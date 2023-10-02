@@ -310,8 +310,8 @@ cfMigrationConfig:
 
 ldapSyncJobConfig:
   poolSize: 3
-  syncInterval: 15
-  defaultCronExpression: "0 0/15 * 1/1 * ? *"
+  syncInterval: 60
+  defaultCronExpression: "0 0 */1 ? * * *"
 
 totp:
   secOpsEmail: secops.fake.email@mailnator.com
@@ -320,6 +320,19 @@ totp:
     count: 10
     duration: 5
     durationUnit: MINUTES
+
+redisLockConfig:
+  sentinel: false
+  masterName: "test"
+  redisUrl: "redis://localhost:6379"
+  sentinelUrls:
+    - "redis://redis1:26379"
+    - "redis://redis2:26379"
+    - "redis://redis3:26379"
+  envNamespace: ""
+  readMode: MASTER
+  nettyThreads: 16
+  useScriptCache: true
 
 redisDelegateConfig:
   sentinel: false
@@ -340,8 +353,24 @@ delegateQueueServiceConfig:
   enableQueueAndDequeue: false
   queueServiceClientConfig:
     httpClientConfig:
-      baseUrl: http://localhost:9091/
+      baseUrl: http://localhost:9544/
       connectTimeOutSeconds: 15
       readTimeOutSeconds: 15
     queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
     envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
+
+notificationClient:
+  messageBroker:
+    type: MONGO
+    uri: mongodb://localhost:27017/notification
+    connectTimeout: 30000
+    serverSelectionTimeout: 90000
+    socketTimeout: 360000
+    maxConnectionIdleTime: 600000
+    connectionsPerHost: 300
+  httpClient:
+    baseUrl: http://localhost:9005
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  secrets:
+    notificationClientSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM

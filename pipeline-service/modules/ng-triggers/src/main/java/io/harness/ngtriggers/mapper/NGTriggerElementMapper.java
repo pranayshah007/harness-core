@@ -32,12 +32,16 @@ import static io.harness.ngtriggers.beans.source.WebhookTriggerType.CUSTOM;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITLAB;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.HARNESS;
+import static io.harness.security.PrincipalProtoMapper.toPrincipalDTO;
 
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.HeaderConfig;
 import io.harness.beans.IdentifierRef;
@@ -101,6 +105,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
+import io.harness.security.SecurityContextBuilder;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.YamlPipelineUtils;
@@ -131,6 +136,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
@@ -219,6 +225,15 @@ public class NGTriggerElementMapper {
       copyFields(existingEntity, newEntity);
       return;
     }
+    if (newEntity.getType() == MULTI_REGION_ARTIFACT) {
+      /* MultiRegionArtifact triggers need different handling here, since we can't just copy the list of BuildMetadata
+      from the previously existing entity (e.g.: The number of artifacts it is listening for could have changed in
+      the update). So we only copy the previously existing signatures to `ngTriggerEntity.metadata.signatures`.
+      These will be used to unsubscribe from the previously subscribed poolingDocuments.
+      At a later step (in NGTriggerServiceImpl:stampPollingInfoForMultiArtifactTrigger) we reset the signatures
+      with the actual new signatures for this trigger. */
+      copyFieldsForMultiArtifactTrigger(existingEntity, newEntity);
+    }
 
     // Currently, enabled only for GITHUB
     if (newEntity.getType() == WEBHOOK) {
@@ -259,6 +274,18 @@ public class NGTriggerElementMapper {
     if (existingPollingConfig != null && isNotEmpty(existingPollingConfig.getPollingDocId())) {
       newEntity.getMetadata().getBuildMetadata().getPollingConfig().setPollingDocId(
           existingPollingConfig.getPollingDocId());
+    }
+  }
+
+  private void copyFieldsForMultiArtifactTrigger(NGTriggerEntity existingEntity, NGTriggerEntity newEntity) {
+    if (existingEntity.getMetadata().getSignatures() == null) {
+      log.info("Previously polling was not enabled. Trigger {} updated with polling", newEntity.getIdentifier());
+      return;
+    }
+    List<String> previousSignatures = existingEntity.getMetadata().getSignatures();
+
+    if (isNotEmpty(previousSignatures)) {
+      newEntity.getMetadata().setSignatures(existingEntity.getMetadata().getSignatures());
     }
   }
 
@@ -464,7 +491,8 @@ public class NGTriggerElementMapper {
   }
 
   public TriggerWebhookEventBuilder toNGTriggerWebhookEvent(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String payload, List<HeaderConfig> headerConfigs) {
+      String projectIdentifier, String payload, List<HeaderConfig> headerConfigs,
+      io.harness.security.Principal principal) {
     WebhookTriggerType webhookTriggerType;
     Map<String, List<String>> headers =
         headerConfigs.stream().collect(Collectors.toMap(HeaderConfig::getKey, HeaderConfig::getValues));
@@ -492,7 +520,6 @@ public class NGTriggerElementMapper {
       }
       webhookTriggerType = CUSTOM;
     }
-
     TriggerWebhookEventBuilder triggerWebhookEventBuilder =
         TriggerWebhookEvent.builder()
             .accountId(accountIdentifier)
@@ -502,6 +529,10 @@ public class NGTriggerElementMapper {
             .headers(headerConfigs)
             .payload(payload)
             .isSubscriptionConfirmation(isConfirmationMessage);
+    if (principal != null
+        && !principal.getPrincipalCase().equals(io.harness.security.Principal.PrincipalCase.PRINCIPAL_NOT_SET)) {
+      triggerWebhookEventBuilder.principal(toPrincipalDTO(accountIdentifier, principal));
+    }
 
     HeaderConfig customTriggerIdentifier = headerConfigs.stream()
                                                .filter(header -> header.getKey().equalsIgnoreCase(X_HARNESS_TRIGGER_ID))
@@ -520,15 +551,23 @@ public class NGTriggerElementMapper {
       List<HeaderConfig> headerConfigs) {
     WebhookTriggerType webhookTriggerType = CUSTOM;
 
-    return TriggerWebhookEvent.builder()
-        .accountId(accountIdentifier)
-        .orgIdentifier(orgIdentifier)
-        .projectIdentifier(projectIdentifier)
-        .triggerIdentifier(triggerIdentifier)
-        .pipelineIdentifier(pipelineIdentifier)
-        .sourceRepoType(webhookTriggerType.getEntityMetadataName())
-        .headers(headerConfigs)
-        .payload(payload);
+    TriggerWebhookEventBuilder triggerWebhookEventBuilder =
+        TriggerWebhookEvent.builder()
+            .accountId(accountIdentifier)
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .triggerIdentifier(triggerIdentifier)
+            .pipelineIdentifier(pipelineIdentifier)
+            .sourceRepoType(webhookTriggerType.getEntityMetadataName())
+            .headers(headerConfigs)
+            .payload(payload);
+    if (!pmsFeatureFlagService.isEnabled(accountIdentifier, FeatureName.CDS_NG_SERVICE_PRINCIPAL_FOR_CUSTOM_WEBHOOK)) {
+      /* If Feature flag CDS_NG_SERVICE_PRINCIPAL_FOR_CUSTOM_WEBHOOK is enabled, it means we should not set
+         user's principal for trigger execution.
+       */
+      triggerWebhookEventBuilder.principal(SecurityContextBuilder.getPrincipal());
+    }
+    return triggerWebhookEventBuilder;
   }
 
   public NGTriggerDetailsResponseDTO toNGTriggerDetailsResponseDTO(NGTriggerEntity ngTriggerEntity, boolean includeYaml,
@@ -768,11 +807,20 @@ public class NGTriggerElementMapper {
 
   public Optional<TriggerEventHistory> fetchLatestExecutionForTrigger(NGTriggerEntity ngTriggerEntity) {
     List<TriggerEventHistory> triggerEventHistoryList =
-        triggerEventHistoryRepository
-            .findFirst1ByAccountIdAndOrgIdentifierAndProjectIdentifierAndTargetIdentifierAndTriggerIdentifier(
-                ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-                ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getTargetIdentifier(),
-                ngTriggerEntity.getIdentifier(), Sort.by(TriggerEventHistoryKeys.createdAt).descending());
+        triggerEventHistoryRepository.findAllWithSort(Criteria.where(TriggerEventHistoryKeys.accountId)
+                                                          .is(ngTriggerEntity.getAccountId())
+                                                          .and(TriggerEventHistoryKeys.orgIdentifier)
+                                                          .is(ngTriggerEntity.getOrgIdentifier())
+                                                          .and(TriggerEventHistoryKeys.projectIdentifier)
+                                                          .is(ngTriggerEntity.getProjectIdentifier())
+                                                          .and(TriggerEventHistoryKeys.targetIdentifier)
+                                                          .is(ngTriggerEntity.getTargetIdentifier())
+                                                          .and(TriggerEventHistoryKeys.triggerIdentifier)
+                                                          .is(ngTriggerEntity.getIdentifier())
+                                                          .and(TriggerEventHistoryKeys.executionNotAttempted)
+                                                          .ne(true),
+            Sort.by(TriggerEventHistoryKeys.createdAt).descending());
+
     if (!isEmpty(triggerEventHistoryList)) {
       return Optional.of(triggerEventHistoryList.get(0));
     }

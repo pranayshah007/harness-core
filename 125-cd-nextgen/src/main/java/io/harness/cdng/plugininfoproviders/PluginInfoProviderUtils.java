@@ -6,10 +6,12 @@
  */
 
 package io.harness.cdng.plugininfoproviders;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.exception.InvalidRequestException;
 
@@ -18,6 +20,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 public class PluginInfoProviderUtils {
   public ManifestOutcome getServerlessManifestOutcome(
       @NotEmpty Collection<ManifestOutcome> manifestOutcomes, String manifestType) {

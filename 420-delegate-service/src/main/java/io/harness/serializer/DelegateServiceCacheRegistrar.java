@@ -40,7 +40,7 @@ public class DelegateServiceCacheRegistrar extends AbstractModule {
   @Named(DELEGATE_CACHE)
   @Singleton
   public RLocalCachedMap<String, Delegate> getDelegateCache(DelegateRedissonCacheManager cacheManager) {
-    return cacheManager.getCache(DELEGATE_CACHE, String.class, Delegate.class, getLocalCachedMapOptions(1));
+    return cacheManager.getCache(DELEGATE_CACHE, String.class, Delegate.class, getLocalCachedMapOptions(5));
   }
 
   @Provides

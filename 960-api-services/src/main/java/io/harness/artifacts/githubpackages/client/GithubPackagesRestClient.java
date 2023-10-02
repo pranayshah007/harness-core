@@ -6,10 +6,12 @@
  */
 
 package io.harness.artifacts.githubpackages.client;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesVersion;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -20,6 +22,7 @@ import retrofit2.http.Header;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 public interface GithubPackagesRestClient {
   @GET("/user/packages")

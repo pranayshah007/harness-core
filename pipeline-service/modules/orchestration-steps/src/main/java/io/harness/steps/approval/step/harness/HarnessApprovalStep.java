@@ -12,7 +12,10 @@ import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.FeatureName;
 import io.harness.data.structure.CollectionUtils;
@@ -25,7 +28,6 @@ import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.dto.UserGroupDTO;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
@@ -38,6 +40,7 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
@@ -69,6 +72,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(CDC)
 @Slf4j
 public class HarnessApprovalStep extends PipelineAsyncExecutable {
@@ -87,14 +91,19 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
 
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
     HarnessApprovalInstance approvalInstance = HarnessApprovalInstance.fromStepParameters(ambiance, stepParameters);
+    final List<String> userGroups = approvalInstance.getApprovers().getUserGroups();
+    final boolean isAnyValidUserGroupPresent = userGroups.stream().anyMatch(EmptyPredicate::isNotEmpty);
+    if (!isAnyValidUserGroupPresent) {
+      throw new InvalidRequestException("All the provided user groups are empty");
+    }
 
     List<UserGroupDTO> validatedUserGroups = approvalNotificationHandler.getUserGroups(approvalInstance);
     if (EmptyPredicate.isEmpty(validatedUserGroups)) {
-      throw new InvalidRequestException("At least 1 valid user group is required");
+      throw new InvalidRequestException(String.format("At least 1 valid user group is required in %s", userGroups));
     }
     approvalInstance.setValidatedUserGroups(validatedUserGroups);
     approvalInstance.setValidatedApprovalUserGroups(
@@ -135,7 +144,7 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
 
   @Override
   public StepResponse handleAsyncResponseInternal(
-      Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
+      Ambiance ambiance, StepBaseParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     try {
       if (pmsFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_AUTO_APPROVAL)
           && responseDataMap.get(TIMEOUT_DATA) != null
@@ -147,10 +156,9 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
         if (!outputOptional.isFound()) {
           log.error(HARNESS_APPROVAL_STEP_OUTCOME + " sweeping output not found. unable to perform auto approval");
           FailureInfo failureInfo = FailureInfo.newBuilder().setErrorMessage("Step timeout occurred").build();
-          dashboardExecutorService.submit(
-              ()
-                  -> stepExecutionEntityService.updateStepExecutionEntity(
-                      ambiance, failureInfo, null, stepParameters.getName(), Status.APPROVAL_WAITING));
+          dashboardExecutorService.submit(()
+                                              -> stepExecutionEntityService.updateStepExecutionEntity(ambiance,
+                                                  failureInfo, null, stepParameters.getName(), Status.FAILED));
           return StepResponse.builder().status(Status.FAILED).failureInfo(failureInfo).build();
         }
         NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, COMMAND_UNIT, false);
@@ -169,7 +177,7 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
             ()
                 -> stepExecutionEntityService.updateStepExecutionEntity(ambiance, null,
                     createHarnessApprovalStepExecutionDetailsFromHarnessApprovalOutcome(outcome),
-                    stepParameters.getName(), Status.APPROVAL_WAITING));
+                    stepParameters.getName(), Status.SUCCEEDED));
         return StepResponse.builder()
             .status(Status.SUCCEEDED)
             .stepOutcome(StepResponse.StepOutcome.builder().name("output").outcome(outcome).build())
@@ -202,7 +210,7 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
 
   private HarnessApprovalStepExecutionDetails createHarnessApprovalStepExecutionDetailsFromHarnessApprovalOutcome(
       HarnessApprovalOutcome outcome) {
-    List<HarnessApprovalStepExecutionDetails.HarnessApprovalActivity> approvalActivities = new ArrayList<>();
+    List<HarnessApprovalStepExecutionDetails.HarnessApprovalExecutionActivity> approvalActivities = new ArrayList<>();
     if (outcome != null && outcome.getApprovalActivities() != null) {
       for (HarnessApprovalActivityDTO harnessApprovalActivityDTO : outcome.getApprovalActivities()) {
         String action = harnessApprovalActivityDTO.getAction().toString();
@@ -211,7 +219,7 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
           approverInputs = harnessApprovalActivityDTO.getApproverInputs().stream().collect(
               Collectors.toMap(ApproverInput::getName, ApproverInput::getValue));
         }
-        approvalActivities.add(HarnessApprovalStepExecutionDetails.HarnessApprovalActivity.builder()
+        approvalActivities.add(HarnessApprovalStepExecutionDetails.HarnessApprovalExecutionActivity.builder()
                                    .user(EmbeddedUserDTO.toEmbeddedUser(harnessApprovalActivityDTO.getUser()))
                                    .approvalAction(action)
                                    .approverInputs(approverInputs)
@@ -225,7 +233,7 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
   }
 
   private HarnessApprovalInstance handleAutoApprovalForStep(
-      String approvalInstanceId, StepElementParameters stepParameters) {
+      String approvalInstanceId, StepBaseParameters stepParameters) {
     HarnessApprovalSpecParameters specParameters = (HarnessApprovalSpecParameters) stepParameters.getSpec();
 
     if (isNull(specParameters.getAutoApproval())) {
@@ -250,14 +258,14 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
 
   @Override
   public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {
-    approvalInstanceService.expireByNodeExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
+      Ambiance ambiance, StepBaseParameters stepParameters, AsyncExecutableResponse executableResponse) {
+    approvalInstanceService.abortByNodeExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
     closeLogStream(ambiance);
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   private void closeLogStream(Ambiance ambiance) {

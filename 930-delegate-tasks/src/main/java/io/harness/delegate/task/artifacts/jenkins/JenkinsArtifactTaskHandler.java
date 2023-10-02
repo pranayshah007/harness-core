@@ -15,9 +15,13 @@ import static io.harness.threading.Morpheus.sleep;
 
 import static software.wings.beans.dto.Log.Builder.aLog;
 
+import static com.google.common.primitives.Longs.max;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.artifacts.jenkins.beans.JenkinsInternalConfig;
 import io.harness.artifacts.jenkins.service.JenkinsRegistryService;
@@ -78,11 +82,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.conn.ConnectTimeoutException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
 public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<JenkinsArtifactDelegateRequest> {
   private static final int ARTIFACT_RETENTION_SIZE = 25;
+  private static final long MINIMUM_CONSOLE_LOG_POLL_FREQUENCY = 5;
   private final SecretDecryptionService secretDecryptionService;
   private final JenkinsRegistryService jenkinsRegistryService;
   @Inject private JenkinsRegistryUtils jenkinsRegistryUtils;
@@ -152,42 +158,41 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(JenkinsArtifactDelegateRequest attributesRequest) {
     try {
       String jobName = URLEncoder.encode(attributesRequest.getJobName(), StandardCharsets.UTF_8.toString());
-      if (isNotEmpty(attributesRequest.getBuildNumber())) {
+      if (isNotEmpty(attributesRequest.getBuildRegex())) {
         List<BuildDetails> buildDetails = jenkinsRegistryService.getBuildsForJob(
             JenkinsRequestResponseMapper.toJenkinsInternalConfig(attributesRequest), jobName,
-            attributesRequest.getArtifactPaths(), ARTIFACT_RETENTION_SIZE);
+            attributesRequest.getArtifactPaths(), Integer.MAX_VALUE);
         if (isNotEmpty(buildDetails)) {
           Pattern pattern = Pattern.compile(
-              attributesRequest.getBuildNumber().replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));
+              attributesRequest.getBuildRegex().replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));
           buildDetails = buildDetails.stream()
                              .filter(buildDetail -> pattern.matcher(buildDetail.getNumber()).find())
                              .sorted(new BuildDetailsComparatorDescending())
                              .collect(toList());
-        } else {
-          throw NestedExceptionUtils.hintWithExplanationException(
-              "Check if the version exist & check if the right connector chosen for fetching the build.",
-              "Version not found ", new InvalidRequestException("Version not found"));
-        }
-        if (isNotEmpty(buildDetails) && buildDetails.get(0) != null) {
-          JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse =
-              JenkinsRequestResponseMapper.toJenkinsArtifactDelegateResponse(buildDetails.get(0), attributesRequest);
-          return getSuccessTaskExecutionResponse(Collections.singletonList(jenkinsArtifactDelegateResponse),
-              Collections.singletonList(buildDetails.get(0)));
-        } else {
-          // If provided build is not older than the ARTIFACT_RETENTION_SIZE builds.
-          BuildDetails buildDetail = jenkinsRegistryService.verifyBuildForJob(
-              JenkinsRequestResponseMapper.toJenkinsInternalConfig(attributesRequest), jobName,
-              attributesRequest.getArtifactPaths(), attributesRequest.getBuildNumber());
-          if (buildDetail != null) {
+
+          if (isNotEmpty(buildDetails) && buildDetails.get(0) != null) {
             JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse =
-                JenkinsRequestResponseMapper.toJenkinsArtifactDelegateResponse(buildDetail, attributesRequest);
-            return getSuccessTaskExecutionResponse(
-                Collections.singletonList(jenkinsArtifactDelegateResponse), Collections.singletonList(buildDetail));
+                JenkinsRequestResponseMapper.toJenkinsArtifactDelegateResponse(buildDetails.get(0), attributesRequest);
+            return getSuccessTaskExecutionResponse(Collections.singletonList(jenkinsArtifactDelegateResponse),
+                Collections.singletonList(buildDetails.get(0)));
           }
-          throw NestedExceptionUtils.hintWithExplanationException(
-              "Check if the version exist & check if the right connector chosen for fetching the build.",
-              "Version didn't matched ", new InvalidRequestException("Version didn't matched"));
         }
+        throw NestedExceptionUtils.hintWithExplanationException(
+            "Check if the version exist & check if the right connector chosen for fetching the build.",
+            "Version not found ", new InvalidRequestException("Version not found"));
+      } else if (isNotEmpty(attributesRequest.getBuildNumber())) {
+        BuildDetails buildDetail = jenkinsRegistryService.verifyBuildForJob(
+            JenkinsRequestResponseMapper.toJenkinsInternalConfig(attributesRequest), jobName,
+            attributesRequest.getArtifactPaths(), attributesRequest.getBuildNumber());
+        if (buildDetail != null) {
+          JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse =
+              JenkinsRequestResponseMapper.toJenkinsArtifactDelegateResponse(buildDetail, attributesRequest);
+          return getSuccessTaskExecutionResponse(
+              Collections.singletonList(jenkinsArtifactDelegateResponse), Collections.singletonList(buildDetail));
+        }
+        throw NestedExceptionUtils.hintWithExplanationException(
+            "Check if the version exist & check if the right connector chosen for fetching the build.",
+            "Version not found ", new InvalidRequestException("Version not found"));
       }
       return getLastSuccessfulBuildForJob(attributesRequest, jobName);
     } catch (UnsupportedEncodingException e) {
@@ -204,8 +209,8 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
     try {
       JenkinsInternalConfig jenkinsInternalConfig =
           JenkinsRequestResponseMapper.toJenkinsInternalConfig(attributesRequest);
-      QueueReference queueReference = jenkinsRegistryUtils.trigger(
-          attributesRequest.getJobName(), jenkinsInternalConfig, attributesRequest.getJobParameter());
+      QueueReference queueReference = jenkinsRegistryUtils.trigger(attributesRequest.getJobName(),
+          jenkinsInternalConfig, attributesRequest.getJobParameter(), executionLogCallback);
       String queueItemUrl = queueReference != null ? queueReference.getQueueItemUrlPart() : null;
 
       // Check if jenkins job start is successful
@@ -289,8 +294,9 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
               + (attributesRequest.getTimeout() - (System.currentTimeMillis() - attributesRequest.getStartTs())) / 1000,
           LogLevel.INFO);
 
-      BuildWithDetails jenkinsBuildWithDetails = waitForJobExecutionToFinish(
-          jenkinsBuild, attributesRequest.getUnitName(), jenkinsInternalConfig, executionLogCallback);
+      BuildWithDetails jenkinsBuildWithDetails =
+          waitForJobExecutionToFinish(jenkinsBuild, attributesRequest.getUnitName(), jenkinsInternalConfig,
+              executionLogCallback, attributesRequest.getConsoleLogFrequency());
       jenkinsBuildTaskNGResponse.setJobUrl(jenkinsBuildWithDetails.getUrl());
 
       executionLogCallback.saveExecutionLog("Collecting environment variables for Jenkins task", LogLevel.INFO);
@@ -381,7 +387,8 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
   }
 
   public BuildWithDetails waitForJobExecutionToFinish(Build jenkinsBuild, String unitName,
-      JenkinsInternalConfig jenkinsInternalConfig, LogCallback logCallback) throws IOException {
+      JenkinsInternalConfig jenkinsInternalConfig, LogCallback logCallback, Long consoleLogFrequency)
+      throws IOException {
     CustomBuildWithDetails jenkinsBuildWithDetails = null;
     AtomicInteger consoleLogsSent = new AtomicInteger();
 
@@ -391,7 +398,7 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
 
     do {
       log.info("Waiting for Job {} to finish execution", buildUrl);
-      sleep(Duration.ofSeconds(5));
+      sleep(Duration.ofSeconds(max(consoleLogFrequency, MINIMUM_CONSOLE_LOG_POLL_FREQUENCY)));
       Future<CustomBuildWithDetails> jenkinsBuildWithDetailsFuture = null;
       Future<Void> saveConsoleLogs = null;
       try {

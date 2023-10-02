@@ -6,9 +6,11 @@
  */
 
 package io.harness.engine;
-
 import static io.harness.security.dto.PrincipalType.USER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.governance.GovernanceMetadata;
@@ -37,6 +39,8 @@ import java.util.List;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @UtilityClass
 public class GovernanceServiceHelper {
   public String getEntityString(String accountId, String orgIdentifier, String projectIdentifier,
@@ -92,6 +96,7 @@ public class GovernanceServiceHelper {
               .setAccountId(HarnessStringUtils.emptyIfNull(setEvaluationResponse.getAccount_id()))
               .setOrgId(HarnessStringUtils.emptyIfNull(setEvaluationResponse.getOrg_id()))
               .setProjectId(HarnessStringUtils.emptyIfNull(setEvaluationResponse.getProject_id()))
+              .setDescription(HarnessStringUtils.emptyIfNull(setEvaluationResponse.getDescription()))
               .build());
     }
     return policySetMetadataList;

@@ -24,24 +24,38 @@ import io.harness.ccm.audittrails.events.BudgetCreateEvent;
 import io.harness.ccm.audittrails.events.BudgetDeleteEvent;
 import io.harness.ccm.audittrails.events.BudgetUpdateEvent;
 import io.harness.ccm.audittrails.yamlDTOs.BudgetDTO;
+import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.context.GlobalContext;
+import io.harness.eventsframework.EventsFrameworkConstants;
+import io.harness.eventsframework.EventsFrameworkMetadataConstants;
+import io.harness.eventsframework.api.EventsFrameworkDownException;
+import io.harness.eventsframework.api.Producer;
+import io.harness.eventsframework.entity_crud.EntityChangeDTO;
+import io.harness.eventsframework.producer.Message;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.StringValue;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class BudgetEventHandler implements OutboxEventHandler {
   private final ObjectMapper objectMapper;
+  private final Producer eventProducer;
   private final AuditClientService auditClientService;
 
   @Inject
-  public BudgetEventHandler(AuditClientService auditClientService) {
+  public BudgetEventHandler(
+      @Named(EventsFrameworkConstants.ENTITY_CRUD) Producer eventProducer, AuditClientService auditClientService) {
     this.objectMapper = NG_DEFAULT_OBJECT_MAPPER;
+    this.eventProducer = eventProducer;
     this.auditClientService = auditClientService;
   }
 
@@ -67,6 +81,8 @@ public class BudgetEventHandler implements OutboxEventHandler {
   private boolean handleBudgetCreateEvent(OutboxEvent outboxEvent) throws IOException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
     BudgetCreateEvent budgetCreateEvent = objectMapper.readValue(outboxEvent.getEventData(), BudgetCreateEvent.class);
+    boolean publishedToRedis =
+        publishEvent(budgetCreateEvent.getBudgetDTO(), EventsFrameworkMetadataConstants.CREATE_ACTION);
     AuditEntry auditEntry =
         AuditEntry.builder()
             .action(Action.CREATE)
@@ -77,12 +93,14 @@ public class BudgetEventHandler implements OutboxEventHandler {
             .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
             .insertId(outboxEvent.getId())
             .build();
-    return auditClientService.publishAudit(auditEntry, globalContext);
+    return publishedToRedis && auditClientService.publishAudit(auditEntry, globalContext);
   }
 
   private boolean handleBudgetUpdateEvent(OutboxEvent outboxEvent) throws IOException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
     BudgetUpdateEvent budgetUpdateEvent = objectMapper.readValue(outboxEvent.getEventData(), BudgetUpdateEvent.class);
+    boolean publishedToRedis =
+        publishEvent(budgetUpdateEvent.getBudgetDTO(), EventsFrameworkMetadataConstants.UPDATE_ACTION);
     AuditEntry auditEntry =
         AuditEntry.builder()
             .action(Action.UPDATE)
@@ -94,8 +112,7 @@ public class BudgetEventHandler implements OutboxEventHandler {
             .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
             .insertId(outboxEvent.getId())
             .build();
-
-    return auditClientService.publishAudit(auditEntry, globalContext);
+    return publishedToRedis && auditClientService.publishAudit(auditEntry, globalContext);
   }
 
   private boolean handleBudgetDeleteEvent(OutboxEvent outboxEvent) throws IOException {
@@ -113,5 +130,29 @@ public class BudgetEventHandler implements OutboxEventHandler {
             .build();
 
     return auditClientService.publishAudit(auditEntry, globalContext);
+  }
+
+  private boolean publishEvent(Budget budget, String action) {
+    try {
+      String eventId = eventProducer.send(
+          Message.newBuilder()
+              .putAllMetadata(
+                  ImmutableMap.of("accountId", budget.getAccountId(), EventsFrameworkMetadataConstants.ENTITY_TYPE,
+                      EventsFrameworkMetadataConstants.CCM_BUDGET, EventsFrameworkMetadataConstants.ACTION, action))
+              .setData(getBudgetPayload(budget))
+              .build());
+      log.info("Produced event id:[{}] for budget:[{}], action:[{}]", eventId, budget, action);
+      return true;
+    } catch (EventsFrameworkDownException e) {
+      log.error("Failed to send event to events framework for budget identifier {}", budget.getUuid(), e);
+      return false;
+    }
+  }
+
+  private ByteString getBudgetPayload(Budget budget) {
+    EntityChangeDTO.Builder builder = EntityChangeDTO.newBuilder()
+                                          .setAccountIdentifier(StringValue.of(budget.getAccountId()))
+                                          .setIdentifier(StringValue.of(budget.getUuid()));
+    return builder.build().toByteString();
   }
 }

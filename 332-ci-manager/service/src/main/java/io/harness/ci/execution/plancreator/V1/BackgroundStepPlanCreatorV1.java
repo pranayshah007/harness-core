@@ -13,12 +13,12 @@ import io.harness.beans.steps.nodes.BackgroundStepNode;
 import io.harness.beans.steps.nodes.V1.BackgroundStepNodeV1;
 import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.steps.stepinfo.V1.BackgroundStepInfoV1;
-import io.harness.ci.integrationstage.V1.CIPlanCreatorUtils;
+import io.harness.ci.execution.integrationstage.V1.CIPlanCreatorUtils;
 import io.harness.ci.plan.creator.step.CIPMSStepPlanCreatorV2;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.utils.IdentifierGeneratorUtils;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 
 import com.google.common.collect.Sets;
 import java.util.Set;
@@ -66,6 +66,6 @@ public class BackgroundStepPlanCreatorV1 extends CIPMSStepPlanCreatorV2<Backgrou
 
   @Override
   public Set<String> getSupportedYamlVersions() {
-    return Set.of(PipelineVersion.V1);
+    return Set.of(HarnessYamlVersion.V1);
   }
 }

@@ -9,17 +9,14 @@ package io.harness.pms.helpers;
 
 import static io.harness.beans.FeatureName.NG_SVC_ENV_REDESIGN;
 import static io.harness.rule.OwnerRule.ALEXEI;
-import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 import io.harness.utils.PmsFeatureFlagHelper;
@@ -52,14 +49,5 @@ public class PmsFeatureFlagHelperTest extends CategoryTest {
   public void isEnabled() throws IOException {
     assertThat(pmsFeatureFlagHelper.isEnabled(accountId, "dd")).isFalse();
     assertThat(pmsFeatureFlagHelper.isEnabled(accountId, NG_SVC_ENV_REDESIGN)).isTrue();
-  }
-
-  @Test
-  @Owner(developers = SOUMYAJIT)
-  @Category(UnitTests.class)
-  public void validateRefreshCacheForGivenAccountId() {
-    assertThatThrownBy(() -> pmsFeatureFlagHelper.refreshCacheForGivenAccountId(accountId))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Cache will be automatically refreshed within 5 mins");
   }
 }

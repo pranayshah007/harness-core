@@ -1,2 +1,2 @@
-DOCKER_FILE_PATH: /harness/harness-core/dist/ng-manager/Dockerfile-cie-jdk
+DOCKER_FILE_PATH: /harness/harness-core/dockerization/ng-manager/Dockerfile-ng-manager-multistage
 HELM_CHART_SOURCE_DIRECTORY: harness-core/120-ng-manager/chart

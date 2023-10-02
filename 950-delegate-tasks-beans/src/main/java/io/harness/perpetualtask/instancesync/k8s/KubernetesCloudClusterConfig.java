@@ -24,4 +24,5 @@ public class KubernetesCloudClusterConfig {
   String subscriptionId;
   String resourceGroup;
   boolean useClusterAdminCredentials;
+  boolean addRegionalParam;
 }

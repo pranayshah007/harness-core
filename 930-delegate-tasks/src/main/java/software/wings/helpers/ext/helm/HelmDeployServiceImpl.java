@@ -6,7 +6,6 @@
  */
 
 package software.wings.helpers.ext.helm;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -37,8 +36,11 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.replace;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FileData;
 import io.harness.concurrent.HTimeLimiter;
@@ -140,6 +142,8 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * Created by anubhaw on 4/1/18.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Singleton
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
@@ -309,8 +313,8 @@ public class HelmDeployServiceImpl implements HelmDeployService {
           containerDeploymentDelegateHelper.getKubernetesConfig(commandRequest.getContainerServiceParams());
       // if skip steady state check is enabled, due to that we're fetching only running pods this may result in not
       // picking all the pods correctly. Overall correct number of pods would be handled by instance sync
-      containerInfos.addAll(k8sTaskHelperBase.getContainerInfos(
-          kubernetesConfig, commandRequest.getReleaseName(), kubernetesConfig.getNamespace(), timeoutInMillis));
+      containerInfos.addAll(k8sTaskHelperBase.getContainerInfos(kubernetesConfig, commandRequest.getReleaseName(),
+          kubernetesConfig.getNamespace(), Collections.emptyMap(), timeoutInMillis));
       executionLogCallback.saveExecutionLog(
           format("Currently running %d container(s) for release %s and namespace %s%n%n", containerInfos.size(),
               commandRequest.getReleaseName(), kubernetesConfig.getNamespace()));
@@ -357,8 +361,8 @@ public class HelmDeployServiceImpl implements HelmDeployService {
         KubernetesConfig kubernetesConfig =
             containerDeploymentDelegateHelper.getKubernetesConfig(commandRequest.getContainerServiceParams());
         String releaseName = commandRequest.getReleaseName();
-        List<ContainerInfo> containerInfos =
-            k8sTaskHelperBase.getContainerInfos(kubernetesConfig, releaseName, namespace, timeoutInMillis);
+        List<ContainerInfo> containerInfos = k8sTaskHelperBase.getContainerInfos(
+            kubernetesConfig, releaseName, namespace, Collections.emptyMap(), timeoutInMillis);
         containerInfoList.addAll(containerInfos);
       }
     }

@@ -6,6 +6,7 @@
  */
 package io.harness.ngtriggers.validations.impl;
 
+import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,11 +20,13 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.HintException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.buildtriggers.helpers.BuildTriggerHelper;
 import io.harness.ngtriggers.buildtriggers.helpers.dtos.BuildTriggerOpsData;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.DockerRegistryPollingItemGenerator;
+import io.harness.ngtriggers.buildtriggers.helpers.generator.GcrPollingItemGenerator;
 import io.harness.ngtriggers.buildtriggers.helpers.generator.GeneratorFactory;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.validations.ValidationResult;
@@ -49,6 +52,8 @@ public class ArtifactTriggerValidatorTest extends CategoryTest {
   @InjectMocks @Inject private NGTriggerElementMapper ngTriggerElementMapper;
   @Mock private PipelineServiceClient pipelineServiceClient;
   private DockerRegistryPollingItemGenerator dockerRegistryPollingItemGenerator;
+
+  private GcrPollingItemGenerator gcrPollingItemGenerator;
   @Mock private GeneratorFactory generatorFactory;
   private BuildTriggerHelper buildTriggerHelper;
   private ArtifactTriggerValidator artifactTriggerValidator;
@@ -56,6 +61,8 @@ public class ArtifactTriggerValidatorTest extends CategoryTest {
   private String ngTriggerYaml_artifact_dockerregistry;
   private String pipelineYaml;
 
+  private String gcr_artifact_trigger;
+  private String gcr_artifact_pipeline;
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
@@ -65,6 +72,13 @@ public class ArtifactTriggerValidatorTest extends CategoryTest {
         StandardCharsets.UTF_8);
     pipelineYaml =
         Resources.toString(Objects.requireNonNull(classLoader.getResource("pipeline.yaml")), StandardCharsets.UTF_8);
+
+    gcr_artifact_trigger = Resources.toString(
+        Objects.requireNonNull(classLoader.getResource("gcr_artifact_trigger.yaml")), StandardCharsets.UTF_8);
+
+    gcr_artifact_pipeline = Resources.toString(
+        Objects.requireNonNull(classLoader.getResource("gcr_artifact_pipeline.yaml")), StandardCharsets.UTF_8);
+
     buildTriggerHelper = spy(new BuildTriggerHelper(pipelineServiceClient));
     artifactTriggerValidator = new ArtifactTriggerValidator(buildTriggerHelper, generatorFactory);
     dockerRegistryPollingItemGenerator = new DockerRegistryPollingItemGenerator(buildTriggerHelper);
@@ -89,6 +103,20 @@ public class ArtifactTriggerValidatorTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testValidateBasedOnArtifactTypeThrowsException() throws Exception {
+    TriggerDetails triggerDetails =
+        ngTriggerElementMapper.toTriggerDetails("account", "org", "proj", ngTriggerYaml_artifact_dockerregistry, true);
+    BuildTriggerOpsData buildTriggerOpsData =
+        buildTriggerHelper.generateBuildTriggerOpsDataForArtifact(triggerDetails, "");
+    when(generatorFactory.retrievePollingItemGenerator(any())).thenReturn(null);
+    assertThatThrownBy(() -> artifactTriggerValidator.validateBasedOnArtifactType(buildTriggerOpsData))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Failed to find Polling Generator For Trigger. Please Check Manifest Config In Trigger");
+  }
+
+  @Test
   @Owner(developers = VINICIUS)
   @Category(UnitTests.class)
   public void testValidate() throws IOException {
@@ -109,5 +137,29 @@ public class ArtifactTriggerValidatorTest extends CategoryTest {
     when(generatorFactory.retrievePollingItemGenerator(any())).thenReturn(dockerRegistryPollingItemGenerator);
     ValidationResult validate = spyArtifactTriggerValidator.validate(triggerDetails);
     assertThat(validate.isSuccess()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testValidateThrowsExceptionForServiceV1() throws IOException {
+    BuildTriggerHelper validationHelper = new BuildTriggerHelper(pipelineServiceClient);
+    ArtifactTriggerValidator spyArtifactTriggerValidator =
+        spy(new ArtifactTriggerValidator(validationHelper, generatorFactory));
+    TriggerDetails triggerDetails =
+        ngTriggerElementMapper.toTriggerDetails("account", "org", "proj", gcr_artifact_trigger, false);
+    Call<ResponseDTO<TemplatesResolvedPipelineResponseDTO>> templatesResolvedPipelineDTO = mock(Call.class);
+    when(pipelineServiceClient.getResolvedTemplatesPipelineByIdentifier(
+             triggerDetails.getNgTriggerEntity().getTargetIdentifier(), "account", "org", "proj",
+             triggerDetails.getNgTriggerConfigV2().getPipelineBranchName(), null, false, "true"))
+        .thenReturn(templatesResolvedPipelineDTO);
+    when(templatesResolvedPipelineDTO.execute())
+        .thenReturn(Response.success(ResponseDTO.newResponse(TemplatesResolvedPipelineResponseDTO.builder()
+                                                                 .resolvedTemplatesPipelineYaml(gcr_artifact_pipeline)
+                                                                 .build())));
+    doNothing().when(spyArtifactTriggerValidator).validateBasedOnArtifactType(any());
+    when(generatorFactory.retrievePollingItemGenerator(any())).thenReturn(gcrPollingItemGenerator);
+    ValidationResult validate = spyArtifactTriggerValidator.validate(triggerDetails);
+    assertThat(validate.isSuccess()).isFalse();
   }
 }

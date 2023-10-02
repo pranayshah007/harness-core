@@ -9,7 +9,10 @@ package io.harness.logstreaming;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.MARKO;
+import static io.harness.rule.OwnerRule.TMACARI;
+import static io.harness.rule.OwnerRule.VITALIE;
 import static io.harness.threading.Morpheus.sleep;
+import static io.harness.windows.CmdUtils.WIN_RM_MARKER;
 
 import static software.wings.beans.LogHelper.COMMAND_UNIT_PLACEHOLDER;
 
@@ -30,6 +33,7 @@ import io.harness.rule.Owner;
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.delegatetasks.DelegateLogService;
 
+import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -115,7 +119,7 @@ public class LogStreamingTaskClientTest extends CategoryTest {
     completeLogStreamingTaskClient.writeLogLine(logLine, null);
     completeLogStreamingTaskClient.dispatchLogs();
 
-    verify(logStreamingSanitizerMock).sanitizeLogMessage(logLine);
+    verify(logStreamingSanitizerMock).sanitizeLogMessage(logLine, Collections.emptySet());
 
     ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
     verify(logStreamingClientMock).pushMessage(eq(TOKEN), eq(ACCOUNT_ID), eq(BASE_LOG_KEY), captor.capture());
@@ -131,7 +135,7 @@ public class LogStreamingTaskClientTest extends CategoryTest {
     completeLogStreamingTaskClient.writeLogLine(logLine, "keySuffix");
     completeLogStreamingTaskClient.dispatchLogs();
 
-    verify(logStreamingSanitizerMock).sanitizeLogMessage(logLine);
+    verify(logStreamingSanitizerMock).sanitizeLogMessage(logLine, Collections.emptySet());
 
     ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
     verify(logStreamingClientMock)
@@ -187,5 +191,51 @@ public class LogStreamingTaskClientTest extends CategoryTest {
         .isInstanceOf(InvalidArgumentsException.class)
         .hasMessage(
             "Application id and activity id were not available as part of task params. Please make sure that task params class implements Cd1ApplicationAccess and ActivityAccess interfaces.");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void shouldWriteLineForWinRm() {
+    LogLine logLine = LogLine.builder().level(LogLevel.INFO).message("msg").build();
+    completeLogStreamingTaskClient.getMarkers().add(WIN_RM_MARKER);
+    completeLogStreamingTaskClient.writeLogLine(logLine, "keySuffix");
+    verify(logStreamingSanitizerMock).sanitizeLogMessage(logLine, completeLogStreamingTaskClient.getMarkers());
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void shouldNotColorErrorLogLine() {
+    LogLine logLine = LogLine.builder().level(LogLevel.ERROR).message("msg").skipColoring(true).build();
+    completeLogStreamingTaskClient.writeLogLine(logLine, "keySuffix");
+    completeLogStreamingTaskClient.dispatchLogs();
+
+    verify(logStreamingSanitizerMock).sanitizeLogMessage(logLine, Collections.emptySet());
+
+    ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
+    verify(logStreamingClientMock)
+        .pushMessage(eq(TOKEN), eq(ACCOUNT_ID), eq(BASE_LOG_KEY + String.format(COMMAND_UNIT_PLACEHOLDER, "keySuffix")),
+            captor.capture());
+    List<LogLine> logLines = captor.getValue();
+    assertThat(logLines.get(0).getMessage()).doesNotContain("1;91");
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void shouldColorErrorLogLine() {
+    LogLine logLine = LogLine.builder().level(LogLevel.ERROR).message("msg").skipColoring(false).build();
+    completeLogStreamingTaskClient.writeLogLine(logLine, "keySuffix");
+    completeLogStreamingTaskClient.dispatchLogs();
+
+    verify(logStreamingSanitizerMock).sanitizeLogMessage(logLine, Collections.emptySet());
+
+    ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
+    verify(logStreamingClientMock)
+        .pushMessage(eq(TOKEN), eq(ACCOUNT_ID), eq(BASE_LOG_KEY + String.format(COMMAND_UNIT_PLACEHOLDER, "keySuffix")),
+            captor.capture());
+    List<LogLine> logLines = captor.getValue();
+    assertThat(logLines.get(0).getMessage()).contains("1;91");
   }
 }

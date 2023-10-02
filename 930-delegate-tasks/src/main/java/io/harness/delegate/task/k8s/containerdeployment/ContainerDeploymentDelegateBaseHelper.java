@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.k8s;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.azure.model.AzureConstants.AZURE_AUTH_CERT_DIR_PATH;
 import static io.harness.azure.model.AzureConstants.REPOSITORY_DIR_PATH;
@@ -19,7 +18,10 @@ import static com.google.common.base.Charsets.UTF_8;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.container.ContainerInfo;
 import io.harness.delegate.beans.azure.AzureConfigContext;
@@ -75,6 +77,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Singleton
 @Slf4j
 @OwnedBy(CDP)
@@ -176,7 +179,7 @@ public class ContainerDeploymentDelegateBaseHelper {
       EksK8sInfraDelegateConfig eksK8sInfraDelegateConfig = (EksK8sInfraDelegateConfig) clusterConfigDTO;
       AwsConnectorDTO awsConnectorDTO = eksK8sInfraDelegateConfig.getAwsConnectorDTO();
       return awsEKSDelegateTaskHelper.getKubeConfig(awsConnectorDTO, eksK8sInfraDelegateConfig.getCluster(),
-          eksK8sInfraDelegateConfig.getNamespace(), logCallback);
+          eksK8sInfraDelegateConfig.isAddRegionalParam(), eksK8sInfraDelegateConfig.getNamespace(), logCallback);
     } else if (clusterConfigDTO instanceof RancherK8sInfraDelegateConfig) {
       RancherK8sInfraDelegateConfig rancherK8sInfraDelegateConfig = (RancherK8sInfraDelegateConfig) clusterConfigDTO;
       return rancherKubeConfigGenerator.createKubernetesConfig(
@@ -305,6 +308,7 @@ public class ContainerDeploymentDelegateBaseHelper {
           log.info("File doesn't exist. Creating file at path {}", configFilePath);
           FileUtils.forceMkdir(file.getParentFile());
           FileUtils.writeStringToFile(file, configFileContent, UTF_8);
+          kubernetesContainerService.modifyFileReadableProperties(configFilePath);
           log.info("Created file with size {}", file.length());
         }
         return file.getAbsolutePath();

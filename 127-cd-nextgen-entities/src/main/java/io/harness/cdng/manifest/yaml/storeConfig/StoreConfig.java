@@ -13,6 +13,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.manifest.yaml.summary.ManifestStoreInfo.ManifestStoreInfoBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.intfc.OverrideConnectorRef;
 import io.harness.yaml.core.intfc.OverridesApplier;
@@ -32,4 +33,5 @@ public interface StoreConfig extends OverridesApplier<StoreConfig>, OverrideConn
   default Set<String> validateAtRuntime() {
     return new HashSet<>();
   }
+  default void populateManifestStoreInfo(ManifestStoreInfoBuilder manifestStoreInfoBuilder) {}
 }

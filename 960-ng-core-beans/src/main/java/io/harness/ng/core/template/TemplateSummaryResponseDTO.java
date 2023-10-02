@@ -57,4 +57,5 @@ public class TemplateSummaryResponseDTO {
   long lastUpdatedAt;
   long createdAt;
   String icon;
+  String yamlVersion;
 }

@@ -11,13 +11,14 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SHALINI;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
+import io.harness.abort.AbortedBy;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.AbortedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.retry.RetryExecutionMetadata;
 import io.harness.execution.StagesExecutionMetadata;
@@ -28,6 +29,7 @@ import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.EdgeLayoutListDTO;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
+import io.harness.pms.plan.execution.beans.dto.PipelineExecutionIdentifierSummaryDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionSummaryDTO;
 import io.harness.rule.Owner;
 
@@ -62,6 +64,7 @@ public class PipelineExecutionSummaryDtoMapperTest extends CategoryTest {
                                                                 .pipelineIdentifier(pipelineId)
                                                                 .runSequence(1)
                                                                 .planExecutionId(planId)
+                                                                .pipelineVersion("0")
                                                                 .build();
     PipelineExecutionSummaryDTO executionSummaryDTO =
         PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, null);
@@ -80,6 +83,7 @@ public class PipelineExecutionSummaryDtoMapperTest extends CategoryTest {
     assertThat(executionSummaryDTO.getGitDetails().getRootFolder()).isNull();
     assertThat(executionSummaryDTO.getStoreType()).isNull();
     assertThat(executionSummaryDTO.getConnectorRef()).isNull();
+    assertThat(executionSummaryDTO.getYamlVersion()).isEqualTo("0");
 
     entityGitDetails = EntityGitDetails.builder()
                            .branch(branch)
@@ -119,6 +123,30 @@ public class PipelineExecutionSummaryDtoMapperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void toExecutionIdentifierDto() {
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                                                        .runSequence(32)
+                                                                        .projectIdentifier(projId)
+                                                                        .orgIdentifier(orgId)
+                                                                        .pipelineIdentifier(pipelineId)
+                                                                        .planExecutionId(planId)
+                                                                        .status(ExecutionStatus.ABORTED)
+                                                                        .build();
+    PipelineExecutionIdentifierSummaryDTO pipelineExecutionIdentifierSummaryDTO =
+        PipelineExecutionSummaryDtoMapper.toExecutionIdentifierDto(pipelineExecutionSummaryEntity);
+
+    assertThat(pipelineExecutionIdentifierSummaryDTO).isNotNull();
+    assertThat(pipelineExecutionIdentifierSummaryDTO.getPipelineIdentifier()).isEqualTo(pipelineId);
+    assertThat(pipelineExecutionIdentifierSummaryDTO.getPlanExecutionId()).isEqualTo(planId);
+    assertThat(pipelineExecutionIdentifierSummaryDTO.getOrgIdentifier()).isEqualTo(orgId);
+    assertThat(pipelineExecutionIdentifierSummaryDTO.getProjectIdentifier()).isEqualTo(projId);
+    assertThat(pipelineExecutionIdentifierSummaryDTO.getRunSequence()).isEqualTo(32);
+    assertThat(pipelineExecutionIdentifierSummaryDTO.getStatus()).isEqualTo(ExecutionStatus.ABORTED);
+  }
+
+  @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testToDtoForInlinePipeline() {
@@ -131,12 +159,14 @@ public class PipelineExecutionSummaryDtoMapperTest extends CategoryTest {
                                                                 .executionInputConfigured(false)
                                                                 .planExecutionId(planId)
                                                                 .storeType(StoreType.INLINE)
+                                                                .pipelineVersion("1")
                                                                 .build();
     PipelineExecutionSummaryDTO executionSummaryDTO =
         PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, null);
     assertThat(executionSummaryDTO.getStoreType()).isEqualTo(StoreType.INLINE);
     assertThat(executionSummaryDTO.getConnectorRef()).isNull();
     assertThat(executionSummaryDTO.getExecutionInputConfigured()).isEqualTo(false);
+    assertThat(executionSummaryDTO.getYamlVersion()).isEqualTo("1");
 
     executionSummaryEntity = PipelineExecutionSummaryEntity.builder()
                                  .accountId(accountId)
@@ -151,6 +181,7 @@ public class PipelineExecutionSummaryDtoMapperTest extends CategoryTest {
 
     executionSummaryDTO = PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, null);
     assertThat(executionSummaryDTO.getExecutionInputConfigured()).isEqualTo(true);
+    assertThat(executionSummaryDTO.getYamlVersion()).isEqualTo("0");
   }
 
   @Test
@@ -339,7 +370,8 @@ public class PipelineExecutionSummaryDtoMapperTest extends CategoryTest {
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testToDtoForParentStageInfo() {
-    AbortedBy abortedBy = AbortedBy.builder().userName("user1").email("email").build();
+    AbortedBy abortedBy =
+        AbortedBy.builder().userName("user1").email("email").createdAt(System.currentTimeMillis()).build();
     PipelineExecutionSummaryEntity executionSummaryEntity = PipelineExecutionSummaryEntity.builder()
                                                                 .accountId(accountId)
                                                                 .orgIdentifier(orgId)
@@ -376,5 +408,46 @@ public class PipelineExecutionSummaryDtoMapperTest extends CategoryTest {
     assertThat(executionSummaryDTO).isNotNull();
     assertThat(executionSummaryDTO.getParentStageInfo()).isNotNull();
     assertEquals(executionSummaryDTO.getParentStageInfo(), pipelineStageInfo);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testToDtoForNotesExist() {
+    PipelineExecutionSummaryEntity executionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                                                .accountId(accountId)
+                                                                .orgIdentifier(orgId)
+                                                                .projectIdentifier(projId)
+                                                                .pipelineIdentifier(pipelineId)
+                                                                .runSequence(1)
+                                                                .planExecutionId(planId)
+                                                                .notesExistForPlanExecutionId(true)
+                                                                .build();
+    PipelineExecutionSummaryDTO executionSummaryDTO =
+        PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, null);
+    assertThat(executionSummaryDTO).isNotNull();
+    assertThat(executionSummaryDTO.getGitDetails()).isNull();
+    assertThat(executionSummaryDTO.isNotesExistForPlanExecutionId()).isTrue();
+    executionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                 .accountId(accountId)
+                                 .orgIdentifier(orgId)
+                                 .projectIdentifier(projId)
+                                 .pipelineIdentifier(pipelineId)
+                                 .runSequence(1)
+                                 .planExecutionId(planId)
+                                 .notesExistForPlanExecutionId(false)
+                                 .build();
+    executionSummaryDTO = PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, null);
+    assertThat(executionSummaryDTO.isNotesExistForPlanExecutionId()).isFalse();
+    executionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                 .accountId(accountId)
+                                 .orgIdentifier(orgId)
+                                 .projectIdentifier(projId)
+                                 .pipelineIdentifier(pipelineId)
+                                 .runSequence(1)
+                                 .planExecutionId(planId)
+                                 .build();
+    executionSummaryDTO = PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, null);
+    assertThat(executionSummaryDTO.isNotesExistForPlanExecutionId()).isFalse();
   }
 }

@@ -6,10 +6,12 @@
  */
 
 package io.harness.connector.helper;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.connector.ConnectorCatalogueItem;
 import io.harness.connector.ConnectorCategory;
@@ -25,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_K8S, HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(CDP)
 @Singleton
 public class CatalogueHelper {
@@ -34,8 +38,6 @@ public class CatalogueHelper {
     final Map<ConnectorCategory, List<ConnectorType>> connectorCategoryListMap =
         Arrays.stream(ConnectorType.values())
             .filter(enumFilter.filter(accountIdentifier, FeatureName.NG_SVC_ENV_REDESIGN))
-            .filter(enumFilter.filter(accountIdentifier, FeatureName.BAMBOO_ARTIFACT_NG))
-            .filter(enumFilter.filter(accountIdentifier, FeatureName.CDS_RANCHER_SUPPORT_NG))
             .collect(Collectors.groupingBy(ConnectorRegistryFactory::getConnectorCategory));
     return connectorCategoryListMap.entrySet()
         .stream()

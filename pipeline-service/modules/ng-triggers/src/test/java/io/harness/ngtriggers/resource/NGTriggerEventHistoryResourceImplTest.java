@@ -7,23 +7,37 @@
 
 package io.harness.ngtriggers.resource;
 
+import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.SRIDHAR;
 
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.dto.PolledResponse;
+import io.harness.dto.PollingInfoForTriggers;
 import io.harness.exception.EntityNotFoundException;
+import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.NGTriggerEventHistoryBaseDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerEventHistoryDTO;
+import io.harness.ngtriggers.beans.dto.PollingConfig;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory.TriggerEventHistoryKeys;
+import io.harness.ngtriggers.beans.entity.metadata.BuildMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.NGTriggerMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookMetadata;
 import io.harness.ngtriggers.beans.response.TriggerEventResponse;
@@ -31,6 +45,7 @@ import io.harness.ngtriggers.beans.response.TriggerEventStatus;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
 import io.harness.ngtriggers.beans.target.TargetType;
+import io.harness.ngtriggers.mapper.NGTriggerEventHistoryMapper;
 import io.harness.ngtriggers.service.NGTriggerEventsService;
 import io.harness.ngtriggers.service.NGTriggerService;
 import io.harness.rule.Owner;
@@ -41,8 +56,11 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -115,6 +133,51 @@ public class NGTriggerEventHistoryResourceImplTest extends CategoryTest {
 
     ngTriggerEventHistoryResource.getTriggerEventHistory(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, "", 0, 10, new ArrayList<>());
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testListTriggerEventHistory() {
+    int page = 0;
+    int size = 10;
+    String artifactType = "artifactType";
+    List<String> sort = Collections.emptyList();
+
+    Criteria criteria = new Criteria();
+    // Set up your criteria mock or expectations here if needed
+
+    Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, TriggerEventHistoryKeys.createdAt));
+
+    TriggerEventHistory triggerEventHistory = TriggerEventHistory.builder()
+                                                  .accountId(ACCOUNT_ID)
+                                                  .orgIdentifier(ORG_IDENTIFIER)
+                                                  .projectIdentifier(PROJ_IDENTIFIER)
+                                                  .targetIdentifier(PIPELINE_IDENTIFIER)
+                                                  .buildSourceType(artifactType)
+                                                  .build();
+
+    Page<TriggerEventHistory> eventHistoryPage =
+        new PageImpl<>(Collections.singletonList(triggerEventHistory), pageable, 1);
+
+    when(ngTriggerEventsService.formTriggerEventCriteria(
+             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, artifactType))
+        .thenReturn(criteria);
+    when(ngTriggerEventsService.getEventHistory(criteria, pageable)).thenReturn(eventHistoryPage);
+
+    // Run the method to be tested
+    ResponseDTO<Page<NGTriggerEventHistoryDTO>> response = ngTriggerEventHistoryResource.listTriggerEventHistory(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, artifactType, null, page, size, sort);
+
+    assertNotNull(response);
+    assertNotNull(response.getData());
+    assertEquals(1, response.getData().getContent().size()); // Adjust expected size as needed
+
+    // Add more assertions as needed
+
+    verify(ngTriggerEventsService, times(1))
+        .formTriggerEventCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, artifactType);
+    verify(ngTriggerEventsService, times(1)).getEventHistory(criteria, pageable);
   }
 
   @Test
@@ -202,7 +265,7 @@ public class NGTriggerEventHistoryResourceImplTest extends CategoryTest {
     assertThat(responseDto.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
     assertThat(responseDto.getTargetIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
     assertThat(responseDto.getFinalStatus()).isNull();
-    assertThat(responseDto.getTriggerEventStatus().getStatus()).isEqualTo(TriggerEventStatus.FinalResponse.FAILURE);
+    assertThat(responseDto.getTriggerEventStatus().getStatus()).isEqualTo(TriggerEventStatus.FinalResponse.FAILED);
     assertThat(responseDto.getTriggerEventStatus().getMessage()).isEqualTo("Unknown status");
   }
 
@@ -214,6 +277,7 @@ public class NGTriggerEventHistoryResourceImplTest extends CategoryTest {
 
     TriggerEventHistory eventHistory = TriggerEventHistory.builder()
                                            .accountId(ACCOUNT_ID)
+                                           .triggerIdentifier(IDENTIFIER)
                                            .eventCorrelationId(EVENT_CORRELATION_ID)
                                            .finalStatus("NO_MATCHING_TRIGGER_FOR_REPO")
                                            .build();
@@ -233,12 +297,46 @@ public class NGTriggerEventHistoryResourceImplTest extends CategoryTest {
 
     assertThat(content).isNotEmpty();
     assertThat(content.getNumberOfElements()).isEqualTo(1);
+    assertThat(content.getContent().get(0).getTriggerIdentifier()).isEqualTo(IDENTIFIER);
 
     NGTriggerEventHistoryBaseDTO responseDto = content.toList().get(0);
     assertThat(responseDto.getEventCorrelationId()).isEqualTo(EVENT_CORRELATION_ID);
     assertThat(responseDto.getFinalStatus())
         .isEqualTo(TriggerEventResponse.FinalStatus.valueOf(eventHistory.getFinalStatus()));
     assertThat(responseDto.getTriggerEventStatus().getMessage()).isEqualTo("No matching trigger for repo");
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testGetTriggerHistoryEventCorrelationV2() {
+    // Prepare test data
+    String accountIdentifier = "accountId";
+    String eventCorrelationId = "correlationId";
+    int page = 0;
+    int size = 10;
+    List<String> sort = new ArrayList<>();
+
+    TriggerEventHistory eventHistory = TriggerEventHistory.builder()
+                                           .accountId(ACCOUNT_ID)
+                                           .triggerIdentifier(IDENTIFIER)
+                                           .eventCorrelationId(EVENT_CORRELATION_ID)
+                                           .finalStatus("NO_MATCHING_TRIGGER_FOR_REPO")
+                                           .build();
+    List<TriggerEventHistory> eventHistoryList = new ArrayList<>();
+    eventHistoryList.add(eventHistory);
+    Page<TriggerEventHistory> eventHistoryPage = new PageImpl<>(eventHistoryList);
+
+    // Mock the behavior of ngTriggerEventsService.getEventHistory
+    doReturn(eventHistoryPage).when(ngTriggerEventsService).getEventHistory(any(), any(Pageable.class));
+
+    // Perform the test
+    ResponseDTO<Page<NGTriggerEventHistoryDTO>> response =
+        ngTriggerEventHistoryResource.getTriggerHistoryEventCorrelationV2(
+            accountIdentifier, eventCorrelationId, page, size, sort);
+
+    // Verify the result
+    assertEquals(eventHistoryPage.map(NGTriggerEventHistoryMapper::toTriggerEventHistoryDto), response.getData());
   }
 
   @Test
@@ -271,7 +369,68 @@ public class NGTriggerEventHistoryResourceImplTest extends CategoryTest {
 
     NGTriggerEventHistoryBaseDTO responseDto = content.toList().get(0);
     assertThat(responseDto.getFinalStatus()).isNull();
-    assertThat(responseDto.getTriggerEventStatus().getStatus()).isEqualTo(TriggerEventStatus.FinalResponse.FAILURE);
+    assertThat(responseDto.getTriggerEventStatus().getStatus()).isEqualTo(TriggerEventStatus.FinalResponse.FAILED);
     assertThat(responseDto.getTriggerEventStatus().getMessage()).isEqualTo("Unknown status");
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void getPolledResponseForTriggerTest() {
+    NGTriggerEntity ngTrigger =
+        NGTriggerEntity.builder()
+            .accountId(ACCOUNT_ID)
+            .orgIdentifier(ORG_IDENTIFIER)
+            .projectIdentifier(PROJ_IDENTIFIER)
+            .targetIdentifier(PIPELINE_IDENTIFIER)
+            .identifier(IDENTIFIER)
+            .name(NAME)
+            .targetType(TargetType.PIPELINE)
+            .type(NGTriggerType.ARTIFACT)
+            .metadata(
+                NGTriggerMetadata.builder()
+                    .buildMetadata(BuildMetadata.builder()
+                                       .pollingConfig(PollingConfig.builder().pollingDocId("pollingDocId").build())
+                                       .build())
+                    .build())
+            .yaml(ngTriggerYaml)
+            .version(0L)
+            .build();
+    doReturn(Optional.empty())
+        .when(ngTriggerService)
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
+    assertThatThrownBy(()
+                           -> ngTriggerEventHistoryResource.getPolledResponseForTrigger(
+                               ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER))
+        .isInstanceOf(EntityNotFoundException.class)
+        .hasMessage("Trigger " + IDENTIFIER + " does not exist");
+
+    doReturn(Optional.of(ngTriggerEntity))
+        .when(ngTriggerService)
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
+    assertThatThrownBy(()
+                           -> ngTriggerEventHistoryResource.getPolledResponseForTrigger(
+                               ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Trigger " + IDENTIFIER + " is not of Artifact or Manifest type");
+
+    doReturn(Optional.of(ngTrigger))
+        .when(ngTriggerService)
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
+    Set<String> allPolledKeys = new HashSet<>();
+    allPolledKeys.add("key1");
+    allPolledKeys.add("key2");
+    doReturn(ResponseDTO.newResponse(PollingInfoForTriggers.builder()
+                                         .polledResponse(PolledResponse.builder().allPolledKeys(allPolledKeys).build())
+                                         .build()))
+        .when(ngTriggerEventsService)
+        .getPollingInfo(ACCOUNT_ID, "pollingDocId");
+    assertThat(
+        ngTriggerEventHistoryResource
+            .getPolledResponseForTrigger(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER)
+            .getData()
+            .getPolledResponse()
+            .getAllPolledKeys())
+        .isEqualTo(allPolledKeys);
   }
 }

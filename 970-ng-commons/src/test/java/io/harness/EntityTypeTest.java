@@ -252,6 +252,21 @@ public class EntityTypeTest extends CategoryTest {
     entityTypeOrdinalMapping.put(218, "COVERITY");
     entityTypeOrdinalMapping.put(219, "SERVERLESS_AWS_LAMBDA_DEPLOY_V2");
     entityTypeOrdinalMapping.put(220, "ANALYZE_DEPLOYMENT_IMPACT_STEP");
+    entityTypeOrdinalMapping.put(221, "SERVERLESS_AWS_LAMBDA_PACKAGE_V2");
+    entityTypeOrdinalMapping.put(222, "GITOPS_REVERT_PR");
+    entityTypeOrdinalMapping.put(223, "AWS_CDK_BOOTSTRAP");
+    entityTypeOrdinalMapping.put(224, "AWS_CDK_SYNTH");
+    entityTypeOrdinalMapping.put(225, "AWS_CDK_DIFF");
+    entityTypeOrdinalMapping.put(226, "AWS_CDK_DEPLOY");
+    entityTypeOrdinalMapping.put(227, "AWS_CDK_DESTROY");
+    entityTypeOrdinalMapping.put(228, "IDP_SCORECARD");
+    entityTypeOrdinalMapping.put(229, "IDP_CHECK");
+    entityTypeOrdinalMapping.put(230, "AWS_CDK_ROLLBACK");
+    entityTypeOrdinalMapping.put(231, "SLSA_VERIFICATION");
+    entityTypeOrdinalMapping.put(232, "UPDATE_GITOPS_APP");
+    entityTypeOrdinalMapping.put(233, "ECS_SERVICE_SETUP_STEP");
+    entityTypeOrdinalMapping.put(234, "ECS_UPGRADE_CONTAINER_STEP");
+    entityTypeOrdinalMapping.put(235, "ECS_BASIC_ROLLBACK_STEP");
 
     entityTypeConstantMapping =
         entityTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

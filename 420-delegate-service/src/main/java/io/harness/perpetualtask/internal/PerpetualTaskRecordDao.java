@@ -49,14 +49,14 @@ public class PerpetualTaskRecordDao {
 
   public void appointDelegate(String taskId, String delegateId, long lastContextUpdated) {
     try (DelegateLogContext ignore = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
-      log.info("Appoint perpetual task: {}", taskId);
+      log.debug("Appoint perpetual task: {}", taskId);
       Query<PerpetualTaskRecord> query =
           persistence.createQuery(PerpetualTaskRecord.class).filter(PerpetualTaskRecordKeys.uuid, taskId);
       UpdateOperations<PerpetualTaskRecord> updateOperations =
           persistence.createUpdateOperations(PerpetualTaskRecord.class)
               .set(PerpetualTaskRecordKeys.delegateId, delegateId)
               .set(PerpetualTaskRecordKeys.state, TASK_ASSIGNED)
-              .set(PerpetualTaskRecordKeys.assignAfterMs, 0)
+              .set(PerpetualTaskRecordKeys.assignAfterMs, 0L)
               .unset(PerpetualTaskRecordKeys.assignTryCount)
               .unset(PerpetualTaskRecordKeys.unassignedReason)
               .set(PerpetualTaskRecordKeys.client_context_last_updated, lastContextUpdated);
@@ -337,6 +337,18 @@ public class PerpetualTaskRecordDao {
             .set(PerpetualTaskRecordKeys.unassignedReason, reason)
             .set(PerpetualTaskRecordKeys.state, TASK_INVALID)
             .set(PerpetualTaskRecordKeys.exception, exception);
+    persistence.update(query, updateOperations);
+  }
+
+  public void updateTaskProcessed(String taskId, int assignTryCount) {
+    Query<PerpetualTaskRecord> query =
+        persistence.createQuery(PerpetualTaskRecord.class).filter(PerpetualTaskRecordKeys.uuid, taskId);
+    UpdateOperations<PerpetualTaskRecord> updateOperations =
+        persistence.createUpdateOperations(PerpetualTaskRecord.class)
+            .set(PerpetualTaskRecordKeys.assignAfterMs,
+                System.currentTimeMillis()
+                    + TimeUnit.MINUTES.toMillis(FibonacciBackOff.getFibonacciElement(
+                        Math.min(MAX_FIBONACCI_INDEX_FOR_TASK_ASSIGNMENT, assignTryCount + 1))));
     persistence.update(query, updateOperations);
   }
 }

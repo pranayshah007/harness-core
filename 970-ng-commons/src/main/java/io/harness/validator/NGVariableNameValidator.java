@@ -21,7 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(CDC)
 public class NGVariableNameValidator implements ConstraintValidator<NGVariableName, String> {
   public static final String ALLOWED_CHARS_STRING_DEFAULT =
-      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_. ";
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.- ";
 
   static final Set<String> NOT_ALLOWED_STRING_SET_DEFAULT =
       Sets.newHashSet("or", "and", "eq", "ne", "lt", "gt", "le", "ge", "div", "mod", "not", "null", "true", "false",

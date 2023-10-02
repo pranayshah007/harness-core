@@ -11,6 +11,9 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.freeze.beans.FreezeDuration;
 import io.harness.freeze.beans.FreezeEvent;
 import io.harness.freeze.beans.FreezeNotificationChannelWrapper;
@@ -44,6 +47,8 @@ import java.util.TimeZone;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_FREEZE})
 @Slf4j
 public class NotificationHelper {
   @Inject NotificationClient notificationClient;

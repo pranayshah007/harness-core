@@ -1,0 +1,50 @@
+Var azureTokenBodyMap = {}
+Var:azureTokenBodyMap.put("grant_type", "client_credentials")
+Var:azureTokenBodyMap.put("client_id", Env:clientId)
+Var:azureTokenBodyMap.put("resource", Env:baseUrl)
+Var:azureTokenBodyMap.put("client_secret", Env:clientSecret)
+
+Var timeSeriesList = []
+Var collectHostDataString = concat("", Env:collectHostData)
+Var one = 1
+Var requestIdx = 0
+foreach resourceId in Env:resourceIds {
+    Var metricsUrl = concat(Env:baseUrl, Var:resourceId, "/providers/Microsoft.Insights/metrics?api-version=2021-05-01&timespan=", Env:startTime, "/", Env:endTime)
+    Var healthSourceMetricName =  Env:healthSourceMetricNames[Var:requestIdx]
+    Var healthSourceMetricNamespace = Env:healthSourceMetricNamespaces[Var:requestIdx]
+    Var metricIdentifier = Env:metricIdentifiers[Var:requestIdx]
+    Var metricName = Env:metricNames[Var:requestIdx]
+    Var aggregationType = Env:aggregationTypes[Var:requestIdx]
+    metricsUrl = concat(Var:metricsUrl, "&metricnamespace=", Var:healthSourceMetricNamespace, "&metricnames=", Var:healthSourceMetricName, "&aggregation=", Var:aggregationType)
+    Var response = null
+    Var timeseries = []
+    if Var:collectHostDataString != "true" {
+        response = sync-call-azure(url=Var:metricsUrl, header=Env:commonHeaders, options=Env:commonOptions, method=GET, azureTokenUrl=Env:azureTokenUrl, azureTokenBody=Var:azureTokenBodyMap)
+    }
+    if Var:collectHostDataString == "true" {
+        Var serviceInstanceIdentifierTag = Env:serviceInstanceIdentifierTags[Var:requestIdx]
+        metricsUrl = concat(Var:metricsUrl, "&$filter=", Var:serviceInstanceIdentifierTag, " eq '*'")
+        response = sync-call-azure(url=Var:metricsUrl, header=Env:commonHeaders, options=Env:commonOptions, method=GET, azureTokenUrl=Env:azureTokenUrl, azureTokenBody=Var:azureTokenBodyMap)
+    }
+    timeseries = extract(Var:response, $.value.[0].timeseries)
+    foreach entry in Var:timeseries {
+        Var resultIdx = 0
+        Var lengthOfResults = 0
+        Var data = extract(Var:entry, $.data)
+        lengthOfResults = Var:data.length()
+        Var hostName = extract(Var:entry, $.metadatavalues.[0].value)
+        while Var:resultIdx != Var:lengthOfResults {
+            Var metricDataResult = Var:data[Var:resultIdx]
+            Var timestamp = extract(Var:metricDataResult, $.timeStamp)
+            Var timestampVal = string-to-time(Var:timestamp)
+            Var metricValueKey = concat("$.", Var:aggregationType)
+            Var metricValue = extract(Var:metricDataResult, Var:metricValueKey)
+            Var tsRecord = new TimeseriesRecord(txnName=Env:groupName, metricIdentifier=Var:metricIdentifier, metricName=Var:metricName, metricValue=Var:metricValue, timestamp=Var:timestampVal, host=Var:hostName)
+            Var:timeSeriesList.append(Var:tsRecord)
+            resultIdx = Var:resultIdx + Var:one
+        }
+    }
+    requestIdx = Var:requestIdx + Var:one
+}
+
+return Var:timeSeriesList

@@ -6,10 +6,12 @@
  */
 
 package io.harness.repositories;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.execution.step.StepExecutionEntity;
 import io.harness.pms.contracts.execution.Status;
@@ -19,6 +21,7 @@ import com.mongodb.client.result.UpdateResult;
 import java.util.Map;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(CDP)
 public interface StepExecutionEntityRepositoryCustom {
   UpdateResult update(Scope scope, String stageExecutionId, Map<String, Object> updates);

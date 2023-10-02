@@ -25,6 +25,7 @@ public class K8sInstanceInfoMapper {
         .podIP(k8sInstanceInfo.getPodIP())
         .podName(k8sInstanceInfo.getPodName())
         .releaseName(k8sInstanceInfo.getReleaseName())
+        .helmChartInfo(k8sInstanceInfo.getHelmChartInfo())
         .build();
   }
 
@@ -36,6 +37,7 @@ public class K8sInstanceInfoMapper {
         .podIP(k8sInstanceInfoDTO.getPodIP())
         .podName(k8sInstanceInfoDTO.getPodName())
         .releaseName(k8sInstanceInfoDTO.getReleaseName())
+        .helmChartInfo(k8sInstanceInfoDTO.getHelmChartInfo())
         .build();
   }
 }

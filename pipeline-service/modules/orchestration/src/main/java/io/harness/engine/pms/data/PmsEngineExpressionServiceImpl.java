@@ -6,11 +6,13 @@
  */
 
 package io.harness.engine.pms.data;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.expressions.ExpressionEvaluatorProvider;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
@@ -24,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PmsEngineExpressionServiceImpl implements PmsEngineExpressionService {
   @Inject private ExpressionEvaluatorProvider expressionEvaluatorProvider;
@@ -48,6 +51,17 @@ public class PmsEngineExpressionServiceImpl implements PmsEngineExpressionServic
 
   @Override
   public String evaluateExpression(Ambiance ambiance, String expression, ExpressionMode expressionMode) {
+    return evaluateExpression(ambiance, expression, expressionMode, false);
+  }
+
+  @Override
+  public String evaluateExpression(Ambiance ambiance, String expression, boolean newRecastFlow) {
+    return evaluateExpression(ambiance, expression, ExpressionMode.RETURN_NULL_IF_UNRESOLVED, newRecastFlow);
+  }
+
+  @Override
+  public String evaluateExpression(
+      Ambiance ambiance, String expression, ExpressionMode expressionMode, boolean newRecastFlow) {
     EngineExpressionEvaluator evaluator = prepareExpressionEvaluator(ambiance);
     Object value = evaluator.evaluateExpression(expression, expressionMode);
     return RecastOrchestrationUtils.toJson(value);

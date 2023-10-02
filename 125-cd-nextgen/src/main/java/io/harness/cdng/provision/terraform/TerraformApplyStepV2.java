@@ -8,20 +8,23 @@
 package io.harness.cdng.provision.terraform;
 
 import static io.harness.beans.FeatureName.CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT;
+import static io.harness.beans.FeatureName.CDS_TF_TG_SKIP_ERROR_LOGS_COLORING;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 import static io.harness.cdng.provision.terraform.TerraformStepHelper.TF_BACKEND_CONFIG_FILE;
 import static io.harness.cdng.provision.terraform.TerraformStepHelper.TF_CONFIG_FILES;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.executables.CdTaskChainExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.provision.ProvisionerOutputHelper;
-import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.task.terraform.TFTaskType;
@@ -37,7 +40,6 @@ import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.ng.core.EntityDetail;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -49,6 +51,7 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.provision.TerraformConstants;
 import io.harness.serializer.KryoSerializer;
@@ -69,6 +72,8 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class TerraformApplyStepV2 extends CdTaskChainExecutable {
@@ -85,12 +90,12 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
   @Inject private ProvisionerOutputHelper provisionerOutputHelper;
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     List<EntityDetail> entityDetailList = new ArrayList<>();
 
     String accountId = AmbianceUtils.getAccountId(ambiance);
@@ -153,7 +158,7 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
 
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
-      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepElementParameters, StepInputPackage inputPackage) {
     TerraformApplyStepParameters stepParameters = (TerraformApplyStepParameters) stepElementParameters.getSpec();
     log.info("Starting execution for the Apply Step");
     String applyConfigurationType = stepParameters.getConfiguration().getType().getDisplayName();
@@ -170,8 +175,8 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
   }
 
   @Override
-  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance,
-      StepElementParameters stepElementParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
+  public TaskChainResponse executeNextLinkWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepBaseParameters stepElementParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
     TerraformApplyStepParameters stepParameters = (TerraformApplyStepParameters) stepElementParameters.getSpec();
 
@@ -180,8 +185,8 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
   }
 
   @Override
-  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance,
-      StepElementParameters stepElementParameters, PassThroughData passThroughData,
+  public StepResponse finalizeExecutionWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepBaseParameters stepElementParameters, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
     log.info("Handling Task Result With Security Context for the Apply Step");
 
@@ -206,7 +211,7 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
   }
 
   private TaskChainResponse handleApplyInlineStartChain(
-      Ambiance ambiance, TerraformApplyStepParameters stepParameters, StepElementParameters stepElementParameters) {
+      Ambiance ambiance, TerraformApplyStepParameters stepParameters, StepBaseParameters stepElementParameters) {
     helper.validateApplyStepConfigFilesInline(stepParameters);
 
     TerraformExecutionDataParameters spec = stepParameters.getConfiguration().getSpec();
@@ -220,6 +225,7 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
     TerraformTaskNGParametersBuilder builder =
         getTerraformTaskNGParametersBuilderInline(ambiance, stepParameters, stepElementParameters);
     terraformPassThroughData.setTerraformTaskNGParametersBuilder(builder);
+    terraformPassThroughData.setOriginalStepVarFiles(spec.getVarFiles());
 
     if (hasGitVarFiles || hasS3VarFiles) {
       return helper.fetchRemoteVarFiles(terraformPassThroughData, varFilesInfo, ambiance, stepElementParameters,
@@ -231,7 +237,7 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
   }
 
   private TaskChainResponse handleApplyInheritPlanStartChain(
-      Ambiance ambiance, TerraformApplyStepParameters stepParameters, StepElementParameters stepElementParameters) {
+      Ambiance ambiance, TerraformApplyStepParameters stepParameters, StepBaseParameters stepElementParameters) {
     // When Apply Inherit from Plan no need to fetch remote var-files, as tfPlan from Plan step is applied.
     TerraformPassThroughData terraformPassThroughData =
         TerraformPassThroughData.builder().hasGitFiles(false).hasS3Files(false).build();
@@ -245,7 +251,7 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
   }
 
   private TerraformTaskNGParametersBuilder getTerraformTaskNGParametersBuilderInline(
-      Ambiance ambiance, TerraformApplyStepParameters stepParameters, StepElementParameters stepElementParameters) {
+      Ambiance ambiance, TerraformApplyStepParameters stepParameters, StepBaseParameters stepElementParameters) {
     log.info("Obtaining Inline Task for the Apply Step");
     boolean isTerraformCloudCli = stepParameters.getConfiguration().getSpec().getIsTerraformCloudCli().getValue();
 
@@ -293,12 +299,13 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
             StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
         .useOptimizedTfPlan(true)
         .isTerraformCloudCli(isTerraformCloudCli)
+        .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
         .skipTerraformRefresh(skipRefreshCommand);
     return builder;
   }
 
   private TerraformTaskNGParametersBuilder getTerraformTaskNGParametersBuilderInheritFromPlan(
-      Ambiance ambiance, TerraformApplyStepParameters stepParameters, StepElementParameters stepElementParameters) {
+      Ambiance ambiance, TerraformApplyStepParameters stepParameters, StepBaseParameters stepElementParameters) {
     log.info("Obtaining Inherited Task for the Apply Step");
     TerraformTaskNGParametersBuilder builder =
         TerraformTaskNGParameters.builder().taskType(TFTaskType.APPLY).terraformCommandUnit(TerraformCommandUnit.Apply);
@@ -338,6 +345,7 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
             StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
         .encryptDecryptPlanForHarnessSMOnManager(
             helper.tfPlanEncryptionOnManager(accountId, inheritOutput.getEncryptionConfig()))
+        .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
         .useOptimizedTfPlan(true);
   }
 
@@ -360,13 +368,9 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
     }
 
     Map<String, String> outputKeys = helper.getRevisionsMap(terraformPassThroughData, terraformTaskNGResponse);
+    helper.addTerraformRevisionOutcomeIfRequired(stepResponseBuilder, outputKeys);
 
-    return stepResponseBuilder
-        .stepOutcome(StepResponse.StepOutcome.builder()
-                         .name(TerraformGitRevisionOutcome.OUTCOME_NAME)
-                         .outcome(TerraformGitRevisionOutcome.builder().revisions(outputKeys).build())
-                         .build())
-        .build();
+    return stepResponseBuilder.build();
   }
 
   private StepResponse handleTaskResultApplyInherited(Ambiance ambiance,
@@ -392,13 +396,9 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
       outputKeys.put(
           TF_BACKEND_CONFIG_FILE, terraformTaskNGResponse.getCommitIdForConfigFilesMap().get(TF_BACKEND_CONFIG_FILE));
     }
+    helper.addTerraformRevisionOutcomeIfRequired(stepResponseBuilder, outputKeys);
 
-    return stepResponseBuilder
-        .stepOutcome(StepResponse.StepOutcome.builder()
-                         .name(TerraformGitRevisionOutcome.OUTCOME_NAME)
-                         .outcome(TerraformGitRevisionOutcome.builder().revisions(outputKeys).build())
-                         .build())
-        .build();
+    return stepResponseBuilder.build();
   }
 
   private StepResponseBuilder createStepResponseBuilder(

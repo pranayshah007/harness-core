@@ -9,7 +9,7 @@ package io.harness.ci.enforcement;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ci.execution.CIAccountExecutionMetadata;
+import io.harness.ci.execution.execution.CIAccountExecutionMetadata;
 import io.harness.enforcement.beans.CustomRestrictionEvaluationDTO;
 import io.harness.enforcement.client.custom.CustomRestrictionInterface;
 import io.harness.licensing.Edition;

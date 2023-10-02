@@ -1,0 +1,34 @@
+{
+  "_id" : "64a2b26e11261e6aea1d8e53",
+  "createdAt" : 1688384110799,
+  "lastModifiedAt" : 1688384110799,
+  "accountIdentifier" : "kmpySmUISimoRrJL6NL73w",
+  "orgIdentifier" : "default",
+  "projectIdentifier" : "TAS",
+  "stageExecutionId" : "_bNe7lGaRbGTwrnlUMIiXQ",
+  "planExecutionId" : "kO0BL3e5TzKStvBdouSQTQ",
+  "pipelineIdentifier" : "custom_stage",
+  "stageName" : "cs",
+  "stageIdentifier" : "cs",
+  "stageType" : "CUSTOM_STAGE",
+  "stageStatus" : "FAILED",
+  "status" : "APPROVAL_REJECTED",
+  "startts" : 1688384110750,
+  "tags" : [
+
+  ],
+  "_class" : "stageExecutionEntity",
+  "failureInfo" : {
+    "failureData" : [
+      {
+        "code" : "APPROVAL_REJECTION",
+        "level" : "ERROR",
+        "message" : "Approval Step has been Rejected",
+        "failureTypes" : [
+          "APPROVAL_REJECTION"
+        ]
+      }
+    ]
+  },
+  "endts" : 1688384122224
+}

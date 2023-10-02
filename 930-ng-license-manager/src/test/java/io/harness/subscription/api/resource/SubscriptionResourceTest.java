@@ -7,6 +7,7 @@
 
 package io.harness.subscription.api.resource;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -37,6 +38,11 @@ import io.harness.subscription.services.SubscriptionService;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -79,17 +85,12 @@ public class SubscriptionResourceTest extends CategoryTest {
           .quantityIncludedInPrice(false)
           .build());
 
-  private static final List<StripeItemRequest> DEFAULT_STRIPE_ITEM_LIST =
-      List.of(StripeItemRequest.Builder.newInstance()
-                  .withQuantity(DEFAULT_NUMBER_MAUS)
-                  .withQuantityIncludedInPrice(true)
-                  .withPriceId(MAU_PRICE_ID)
-                  .build(),
-          StripeItemRequest.Builder.newInstance()
-              .withQuantity(DEFAULT_NUMBER_USERS)
-              .withQuantityIncludedInPrice(false)
-              .withPriceId(DEVELOPER_PRICE_ID)
-              .build());
+  private static final List<StripeItemRequest> DEFAULT_STRIPE_ITEM_LIST = List.of(
+      StripeItemRequest.Builder.newInstance().withQuantity(DEFAULT_NUMBER_MAUS).withPriceId(MAU_PRICE_ID).build(),
+      StripeItemRequest.Builder.newInstance()
+          .withQuantity(DEFAULT_NUMBER_USERS)
+          .withPriceId(DEVELOPER_PRICE_ID)
+          .build());
 
   private static final PriceDTO DEFAULT_MAU_PRICE_DTO =
       PriceDTO.builder().priceId(MAU_PRICE_ID).productId(MAU_PRODUCT_ID).unitAmount(DEFAULT_MAU_PRICE).build();
@@ -291,5 +292,71 @@ public class SubscriptionResourceTest extends CategoryTest {
 
     Mockito.verify(subscriptionService, times(1)).payInvoice(INVOICE_ID, ACCOUNT_IDENTIFIER);
     assertThat(responseDTO).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.KAPIL)
+  @Category(UnitTests.class)
+  public void testSubscriptionRequestValidation() {
+    AddressDto addressDto = AddressDto.builder()
+                                .line1("Address Line 1")
+                                .line2("Address Line 2")
+                                .city("Beverly Hills")
+                                .state("CA")
+                                .country("USA")
+                                .postalCode("90210")
+                                .build();
+    CustomerDTO customerDTO = CustomerDTO.builder()
+                                  .billingEmail("billingEmail@harness.io")
+                                  .companyName("Harness")
+                                  .address(addressDto)
+                                  .build();
+    SubscriptionRequest subscriptionRequest = SubscriptionRequest.builder().customer(customerDTO).build();
+
+    ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory();
+    Validator validator = validatorFactory.getValidator();
+    Set<ConstraintViolation<SubscriptionRequest>> violations = validator.validate(subscriptionRequest);
+    assertTrue(violations.isEmpty());
+
+    addressDto.setLine1(null);
+    customerDTO.setBillingEmail("billingEmail@harness");
+    customerDTO.setCompanyName("this is the longest company name that ever existed in the world!!");
+    customerDTO.setAddress(addressDto);
+    subscriptionRequest.setCustomer(customerDTO);
+
+    violations = validator.validate(subscriptionRequest);
+    assertThat(violations.size()).isEqualTo(3);
+    assertThat(violations.stream().filter(violation -> "Email must be valid.".equals(violation.getMessage())).count())
+        .isEqualTo(1);
+    assertThat(violations.stream().filter(violation -> "must not be null".equals(violation.getMessage())).count())
+        .isEqualTo(1);
+    assertThat(
+        violations.stream().filter(violation -> "size must be between 0 and 46".equals(violation.getMessage())).count())
+        .isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.KAPIL)
+  @Category(UnitTests.class)
+  public void testSubscriptionRequestValidationWithPlusCharInCompanyName() {
+    AddressDto addressDto = AddressDto.builder()
+                                .line1("Address Line 1")
+                                .line2("Address Line 2")
+                                .city("Beverly Hills")
+                                .state("CA")
+                                .country("USA")
+                                .postalCode("90210")
+                                .build();
+    CustomerDTO customerDTO = CustomerDTO.builder()
+                                  .billingEmail("billingEmail@harness.io")
+                                  .companyName("Harness+440")
+                                  .address(addressDto)
+                                  .build();
+    SubscriptionRequest subscriptionRequest = SubscriptionRequest.builder().customer(customerDTO).build();
+
+    ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory();
+    Validator validator = validatorFactory.getValidator();
+    Set<ConstraintViolation<SubscriptionRequest>> violations = validator.validate(subscriptionRequest);
+    assertTrue(violations.isEmpty());
   }
 }

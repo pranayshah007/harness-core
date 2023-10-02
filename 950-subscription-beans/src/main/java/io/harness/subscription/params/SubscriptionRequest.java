@@ -11,6 +11,7 @@ import io.harness.ModuleType;
 import io.harness.subscription.dto.CustomerDTO;
 
 import java.util.List;
+import javax.validation.Valid;
 import lombok.Builder;
 import lombok.Data;
 
@@ -23,5 +24,5 @@ public class SubscriptionRequest {
   private String paymentFrequency;
   private String edition;
   private boolean premiumSupport;
-  private CustomerDTO customer;
+  @Valid private CustomerDTO customer;
 }

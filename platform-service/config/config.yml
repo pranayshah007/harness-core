@@ -95,6 +95,8 @@ notificationServiceConfig:
     connectionsPerHost: 300
     indexManagerMode: AUTO
     aliasDBName: notification
+    maxDocumentsToBeFetched: 2147483647
+    maxOperationTimeInMillis: 900000
 
   smtp:
     type: SMTP
@@ -131,6 +133,8 @@ auditServiceConfig:
     indexManagerMode: AUTO
     aliasDBName: ng-audits
     transactionsEnabled: false
+    maxDocumentsToBeFetched: 2147483647
+    maxOperationTimeInMillis: 900000
 
   enableAuditService: true
   hostname: ${HOSTNAME:-localhost}
@@ -168,6 +172,10 @@ resourceGroupServiceConfig:
     ce-nextgen:
       baseUrl: http://localhost:7340/
       secret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+    code:
+      baseUrl: http://localhost:3000/
+      secret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+
   redis:
     sentinel: false
     masterName: "test"
@@ -220,6 +228,8 @@ resourceGroupServiceConfig:
     connectionsPerHost: 300
     indexManagerMode: AUTO
     aliasDBName: resourcegroup
+    maxDocumentsToBeFetched: 2147483647
+    maxOperationTimeInMillis: 900000
   enableAudit: false
   auditClientConfig:
     baseUrl: http://localhost:9005/api/
@@ -246,3 +256,29 @@ enforcementClientConfiguration:
   enforcementCheckEnabled: false
 
 enableOpentelemetry: false
+
+eventsFramework:
+  redis:
+    sentinel: false
+    masterName: "test"
+    redisUrl: "redis://localhost:6379"
+    sentinelUrls:
+      - "redis://redis1:26379"
+      - "redis://redis2:26379"
+      - "redis://redis3:26379"
+    envNamespace: ""
+    readMode: MASTER
+    nettyThreads: 16
+    useScriptCache: true
+    userName: ""
+    password: ""
+    sslConfig:
+      enabled: false
+      CATrustStorePath: "/tmp/ca_trust_store"
+      CATrustStorePassword: ""
+
+segmentConfiguration:
+  enabled: false
+  url: "segment_url_place_holder"
+  apiKey: "segment_api_key"
+  certValidationRequired: false

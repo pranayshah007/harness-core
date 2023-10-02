@@ -7,6 +7,7 @@
 
 package io.harness.cdng.helm.rollback;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.cdng.helm.HelmSpecParameters;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
@@ -19,6 +20,7 @@ import java.util.List;
 import javax.annotation.Nonnull;
 import lombok.Builder;
 
+@RecasterAlias("io.harness.cdng.helm.rollback.HelmRollbackStepParams")
 public class HelmRollbackStepParams extends HelmRollbackBaseStepInfo implements HelmSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
   public HelmRollbackStepParams(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String helmRollbackFqn,

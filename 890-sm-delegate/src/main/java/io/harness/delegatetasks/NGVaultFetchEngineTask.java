@@ -12,7 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.VAULT_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.helpers.vault.NGVaultTaskHelper.getToken;
-import static io.harness.helpers.vault.NGVaultTaskHelper.getVaultAppRoleLoginResult;
+import static io.harness.helpers.vault.NGVaultTaskHelper.getVaultAppRoleToken;
 import static io.harness.helpers.vault.NGVaultTaskHelper.logAndThrowVaultError;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -24,7 +24,6 @@ import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.helpers.ext.vault.SecretEngineSummary;
-import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
 
 import software.wings.beans.BaseVaultConfig;
 import software.wings.helpers.ext.vault.SysMount;
@@ -71,11 +70,8 @@ public class NGVaultFetchEngineTask extends AbstractDelegateRunnableTask {
     try {
       String vaultToken = getToken(vaultConfig);
       if (isEmpty(vaultToken)) {
-        VaultAppRoleLoginResult loginResult = getVaultAppRoleLoginResult(vaultConfig);
-        if (loginResult != null) {
-          vaultToken = loginResult.getClientToken();
-          vaultConfig.setAuthToken(vaultToken);
-        }
+        vaultToken = getVaultAppRoleToken(vaultConfig);
+        vaultConfig.setAuthToken(vaultToken);
       }
 
       VaultSysAuthRestClient restClient =

@@ -16,7 +16,6 @@ import io.harness.eventsframework.consumer.Message;
 import io.harness.execution.InitiateNodeHandler;
 import io.harness.rule.Owner;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -33,8 +32,7 @@ public class InitiateNodeEventMessageListenerTest {
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testInitiateNodeEventMessageListener() {
-    InitiateNodeEventMessageListener messageListener =
-        Mockito.spy(new InitiateNodeEventMessageListener(eventHandler, MoreExecutors.newDirectExecutorService()));
+    InitiateNodeEventMessageListener messageListener = Mockito.spy(new InitiateNodeEventMessageListener(eventHandler));
 
     Boolean listenerProcessable = messageListener.isProcessable(Message.newBuilder().build());
     assertThat(listenerProcessable).isEqualTo(true);

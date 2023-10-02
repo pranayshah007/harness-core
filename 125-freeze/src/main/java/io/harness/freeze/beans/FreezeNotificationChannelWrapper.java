@@ -7,6 +7,9 @@
 
 package io.harness.freeze.beans;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.notification.channelDetails.PmsNotificationChannel;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -15,6 +18,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_FREEZE})
 @Data
 @NoArgsConstructor
 public class FreezeNotificationChannelWrapper {

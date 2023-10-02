@@ -47,3 +47,11 @@ go_test(
         "@org_uber_go_zap//zaptest/observer",
     ],
 )
+
+load("//:tools/bazel/macros.bzl", "run_analysis")
+
+run_analysis(
+    language = "go",
+    targets = [":db"],
+    test_targets = [":db_test"],
+)

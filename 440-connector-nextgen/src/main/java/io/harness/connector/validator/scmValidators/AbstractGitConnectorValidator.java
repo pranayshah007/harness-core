@@ -72,7 +72,7 @@ public abstract class AbstractGitConnectorValidator extends AbstractConnectorVal
         .build();
   }
 
-  private NGAccess getNgAccess(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+  protected NGAccess getNgAccess(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     return BaseNGAccess.builder()
         .accountIdentifier(accountIdentifier)
         .orgIdentifier(orgIdentifier)

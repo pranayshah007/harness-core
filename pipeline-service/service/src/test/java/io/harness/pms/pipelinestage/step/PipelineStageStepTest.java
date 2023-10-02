@@ -207,10 +207,10 @@ public class PipelineStageStepTest extends CategoryTest {
     PipelineStageInfo info = pipelineStageStep.prepareParentStageInfo(ambiance, stepParameters);
     doReturn(PlanExecutionResponseDto.builder().planExecution(PlanExecution.builder().uuid("uuid").build()).build())
         .when(pipelineExecutor)
-        .runPipelineAsChildPipeline(ambiance.getSetupAbstractions().get("accountId"), stepParameters.getOrg(),
-            stepParameters.getProject(), stepParameters.getPipeline(), ambiance.getMetadata().getModuleType(),
-            stepParameters.getPipelineInputs(), false, false, stepParameters.getInputSetReferences(), info,
-            ambiance.getMetadata().getIsDebug());
+        .runPipelineAsChildPipelineWithJsonNode(ambiance.getSetupAbstractions().get("accountId"),
+            stepParameters.getOrg(), stepParameters.getProject(), stepParameters.getPipeline(),
+            ambiance.getMetadata().getModuleType(), stepParameters.getPipelineInputsJsonNode(), false, false,
+            stepParameters.getInputSetReferences(), info, ambiance.getMetadata().getIsDebug());
 
     doReturn(null)
         .when(sweepingOutputService)

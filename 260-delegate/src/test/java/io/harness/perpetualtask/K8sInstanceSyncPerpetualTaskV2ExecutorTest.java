@@ -21,6 +21,7 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDT
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesync.InstanceSyncV2Request;
@@ -81,8 +82,12 @@ public class K8sInstanceSyncPerpetualTaskV2ExecutorTest extends WingsBaseTest {
             .build();
     LinkedHashSet<String> namespaces = new LinkedHashSet<>();
     namespaces.add("namespace1");
-    K8sDeploymentReleaseDetails k8sDeploymentReleaseDetails =
-        K8sDeploymentReleaseDetails.builder().releaseName("releaseName").namespaces(namespaces).build();
+    HelmChartInfo helmChartInfo = HelmChartInfo.builder().name("haha").repoUrl("sample.com").version("0.2.0").build();
+    K8sDeploymentReleaseDetails k8sDeploymentReleaseDetails = K8sDeploymentReleaseDetails.builder()
+                                                                  .releaseName("releaseName")
+                                                                  .namespaces(namespaces)
+                                                                  .helmChartInfo(helmChartInfo)
+                                                                  .build();
     List<K8sDeploymentReleaseDetails> k8sDeploymentReleaseDetailsList = new ArrayList<>();
     k8sDeploymentReleaseDetailsList.add(k8sDeploymentReleaseDetails);
     DeploymentReleaseDetails deploymentReleaseDetails =
@@ -100,6 +105,7 @@ public class K8sInstanceSyncPerpetualTaskV2ExecutorTest extends WingsBaseTest {
                                 .name("instance1")
                                 .namespace("namespace1")
                                 .releaseName("releaseName")
+                                .helmChartInfo(helmChartInfo)
                                 .build()));
     List<ServerInstanceInfo> serverInstanceInfoList =
         executor.retrieveServiceInstances(instanceSyncV2Request, deploymentReleaseDetails);
@@ -107,6 +113,7 @@ public class K8sInstanceSyncPerpetualTaskV2ExecutorTest extends WingsBaseTest {
     assertThat(serverInstanceInfoList.size()).isEqualTo(1);
     assertThat(((K8sServerInstanceInfo) serverInstanceInfoList.get(0)).getName()).isEqualTo("instance1");
     assertThat(((K8sServerInstanceInfo) serverInstanceInfoList.get(0)).getNamespace()).isEqualTo("namespace1");
+    assertThat(((K8sServerInstanceInfo) serverInstanceInfoList.get(0)).getHelmChartInfo()).isEqualTo(helmChartInfo);
   }
 
   @Test

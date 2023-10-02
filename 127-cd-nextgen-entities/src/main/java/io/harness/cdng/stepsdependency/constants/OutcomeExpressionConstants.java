@@ -9,14 +9,22 @@ package io.harness.cdng.stepsdependency.constants;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_COMMON_STEPS, HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(CDP)
 @UtilityClass
 public class OutcomeExpressionConstants {
   public final String MERGE_PR_OUTCOME = "mergePROutcome";
+  public final String MERGE_REVERT_PR_OUTCOME = "mergeRevertPROutcome";
+  public final String REVERT_PR_OUTCOME = "revertPROutcome";
+  public final String UPDATE_GITOPS_APP_OUTCOME = "updateGitOpsAppOutcome";
   public final String SERVICE = "service";
   public final String ARTIFACTS = "artifacts";
   public final String ARTIFACT = "artifact";
@@ -31,12 +39,15 @@ public class OutcomeExpressionConstants {
   public final String K8S_CANARY_DELETE_OUTCOME = "k8sCanaryDeleteOutcome";
   public final String K8S_BG_SWAP_SERVICES_OUTCOME = "k8sBGSwapServicesOutcome";
   public final String OUTPUT = "output";
+  public final String RELEASE_HELM_CHART_OUTCOME = "releaseHelmChartOutcome";
+
   public final String INFRA_TASK_EXECUTABLE_STEP_OUTPUT = "InfrastructureStepOutput";
   public final String TERRAFORM_CONFIG = "terraformConfig";
   public final String TERRAGRUNT_CONFIG = "terragruntConfig";
   public final String TERRAFORM_CLOUD_CONFIG = "terraformCloudConfig";
   public final String DEPLOYMENT_INFO_OUTCOME = "deploymentInfoOutcome";
   public final String HELM_DEPLOY_OUTCOME = "helmDeployOutcome";
+  public final String HELM_DEPLOY_RELEASE_OUTCOME = "helmDeployRelease";
   public final String HELM_ROLLBACK_OUTCOME = "helmRollbackOutcome";
   public final String SERVERLESS_AWS_LAMBDA_ROLLBACK_DATA_OUTCOME = "serverlessAwsLambdaRollbackDataOutcome";
   public final String SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_DATA_OUTCOME_V2 =
@@ -86,5 +97,7 @@ public class OutcomeExpressionConstants {
   public final String SSH_WINRM_PREPARE_ROLLBACK_DATA_OUTCOME = "sshWinRmPrepareRollbackDataOutcome";
   public final String AWS_SAM_VALUES_YAML_DATA_OUTCOME = "AwsSamValuesYamlDataOutcome";
   public final String SERVERLESS_VALUES_YAML_DATA_OUTCOME = "ServerlessValuesYamlDataOutcome";
-  public final String SERVICE_VARIABLES_OUTCOME = "serviceVariables";
+  public final String SERVERLESS_V2_DIRECTORY_PATH_OUTCOME = "serverlessV2";
+  public final String USER_DATA = "userData";
+  public final String ENVIRONMENT = "environment";
 }

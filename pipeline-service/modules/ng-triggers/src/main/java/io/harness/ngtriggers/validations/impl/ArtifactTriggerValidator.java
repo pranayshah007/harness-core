@@ -6,12 +6,14 @@
  */
 
 package io.harness.ngtriggers.validations.impl;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ngtriggers.Constants.ARTIFACT_REF;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactType;
@@ -33,6 +35,7 @@ import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
@@ -54,12 +57,12 @@ public class ArtifactTriggerValidator implements TriggerValidator {
     try {
       Optional<String> pipelineYmlOptional = validationHelper.fetchResolvedTemplatesPipelineForTrigger(triggerDetails);
 
-      if (!pipelineYmlOptional.isPresent()) {
+      if (pipelineYmlOptional.isEmpty()) {
         return builder.success(false).message("Pipeline doesn't exists").build();
       }
 
       // make sure, stage and artifact identifiers are given
-      if (triggerDetails.getNgTriggerEntity().getWithServiceV2() == false) {
+      if (!triggerDetails.getNgTriggerEntity().getWithServiceV2()) {
         validationHelper.verifyStageAndBuildRef(triggerDetails, ARTIFACT_REF);
       }
 
@@ -67,7 +70,7 @@ public class ArtifactTriggerValidator implements TriggerValidator {
       BuildTriggerOpsData buildTriggerOpsData =
           validationHelper.generateBuildTriggerOpsDataForArtifact(triggerDetails, pipelineYml);
       // stageRef & manifestRef exists
-      if (triggerDetails.getNgTriggerEntity().getWithServiceV2() == false
+      if (!triggerDetails.getNgTriggerEntity().getWithServiceV2()
           && isEmpty(buildTriggerOpsData.getPipelineBuildSpecMap())) {
         throw new InvalidRequestException(
             "Artifact With Given StageIdentifier and ArtifactRef in Trigger does not exist in Pipeline");

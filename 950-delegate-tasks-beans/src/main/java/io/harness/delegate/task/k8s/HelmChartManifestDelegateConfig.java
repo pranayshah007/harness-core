@@ -6,9 +6,11 @@
  */
 
 package io.harness.delegate.task.k8s;
-
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.expression.Expression;
@@ -18,6 +20,8 @@ import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 import lombok.Builder;
 import lombok.Value;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Value
 @Builder
 public class HelmChartManifestDelegateConfig implements ManifestDelegateConfig, NestedAnnotationResolver {

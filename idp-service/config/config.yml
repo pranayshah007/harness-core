@@ -58,6 +58,26 @@ redisLockConfig:
   userName: ""
   password: ""
 
+pmsSdkGrpcServerConfig:
+  connectors:
+    - port: 12501
+      secure: true
+      keyFilePath: key.pem
+      certFilePath: cert.pem
+    - port: 12502
+
+pmsGrpcClientConfig:
+  target: localhost:12011
+  authority: localhost
+
+shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-false}
+
+cacheConfig:
+  cacheBackend: REDIS
+  cacheNamespace: ""
+  disabledCaches: [ ]
+  enterpriseCacheEnabled: true
+
 logging:
   level: INFO
   loggers:
@@ -91,7 +111,7 @@ managerClientConfig:
   readTimeOutSeconds: 15
 
 backstageHttpClientConfig:
-  baseUrl: https://localhost:7007
+  baseUrl: http://localhost:7007/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
@@ -101,18 +121,21 @@ backstageServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiw
 idpServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 jwtAuthSecret: dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq
 jwtIdentityServiceSecret: HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU
+idpEncryptionSecret: q7YdsdUoXTit5nqdBR1LdKQXE3beIGE6yiseIPM1WKg_iFE5C4oRxi1_Ao6XcKZvhCbtgZQliOkUO1cu
+pipelineServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 
 managerTarget: localhost:9880
 managerAuthority: localhost
 
 onboardingModuleConfig:
-  descriptionForEntitySelected: A YAML file will be created for each service inside your GitHub repository. An example of what the files will look like is shown below
-  descriptionForSampleEntity: Because you didn't choose any Harness services to import in the previous step, an example Harness service catalog-info.yaml will be created inside your GitHub repository as shown below
+  descriptionForEntitySelected: A YAML file will be created for each service inside your Git repository. An example of what the files will look like is shown below
+  descriptionForSampleEntity: Because you didn't choose any Harness services to import in the previous step, an example Harness service catalog-info.yaml will be created inside your Git repository as shown below
   useGitServiceGrpcForSingleEntityPush: true
   tmpPathForCatalogInfoYamlStore: /tmp/idp-catalog-onboarding
   catalogInfoLocationDefaultPath: /.harness-idp-entities
   harnessCiCdAnnotations:
     projectUrl: https://localhost:8181/ng/account/accountIdentifier/home/orgs/orgIdentifier/projects/projectIdentifier/details
+    serviceUrl: https://localhost:8181/ng/account/accountIdentifier/cd/orgs/orgIdentifier/projects/projectIdentifier/services/serviceIdentifier
 
 gitManagerGrpcClientConfig:
   target: localhost:13001
@@ -141,3 +164,67 @@ backstageAppBaseUrl: https://localhost:3000
 backstagePostgresHost: ""
 
 delegateSelectorsCacheMode: redis # in-memory or redis
+
+proxyAllowList:
+  services:
+    manager:
+      proxyPath: v1/idp-proxy-service/manager
+      clientConfig:
+        baseUrl: http://localhost:3457/api/
+        connectTimeOutSeconds: 15
+        readTimeOutSeconds: 15
+      secret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+      allowList:
+        - /users/validate-support-user
+    ng-manager:
+      proxyPath: v1/idp-proxy-service/ng-manager
+      clientConfig:
+        baseUrl: http://localhost:7457/
+        connectTimeOutSeconds: 15
+        readTimeOutSeconds: 15
+      secret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+      allowList:
+        - /user/aggregate
+        - /aggregate/acl/usergroups
+        - /token/validate
+
+shouldConfigureWithNotification: ${SHOULD_CONFIGURE_WITH_NOTIFICATION:-false}
+
+notificationClient:
+  messageBroker:
+    type: MONGO
+    uri: mongodb://localhost:27017/notification
+    connectTimeout: 30000
+    serverSelectionTimeout: 90000
+    socketTimeout: 360000
+    maxConnectionIdleTime: 600000
+    connectionsPerHost: 300
+  httpClient:
+    baseUrl: http://localhost:9005/api/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  secrets:
+    notificationClientSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+
+notificationConfigs:
+  pluginRequestsNotificationSlack: https://hooks.slack.com/services/dummy/dummy/dummy
+
+pipelineServiceClientConfig:
+  baseUrl: http://localhost:12001/api/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+scorecardScoreComputationIteratorConfig:
+  threadPoolCount: 5
+  enabled: false
+  targetIntervalInSeconds: 43200 #12 hours in seconds
+
+tiServiceConfig:
+  internalUrl: ""
+  baseUrl: http://localhost:8078
+  globalToken: "78d16b66-4b4c-11eb-8377-acde48001122"
+
+cpu: 2
+scoreComputerThreadsPerCore: 2
+
+streamPerServiceConfiguration: ${PIE_STREAM_PER_SERVICE:- false}

@@ -87,6 +87,7 @@ public class JiraApprovalStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.stage1.spec.execution.steps.jira_approval.name",
             "pipeline.stages.stage1.spec.execution.steps.jira_approval.description",
             "pipeline.stages.stage1.spec.execution.steps.jira_approval.timeout",
+            "pipeline.stages.stage1.spec.execution.steps.jira_approval.spec.retryInterval",
             "pipeline.stages.stage1.spec.execution.steps.jira_approval.spec.issueKey",
             "pipeline.stages.stage1.spec.execution.steps.jira_approval.spec.issueType",
             "pipeline.stages.stage1.spec.execution.steps.jira_approval.spec.projectKey",
@@ -105,7 +106,8 @@ public class JiraApprovalStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.stage1.spec.execution.steps.jira_approval.identifier",
             "pipeline.stages.stage1.spec.execution.steps.jira_approval.type",
             "pipeline.stages.stage1.spec.execution.steps.jira_approval.startTs",
-            "pipeline.stages.stage1.spec.execution.steps.jira_approval.endTs");
+            "pipeline.stages.stage1.spec.execution.steps.jira_approval.endTs",
+            "pipeline.stages.stage1.spec.execution.steps.jira_approval.status");
 
     List<String> fqnOutputPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()
                                                .get("AXE2wdxvRPO0zRfCaQByAQ") // pipeline uuid

@@ -28,6 +28,7 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.HostRecordDTO;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.VerificationJobType;
+import io.harness.cvng.cdng.beans.v2.AppliedDeploymentAnalysisType;
 import io.harness.cvng.core.beans.LoadTestAdditionalInfo;
 import io.harness.cvng.core.beans.LoadTestAdditionalInfo.LoadTestAdditionalInfoBuilder;
 import io.harness.cvng.core.beans.SimpleVerificationAdditionalInfo;
@@ -43,6 +44,7 @@ import io.harness.cvng.verificationjob.entities.CanaryBlueGreenVerificationJob;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
+import io.harness.data.structure.CollectionUtils;
 
 import com.google.inject.Inject;
 import java.util.Arrays;
@@ -51,6 +53,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -126,10 +129,10 @@ public class VerificationJobInstanceAnalysisServiceImpl implements VerificationJ
     Optional<TimeRange> preDeploymentTimeRange =
         verificationJobInstanceService.getPreDeploymentTimeRange(verificationJobInstance.getUuid());
     Set<String> oldHosts = new HashSet<>();
-    if (verificationJobInstance.getServiceInstanceDetailsFromCD() != null
-        && verificationJobInstance.getServiceInstanceDetailsFromCD().isValid()) {
-      oldHosts = new HashSet<>(
-          verificationJobInstance.getServiceInstanceDetailsFromCD().getServiceInstancesBeforeDeployment());
+    if (verificationJobInstance.getServiceInstanceDetails() != null
+        && verificationJobInstance.getServiceInstanceDetails().isShouldUseNodesFromCD()) {
+      oldHosts = new HashSet<>(CollectionUtils.emptyIfNull(
+          verificationJobInstance.getServiceInstanceDetails().getServiceInstancesBeforeDeployment()));
     } else if (preDeploymentTimeRange.isPresent()) {
       Set<String> verificationTaskIds =
           verificationTaskService.maybeGetVerificationTaskIds(accountId, verificationJobInstance.getUuid());
@@ -138,9 +141,7 @@ public class VerificationJobInstanceAnalysisServiceImpl implements VerificationJ
     }
 
     CanaryBlueGreenAdditionalInfo canaryBlueGreenAdditionalInfo =
-        verificationJobInstance.getResolvedJob().getType() == VerificationJobType.CANARY
-        ? new CanaryAdditionalInfo()
-        : new BlueGreenAdditionalInfo();
+        getCanaryBlueGreenAdditionalInfo(verificationJobInstance);
 
     updateDeploymentVerificationHostInfoFromAnalyses(
         deploymentTimeSeriesAnalysis, deploymentLogAnalysis, oldHosts, canaryBlueGreenAdditionalInfo);
@@ -151,6 +152,61 @@ public class VerificationJobInstanceAnalysisServiceImpl implements VerificationJ
     canaryBlueGreenAdditionalInfo.setFieldNames();
 
     return canaryBlueGreenAdditionalInfo;
+  }
+
+  private CanaryBlueGreenAdditionalInfo getCanaryBlueGreenAdditionalInfo(
+      VerificationJobInstance verificationJobInstance) {
+    VerificationJobType verificationJobType = verificationJobInstance.getResolvedJob().getType();
+    switch (verificationJobType) {
+      case CANARY:
+        return new CanaryAdditionalInfo();
+      case BLUE_GREEN:
+      case ROLLING:
+        return new BlueGreenAdditionalInfo();
+      case AUTO: {
+        return getBlueGreenAdditionalInfoForAutoVerificationType(verificationJobInstance);
+      }
+      default:
+        throw new IllegalStateException("Unsupported verificationJobType " + verificationJobType.name());
+    }
+  }
+
+  private static CanaryBlueGreenAdditionalInfo getBlueGreenAdditionalInfoForAutoVerificationType(
+      VerificationJobInstance verificationJobInstance) {
+    AppliedDeploymentAnalysisType appliedDeploymentAnalysisType =
+        getAppliedDeploymentAnalysisTypeForAutoVerificationType(verificationJobInstance);
+    if (appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.CANARY) {
+      return new CanaryAdditionalInfo();
+    } else {
+      return new BlueGreenAdditionalInfo();
+    }
+  }
+
+  public static AppliedDeploymentAnalysisType getAppliedDeploymentAnalysisTypeForAutoVerificationType(
+      VerificationJobInstance verificationJobInstance) {
+    Map<String, AppliedDeploymentAnalysisType> appliedDeploymentAnalysisTypeMap =
+        verificationJobInstance.getAppliedDeploymentAnalysisTypeMap();
+    if (Objects.nonNull(appliedDeploymentAnalysisTypeMap) && appliedDeploymentAnalysisTypeMap.size() > 0) {
+      int numberOfCanaryAnalyses = getNumberOfCanaryAnalyses(appliedDeploymentAnalysisTypeMap);
+      if (numberOfCanaryAnalyses > appliedDeploymentAnalysisTypeMap.size() / 2) {
+        return AppliedDeploymentAnalysisType.CANARY;
+      } else {
+        return AppliedDeploymentAnalysisType.ROLLING;
+      }
+    } else {
+      return AppliedDeploymentAnalysisType.ROLLING;
+    }
+  }
+
+  private static int getNumberOfCanaryAnalyses(
+      Map<String, AppliedDeploymentAnalysisType> appliedDeploymentAnalysisTypeMap) {
+    int numberOfCanaryAnalyses = 0;
+    for (AppliedDeploymentAnalysisType appliedDeploymentAnalysisType : appliedDeploymentAnalysisTypeMap.values()) {
+      if (appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.CANARY) {
+        numberOfCanaryAnalyses++;
+      }
+    }
+    return numberOfCanaryAnalyses;
   }
 
   @Override

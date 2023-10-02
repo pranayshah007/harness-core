@@ -59,6 +59,7 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       security:
         - x-api-key: []
+      x-internal: true
   '/v1/connectors/{connector}':
     get:
       summary: Retrieve a connector
@@ -67,7 +68,7 @@ paths:
         '200':
           $ref: '#/components/responses/ConnectorResponse'
       description: |
-        Retrieves the information of the connector with the matching connector identifier.
+        Retrieves the information of the connector with the matching connector identifier. Connector types supported are GIT, ARTIFACTORY, APP_DYNAMICS and AZURE.
       tags:
         - Account Connector
       parameters:
@@ -102,7 +103,7 @@ paths:
       responses:
         '200':
           description: OK
-      description: Deletes the information of the connector with the matching connector identifier.
+      description: 'Deletes the information of the connector with the matching connector identifier. Connector types supported are GIT, ARTIFACTORY, APP_DYNAMICS and AZURE.'
       tags:
         - Account Connector
       parameters:
@@ -173,6 +174,7 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       security:
         - x-api-key: []
+      x-internal: true
   '/v1/orgs/{org}/connectors/{connector}':
     get:
       summary: Retrieve a connector
@@ -181,7 +183,7 @@ paths:
         '200':
           $ref: '#/components/responses/ConnectorResponse'
       description: |
-        Retrieves the information of the connector with the matching connector identifier.
+        Retrieves the information of the connector with the matching connector identifier. Connector types supported are GIT, ARTIFACTORY, APP_DYNAMICS and AZURE.
       tags:
         - Org Connector
       parameters:
@@ -209,7 +211,7 @@ paths:
       responses:
         '200':
           description: OK
-      description: Deletes the information of the connector with the matching connector identifier.
+      description: 'Deletes the information of the connector with the matching connector identifier. Connector types supported are GIT, ARTIFACTORY, APP_DYNAMICS and AZURE.'
       tags:
         - Org Connector
       parameters:
@@ -290,6 +292,7 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       security:
         - x-api-key: []
+      x-internal: true
   '/v1/orgs/{org}/projects/{project}/connectors/{connector}':
     get:
       summary: Retrieve a connector
@@ -298,7 +301,7 @@ paths:
         '200':
           $ref: '#/components/responses/ConnectorResponse'
       description: |
-        Retrieves the information of the connector with the matching connector identifier.
+        Retrieves the information of the connector with the matching connector identifier. Connector types supported are GIT, ARTIFACTORY, APP_DYNAMICS and AZURE.
       tags:
         - Project Connector
       parameters:
@@ -326,7 +329,7 @@ paths:
       responses:
         '200':
           description: OK
-      description: Deletes the information of the connector with the matching connector identifier.
+      description: 'Deletes the information of the connector with the matching connector identifier. Connector types supported are GIT, ARTIFACTORY, APP_DYNAMICS and AZURE.'
       tags:
         - Project Connector
       parameters:
@@ -520,17 +523,6 @@ components:
           Artifactory: '#/components/schemas/ArtifactoryConnectorSpec'
           ArtifactoryEncrypted: '#/components/schemas/ArtifactoryEncryptedConnectorSpec'
           ArtifactoryAnonymous: '#/components/schemas/ArtifactoryAnonymousConnectorSpec'
-          AwsCodeCommit: '#/components/schemas/AwsCodeCommitConnectorSpec'
-          AwsAccessKey: '#/components/schemas/AwsAccessKeyConnectorSpec'
-          AwsEncryptedAccessKey: '#/components/schemas/AwsEncryptedAccessKeyConnectorSpec'
-          AwsIAMRole: '#/components/schemas/AwsIAMRoleConnectorSpec'
-          AwsIRSA: '#/components/schemas/AwsIRSAConnectorSpec'
-          AwsKmsAccessKey: '#/components/schemas/AwsKmsAccessKeyConnectorSpec'
-          AwsKmsAssumeIAM: '#/components/schemas/AwsKmsAssumeIAMConnectorSpec'
-          AwsKmsAssumeSTS: '#/components/schemas/AwsKmsAssumeSTSConnectorSpec'
-          AwsSecretManagerAccessKey: '#/components/schemas/AwsSecretManagerAccessKeyConnectorSpec'
-          AwsSecretManagerAssumeIAM: '#/components/schemas/AwsSecretManagerAssumeIAMConnectorSpec'
-          AwsSecretManagerAssumeSTS: '#/components/schemas/AwsSecretManagerAssumeSTSConnectorSpec'
           AzureClientSecretKey: '#/components/schemas/AzureClientSecretKeyConnectorSpec'
           AzureClientCertificate: '#/components/schemas/AzureClientCertificateConnectorSpec'
           AzureInheritFromDelegateUserAssignedManagedIdentity: '#/components/schemas/AzureInheritFromDelegateUserAssignedManagedIdentityConnectorSpec'
@@ -547,17 +539,6 @@ components:
             - Artifactory
             - ArtifactoryEncrypted
             - ArtifactoryAnonymous
-            - AwsCodeCommit
-            - AwsAccessKey
-            - AwsEncryptedAccessKey
-            - AwsIAMRole
-            - AwsIRSA
-            - AwsKmsAccessKey
-            - AwsKmsAssumeIAM
-            - AwsKmsAssumeSTS
-            - AwsSecretManagerAccessKey
-            - AwsSecretManagerAssumeIAM
-            - AwsSecretManagerAssumeSTS
             - AzureClientSecretKey
             - AzureClientCertificate
             - AzureInheritFromDelegateUserAssignedManagedIdentity

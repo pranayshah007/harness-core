@@ -18,6 +18,7 @@ import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.SATHISH;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.rule.OwnerRule.YOGESH;
 
@@ -553,6 +554,32 @@ public class GitClientV2ImplTest extends CategoryTest {
     }
   }
 
+  private String addRemoteWithIndexLock(String repoPath) {
+    try {
+      String remoteRepo = Files.createTempDirectory(UUID.randomUUID().toString()).toString();
+      createRepo(remoteRepo, true);
+      String command = new StringBuilder(128)
+                           .append("cd " + repoPath + ";")
+                           .append("git remote add origin " + remoteRepo + ";")
+                           .append("touch base.txt;")
+                           .append("git add base.txt;")
+                           .append("git commit -m 'commit base';")
+                           .append("git push -u origin master;")
+                           .append("git tag base;")
+                           .append("git push origin base;")
+                           .append("git remote update;")
+                           .append("git fetch;")
+                           .append("touch index.lock")
+                           .toString();
+
+      executeCommand(command);
+      return remoteRepo;
+    } catch (Exception e) {
+      fail("Should not reach here.");
+      return null;
+    }
+  }
+
   private void addGitTag(String repoPath, String tag) {
     try {
       String command = new StringBuilder(128)
@@ -579,7 +606,7 @@ public class GitClientV2ImplTest extends CategoryTest {
     String command = new StringBuilder(128)
                          .append("mkdir -p " + repoPath + ";")
                          .append("cd " + repoPath + ";")
-                         .append("git init " + (bare ? "--bare" : "") + ";")
+                         .append("git init -b master " + (bare ? "--bare" : "") + ";")
                          .append("git config user.email 'someone@someplace.com';")
                          .append("git config user.name 'someone';")
                          .append("git config gc.auto '0';")
@@ -1023,5 +1050,27 @@ public class GitClientV2ImplTest extends CategoryTest {
         .containsEntry("refs/tags/base", "refs/tags/base")
         .containsEntry("refs/heads/master", "refs/heads/master")
         .containsEntry("refs/remotes/origin/master", "refs/remotes/origin/master");
+  }
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testFetchFilesByPathWhenIndexExist() throws Exception {
+    FetchFilesByPathRequest request =
+        FetchFilesByPathRequest.builder()
+            .repoUrl(repoPath)
+            .authRequest(new UsernamePasswordAuthRequest(USERNAME, PASSWORD.toCharArray()))
+            .connectorId(CONNECTOR_ID)
+            .accountId("ACCOUNT_ID")
+            .build();
+
+    request.setFilePaths(Collections.singletonList("./"));
+    request.setBranch("master");
+    doReturn(cache.get(CONNECTOR_ID)).when(gitClientHelper).getLockObject(request.getConnectorId());
+
+    doNothing().when(gitClientHelper).createDirStructureForFileDownload(any());
+    doReturn(repoPath).when(gitClientHelper).getFileDownloadRepoDirectory(any());
+    addRemoteWithIndexLock(repoPath);
+    FetchFilesResult fetchFilesResult = gitClient.fetchFilesByPath(request);
+    assertThat(fetchFilesResult.getFiles()).isEmpty();
   }
 }

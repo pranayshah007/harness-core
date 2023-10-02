@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.service.servicev2;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 
 import software.wings.api.DeploymentType;
@@ -16,9 +18,12 @@ import software.wings.beans.Service;
 import software.wings.utils.ArtifactType;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceV2Factory {
   private static final ServiceV2Mapper k8sServiceV2Mapper = new K8sServiceV2Mapper();
@@ -126,5 +131,19 @@ public class ServiceV2Factory {
     //    map.put(DeploymentType.AZURE_VMSS, ServiceDefinitionType.);
     //    map.put(AWS_CODEDEPLOY, ServiceDefinitionType.);
     return map.get(deploymentType);
+  }
+
+  public static boolean checkForASG(String nodeType) {
+    Set<String> set = new HashSet<>();
+    set.add("AWS_AMI_SERVICE_SETUP");
+    set.add("AWS_AMI_SERVICE_ROLLBACK");
+    set.add("AWS_AMI_SWITCH_ROUTES");
+    set.add("AWS_AMI_ROLLBACK_SWITCH_ROUTES");
+    set.add("AWS_AMI_SERVICE_DEPLOY");
+    set.add("ASG_AMI_ALB_SHIFT_SWITCH_ROUTES");
+    set.add("ASG_AMI_SERVICE_ALB_SHIFT_DEPLOY");
+    set.add("ASG_AMI_SERVICE_ALB_SHIFT_SETUP");
+    set.add("ASG_AMI_ROLLBACK_ALB_SHIFT_SWITCH_ROUTES");
+    return set.contains(nodeType);
   }
 }

@@ -6,7 +6,6 @@
  */
 
 package software.wings.sm;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionInterruptType.CONTINUE_PIPELINE_STAGE;
 import static io.harness.beans.ExecutionInterruptType.PAUSE_ALL;
@@ -32,7 +31,6 @@ import static io.harness.beans.ExecutionStatus.brokeStatuses;
 import static io.harness.beans.ExecutionStatus.isBrokeStatus;
 import static io.harness.beans.ExecutionStatus.isFinalStatus;
 import static io.harness.beans.ExecutionStatus.isPositiveStatus;
-import static io.harness.beans.FeatureName.SPG_FIX_APPROVAL_WAITING_FOR_INPUTS;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -46,7 +44,6 @@ import static io.harness.threading.Morpheus.quietSleep;
 import static io.harness.validation.Validator.notNullCheck;
 import static io.harness.waiter.OrchestrationNotifyEventListener.ORCHESTRATION;
 
-import static software.wings.beans.ExecutionScope.WORKFLOW;
 import static software.wings.beans.NotificationRule.NotificationRuleBuilder.aNotificationRule;
 import static software.wings.beans.alert.AlertType.ManualInterventionNeeded;
 import static software.wings.common.NotificationMessageResolver.NotificationMessageType.MANUAL_INTERVENTION_NEEDED_NOTIFICATION;
@@ -74,8 +71,11 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.alert.AlertData;
 import io.harness.annotations.dev.BreakDependencyOn;
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EventType;
 import io.harness.beans.ExecutionInterruptType;
@@ -124,6 +124,7 @@ import software.wings.beans.NotificationRule;
 import software.wings.beans.Pipeline;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.alert.AlertType;
 import software.wings.beans.alert.ManualInterventionNeededAlert;
 import software.wings.beans.alert.RuntimeInputsRequiredAlert;
@@ -188,15 +189,14 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.modelmapper.MappingException;
 
 /**
  * Class responsible for executing state machine.
  *
  * @author Rishi
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
@@ -261,7 +261,8 @@ public class StateMachineExecutor implements StateInspectionListener {
    */
   public StateExecutionInstance execute(String appId, String executionUuid, String executionName,
       List<ContextElement> contextParams, StateMachineExecutionCallback callback) {
-    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(appId, executionUuid);
+    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(
+        appId, executionUuid, WorkflowExecutionKeys.stateMachine, WorkflowExecutionKeys.stateMachineId);
     StateMachine stateMachine = workflowExecutionService.obtainStateMachine(workflowExecution);
     return execute(stateMachine, executionUuid, executionName, contextParams, callback, null);
   }
@@ -280,7 +281,8 @@ public class StateMachineExecutor implements StateInspectionListener {
   public StateExecutionInstance execute(String appId, String executionUuid, String executionName,
       List<ContextElement> contextParams, StateMachineExecutionCallback callback,
       ExecutionEventAdvisor executionEventAdvisor) {
-    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(appId, executionUuid);
+    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(
+        appId, executionUuid, WorkflowExecutionKeys.stateMachine, WorkflowExecutionKeys.stateMachineId);
     StateMachine stateMachine = workflowExecutionService.obtainStateMachine(workflowExecution);
     return execute(stateMachine, executionUuid, executionName, contextParams, callback, executionEventAdvisor);
   }
@@ -992,8 +994,13 @@ public class StateMachineExecutor implements StateInspectionListener {
         updateStateExecutionInstanceForManualInterventions(stateExecutionInstance, status, executionEventAdvice);
 
         // Open an alert
+        String[] fields = {WorkflowExecutionKeys.createdAt, WorkflowExecutionKeys.createdBy,
+            WorkflowExecutionKeys.createdByType, WorkflowExecutionKeys.envIds, WorkflowExecutionKeys.executionArgs,
+            WorkflowExecutionKeys.infraDefinitionIds, WorkflowExecutionKeys.name,
+            WorkflowExecutionKeys.pipelineExecution, WorkflowExecutionKeys.pipelineExecutionId,
+            WorkflowExecutionKeys.pipelineSummary, WorkflowExecutionKeys.serviceIds, WorkflowExecutionKeys.workflowId};
         WorkflowExecution workflowExecution =
-            workflowExecutionService.getWorkflowExecution(context.getAppId(), context.getWorkflowExecutionId());
+            workflowExecutionService.getWorkflowExecution(context.getAppId(), context.getWorkflowExecutionId(), fields);
         Environment environment = context.getEnv();
         String pipelineExecutionId = workflowExecution.getPipelineExecutionId();
         WorkflowType workflowType = pipelineExecutionId != null ? WorkflowType.PIPELINE : WorkflowType.ORCHESTRATION;
@@ -1294,18 +1301,6 @@ public class StateMachineExecutor implements StateInspectionListener {
 
   private boolean checkIfOnDemand(String appId, String executionUuid) {
     return workflowExecutionService.checkIfOnDemand(appId, executionUuid);
-  }
-
-  private Map<String, String> getManualInterventionPlaceholderValues(ExecutionContextImpl context) {
-    notNullCheck("context.getApp()", context.getApp());
-    WorkflowExecution workflowExecution = workflowExecutionService.getExecutionDetails(
-        context.getApp().getUuid(), context.getWorkflowExecutionId(), false, false);
-    String artifactsMessage =
-        workflowNotificationHelper.getArtifactsDetails(context, workflowExecution, WORKFLOW, null).getMessage();
-
-    return notificationMessageResolver.getPlaceholderValues(context, workflowExecution.getTriggeredBy().getName(),
-        workflowExecution.getStartTs(), System.currentTimeMillis(), "", "", artifactsMessage, ExecutionStatus.PAUSED,
-        AlertType.ManualInterventionNeeded);
   }
 
   protected void sendManualInterventionNeededNotification(ExecutionContextImpl context, long expiryTs) {
@@ -1865,11 +1860,8 @@ public class StateMachineExecutor implements StateInspectionListener {
    */
   private StateExecutionInstance clone(StateExecutionInstance stateExecutionInstance, State nextState) {
     StateExecutionInstance cloned = kryoSerializer.clone(stateExecutionInstance);
-    if (featureFlagService.isEnabled(SPG_FIX_APPROVAL_WAITING_FOR_INPUTS, stateExecutionInstance.getAccountId())) {
-      cloned.setWaitingForInputs(false);
-      cloned.setActionOnTimeout(null);
-    }
-
+    cloned.setWaitingForInputs(false);
+    cloned.setActionOnTimeout(null);
     cloned.setContinued(false);
     cloned.setInterruptHistory(null);
     cloned.setStateExecutionDataHistory(null);
@@ -2780,92 +2772,6 @@ public class StateMachineExecutor implements StateInspectionListener {
    * Maps source to target.
    */
   private void mapObject(Map<String, Object> source, State target, String accountId) {
-    try {
-      MapperUtils.mapObject(source, target);
-    } catch (MappingException e) {
-      // CHANGE LOG PRIORITY TO A LOWER VALUE AS WE FOUND THE ROOT CAUSE
-      log.warn(String.format("Got model mapping exception during map the stateParams <%s> to state <%s>", source,
-                   ToStringBuilder.reflectionToString(target)),
-          e);
-
-      // ITERATE THE SOURCE ELEMENTS AND MAP TO THE SAME TARGET
-      mapEntries(source, target, accountId);
-    }
-  }
-
-  @VisibleForTesting
-  void mapEntries(Map<String, Object> source, State target, String accountId) {
-    for (Map.Entry<String, Object> entry : source.entrySet()) {
-      try {
-        MapperUtils.mapObject(sanitizeEntry(entry), target);
-
-      } catch (MappingException e1) {
-        log.error(String.format("Failure on entry <%s> to the same target", entry), e1);
-
-        // IF IGNORE FF IS ENABLED, LOG AND KEEP THE EXECUTION.
-        if (featureFlagService.isNotEnabled(FeatureName.SPG_STATE_MACHINE_MAPPING_EXCEPTION_IGNORE, accountId)) {
-          throw e1;
-        }
-      }
-    }
-  }
-
-  @VisibleForTesting
-  Map<String, Object> sanitizeEntry(Map.Entry<String, Object> entry) {
-    //
-    // ONLY SOME FIELDS NEED SANITIZATION, WHEN NOT REQUIRED THE SAME ENTRY IS RETURNED.
-    //
-    Map<String, Object> result = null;
-
-    if (TEMPLATE_VARIABLE_ENTRY.equals(entry.getKey())) {
-      result = sanitizeTemplateVariables(entry);
-    }
-
-    // ADVICE: USING singletonMap BECAUSE ENTRY VALUE CAN BE NULL
-    return Optional.ofNullable(result).orElseGet(() -> Collections.singletonMap(entry.getKey(), entry.getValue()));
-  }
-
-  @VisibleForTesting
-  Map<String, Object> sanitizeTemplateVariables(final Map.Entry<String, Object> entry) {
-    //
-    // THE ROOT CAUSE OF MAPPING EXCEPTION IS AN ISSUE IN ModelMapper LIBRARY WHERE IS EXPECTED TO EVERY MAP
-    // ELEMENT OF THE SAME FIELD HAS THE SAME KEYS, NOT THE COUNT, BUT THE KEYS. MORE DETAILS AT CDS-54824.
-    //
-    if (entry.getValue() instanceof List) {
-      try {
-        @SuppressWarnings("unchecked")
-        List<Map<String, String>> elements = (List<Map<String, String>>) entry.getValue();
-        final List<Map<String, String>> result = new ArrayList<>();
-
-        final boolean hasDescription = elements.stream().anyMatch(e -> e.containsKey(VARIABLE_DESCRIPTION_FIELD));
-        final boolean hasValue = elements.stream().anyMatch(e -> e.containsKey(VARIABLE_VALUE_FIELD));
-
-        elements.forEach(e -> {
-          Map<String, String> content = new HashMap<>(e);
-          if (hasDescription) {
-            content.putIfAbsent(VARIABLE_DESCRIPTION_FIELD, StringUtils.EMPTY);
-          }
-          if (hasValue) {
-            content.putIfAbsent(VARIABLE_VALUE_FIELD, StringUtils.EMPTY);
-          }
-          result.add(content);
-        });
-
-        if (!result.isEmpty()) {
-          return Collections.singletonMap(TEMPLATE_VARIABLE_ENTRY, result);
-        }
-
-      } catch (ClassCastException e) {
-        log.warn(
-            String.format("Unable to cast [%s] to expected type [java.util.List]", entry.getValue().getClass()), e);
-      } catch (RuntimeException e) {
-        log.warn(String.format("Unable to sanitize field [%s]", TEMPLATE_VARIABLE_ENTRY), e);
-      }
-    }
-
-    // FALLBACK. THE OUTPUT IS THE SAME AS INPUT
-    final Map<String, Object> fallback = new HashMap<>();
-    fallback.put(entry.getKey(), entry.getValue());
-    return fallback;
+    MapperUtils.mapProperties(source, target);
   }
 }

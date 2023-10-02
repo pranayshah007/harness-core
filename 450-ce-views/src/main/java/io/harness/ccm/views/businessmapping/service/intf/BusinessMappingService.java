@@ -14,6 +14,7 @@ import io.harness.ccm.views.businessmapping.entities.CostCategorySortType;
 import io.harness.ccm.views.entities.ViewField;
 
 import java.util.List;
+import java.util.Set;
 
 public interface BusinessMappingService {
   BusinessMapping save(BusinessMapping businessMapping);
@@ -24,5 +25,6 @@ public interface BusinessMappingService {
   BusinessMappingListDTO list(String accountId, String searchKey, CostCategorySortType sortType, CCMSortOrder sortOrder,
       Integer limit, Integer offset);
   List<ViewField> getBusinessMappingViewFields(String accountId);
+  Set<String> getBusinessMappingIds(String accountId);
   List<String> getCostTargetNames(String businessMappingId, String accountId, String searchString);
 }

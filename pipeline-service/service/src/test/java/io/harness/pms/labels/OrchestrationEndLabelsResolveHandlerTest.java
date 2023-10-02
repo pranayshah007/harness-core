@@ -19,10 +19,11 @@ import io.harness.category.element.UnitTests;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.pipeline.labels.OrchestrationEndLabelsResolveHandler;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.rule.Owner;
 import io.harness.yaml.core.NGLabel;
 
@@ -64,7 +65,7 @@ public class OrchestrationEndLabelsResolveHandlerTest extends CategoryTest {
   public void testOnEndForV1Yaml() {
     PipelineExecutionSummaryEntity dummyEntity = PipelineExecutionSummaryEntity.builder()
                                                      .label(NGLabel.builder().key("key").value("val").build())
-                                                     .pipelineVersion(PipelineVersion.V1)
+                                                     .pipelineVersion(HarnessYamlVersion.V1)
                                                      .build();
     List<NGLabel> dummyLabels = new ArrayList<>();
     Ambiance ambiance =
@@ -77,7 +78,7 @@ public class OrchestrationEndLabelsResolveHandlerTest extends CategoryTest {
     doReturn(dummyLabels)
         .when(pmsEngineExpressionService)
         .resolve(ambiance, dummyEntity.getLabels(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
-    orchestrationEndLabelsResolveHandler.onEnd(ambiance);
+    orchestrationEndLabelsResolveHandler.onEnd(ambiance, Status.SUCCEEDED);
 
     verify(pmsEngineExpressionService, times(1))
         .resolve(ambiance, dummyEntity.getLabels(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
@@ -92,7 +93,7 @@ public class OrchestrationEndLabelsResolveHandlerTest extends CategoryTest {
   public void testOnEndForV0Yaml() {
     PipelineExecutionSummaryEntity dummyEntity = PipelineExecutionSummaryEntity.builder()
                                                      .label(NGLabel.builder().key("key").value("val").build())
-                                                     .pipelineVersion(PipelineVersion.V0)
+                                                     .pipelineVersion(HarnessYamlVersion.V0)
                                                      .build();
     List<NGLabel> dummyLabels = new ArrayList<>();
     Ambiance ambiance =
@@ -105,7 +106,7 @@ public class OrchestrationEndLabelsResolveHandlerTest extends CategoryTest {
     doReturn(dummyLabels)
         .when(pmsEngineExpressionService)
         .resolve(ambiance, dummyEntity.getLabels(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
-    orchestrationEndLabelsResolveHandler.onEnd(ambiance);
+    orchestrationEndLabelsResolveHandler.onEnd(ambiance, Status.SUCCEEDED);
 
     verify(pmsEngineExpressionService, times(0))
         .resolve(ambiance, dummyEntity.getLabels(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED);

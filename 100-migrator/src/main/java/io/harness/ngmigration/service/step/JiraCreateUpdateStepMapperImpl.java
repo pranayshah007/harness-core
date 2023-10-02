@@ -126,7 +126,7 @@ public class JiraCreateUpdateStepMapperImpl extends StepMapper {
     addJiraField(jiraFields, Field.SUMMARY, state.getSummary());
     addJiraField(jiraFields, Field.DESCRIPTION, state.getDescription());
     addJiraField(jiraFields, Field.PRIORITY, state.getPriority());
-    addJiraField(jiraFields, Field.COMMENT, state.getComment());
+    addJiraField(jiraFields, "Comment", state.getComment());
     addJiraField(jiraFields, Field.STATUS, state.getStatus());
     if (EmptyPredicate.isNotEmpty(state.getLabels())) {
       addJiraField(jiraFields, Field.LABELS, String.join(",", state.getLabels()));

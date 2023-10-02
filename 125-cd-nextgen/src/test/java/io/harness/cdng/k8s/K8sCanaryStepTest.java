@@ -26,7 +26,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.NGInstanceUnitType;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.execution.service.StageExecutionInstanceInfoService;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.helm.ReleaseHelmChartOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
 import io.harness.cdng.manifest.yaml.K8sCommandFlagType;
@@ -34,6 +36,7 @@ import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.exception.TaskNGDataException;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.K8sCanaryDeployRequest;
 import io.harness.delegate.task.k8s.K8sCanaryDeployResponse;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
@@ -42,6 +45,7 @@ import io.harness.delegate.task.k8s.data.K8sCanaryDataException;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.k8s.model.K8sPod;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
@@ -71,6 +75,7 @@ public class K8sCanaryStepTest extends AbstractK8sStepExecutorTestBase {
   @Mock InstanceInfoService instanceInfoService;
   @InjectMocks private K8sCanaryStep k8sCanaryStep;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Mock StageExecutionInstanceInfoService stageExecutionInstanceInfoService;
 
   @Test
   @Owner(developers = ABOSII)
@@ -209,27 +214,46 @@ public class K8sCanaryStepTest extends AbstractK8sStepExecutorTestBase {
   public void testOutcomesInResponse() {
     K8sCanaryStepParameters stepParameters = new K8sCanaryStepParameters();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
+    HelmChartInfo helmChartInfo = HelmChartInfo.builder().name("todolist").version("0.2.0").build();
 
-    K8sDeployResponse k8sDeployResponse = K8sDeployResponse.builder()
-                                              .k8sNGTaskResponse(K8sCanaryDeployResponse.builder()
-                                                                     .canaryWorkload("canaryWorkload")
-                                                                     .releaseNumber(1)
-                                                                     .k8sPodList(new ArrayList<>())
-                                                                     .build())
-                                              .commandUnitsProgress(UnitProgressData.builder().build())
-                                              .commandExecutionStatus(SUCCESS)
-                                              .build();
+    K8sDeployResponse k8sDeployResponse =
+        K8sDeployResponse.builder()
+            .k8sNGTaskResponse(K8sCanaryDeployResponse.builder()
+                                   .canaryWorkload("canaryWorkload")
+                                   .releaseNumber(1)
+                                   .k8sPodList(List.of(K8sPod.builder().name("pod1").newPod(true).build()))
+                                   .previousK8sPodList(Collections.emptyList())
+                                   .helmChartInfo(helmChartInfo)
+                                   .k8sPodList(List.of(K8sPod.builder().podIP("ip1").build(),
+                                       K8sPod.builder().podIP("ip2").build(), K8sPod.builder().podIP("ip3").build()))
+                                   .build())
+            .commandUnitsProgress(UnitProgressData.builder().build())
+            .commandExecutionStatus(SUCCESS)
+            .build();
     when(cdStepHelper.getReleaseName(any(), any())).thenReturn("releaseName");
+    ReleaseHelmChartOutcome releaseHelmChartOutcome =
+        ReleaseHelmChartOutcome.builder().name(helmChartInfo.getName()).version(helmChartInfo.getVersion()).build();
+    doReturn(releaseHelmChartOutcome).when(k8sStepHelper).getHelmChartOutcome(eq(helmChartInfo));
 
-    StepResponse response = k8sCanaryStep.finalizeExecutionWithSecurityContext(
+    StepResponse response = k8sCanaryStep.finalizeExecutionWithSecurityContextAndNodeInfo(
         ambiance, stepElementParameters, K8sExecutionPassThroughData.builder().build(), () -> k8sDeployResponse);
     assertThat(response.getStatus()).isEqualTo(Status.SUCCEEDED);
-    assertThat(response.getStepOutcomes()).hasSize(1);
+    assertThat(response.getStepOutcomes()).hasSize(2);
 
     StepOutcome outcome = response.getStepOutcomes().stream().collect(Collectors.toList()).get(0);
     assertThat(outcome.getOutcome()).isInstanceOf(K8sCanaryOutcome.class);
     assertThat(outcome.getName()).isEqualTo(OutcomeExpressionConstants.OUTPUT);
     assertThat(outcome.getGroup()).isNull();
+    ((K8sCanaryOutcome) outcome.getOutcome())
+        .getPodIps()
+        .forEach(ip -> assertThat(List.of("ip1", "ip2", "ip3").contains(ip)).isTrue());
+
+    StepOutcome helmChartOutcome = new ArrayList<>(response.getStepOutcomes()).get(1);
+    assertThat(helmChartOutcome.getOutcome()).isInstanceOf(ReleaseHelmChartOutcome.class);
+    assertThat(helmChartOutcome.getName()).isEqualTo(OutcomeExpressionConstants.RELEASE_HELM_CHART_OUTCOME);
+    assertThat(((ReleaseHelmChartOutcome) helmChartOutcome.getOutcome()).getName()).isEqualTo(helmChartInfo.getName());
+    assertThat(((ReleaseHelmChartOutcome) helmChartOutcome.getOutcome()).getVersion())
+        .isEqualTo(helmChartInfo.getVersion());
 
     ArgumentCaptor<K8sCanaryOutcome> argumentCaptor = ArgumentCaptor.forClass(K8sCanaryOutcome.class);
     verify(executionSweepingOutputService, times(1))
@@ -250,7 +274,7 @@ public class K8sCanaryStepTest extends AbstractK8sStepExecutorTestBase {
 
     doReturn(stepResponse).when(k8sStepHelper).handleTaskException(ambiance, executionPassThroughData, thrownException);
 
-    StepResponse response = k8sCanaryStep.finalizeExecutionWithSecurityContext(
+    StepResponse response = k8sCanaryStep.finalizeExecutionWithSecurityContextAndNodeInfo(
         ambiance, stepElementParameters, executionPassThroughData, () -> { throw thrownException; });
 
     assertThat(response).isEqualTo(stepResponse);
@@ -271,7 +295,7 @@ public class K8sCanaryStepTest extends AbstractK8sStepExecutorTestBase {
 
     doThrow(taskException).when(k8sStepHelper).handleTaskException(ambiance, executionPassThroughData, taskException);
     try {
-      k8sCanaryStep.finalizeExecutionWithSecurityContext(
+      k8sCanaryStep.finalizeExecutionWithSecurityContextAndNodeInfo(
           ambiance, stepElementParameters, executionPassThroughData, () -> { throw taskException; });
 
     } catch (Exception e) {

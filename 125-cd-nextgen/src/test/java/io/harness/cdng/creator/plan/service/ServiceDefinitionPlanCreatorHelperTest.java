@@ -64,6 +64,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -683,10 +684,10 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
                                            .configFiles(singletonList(configFile3b))
                                            .build())
             .build();
-
+    Map<String, String> configFileLocation = new HashMap<>();
     final List<ConfigFileWrapper> finalConfigFiles =
         ServiceStepOverrideHelper.prepareFinalConfigFiles(serviceInfoConfig, serviceOverrideConfig,
-            environmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride());
+            environmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride(), configFileLocation);
 
     assertThat(finalConfigFiles).hasSize(3);
     assertThat(finalConfigFiles).containsExactlyInAnyOrder(configFile1a, configFile2b, configFile3b);
@@ -852,10 +853,10 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
                                          .ngEnvironmentGlobalOverride(NGEnvironmentGlobalOverride.builder().build())
                                          .build())
             .build();
-
+    Map<String, String> configFileLocation = new HashMap<>();
     final List<ConfigFileWrapper> finalConfigFiles =
         ServiceStepOverrideHelper.prepareFinalConfigFiles(serviceInfoConfig, serviceOverrideConfig,
-            environmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride());
+            environmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride(), configFileLocation);
     assertThat(finalConfigFiles).hasSize(3);
     assertThat(finalConfigFiles).containsExactlyInAnyOrder(configFile1a, configFile2a, configFile3a);
   }
@@ -921,10 +922,10 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
                                                      .build())
                     .build())
             .build();
-
+    Map<String, String> configFileLocation = new HashMap<>();
     final List<ConfigFileWrapper> finalConfigFiles =
         ServiceStepOverrideHelper.prepareFinalConfigFiles(serviceInfoConfig, serviceOverrideConfig,
-            environmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride());
+            environmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride(), configFileLocation);
     assertThat(finalConfigFiles).hasSize(3);
     assertThat(finalConfigFiles).containsExactlyInAnyOrder(configFile3a, configFile1a, configFile2a);
   }

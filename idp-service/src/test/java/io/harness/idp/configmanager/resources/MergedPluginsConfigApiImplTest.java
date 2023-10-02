@@ -38,9 +38,7 @@ import lombok.experimental.FieldDefaults;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
@@ -121,14 +119,14 @@ public class MergedPluginsConfigApiImplTest extends CategoryTest {
   @Test
   @Owner(developers = DEVESH)
   @Category(UnitTests.class)
-  public void testUpdateConfigurationEntities() throws Exception {
+  public void testUpdateConfigurationEntities() {
     ConfigurationEntities configurationEntities = new ConfigurationEntities();
     List<BackstageEnvVariable> backstageEnvVariables = Collections.singletonList(new BackstageEnvVariable());
     List<ProxyHostDetail> proxyHostDetails = Collections.singletonList(new ProxyHostDetail());
     configurationEntities.setEnvVariables(backstageEnvVariables);
     configurationEntities.setProxy(proxyHostDetails);
     when(backstageEnvVariableService.createOrUpdate(any(), any())).thenReturn(backstageEnvVariables);
-    when(pluginsProxyInfoService.updateProxyHostDetailsForPlugin(any(), any())).thenReturn(proxyHostDetails);
+    when(pluginsProxyInfoService.updateProxyHostDetailsForPlugin(any(), any(), any())).thenReturn(proxyHostDetails);
     Response response = mergedPluginsConfigApiImpl.updateConfigurationEntities(
         getTestConfigurationEntityRequestBody(), TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
@@ -144,7 +142,7 @@ public class MergedPluginsConfigApiImplTest extends CategoryTest {
     configurationEntities.setEnvVariables(backstageEnvVariables);
     configurationEntities.setProxy(proxyHostDetails);
     when(backstageEnvVariableService.createOrUpdate(any(), any())).thenThrow(new InvalidRequestException("Error"));
-    when(pluginsProxyInfoService.updateProxyHostDetailsForPlugin(any(), any())).thenReturn(proxyHostDetails);
+    when(pluginsProxyInfoService.updateProxyHostDetailsForPlugin(any(), any(), any())).thenReturn(proxyHostDetails);
     Response response = mergedPluginsConfigApiImpl.updateConfigurationEntities(
         getTestConfigurationEntityRequestBody(), TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());

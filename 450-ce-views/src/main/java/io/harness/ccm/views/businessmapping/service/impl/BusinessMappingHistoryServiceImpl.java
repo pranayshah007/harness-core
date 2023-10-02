@@ -60,6 +60,11 @@ public class BusinessMappingHistoryServiceImpl implements BusinessMappingHistory
   }
 
   @Override
+  public boolean delete(BusinessMappingHistory businessMappingHistory) {
+    return businessMappingHistoryDao.delete(businessMappingHistory);
+  }
+
+  @Override
   public void handleCreateEvent(BusinessMapping businessMapping, Instant eventTime) {
     save(BusinessMappingHistory.fromBusinessMapping(
         businessMapping, getYearMonthInteger(getYearMonth(eventTime)), MAX_YEAR_MONTH));
@@ -90,8 +95,13 @@ public class BusinessMappingHistoryServiceImpl implements BusinessMappingHistory
   public void handleDeleteEvent(BusinessMapping businessMapping, Instant eventTime) {
     BusinessMappingHistory businessMappingHistory =
         getLatest(businessMapping.getAccountId(), businessMapping.getUuid(), eventTime);
-    businessMappingHistory.setEndAt(getYearMonthInteger(getYearMonth(eventTime)));
-    update(businessMappingHistory);
+    Integer yearMonth = getYearMonthInteger(getYearMonth(eventTime).minusMonths(1));
+    if (yearMonth < businessMappingHistory.getStartAt()) {
+      delete(businessMappingHistory);
+    } else {
+      businessMappingHistory.setEndAt(yearMonth);
+      update(businessMappingHistory);
+    }
   }
 
   private static YearMonth getYearMonth(Instant instant) {

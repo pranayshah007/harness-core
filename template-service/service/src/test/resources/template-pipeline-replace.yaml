@@ -1,0 +1,50 @@
+pipeline:
+  stages:
+    - stage:
+        name: Stage 1
+        identifier: Stage_1
+        description: ""
+        type: Deployment
+        spec:
+          serviceConfig:
+            serviceRef: Some_Service
+            serviceDefinition:
+              type: Kubernetes
+              spec:
+                variables: []
+          infrastructure:
+            environmentRef: Some_Environment
+            infrastructureDefinition:
+              type: KubernetesDirect
+              spec:
+                connectorRef: account.testdisableharnesssm
+                namespace: default
+                releaseName: release-<+INFRA_KEY>
+            allowSimultaneousDeployments: false
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: Step 1
+                  identifier: Step_1
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: <+input>
+                    environmentVariables: []
+                    outputVariables: []
+                    executionTarget: {}
+                  timeout: <+input>
+            rollbackSteps: []
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback
+  identifier: templateInputs
+  name: templateInputs

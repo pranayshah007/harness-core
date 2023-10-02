@@ -12,6 +12,7 @@ import io.harness.annotation.RecasterAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import java.util.Arrays;
 import org.springframework.data.annotation.TypeAlias;
 
 @TypeAlias("osType")
@@ -29,7 +30,8 @@ public enum OSType {
         return osType;
       }
     }
-    throw new IllegalArgumentException("Invalid value: " + yamlName);
+    throw new IllegalArgumentException(
+        String.format("Os type %s is invalid, valid values are : %s", yamlName, Arrays.asList(OSType.values())));
   }
 
   OSType(String yamlName) {

@@ -34,13 +34,13 @@ disableResourceValidation: ${DISABLE_RESOURCE_VALIDATION:-false}
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-20}
   maxPoolSize: ${PMS_SDK_EXECUTION_POOL_MAX_SIZE:-100}
-  idleTime: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME:-120}
+  idleTime: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME:-60}
   timeUnit: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 pmsSdkOrchestrationEventPoolConfig:
   corePoolSize: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_CORE_SIZE:-10}
   maxPoolSize: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_MAX_SIZE:-50}
-  idleTime: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME:-120}
+  idleTime: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME:-60}
   timeUnit: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 nextGen:
@@ -142,6 +142,11 @@ cvngClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
+stoCoreClientConfig:
+  baseUrl: ${STO_CORE_SERVICE_BASE_URL:-http://localhost:4000/api/}v2/system/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
 pipelineServiceClientConfig:
   baseUrl: http://localhost:12001/api/
   connectTimeOutSeconds: 15
@@ -174,6 +179,11 @@ templateServiceClientConfig:
 
 chaosServiceClientConfig:
   baseUrl: ${CHAOS_SERVICE_BASE_URL:-http://localhost:8080}
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+seiServiceClientConfig:
+  baseUrl: ${SEI_SERVICE_BASE_URL:-http://localhost:8991}
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
@@ -323,6 +333,14 @@ notificationClient:
 logStreamingServiceConfig:
   baseUrl: http://localhost:8079
   serviceToken: token
+  threadPoolConfig:
+    corePoolSize: ${LOG_STREAMING_CLIENT_POOL_CORE_SIZE:-1}
+    maxPoolSize: ${LOG_STREAMING_CLIENT_POOL_MAX_SIZE:-50}
+    idleTime: ${LOG_STREAMING_CLIENT_POOL_IDLE_TIME:-30}
+    timeUnit: ${LOG_STREAMING_CLIENT_POOL_TIME_UNIT:-SECONDS}
+
+cannyApiConfig:
+  token: dummyToken
 
 outboxPollConfig:
   initialDelayInSeconds: 5
@@ -392,7 +410,8 @@ baseUrls:
   nextGenUiUrl: https://localhost:8181/ng/#/
   nextGenAuthUiUrl: http://localhost:8181/auth/#/
   webhookBaseUrl: http://localhost:7457/
-  ngManagerScmBaseUrl: ${HARNESS_SCM_BASE_URL:-http://localhost:7457/}
+  ngManagerInternalBaseUrl: ${HARNESS_NG_MANAGER_INTERNAL_URL:-http://localhost:7457/}
+  scmServiceBaseUrl: ${HARNESS_SCM_API_INTERNAL_URL:-http://localhost:3000/}
 
 ngAuthUIEnabled: false
 
@@ -516,7 +535,7 @@ pluginExecutionConfig:
       - ""
   gitCloneConfig:
     # Use rootless image only for K8 git clone
-    image: harness/drone-git:1.3.4-rootless
+    image: harness/drone-git:1.3.9-rootless
     entrypoint:
       - /usr/local/bin/clone
   apiUrl: https://localhost:8181/#/
@@ -526,4 +545,39 @@ signupDomainDenylistConfig:
   projectId: null
   bucketName: null
 
+queueServiceClientConfig:
+  httpClientConfig:
+    baseUrl: http://localhost:9544/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
+  envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
+  topic: ${HSQS_TOPIC:-ng}
 
+webhookPushEventHsqsDequeueConfig:
+  batchSize: ${WEBHOOK_PUSH_EVENT_DEQUE_BATCH_SIZE:-20}
+  threadSleepTimeInMillis: ${WEBHOOK_PUSH_EVENT_DEQUE_THREAD_SLEEP_TIME_IN_MILLIS:-30}
+
+webhookBranchHookEventHsqsDequeueConfig:
+  batchSize: ${WEBHOOK_BRANCH_HOOK_EVENT_DEQUE_BATCH_SIZE:-20}
+  threadSleepTimeInMillis: ${WEBHOOK_BRANCH_HOOK_EVENT_DEQUE_THREAD_SLEEP_TIME_IN_MILLIS:-30}
+
+useQueueServiceForWebhookTriggers: ${USE_QUEUE_SERVICE_FOR_WEBHOOK_TRIGGERS:-false}
+
+proxy:
+  enabled: false
+  host: localhost
+  port: 80
+  username: ""
+  password: ""
+  protocol: http
+
+awsServiceEndpointUrls:
+  enabled: false
+  endPointRegion: us-east-1
+  stsEndPointUrl: https://sts.us-east-1.amazonaws.com
+  ecsEndPointUrl: https://ecs.us-east-1.amazonaws.com
+  cloudwatchEndPointUrl: https://monitoring.us-east-1.amazonaws.com
+
+
+streamPerServiceConfiguration: ${PIE_STREAM_PER_SERVICE:- false}

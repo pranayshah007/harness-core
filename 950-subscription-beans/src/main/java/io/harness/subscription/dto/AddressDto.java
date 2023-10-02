@@ -11,6 +11,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -22,10 +25,12 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AddressDto {
-  private String line1;
-  private String line2;
-  private String city;
-  private String state;
-  private String country;
-  private String postalCode;
+  private static final String ADDRESS_PART_REGEX = "^[a-zA-Z0-9 \\-.,'&#()@!+]+$";
+
+  @NotNull @Pattern(regexp = ADDRESS_PART_REGEX) @Size(max = 46) private String line1;
+  @Pattern(regexp = ADDRESS_PART_REGEX) @Size(max = 46) private String line2;
+  @NotNull @Pattern(regexp = ADDRESS_PART_REGEX) @Size(max = 50) private String city;
+  @NotNull @Pattern(regexp = ADDRESS_PART_REGEX) @Size(max = 50) private String state;
+  @NotNull @Pattern(regexp = ADDRESS_PART_REGEX) @Size(max = 50) private String country;
+  @NotNull @Pattern(regexp = ADDRESS_PART_REGEX) @Size(max = 10) private String postalCode;
 }

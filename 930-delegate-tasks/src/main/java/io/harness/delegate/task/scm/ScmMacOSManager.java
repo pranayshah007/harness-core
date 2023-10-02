@@ -9,6 +9,7 @@ package io.harness.delegate.task.scm;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.grpc.client.SCMGrpcInterceptor;
 
 import io.grpc.ManagedChannel;
 import io.grpc.netty.NettyChannelBuilder;
@@ -29,6 +30,7 @@ public class ScmMacOSManager extends ScmUnixManager {
     return NettyChannelBuilder.forAddress(new DomainSocketAddress(socketAddress))
         .eventLoopGroup(klg)
         .channelType(KQueueDomainSocketChannel.class)
+        .intercept(SCMGrpcInterceptor.INTERCEPTOR)
         .usePlaintext()
         .withOption(ChannelOption.SO_KEEPALIVE, false)
         .build();

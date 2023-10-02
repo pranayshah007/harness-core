@@ -8,7 +8,7 @@
 package io.harness.ci.app;
 
 import io.harness.app.CIManagerConfiguration;
-import io.harness.ci.serializer.CiExecutionRegistrars;
+import io.harness.ci.execution.serializer.CiExecutionRegistrars;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;

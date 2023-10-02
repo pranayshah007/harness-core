@@ -18,6 +18,7 @@ java_library(
         "//970-ng-commons:module",
         "//980-commons:module",
         "//999-annotations:module",
+        "//clients/access-control/sdk:module",
         "//pipeline-service/modules/pms-contracts/src/main/proto:pms_contracts_java_proto",
         "@maven//:org_springframework_data_spring_data_commons",
     ],

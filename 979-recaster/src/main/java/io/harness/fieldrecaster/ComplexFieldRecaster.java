@@ -6,12 +6,18 @@
  */
 
 package io.harness.fieldrecaster;
+import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.CastedField;
 import io.harness.beans.RecasterMap;
 import io.harness.core.Recaster;
+import io.harness.exception.CastedFieldException;
+import io.harness.exception.ParameterFieldCastException;
 import io.harness.exceptions.RecasterException;
 import io.harness.utils.RecastReflectionUtils;
 
@@ -19,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public class ComplexFieldRecaster implements FieldRecaster {
@@ -50,7 +57,25 @@ public class ComplexFieldRecaster implements FieldRecaster {
         }
       }
     } catch (Exception e) {
-      throw new RecasterException("Exception while processing complex field", e);
+      throwErrorBasedOnException(e, cf);
+    }
+  }
+
+  private void throwErrorBasedOnException(Exception e, CastedField cf) {
+    if (e instanceof ParameterFieldCastException) {
+      String fieldName = cf.getField().getName();
+      String message = "Exception while resolving the field [%s]; Cause: " + e.getMessage();
+      // This exception is thrown when there's a class cast error in field of type parameterField
+      throw new RecasterException(format(message, fieldName), e, fieldName, message);
+    } else if (e instanceof CastedFieldException) {
+      // We are building path of field by appending the field name from the caught exception
+      String newFieldPath = cf.getField().getName() + "." + ((CastedFieldException) e).getFieldPath();
+      String messageWithoutFieldPath = ((CastedFieldException) e).getMessageWithoutFieldPath();
+      throw new RecasterException(
+          format(messageWithoutFieldPath, newFieldPath), e, newFieldPath, messageWithoutFieldPath);
+    } else {
+      throw new RecasterException(
+          String.format("Exception while processing complex field [%s]", cf.getField().getName()), e);
     }
   }
 

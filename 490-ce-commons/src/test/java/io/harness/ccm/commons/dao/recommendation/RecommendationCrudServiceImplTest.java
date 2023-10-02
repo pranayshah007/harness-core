@@ -112,10 +112,11 @@ public class RecommendationCrudServiceImplTest extends CategoryTest {
     JobConstants jobConstants = mock(JobConstants.class);
     when(jobConstants.getJobEndTime()).thenReturn(NOW.toEpochMilli());
 
-    doNothing().when(k8sRecommendationDAO).upsertCeRecommendation(any(), any(), any(), any(), any(), any());
+    doNothing().when(k8sRecommendationDAO).upsertCeRecommendation(any(), any(), any(), any(), any(), any(), any());
 
-    recommendationCrudService.upsertNodeRecommendation(UUID, jobConstants, nodePoolId, CLUSTER_NAME, stats);
-    verify(k8sRecommendationDAO).upsertCeRecommendation(any(), any(), any(), stringCaptor.capture(), any(), any());
+    recommendationCrudService.upsertNodeRecommendation(UUID, jobConstants, nodePoolId, CLUSTER_NAME, stats, "");
+    verify(k8sRecommendationDAO)
+        .upsertCeRecommendation(any(), any(), any(), stringCaptor.capture(), any(), any(), any());
     assertThat(stringCaptor.getValue()).isNotNull().isEqualTo(CLUSTER_NAME);
   }
 

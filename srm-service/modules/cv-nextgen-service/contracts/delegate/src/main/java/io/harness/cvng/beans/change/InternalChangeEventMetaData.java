@@ -29,6 +29,10 @@ public class InternalChangeEventMetaData extends ChangeEventMetadata {
   InternalChangeEvent internalChangeEvent;
   Long eventStartTime;
   Long eventEndTime;
+  String pipelineId;
+  String stageStepId;
+  String stageId;
+  String planExecutionId;
 
   @Override
   public ChangeSourceType getType() {

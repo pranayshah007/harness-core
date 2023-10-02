@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.pipeline.steps;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
@@ -19,6 +18,9 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.accesscontrol.principals.PrincipalType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
@@ -78,6 +80,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @Slf4j
 public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAndRbac<MultiDeploymentStepParameters> {
   @Inject private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
@@ -186,7 +190,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
       // This case is when the deployment is of type single service multiple environment/infras
       publishSvcEnvCount(ambiance, 1, MultiDeploymentSpawnerUtils.getEnvCount(environmentsMapList));
       return getChildrenExecutionResponseForMultiEnvironment(
-          stepParameters, children, environmentsMapList, childNodeId);
+          stepParameters, children, environmentsMapList, childNodeId, ambiance);
     }
 
     if (environmentsMapList.isEmpty()) {
@@ -216,7 +220,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
           MultiDeploymentSpawnerUtils.addServiceOverridesToMap(serviceMap, serviceRefToOverrides.get(serviceRef));
         }
         children.add(getChild(childNodeId, currentIteration, totalIterations, serviceMap,
-            MultiDeploymentSpawnerUtils.MULTI_SERVICE_DEPLOYMENT));
+            MultiDeploymentSpawnerUtils.MULTI_SERVICE_DEPLOYMENT, ambiance));
         currentIteration++;
       }
       publishSvcEnvCount(ambiance, servicesMap.size(), 1);
@@ -242,8 +246,8 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
       }
       for (EnvironmentMapResponse environmentMap : environmentsMapList) {
         for (Map<String, String> serviceMap : servicesMap) {
-          children.add(
-              getChildForMultiServiceInfra(childNodeId, currentIteration, totalIterations, serviceMap, environmentMap));
+          children.add(getChildForMultiServiceInfra(
+              childNodeId, currentIteration, totalIterations, serviceMap, environmentMap, ambiance));
           currentIteration++;
         }
       }
@@ -251,8 +255,8 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
       maxConcurrency = environmentsMapList.size();
       for (Map<String, String> serviceMap : servicesMap) {
         for (EnvironmentMapResponse environmentMap : environmentsMapList) {
-          children.add(
-              getChildForMultiServiceInfra(childNodeId, currentIteration, totalIterations, serviceMap, environmentMap));
+          children.add(getChildForMultiServiceInfra(
+              childNodeId, currentIteration, totalIterations, serviceMap, environmentMap, ambiance));
           currentIteration++;
         }
       }
@@ -260,8 +264,8 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
       maxConcurrency = 1;
       for (EnvironmentMapResponse environmentMap : environmentsMapList) {
         for (Map<String, String> serviceMap : servicesMap) {
-          children.add(
-              getChildForMultiServiceInfra(childNodeId, currentIteration, totalIterations, serviceMap, environmentMap));
+          children.add(getChildForMultiServiceInfra(
+              childNodeId, currentIteration, totalIterations, serviceMap, environmentMap, ambiance));
           currentIteration++;
         }
       }
@@ -271,7 +275,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
 
   private ChildrenExecutableResponse getChildrenExecutionResponseForMultiEnvironment(
       MultiDeploymentStepParameters stepParameters, List<ChildrenExecutableResponse.Child> children,
-      List<EnvironmentMapResponse> environmentsMapList, String childNodeId) {
+      List<EnvironmentMapResponse> environmentsMapList, String childNodeId, Ambiance ambiance) {
     int currentIteration = 0;
     int totalIterations = environmentsMapList.size();
     int maxConcurrency = 0;
@@ -296,7 +300,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
                 .getValue());
       }
       children.add(getChild(childNodeId, currentIteration, totalIterations, environmentMap,
-          MultiDeploymentSpawnerUtils.MULTI_ENV_DEPLOYMENT));
+          MultiDeploymentSpawnerUtils.MULTI_ENV_DEPLOYMENT, ambiance));
       currentIteration++;
     }
     return ChildrenExecutableResponse.newBuilder().addAllChildren(children).setMaxConcurrency(maxConcurrency).build();
@@ -375,7 +379,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
         Map<String, String> serviceMatrixMetadata =
             CollectionUtils.emptyIfNull(serviceToMatrixMetadataMap.get(serviceRef));
         children.add(getChildForMultiServiceInfra(
-            childNodeId, currentIteration++, totalIterations, serviceMatrixMetadata, envMap));
+            childNodeId, currentIteration++, totalIterations, serviceMatrixMetadata, envMap, ambiance));
       }
     }
     return ChildrenExecutableResponse.newBuilder().addAllChildren(children).setMaxConcurrency(maxConcurrency).build();
@@ -463,20 +467,24 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
     }
   }
 
-  private ChildrenExecutableResponse.Child getChild(
-      String childNodeId, int currentIteration, int totalIterations, Map<String, String> serviceMap, String subType) {
+  private ChildrenExecutableResponse.Child getChild(String childNodeId, int currentIteration, int totalIterations,
+      Map<String, String> serviceMap, String subType, Ambiance ambiance) {
+    StrategyMetadata metadata = StrategyMetadata.newBuilder()
+                                    .setCurrentIteration(currentIteration)
+                                    .setTotalIterations(totalIterations)
+                                    .setMatrixMetadata(MatrixMetadata.newBuilder()
+                                                           .setSubType(subType)
+                                                           .addMatrixCombination(currentIteration)
+                                                           .addAllMatrixKeysToSkipInName(SKIP_KEYS_LIST_FROM_STAGE_NAME)
+                                                           .putAllMatrixValues(serviceMap)
+                                                           .build())
+                                    .build();
+    String nodeName =
+        AmbianceUtils.getStrategyPostFixUsingMetadata(metadata, AmbianceUtils.shouldUseMatrixFieldName(ambiance));
+    metadata = metadata.toBuilder().setIdentifierPostFix(nodeName).build();
     return ChildrenExecutableResponse.Child.newBuilder()
         .setChildNodeId(childNodeId)
-        .setStrategyMetadata(StrategyMetadata.newBuilder()
-                                 .setCurrentIteration(currentIteration)
-                                 .setTotalIterations(totalIterations)
-                                 .setMatrixMetadata(MatrixMetadata.newBuilder()
-                                                        .setSubType(subType)
-                                                        .addMatrixCombination(currentIteration)
-                                                        .addAllMatrixKeysToSkipInName(SKIP_KEYS_LIST_FROM_STAGE_NAME)
-                                                        .putAllMatrixValues(serviceMap)
-                                                        .build())
-                                 .build())
+        .setStrategyMetadata(metadata)
         .build();
   }
 
@@ -491,7 +499,8 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
   }
 
   private ChildrenExecutableResponse.Child getChildForMultiServiceInfra(String childNodeId, int currentIteration,
-      int totalIterations, Map<String, String> serviceMap, EnvironmentMapResponse environmentMapResponse) {
+      int totalIterations, Map<String, String> serviceMap, EnvironmentMapResponse environmentMapResponse,
+      Ambiance ambiance) {
     Map<String, String> matrixMetadataMap = new HashMap<>(serviceMap);
     Map<String, String> environmentMap = environmentMapResponse.getEnvironmentsMapList();
     String serviceRef = MultiDeploymentSpawnerUtils.getServiceRef(serviceMap);
@@ -512,7 +521,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
     } else {
       subType = MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT;
     }
-    return getChild(childNodeId, currentIteration, totalIterations, matrixMetadataMap, subType);
+    return getChild(childNodeId, currentIteration, totalIterations, matrixMetadataMap, subType, ambiance);
   }
 
   private List<EnvironmentMapResponse> getEnvironmentMapList(EnvironmentsYaml environmentsYaml) {

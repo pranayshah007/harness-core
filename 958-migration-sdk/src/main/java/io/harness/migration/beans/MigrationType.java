@@ -11,7 +11,8 @@ public enum MigrationType {
   MongoMigration("MongoMigration"),
   MongoBGMigration("BackgroundMongoMigration"),
   TimeScaleMigration("TimeScaleDBMigration"),
-  TimeScaleBGMigration("BackgroundTimeScaleDBMigration");
+  TimeScaleBGMigration("BackgroundTimeScaleDBMigration"),
+  ClickhouseMigration("ClickhouseDBMigration");
 
   private final String migration;
 

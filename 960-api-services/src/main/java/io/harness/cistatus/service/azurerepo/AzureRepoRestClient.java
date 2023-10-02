@@ -26,6 +26,13 @@ public interface AzureRepoRestClient {
       @Path("repositoryId") String repositoryId, @Path("commitId") String commitId,
       @Body Map<String, Object> parameters);
 
+  @POST(
+      "{organization}/{project}/_apis/git/repositories/{repositoryId}/pullRequests/{pullRequestId}/statuses?api-version=4.1-preview.1")
+  Call<StatusCreationResponse>
+  createPRStatus(@Header("Authorization") String authorization, @Path("organization") String organization,
+      @Path("project") String project, @Path("repositoryId") String repositoryId,
+      @Path("pullRequestId") String pullRequestId, @Body Map<String, Object> parameters);
+
   @PATCH("{organization}/{project}/_apis/git/repositories/{repositoryId}/pullrequests/{prNumber}?api-version=6.0")
   @Headers("Accept: application/json")
   Call<Object> mergePR(@Header("Authorization") String authorization, @Path("organization") String organization,

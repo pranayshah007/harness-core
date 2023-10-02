@@ -31,11 +31,13 @@ public class AzureWebAppSlotDeploymentStepParameters
     extends AzureWebAppSlotDeploymentBaseStepInfo implements SpecParameters, AzureWebAppStepParameters {
   ParameterField<String> webApp;
   ParameterField<String> deploymentSlot;
+  ParameterField<Boolean> clean;
   @Builder(builderMethodName = "infoBuilder")
   public AzureWebAppSlotDeploymentStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ParameterField<String> webApp, ParameterField<String> deploymentSlot) {
+      ParameterField<String> webApp, ParameterField<String> deploymentSlot, ParameterField<Boolean> clean) {
     super(delegateSelectors);
     this.webApp = webApp;
     this.deploymentSlot = deploymentSlot;
+    this.clean = clean;
   }
 }

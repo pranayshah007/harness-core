@@ -16,53 +16,64 @@ import static io.harness.yaml.schema.beans.SchemaConstants.TEMPLATE_NODE;
 import io.harness.EntityType;
 import io.harness.TemplateServiceConfiguration;
 import io.harness.account.AccountClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.common.EntityTypeConstants;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.exception.JsonSchemaException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.pipeline.yamlschema.PipelineYamlSchemaServiceClient;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.remote.client.NGRestUtils;
-import io.harness.serializer.JsonUtils;
+import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.TemplateYamlSchemaMergeHelper;
 import io.harness.template.mappers.TemplateChildEntityTypeToEntityTypeMapper;
+import io.harness.template.utils.TemplateSchemaFetcher;
+import io.harness.yaml.individualschema.AbstractStaticSchemaParser;
+import io.harness.yaml.individualschema.PipelineSchemaRequest;
+import io.harness.yaml.individualschema.TemplateSchemaMetadata;
+import io.harness.yaml.individualschema.TemplateSchemaParserFactory;
 import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.client.YamlSchemaClient;
 import io.harness.yaml.utils.JsonPipelineUtils;
 import io.harness.yaml.validator.YamlSchemaValidator;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.io.Resources;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY, HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @Slf4j
 @OwnedBy(CDC)
 public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
   private PipelineYamlSchemaServiceClient pipelineYamlSchemaServiceClient;
   @Inject TemplateServiceConfiguration templateServiceConfiguration;
-  private final String TEMPLATE_JSON = "template.json";
+  @Inject TemplateSchemaFetcher templateSchemaFetcher;
+
+  @Inject TemplateSchemaParserFactory templateSchemaParserFactory;
   Map<String, YamlSchemaClient> yamlSchemaClientMapper;
   private YamlSchemaProvider yamlSchemaProvider;
   private YamlSchemaValidator yamlSchemaValidator;
   private AccountClient accountClient;
   Integer allowedParallelStages;
-  private final String TEMPLATE_JSON_PATH = "static-schema/template.json";
-  private final String PRE_QA = "stress";
 
   @Inject
   public NGTemplateSchemaServiceImpl(PipelineYamlSchemaServiceClient pipelineYamlSchemaServiceClient,
@@ -160,34 +171,62 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
   }
 
   public void validateYamlSchemaInternal(TemplateEntity templateEntity) {
-    String accountIdentifier = templateEntity.getAccountIdentifier();
-    String projectIdentifier = templateEntity.getProjectIdentifier();
-    String orgIdentifier = templateEntity.getOrgIdentifier();
-    String templateYaml = templateEntity.getYaml();
+    validateYamlSchema(templateEntity.getAccountIdentifier(), templateEntity.getProjectIdentifier(),
+        templateEntity.getOrgIdentifier(), templateEntity.getYaml(), templateEntity.getTemplateScope(),
+        templateEntity.getChildType(), templateEntity.getTemplateEntityType(),
+        getSchemaVersionFromHarnessYamlVersion(templateEntity.getHarnessVersion()));
+  }
+
+  public void validateYamlSchemaInternal(GlobalTemplateEntity globalTemplateEntity) {
+    validateYamlSchema(globalTemplateEntity.getAccountIdentifier(), globalTemplateEntity.getProjectIdentifier(),
+        globalTemplateEntity.getOrgIdentifier(), globalTemplateEntity.getYaml(),
+        globalTemplateEntity.getTemplateScope(), globalTemplateEntity.getChildType(),
+        globalTemplateEntity.getTemplateEntityType(),
+        getSchemaVersionFromHarnessYamlVersion(globalTemplateEntity.getHarnessVersion()));
+  }
+
+  @Override
+  public ObjectNode getIndividualStaticSchema(String nodeGroup, String nodeType, String version) {
+    AbstractStaticSchemaParser templateSchemaParser = templateSchemaParserFactory.getTemplateSchemaParser(version);
+    return templateSchemaParser.getIndividualSchema(
+        PipelineSchemaRequest.builder()
+            .individualSchemaMetadata(TemplateSchemaMetadata.builder().nodeGroup(nodeGroup).nodeType(nodeType).build())
+            .build());
+  }
+
+  void validateYamlSchema(String accountIdentifier, String projectIdentifier, String orgIdentifier, String templateYaml,
+      Scope templateScope, String childType, TemplateEntityType templateEntityType, String version) {
     long start = System.currentTimeMillis();
     if (TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
             FeatureName.DISABLE_TEMPLATE_SCHEMA_VALIDATION, accountIdentifier, accountClient)) {
       return;
     }
     try {
-      Scope scope = templateEntity.getTemplateScope() != null ? templateEntity.getTemplateScope()
-          : projectIdentifier != null                         ? Scope.PROJECT
-          : orgIdentifier != null                             ? Scope.ORG
-                                                              : Scope.ACCOUNT;
+      Scope scope = templateScope != null ? templateScope
+          : projectIdentifier != null     ? Scope.PROJECT
+          : orgIdentifier != null         ? Scope.ORG
+                                          : Scope.ACCOUNT;
 
       JsonNode schema;
       // Use Static schema if ff is enabled.
       if (TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
               FeatureName.PIE_STATIC_YAML_SCHEMA, accountIdentifier, accountClient)) {
-        schema = getStaticYamlSchema(accountIdentifier, orgIdentifier, projectIdentifier, templateEntity.getChildType(),
-            templateEntity.getTemplateEntityType(), scope, "v0");
+        String nodeGroup = templateEntityType.getNodeGroup();
+        String nodeType = getNodeType(templateEntityType, childType);
+        schema = getIndividualStaticSchema(nodeGroup, nodeType, version);
+        if (EmptyPredicate.isEmpty(schema)) {
+          // FallBack logic - If we didn't find 'nodeGroup/nodeType' key in the parser, we will use template.json
+          log.warn(String.format(
+              "Individual Schema not found for v0 Templates with %s nodeGroup and %s nodeType", nodeGroup, nodeType));
+          schema = templateSchemaFetcher.getStaticYamlSchema(version);
+        }
       } else {
         // Use traditional way of generating schema if ff is off
-        schema = getTemplateSchema(accountIdentifier, projectIdentifier, orgIdentifier, scope,
-            templateEntity.getChildType(), templateEntity.getTemplateEntityType());
+        schema = getTemplateSchema(
+            accountIdentifier, projectIdentifier, orgIdentifier, scope, childType, templateEntityType);
       }
       String schemaString = JsonPipelineUtils.writeJsonString(schema);
-      if (templateEntity.getTemplateEntityType().equals(TemplateEntityType.PIPELINE_TEMPLATE)) {
+      if (templateEntityType.equals(TemplateEntityType.PIPELINE_TEMPLATE)) {
         String pathToJsonNode = TEMPLATE_NODE + "/" + SPEC_NODE + "/" + STAGES_NODE;
         yamlSchemaValidator.validate(templateYaml, schemaString,
             TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
@@ -211,80 +250,21 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
     }
   }
 
-  public JsonNode getStaticYamlSchema(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String templateChildType, TemplateEntityType entityType, Scope scope, String version) {
-    String env = System.getenv("ENV");
-    log.info(String.format("Current Environment :- %s ", env));
-    if (PRE_QA.equals(env)) {
-      String fileUrl = calculateFileURL(entityType, version);
-      try {
-        // Read the JSON file as JsonNode
-        log.info(String.format("Fetching static schema with file URL %s ", fileUrl));
-        return JsonPipelineUtils.getMapper().readTree(new URL(fileUrl));
-      } catch (Exception ex) {
-        log.error(String.format("Not able to read template schema file from %s path for stress env", fileUrl));
-      }
+  private String getNodeType(TemplateEntityType templateEntityType, String childType) {
+    Set<TemplateEntityType> templatesWithoutNodeType = new HashSet<>(
+        Arrays.asList(TemplateEntityType.CUSTOM_DEPLOYMENT_TEMPLATE, TemplateEntityType.MONITORED_SERVICE_TEMPLATE,
+            TemplateEntityType.SECRET_MANAGER_TEMPLATE, TemplateEntityType.STEPGROUP_TEMPLATE,
+            TemplateEntityType.ARTIFACT_SOURCE_TEMPLATE, TemplateEntityType.PIPELINE_TEMPLATE));
+    if (templatesWithoutNodeType.contains(templateEntityType)) {
+      return null;
     }
-    log.info("Fetching static schema from resource file");
-    return getStaticYamlSchemaFromResource(
-        accountIdentifier, projectIdentifier, orgIdentifier, templateChildType, entityType, scope);
+    return childType;
   }
 
-  /*
-  Based on environment and entityType, URL is created. For qa/stress branch is quality-assurance, for all other
-  supported env branch will be master
-  */
-  public String calculateFileURL(TemplateEntityType entityType, String version) {
-    String fileURL = templateServiceConfiguration.getStaticSchemaFileURL();
-
-    String entityTypeJson = "";
-    switch (entityType) {
-      case STEP_TEMPLATE:
-      case STAGE_TEMPLATE:
-      case STEPGROUP_TEMPLATE:
-      case PIPELINE_TEMPLATE:
-      case CUSTOM_DEPLOYMENT_TEMPLATE:
-      case ARTIFACT_SOURCE_TEMPLATE:
-        entityTypeJson = TEMPLATE_JSON;
-        break;
-      default:
-        entityTypeJson = TEMPLATE_JSON;
-        log.error("Code should never reach here {}", entityType);
+  private String getSchemaVersionFromHarnessYamlVersion(String harnessYamlVersion) {
+    if (harnessYamlVersion.equals(HarnessYamlVersion.V0)) {
+      return "v0";
     }
-
-    return String.format(fileURL, version, entityTypeJson);
-  }
-
-  public JsonNode fetchFile(String filePath) throws IOException {
-    ClassLoader classLoader = this.getClass().getClassLoader();
-    String staticJson =
-        Resources.toString(Objects.requireNonNull(classLoader.getResource(filePath)), StandardCharsets.UTF_8);
-    return JsonUtils.asObject(staticJson, JsonNode.class);
-  }
-  private JsonNode getStaticYamlSchemaFromResource(String accountIdentifier, String projectIdentifier,
-      String orgIdentifier, String templateChildType, TemplateEntityType entityType, Scope scope) {
-    String filePath;
-    switch (entityType) {
-      case STEP_TEMPLATE:
-      case STEPGROUP_TEMPLATE:
-      case PIPELINE_TEMPLATE:
-      case STAGE_TEMPLATE:
-      case MONITORED_SERVICE_TEMPLATE:
-      case SECRET_MANAGER_TEMPLATE:
-      case ARTIFACT_SOURCE_TEMPLATE:
-      case CUSTOM_DEPLOYMENT_TEMPLATE:
-        filePath = TEMPLATE_JSON_PATH;
-        break;
-      default:
-        return getTemplateSchema(
-            accountIdentifier, projectIdentifier, orgIdentifier, scope, templateChildType, entityType);
-    }
-
-    try {
-      return fetchFile(filePath);
-    } catch (IOException ex) {
-      log.error("Not able to read json from {} path", filePath);
-    }
-    return getTemplateSchema(accountIdentifier, projectIdentifier, orgIdentifier, scope, templateChildType, entityType);
+    return "v1";
   }
 }

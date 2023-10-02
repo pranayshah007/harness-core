@@ -10,8 +10,11 @@ package io.harness.gitaware.helper;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
@@ -41,6 +44,7 @@ import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.log4j.Log4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PL)
 @Log4j
 @Singleton
@@ -51,6 +55,7 @@ public class GitAwareEntityHelper {
   public static final String FILE_PATH_INVALID_HINT = "Please check if the requested filepath is valid.";
   public static final String FILE_PATH_INVALID_EXTENSION_EXPLANATION =
       "Harness File should have [.yaml] or [.yml] extension.";
+  public static final String READ_ME_FILE_PATH_INVALID_EXTENSION_EXPLANATION = "Harness File should have [.md].";
 
   public static final String FILE_PATH_INVALID_EXTENSION_ERROR_FORMAT = "FilePath [%s] doesn't have right extension.";
 
@@ -76,20 +81,22 @@ public class GitAwareEntityHelper {
     boolean getFileContentOnly = gitContextRequestParams.isGetOnlyFileContent();
 
     log.info(String.format("Fetching Remote Entity : %s , %s , %s , %s", entityType, repoName, branch, filePath));
-    ScmGetFileResponse scmGetFileResponse = scmGitSyncHelper.getFileByBranch(
-        Scope.builder()
-            .accountIdentifier(scope.getAccountIdentifier())
-            .orgIdentifier(scope.getOrgIdentifier())
-            .projectIdentifier(scope.getProjectIdentifier())
-            .build(),
-        repoName, branch, commitId, filePath, connectorRef, loadFromCache, entityType, contextMap, getFileContentOnly);
+    ScmGetFileResponse scmGetFileResponse =
+        scmGitSyncHelper.getFileByBranch(Scope.builder()
+                                             .accountIdentifier(scope.getAccountIdentifier())
+                                             .orgIdentifier(scope.getOrgIdentifier())
+                                             .projectIdentifier(scope.getProjectIdentifier())
+                                             .build(),
+            repoName, branch, commitId, filePath, connectorRef, loadFromCache, entityType, contextMap,
+            getFileContentOnly, gitContextRequestParams.isApplyRepoAllowListFilter());
     entity.setData(scmGetFileResponse.getFileContent());
     GitAwareContextHelper.updateScmGitMetaData(scmGetFileResponse.getGitMetaData());
     return entity;
   }
 
   // todo: make pipeline import call this method too
-  public String fetchYAMLFromRemote(String accountId, String orgIdentifier, String projectIdentifier) {
+  public String fetchYAMLFromRemote(
+      String accountId, String orgIdentifier, String projectIdentifier, boolean applyRepoAllowListFilter) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     Scope scope = Scope.of(accountId, orgIdentifier, projectIdentifier);
     GitContextRequestParams gitContextRequestParams = GitContextRequestParams.builder()
@@ -97,6 +104,7 @@ public class GitAwareEntityHelper {
                                                           .connectorRef(gitEntityInfo.getConnectorRef())
                                                           .filePath(gitEntityInfo.getFilePath())
                                                           .repoName(gitEntityInfo.getRepoName())
+                                                          .applyRepoAllowListFilter(applyRepoAllowListFilter)
                                                           .build();
     return fetchYAMLFromRemote(scope, gitContextRequestParams, Collections.emptyMap());
   }
@@ -128,7 +136,8 @@ public class GitAwareEntityHelper {
                                              .orgIdentifier(scope.getOrgIdentifier())
                                              .projectIdentifier(scope.getProjectIdentifier())
                                              .build(),
-            repoName, branch, commitId, filePath, connectorRef, loadFromCache, entityType, contextMap, false);
+            repoName, branch, commitId, filePath, connectorRef, loadFromCache, entityType, contextMap, false,
+            gitContextRequestParams.isApplyRepoAllowListFilter());
     GitAwareContextHelper.updateScmGitMetaData(scmGetFileResponse.getGitMetaData());
     return scmGetFileResponse.getFileContent();
   }
@@ -232,16 +241,20 @@ public class GitAwareEntityHelper {
 
   public Map<String, GitAware> fetchEntitiesFromRemote(
       String accountIdentifier, Map<String, FetchRemoteEntityRequest> remoteTemplatesList) {
-    ScmGetBatchFileRequest scmGetBatchFileRequest = prepareScmGetBatchFilesRequest(remoteTemplatesList);
-
+    ScmGetBatchFileRequest scmGetBatchFileRequest = prepareScmGetBatchFilesRequest(remoteTemplatesList, false);
     ScmGetBatchFilesResponse scmGetBatchFilesResponse =
         scmGitSyncHelper.getBatchFilesByBranch(accountIdentifier, scmGetBatchFileRequest);
-
     return processScmGetBatchFiles(scmGetBatchFilesResponse.getBatchFilesResponse(), remoteTemplatesList);
   }
 
+  public ScmGetBatchFilesResponse fetchEntitiesFromRemoteIncludingReadMeFile(
+      String accountIdentifier, Map<String, FetchRemoteEntityRequest> remoteTemplatesList) {
+    ScmGetBatchFileRequest scmGetBatchFileRequest = prepareScmGetBatchFilesRequest(remoteTemplatesList, true);
+    return scmGitSyncHelper.getBatchFilesByBranch(accountIdentifier, scmGetBatchFileRequest);
+  }
+
   private ScmGetBatchFileRequest prepareScmGetBatchFilesRequest(
-      Map<String, FetchRemoteEntityRequest> remoteTemplatesList) {
+      Map<String, FetchRemoteEntityRequest> remoteTemplatesList, boolean fetchReadMeFile) {
     Map<String, ScmGetFileRequest> scmGetBatchFilesRequestMap = new HashMap<>();
 
     for (Map.Entry<String, FetchRemoteEntityRequest> remoteTemplateRequestEntry : remoteTemplatesList.entrySet()) {
@@ -262,7 +275,11 @@ public class GitAwareEntityHelper {
       if (isNullOrDefault(filePath)) {
         throw new InvalidRequestException("No file path provided.");
       }
-      validateFilePathHasCorrectExtension(filePath);
+      if (!fetchReadMeFile) {
+        validateFilePathHasCorrectExtension(filePath);
+      } else {
+        validateFilePathHasCorrectExtensionWithReadMe(filePath);
+      }
       String connectorRef = getFileGitContextRequestParams.getConnectorRef();
       boolean loadFromCache = getFileGitContextRequestParams.isLoadFromCache();
       EntityType entityType = getFileGitContextRequestParams.getEntityType();
@@ -294,13 +311,10 @@ public class GitAwareEntityHelper {
     getBatchFilesResponse.forEach((identifier, scmGetFileResponse) -> {
       GitAware gitAwareEntity = remoteTemplatesList.get(identifier).getEntity();
       gitAwareEntity.setData(scmGetFileResponse.getFileContent());
-
       batchFilesResponse.put(identifier, gitAwareEntity);
     });
-
     return batchFilesResponse;
   }
-
   private boolean isNullOrDefault(String val) {
     return isEmpty(val) || val.equals(DEFAULT);
   }
@@ -322,6 +336,16 @@ public class GitAwareEntityHelper {
     }
   }
 
+  // Allowing README.md file
+  @VisibleForTesting
+  void validateFilePathHasCorrectExtensionWithReadMe(String filePath) {
+    if (!filePath.endsWith(".yaml") && !filePath.endsWith(".yml") && !filePath.endsWith(".md")) {
+      throw NestedExceptionUtils.hintWithExplanationException(FILE_PATH_INVALID_HINT,
+          FILE_PATH_INVALID_EXTENSION_EXPLANATION,
+          new InvalidRequestException(String.format(FILE_PATH_INVALID_EXTENSION_ERROR_FORMAT, filePath)));
+    }
+  }
+
   public String getWorkingBranch(String repoName) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     // If there's static branch present for any template, then it takes highest precedence
@@ -336,5 +360,10 @@ public class GitAwareEntityHelper {
       return branchName;
     }
     return gitEntityInfo.getParentEntityRepoName().equals(repoName) ? branchName : "";
+  }
+
+  public void validateRepo(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef, String repo) {
+    scmGitSyncHelper.validateRepo(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repo);
   }
 }

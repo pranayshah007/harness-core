@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cf.CfClientModule;
+import io.harness.delegate.authenticator.DelegateSecretManager;
 import io.harness.delegate.authenticator.DelegateTokenAuthenticatorImpl;
 import io.harness.event.MessageProcessorType;
 import io.harness.event.grpc.EventPublisherServerImpl;
@@ -38,6 +39,7 @@ import io.harness.metrics.modules.MetricsModule;
 import io.harness.metrics.service.api.MetricsPublisher;
 import io.harness.persistence.HPersistence;
 import io.harness.security.DelegateTokenAuthenticator;
+import io.harness.service.impl.DelegateSecretManagerImpl;
 import io.harness.service.impl.agent.mtls.AgentMtlsEndpointServiceReadOnlyImpl;
 import io.harness.service.intfc.AgentMtlsEndpointService;
 import io.harness.threading.ExecutorModule;
@@ -129,6 +131,7 @@ public class EventServiceModule extends AbstractModule {
     bind(MetricsPublisher.class).to(EventServiceMetricsPublisher.class).in(Scopes.SINGLETON);
 
     bindCFServices();
+    bind(DelegateSecretManager.class).to(DelegateSecretManagerImpl.class);
   }
 
   @Provides

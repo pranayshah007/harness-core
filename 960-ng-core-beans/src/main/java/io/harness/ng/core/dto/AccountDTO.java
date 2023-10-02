@@ -80,12 +80,20 @@ public class AccountDTO {
   @VariableExpression(skipVariableExpression = true)
   private Integer sessionTimeoutInMinutes;
 
+  @Schema(description = "Specifies if Account has public access enabled.")
+  @VariableExpression(skipVariableExpression = true)
+  boolean publicAccessEnabled;
+
+  @Schema(description = "Specifies if Account has harness support usergroup access.")
+  @VariableExpression(skipVariableExpression = true)
+  boolean isHarnessSupportAccessAllowed;
+
   @Builder
   public AccountDTO(String identifier, String name, String companyName, String cluster,
       DefaultExperience defaultExperience, boolean isCrossGenerationAccessEnabled,
       AuthenticationMechanism authenticationMechanism, ServiceAccountConfig serviceAccountConfig,
       boolean isNextGenEnabled, boolean isProductLed, boolean isTwoFactorAdminEnforced, long createdAt, String ringName,
-      Integer sessionTimeoutInMinutes) {
+      Integer sessionTimeoutInMinutes, boolean publicAccessEnabled) {
     this.identifier = identifier;
     this.name = name;
     this.companyName = companyName;
@@ -100,5 +108,6 @@ public class AccountDTO {
     this.ringName = ringName;
     this.createdAt = createdAt;
     this.sessionTimeoutInMinutes = sessionTimeoutInMinutes;
+    this.publicAccessEnabled = publicAccessEnabled;
   }
 }

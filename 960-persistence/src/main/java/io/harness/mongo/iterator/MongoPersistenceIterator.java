@@ -24,8 +24,11 @@ import static java.lang.System.currentTimeMillis;
 import static java.time.Duration.ofMillis;
 import static java.time.Duration.ofSeconds;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.iterator.PersistenceIterator;
 import io.harness.iterator.PersistentIrregularIterable;
 import io.harness.iterator.PersistentIterable;
@@ -57,6 +60,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.client.RedisException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(HarnessTeam.PL)
 @Builder
 @Slf4j
@@ -113,6 +117,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         executorService.submit(this::process);
         break;
       case LOOP:
+      case REDIS_BATCH:
         notifyAll();
         break;
       default:
@@ -195,7 +200,8 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
           break;
         }
 
-        T next = persistenceProvider.findInstance(clazz, fieldName, filterExpander, isDelegateTaskMigrationEnabled);
+        T next = persistenceProvider.findInstance(
+            clazz, fieldName, filterExpander, unsorted, isDelegateTaskMigrationEnabled);
 
         long sleepMillis = calculateSleepDuration(next).toMillis();
         // Do not sleep with 0, it is actually infinite sleep
@@ -210,7 +216,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         Thread.currentThread().interrupt();
         break;
       } catch (Throwable exception) {
-        log.error("Exception occurred while processing iterator", exception);
+        log.debug("Exception occurred while processing iterator", exception);
         iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
         sleep(ofSeconds(1));
       }
@@ -270,11 +276,11 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         try {
           handler.handle(entity);
         } catch (RuntimeException exception) {
-          log.error("Catch and handle all exceptions in the entity handler", exception);
+          log.debug("Catch and handle all exceptions in the entity handler");
           iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
         }
       } catch (Throwable exception) {
-        log.error("Exception while processing entity", exception);
+        log.debug("Exception while processing entity", exception);
         iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
       } finally {
         semaphore.release();
@@ -349,7 +355,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         log.debug("Redis Batch Iterator Mode - time to acquire Redis lock {}", processTime);
 
         startTime = currentTimeMillis();
-        Iterator<T> docItr = persistenceProvider.obtainNextInstances(clazz, fieldName, filterExpander, limit);
+        Iterator<T> docItr = persistenceProvider.obtainNextInstances(clazz, fieldName, filterExpander, unsorted, limit);
         processTime = currentTimeMillis() - startTime;
         log.debug("Redis Batch Iterator Mode - time to acquire {} docs is {}", limit, processTime);
 
@@ -376,7 +382,13 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
       // If there were no docs available then sleep for
       // the configured threadPool interval duration.
       if (docIds.isEmpty()) {
-        sleep(threadPoolIntervalInSeconds);
+        synchronized (this) {
+          try {
+            wait(threadPoolIntervalInSeconds.toMillis());
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+        }
       }
     }
   }
@@ -437,7 +449,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         // Work on this entity.
         handler.handle(entity);
       } catch (Exception exception) {
-        log.error("Catch and handle all exceptions in the entity handler", exception);
+        log.debug("Catch and handle all exceptions in the entity handler", exception);
         iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
       } finally {
         semaphore.release();
@@ -566,7 +578,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         log.debug("Done with entity but took too long acceptable {}", acceptableExecutionTime.toMillis());
       }
     } catch (Exception exception) {
-      log.error("Exception while recording the processing of entity", exception);
+      log.debug("Exception while recording the processing of entity", exception);
       iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
     }
   }

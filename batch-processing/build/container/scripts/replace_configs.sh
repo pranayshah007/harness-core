@@ -60,6 +60,18 @@ if [[ "" != "$TIMESCALEDB_PASSWORD" ]]; then
   export TIMESCALEDB_PASSWORD; yq -i '.timescaledb.timescaledbPassword=env(TIMESCALEDB_PASSWORD)' $CONFIG_FILE
 fi
 
+if [[ "" != "$BATCH_POSTGRESDB_URI" ]]; then
+  export BATCH_POSTGRESDB_URI; yq -i '.batch-job-postgresdb.timescaledbUrl=env(BATCH_POSTGRESDB_URI)' $CONFIG_FILE
+fi
+
+if [[ "" != "$BATCH_POSTGRESDB_USERNAME" ]]; then
+  export BATCH_POSTGRESDB_USERNAME; yq -i '.batch-job-postgresdb.timescaledbUsername=env(BATCH_POSTGRESDB_USERNAME)' $CONFIG_FILE
+fi
+
+if [[ "" != "$BATCH_POSTGRESDB_PASSWORD" ]]; then
+  export BATCH_POSTGRESDB_PASSWORD; yq -i '.batch-job-postgresdb.timescaledbPassword=env(BATCH_POSTGRESDB_PASSWORD)' $CONFIG_FILE
+fi
+
 if [[ "" != "$TIMESCALEDB_SSL_MODE" ]]; then
   export TIMESCALEDB_SSL_MODE; yq -i '.timescaledb.sslMode=env(TIMESCALEDB_SSL_MODE)' $CONFIG_FILE
 fi
@@ -78,6 +90,10 @@ fi
 
 if [[ "" != "$BILLING_DATA_QUERY_BATCH_SIZE" ]]; then
   export BILLING_DATA_QUERY_BATCH_SIZE; yq -i '.batchQueryConfig.billingDataQueryBatchSize=env(BILLING_DATA_QUERY_BATCH_SIZE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DISABLE_BATCH_JOBS_IN_CG" ]]; then
+  export DISABLE_BATCH_JOBS_IN_CG; yq -i '.batchQueryConfig.disableBatchJobsInCG=env(DISABLE_BATCH_JOBS_IN_CG)' $CONFIG_FILE
 fi
 
 if [[ "" != "$BULK_OPERATION_QUERY_BATCH_SIZE" ]]; then
@@ -316,6 +332,19 @@ if [[ "" != "$GCP_BQ_UPDATE_BATCH_SUBSCRIPTION_NAME" ]]; then
   export GCP_BQ_UPDATE_BATCH_SUBSCRIPTION_NAME; yq -i '.gcpConfig.bigQueryUpdatePubSubTopic.subscriptionName=env(GCP_BQ_UPDATE_BATCH_SUBSCRIPTION_NAME)' $CONFIG_FILE
 fi
 
+if [[ "" != "$BATCH_JOB_REPOSITORY_TIMESCALE_ENABLE" ]]; then
+  export BATCH_JOB_REPOSITORY_TIMESCALE_ENABLE; yq -i '.batchJobRepository.timescaleEnabled=env(BATCH_JOB_REPOSITORY_TIMESCALE_ENABLE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$BATCH_JOB_METADATA_CLEANUP_SCHEDULE" ]]; then
+  export BATCH_JOB_METADATA_CLEANUP_SCHEDULE; yq -i '.batchJobRepository.metadataCleanupSchedule=env(BATCH_JOB_METADATA_CLEANUP_SCHEDULE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$BATCH_JOB_METADATA_RETENTION_PERIOD" ]]; then
+  export BATCH_JOB_METADATA_RETENTION_PERIOD; yq -i '.batchJobRepository.dataRetentionPeriodInDays=env(BATCH_JOB_METADATA_RETENTION_PERIOD)' $CONFIG_FILE
+fi
+
+
 replace_key_value cfClientConfig.apiKey "$CF_CLIENT_API_KEY"
 replace_key_value cfClientConfig.configUrl "$CF_CLIENT_CONFIG_URL"
 replace_key_value cfClientConfig.eventUrl "$CF_CLIENT_EVENT_URL"
@@ -345,3 +374,32 @@ replace_key_value clickHouseConfig.username "$CLICKHOUSE_USERNAME"
 replace_key_value clickHouseConfig.password "$CLICKHOUSE_PASSWORD"
 
 replace_key_value isClickHouseEnabled "$CLICKHOUSE_ENABLED"
+
+replace_key_value governanceConfig.useDkron "$GOVERNANCE_USE_DKRON"
+replace_key_value governanceConfig.callbackApiEndpoint "$GOVERNANCE_CALLBACK_API_ENDPOINT"
+replace_key_value governanceConfig.dkronJobEnabled "$GOVERNANCE_DKRON_JOB_ENABLED"
+replace_key_value governanceConfig.awsFaktoryJobType "$GOVERNANCE_AWS_FAKTORY_JOB_TYPE"
+replace_key_value governanceConfig.awsFaktoryQueueName "$GOVERNANCE_AWS_FAKTORY_QUEUE_NAME"
+replace_key_value governanceConfig.azureFaktoryJobType "$GOVERNANCE_AZURE_FAKTORY_JOB_TYPE"
+replace_key_value governanceConfig.azureFaktoryQueueName "$GOVERNANCE_AZURE_FAKTORY_QUEUE_NAME"
+replace_key_value governanceConfig.OOTBAccount "$GOVERNANCE_OOTB_ACCOUNT"
+
+replace_key_value proxy.enabled "$PROXY_ENABLED"
+replace_key_value proxy.host "$PROXY_HOST"
+replace_key_value proxy.port "$PROXY_PORT"
+replace_key_value proxy.username "$PROXY_USERNAME"
+replace_key_value proxy.password "$PROXY_PASSWORD"
+replace_key_value proxy.protocol "$PROXY_PROTOCOL"
+
+replace_key_value cliProxy.enabled "$CLI_PROXY_ENABLED"
+replace_key_value cliProxy.host "$CLI_PROXY_HOST"
+replace_key_value cliProxy.port "$CLI_PROXY_PORT"
+replace_key_value cliProxy.username "$CLI_PROXY_USERNAME"
+replace_key_value cliProxy.password "$CLI_PROXY_PASSWORD"
+replace_key_value cliProxy.protocol "$CLI_PROXY_PROTOCOL"
+
+replace_key_value awsServiceEndpointUrls.enabled "$AWS_SERVICE_ENDPOINT_URLS_ENABLED"
+replace_key_value awsServiceEndpointUrls.endPointRegion "$AWS_SERVICE_ENDPOINT_URLS_ENDPOINT_REGION"
+replace_key_value awsServiceEndpointUrls.stsEndPointUrl "$AWS_SERVICE_ENDPOINT_URLS_STS_ENDPOINT_URL"
+replace_key_value awsServiceEndpointUrls.ecsEndPointUrl "$AWS_SERVICE_ENDPOINT_URLS_ECS_ENDPOINT_URL"
+replace_key_value awsServiceEndpointUrls.cloudwatchEndPointUrl "$AWS_SERVICE_ENDPOINT_URLS_CLOUDWATCH_ENDPOINT_URL"

@@ -12,7 +12,6 @@ import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.core.beans.HealthMonitoringFlagResponse;
 import io.harness.cvng.core.beans.monitoredService.AnomaliesSummaryDTO;
 import io.harness.cvng.core.beans.monitoredService.CountServiceDTO;
-import io.harness.cvng.core.beans.monitoredService.DurationDTO;
 import io.harness.cvng.core.beans.monitoredService.HealthScoreDTO;
 import io.harness.cvng.core.beans.monitoredService.HistoricalTrend;
 import io.harness.cvng.core.beans.monitoredService.MetricDTO;
@@ -31,11 +30,18 @@ import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.LiveMonitoringLogsFilter;
 import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.DeleteEntityByHandler;
+import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
+import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule;
 import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetailsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
 import io.harness.cvng.usage.impl.ActiveServiceMonitoredDTO;
+import io.harness.cvng.usage.impl.resources.ActiveServiceDTO;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
+import io.harness.pms.contracts.ambiance.Ambiance;
 
 import java.time.Instant;
 import java.util.List;
@@ -72,6 +78,10 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
   @Deprecated MonitoredService getMonitoredService(ProjectParams projectParams, String identifier);
   MonitoredService getMonitoredService(MonitoredServiceParams monitoredServiceParams);
   MonitoredServiceDTO getExpandedMonitoredServiceFromYaml(ProjectParams projectParams, String yaml);
+
+  MonitoredServiceDTO getExpandedMonitoredServiceFromYamlWithPipelineVariables(
+      ProjectParams projectParams, String yaml, Ambiance ambiance);
+
   Optional<MonitoredService> getApplicationMonitoredService(ServiceEnvironmentParams serviceEnvironmentParams);
 
   List<MonitoredService> list(
@@ -93,9 +103,13 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
   HealthMonitoringFlagResponse setHealthMonitoringFlag(ProjectParams projectParams, String identifier, boolean enable);
 
   HistoricalTrend getOverAllHealthScore(
-      ProjectParams projectParams, String identifier, DurationDTO duration, Instant endTime);
+      ProjectParams projectParams, String identifier, Instant startTime, Instant endTime);
 
   HealthScoreDTO getCurrentAndDependentServicesScore(MonitoredServiceParams monitoredServiceParams);
+
+  List<SecondaryEventsResponse> getMSSecondaryEvents(
+      ProjectParams projectParams, String monitoredServiceIdentifier, long startTime, long endTime);
+  SecondaryEventDetailsResponse getMSSecondaryEventDetails(SecondaryEventsType eventType, List<String> uuids);
 
   String getYamlTemplate(ProjectParams projectParams, MonitoredServiceType type);
 
@@ -126,8 +140,13 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
   void handleNotification(MonitoredService monitoredService);
   PageResponse<NotificationRuleResponse> getNotificationRules(
       ProjectParams projectParams, String monitoredServiceIdentifier, PageParams pageParams);
+
+  List<MonitoredServiceNotificationRule> getNotificationRules(ProjectParams projectParams,
+      String monitoredServiceIdentifier, List<NotificationRuleConditionType> conditionTypes);
   void beforeNotificationRuleDelete(ProjectParams projectParams, String notificationRuleRef);
   long countUniqueEnabledServices(String accountId);
 
   List<ActiveServiceMonitoredDTO> listActiveServiceMonitored(ProjectParams projectParams);
+
+  List<ActiveServiceDTO> listActiveMonitoredServices(ProjectParams projectParams, String serviceIdentifier);
 }

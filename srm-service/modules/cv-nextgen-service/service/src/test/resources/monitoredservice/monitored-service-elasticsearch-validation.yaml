@@ -16,6 +16,7 @@ monitoredService:
       - identifier: "elasticsearch"
         type: "ElasticSearch"
         name: "elasticsearch"
+        version: "v1"
         spec:
           connectorRef: "account.ElasticSearch"
           feature: "ELK Logs"

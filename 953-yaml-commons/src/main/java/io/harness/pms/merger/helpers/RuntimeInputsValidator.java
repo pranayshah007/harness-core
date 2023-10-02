@@ -6,12 +6,14 @@
  */
 
 package io.harness.pms.merger.helpers;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.common.NGExpressionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.merger.YamlConfig;
@@ -34,6 +36,8 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(CDC)
 @UtilityClass
 public class RuntimeInputsValidator {
@@ -41,6 +45,13 @@ public class RuntimeInputsValidator {
   private static final String USE_FROM_STAGE_NODE = "useFromStage";
   private static final String STAGE_NODE = "stage";
   private static final String CHILD_SERVICE_REF_NODE = "service.serviceRef";
+  private static final String CHILD_SERVICES_VALUES_REF_NODE = "services.values";
+
+  private static final String CHILD_ENVIRONMENT_REF_NODE = "environment.environmentRef";
+  private static final String CHILD_INFRA_DEFINITIONS_REF_NODE = "environment.infrastructureDefinitions";
+
+  private static final List<String> useFromStageSiblingNodes = List.of(CHILD_SERVICE_REF_NODE,
+      CHILD_SERVICES_VALUES_REF_NODE, CHILD_ENVIRONMENT_REF_NODE, CHILD_INFRA_DEFINITIONS_REF_NODE);
 
   public boolean areInputsValidAgainstSourceNode(JsonNode nodeToValidate, JsonNode sourceNode) {
     return areInputsValidAgainstSourceNode(nodeToValidate, sourceNode, new HashSet<>());
@@ -107,6 +118,7 @@ public class RuntimeInputsValidator {
     YamlConfig nodeToValidateYamlConfig = new YamlConfig(nodeToValidateYaml);
     Map<FQN, Object> nodeToValidateFqnToValueMap = new LinkedHashMap<>(nodeToValidateYamlConfig.getFqnToValueMap());
 
+    Set<FQN> fqnsToBeRemovedForPropagation = new HashSet<>();
     for (Map.Entry<FQN, Object> entry : sourceNodeFqnToValueMap.entrySet()) {
       FQN key = entry.getKey();
       Object value = entry.getValue();
@@ -136,12 +148,14 @@ public class RuntimeInputsValidator {
               && skipValidationIfAbsentKeySet.stream().anyMatch(fqnExp::endsWith)) {
             continue;
           }
-          // This is to handle if sourceYaml has serviceRef as input but user choose useFromStage in nodeToRefresh
-          // ServiceInputs node from sourceYaml is already getting handled with skipValidationIfAbsentKeySet
-          Optional<FQN> nodeFQNOneOfForService =
-              isNodeToValidationKeyIsOneOfForService(nodeToValidateFqnToValueMap, key);
-          if (nodeFQNOneOfForService.isPresent()) {
-            nodeToValidateFqnToValueMap.remove(nodeFQNOneOfForService.get());
+
+          // This is to handle if sourceYaml has a sibling node of useFromStage node as input but user choose
+          // useFromStage in nodeToRefresh EnvironmentInputs,ServiceInputs nodes from sourceYaml are already getting
+          // handled with skipValidationIfAbsentKeySet
+          Optional<FQN> useFromStageSiblingFromSiblingNode =
+              getUseFromStageSiblingFromSiblingNode(nodeToValidateFqnToValueMap, key);
+          if (useFromStageSiblingFromSiblingNode.isPresent()) {
+            fqnsToBeRemovedForPropagation.add(useFromStageSiblingFromSiblingNode.get());
             continue;
           }
           return false;
@@ -150,6 +164,9 @@ public class RuntimeInputsValidator {
         subMap.keySet().forEach(nodeToValidateFqnToValueMap::remove);
       }
     }
+
+    // This is to remove all sources from yaml if the propagation is happening.
+    fqnsToBeRemovedForPropagation.forEach(nodeToValidateFqnToValueMap::remove);
 
     // if nodeToValidateFqnToValueMap is not empty, return false.
     // if some entries are remaining which are expected, remove them for nodeToValidate
@@ -168,14 +185,44 @@ public class RuntimeInputsValidator {
   }
 
   private Optional<FQN> isNodeToValidationKeyIsOneOfForService(Map<FQN, Object> nodeToValidateFqnToValueMap, FQN key) {
-    if (key.getExpressionFqn().endsWith(CHILD_SERVICE_REF_NODE)) {
+    return getUseFromStageFqnForSiblingNode(nodeToValidateFqnToValueMap, key, CHILD_SERVICE_REF_NODE);
+  }
+
+  private Optional<FQN> isNodeToValidationKeyIsOneOfForServices(Map<FQN, Object> nodeToValidateFqnToValueMap, FQN key) {
+    return getUseFromStageFqnForSiblingNode(nodeToValidateFqnToValueMap, key, CHILD_SERVICES_VALUES_REF_NODE);
+  }
+  private Optional<FQN> isNodeToValidationKeyIsOneOfForEnvironment(
+      Map<FQN, Object> nodeToValidateFqnToValueMap, FQN key) {
+    return getUseFromStageFqnForSiblingNode(nodeToValidateFqnToValueMap, key, CHILD_ENVIRONMENT_REF_NODE);
+  }
+
+  private Optional<FQN> isNodeToValidationKeyIsOneOfForInfraDefinition(
+      Map<FQN, Object> nodeToValidateFqnToValueMap, FQN key) {
+    return getUseFromStageFqnForSiblingNode(nodeToValidateFqnToValueMap, key, CHILD_INFRA_DEFINITIONS_REF_NODE);
+  }
+
+  private Optional<FQN> getUseFromStageSiblingFromSiblingNode(Map<FQN, Object> nodeToValidateFqnToValueMap, FQN key) {
+    Optional<FQN> useFromStageFqnForSiblingNode = Optional.empty();
+    for (String useFromStageSiblingNode : useFromStageSiblingNodes) {
+      useFromStageFqnForSiblingNode =
+          getUseFromStageFqnForSiblingNode(nodeToValidateFqnToValueMap, key, useFromStageSiblingNode);
+      if (useFromStageFqnForSiblingNode.isPresent()) {
+        break;
+      }
+    }
+    return useFromStageFqnForSiblingNode;
+  }
+
+  private Optional<FQN> getUseFromStageFqnForSiblingNode(
+      Map<FQN, Object> nodeToValidateFqnToValueMap, FQN key, String childEnvironmentRefNode) {
+    if (key.getExpressionFqn().endsWith(childEnvironmentRefNode)) {
       List<FQNNode> fqnList = new ArrayList<>(key.getParent().getFqnList());
       FQNNode fqnNode1 = FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(USE_FROM_STAGE_NODE).build();
       FQNNode fqnNode2 = FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(STAGE_NODE).build();
       fqnList.add(fqnNode1);
       fqnList.add(fqnNode2);
       FQN useFromStageFQN = FQN.builder().fqnList(fqnList).build();
-      if (nodeToValidateFqnToValueMap.containsKey(useFromStageFQN)) {
+      if (nodeToValidateFqnToValueMap.isEmpty() || nodeToValidateFqnToValueMap.containsKey(useFromStageFQN)) {
         return Optional.of(useFromStageFQN);
       }
     }

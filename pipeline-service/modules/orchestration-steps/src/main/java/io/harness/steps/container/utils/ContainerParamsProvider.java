@@ -6,7 +6,6 @@
  */
 
 package io.harness.steps.container.utils;
-
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.DELEGATE_SERVICE_ENDPOINT_VARIABLE;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.DELEGATE_SERVICE_ID_VARIABLE;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.DELEGATE_SERVICE_ID_VARIABLE_VALUE;
@@ -33,6 +32,9 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.beans.ci.pod.CICommonConstants.LITE_ENGINE_CONTAINER_NAME;
 import static io.harness.delegate.beans.ci.pod.SecretParams.Type.TEXT;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.beans.entities.CIExecutionImages;
@@ -44,11 +46,14 @@ import io.harness.delegate.beans.ci.pod.ContainerSecrets;
 import io.harness.delegate.beans.ci.pod.ContainerSecurityContext;
 import io.harness.delegate.beans.ci.pod.ImageDetailsWithConnector;
 import io.harness.delegate.beans.ci.pod.SecretParams;
+import io.harness.exception.WingsException;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.execution.ContainerDetailsSweepingOutput;
 import io.harness.steps.container.execution.ContainerExecutionConfig;
+import io.harness.utils.CiIntegrationStageUtils;
 import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.inject.Inject;
@@ -58,6 +63,8 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Slf4j
 public class ContainerParamsProvider {
   @Inject ContainerExecutionConfig containerExecutionConfig;
@@ -79,10 +86,13 @@ public class ContainerParamsProvider {
         .containerType(CIContainerType.LITE_ENGINE)
         .containerSecrets(
             ContainerSecrets.builder().plainTextSecretsByName(getLiteEngineSecretVars(logEnvVars)).build())
-        .imageDetailsWithConnector(ImageDetailsWithConnector.builder()
-                                       .imageDetails(ImageDetails.builder().name(imageName).build())
-                                       .imageConnectorDetails(harnessInternalImageConnector)
-                                       .build())
+        .imageDetailsWithConnector(
+            ImageDetailsWithConnector.builder()
+                .imageDetails(ImageDetails.builder()
+                                  .name(getFullyQualifiedImageName(imageName, harnessInternalImageConnector))
+                                  .build())
+                .imageConnectorDetails(harnessInternalImageConnector)
+                .build())
         .volumeToMountPath(volumeToMountPath)
         .securityContext(ctrSecurityContext)
         .workingDir(workDirPath)
@@ -148,8 +158,7 @@ public class ContainerParamsProvider {
   }
 
   public Map<String, SecretParams> getLiteEngineSecretVars(Map<String, String> logEnvVars) {
-    Map<String, String> vars = new HashMap<>();
-    vars.putAll(logEnvVars);
+    Map<String, String> vars = new HashMap<>(logEnvVars);
 
     Map<String, SecretParams> secretVars = new HashMap<>();
     for (Map.Entry<String, String> entry : vars.entrySet()) {
@@ -178,10 +187,13 @@ public class ContainerParamsProvider {
         .name(SETUP_ADDON_CONTAINER_NAME)
         .envVars(envVars)
         .containerType(CIContainerType.ADD_ON)
-        .imageDetailsWithConnector(ImageDetailsWithConnector.builder()
-                                       .imageDetails(ImageDetails.builder().name(imageName).build())
-                                       .imageConnectorDetails(harnessInternalImageConnector)
-                                       .build())
+        .imageDetailsWithConnector(
+            ImageDetailsWithConnector.builder()
+                .imageDetails(ImageDetails.builder()
+                                  .name(getFullyQualifiedImageName(imageName, harnessInternalImageConnector))
+                                  .build())
+                .imageConnectorDetails(harnessInternalImageConnector)
+                .build())
         .containerSecrets(ContainerSecrets.builder().build())
         .volumeToMountPath(volumeToMountPath)
         .commands(commands)
@@ -190,5 +202,14 @@ public class ContainerParamsProvider {
         .containerResourceParams(getAddonResourceParams())
         .imagePullPolicy(imagePullPolicy)
         .build();
+  }
+
+  public String getFullyQualifiedImageName(String imageName, ConnectorDetails connectorDetails) {
+    try {
+      return CiIntegrationStageUtils.getFullyQualifiedImageName(imageName, connectorDetails);
+    } catch (WingsException ex) {
+      log.error("Error while getting Fully qualified image", ex);
+      throw new ContainerStepExecutionException(ex.getMessage());
+    }
   }
 }

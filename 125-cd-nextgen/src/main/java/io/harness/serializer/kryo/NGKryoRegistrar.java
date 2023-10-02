@@ -6,10 +6,12 @@
  */
 
 package io.harness.serializer.kryo;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.advisers.RollbackCustomStepParameters;
 import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
 import io.harness.cdng.artifact.steps.beans.ArtifactStepParameters;
@@ -40,8 +42,13 @@ import io.harness.cdng.gitops.UpdateReleaseRepoStepInfo;
 import io.harness.cdng.gitops.UpdateReleaseRepoStepParams;
 import io.harness.cdng.gitops.beans.FetchLinkedAppsStepParams;
 import io.harness.cdng.gitops.beans.GitOpsLinkedAppsOutcome;
+import io.harness.cdng.gitops.revertpr.RevertPRStepInfo;
+import io.harness.cdng.gitops.revertpr.RevertPRStepParameters;
 import io.harness.cdng.gitops.syncstep.SyncResponse;
 import io.harness.cdng.gitops.syncstep.SyncStepOutcome;
+import io.harness.cdng.gitops.updategitopsapp.UpdateGitOpsAppResponse;
+import io.harness.cdng.gitops.updategitopsapp.UpdateGitOpsAppStepInfo;
+import io.harness.cdng.gitops.updategitopsapp.UpdateGitOpsAppStepParameters;
 import io.harness.cdng.helm.HelmDeployStepInfo;
 import io.harness.cdng.helm.HelmDeployStepParams;
 import io.harness.cdng.helm.rollback.HelmRollbackStepInfo;
@@ -147,12 +154,18 @@ import io.harness.telemetry.beans.CdTelemetrySentStatus;
 
 import com.esotericsoftware.kryo.Kryo;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @OwnedBy(CDC)
 public class NGKryoRegistrar implements KryoRegistrar {
   @Override
   public void register(Kryo kryo) {
     kryo.register(UpdateReleaseRepoStepInfo.class, 13009);
     kryo.register(UpdateReleaseRepoStepParams.class, 13010);
+    kryo.register(RevertPRStepInfo.class, 13011);
+    kryo.register(RevertPRStepParameters.class, 13012);
+    kryo.register(UpdateGitOpsAppStepInfo.class, 13013);
+    kryo.register(UpdateGitOpsAppStepParameters.class, 13014);
+    kryo.register(UpdateGitOpsAppResponse.class, 13015);
 
     kryo.register(ArtifactStepParameters.class, 8001);
     kryo.register(ServiceStepParameters.class, 8008);

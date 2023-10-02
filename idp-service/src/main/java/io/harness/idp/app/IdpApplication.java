@@ -14,9 +14,12 @@ import static io.harness.idp.app.IdpConfiguration.HARNESS_RESOURCE_CLASSES;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
 import io.harness.Microservice;
+import io.harness.ModuleType;
+import io.harness.PipelineServiceUtilityModule;
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.authorization.AuthorizationServiceHeader;
+import io.harness.cache.CacheModule;
 import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
 import io.harness.idp.annotations.IdpServiceAuth;
@@ -27,24 +30,56 @@ import io.harness.idp.events.consumers.EntityCrudStreamConsumer;
 import io.harness.idp.events.consumers.IdpEventConsumerController;
 import io.harness.idp.migration.IdpMigrationProvider;
 import io.harness.idp.namespace.jobs.DefaultAccountIdToNamespaceMappingForPrEnv;
+import io.harness.idp.pipeline.filter.IdpFilterCreationResponseMerger;
+import io.harness.idp.pipeline.provider.IdpModuleInfoProvider;
+import io.harness.idp.pipeline.provider.IdpPipelineServiceInfoProvider;
+import io.harness.idp.pipeline.registrar.IdpStepRegistrar;
+import io.harness.idp.scorecard.scores.iteratorhandler.ScoreComputationHandler;
 import io.harness.idp.user.jobs.UserSyncJob;
 import io.harness.maintenance.MaintenanceController;
+import io.harness.metrics.HarnessMetricRegistry;
+import io.harness.metrics.MetricRegistryModule;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.migration.MigrationProvider;
 import io.harness.migration.NGMigrationSdkInitHelper;
 import io.harness.migration.NGMigrationSdkModule;
 import io.harness.migration.beans.NGMigrationConfiguration;
+import io.harness.mongo.iterator.IteratorConfig;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.NotAllowedExceptionMapper;
 import io.harness.ng.core.exceptionmappers.NotFoundExceptionMapper;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
+import io.harness.notification.Team;
+import io.harness.notification.module.NotificationClientModule;
+import io.harness.notification.notificationclient.NotificationClient;
+import io.harness.notification.templates.PredefinedTemplate;
 import io.harness.persistence.HPersistence;
+import io.harness.pms.events.base.PipelineEventConsumerController;
+import io.harness.pms.sdk.PmsSdkConfiguration;
+import io.harness.pms.sdk.PmsSdkInitHelper;
+import io.harness.pms.sdk.PmsSdkModule;
+import io.harness.pms.sdk.core.SdkDeployMode;
+import io.harness.pms.sdk.execution.events.facilitators.FacilitatorEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.facilitators.FacilitatorEventRedisConsumerV2;
+import io.harness.pms.sdk.execution.events.interrupts.InterruptEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.interrupts.InterruptEventRedisConsumerV2;
+import io.harness.pms.sdk.execution.events.node.advise.NodeAdviseEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.node.advise.NodeAdviseRedisConsumerV2;
+import io.harness.pms.sdk.execution.events.node.resume.NodeResumeEventConsumerV2;
+import io.harness.pms.sdk.execution.events.node.resume.NodeResumeEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsumerV2;
+import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
+import io.harness.pms.sdk.execution.events.progress.NodeProgressEventRedisConsumerV2;
+import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
 import io.harness.request.RequestLoggingFilter;
 import io.harness.security.InternalApiAuthFilter;
 import io.harness.security.NextGenAuthenticationFilter;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.serializer.PipelineServiceUtilAdviserRegistrar;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateProgressServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
@@ -138,17 +173,29 @@ public class IdpApplication extends Application<IdpConfiguration> {
 
     List<Module> modules = new ArrayList<>();
     modules.add(new IdpModule(configuration));
+    modules.add(new CacheModule(configuration.getCacheConfig()));
+    PmsSdkConfiguration idpPmsSdkConfiguration = getPmsSdkConfiguration(configuration);
+    modules.add(PmsSdkModule.getInstance(idpPmsSdkConfiguration));
+    modules.add(PipelineServiceUtilityModule.getInstance());
     modules.add(NGMigrationSdkModule.getInstance());
+    modules.add(new NotificationClientModule(configuration.getNotificationClientConfiguration()));
+    modules.add(new MetricRegistryModule(metricRegistry));
+
     Injector injector = Guice.createInjector(modules);
+    registerPMSSDK(configuration, injector);
     registerResources(environment, injector);
     registerHealthChecksManager(environment, injector);
     registerQueueListeners(injector);
     registerAuthFilters(configuration, environment, injector);
     registerManagedJobs(environment, injector);
+    registerPmsSdkEvents(injector);
     registerExceptionMappers(environment.jersey());
     registerMigrations(injector);
     registerHealthCheck(environment, injector);
+    registerNotificationTemplates(configuration, injector);
+    registerIterators(injector, configuration.getScorecardScoreComputationIteratorConfig());
     environment.jersey().register(RequestLoggingFilter.class);
+
     //    initMetrics(injector);
     log.info("Starting app done");
     log.info("IDP Service is running on JRE: {}", System.getProperty("java.version"));
@@ -161,6 +208,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     environment.lifecycle().manage(injector.getInstance(UserSyncJob.class));
     environment.lifecycle().manage(injector.getInstance(ConfigPurgeJob.class));
     environment.lifecycle().manage(injector.getInstance(DefaultAccountIdToNamespaceMappingForPrEnv.class));
+    environment.lifecycle().manage(injector.getInstance(PipelineEventConsumerController.class));
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
         .scheduleWithFixedDelay(injector.getInstance(DelegateSyncServiceImpl.class), 0L, 2L, TimeUnit.SECONDS);
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
@@ -173,6 +221,12 @@ public class IdpApplication extends Application<IdpConfiguration> {
     log.info("Initializing queue listeners...");
     IdpEventConsumerController controller = injector.getInstance(IdpEventConsumerController.class);
     controller.register(injector.getInstance(EntityCrudStreamConsumer.class), 1);
+  }
+
+  private void registerIterators(Injector injector, IteratorConfig iteratorConfig) {
+    if (iteratorConfig.isEnabled()) {
+      injector.getInstance(ScoreComputationHandler.class).registerIterators(iteratorConfig);
+    }
   }
 
   private void initMetrics(Injector injector) {
@@ -212,6 +266,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
         AuthorizationServiceHeader.IDENTITY_SERVICE.getServiceId(), config.getJwtIdentityServiceSecret());
     serviceToSecretMapping.put(AuthorizationServiceHeader.DEFAULT.getServiceId(), config.getNgManagerServiceSecret());
     serviceToSecretMapping.put(AuthorizationServiceHeader.IDP_UI.getServiceId(), config.getIdpServiceSecret());
+    serviceToSecretMapping.put(AuthorizationServiceHeader.IDP_SERVICE.getServiceId(), config.getIdpServiceSecret());
     environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
         injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED")))));
     registerInternalApiAuthFilter(config, environment);
@@ -258,9 +313,79 @@ public class IdpApplication extends Application<IdpConfiguration> {
         .build();
   }
 
+  private PmsSdkConfiguration getPmsSdkConfiguration(IdpConfiguration configuration) {
+    boolean remote = configuration.getShouldConfigureWithPMS() != null && configuration.getShouldConfigureWithPMS();
+
+    return PmsSdkConfiguration.builder()
+        .streamPerServiceConfiguration(configuration.isStreamPerServiceConfiguration())
+        .deploymentMode(remote ? SdkDeployMode.REMOTE : SdkDeployMode.LOCAL)
+        .moduleType(ModuleType.IDP)
+        .grpcServerConfig(configuration.getPmsSdkGrpcServerConfig())
+        .pmsGrpcClientConfig(configuration.getPmsGrpcClientConfig())
+        .pipelineServiceInfoProviderClass(IdpPipelineServiceInfoProvider.class)
+        .filterCreationResponseMerger(new IdpFilterCreationResponseMerger())
+        .engineSteps(IdpStepRegistrar.getEngineSteps())
+        .engineAdvisers(PipelineServiceUtilAdviserRegistrar.getEngineAdvisers())
+        .executionSummaryModuleInfoProviderClass(IdpModuleInfoProvider.class)
+        .eventsFrameworkConfiguration(configuration.getEventsFrameworkConfiguration())
+        .build();
+  }
+
+  private void registerPMSSDK(IdpConfiguration configuration, Injector injector) {
+    PmsSdkConfiguration idpSDKConfig = getPmsSdkConfiguration(configuration);
+    if (idpSDKConfig.getDeploymentMode().equals(SdkDeployMode.REMOTE)) {
+      try {
+        PmsSdkInitHelper.initializeSDKInstance(injector, idpSDKConfig);
+      } catch (Exception e) {
+        log.error("PMS SDK registration failed", e);
+      }
+    }
+  }
+
+  private void registerPmsSdkEvents(Injector injector) {
+    log.info("Initializing pms sdk redis abstract consumers...");
+    PipelineEventConsumerController pipelineEventConsumerController =
+        injector.getInstance(PipelineEventConsumerController.class);
+    pipelineEventConsumerController.register(injector.getInstance(OrchestrationEventRedisConsumer.class), 1);
+
+    pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumer.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumer.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumer.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(ProgressEventRedisConsumer.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeAdviseEventRedisConsumer.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventRedisConsumer.class), 1);
+
+    pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumerV2.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumerV2.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumerV2.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeProgressEventRedisConsumerV2.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeAdviseRedisConsumerV2.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventConsumerV2.class), 1);
+
+    pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class), 1);
+  }
+
   private void registerHealthCheck(Environment environment, Injector injector) {
     final HealthService healthService = injector.getInstance(HealthService.class);
     environment.healthChecks().register("IDP", healthService);
     healthService.registerMonitor((HealthMonitor) injector.getInstance(MongoTemplate.class));
+  }
+
+  private void registerNotificationTemplates(IdpConfiguration configuration, Injector injector) {
+    NotificationClient notificationClient = injector.getInstance(NotificationClient.class);
+    List<PredefinedTemplate> templates =
+        new ArrayList<>(List.of(PredefinedTemplate.IDP_PLUGIN_REQUESTS_NOTIFICATION_SLACK));
+
+    if (configuration.getShouldConfigureWithNotification()) {
+      for (PredefinedTemplate template : templates) {
+        try {
+          log.info("Registering {} with NotificationService", template);
+          notificationClient.saveNotificationTemplate(Team.IDP, template, true);
+        } catch (Exception ex) {
+          log.error(
+              "Unable to save {} to NotificationService - skipping register notification templates.", template, ex);
+        }
+      }
+    }
   }
 }

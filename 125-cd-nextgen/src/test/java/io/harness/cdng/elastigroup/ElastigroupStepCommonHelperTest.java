@@ -13,6 +13,7 @@ import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MA
 import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MIN_INSTANCES;
 import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_TARGET_INSTANCES;
 import static io.harness.spotinst.model.SpotInstConstants.GROUP_CONFIG_ELEMENT;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -42,6 +43,7 @@ import io.harness.cdng.elastigroup.beans.ElastigroupStepExecutorParams;
 import io.harness.cdng.elastigroup.config.StartupScriptOutcome;
 import io.harness.cdng.elastigroup.output.ElastigroupConfigurationOutput;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -74,6 +76,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
@@ -91,14 +94,17 @@ import io.harness.spotinst.model.ElastiGroupCapacity;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import software.wings.beans.TaskType;
 
 import com.google.gson.Gson;
+import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -112,8 +118,9 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   public static final int DEFAULT_CURRENT_RUNNING_INSTANCE_COUNT = 2;
-
   @Mock private EngineExpressionService engineExpressionService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock private ElastigroupEntityHelper elastigroupEntityHelper;
   @Mock private KryoSerializer kryoSerializer;
   @Mock private StepHelper stepHelper;
@@ -132,6 +139,10 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
   @Before
   public void setUp() throws Exception {
     when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(logStreamingStepClient);
+    Reflect.on(cdExpressionResolver).set("engineExpressionService", engineExpressionService);
+    Reflect.on(elastigroupStepCommonHelper).set("cdExpressionResolver", cdExpressionResolver);
+    Reflect.on(cdExpressionResolver).set("ngFeatureFlagHelperService", ngFeatureFlagHelperService);
+    doReturn(false).when(ngFeatureFlagHelperService).isEnabled(any(), any());
   }
 
   @Test
@@ -684,7 +695,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
 
     assertThat(((ElastigroupStepExceptionPassThroughData) taskChainResponse.getPassThroughData()).getErrorMessage())
         .isNotNull()
-        .isEqualTo("NullPointerException");
+        .contains("NullPointerException");
   }
 
   @Test
@@ -842,6 +853,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
         .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
         .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
+        .setMetadata(ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
         .build();
   }
 }

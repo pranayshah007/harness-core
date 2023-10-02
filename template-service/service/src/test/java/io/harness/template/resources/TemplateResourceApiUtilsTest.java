@@ -8,8 +8,14 @@
 package io.harness.template.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.ng.core.template.TemplateEntityConstants.ALL;
+import static io.harness.ng.core.template.TemplateEntityConstants.LAST_UPDATES_TEMPLATE;
+import static io.harness.ng.core.template.TemplateEntityConstants.STABLE_TEMPLATE;
 import static io.harness.rule.OwnerRule.ADITHYA;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static io.harness.template.resources.NGTemplateResource.TEMPLATE;
 
 import static junit.framework.TestCase.assertEquals;
@@ -32,6 +38,8 @@ import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.ng.core.template.TemplateResponseDTO;
+import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
 import io.harness.pms.contracts.plan.YamlOutputProperties;
 import io.harness.pms.contracts.service.VariableMergeResponseProto;
 import io.harness.pms.contracts.service.VariableResponseMapValueProto;
@@ -40,10 +48,12 @@ import io.harness.pms.contracts.service.VariablesServiceGrpc.VariablesServiceBlo
 import io.harness.pms.contracts.service.VariablesServiceRequest;
 import io.harness.rule.Owner;
 import io.harness.spec.server.template.v1.model.GitImportDetails;
+import io.harness.spec.server.template.v1.model.TemplateCreateRequestBody;
 import io.harness.spec.server.template.v1.model.TemplateImportRequestDTO;
 import io.harness.spec.server.template.v1.model.TemplateImportResponseBody;
 import io.harness.spec.server.template.v1.model.TemplateMetadataSummaryResponse;
 import io.harness.spec.server.template.v1.model.TemplateResponse;
+import io.harness.spec.server.template.v1.model.TemplateUpdateRequestBody;
 import io.harness.spec.server.template.v1.model.TemplateUpdateStableResponse;
 import io.harness.spec.server.template.v1.model.TemplateWithInputsResponse;
 import io.harness.template.entity.TemplateEntity;
@@ -201,8 +211,9 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
     templateResponse.setConnectorRef(entity.getConnectorRef());
     templateResponse.setStableTemplate(entity.isStableTemplate());
     when(templateResourceApiMapper.toTemplateResponse(any())).thenReturn(templateResponse);
-    Response response =
-        templateResourceApiUtils.createTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, yaml, false, "");
+    TemplateRequestInfoDTO requestInfoDTO = TemplateRequestInfoDTO.builder().yaml(yaml).build();
+    Response response = templateResourceApiUtils.createTemplate(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, requestInfoDTO, false, "");
     assertThat(response.getEntity()).isNotNull();
     verify(accessControlClient)
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
@@ -267,6 +278,49 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testGetTemplateWithInputs() {
+    TemplateResponseDTO templateResponseDTO = TemplateResponseDTO.builder()
+                                                  .accountId(ACCOUNT_ID)
+                                                  .orgIdentifier(ORG_IDENTIFIER)
+                                                  .projectIdentifier(PROJ_IDENTIFIER)
+                                                  .identifier(TEMPLATE_IDENTIFIER)
+                                                  .name(TEMPLATE_IDENTIFIER)
+                                                  .versionLabel(TEMPLATE_VERSION_LABEL)
+                                                  .version(1L)
+                                                  .yaml("yaml")
+                                                  .build();
+    TemplateWithInputsResponseDTO templateWithInputsResponseDTO = TemplateWithInputsResponseDTO.builder()
+                                                                      .templateResponseDTO(templateResponseDTO)
+                                                                      .templateInputs("inputs")
+                                                                      .build();
+    TemplateWithInputsResponse templateWithInputsResponse = new TemplateWithInputsResponse();
+    TemplateResponse templateResponse = new TemplateResponse();
+    templateResponse.setAccount(entity.getAccountId());
+    templateResponse.setOrg(entity.getOrgIdentifier());
+    templateResponse.setProject(entity.getProjectIdentifier());
+    templateResponse.setIdentifier(entity.getIdentifier());
+    templateResponse.setYaml(entity.getYaml());
+    templateResponse.setVersionLabel(entity.getVersionLabel());
+    templateWithInputsResponse.setTemplate(templateResponse);
+    templateWithInputsResponse.setInputs("inputs");
+    doReturn(templateWithInputsResponseDTO)
+        .when(templateService)
+        .getTemplateWithInputs(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false);
+    when(templateResourceApiMapper.toTemplateWithInputResponse(any())).thenReturn(templateWithInputsResponse);
+    Response response = templateResourceApiUtils.getTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+        TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, null, null, null, null, null, null, true);
+    TemplateWithInputsResponse templateResponseInput = (TemplateWithInputsResponse) response.getEntity();
+    assertThat(response.getEntityTag().getValue()).isEqualTo("1");
+    assertThat(templateResponseInput.getInputs()).isEqualTo("inputs");
+    verify(accessControlClient)
+        .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
+            Resource.of(TEMPLATE, TEMPLATE_IDENTIFIER), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
+  }
+
+  @Test
   @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
   public void testGetTemplateWithInvalidTemplateIdentifier() {
@@ -304,8 +358,9 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
     templateResponse.setConnectorRef(entity.getConnectorRef());
     templateResponse.setStableTemplate(entity.isStableTemplate());
     when(templateResourceApiMapper.toTemplateResponse(any())).thenReturn(templateResponse);
+    TemplateRequestInfoDTO requestInfoDTO = TemplateRequestInfoDTO.builder().yaml(yaml).build();
     Response response = templateResourceApiUtils.updateTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-        TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, yaml, false, "");
+        TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, requestInfoDTO, false, "");
     TemplateResponse templateResponseFinal = (TemplateResponse) response.getEntity();
     verify(accessControlClient)
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
@@ -335,10 +390,33 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testUpdateTemplateWithWrongIdentifier() {
     String incorrectPipelineIdentifier = "notTheIdentifierWeNeed";
+    TemplateRequestInfoDTO requestInfoDTO = TemplateRequestInfoDTO.builder().yaml(yaml).build();
     assertThatThrownBy(()
                            -> templateResourceApiUtils.updateTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-                               incorrectPipelineIdentifier, TEMPLATE_VERSION_LABEL, null, yaml, false, ""))
+                               incorrectPipelineIdentifier, TEMPLATE_VERSION_LABEL, null, requestInfoDTO, false, ""))
         .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testToListType() {
+    String value = templateResourceApiUtils.toListType("");
+    assertThat(value).isEqualTo(ALL);
+
+    value = templateResourceApiUtils.toListType("LAST_UPDATES_TEMPLATE");
+    assertThat(value).isEqualTo(LAST_UPDATES_TEMPLATE);
+
+    value = templateResourceApiUtils.toListType("STABLE_TEMPLATE");
+    assertThat(value).isEqualTo(STABLE_TEMPLATE);
+
+    value = templateResourceApiUtils.toListType("ALL");
+    assertThat(value).isEqualTo(ALL);
+
+    assertThatThrownBy(() -> templateResourceApiUtils.toListType("random"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Expected query param 'type' to be of value LAST_UPDATES_TEMPLATE, STABLE_TEMPLATE, ALL. [random] value Not allowed");
   }
 
   @Test
@@ -392,5 +470,39 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
     verify(accessControlClient)
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
             Resource.of(TEMPLATE, null), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testMapCreateToRequestInfoDTO() {
+    TemplateCreateRequestBody createRequestBody = new TemplateCreateRequestBody();
+    createRequestBody.setIdentifier(generateUuid());
+    createRequestBody.setName(generateUuid());
+    createRequestBody.setLabel(generateUuid());
+    createRequestBody.setTags(Map.of("tag1", "val1"));
+    TemplateRequestInfoDTO requestInfoDTO = templateResourceApiUtils.mapCreateToRequestInfoDTO(createRequestBody);
+    assertThat(requestInfoDTO.getIdentifier()).isEqualTo(createRequestBody.getIdentifier());
+    assertThat(requestInfoDTO.getName()).isEqualTo(createRequestBody.getName());
+    assertThat(requestInfoDTO.getLabel()).isEqualTo(createRequestBody.getLabel());
+    assertThat(requestInfoDTO.getYaml()).isEqualTo(createRequestBody.getTemplateYaml());
+    assertThat(requestInfoDTO.getTags()).isEqualTo(createRequestBody.getTags());
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testMapUpdateToRequestInfoDTO() {
+    TemplateUpdateRequestBody createRequestBody = new TemplateUpdateRequestBody();
+    createRequestBody.setIdentifier(generateUuid());
+    createRequestBody.setName(generateUuid());
+    createRequestBody.setLabel(generateUuid());
+    createRequestBody.setTags(Map.of("tag1", "val1"));
+    TemplateRequestInfoDTO requestInfoDTO = templateResourceApiUtils.mapUpdateToRequestInfoDTO(createRequestBody);
+    assertThat(requestInfoDTO.getIdentifier()).isEqualTo(createRequestBody.getIdentifier());
+    assertThat(requestInfoDTO.getName()).isEqualTo(createRequestBody.getName());
+    assertThat(requestInfoDTO.getLabel()).isEqualTo(createRequestBody.getLabel());
+    assertThat(requestInfoDTO.getYaml()).isEqualTo(createRequestBody.getTemplateYaml());
+    assertThat(requestInfoDTO.getTags()).isEqualTo(createRequestBody.getTags());
   }
 }

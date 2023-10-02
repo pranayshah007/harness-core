@@ -7,32 +7,46 @@
 
 package io.harness.cdng.manifest.steps;
 
+import static io.harness.cdng.manifest.ManifestType.HelmChart;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENVIRONMENT_GLOBAL_OVERRIDES;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_OVERRIDES;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.PRATYUSH;
+import static io.harness.rule.OwnerRule.RISHABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
+import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.execution.ServiceExecutionSummaryDetails;
+import io.harness.cdng.execution.StageExecutionInfoUpdateDTO;
+import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.steps.output.NgManifestsMetadataSweepingOutput;
+import io.harness.cdng.manifest.steps.output.UnresolvedManifestsOutput;
+import io.harness.cdng.manifest.steps.task.FetchManifestTaskContext;
+import io.harness.cdng.manifest.steps.task.ManifestTaskService;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.HttpStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
@@ -45,6 +59,8 @@ import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.manifest.yaml.kinds.ValuesManifest;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
+import io.harness.cdng.manifest.yaml.summary.HelmChartManifestSummary;
+import io.harness.cdng.manifestConfigs.ManifestConfigurations;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
@@ -52,9 +68,12 @@ import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
+import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.task.TaskParameters;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.sdk.EntityValidityDetails;
+import io.harness.k8s.model.HelmVersion;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -70,16 +89,23 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.execution.invokers.StrategyHelper;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.serializer.KryoSerializer;
+import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.EntityReferenceExtractorUtils;
+import io.harness.tasks.ResponseData;
 import io.harness.utils.NGFeatureFlagHelperService;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.protobuf.ByteString;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -91,6 +117,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -115,6 +142,12 @@ public class ManifestsStepV2Test extends CategoryTest {
   @Mock NGFeatureFlagHelperService featureFlagHelperService;
   @Mock private NGSettingsClient ngSettingsClient;
   @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
+  @Mock private StageExecutionInfoService stageExecutionInfoService;
+  @Mock private ManifestTaskService manifestTaskService;
+  @Mock private StrategyHelper strategyHelper;
+  @Mock private KryoSerializer referenceFalseKryoSerializer;
+  @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+
   @InjectMocks private ManifestsStepV2 step = new ManifestsStepV2();
 
   private AutoCloseable mocks;
@@ -130,7 +163,7 @@ public class ManifestsStepV2Test extends CategoryTest {
                              .build()))
         .when(connectorService)
         .get(anyString(), anyString(), anyString(), anyString());
-    doReturn(logCallback).when(serviceStepsHelper).getServiceLogCallback(any());
+    doReturn(logCallback).when(serviceStepsHelper).getServiceLogCallback(any(), anyBoolean(), anyString());
   }
 
   @After
@@ -138,6 +171,15 @@ public class ManifestsStepV2Test extends CategoryTest {
     if (mocks != null) {
       mocks.close();
     }
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void executeSyncHelm() {
+    StepResponse stepResponse =
+        testExecuteHelmManifest(() -> step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null));
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
   }
 
   @Test
@@ -150,12 +192,88 @@ public class ManifestsStepV2Test extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void executeSyncMultipleHelmChart() {
+    doReturn(true)
+        .when(featureFlagHelperService)
+        .isEnabled(anyString(), eq(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG));
+    StepResponse stepResponse = testExecuteForHelmMultipleManifest(
+        () -> step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null));
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+  }
+
+  @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void executeAsync() {
     AsyncExecutableResponse asyncResponse =
         testExecute(() -> step.executeAsync(buildAmbiance(), new EmptyStepParameters(), null, null));
     assertThat(asyncResponse.getCallbackIdsList().asByteStringList()).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void executeAsyncMultipleHelmCharts() {
+    doReturn(true)
+        .when(featureFlagHelperService)
+        .isEnabled(anyString(), eq(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG));
+    AsyncExecutableResponse asyncResponse = testExecuteForHelmMultipleManifest(
+        () -> step.executeAsync(buildAmbiance(), new EmptyStepParameters(), null, null));
+    assertThat(asyncResponse.getCallbackIdsList().asByteStringList()).isEmpty();
+  }
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void executeAsyncWithTasks() {
+    final TaskParameters taskParameters = mock(TaskParameters.class);
+    ManifestConfigWrapper file1 = sampleManifestFile("file1", ManifestConfigType.K8_MANIFEST);
+    final Map<String, List<ManifestConfigWrapper>> finalManifests = new HashMap<>();
+    finalManifests.put(SERVICE, Collections.singletonList(file1));
+
+    doReturn(OptionalSweepingOutput.builder()
+                 .found(true)
+                 .output(NgManifestsMetadataSweepingOutput.builder()
+                             .finalSvcManifestsMap(finalManifests)
+                             .serviceIdentifier(SVC_ID)
+                             .environmentIdentifier(ENV_ID)
+                             .serviceDefinitionType(ServiceDefinitionType.KUBERNETES)
+                             .build())
+                 .build())
+        .when(sweepingOutputService)
+        .resolveOptional(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+
+    List<EntityDetail> listEntityDetail = new ArrayList<>();
+
+    listEntityDetail.add(EntityDetail.builder().name("ManifestSecret1").build());
+
+    Set<EntityDetailProtoDTO> setEntityDetail = new HashSet<>();
+
+    doReturn(setEntityDetail).when(entityReferenceExtractorUtils).extractReferredEntities(any(), any());
+
+    doReturn(listEntityDetail)
+        .when(entityDetailProtoToRestMapper)
+        .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
+    doReturn(true).when(manifestTaskService).isSupported(any(FetchManifestTaskContext.class));
+    doReturn(Optional.of(TaskData.builder().parameters(new Object[] {taskParameters}).taskType("TEST_TASK").build()))
+        .when(manifestTaskService)
+        .createTaskData(any(FetchManifestTaskContext.class));
+    doReturn("taskId")
+        .when(delegateGrpcClientWrapper)
+        .submitAsyncTaskV2(nullable(DelegateTaskRequest.class), any(Duration.class));
+
+    AsyncExecutableResponse asyncResponse = step.executeAsync(buildAmbiance(), new EmptyStepParameters(), null, null);
+    assertThat(asyncResponse.getCallbackIdsList().asByteStringList())
+        .containsExactlyInAnyOrder(ByteString.copyFromUtf8("taskId"));
+
+    ArgumentCaptor<UnresolvedManifestsOutput> captor = ArgumentCaptor.forClass(UnresolvedManifestsOutput.class);
+    verify(sweepingOutputService, times(1))
+        .consume(any(Ambiance.class), eq(OutcomeExpressionConstants.UNRESOLVED_MANIFESTS), captor.capture(), eq(""));
+    UnresolvedManifestsOutput unresolvedManifestsOutput = captor.getValue();
+    assertThat(unresolvedManifestsOutput.getTaskIdMapping()).isEqualTo(ImmutableMap.of("taskId", "file1"));
+    assertThat(unresolvedManifestsOutput.getManifestsOutcome().keySet()).containsExactlyInAnyOrder("file1");
   }
 
   private <T> T testExecute(Supplier<T> executeMethod) {
@@ -192,6 +310,7 @@ public class ManifestsStepV2Test extends CategoryTest {
     doReturn(listEntityDetail)
         .when(entityDetailProtoToRestMapper)
         .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
+    verify(stageExecutionInfoService, times(0)).updateStageExecutionInfo(any(), any());
 
     T response = executeMethod.get();
 
@@ -210,10 +329,133 @@ public class ManifestsStepV2Test extends CategoryTest {
     return response;
   }
 
+  private <T> T testExecuteHelmManifest(Supplier<T> executeMethod) {
+    ManifestConfigWrapper file1 = sampleManifestFile("file1", ManifestConfigType.HELM_CHART);
+    ManifestConfigWrapper file2 = sampleValuesYamlFile("file2");
+
+    final Map<String, List<ManifestConfigWrapper>> finalManifests = new HashMap<>();
+    finalManifests.put(SERVICE, Arrays.asList(file1, file2));
+
+    doReturn(OptionalSweepingOutput.builder()
+                 .found(true)
+                 .output(NgManifestsMetadataSweepingOutput.builder()
+                             .finalSvcManifestsMap(finalManifests)
+                             .serviceIdentifier(SVC_ID)
+                             .environmentIdentifier(ENV_ID)
+                             .serviceDefinitionType(ServiceDefinitionType.KUBERNETES)
+                             .build())
+                 .build())
+        .when(sweepingOutputService)
+        .resolveOptional(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+    List<EntityDetail> listEntityDetail = new ArrayList<>();
+
+    listEntityDetail.add(EntityDetail.builder().name("ManifestSecret1").build());
+    listEntityDetail.add(EntityDetail.builder().name("ManifestSecret2").build());
+
+    Set<EntityDetailProtoDTO> setEntityDetail = new HashSet<>();
+
+    doReturn(setEntityDetail).when(entityReferenceExtractorUtils).extractReferredEntities(any(), any());
+
+    doReturn(listEntityDetail)
+        .when(entityDetailProtoToRestMapper)
+        .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
+    T response = executeMethod.get();
+
+    ArgumentCaptor<StageExecutionInfoUpdateDTO> captor = ArgumentCaptor.forClass(StageExecutionInfoUpdateDTO.class);
+    verify(stageExecutionInfoService, times(1)).updateStageExecutionInfo(any(), captor.capture());
+    StageExecutionInfoUpdateDTO stageExecutionInfoUpdateDTO = captor.getValue();
+    ServiceExecutionSummaryDetails.ManifestsSummary manifestsSummary =
+        stageExecutionInfoUpdateDTO.getManifestsSummary();
+    assertThat(manifestsSummary.getManifestSummaries()).hasSize(1);
+    HelmChartManifestSummary helmChartManifestSummary =
+        (HelmChartManifestSummary) manifestsSummary.getManifestSummaries().get(0);
+    assertThat(helmChartManifestSummary.getIdentifier()).isEqualTo("file1");
+    assertThat(helmChartManifestSummary.getType()).isEqualTo(HelmChart);
+    assertThat(helmChartManifestSummary.getChartVersion()).isEqualTo("0.1.0");
+    assertThat(helmChartManifestSummary.getHelmVersion()).isEqualTo(HelmVersion.V3);
+
+    ArgumentCaptor<ManifestsOutcome> manifestsOutcomeArgumentCaptor = ArgumentCaptor.forClass(ManifestsOutcome.class);
+    verify(sweepingOutputService, times(1))
+        .consume(any(Ambiance.class), eq("manifests"), manifestsOutcomeArgumentCaptor.capture(), eq("STAGE"));
+    verify(expressionResolver, times(1)).updateExpressions(any(Ambiance.class), any());
+
+    ManifestsOutcome outcome = manifestsOutcomeArgumentCaptor.getValue();
+
+    assertThat(outcome.keySet()).containsExactlyInAnyOrder("file1", "file2");
+    assertThat(outcome.get("file2").getOrder()).isEqualTo(1);
+    verify(pipelineRbacHelper, times(1)).checkRuntimePermissions(any(), any(List.class), any(Boolean.class));
+
+    return response;
+  }
+
+  private <T> T testExecuteForHelmMultipleManifest(Supplier<T> executeMethod) {
+    ManifestConfigWrapper file1 = sampleHelmChartManifestFile("file1", ManifestConfigType.HELM_CHART);
+    ManifestConfigWrapper file2 = sampleHelmChartManifestFile("file2", ManifestConfigType.HELM_CHART);
+    ManifestConfigWrapper file3 = sampleValuesYamlFile("file3");
+    ManifestConfigWrapper file4 = sampleValuesYamlFile("file4");
+
+    final Map<String, List<ManifestConfigWrapper>> finalManifests = new HashMap<>();
+    finalManifests.put(SERVICE, Arrays.asList(file1, file2));
+    finalManifests.put(ENVIRONMENT_GLOBAL_OVERRIDES, Collections.singletonList(file3));
+    finalManifests.put(SERVICE_OVERRIDES, Collections.singletonList(file4));
+
+    doReturn(OptionalSweepingOutput.builder()
+                 .found(true)
+                 .output(NgManifestsMetadataSweepingOutput.builder()
+                             .finalSvcManifestsMap(finalManifests)
+                             .serviceIdentifier(SVC_ID)
+                             .environmentIdentifier(ENV_ID)
+                             .serviceDefinitionType(ServiceDefinitionType.KUBERNETES)
+                             .manifestConfigurations(ManifestConfigurations.builder()
+                                                         .primaryManifestRef(ParameterField.createValueField("file2"))
+                                                         .build())
+                             .build())
+                 .build())
+        .when(sweepingOutputService)
+        .resolveOptional(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+    List<EntityDetail> listEntityDetail = new ArrayList<>();
+
+    listEntityDetail.add(EntityDetail.builder().name("ManifestSecret1").build());
+    listEntityDetail.add(EntityDetail.builder().name("ManifestSecret2").build());
+
+    Set<EntityDetailProtoDTO> setEntityDetail = new HashSet<>();
+
+    doReturn(setEntityDetail).when(entityReferenceExtractorUtils).extractReferredEntities(any(), any());
+
+    doReturn(listEntityDetail)
+        .when(entityDetailProtoToRestMapper)
+        .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
+    verify(stageExecutionInfoService, times(0)).updateStageExecutionInfo(any(), any());
+
+    T response = executeMethod.get();
+
+    ArgumentCaptor<ManifestsOutcome> captor = ArgumentCaptor.forClass(ManifestsOutcome.class);
+    verify(sweepingOutputService, times(1))
+        .consume(any(Ambiance.class), eq("manifests"), captor.capture(), eq("STAGE"));
+    verify(expressionResolver, times(2)).updateExpressions(any(Ambiance.class), any());
+
+    ManifestsOutcome outcome = captor.getValue();
+
+    assertThat(outcome.keySet()).containsExactlyInAnyOrder("file2", "file3", "file4");
+    assertThat(outcome.get("file3").getOrder()).isEqualTo(1);
+    assertThat(outcome.get("file4").getOrder()).isEqualTo(2);
+    verify(pipelineRbacHelper, times(1)).checkRuntimePermissions(any(), any(List.class), any(Boolean.class));
+
+    return response;
+  }
+
   @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   public void executeSyncFailWithInvalidManifestListSync_0() {
+    executeSyncFailWithInvalidManifestList_0(
+        () -> step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null));
+
+    doReturn(true)
+        .when(featureFlagHelperService)
+        .isEnabled(anyString(), eq(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG));
     executeSyncFailWithInvalidManifestList_0(
         () -> step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null));
   }
@@ -224,6 +466,12 @@ public class ManifestsStepV2Test extends CategoryTest {
   public void executeSyncFailWithInvalidManifestList_0() {
     executeSyncFailWithInvalidManifestList_0(
         () -> step.executeAsync(buildAmbiance(), new EmptyStepParameters(), null, null));
+
+    doReturn(true)
+        .when(featureFlagHelperService)
+        .isEnabled(anyString(), eq(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG));
+    executeSyncFailWithInvalidManifestList_0(
+        () -> step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null));
   }
 
   private <T> void executeSyncFailWithInvalidManifestList_0(Supplier<T> executeMethod) {
@@ -265,12 +513,24 @@ public class ManifestsStepV2Test extends CategoryTest {
   public void executeSyncFailWithInvalidManifestListSync_1() {
     executeSyncFailWithInvalidManifestList_1(
         () -> step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null));
+
+    doReturn(true)
+        .when(featureFlagHelperService)
+        .isEnabled(anyString(), eq(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG));
+    executeSyncFailWithInvalidManifestList_1(
+        () -> step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null));
   }
 
   @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void executeSyncFailWithInvalidManifestList_1() {
+    executeSyncFailWithInvalidManifestList_1(
+        () -> step.executeAsync(buildAmbiance(), new EmptyStepParameters(), null, null));
+
+    doReturn(true)
+        .when(featureFlagHelperService)
+        .isEnabled(anyString(), eq(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG));
     executeSyncFailWithInvalidManifestList_1(
         () -> step.executeAsync(buildAmbiance(), new EmptyStepParameters(), null, null));
   }
@@ -304,6 +564,62 @@ public class ManifestsStepV2Test extends CategoryTest {
       assertThat(ex.getMessage())
           .contains(
               "Multiple manifests found [file2 : HelmChart, file1 : HelmChart]. NativeHelm deployment support only one manifest of one of types: HelmChart. Remove all unused manifests");
+      return;
+    }
+
+    fail("expected to raise an exception");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void executeSyncFailWithInvalidMultipleHelmManifestListSync_1() {
+    executeSyncFailWithInvalidMultipleHelmManifestList_1(
+        () -> step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null));
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void executeSyncFailWithInvalidMultipleHelmManifestList_1() {
+    executeSyncFailWithInvalidMultipleHelmManifestList_1(
+        () -> step.executeAsync(buildAmbiance(), new EmptyStepParameters(), null, null));
+  }
+
+  private <T> void executeSyncFailWithInvalidMultipleHelmManifestList_1(Supplier<T> executeMethod) {
+    doReturn(true)
+        .when(featureFlagHelperService)
+        .isEnabled(anyString(), eq(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG));
+    ManifestConfigWrapper file1 = sampleHelmChartManifestFile("file1", ManifestConfigType.HELM_CHART);
+    ManifestConfigWrapper file2 = sampleManifestFile("file2", ManifestConfigType.K8_MANIFEST);
+    ManifestConfigWrapper file3 = sampleValuesYamlFile("file3");
+
+    final Map<String, List<ManifestConfigWrapper>> finalManifests = new HashMap<>();
+    finalManifests.put(SERVICE, Arrays.asList(file1, file2));
+    finalManifests.put(SERVICE_OVERRIDES, Collections.singletonList(file3));
+
+    doReturn(OptionalSweepingOutput.builder()
+                 .found(true)
+                 .output(NgManifestsMetadataSweepingOutput.builder()
+                             .finalSvcManifestsMap(finalManifests)
+                             .serviceIdentifier(SVC_ID)
+                             .environmentIdentifier(ENV_ID)
+                             .serviceDefinitionType(ServiceDefinitionType.KUBERNETES)
+                             .manifestConfigurations(ManifestConfigurations.builder()
+                                                         .primaryManifestRef(ParameterField.createValueField("file1"))
+                                                         .build())
+                             .build())
+                 .build())
+        .when(sweepingOutputService)
+        .resolveOptional(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+
+    try {
+      executeMethod.get();
+    } catch (InvalidRequestException ex) {
+      assertThat(ex.getMessage())
+          .contains(
+              "Multiple manifests found [file2 : K8sManifest, file1 : HelmChart]. Kubernetes deployment support only one manifest of one of types: K8sManifest, HelmChart, Kustomize, OpenshiftTemplate. Remove all unused manifests");
       return;
     }
 
@@ -614,6 +930,74 @@ public class ManifestsStepV2Test extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void svcAndEnvLevelOverridesV2HelmRepoOverrideSyncMultipleManifest() throws IOException {
+    doReturn(true)
+        .when(featureFlagHelperService)
+        .isEnabled(anyString(), eq(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG));
+    svcAndEnvLevelOverridesV2HelmRepoOverrideMultipleManifest(
+        () -> step.executeSync(buildAmbiance(), new EmptyStepParameters(), null, null));
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void svcAndEnvLevelOverridesV2HelmRepoOverrideMultipleManifest() throws IOException {
+    doReturn(true)
+        .when(featureFlagHelperService)
+        .isEnabled(anyString(), eq(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG));
+    svcAndEnvLevelOverridesV2HelmRepoOverrideMultipleManifest(
+        () -> step.executeAsync(buildAmbiance(), new EmptyStepParameters(), null, null));
+  }
+
+  private <T> void svcAndEnvLevelOverridesV2HelmRepoOverrideMultipleManifest(Supplier<T> executeMethod)
+      throws IOException {
+    ManifestConfigWrapper svcHelmChart1 = sampleManifestHttpHelm("helm1", ManifestConfigType.HELM_CHART);
+    ManifestConfigWrapper svcHelmChart2 = sampleManifestHttpHelm("helm2", ManifestConfigType.HELM_CHART);
+    ManifestConfigWrapper envOverride = sampleHelmRepoOverride("helmoverride1", "svcoverride");
+    ManifestConfigWrapper infraOverride = sampleHelmRepoOverride("helmoverride2", "envoverride");
+
+    Map<ServiceOverridesType, List<ManifestConfigWrapper>> manifestsFromOverride = new HashMap<>();
+    manifestsFromOverride.put(ServiceOverridesType.ENV_SERVICE_OVERRIDE, List.of(envOverride));
+    manifestsFromOverride.put(ServiceOverridesType.INFRA_GLOBAL_OVERRIDE, List.of(infraOverride));
+
+    doReturn(true).when(featureFlagHelperService).isEnabled(anyString(), eq(FeatureName.CDS_SERVICE_OVERRIDES_2_0));
+
+    doReturn(OptionalSweepingOutput.builder()
+                 .found(true)
+                 .output(NgManifestsMetadataSweepingOutput.builder()
+                             .serviceIdentifier(SVC_ID)
+                             .environmentIdentifier(ENV_ID)
+                             .svcManifests(List.of(svcHelmChart1, svcHelmChart2))
+                             .manifestsFromOverride(manifestsFromOverride)
+                             .serviceDefinitionType(ServiceDefinitionType.NATIVE_HELM)
+                             .manifestConfigurations(ManifestConfigurations.builder()
+                                                         .primaryManifestRef(ParameterField.createValueField("helm1"))
+                                                         .build())
+                             .build())
+                 .build())
+        .when(sweepingOutputService)
+        .resolveOptional(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
+    doReturn(request).when(ngSettingsClient).getSetting(anyString(), anyString(), anyString(), anyString());
+    doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
+
+    executeMethod.get();
+
+    ArgumentCaptor<ManifestsOutcome> captor = ArgumentCaptor.forClass(ManifestsOutcome.class);
+    verify(sweepingOutputService, times(1))
+        .consume(any(Ambiance.class), eq("manifests"), captor.capture(), eq("STAGE"));
+    ManifestsOutcome manifestsOutcome = captor.getValue();
+    assertThat(manifestsOutcome).isNotNull();
+    assertThat(manifestsOutcome.values().stream().map(ManifestOutcome::getIdentifier).collect(Collectors.toList()))
+        .containsExactlyInAnyOrder("helm1");
+  }
+
+  @Test
   @Owner(developers = OwnerRule.TATHAGAT)
   @Category(UnitTests.class)
   public void svcAndEnvLevelOverridesV2OnlySvcManifestSync() throws IOException {
@@ -833,26 +1217,166 @@ public class ManifestsStepV2Test extends CategoryTest {
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SKIPPED);
   }
 
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void handleAsyncResponseWithResponse() {
+    final ManifestsOutcome manifestsOutcome = new ManifestsOutcome();
+    final Map<String, String> taskIdMapping = ImmutableMap.of("task1", "manifest1");
+    final UnresolvedManifestsOutput output =
+        UnresolvedManifestsOutput.builder().taskIdMapping(taskIdMapping).manifestsOutcome(manifestsOutcome).build();
+    final OptionalSweepingOutput optionalSweepingOutput =
+        OptionalSweepingOutput.builder().found(true).output(output).build();
+    final Map<String, ResponseData> responses = ImmutableMap.of("task1", mock(ResponseData.class));
+
+    doReturn(optionalSweepingOutput)
+        .when(sweepingOutputService)
+        .resolveOptional(any(Ambiance.class),
+            eq(RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.UNRESOLVED_MANIFESTS)));
+
+    StepResponse stepResponse = step.handleAsyncResponse(buildAmbiance(), new EmptyStepParameters(), responses);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    verify(manifestTaskService).handleTaskResponses(responses, manifestsOutcome, taskIdMapping);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void handleAsyncResponseWithErrorResponse() {
+    final ManifestsOutcome manifestsOutcome = new ManifestsOutcome();
+    final Map<String, String> taskIdMapping = ImmutableMap.of("task1", "manifest1");
+    final UnresolvedManifestsOutput output =
+        UnresolvedManifestsOutput.builder().taskIdMapping(taskIdMapping).manifestsOutcome(manifestsOutcome).build();
+    final OptionalSweepingOutput optionalSweepingOutput =
+        OptionalSweepingOutput.builder().found(true).output(output).build();
+    final Map<String, ResponseData> responses = ImmutableMap.of("task1", mock(ResponseData.class));
+    final StepResponse failedResponse = StepResponse.builder().status(Status.FAILED).build();
+    final Exception exception = new InvalidRequestException("Something went wrong");
+
+    doReturn(optionalSweepingOutput)
+        .when(sweepingOutputService)
+        .resolveOptional(any(Ambiance.class),
+            eq(RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.UNRESOLVED_MANIFESTS)));
+    doThrow(exception).when(manifestTaskService).handleTaskResponses(responses, manifestsOutcome, taskIdMapping);
+    doReturn(failedResponse).when(strategyHelper).handleException(exception);
+
+    StepResponse stepResponse = step.handleAsyncResponse(buildAmbiance(), new EmptyStepParameters(), responses);
+    assertThat(stepResponse).isSameAs(failedResponse);
+    verify(manifestTaskService).handleTaskResponses(responses, manifestsOutcome, taskIdMapping);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void throwExceptionIfPrimaryManifestRefUnresolved() {
+    doReturn(true)
+        .when(featureFlagHelperService)
+        .isEnabled(anyString(), eq(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG));
+    ManifestConfigWrapper svcHelmChart1 = sampleManifestHttpHelm("helm1", ManifestConfigType.HELM_CHART);
+    ManifestConfigWrapper svcHelmChart2 = sampleManifestHttpHelm("helm2", ManifestConfigType.HELM_CHART);
+    ManifestConfigWrapper envOverride = sampleHelmRepoOverride("helmoverride1", "svcoverride");
+    ManifestConfigWrapper infraOverride = sampleHelmRepoOverride("helmoverride2", "envoverride");
+
+    Map<ServiceOverridesType, List<ManifestConfigWrapper>> manifestsFromOverride = new HashMap<>();
+    manifestsFromOverride.put(ServiceOverridesType.ENV_SERVICE_OVERRIDE, List.of(envOverride));
+    manifestsFromOverride.put(ServiceOverridesType.INFRA_GLOBAL_OVERRIDE, List.of(infraOverride));
+
+    doReturn(OptionalSweepingOutput.builder()
+                 .found(true)
+                 .output(NgManifestsMetadataSweepingOutput.builder()
+                             .serviceIdentifier(SVC_ID)
+                             .environmentIdentifier(ENV_ID)
+                             .svcManifests(List.of(svcHelmChart1, svcHelmChart2))
+                             .manifestsFromOverride(manifestsFromOverride)
+                             .serviceDefinitionType(ServiceDefinitionType.NATIVE_HELM)
+                             .manifestConfigurations(ManifestConfigurations.builder()
+                                                         .primaryManifestRef(ParameterField.createExpressionField(
+                                                             true, "<+input>", null, true))
+                                                         .build())
+                             .build())
+                 .build())
+        .when(sweepingOutputService)
+        .resolveOptional(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+
+    assertThatThrownBy(() -> step.executeAsync(buildAmbiance(), new EmptyStepParameters(), null, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Unable to resolve primaryManifestRef. Please check the expression <+input>");
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void throwExceptionIfPrimaryManifestDoesNotMatchManifestId() throws IOException {
+    doReturn(true)
+        .when(featureFlagHelperService)
+        .isEnabled(anyString(), eq(FeatureName.CDS_HELM_MULTIPLE_MANIFEST_SUPPORT_NG));
+    doReturn(true).when(featureFlagHelperService).isEnabled(anyString(), eq(FeatureName.CDS_SERVICE_OVERRIDES_2_0));
+    ManifestConfigWrapper svcHelmChart1 = sampleManifestHttpHelm("helm1", ManifestConfigType.HELM_CHART);
+    ManifestConfigWrapper envOverride = sampleHelmRepoOverride("helmoverride1", "svcoverride");
+    ManifestConfigWrapper infraOverride = sampleHelmRepoOverride("helmoverride2", "envoverride");
+
+    Map<ServiceOverridesType, List<ManifestConfigWrapper>> manifestsFromOverride = new HashMap<>();
+    manifestsFromOverride.put(ServiceOverridesType.ENV_SERVICE_OVERRIDE, List.of(envOverride));
+    manifestsFromOverride.put(ServiceOverridesType.INFRA_GLOBAL_OVERRIDE, List.of(infraOverride));
+
+    doReturn(OptionalSweepingOutput.builder()
+                 .found(true)
+                 .output(NgManifestsMetadataSweepingOutput.builder()
+                             .serviceIdentifier(SVC_ID)
+                             .environmentIdentifier(ENV_ID)
+                             .svcManifests(List.of(svcHelmChart1))
+                             .manifestsFromOverride(manifestsFromOverride)
+                             .serviceDefinitionType(ServiceDefinitionType.NATIVE_HELM)
+                             .manifestConfigurations(ManifestConfigurations.builder()
+                                                         .primaryManifestRef(ParameterField.createValueField("helm2"))
+                                                         .build())
+                             .build())
+                 .build())
+        .when(sweepingOutputService)
+        .resolveOptional(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_MANIFESTS_SWEEPING_OUTPUT)));
+
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
+    doReturn(request).when(ngSettingsClient).getSetting(anyString(), anyString(), anyString(), anyString());
+    doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
+
+    assertThatThrownBy(() -> step.executeAsync(buildAmbiance(), new EmptyStepParameters(), null, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("primaryManifestRef: helm2 does not match to any [HELMCHART] manifests");
+  }
+
   private ManifestConfigWrapper sampleManifestFile(String identifier, ManifestConfigType type) {
     return ManifestConfigWrapper.builder()
-        .manifest(ManifestConfig.builder()
-                      .identifier(identifier)
-                      .type(type)
-                      .spec(K8sManifest.builder()
-                                .identifier(identifier)
-                                .store(ParameterField.createValueField(
-                                    StoreConfigWrapper.builder()
-                                        .type(StoreConfigType.GIT)
-                                        .spec(GitStore.builder()
-                                                  .folderPath(ParameterField.createValueField("manifests/"))
-                                                  .connectorRef(ParameterField.createValueField("gitconnector"))
-                                                  .branch(ParameterField.createValueField("main"))
-                                                  .paths(ParameterField.createValueField(List.of("path1", "path2")))
-                                                  .build())
-                                        .build()))
-                                .build())
-                      .build())
+        .manifest(ManifestConfig.builder().identifier(identifier).type(type).spec(getSpec(identifier, type)).build())
         .build();
+  }
+
+  private ManifestAttributes getSpec(String identifier, ManifestConfigType type) {
+    if (ManifestConfigType.HELM_CHART.equals(type)) {
+      return HelmChartManifest.builder()
+          .identifier(identifier)
+          .helmVersion(HelmVersion.V3)
+          .chartVersion(ParameterField.createValueField("0.1.0"))
+          .store(getStoreConfig())
+          .build();
+    }
+    return K8sManifest.builder().identifier(identifier).store(getStoreConfig()).build();
+  }
+
+  @NotNull
+  private ParameterField<StoreConfigWrapper> getStoreConfig() {
+    return ParameterField.createValueField(
+        StoreConfigWrapper.builder()
+            .type(StoreConfigType.GIT)
+            .spec(GitStore.builder()
+                      .folderPath(ParameterField.createValueField("manifests/"))
+                      .connectorRef(ParameterField.createValueField("gitconnector"))
+                      .branch(ParameterField.createValueField("main"))
+                      .paths(ParameterField.createValueField(List.of("path1", "path2")))
+                      .build())
+            .build());
   }
 
   private ManifestConfigWrapper sampleManifestHttpHelm(String identifier, ManifestConfigType type) {

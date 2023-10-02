@@ -7,26 +7,24 @@
 
 package io.harness.delegate.aws.asg;
 
-import static io.harness.aws.asg.manifest.AsgManifestType.AsgConfiguration;
-import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
-import static io.harness.aws.asg.manifest.AsgManifestType.AsgScheduledUpdateGroupAction;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgSwapService;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.beans.LogHelper.color;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.asg.AsgCommandUnitConstants;
 import io.harness.aws.asg.AsgSdkManager;
-import io.harness.aws.asg.manifest.AsgConfigurationManifestHandler;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainFactory;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainState;
-import io.harness.aws.asg.manifest.request.AsgConfigurationManifestRequest;
-import io.harness.aws.asg.manifest.request.AsgScalingPolicyManifestRequest;
-import io.harness.aws.asg.manifest.request.AsgScheduledActionManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgSwapServiceManifestRequest;
+import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.ecs.ElbV2Client;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -52,12 +50,12 @@ import software.wings.beans.LogWeight;
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.google.inject.Inject;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
 @Slf4j
@@ -93,6 +91,10 @@ public class AsgBlueGreenSwapServiceCommandTaskHandler extends AsgCommandTaskNGH
 
       AutoScalingGroup prodAutoScalingGroup = asgSdkManager.getASG(asgBlueGreenSwapServiceRequest.getProdAsgName());
 
+      List<AsgLoadBalancerConfig> lbConfigs = isNotEmpty(asgBlueGreenSwapServiceRequest.getLoadBalancers())
+          ? asgBlueGreenSwapServiceRequest.getLoadBalancers()
+          : Arrays.asList(asgBlueGreenSwapServiceRequest.getAsgLoadBalancerConfig());
+
       AsgManifestHandlerChainFactory asgManifestHandlerChainFactory =
           (AsgManifestHandlerChainFactory) AsgManifestHandlerChainFactory.builder()
               .initialChainState(AsgManifestHandlerChainState.builder()
@@ -103,32 +105,19 @@ public class AsgBlueGreenSwapServiceCommandTaskHandler extends AsgCommandTaskNGH
               .build()
               .addHandler(AsgSwapService,
                   AsgSwapServiceManifestRequest.builder()
-                      .asgLoadBalancerConfig(asgBlueGreenSwapServiceRequest.getAsgLoadBalancerConfig())
+                      .loadBalancers(lbConfigs)
                       .region(asgInfraConfig.getRegion())
                       .awsInternalConfig(awsInternalConfig)
                       .build());
 
-      if (asgBlueGreenSwapServiceRequest.isDownsizeOldAsg() && prodAutoScalingGroup != null) {
-        // if its not a first deployment, update old asg with zero desired instance count (if downsize flag is enabled)
-        // and change its tag
-        String asgConfigurationContent = "{}";
-        Map<String, Object> asgConfigurationOverrideProperties = new HashMap<>();
-        asgConfigurationOverrideProperties.put(AsgConfigurationManifestHandler.OverrideProperties.minSize, 0);
-        asgConfigurationOverrideProperties.put(AsgConfigurationManifestHandler.OverrideProperties.maxSize, 0);
-        asgConfigurationOverrideProperties.put(AsgConfigurationManifestHandler.OverrideProperties.desiredCapacity, 0);
-
-        asgManifestHandlerChainFactory
-            .addHandler(AsgScalingPolicy, AsgScalingPolicyManifestRequest.builder().manifests(null).build())
-            .addHandler(
-                AsgScheduledUpdateGroupAction, AsgScheduledActionManifestRequest.builder().manifests(null).build())
-            .addHandler(AsgConfiguration,
-                AsgConfigurationManifestRequest.builder()
-                    .manifests(Arrays.asList(asgConfigurationContent))
-                    .overrideProperties(asgConfigurationOverrideProperties)
-                    .build());
-      }
-
       AsgManifestHandlerChainState chainState = asgManifestHandlerChainFactory.executeUpsert();
+
+      // if it's not a first deployment, update old asg with zero desired instance count (if downsize flag is enabled)
+      if (asgBlueGreenSwapServiceRequest.isDownsizeOldAsg() && prodAutoScalingGroup != null) {
+        asgSdkManager.clearAllScalingPoliciesForAsg(prodAutoScalingGroup.getAutoScalingGroupName());
+        asgSdkManager.clearAllScheduledActionsForAsg(prodAutoScalingGroup.getAutoScalingGroupName());
+        asgSdkManager.downSizeToZero(prodAutoScalingGroup.getAutoScalingGroupName());
+      }
 
       AutoScalingGroup prodAutoScalingGroupAfterTrafficShift = asgSdkManager.getASG(chainState.getNewAsgName());
       AutoScalingGroupContainer prodAutoScalingGroupContainerAfterTrafficShift =

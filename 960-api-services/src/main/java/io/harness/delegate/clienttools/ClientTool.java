@@ -6,6 +6,9 @@
  */
 
 package io.harness.delegate.clienttools;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
@@ -13,6 +16,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Getter
 @RequiredArgsConstructor
 @ToString(onlyExplicitlyIncluded = true)
@@ -26,7 +30,7 @@ public enum ClientTool {
       "storage/harness-download/harness-helm/release/%s/bin/%s/%s/helm", ImmutableList.copyOf(HelmVersion.values()),
       HelmVersion.V3_8),
   KUBECTL("kubectl", "public/shared/tools/kubectl/release/%s/bin/%s/%s/kubectl", "./client-tools/kubectl/",
-      "version --short --client", "storage/harness-download/kubernetes-release/release/%s/bin/%s/%s/kubectl",
+      "version --client", "storage/harness-download/kubernetes-release/release/%s/bin/%s/%s/kubectl",
       ImmutableList.copyOf(KubectlVersion.values()), KubectlVersion.V1_19),
   KUSTOMIZE("kustomize", "public/shared/tools/kustomize/release/%s/bin/%s/%s/kustomize", "./client-tools/kustomize/",
       "version --short", "storage/harness-download/harness-kustomize/release/%s/bin/%s/%s/kustomize",
@@ -45,7 +49,7 @@ public enum ClientTool {
   GO_TEMPLATE("go-template", "public/shared/tools/go-template/release/%s/bin/%s/%s/go-template",
       "./client-tools/go-template/", "-v",
       "storage/harness-download/snapshot-go-template/release/%s/bin/%s/%s/go-template",
-      ImmutableList.copyOf(GoTemplateVersion.values()), GoTemplateVersion.V0_4_2),
+      ImmutableList.copyOf(GoTemplateVersion.values()), GoTemplateVersion.V0_4_4),
   HARNESS_PYWINRM("harness-pywinrm", "public/shared/tools/harness-pywinrm/release/%s/bin/%s/%s/harness-pywinrm",
       "./client-tools/harness-pywinrm/", "-v",
       "storage/harness-download/snapshot-harness-pywinrm/release/%s/bin/%s/%s/harness-pywinrm",

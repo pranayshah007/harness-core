@@ -10,9 +10,10 @@ package io.harness.cvng.core.beans.healthsource;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.google.common.base.Preconditions;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BadRequestException;
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -25,7 +26,9 @@ public class HealthSourceParamValuesRequest {
 
   public void validate() {
     if (QueryParamsDTO.QueryParamKeys.index.equals(paramName)) {
-      Preconditions.checkNotNull(connectorIdentifier, "The connector Identifer cannot be null");
+      if (StringUtils.isEmpty(connectorIdentifier)) {
+        throw new BadRequestException("The connector Identifier cannot be null");
+      }
     }
   }
 }

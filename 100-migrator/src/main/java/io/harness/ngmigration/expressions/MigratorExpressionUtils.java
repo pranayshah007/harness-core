@@ -7,6 +7,9 @@
 
 package io.harness.ngmigration.expressions;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EncryptedData;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
@@ -40,6 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 @Singleton
 public class MigratorExpressionUtils {
@@ -139,7 +143,7 @@ public class MigratorExpressionUtils {
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.buildNo", "<+ARTIFACT_PLACEHOLDER.tag>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.source.registryUrl", "<+ARTIFACT_PLACEHOLDER.registryUrl>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.URL", "<+ARTIFACT_PLACEHOLDER.url>");
-    artifactExpressions.put("ARTIFACT_PLACEHOLDER.url", "<+ARTIFACT_PLACEHOLDER.url>");
+    artifactExpressions.put("ARTIFACT_PLACEHOLDER.url", "<+ARTIFACT_PLACEHOLDER.metadata.url>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.artifactPath", "<+ARTIFACT_PLACEHOLDER.artifactPath>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.fileName", "<+ARTIFACT_PLACEHOLDER.metadata.fileName>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.key", "<+artifact.metadata.key>");
@@ -153,6 +157,10 @@ public class MigratorExpressionUtils {
       context.put(
           k.replace("ARTIFACT_PLACEHOLDER", "rollbackArtifact"), v.replace("ARTIFACT_PLACEHOLDER", "rollbackArtifact"));
     });
+
+    context.put("artifact.metadata.s3_bucket", "<+artifact.metadata.get(\"s3_bucket\")>");
+    context.put("artifact.metadata.s3_key", "<+artifact.metadata.get(\"s3_key\")>");
+    context.put("artifact.metadata.s3_secret", "<+artifact.metadata.get(\"s3_secret\")>");
 
     context.put("artifact.label", new ArtifactLabelMigratorFunctor());
     context.put("rollbackArtifact.label", new ArtifactLabelMigratorFunctor());
@@ -181,7 +189,7 @@ public class MigratorExpressionUtils {
     context.put("servicevariable", new ServiceVariablesMigratorFunctor());
     context.put("environmentVariable", new EnvVariablesMigratorFunctor());
     context.put("environmentVariables", new EnvVariablesMigratorFunctor());
-    context.put("configFile", new ConfigFileMigratorFunctor());
+    context.put("configFile", new ConfigFileMigratorFunctor(identifierCaseFormat));
 
     // Secrets
     context.put(
@@ -222,6 +230,13 @@ public class MigratorExpressionUtils {
     context.put("infra.pcf.space", "<+infra.space>");
     context.put("host.pcfElement.applicationId", "<+pcf.newAppGuid>");
     context.put("host.pcfElement.displayName", "<+pcf.newAppName>");
+
+    context.put("BACKUP_PATH", "<+variable.backupPath>");
+    context.put("RUNTIME_PATH", "<+variable.runtimePath>");
+    context.put("STAGING_PATH", "<+variable.stagingPath>");
+    context.put("WINGS_BACKUP_PATH", "<+variable.wingsBackupPath>");
+    context.put("WINGS_RUNTIME_PATH", "<+variable.wingsRuntimePath>");
+    context.put("WINGS_STAGING_PATH", "<+variable.wingsStagingPath>");
 
     if (overrides != null && EmptyPredicate.isNotEmpty(overrides.getCustomExpressions())) {
       context.putAll(overrides.getCustomExpressions());

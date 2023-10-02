@@ -47,6 +47,8 @@ public class ServiceYamlV2 implements Visitable {
   @Pattern(regexp = NGRegexValidatorConstants.NON_EMPTY_STRING_PATTERN)
   private ParameterField<String> serviceRef;
 
+  private String gitBranch;
+
   @VariableExpression(skipVariableExpression = true) private ServiceUseFromStageV2 useFromStage;
 
   @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH)

@@ -7,17 +7,19 @@
 
 package io.harness.event.handlers;
 
-import static io.harness.execution.NodeExecution.NodeExecutionKeys;
-
 import io.harness.OrchestrationPublisherName;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.pms.resume.EngineResumeCallback;
 import io.harness.engine.pms.tasks.TaskExecutor;
 import io.harness.engine.progress.EngineProgressCallback;
 import io.harness.exception.InvalidRequestException;
+import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
@@ -44,6 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.PIPELINE)
+@CodePulse(module = ProductModule.CDS, components = HarnessModuleComponent.CDS_PIPELINE, unitCoverageRequired = true)
 public class QueueTaskRequestProcessor implements SdkResponseProcessor {
   @Inject private Map<TaskCategory, TaskExecutor> taskExecutorMap;
   @Inject @Named(OrchestrationPublisherName.PUBLISHER_NAME) private String publisherName;
@@ -55,19 +58,26 @@ public class QueueTaskRequestProcessor implements SdkResponseProcessor {
   public void handleEvent(SdkResponseEventProto event) {
     // Queue Task
     QueueTaskRequest queueTaskRequest = event.getQueueTaskRequest();
+    Ambiance ambiance = event.getAmbiance();
     String nodeExecutionId = SdkResponseEventUtils.getNodeExecutionId(event);
-    String taskId =
-        queueTask(event.getAmbiance(), queueTaskRequest.getTaskRequest(), queueTaskRequest.getSetupAbstractionsMap());
+    String taskId = queueTask(ambiance, queueTaskRequest.getTaskRequest(), queueTaskRequest.getSetupAbstractionsMap());
 
     // this indicates and issue in task execution
     if (taskId == null) {
       log.error("Failed to Queue Task. Exiting handler");
       return;
     }
+
+    // update the node execution with executable response before queuing the callback
     ExecutableResponse executableResponse = buildExecutableResponseWithTaskId(queueTaskRequest, taskId);
     // Add Executable Response
     nodeExecutionService.updateStatusWithOps(nodeExecutionId, queueTaskRequest.getStatus(),
         ops -> ops.addToSet(NodeExecutionKeys.executableResponses, executableResponse), EnumSet.noneOf(Status.class));
+
+    // Queue callbacks
+    EngineResumeCallback callback = EngineResumeCallback.builder().ambiance(ambiance).build();
+    ProgressCallback progressCallback = EngineProgressCallback.builder().nodeExecutionId(nodeExecutionId).build();
+    waitNotifyEngine.waitForAllOn(publisherName, callback, progressCallback, taskId);
   }
 
   private ExecutableResponse buildExecutableResponseWithTaskId(QueueTaskRequest queueTaskRequest, String taskId) {
@@ -98,9 +108,6 @@ public class QueueTaskRequestProcessor implements SdkResponseProcessor {
       String taskId =
           Preconditions.checkNotNull(taskExecutor.queueTask(setupAbstractionsMap, taskRequest, Duration.ofSeconds(0)));
       log.info("TaskRequestQueued for NodeExecutionId : {}, TaskId; {}", nodeExecutionId, taskId);
-      EngineResumeCallback callback = EngineResumeCallback.builder().ambiance(ambiance).build();
-      ProgressCallback progressCallback = EngineProgressCallback.builder().ambiance(ambiance).build();
-      waitNotifyEngine.waitForAllOn(publisherName, callback, progressCallback, taskId);
       return taskId;
     } catch (Exception ex) {
       log.error("Error while queuing delegate task for node execution {}", nodeExecutionId, ex);

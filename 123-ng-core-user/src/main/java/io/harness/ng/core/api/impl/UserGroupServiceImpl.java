@@ -607,6 +607,9 @@ public class UserGroupServiceImpl implements UserGroupService {
     try {
       return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
         log.info("[NGSamlUserGroupSync] Saving new User group {}", newUserGroup);
+        UserGroup existingUG = getOrThrow(newUserGroup.getAccountIdentifier(), newUserGroup.getOrgIdentifier(),
+            newUserGroup.getProjectIdentifier(), newUserGroup.getIdentifier());
+        newUserGroup.setVersion(existingUG.getVersion());
         UserGroup updatedUserGroup = userGroupRepository.save(newUserGroup);
         log.info("[NGSamlUserGroupSync] Saved New User Group Successfully");
         outboxService.save(

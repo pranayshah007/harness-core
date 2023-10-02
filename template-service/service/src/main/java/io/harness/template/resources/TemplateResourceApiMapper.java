@@ -10,6 +10,9 @@ package io.harness.template.resources;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.StoreType;
@@ -32,6 +35,8 @@ import java.util.Set;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validator;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 public class TemplateResourceApiMapper {
   public static final String TEMPLATE = "TEMPLATE";
   private final Validator validator;
@@ -90,6 +95,7 @@ public class TemplateResourceApiMapper {
     templateResponse.setStoreType(storeTypeEnum);
     templateResponse.setConnectorRef(templateResponseDTO.getConnectorRef());
     templateResponse.setStableTemplate(templateResponseDTO.isStableTemplate());
+    templateResponse.setYamlVersion(templateResponseDTO.getYamlVersion());
     Set<ConstraintViolation<TemplateResponse>> violations = validator.validate(templateResponse);
     if (!violations.isEmpty()) {
       throw new JerseyViolationException(violations, null);
@@ -130,6 +136,7 @@ public class TemplateResourceApiMapper {
     templateMetadataSummaryResponse.setStoreType(storeTypeEnum);
     templateMetadataSummaryResponse.setConnectorRef(templateMetadataSummaryResponseDTO.getConnectorRef());
     templateMetadataSummaryResponse.setStableTemplate(templateMetadataSummaryResponseDTO.getStableTemplate());
+    templateMetadataSummaryResponse.yamlVersion(templateMetadataSummaryResponseDTO.getYamlVersion());
     Set<ConstraintViolation<TemplateMetadataSummaryResponseDTO>> violations =
         validator.validate(templateMetadataSummaryResponseDTO);
     if (!violations.isEmpty()) {

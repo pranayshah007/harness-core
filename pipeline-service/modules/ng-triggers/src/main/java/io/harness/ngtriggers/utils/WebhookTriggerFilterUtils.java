@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngtriggers.utils;
-
 import static io.harness.beans.WebhookEvent.Type.PUSH;
 import static io.harness.constants.Constants.BITBUCKET_CLOUD_HEADER_KEY;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -27,8 +26,11 @@ import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.HeaderConfig;
 import io.harness.exception.TriggerException;
 import io.harness.ngtriggers.beans.scm.WebhookPayloadData;
@@ -36,6 +38,7 @@ import io.harness.ngtriggers.beans.source.webhook.v2.TriggerEventDataCondition;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerSpecV2;
 import io.harness.ngtriggers.beans.source.webhook.v2.bitbucket.action.BitbucketPRAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.git.GitAction;
+import io.harness.ngtriggers.beans.source.webhook.v2.harness.HarnessSpec;
 import io.harness.ngtriggers.conditionchecker.ConditionEvaluator;
 import io.harness.ngtriggers.expressions.TriggerExpressionEvaluator;
 import io.harness.product.ci.scm.proto.ParseWebhookResponse;
@@ -49,12 +52,26 @@ import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
 @Slf4j
 public class WebhookTriggerFilterUtils {
+  public boolean checkIfEventTypeMatchesHarnessScm(WebhookTriggerSpecV2 webhookTriggerSpec) {
+    if (webhookTriggerSpec.fetchGitAware() == null) {
+      throw new TriggerException(
+          "Invalid Filter used. Event Filter is not compatible with class: " + webhookTriggerSpec.getClass(), USER_SRE);
+    }
+    String gitEvent = webhookTriggerSpec.fetchGitAware().fetchEvent().getValue();
+    return gitEvent.equals(PUSH_EVENT_TYPE);
+  }
+
   public boolean evaluateEventAndActionFilters(
       WebhookPayloadData webhookPayloadData, WebhookTriggerSpecV2 webhookTriggerConfigSpec) {
+    if (webhookTriggerConfigSpec instanceof HarnessSpec) {
+      return checkIfEventTypeMatchesHarnessScm(webhookTriggerConfigSpec)
+          && checkIfActionMatches(webhookPayloadData, webhookTriggerConfigSpec);
+    }
     return checkIfEventTypeMatches(webhookPayloadData.getWebhookEvent().getType(), webhookTriggerConfigSpec)
         && checkIfActionMatches(webhookPayloadData, webhookTriggerConfigSpec);
   }
@@ -99,9 +116,9 @@ public class WebhookTriggerFilterUtils {
       return true;
     }
 
-    Set<String> parsedActionValueSet = actions.stream().map(action -> action.getParsedValue()).collect(toSet());
+    Set<String> parsedActionValueSet = actions.stream().map(GitAction::getParsedValue).collect(toSet());
     if (actions.contains(BT_PULL_REQUEST_UPDATED)) {
-      specialHandlingForBBSPullReqUpdate(webhookPayloadData, actions, parsedActionValueSet);
+      specialHandlingForBBSPullReqUpdate(webhookPayloadData, parsedActionValueSet);
     }
     String eventActionReceived = webhookPayloadData.getWebhookEvent().getBaseAttributes().getAction();
 
@@ -121,12 +138,9 @@ public class WebhookTriggerFilterUtils {
   // So, For BT_PULL_REQUEST_UPDATED, we have associated "sync" as parsedValue,
   // So, here are adding "open" in case, it was bitbucker server payload
   private static void specialHandlingForBBSPullReqUpdate(
-      WebhookPayloadData webhookPayloadData, List<GitAction> actions, Set<String> parsedActionValueSet) {
-    Set<String> headerKeys = webhookPayloadData.getOriginalEvent()
-                                 .getHeaders()
-                                 .stream()
-                                 .map(headerConfig -> headerConfig.getKey())
-                                 .collect(toSet());
+      WebhookPayloadData webhookPayloadData, Set<String> parsedActionValueSet) {
+    Set<String> headerKeys =
+        webhookPayloadData.getOriginalEvent().getHeaders().stream().map(HeaderConfig::getKey).collect(toSet());
 
     if (!headerKeys.contains(BITBUCKET_CLOUD_HEADER_KEY)
         && !headerKeys.contains(BITBUCKET_CLOUD_HEADER_KEY.toLowerCase())
@@ -275,6 +289,6 @@ public class WebhookTriggerFilterUtils {
 
   public TriggerExpressionEvaluator generatorPMSExpressionEvaluator(
       ParseWebhookResponse parseWebhookResponse, List<HeaderConfig> headerConfigs, String payload) {
-    return new TriggerExpressionEvaluator(parseWebhookResponse, null, headerConfigs, payload);
+    return new TriggerExpressionEvaluator(parseWebhookResponse, null, headerConfigs, payload, null);
   }
 }

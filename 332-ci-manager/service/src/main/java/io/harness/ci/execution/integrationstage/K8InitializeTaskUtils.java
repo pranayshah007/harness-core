@@ -5,13 +5,18 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.integrationstage;
+package io.harness.ci.execution.integrationstage;
 
 import static io.harness.beans.FeatureName.CIE_ENABLED_RBAC;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveIntegerParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODE_BASE_CONNECTOR_REF;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_ARCH;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_NAME;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_OS;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_STAGE_TYPE;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_WORKSPACE;
 import static io.harness.ci.commonconstants.CICommonPodConstants.POD_NAME_PREFIX;
 import static io.harness.ci.commonconstants.CIExecutionConstants.ACCOUNT_ID_ATTR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.ADDON_VOLUME;
@@ -49,8 +54,9 @@ import static io.harness.ci.commonconstants.ContainerExecutionConstants.GOLANG_C
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.GOLANG_CACHE_ENV_NAME;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.GRADLE_CACHE_DIR;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.GRADLE_CACHE_ENV_NAME;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_STAGE_ID_VARIABLE;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.PLUGIN_PIPELINE;
-import static io.harness.ci.utils.UsageUtils.getExecutionUser;
+import static io.harness.ci.execution.utils.UsageUtils.getExecutionUser;
 import static io.harness.common.STOExecutionConstants.STO_SERVICE_ENDPOINT_VARIABLE;
 import static io.harness.common.STOExecutionConstants.STO_SERVICE_TOKEN_VARIABLE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -61,8 +67,11 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.CharUtils.isAsciiAlphanumeric;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
@@ -77,18 +86,20 @@ import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.Capabilities;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.SecurityContext;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.Toleration;
+import io.harness.beans.yaml.extended.platform.ArchType;
+import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.beans.yaml.extended.volumes.CIVolume;
 import io.harness.beans.yaml.extended.volumes.EmptyDirYaml;
 import io.harness.beans.yaml.extended.volumes.HostPathYaml;
 import io.harness.beans.yaml.extended.volumes.PersistentVolumeClaimYaml;
-import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.SecretUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.utils.ExceptionUtility;
+import io.harness.ci.execution.utils.GithubApiFunctor;
+import io.harness.ci.execution.utils.GithubApiTokenEvaluator;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.tiserviceclient.TIServiceUtils;
-import io.harness.ci.utils.ExceptionUtility;
-import io.harness.ci.utils.GithubApiFunctor;
-import io.harness.ci.utils.GithubApiTokenEvaluator;
 import io.harness.ci.utils.QuantityUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -114,6 +125,7 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 import io.harness.stoserviceclient.STOServiceUtils;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.core.timeout.Timeout;
@@ -133,11 +145,13 @@ import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.CI)
 public class K8InitializeTaskUtils {
   @Inject private ConnectorUtils connectorUtils;
+  @Inject private InputSetValidatorFactory inputSetValidatorFactory;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject private CILogServiceUtils logServiceUtils;
@@ -459,6 +473,7 @@ public class K8InitializeTaskUtils {
                                         .fetchConnector(true)
                                         .build())
             .connectorUtils(connectorUtils)
+            .inputSetValidatorFactory(inputSetValidatorFactory)
             .build();
 
     return githubApiTokenEvaluator.resolve(initializeStepInfo, ngAccess, ambiance.getExpressionFunctorToken());
@@ -535,7 +550,8 @@ public class K8InitializeTaskUtils {
 
   @NotNull
   public Map<String, String> getCommonStepEnvVariables(K8PodDetails k8PodDetails, Map<String, String> gitEnvVars,
-      Map<String, String> runtimeCodebaseVars, String workDirPath, String logPrefix, Ambiance ambiance) {
+      Map<String, String> runtimeCodebaseVars, String workDirPath, String logPrefix, Ambiance ambiance,
+      InitializeStepInfo initializeStepInfo, OSType os) {
     Map<String, String> envVars = new HashMap<>();
     final String accountID = AmbianceUtils.getAccountId(ambiance);
     final String userID = getExecutionUser(ambiance.getMetadata().getPrincipalInfo());
@@ -568,8 +584,17 @@ public class K8InitializeTaskUtils {
     envVars.put(PLUGIN_PIPELINE, pipelineID);
     envVars.put(HARNESS_BUILD_ID_VARIABLE, String.valueOf(buildNumber));
     envVars.put(HARNESS_STAGE_ID_VARIABLE, stageID);
+    envVars.put(DRONE_STAGE_NAME, stageID);
     envVars.put(HARNESS_EXECUTION_ID_VARIABLE, executionID);
     envVars.put(HARNESS_LOG_PREFIX_VARIABLE, logPrefix);
+    ParameterField<Platform> platform = initializeStepInfo.getStageElementConfig().getPlatform();
+    if (platform.getValue() != null && platform.getValue().getArch() != null) {
+      ArchType arch = RunTimeInputHandler.resolveArchType(platform.getValue().getArch());
+      envVars.put(DRONE_STAGE_ARCH, arch.toString());
+    }
+    envVars.put(DRONE_STAGE_TYPE, Infrastructure.Type.KUBERNETES_DIRECT.toString());
+    envVars.put(DRONE_STAGE_OS, os.toString());
+    envVars.put(DRONE_WORKSPACE, workDirPath);
     return envVars;
   }
 
@@ -618,9 +643,13 @@ public class K8InitializeTaskUtils {
     List<EntityDetail> entityDetails =
         secretVariableDetails.stream()
             .map(secretVariableDetail -> {
+              if (secretVariableDetail == null) {
+                return null;
+              }
               return createEntityDetails(secretVariableDetail.getSecretVariableDTO().getSecret().getIdentifier(),
                   accountIdentifier, projectIdentifier, orgIdentifier);
             })
+            .filter(Objects::nonNull)
             .collect(Collectors.toList());
 
     if (isNotEmpty(entityDetails) && featureFlagService.isEnabled(CIE_ENABLED_RBAC, accountIdentifier)) {

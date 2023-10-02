@@ -11,17 +11,12 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.PRASHANT;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
 import io.harness.OrchestrationTestBase;
 import io.harness.category.element.UnitTests;
-import io.harness.delay.DelayEventHelper;
 import io.harness.engine.interrupts.InterruptManager;
 import io.harness.engine.interrupts.InterruptPackage;
-import io.harness.engine.pms.resume.EngineWaitRetryCallback;
 import io.harness.execution.NodeExecution;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
@@ -35,7 +30,6 @@ import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.rule.Owner;
-import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
 import java.util.Collections;
@@ -47,8 +41,6 @@ import org.mockito.Mock;
 
 public class RetryAdviserResponseHandlerTest extends OrchestrationTestBase {
   @Mock private InterruptManager interruptManager;
-  @Mock private DelayEventHelper delayEventHelper;
-  @Mock private WaitNotifyEngine waitNotifyEngine;
   @Inject @InjectMocks private RetryAdviserResponseHandler retryAdviseHandler;
 
   @Test
@@ -90,46 +82,5 @@ public class RetryAdviserResponseHandlerTest extends OrchestrationTestBase {
         .isEqualTo(InterruptConfig.ConfigCase.RETRYINTERRUPTCONFIG);
     assertThat(interruptPackage.getInterruptConfig().getIssuedBy().getAdviserIssuer())
         .isEqualTo(AdviserIssuer.newBuilder().setAdviserType(AdviseType.RETRY).build());
-  }
-
-  @Test
-  @Owner(developers = PRASHANT)
-  @Category(UnitTests.class)
-  public void shouldTestHandleAdviseWithWait() {
-    String planExecutionId = generateUuid();
-    String nodeExecutionId = generateUuid();
-    String nodeSetupId = generateUuid();
-    String resumeId = generateUuid();
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .setPlanExecutionId(planExecutionId)
-                            .addAllLevels(Collections.singletonList(
-                                Level.newBuilder().setRuntimeId(nodeExecutionId).setSetupId(nodeSetupId).build()))
-                            .build();
-    RetryAdvise advise = RetryAdvise.newBuilder().setWaitInterval(100).setRetryNodeExecutionId(nodeExecutionId).build();
-    NodeExecution nodeExecution =
-        NodeExecution.builder()
-            .uuid(nodeExecutionId)
-            .ambiance(ambiance)
-            .nodeId(nodeSetupId)
-            .name("DUMMY")
-            .identifier("dummy")
-            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
-            .module("CD")
-            .startTs(System.currentTimeMillis())
-            .status(Status.FAILED)
-            .build();
-    doReturn(resumeId).when(delayEventHelper).delay(eq(100L), any());
-
-    retryAdviseHandler.handleAdvise(
-        nodeExecution, AdviserResponse.newBuilder().setRetryAdvise(advise).setType(AdviseType.RETRY).build());
-
-    verify(delayEventHelper).delay(eq(100L), any());
-
-    ArgumentCaptor<EngineWaitRetryCallback> argumentCaptor = ArgumentCaptor.forClass(EngineWaitRetryCallback.class);
-    verify(waitNotifyEngine).waitForAllOn(any(), argumentCaptor.capture(), eq(resumeId));
-
-    EngineWaitRetryCallback cb = argumentCaptor.getValue();
-    assertThat(cb.getPlanExecutionId()).isEqualTo(planExecutionId);
-    assertThat(cb.getNodeExecutionId()).isEqualTo(nodeExecutionId);
   }
 }

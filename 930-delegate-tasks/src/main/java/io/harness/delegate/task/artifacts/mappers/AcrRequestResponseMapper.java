@@ -6,14 +6,16 @@
  */
 
 package io.harness.delegate.task.artifacts.mappers;
-
 import static io.harness.azure.model.AzureConstants.DEFAULT_CERT_FILE_NAME;
 import static io.harness.filesystem.FileIo.writeFile;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.azure.AzureEnvironmentType;
 import io.harness.azure.model.AzureAuthenticationType;
@@ -42,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @UtilityClass
 @OwnedBy(HarnessTeam.CDP)
 public class AcrRequestResponseMapper {

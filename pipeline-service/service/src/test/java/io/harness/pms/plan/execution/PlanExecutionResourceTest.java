@@ -546,9 +546,9 @@ public class PlanExecutionResourceTest extends CategoryTest {
     doReturn(
         RetryInfo.builder().isResumable(true).groups(Collections.singletonList(RetryGroup.builder().build())).build())
         .when(retryExecutionHelper)
-        .validateRetry(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "PlanExecutionId");
+        .validateRetry(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "PlanExecutionId", null);
     ResponseDTO<RetryInfo> response = planExecutionResource.getRetryStages(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "PlanExecutionId", null);
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "PlanExecutionId", null, null);
     assertTrue(response.getData().isResumable());
   }
 
@@ -560,9 +560,9 @@ public class PlanExecutionResourceTest extends CategoryTest {
     doReturn(
         RetryInfo.builder().isResumable(true).groups(Collections.singletonList(RetryGroup.builder().build())).build())
         .when(retryExecutionHelper)
-        .validateRetry(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "PlanExecutionId");
+        .validateRetry(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "PlanExecutionId", null);
     ResponseDTO<RetryInfo> response = planExecutionResource.getRetryStages(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "PlanExecutionId", null);
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "PlanExecutionId", null, null);
     assertTrue(response.getData().isResumable());
     assertNull(ThreadOperationContextHelper.getThreadOperationContextUserFlow());
   }

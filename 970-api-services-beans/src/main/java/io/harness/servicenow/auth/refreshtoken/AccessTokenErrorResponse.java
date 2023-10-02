@@ -6,11 +6,13 @@
  */
 
 package io.harness.servicenow.auth.refreshtoken;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.servicenow.auth.refreshtoken.RefreshTokenExceptionUtils.throwRefreshTokenException;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.jackson.JsonNodeUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -21,6 +23,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Data
 @FieldDefaults(level = AccessLevel.PRIVATE)

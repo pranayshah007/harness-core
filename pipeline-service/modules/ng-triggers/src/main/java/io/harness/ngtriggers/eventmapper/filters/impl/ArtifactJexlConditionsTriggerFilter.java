@@ -5,7 +5,6 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 package io.harness.ngtriggers.eventmapper.filters.impl;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -13,16 +12,22 @@ import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalSta
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.TriggerException;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
+import io.harness.ngtriggers.beans.dto.eventmapping.UnMatchedTriggerInfo;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse.WebhookEventMappingResponseBuilder;
+import io.harness.ngtriggers.beans.response.TriggerEventResponse;
 import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactTriggerConfig;
 import io.harness.ngtriggers.beans.source.artifact.ManifestTriggerConfig;
+import io.harness.ngtriggers.beans.source.artifact.MultiRegionArtifactTriggerConfig;
 import io.harness.ngtriggers.eventmapper.filters.TriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.dto.FilterRequestData;
 import io.harness.ngtriggers.expressions.TriggerExpressionEvaluator;
@@ -41,6 +46,7 @@ import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 @Singleton
@@ -52,6 +58,7 @@ public class ArtifactJexlConditionsTriggerFilter implements TriggerFilter {
   public WebhookEventMappingResponse applyFilter(FilterRequestData filterRequestData) {
     WebhookEventMappingResponseBuilder mappingResponseBuilder = initWebhookEventMappingResponse(filterRequestData);
     List<TriggerDetails> matchedTriggers = new ArrayList<>();
+    List<UnMatchedTriggerInfo> unMatchedTriggersInfoList = new ArrayList<>();
 
     for (TriggerDetails trigger : filterRequestData.getDetails()) {
       try {
@@ -66,12 +73,22 @@ public class ArtifactJexlConditionsTriggerFilter implements TriggerFilter {
                                             .build();
         if (checkTriggerEligibility(filterRequestData, triggerDetails)) {
           matchedTriggers.add(triggerDetails);
+        } else {
+          UnMatchedTriggerInfo unMatchedTriggerInfo =
+              UnMatchedTriggerInfo.builder()
+                  .unMatchedTriggers(triggerDetails)
+                  .finalStatus(TriggerEventResponse.FinalStatus.TRIGGER_DID_NOT_MATCH_ARTIFACT_JEXL_CONDITION)
+                  .message(triggerDetails.getNgTriggerEntity().getIdentifier()
+                      + " didn't match condition for artifact jexl condition")
+                  .build();
+          unMatchedTriggersInfoList.add(unMatchedTriggerInfo);
         }
       } catch (Exception e) {
         log.error(getTriggerSkipMessage(trigger.getNgTriggerEntity()), e);
       }
     }
 
+    mappingResponseBuilder.unMatchedTriggerInfoList(unMatchedTriggersInfoList);
     if (isEmpty(matchedTriggers)) {
       log.info("No trigger matched polling event after condition evaluation:");
       mappingResponseBuilder.failedToFindTrigger(true)
@@ -96,6 +113,9 @@ public class ArtifactJexlConditionsTriggerFilter implements TriggerFilter {
     } else if (ArtifactTriggerConfig.class.isAssignableFrom(spec.getClass())) {
       ArtifactTriggerConfig artifactTriggerConfig = (ArtifactTriggerConfig) spec;
       triggerJexlCondition = artifactTriggerConfig.getSpec().fetchJexlArtifactConditions();
+    } else if (MultiRegionArtifactTriggerConfig.class.isAssignableFrom(spec.getClass())) {
+      MultiRegionArtifactTriggerConfig multiRegionArtifactTriggerConfig = (MultiRegionArtifactTriggerConfig) spec;
+      triggerJexlCondition = multiRegionArtifactTriggerConfig.getJexlCondition();
     }
 
     if (isEmpty(triggerJexlCondition)) {
@@ -110,16 +130,17 @@ public class ArtifactJexlConditionsTriggerFilter implements TriggerFilter {
     ArtifactData artifactData = ArtifactData.newBuilder().putAllMetadata(metadata).setBuild(build).build();
     String jsonMetadata = "";
     jsonMetadata = JsonPipelineUtils.getJsonString(metadata);
-    return checkIfJexlConditionsMatch(artifactData, jsonMetadata, triggerJexlCondition);
+    return checkIfJexlConditionsMatch(artifactData, jsonMetadata, triggerJexlCondition, spec);
   }
 
-  public boolean checkIfJexlConditionsMatch(ArtifactData artifactData, String payload, String jexlExpression) {
+  public boolean checkIfJexlConditionsMatch(
+      ArtifactData artifactData, String payload, String jexlExpression, NGTriggerSpecV2 spec) {
     if (isBlank(jexlExpression)) {
       return true;
     }
 
     TriggerExpressionEvaluator triggerExpressionEvaluator =
-        new TriggerExpressionEvaluator(null, artifactData, Collections.emptyList(), payload);
+        new TriggerExpressionEvaluator(null, artifactData, Collections.emptyList(), payload, spec);
     Object result = triggerExpressionEvaluator.evaluateExpression(jexlExpression);
     if (result != null && Boolean.class.isAssignableFrom(result.getClass())) {
       return (Boolean) result;

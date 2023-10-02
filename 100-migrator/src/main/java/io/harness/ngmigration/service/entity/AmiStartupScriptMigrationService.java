@@ -6,11 +6,13 @@
  */
 
 package io.harness.ngmigration.service.entity;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.cdng.elastigroup.config.yaml.StartupScriptConfiguration;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
@@ -29,6 +31,7 @@ import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
+import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
@@ -53,6 +56,7 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class AmiStartupScriptMigrationService extends NgMigrationService {
@@ -109,6 +113,7 @@ public class AmiStartupScriptMigrationService extends NgMigrationService {
     if (StringUtils.isBlank(userDataSpecification.getData())) {
       return null;
     }
+    MigratorExpressionUtils.render(migrationContext, userDataSpecification, inputDTO.getCustomExpressions());
     byte[] fileContent = userDataSpecification.getData().getBytes(StandardCharsets.UTF_8);
     CgEntityNode serviceNode = entities.get(
         CgEntityId.builder().type(NGMigrationEntityType.SERVICE).id(userDataSpecification.getServiceId()).build());
@@ -159,7 +164,7 @@ public class AmiStartupScriptMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected boolean isNGEntityExists() {
+  protected boolean isNGEntityExists(MigrationContext migrationContext) {
     return true;
   }
 

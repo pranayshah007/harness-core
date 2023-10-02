@@ -760,8 +760,8 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetUrlsForAzure() {
     HashSet<String> urls = filter.getUrls(repository4, "AZURE_REPO");
-    assertThat(urls).containsExactlyInAnyOrder(
-        "https://dev.azure.com/org/test/_git/test", "git@ssh.dev.azure.com:v3/org/test/test");
+    assertThat(urls).containsExactlyInAnyOrder("https://dev.azure.com/org/test/_git/test",
+        "https://org@dev.azure.com/org/test/_git/test", "git@ssh.dev.azure.com:v3/org/test/test");
   }
 
   @Test
@@ -769,16 +769,16 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetUrlsForOldAzure() {
     HashSet<String> urls = filter.getUrls(repository6, "AZURE_REPO");
-    assertThat(urls).containsExactlyInAnyOrder(
-        "https://dev.azure.com/org/test/_git/test", "git@ssh.dev.azure.com:v3/org/test/test");
+    assertThat(urls).containsExactlyInAnyOrder("https://dev.azure.com/org/test/_git/test",
+        "https://org@dev.azure.com/org/test/_git/test", "git@ssh.dev.azure.com:v3/org/test/test");
   }
   @Test
   @Owner(developers = RAGHAV_GUPTA)
   @Category(UnitTests.class)
   public void testGetUrlsForAzureWithEmptySSHUrl() {
     HashSet<String> urls = filter.getUrls(repository5, "AZURE_REPO");
-    assertThat(urls).containsExactlyInAnyOrder(
-        "https://dev.azure.com/org/test/_git/test", "git@ssh.dev.azure.com:v3/org/test/test");
+    assertThat(urls).containsExactlyInAnyOrder("https://dev.azure.com/org/test/_git/test",
+        "https://org@dev.azure.com/org/test/_git/test", "git@ssh.dev.azure.com:v3/org/test/test");
   }
 
   @Test
@@ -888,22 +888,6 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
 
     String sanitizedUrlAzure5 = filter.sanitizeUrl("http://www.dev.azure.com/username/repo");
     assertThat(sanitizedUrlAzure5).isEqualTo("https://dev.azure.com/username/repo");
-  }
-
-  @Test
-  @Owner(developers = DEV_MITTAL)
-  @Category(UnitTests.class)
-  public void testGetCompleteHarnessRepoName() {
-    NGTriggerEntity ngTriggerEntity =
-        NGTriggerEntity.builder().accountId("acc").orgIdentifier("org").projectIdentifier("proj").build();
-    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "repo")).isEqualTo("acc/org/proj/repo");
-    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "repo/")).isEqualTo("acc/org/proj/repo");
-    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "/repo/")).isEqualTo("acc/org/proj/repo");
-    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "proj/repo")).isEqualTo("acc/org/proj/repo");
-    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "proj/repo/")).isEqualTo("acc/org/proj/repo");
-    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "org/proj/repo")).isEqualTo("acc/org/proj/repo");
-    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "org/proj/repo/")).isEqualTo("acc/org/proj/repo");
-    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "/org/proj/repo")).isEqualTo("acc/org/proj/repo");
   }
 
   @Test

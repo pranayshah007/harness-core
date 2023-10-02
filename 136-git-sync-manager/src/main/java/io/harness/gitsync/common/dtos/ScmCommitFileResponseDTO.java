@@ -22,4 +22,5 @@ import lombok.experimental.FieldDefaults;
 public class ScmCommitFileResponseDTO {
   String commitId;
   String blobId;
+  boolean isGitDefaultBranch;
 }

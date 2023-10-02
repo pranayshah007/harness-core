@@ -6,7 +6,6 @@
  */
 
 package io.harness.filestore.outbox;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.audit.beans.AuthenticationInfoDTO.fromSecurityPrincipal;
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
@@ -15,13 +14,17 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.FILE_ENTITY;
 import static io.harness.filestore.events.FileCreateEvent.FILE_CREATED_EVENT;
 import static io.harness.filestore.events.FileDeleteEvent.FILE_DELETED_EVENT;
+import static io.harness.filestore.events.FileForceDeleteEvent.FILE_FORCE_DELETED_EVENT;
 import static io.harness.filestore.events.FileUpdateEvent.FILE_UPDATED_EVENT;
 import static io.harness.security.PrincipalContextData.PRINCIPAL_CONTEXT;
 
 import static java.lang.String.format;
 
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.audit.Action;
 import io.harness.audit.beans.AuditEntry;
 import io.harness.audit.beans.ResourceDTO;
@@ -58,6 +61,7 @@ import io.serializer.HObjectMapper;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @Slf4j
 @OwnedBy(CDP)
 public class FileEventHandler implements OutboxEventHandler {
@@ -82,7 +86,9 @@ public class FileEventHandler implements OutboxEventHandler {
         case FILE_UPDATED_EVENT:
           return handleFileUpdateEvent(outboxEvent);
         case FILE_DELETED_EVENT:
-          return handleFileDeleteEvent(outboxEvent);
+          return handleFileDeleteEvent(outboxEvent, false);
+        case FILE_FORCE_DELETED_EVENT:
+          return handleFileDeleteEvent(outboxEvent, true);
         default:
           throw new InvalidArgumentsException(format("Not supported event type %s", outboxEvent.getEventType()));
       }
@@ -129,12 +135,12 @@ public class FileEventHandler implements OutboxEventHandler {
     return publishedToRedis && publishAudit(auditEntry, outboxEvent);
   }
 
-  private boolean handleFileDeleteEvent(OutboxEvent outboxEvent) throws IOException {
+  private boolean handleFileDeleteEvent(OutboxEvent outboxEvent, boolean forceDelete) throws IOException {
     FileDeleteEvent fileDeleteEvent = objectMapper.readValue(outboxEvent.getEventData(), FileDeleteEvent.class);
     boolean publishedToRedis = publishEvent(outboxEvent, EventsFrameworkMetadataConstants.DELETE_ACTION);
     AuditEntry auditEntry =
         AuditEntry.builder()
-            .action(Action.DELETE)
+            .action(forceDelete ? Action.FORCE_DELETE : Action.DELETE)
             .module(ModuleType.CORE)
             .oldYaml(NGYamlUtils.getYamlString(FileStoreRequest.builder().file(fileDeleteEvent.getFile()).build()))
             .timestamp(outboxEvent.getCreatedAt())

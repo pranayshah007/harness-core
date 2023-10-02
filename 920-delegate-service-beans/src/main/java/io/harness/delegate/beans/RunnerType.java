@@ -11,5 +11,7 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class RunnerType {
-  public static final String RUNNER_TYPE_K8S = "k8s";
+  public static final String RUNNER_TYPE_K8S = "k8s-runner";
+  public static final String K8sRunnerInfraEndpoint = "/executionInfrastructure/" + RunnerType.RUNNER_TYPE_K8S;
+  public static final String K8sRunnerExecEndpoint = "/execution/" + RunnerType.RUNNER_TYPE_K8S;
 }

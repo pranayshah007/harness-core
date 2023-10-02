@@ -7,10 +7,13 @@
 
 package io.harness.delegate.beans.instancesync.info;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.k8s.model.K8sContainer;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -32,4 +35,13 @@ public class K8sServerInstanceInfo extends ServerInstanceInfo {
   private String podIP;
   private String blueGreenColor;
   private List<K8sContainer> containerList;
+  private HelmChartInfo helmChartInfo;
+
+  @Override
+  public String getReleaseKey() {
+    if (isEmpty(releaseName) || isEmpty(namespace)) {
+      return null;
+    }
+    return String.format("%s_%s", releaseName, namespace);
+  }
 }

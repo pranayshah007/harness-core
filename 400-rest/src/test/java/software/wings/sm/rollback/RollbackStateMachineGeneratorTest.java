@@ -30,6 +30,7 @@ import static software.wings.utils.WingsTestConstants.WORKFLOW_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.beans.ExecutionStatus;
@@ -108,7 +109,8 @@ public class RollbackStateMachineGeneratorTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldGenerateForRollbackExecution() {
     Workflow workflow = constructBasicWorkflowWithRollbackForAMI();
-    when(workflowExecutionService.getWorkflowExecution(APP_ID, WORKFLOW_EXECUTION_ID)).thenReturn(execution);
+    when(workflowExecutionService.getWorkflowExecution(eq(APP_ID), eq(WORKFLOW_EXECUTION_ID), any(String[].class)))
+        .thenReturn(execution);
     when(workflowService.readWorkflow(APP_ID, WORKFLOW_ID)).thenReturn(workflow);
     when(workflowService.stencilMap(any())).thenReturn(stencilMap);
     StateMachine originalStateMachine = new StateMachine(workflow, workflow.getDefaultVersion(),
@@ -128,7 +130,8 @@ public class RollbackStateMachineGeneratorTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldNotGenerateForRollback() {
     Workflow workflow = constructBasicWorkflowWithRollbackForAMI();
-    when(workflowExecutionService.getWorkflowExecution(APP_ID, WORKFLOW_EXECUTION_ID)).thenReturn(runningExecution);
+    when(workflowExecutionService.getWorkflowExecution(eq(APP_ID), eq(WORKFLOW_EXECUTION_ID), any(String[].class)))
+        .thenReturn(runningExecution);
     when(workflowService.readWorkflow(APP_ID, WORKFLOW_ID)).thenReturn(workflow);
     when(workflowService.stencilMap(any())).thenReturn(stencilMap);
     assertThatThrownBy(() -> stateMachineGenerator.generateForRollbackExecution(APP_ID, WORKFLOW_EXECUTION_ID))

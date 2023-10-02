@@ -16,7 +16,8 @@ import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.MEET;
 
 import static junit.framework.TestCase.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -29,8 +30,11 @@ import io.harness.eventsframework.webhookpayloads.webhookdata.SourceRepoType;
 import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
 import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookEventType;
 import io.harness.pms.triggers.webhook.service.TriggerWebhookExecutionServiceV2;
+import io.harness.product.ci.scm.proto.ParseWebhookResponse;
 import io.harness.rule.Owner;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -51,17 +55,22 @@ public class WebhookEventStreamListenerTest extends CategoryTest {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testHandleMessage() {
-    Message message = Message.newBuilder().build();
-    assertTrue(webhookEventStreamListener.handleMessage(message));
-    message = Message.newBuilder()
-                  .setMessage(io.harness.eventsframework.producer.Message.newBuilder()
-                                  .putMetadata(ENTITY_TYPE, PIPELINE_ENTITY)
-                                  .putMetadata(ACTION, DELETE_ACTION)
-                                  .setData(WebhookDTO.newBuilder().build().toByteString())
-                                  .build())
-                  .build();
-    webhookEventStreamListener.handleMessage(message);
-    verify(triggerWebhookExecutionServiceV2, times(1)).processEvent(any());
+    WebhookDTO webhookDTO = WebhookDTO.newBuilder()
+                                .setParsedResponse(ParseWebhookResponse.newBuilder().build())
+                                .setGitDetails(GitDetails.newBuilder().setEvent(WebhookEventType.PUSH).build())
+                                .build();
+    Message message = Message.newBuilder()
+                          .setMessage(io.harness.eventsframework.producer.Message.newBuilder()
+                                          .putMetadata(ENTITY_TYPE, PIPELINE_ENTITY)
+                                          .putMetadata(ACTION, DELETE_ACTION)
+                                          .setData(webhookDTO.toByteString())
+                                          .build())
+                          .build();
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put(ENTITY_TYPE, PIPELINE_ENTITY);
+    metadata.put(ACTION, DELETE_ACTION);
+    webhookEventStreamListener.handleMessage(message, System.currentTimeMillis());
+    verify(triggerWebhookExecutionServiceV2, times(1)).handleEvent(eq(webhookDTO), eq(metadata), anyLong(), anyLong());
   }
 
   @Test
@@ -69,23 +78,24 @@ public class WebhookEventStreamListenerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testHandleMessageForGitlabTrigger() {
     Message message = Message.newBuilder().build();
-    assertTrue(webhookEventStreamListener.handleMessage(message));
+    assertTrue(webhookEventStreamListener.handleMessage(message, System.currentTimeMillis()));
+    WebhookDTO webhookDTO =
+        WebhookDTO.newBuilder()
+            .setJsonPayload("{\n"
+                + "  \"ref\": \"refs/heads/main\"\n"
+                + "}")
+            .setGitDetails(
+                GitDetails.newBuilder().setEvent(WebhookEventType.PR).setSourceRepoType(SourceRepoType.GITLAB).build())
+            .build();
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put(ENTITY_TYPE, "trigger");
     message = Message.newBuilder()
                   .setMessage(io.harness.eventsframework.producer.Message.newBuilder()
-                                  .putMetadata(ENTITY_TYPE, "trigger")
-                                  .setData(WebhookDTO.newBuilder()
-                                               .setJsonPayload("{\n"
-                                                   + "  \"ref\": \"refs/heads/main\"\n"
-                                                   + "}")
-                                               .setGitDetails(GitDetails.newBuilder()
-                                                                  .setEvent(WebhookEventType.PR)
-                                                                  .setSourceRepoType(SourceRepoType.GITLAB)
-                                                                  .build())
-                                               .build()
-                                               .toByteString())
+                                  .putAllMetadata(metadata)
+                                  .setData(webhookDTO.toByteString())
                                   .build())
                   .build();
-    webhookEventStreamListener.handleMessage(message);
-    verify(triggerWebhookExecutionServiceV2, times(1)).processEvent(any());
+    webhookEventStreamListener.handleMessage(message, System.currentTimeMillis());
+    verify(triggerWebhookExecutionServiceV2, times(1)).handleEvent(eq(webhookDTO), eq(metadata), anyLong(), anyLong());
   }
 }

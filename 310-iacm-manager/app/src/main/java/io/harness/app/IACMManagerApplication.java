@@ -8,6 +8,7 @@
 package io.harness.app;
 
 import static io.harness.annotations.dev.HarnessTeam.IACM;
+import static io.harness.eventsframework.EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
@@ -18,10 +19,12 @@ import io.harness.ModuleType;
 import io.harness.PipelineServiceUtilityModule;
 import io.harness.SCMGrpcClientModule;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.functors.IacmFunctor;
 import io.harness.cache.CacheModule;
-import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
-import io.harness.ci.plan.creator.CIModuleInfoProvider;
-import io.harness.ci.plan.creator.filter.CIFilterCreationResponseMerger;
+import io.harness.ci.execution.execution.ObserverEventConsumer;
+import io.harness.ci.execution.execution.OrchestrationExecutionEventHandlerRegistrar;
+import io.harness.ci.execution.plan.creator.CIModuleInfoProvider;
+import io.harness.ci.execution.plan.creator.filter.CIFilterCreationResponseMerger;
 import io.harness.ci.registrars.ExecutionAdvisers;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
@@ -49,15 +52,22 @@ import io.harness.pms.sdk.PmsSdkConfiguration;
 import io.harness.pms.sdk.PmsSdkInitHelper;
 import io.harness.pms.sdk.PmsSdkModule;
 import io.harness.pms.sdk.core.SdkDeployMode;
+import io.harness.pms.sdk.core.execution.expression.SdkFunctor;
 import io.harness.pms.sdk.core.governance.JsonExpansionHandlerInfo;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.pms.sdk.execution.events.facilitators.FacilitatorEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.facilitators.FacilitatorEventRedisConsumerV2;
 import io.harness.pms.sdk.execution.events.interrupts.InterruptEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.interrupts.InterruptEventRedisConsumerV2;
 import io.harness.pms.sdk.execution.events.node.advise.NodeAdviseEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.node.advise.NodeAdviseRedisConsumerV2;
+import io.harness.pms.sdk.execution.events.node.resume.NodeResumeEventConsumerV2;
 import io.harness.pms.sdk.execution.events.node.resume.NodeResumeEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsumerV2;
 import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
+import io.harness.pms.sdk.execution.events.progress.NodeProgressEventRedisConsumerV2;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
 import io.harness.pms.serializer.json.PmsBeansJacksonModule;
 import io.harness.queue.QueueController;
@@ -88,6 +98,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -117,6 +128,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -280,6 +293,8 @@ public class IACMManagerApplication extends Application<IACMManagerConfiguration
 
     modules.add(new IACMPersistenceModule());
     addGuiceValidationModule(modules);
+    String mongoUri = configuration.getHarnessIACMMongo().getUri();
+
     modules.add(new IACMManagerServiceModule(configuration));
     modules.add(new CacheModule(configuration.getCacheConfig())); // TODO: ??
 
@@ -304,12 +319,18 @@ public class IACMManagerApplication extends Application<IACMManagerConfiguration
     scheduleJobs(injector, configuration);
     registerQueueListener(injector);
     registerPmsSdkEvents(injector);
+    registerEventConsumers(injector);
     registerOasResource(configuration, environment, injector);
     log.info("Starting app done");
     MaintenanceController.forceMaintenance(false);
     LogManager.shutdown();
   }
 
+  private void registerEventConsumers(final Injector injector) {
+    final ExecutorService observerEventConsumerExecutor =
+        Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat(OBSERVER_EVENT_CHANNEL).build());
+    observerEventConsumerExecutor.execute(injector.getInstance(ObserverEventConsumer.class));
+  }
   private void registerOasResource(IACMManagerConfiguration appConfig, Environment environment, Injector injector) {
     OpenApiResource openApiResource = injector.getInstance(OpenApiResource.class);
     openApiResource.setOpenApiConfiguration(appConfig.getOasConfig());
@@ -373,6 +394,7 @@ public class IACMManagerApplication extends Application<IACMManagerConfiguration
     boolean remote = config.getShouldConfigureWithPMS() != null && config.getShouldConfigureWithPMS();
 
     return PmsSdkConfiguration.builder()
+        .streamPerServiceConfiguration(config.isStreamPerServiceConfiguration())
         .deploymentMode(remote ? SdkDeployMode.REMOTE : SdkDeployMode.LOCAL)
         .moduleType(moduleType)
         .pipelineServiceInfoProviderClass(pipelineServiceInfoProviderClass)
@@ -390,7 +412,14 @@ public class IACMManagerApplication extends Application<IACMManagerConfiguration
         .orchestrationEventPoolConfig(config.getPmsSdkOrchestrationEventPoolConfig())
         .planCreatorServiceInternalConfig(config.getPmsPlanCreatorServicePoolConfig())
         .jsonExpansionHandlers(getJsonExpansionHandlers())
+        .sdkFunctors(getSdkFunctors())
         .build();
+  }
+
+  private Map<String, Class<? extends SdkFunctor>> getSdkFunctors() {
+    Map<String, Class<? extends SdkFunctor>> sdkFunctorMap = new HashMap<>();
+    sdkFunctorMap.put(IacmFunctor.IACM_FUNCTOR_NAME, IacmFunctor.class);
+    return sdkFunctorMap;
   }
 
   private List<JsonExpansionHandlerInfo> getJsonExpansionHandlers() {
@@ -424,13 +453,22 @@ public class IACMManagerApplication extends Application<IACMManagerConfiguration
     log.info("Initializing redis abstract consumers...");
     PipelineEventConsumerController pipelineEventConsumerController =
         injector.getInstance(PipelineEventConsumerController.class);
-    pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(OrchestrationEventRedisConsumer.class), 1);
+
+    pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(ProgressEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(NodeAdviseEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventRedisConsumer.class), 2);
+
+    pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumerV2.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumerV2.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumerV2.class), 2);
+    pipelineEventConsumerController.register(injector.getInstance(NodeProgressEventRedisConsumerV2.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeAdviseRedisConsumerV2.class), 2);
+    pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventConsumerV2.class), 2);
+
     pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class), 2);
   }
 

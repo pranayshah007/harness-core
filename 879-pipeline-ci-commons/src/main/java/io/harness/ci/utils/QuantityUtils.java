@@ -13,8 +13,12 @@ import io.harness.beans.quantity.CpuQuantity;
 import io.harness.beans.quantity.StorageQuantity;
 import io.harness.beans.quantity.unit.DecimalQuantityUnit;
 import io.harness.beans.quantity.unit.StorageQuantityUnit;
+import io.harness.exception.InvalidRequestException;
+
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CI)
+@Slf4j
 public class QuantityUtils {
   public static Integer getStorageQuantityValueInUnit(String memoryQuantityString, StorageQuantityUnit targetUnit) {
     StorageQuantity storageQuantity = StorageQuantity.fromString(memoryQuantityString);
@@ -26,9 +30,15 @@ public class QuantityUtils {
 
   public static Integer getCpuQuantityValueInUnit(String cpuQuantityString, DecimalQuantityUnit targetUnit) {
     CpuQuantity cpuQuantity = CpuQuantity.fromString(cpuQuantityString);
-    double numeric = Double.parseDouble(cpuQuantity.getNumericValue());
-    double multiplier = Math.pow(cpuQuantity.getUnit().getBase(), cpuQuantity.getUnit().getExponent());
-    double targetUnitMultiplier = Math.pow(targetUnit.getBase(), targetUnit.getExponent());
-    return Math.toIntExact(Math.round(numeric * (multiplier / targetUnitMultiplier)));
+    try {
+      double numeric = Double.parseDouble(cpuQuantity.getNumericValue());
+      double multiplier = Math.pow(cpuQuantity.getUnit().getBase(), cpuQuantity.getUnit().getExponent());
+      double targetUnitMultiplier = Math.pow(targetUnit.getBase(), targetUnit.getExponent());
+      return Math.toIntExact(Math.round(numeric * (multiplier / targetUnitMultiplier)));
+    } catch (Exception e) {
+      String errorMessage = String.format("Error while parsing cpu value %s", cpuQuantity.getNumericValue());
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage);
+    }
   }
 }

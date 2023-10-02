@@ -151,15 +151,9 @@ public interface DelegateService extends OwnedByAccount {
 
   String getProfileResult(String accountId, String delegateId);
 
-  @ValidationGroups(Create.class) String queueTask(@Valid DelegateTask task);
-
   @ValidationGroups(Create.class) String queueTaskV2(@Valid DelegateTask task);
 
-  void scheduleSyncTask(DelegateTask task);
-
   void scheduleSyncTaskV2(DelegateTask task);
-
-  <T extends DelegateResponseData> T executeTask(DelegateTask task) throws InterruptedException;
 
   <T extends DelegateResponseData> T executeTaskV2(DelegateTask task) throws InterruptedException;
 
@@ -206,11 +200,7 @@ public interface DelegateService extends OwnedByAccount {
 
   void updateLastExpiredEventHeartbeatTime(long lastExpiredEventHeartbeatTime, String delegateId, String accountId);
 
-  DelegateTask abortTask(String accountId, String delegateTaskId);
-
   DelegateTask abortTaskV2(String accountId, String delegateTaskId);
-
-  String expireTask(String accountId, String delegateTaskId);
 
   String expireTaskV2(String accountId, String delegateTaskId);
 

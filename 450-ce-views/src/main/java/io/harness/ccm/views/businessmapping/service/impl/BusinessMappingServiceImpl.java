@@ -27,9 +27,11 @@ import io.harness.ccm.views.helper.BusinessMappingDataSourceHelper;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @OwnedBy(CE)
@@ -99,6 +101,15 @@ public class BusinessMappingServiceImpl implements BusinessMappingService {
                             .build());
     }
     return viewFieldList;
+  }
+
+  @Override
+  public Set<String> getBusinessMappingIds(String accountId) {
+    List<BusinessMapping> businessMappings = businessMappingDao.findBusinessMappingIdsByAccountId(accountId);
+    if (businessMappings != null) {
+      return businessMappings.stream().map(businessMapping -> businessMapping.getUuid()).collect(Collectors.toSet());
+    }
+    return Collections.emptySet();
   }
 
   @Override

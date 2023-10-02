@@ -3,3 +3,4 @@ identifier: ngManagerServiceMetricsGroup
 labels:
   - namespace
   - containerName
+  - serviceName

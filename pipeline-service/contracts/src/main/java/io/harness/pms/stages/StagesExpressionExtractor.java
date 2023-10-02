@@ -6,12 +6,14 @@
  */
 
 package io.harness.pms.stages;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.expression.common.ExpressionConstants.EXPR_END;
 import static io.harness.expression.common.ExpressionConstants.EXPR_START;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
@@ -36,27 +38,11 @@ import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @UtilityClass
 @Slf4j
 public class StagesExpressionExtractor {
-  public String replaceExpressions(String pipelineYaml, Map<String, String> expressionValues) {
-    if (EmptyPredicate.isEmpty(expressionValues)) {
-      return pipelineYaml;
-    }
-    for (Map.Entry<String, String> entry : expressionValues.entrySet()) {
-      String expression = entry.getKey();
-      String replacement = entry.getValue();
-      if (!NGExpressionUtils.containsPattern(NGExpressionUtils.GENERIC_EXPRESSIONS_PATTERN, expression)) {
-        log.error(expression + " is not a syntactically valid pipeline expression.");
-        throw new InvalidRequestException(
-            expression + " is not a syntactically valid pipeline expression. Is the expression surrounded by <+ >?");
-      }
-      pipelineYaml = pipelineYaml.replace(expression, replacement);
-    }
-    return pipelineYaml;
-  }
-
   public String replaceExpressionsWithJsonNode(String pipelineYaml, Map<String, String> expressionValues) {
     if (EmptyPredicate.isEmpty(expressionValues)) {
       return pipelineYaml;
@@ -150,7 +136,7 @@ public class StagesExpressionExtractor {
                   return false;
                 }
                 String stageInExpression = getStageIdentifierInExpression(expression);
-                return !stageIdentifiers.contains(stageInExpression);
+                return stageInExpression != null && !stageIdentifiers.contains(stageInExpression);
               })
               .collect(Collectors.toList());
       expressionsToOtherStages.addAll(otherStageExpressions);
@@ -165,6 +151,9 @@ public class StagesExpressionExtractor {
 
   boolean isReferringToNonStageValue(String expression) {
     String[] wordsInExpression = expression.replace(EXPR_START, "").replace(EXPR_END, "").split("\\.");
+    if (wordsInExpression.length < 2) {
+      return true;
+    }
     return wordsInExpression[0].equals("pipeline") && !wordsInExpression[1].equals("stages");
   }
 
@@ -172,9 +161,17 @@ public class StagesExpressionExtractor {
     String firstKeyOfExpression = NGExpressionUtils.getFirstKeyOfExpression(expression);
     String[] wordsInExpression = expression.replace(EXPR_START, "").replace(EXPR_END, "").split("\\.");
     if (firstKeyOfExpression.equals("pipeline")) {
-      return wordsInExpression[2];
+      if (wordsInExpression.length > 2) {
+        return wordsInExpression[2];
+      } else {
+        return null;
+      }
     } else if (firstKeyOfExpression.equals("stages")) {
-      return wordsInExpression[1];
+      if (wordsInExpression.length > 1) {
+        return wordsInExpression[1];
+      } else {
+        return null;
+      }
     }
     throw new InvalidRequestException(expression + " is not a pipeline level or stages level expression");
   }

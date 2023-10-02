@@ -6,7 +6,6 @@
  */
 
 package io.harness.helper;
-
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AWS;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AZURE;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
@@ -16,8 +15,11 @@ import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_RA
 import static io.fabric8.kubernetes.api.KubernetesHelper.DEFAULT_NAMESPACE;
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
@@ -34,11 +36,13 @@ import io.harness.perpetualtask.instancesync.k8s.KubernetesCloudClusterConfig;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDP)
 @UtilityClass
 @Slf4j
 public class K8sAndHelmInfrastructureUtility {
-  public K8sDeploymentReleaseDetails getK8sDeploymentReleaseDetails(DeploymentInfoDTO deploymentInfoDTO) {
+  public K8sDeploymentReleaseDetails getK8sDeploymentReleaseDetails(
+      DeploymentInfoDTO deploymentInfoDTO, boolean isAddRegionalParam) {
     K8sDeploymentInfoDTO k8sDeploymentInfoDTO = (K8sDeploymentInfoDTO) deploymentInfoDTO;
     String subscriptionId = null;
     String resourceGroup = null;
@@ -62,7 +66,9 @@ public class K8sAndHelmInfrastructureUtility {
                                    .subscriptionId(subscriptionId)
                                    .resourceGroup(resourceGroup)
                                    .useClusterAdminCredentials(useClusterAdminCredentials)
+                                   .addRegionalParam(isAddRegionalParam)
                                    .build())
+        .helmChartInfo(k8sDeploymentInfoDTO.getHelmChartInfo())
         .build();
   }
 
@@ -92,6 +98,8 @@ public class K8sAndHelmInfrastructureUtility {
                                    .useClusterAdminCredentials(useClusterAdminCredentials)
                                    .build())
         .helmVersion(nativeHelmDeploymentInfoDTO.getHelmVersion().toString())
+        .helmChartInfo(nativeHelmDeploymentInfoDTO.getHelmChartInfo())
+        .workloadLabelSelectors(nativeHelmDeploymentInfoDTO.getWorkloadLabelSelectors())
         .build();
   }
 

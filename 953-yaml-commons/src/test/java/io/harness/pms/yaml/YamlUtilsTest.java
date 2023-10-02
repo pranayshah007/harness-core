@@ -832,7 +832,7 @@ public class YamlUtilsTest extends CategoryTest {
     YamlNode stepsNode =
         stage1Node.getField("spec").getNode().getField("execution").getNode().getField("steps").getNode();
     YamlNode step1Node = stepsNode.asArray().get(0).getField("step").getNode();
-    assertThat(YamlUtils.getStageFqnPath(step1Node, PipelineVersion.V0)).isEqualTo("pipeline.stages.qaStage");
+    assertThat(YamlUtils.getStageFqnPath(step1Node, HarnessYamlVersion.V0)).isEqualTo("pipeline.stages.qaStage");
   }
 
   @Test
@@ -849,7 +849,7 @@ public class YamlUtilsTest extends CategoryTest {
     YamlNode stage1Node = stagesNode.getNode().asArray().get(0);
     YamlNode stepsNode = stage1Node.getField("spec").getNode().getField("steps").getNode();
     YamlNode step1Node = stepsNode.asArray().get(0);
-    assertThat(YamlUtils.getStageFqnPath(step1Node, PipelineVersion.V1)).isEqualTo("stages.stage1");
+    assertThat(YamlUtils.getStageFqnPath(step1Node, HarnessYamlVersion.V1)).isEqualTo("stages.stage1");
   }
 
   @Test
@@ -949,5 +949,9 @@ public class YamlUtilsTest extends CategoryTest {
     assertThat(YamlUtils.writeYamlString(Map.of("k", new TextNode("+1234.12")))).isEqualTo("k: \"+1234.12\"\n");
     assertThat(YamlUtils.writeYamlString(Map.of("k", new TextNode("+1234.")))).isEqualTo("k: \"+1234.\"\n");
     assertThat(YamlUtils.writeYamlString(Map.of("k", new TextNode("+.12")))).isEqualTo("k: \"+.12\"\n");
+    assertThat(YamlUtils.writeYamlString(Map.of("k", new TextNode("123_321")))).isEqualTo("k: \"123_321\"\n");
+    assertThat(YamlUtils.writeYamlString(Map.of("k", new TextNode("_12321")))).isEqualTo("k: _12321\n");
+    assertThat(YamlUtils.writeYamlString(Map.of("k", new TextNode("123_321_")))).isEqualTo("k: \"123_321_\"\n");
+    assertThat(YamlUtils.writeYamlString(Map.of("k", new TextNode("12321_")))).isEqualTo("k: \"12321_\"\n");
   }
 }

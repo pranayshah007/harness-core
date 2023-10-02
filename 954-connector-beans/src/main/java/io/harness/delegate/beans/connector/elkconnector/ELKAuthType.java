@@ -16,5 +16,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public enum ELKAuthType {
   @JsonProperty("UsernamePassword") USERNAME_PASSWORD,
   @JsonProperty("ApiClientToken") API_CLIENT_TOKEN,
-  @JsonProperty("None") NONE;
+  @JsonProperty("None") NONE,
+  @JsonProperty("Bearer Token(HTTP Header)") BEARER_TOKEN;
 }

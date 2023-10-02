@@ -13,12 +13,18 @@ import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static java.util.Objects.isNull;
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+import static org.springframework.data.mongodb.core.query.Query.query;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.jira.JiraIssueNG;
@@ -70,12 +76,14 @@ import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Slf4j
 public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
@@ -90,6 +98,9 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
   private static final Set<String> approvalStepSpecTypeConstants =
       new HashSet<>(Arrays.asList(StepSpecTypeConstants.HARNESS_APPROVAL, StepSpecTypeConstants.SERVICENOW_APPROVAL,
           StepSpecTypeConstants.JIRA_APPROVAL, StepSpecTypeConstants.CUSTOM_APPROVAL));
+  private static final ApprovalType[] approvalsWithDelegateTasksInPolling =
+      new ApprovalType[] {ApprovalType.SERVICENOW_APPROVAL, ApprovalType.CUSTOM_APPROVAL, ApprovalType.JIRA_APPROVAL};
+
   @Inject private PmsEngineExpressionService pmsEngineExpressionService;
 
   @Inject
@@ -121,7 +132,7 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
   public List<ApprovalInstance> getApprovalInstancesByExecutionId(@NotEmpty String planExecutionId,
       @Valid ApprovalStatus approvalStatus, @Valid ApprovalType approvalType, String nodeExecutionId) {
     if (isEmpty(planExecutionId)) {
-      throw new InvalidRequestException("PlanExecutionId can be empty");
+      throw new InvalidRequestException("PlanExecutionId cannot be empty");
     }
 
     Criteria criteria = Criteria.where(ApprovalInstanceKeys.planExecutionId).is(planExecutionId);
@@ -152,10 +163,35 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
   @Override
   public HarnessApprovalInstance getHarnessApprovalInstance(@NotNull String approvalInstanceId) {
     ApprovalInstance instance = get(approvalInstanceId);
-    if (instance == null || instance.getType() != ApprovalType.HARNESS_APPROVAL) {
+    if (instance == null) {
       throw new InvalidRequestException(String.format("Invalid harness approval instance id: %s", approvalInstanceId));
+    } else if (instance.getType() != ApprovalType.HARNESS_APPROVAL) {
+      throw new InvalidRequestException(String.format(
+          "operation not permitted for %s type of approval step, it is supported only for Harness Approval Step",
+          instance.getType()));
     }
     return (HarnessApprovalInstance) instance;
+  }
+
+  @Override
+  public Optional<ApprovalInstance> findLatestApprovalInstanceByPlanExecutionIdAndType(
+      @NotEmpty String planExecutionId, @NotNull ApprovalType approvalType) {
+    if (isEmpty(planExecutionId)) {
+      throw new InvalidArgumentsException("PlanExecutionId cannot be null or empty");
+    }
+    if (approvalType == null) {
+      throw new InvalidArgumentsException("ApprovalType cannot be null");
+    }
+
+    Query approvalInstancesByPlanExecutionIdAndTypeQuery =
+        query(where(ApprovalInstanceKeys.planExecutionId).is(planExecutionId))
+            .addCriteria(where(ApprovalInstanceKeys.type).in(approvalType))
+            .with(Sort.by(Sort.Direction.DESC, ApprovalInstanceKeys.createdAt))
+            .limit(1);
+
+    List<ApprovalInstance> approvalInstances =
+        approvalInstanceRepository.find(approvalInstancesByPlanExecutionIdAndTypeQuery);
+    return isEmpty(approvalInstances) ? Optional.empty() : Optional.ofNullable(approvalInstances.get(0));
   }
 
   @Override
@@ -301,7 +337,7 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
 
   @Override
   public List<String> findAllPreviousWaitingApprovals(String accountId, String orgId, String projectId,
-      @NotEmpty String pipelineId, String approvalKey, Ambiance ambiance) {
+      @NotEmpty String pipelineId, String approvalKey, Ambiance ambiance, Long createdAt) {
     Criteria criteria = Criteria.where("accountId").is(accountId);
     if (!isNull(orgId)) {
       criteria.and("orgIdentifier").is(orgId);
@@ -317,15 +353,17 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
     }
     criteria.and(ApprovalInstanceKeys.status).is(ApprovalStatus.WAITING);
     criteria.and("isAutoRejectEnabled").is(true);
+    criteria.and(ApprovalInstanceKeys.createdAt).lt(createdAt);
 
     List<ApprovalInstance> approvalInstances = approvalInstanceRepository.findAll(criteria);
     approvalInstances = filterOnService(approvalInstances, ambiance);
     log.info("No. of approval instances fetched waiting for approval that will be auto rejected : {}",
         approvalInstances.size());
 
-    List<String> rejectedApprovalIds = new ArrayList<>();
-    approvalInstances.forEach(approvalInstance -> rejectedApprovalIds.add(approvalInstance.getId()));
-    return rejectedApprovalIds;
+    return approvalInstances.stream()
+        .filter(instance -> !instance.hasExpired())
+        .map(ApprovalInstance::getId)
+        .collect(Collectors.toList());
   }
 
   private List<ApprovalInstance> filterOnService(List<ApprovalInstance> approvalInstances, Ambiance currAmbiance) {
@@ -450,6 +488,53 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
             .addCriteria(Criteria.where(ApprovalInstanceKeys.status).is(ApprovalStatus.WAITING)),
         update);
   }
+  @Override
+  public void updateLatestDelegateTaskId(@NotNull String approvalInstanceId, String latestDelegateTaskId) {
+    if (StringUtils.isBlank(approvalInstanceId)) {
+      log.warn("Skipping updating latest delegate task id as empty approval id received");
+      return;
+    }
+
+    if (StringUtils.isBlank(latestDelegateTaskId)) {
+      log.warn("Skipping updating latest delegate task id in approval instance as empty delegate task id received");
+      return;
+    }
+
+    // update task id in approval instance to latest delegate task id
+    Update update = new Update().set(ServiceNowApprovalInstanceKeys.latestDelegateTaskId, latestDelegateTaskId);
+    // it only makes sense to update delegate task id for instances in waiting state
+    // if the instance is aborted/expired etc., and a task is queued that task id will not be updated.
+    approvalInstanceRepository.updateFirst(
+        new Query(Criteria.where(Mapper.ID_KEY).is(approvalInstanceId))
+            .addCriteria(Criteria.where(ApprovalInstanceKeys.status).is(ApprovalStatus.WAITING))
+            .addCriteria(
+                Criteria.where(ApprovalInstanceKeys.type).in(Arrays.asList(approvalsWithDelegateTasksInPolling))),
+        update);
+  }
+
+  @Override
+  public void updateKeyListInKeyValueCriteria(@NotNull String approvalInstanceId, String keyListInKeyValueCriteria) {
+    if (StringUtils.isBlank(approvalInstanceId)) {
+      log.warn("Skipping updating keyListInKeyValueCriteria as empty approval id received");
+      return;
+    }
+
+    if (isNull(keyListInKeyValueCriteria)) {
+      log.warn(
+          "Skipping updating keyListInKeyValueCriteria in approval instance as null keyListInKeyValueCriteria received");
+      return;
+    }
+
+    // update keyListInKeyValueCriteria in approval instance to filter fields
+    Update update = new Update().set(JiraApprovalInstanceKeys.keyListInKeyValueCriteria, keyListInKeyValueCriteria);
+    // it only makes sense to update keyListInKeyValueCriteria for Jira instances in waiting state
+    // if the instance is aborted/expired etc., and a task is queued then keyListInKeyValueCriteria will not be updated.
+    approvalInstanceRepository.updateFirst(
+        new Query(Criteria.where(Mapper.ID_KEY).is(approvalInstanceId))
+            .addCriteria(Criteria.where(ApprovalInstanceKeys.status).is(ApprovalStatus.WAITING))
+            .addCriteria(Criteria.where(ApprovalInstanceKeys.type).is(ApprovalType.JIRA_APPROVAL)),
+        update);
+  }
 
   public void rejectPreviousExecutionsV2(HarnessApprovalInstance instance, EmbeddedUser user) {
     if (instance.getIsAutoRejectEnabled() == null || !instance.getIsAutoRejectEnabled()) {
@@ -457,7 +542,7 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
     }
     List<String> rejectedApprovalIds = findAllPreviousWaitingApprovals(instance.getAccountId(),
         instance.getOrgIdentifier(), instance.getProjectIdentifier(), instance.getPipelineIdentifier(),
-        instance.getApprovalKey(), instance.getAmbiance());
+        instance.getApprovalKey(), instance.getAmbiance(), instance.getCreatedAt());
     rejectedApprovalIds.forEach(id -> rejectPreviousExecutions(id, user, false, instance.getAmbiance()));
     NGLogCallback logCallback =
         new NGLogCallback(logStreamingStepClientFactory, instance.getAmbiance(), COMMAND_UNIT, false);
@@ -467,33 +552,38 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
   @VisibleForTesting
   HarnessApprovalInstance addHarnessApprovalActivityInTransaction(@NotNull String approvalInstanceId,
       @NotNull EmbeddedUser user, @NotNull @Valid HarnessApprovalActivityRequestDTO request) {
-    HarnessApprovalInstance instance = fetchWaitingHarnessApproval(approvalInstanceId);
-    Ambiance ambiance = instance.getAmbiance();
-    NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, COMMAND_UNIT, false);
-    if (instance.hasExpired()) {
-      throw new InvalidRequestException("Harness approval instance has already expired");
-    }
+    try {
+      HarnessApprovalInstance instance = fetchWaitingHarnessApproval(approvalInstanceId);
+      Ambiance ambiance = instance.getAmbiance();
+      NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, COMMAND_UNIT, false);
+      if (instance.hasExpired()) {
+        throw new InvalidRequestException("Harness approval instance has already expired");
+      }
 
-    if (request.isAutoApprove()) {
-      instance.setStatus(ApprovalStatus.APPROVED);
-    } else if (request.getAction() == HarnessApprovalAction.REJECT) {
-      instance.setStatus(ApprovalStatus.REJECTED);
-    } else {
-      int newCount = (instance.getApprovalActivities() == null ? 0 : instance.getApprovalActivities().size()) + 1;
-      instance.setStatus(
-          (newCount >= instance.getApprovers().getMinimumCount()) ? ApprovalStatus.APPROVED : ApprovalStatus.WAITING);
+      if (request.isAutoApprove()) {
+        instance.setStatus(ApprovalStatus.APPROVED);
+      } else if (request.getAction() == HarnessApprovalAction.REJECT) {
+        instance.setStatus(ApprovalStatus.REJECTED);
+      } else {
+        int newCount = (instance.getApprovalActivities() == null ? 0 : instance.getApprovalActivities().size()) + 1;
+        instance.setStatus(
+            (newCount >= instance.getApprovers().getMinimumCount()) ? ApprovalStatus.APPROVED : ApprovalStatus.WAITING);
+      }
+      instance.addApprovalActivity(user, request);
+      logCallback.saveExecutionLog(String.format(
+          "Request to %s this approval received by %s with comments:{%s} and inputs:%s", request.getAction(),
+          StringUtils.isBlank(user.getName()) ? user.getName() : user.getEmail(), request.getComments(),
+          isEmpty(request.getApproverInputs())
+              ? "[]"
+              : request.getApproverInputs()
+                    .stream()
+                    .map(input -> String.format("( %s : %s)", input.getName(), input.getValue()))
+                    .collect(Collectors.toList())));
+      return approvalInstanceRepository.save(instance);
+    } catch (Exception e) {
+      log.error("failed to add approval activity", e);
+      throw new InvalidRequestException(String.format("Unable to add Harness Approval Activity : %s", e.getMessage()));
     }
-    instance.addApprovalActivity(user, request);
-    logCallback.saveExecutionLog(String.format(
-        "Request to %s this approval received by %s with comments:{%s} and inputs:%s", request.getAction(),
-        StringUtils.isBlank(user.getName()) ? user.getName() : user.getEmail(), request.getComments(),
-        isEmpty(request.getApproverInputs())
-            ? "[]"
-            : request.getApproverInputs()
-                  .stream()
-                  .map(input -> String.format("( %s : %s)", input.getName(), input.getValue()))
-                  .collect(Collectors.toList())));
-    return approvalInstanceRepository.save(instance);
   }
 
   private HarnessApprovalInstance fetchWaitingHarnessApproval(String approvalInstanceId) {

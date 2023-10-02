@@ -7,6 +7,9 @@
 
 package io.harness.repositories;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.freeze.entity.FrozenExecution;
 import io.harness.freeze.entity.FrozenExecution.FrozenExecutionKeys;
 
@@ -19,6 +22,8 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_FREEZE})
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
 @Slf4j
 public class FrozenExecutionRepositoryCustomImpl implements FrozenExecutionRepositoryCustom {

@@ -12,10 +12,10 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.StepSpecTypeConstants;
-import io.harness.ci.creator.variables.ActionStepVariableCreator;
-import io.harness.ci.creator.variables.PluginStepVariableCreator;
-import io.harness.ci.creator.variables.RunStepVariableCreator;
-import io.harness.ci.plan.creator.steps.CIStepsPlanCreator;
+import io.harness.ci.execution.creator.variables.ActionStepVariableCreator;
+import io.harness.ci.execution.creator.variables.PluginStepVariableCreator;
+import io.harness.ci.execution.creator.variables.RunStepVariableCreator;
+import io.harness.ci.execution.plan.creator.steps.CIStepsPlanCreator;
 import io.harness.ci.plancreator.ActionStepPlanCreator;
 import io.harness.ci.plancreator.PluginStepPlanCreator;
 import io.harness.ci.plancreator.RunStepPlanCreator;
@@ -118,7 +118,7 @@ public class IACMPipelineServiceInfoProvider implements PipelineServiceInfoProvi
 
   private StepInfo createStepInfo(IACMStepType iacmStepType, String stepCategory) {
     return StepInfo.newBuilder()
-        .setName(iacmStepType.getName())
+        .setName(iacmStepType.getDisplayName())
         .setType(iacmStepType.getName())
         .setFeatureFlag(iacmStepType.getFeatureName().name())
         .setStepMetaData(StepMetaData.newBuilder().addFolderPaths(stepCategory).build())

@@ -6,11 +6,13 @@
  */
 
 package io.harness.pms.yaml.validation;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.expression.common.ExpressionMode;
+import io.harness.pms.expression.EngineExpressionResolver;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,14 +30,16 @@ import java.util.stream.Collectors;
  * ${input}.allowedValues(jexl(${env} == 'dev'?(${team} == 'a' ?'dev_a, dev_b':'dev_qa, dev_qb'):'prod,stage'))
  * #evaluate
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class AllowedValuesValidator implements RuntimeValidator {
-  private final EngineExpressionEvaluator engineExpressionEvaluator;
+  private final EngineExpressionResolver engineExpressionResolver;
   private final ExpressionMode expressionMode;
   private static final Pattern JEXL_PATTERN = Pattern.compile("jexl\\(");
 
-  public AllowedValuesValidator(EngineExpressionEvaluator engineExpressionEvaluator, ExpressionMode expressionMode) {
-    this.engineExpressionEvaluator = engineExpressionEvaluator;
+  public AllowedValuesValidator(EngineExpressionResolver engineExpressionResolver, ExpressionMode expressionMode) {
+    this.engineExpressionResolver = engineExpressionResolver;
     this.expressionMode = expressionMode;
   }
 
@@ -55,9 +59,9 @@ public class AllowedValuesValidator implements RuntimeValidator {
     }
 
     if (isJexlExpression) {
-      parameters = (String) engineExpressionEvaluator.evaluateExpression(parameters, expressionMode);
+      parameters = (String) engineExpressionResolver.evaluateExpression(parameters, expressionMode);
     } else {
-      parameters = engineExpressionEvaluator.renderExpression(parameters, expressionMode);
+      parameters = engineExpressionResolver.renderExpression(parameters, expressionMode);
     }
 
     List<String> parametersList = AllowedValuesHelper.split(parameters);

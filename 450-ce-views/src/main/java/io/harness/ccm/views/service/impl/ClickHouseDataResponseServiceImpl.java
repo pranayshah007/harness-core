@@ -14,11 +14,15 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.BILLING_AMOUNT;
 import static io.harness.ccm.views.utils.ClusterTableKeys.COST;
 import static io.harness.ccm.views.utils.ClusterTableKeys.DEFAULT_GRID_ENTRY_NAME;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ccm.clickHouse.ClickHouseService;
 import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessmapping.entities.CostTarget;
+import io.harness.ccm.views.entities.ViewPreferences;
 import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
@@ -50,6 +54,8 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CCM, unitCoverageRequired = true, components = {HarnessModuleComponent.CCM_PERSPECTIVE})
 @Slf4j
 @Singleton
 @OwnedBy(CE)
@@ -67,7 +73,8 @@ public class ClickHouseDataResponseServiceImpl implements DataResponseService {
   public Map<String, Double> getCostBucketEntityCost(final List<QLCEViewFilterWrapper> filters,
       final List<QLCEViewGroupBy> groupBy, final List<QLCEViewAggregation> aggregateFunction,
       final String cloudProviderTableName, final ViewQueryParams queryParams, final boolean skipRoundOff,
-      final BusinessMapping sharedCostBusinessMapping, final Map<String, String> labelsKeyAndColumnMapping) {
+      final BusinessMapping sharedCostBusinessMapping, final Map<String, String> labelsKeyAndColumnMapping,
+      final ViewPreferences viewPreferences) {
     final Map<String, Double> entityCosts = new HashMap<>();
     final List<QLCEViewGroupBy> businessMappingGroupBy =
         viewsQueryHelper.createBusinessMappingGroupBy(sharedCostBusinessMapping);
@@ -75,7 +82,7 @@ public class ClickHouseDataResponseServiceImpl implements DataResponseService {
         viewsQueryHelper.removeBusinessMappingFilter(filters, sharedCostBusinessMapping.getUuid());
     final SelectQuery query = viewBillingServiceHelper.getQuery(modifiedFilters, groupBy, businessMappingGroupBy,
         aggregateFunction, Collections.emptyList(), cloudProviderTableName, queryParams, sharedCostBusinessMapping,
-        Collections.emptyList(), labelsKeyAndColumnMapping);
+        Collections.emptyList(), labelsKeyAndColumnMapping, viewPreferences);
     query.addCustomization(new PgLimitClause(MAX_LIMIT_VALUE));
     query.addCustomization(new PgOffsetClause(0));
     log.info("Query for shared cost (with limit as {}): {}", MAX_LIMIT_VALUE, query);

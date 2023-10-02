@@ -8,6 +8,10 @@
 # --global.imagePullSecrets Global Docker registry secret names as an array
 # --global.storageClass Global StorageClass for Persistent Volume(s)
 global:
+  commonAnnotations: {}
+  commonLabels: {}
+  kubeVersion: ""
+  loadbalancerURL: ""
   ha: true
   stackDriverLoggingEnabled: false
   database:
@@ -46,6 +50,21 @@ global:
       userKey: ""
       passwordKey: ""
       extraArgs: ""
+    redis:
+      installed: true
+      protocol: "redis"
+      # --  provide default values if redis.installed is set to false
+      hosts:
+        - redis:6379
+      secretName: "redis-secret"
+      userKey: "redis-user"
+      passwordKey: "redis-password"
+      extraArgs: ""
+  monitoring:
+    enabled: false
+    port: 8889
+    path: /metrics
+
   ingress:
     # -- create ingress objects
     enabled: false
@@ -72,7 +91,7 @@ global:
       gateways:
       hosts:
   imagePullSecrets: []
-
+  
 # --mongoHosts List of mongo hosts
 mongoHosts: []
 
@@ -134,13 +153,14 @@ config:
   ACCESS_CONTROL_PREFERENCE_ENABLED: true
   NOTIFICATION_SLACK_WEBHOOK_URL: ""
   NOTIFICATION_ENVIRONMENT: ONPREM
-  ENABLE_ACCESS_CONTROL: false
+  ENABLE_ACCESS_CONTROL: true
   ACCESS_CONTROL_SERVICE_BASE_URL:
   ENABLE_AUDIT: true
   AUDIT_CLIENT_BASE_URL:
   DISTRIBUTED_LOCK_IMPLEMENTATION: REDIS
   GOOGLE_APPLICATION_CREDENTIALS: /opt/harness/monitoring/stackdriver.json
-  MEMORY: 512
+java:
+  memory: 512m
 secrets:
   IDENTITY_SERVICE_SECRET: HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU=
   MONGODB_USER: admin
@@ -169,7 +189,7 @@ image:
   registry: docker.io
   repository: harness/accesscontrol-service-signed
   pullPolicy: IfNotPresent
-  tag: "78900"
+  tag: "79802"
   digest: ""
   imagePullSecrets: []
 # -- Wait-For-App initContainers details
@@ -191,7 +211,6 @@ waitForInitContainer:
     imagePullSecrets: []
   resources:
     limits:
-      cpu: 128m
       memory: 128Mi
     requests:
       cpu: 128m
@@ -242,6 +261,7 @@ containerSecurityContext:
   # runAsUser: 1000
 
 service:
+  annotations: {}
   type: ClusterIP
   port: 9006
 ## Pod resource requests and limits
@@ -251,17 +271,16 @@ service:
 ##
 resources:
   limits:
-    cpu: 0.5
     memory: 8192Mi
   requests:
-    cpu: 0.5
-    memory: 512Mi
+    cpu: 1
+    memory: 712Mi
 # --  lifecycleHooks for the container(s) to automate configuration before or after startup
 ## e.g.
 # lifecycleHooks:
 #   postStart:
 #     exec:
-#       command: 
+#       command:
 #         - /bin/sh
 #         - -c
 #         - |
@@ -283,24 +302,24 @@ resources:
 #         PID=$(jps|grep -vi jps|awk '{ print $1}');
 #         #Copy GC log file
 #         cp mygclogfilename.gc $loc/;
-        
+
 #         #Retry 10 times to take thread dump. Unsuccessful attempt has just 1 line with java process id in the output.
 #         for ((n=0;n<10;n++)); do
 #           jcmd $PID Thread.print -e > $loc/thread-dump-attempt-$n.txt;
 #           if [ $(wc -l < $loc/thread-dump-attempt-$n.txt) -gt 1 ]; then break; fi;
 #         done
-        
+
 #         #10 retries to take heap histogram. Unsuccessful attempt has just 1 line with java process id in the output.
 #         for ((n=0;n<10;n++)); do
 #           jcmd $PID GC.class_histogram -all > $loc/heap-histogram-attempt-$n.txt;
 #           if [ $(wc -l < $loc/heap-histogram-attempt-$n.txt) -gt 1 ]; then break; fi;
 #         done
-        
+
 #         jcmd $PID VM.native_memory  > $loc/native-memory-dump.txt;
-        
+
 #         #Dump latest chunk of JFR recording
 #         jcmd $PID JFR.dump name=jfrRecording filename=/opt/harness/dumps/${SERVICE_NAME}/${ENV_TYPE}/jfr_dumps/${POD_NAME}/container_termination_$(date +%Y_%m_%d_%H_%M_%S).jfr > $loc/jfr_done.txt
-        
+
 #         echo $(date '+%s') > $loc/end
 #         kill -15
 lifecycleHooks: {}
@@ -316,8 +335,8 @@ autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
+  targetCPU: ""
+  targetMemory: ""
 
 ## Configure extra options for liveness probe
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes
@@ -334,7 +353,7 @@ livenessProbe:
   periodSeconds: 10
   timeoutSeconds: 10
   successThreshold: 1
-  failureThreshold: 
+  failureThreshold:
 ## Configure extra options for readiness probe
 ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes
 # -- readinessProbe.enabled Enable readinessProbe
@@ -453,3 +472,9 @@ mongoSSL:
 
 # -- additionalConfigs Additional configurations for the deployment
 additionalConfigs: {}
+java17flags: ""
+
+virtualService:
+  annotations: {}
+ingress:
+  annotations: {}

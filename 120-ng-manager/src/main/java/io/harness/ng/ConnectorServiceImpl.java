@@ -6,7 +6,6 @@
  */
 
 package io.harness.ng;
-
 import static io.harness.NGConstants.CONNECTOR_HEARTBEAT_LOG_PREFIX;
 import static io.harness.NGConstants.CONNECTOR_STRING;
 import static io.harness.connector.ConnectivityStatus.FAILURE;
@@ -16,20 +15,19 @@ import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.errorhandling.NGErrorHelper.DEFAULT_ERROR_SUMMARY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_IDENTIFIER_METRICS_KEY;
+import static io.harness.exception.HintException.HINT_INVALID_GIT_API_AUTHORIZATION;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.ng.NextGenModule.SECRET_MANAGER_CONNECTOR_SERVICE;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
-import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.NgAutoLogContext;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EntityReference;
-import io.harness.beans.FeatureName;
 import io.harness.beans.ScopeLevel;
 import io.harness.connector.CombineCcmK8sConnectorResponseDTO;
 import io.harness.connector.ConnectorActivityDetails;
@@ -40,6 +38,7 @@ import io.harness.connector.ConnectorConnectivityDetails.ConnectorConnectivityDe
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.connector.ConnectorInternalFilterPropertiesDTO;
 import io.harness.connector.ConnectorRegistryFactory;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
@@ -53,10 +52,6 @@ import io.harness.connector.services.ConnectorHeartbeatService;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.stats.ConnectorStatistics;
 import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.delegate.beans.connector.jira.JiraAuthType;
-import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
-import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
-import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.eventsframework.EventsFrameworkConstants;
@@ -68,6 +63,7 @@ import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.ConnectorNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.ngexception.beans.ConnectorValidationErrorMetadataDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
@@ -90,6 +86,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.protobuf.StringValue;
+import io.fabric8.utils.Strings;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -179,33 +176,9 @@ public class ConnectorServiceImpl implements ConnectorService {
       ConnectorInfoDTO connectorInfoDTO = connectorDTO.getConnectorInfo();
       VaultConnectorDTO vaultConnectorDTO = (VaultConnectorDTO) connectorInfoDTO.getConnectorConfig();
       if (AccessType.APP_ROLE.equals(vaultConnectorDTO.getAccessType())) {
-        vaultConnectorDTO.setRenewAppRoleToken(
-            !ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.DO_NOT_RENEW_APPROLE_TOKEN));
+        vaultConnectorDTO.setRenewAppRoleToken(false);
         connectorInfoDTO.setConnectorConfig(vaultConnectorDTO);
         connectorDTO.setConnectorInfo(connectorInfoDTO);
-      }
-    }
-  }
-
-  private void applyPatAuthFFCheckForJiraConnector(ConnectorDTO connectorDTO, String accountIdentifier) {
-    if (connectorDTO.getConnectorInfo().getConnectorConfig() instanceof JiraConnectorDTO) {
-      ConnectorInfoDTO connectorInfoDTO = connectorDTO.getConnectorInfo();
-      JiraConnectorDTO jiraConnectorDTO = (JiraConnectorDTO) connectorInfoDTO.getConnectorConfig();
-      if (!isNull(jiraConnectorDTO.getAuth()) && JiraAuthType.PAT.equals(jiraConnectorDTO.getAuth().getAuthType())
-          && !ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.CDS_JIRA_PAT_AUTH)) {
-        throw new InvalidRequestException("Unsupported jira auth type provided : PAT");
-      }
-    }
-  }
-
-  private void applyRefreshTokenAuthFFCheckForServiceNowConnector(ConnectorDTO connectorDTO, String accountIdentifier) {
-    if (connectorDTO.getConnectorInfo().getConnectorConfig() instanceof ServiceNowConnectorDTO) {
-      ConnectorInfoDTO connectorInfoDTO = connectorDTO.getConnectorInfo();
-      ServiceNowConnectorDTO serviceNowConnectorDTO = (ServiceNowConnectorDTO) connectorInfoDTO.getConnectorConfig();
-      if (!isNull(serviceNowConnectorDTO.getAuth())
-          && ServiceNowAuthType.REFRESH_TOKEN.equals(serviceNowConnectorDTO.getAuth().getAuthType())
-          && !ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.CDS_SERVICENOW_REFRESH_TOKEN_AUTH)) {
-        throw new InvalidRequestException("Unsupported servicenow auth type provided : Refresh Token Grant");
       }
     }
   }
@@ -213,8 +186,6 @@ public class ConnectorServiceImpl implements ConnectorService {
   private ConnectorResponseDTO createInternal(
       ConnectorDTO connectorDTO, String accountIdentifier, ChangeType gitChangeType) {
     skipAppRoleRenewalForVaultConnector(connectorDTO, accountIdentifier);
-    applyPatAuthFFCheckForJiraConnector(connectorDTO, accountIdentifier);
-    applyRefreshTokenAuthFFCheckForServiceNowConnector(connectorDTO, accountIdentifier);
     PerpetualTaskId connectorHeartbeatTaskId = null;
     try (AutoLogContext ignore1 = new NgAutoLogContext(connectorDTO.getConnectorInfo().getProjectIdentifier(),
              connectorDTO.getConnectorInfo().getOrgIdentifier(), accountIdentifier, OVERRIDE_ERROR);
@@ -319,8 +290,6 @@ public class ConnectorServiceImpl implements ConnectorService {
   @Override
   public ConnectorResponseDTO update(ConnectorDTO connectorDTO, String accountIdentifier, ChangeType gitChangeType) {
     skipAppRoleRenewalForVaultConnector(connectorDTO, accountIdentifier);
-    applyPatAuthFFCheckForJiraConnector(connectorDTO, accountIdentifier);
-    applyRefreshTokenAuthFFCheckForServiceNowConnector(connectorDTO, accountIdentifier);
     try (AutoLogContext ignore1 = new NgAutoLogContext(connectorDTO.getConnectorInfo().getProjectIdentifier(),
              connectorDTO.getConnectorInfo().getOrgIdentifier(), accountIdentifier, OVERRIDE_ERROR);
          AutoLogContext ignore2 =
@@ -629,6 +598,11 @@ public class ConnectorServiceImpl implements ConnectorService {
         validationFailureBuilder.errorSummary(errorSummary).errors(errorDetail);
       }
       connectorValidationResult = validationFailureBuilder.build();
+      // set Delegate taskId as the metadata
+      if (isNotEmpty((String) wingsException.getParams().get("taskId"))) {
+        wingsException.setMetadata(
+            new ConnectorValidationErrorMetadataDTO((String) wingsException.getParams().get("taskId")));
+      }
       throw wingsException;
     } finally {
       if (connectorValidationResult != null) {
@@ -648,11 +622,43 @@ public class ConnectorServiceImpl implements ConnectorService {
       Connector connector =
           getConnectorWithIdentifier(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
       setConnectivityStatusInConnector(connector, connectorValidationResult, connector.getConnectivityDetails());
+      updatePTForGitConnector(connectorValidationResult, connector, accountIdentifier, orgIdentifier, projectIdentifier,
+          connectorIdentifier);
+
       connectorRepository.save(connector, ChangeType.NONE);
+
+      getConnectorService(connector.getType())
+          .updateActivityDetailsInTheConnector(connector.getAccountIdentifier(), connector.getOrgIdentifier(),
+              connector.getProjectIdentifier(), connector.getIdentifier(), connectorValidationResult,
+              connector.getConnectivityDetails().getTestedAt());
+
     } catch (Exception ex) {
       log.error("Error saving the connector status for the connector {}",
           String.format(CONNECTOR_STRING, connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier),
           ex);
+    }
+  }
+
+  private void updatePTForGitConnector(ConnectorValidationResult connectorValidationResult, Connector connector,
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+    if (connectorValidationResult.getStatus() == SUCCESS) {
+      startPTForGitConnector(connectorValidationResult, connector, accountIdentifier);
+    } else if (connectorValidationResult.getStatus() == FAILURE) {
+      deletePTForGitConnector(connectorValidationResult, connector, accountIdentifier);
+    }
+  }
+
+  private void startPTForGitConnector(
+      ConnectorValidationResult connectorValidationResult, Connector connector, String accountIdentifier) {
+    // Start PT if connection success and doesnt exist
+    if (connectorValidationResult.getStatus() == SUCCESS && connector.getType() == ConnectorType.GITHUB
+        && connector.getHeartbeatPerpetualTaskId() == null && connector.getExecuteOnDelegate()) {
+      PerpetualTaskId connectorHeartbeatTaskId = connectorHeartbeatService.createConnectorHeatbeatTask(
+          accountIdentifier, connector.getOrgIdentifier(), connector.getProjectIdentifier(), connector.getIdentifier());
+      log.info("Started Heartbeat Perpetual task for connector {} with taskID {}", connector.getIdentifier(),
+          connectorHeartbeatTaskId.getId());
+
+      connector.setHeartbeatPerpetualTaskId(connectorHeartbeatTaskId == null ? null : connectorHeartbeatTaskId.getId());
     }
   }
 
@@ -690,6 +696,24 @@ public class ConnectorServiceImpl implements ConnectorService {
     }
   }
 
+  private void deletePTForGitConnector(
+      ConnectorValidationResult connectorValidationResult, Connector connector, String accountIdentifier) {
+    // Delete PT during connection failure if it exist
+    if (Strings.isNotBlank(connectorValidationResult.getErrorSummary())
+        && connectorValidationResult.getErrorSummary().contains(HINT_INVALID_GIT_API_AUTHORIZATION)
+        && connector.getType() == ConnectorType.GITHUB && connector.getHeartbeatPerpetualTaskId() != null) {
+      String fullyQualifiedIdentifier = FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(
+          accountIdentifier, connector.getOrgIdentifier(), connector.getProjectIdentifier(), connector.getIdentifier());
+      boolean isConnectorHeartbeatDeleted = deleteConnectorHeartbeatTask(
+          accountIdentifier, fullyQualifiedIdentifier, connector.getHeartbeatPerpetualTaskId());
+      if (isConnectorHeartbeatDeleted) {
+        log.info("Deleted Heartbeat Perpetual task for connector {} with taskID {} due to invalid Auth",
+            connector.getIdentifier(), connector.getHeartbeatPerpetualTaskId());
+        connector.setHeartbeatPerpetualTaskId(null);
+      }
+    }
+  }
+
   private void setLastUpdatedTimeIfNotPresent(Connector connector) {
     if (connector.getTimeWhenConnectorIsLastUpdated() == null) {
       connector.setTimeWhenConnectorIsLastUpdated(connector.getCreatedAt());
@@ -724,6 +748,9 @@ public class ConnectorServiceImpl implements ConnectorService {
     }
     if (connectorValidationResult != null) {
       setConnectivityStatusInConnector(connector, connectorValidationResult, connector.getConnectivityDetails());
+      if (connectorValidationResult.getStatus() == FAILURE) {
+        deletePTForGitConnector(connectorValidationResult, connector, accountIdentifier);
+      }
     }
     connectorRepository.save(connector, ChangeType.NONE);
   }
@@ -838,6 +865,12 @@ public class ConnectorServiceImpl implements ConnectorService {
       Boolean getDistinctFromBranches, Pageable pageable) {
     return defaultConnectorService.listCcmK8S(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier,
         filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable);
+  }
+
+  @Override
+  public Page<ConnectorResponseDTO> list(
+      ConnectorInternalFilterPropertiesDTO connectorInternalFilterPropertiesDTO, Pageable pageable) {
+    return defaultConnectorService.list(connectorInternalFilterPropertiesDTO, pageable);
   }
 
   @Override

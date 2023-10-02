@@ -7,14 +7,17 @@
 
 package io.harness.delegate.task.pcf.exception;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
 import io.harness.exception.WingsException;
 
 import java.util.EnumSet;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_PCF})
 @OwnedBy(HarnessTeam.CDP)
 public class InvalidPcfStateException extends WingsException {
   public InvalidPcfStateException(String message, ErrorCode code, EnumSet<ReportTarget> reportTarget) {

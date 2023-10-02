@@ -28,8 +28,8 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipelinestage.outcome.PipelineStageOutcome;
 import io.harness.pms.pipelinestage.v1.helper.PipelineStageHelperV1;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
@@ -44,6 +44,7 @@ import io.harness.yaml.core.failurestrategy.marksuccess.MarkAsSuccessFailureActi
 import io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -86,7 +87,7 @@ public class PipelineStageHelperTest extends CategoryTest {
     verify(pmsPipelineTemplateHelper, times(1)).resolveTemplateRefsInPipeline(pipelineEntity, "true");
     verify(pipelineStageHelperV1, times(0)).containsPipelineStage(yaml);
 
-    pipelineEntity = PipelineEntity.builder().harnessVersion(PipelineVersion.V1).build();
+    pipelineEntity = PipelineEntity.builder().harnessVersion(HarnessYamlVersion.V1).build();
     doReturn(TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build())
         .when(pmsPipelineTemplateHelper)
         .resolveTemplateRefsInPipeline(pipelineEntity, "true");
@@ -252,16 +253,16 @@ public class PipelineStageHelperTest extends CategoryTest {
   @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
-  public void testGetInputSetYaml() throws IOException {
+  public void testGetInputSetJsonNode() throws IOException {
     YamlField inputSetField = YamlUtils.readTreeWithDefaultObjectMapper("a:\n  b: c");
-    String inputSetYaml = pipelineStageHelper.getInputSetYaml(inputSetField, PipelineVersion.V0);
-    assertThat(inputSetYaml).isEqualTo("pipeline:\n  a:\n    b: c\n");
-    verify(pipelineStageHelperV1, times(0)).getInputSet(inputSetField);
+    JsonNode inputSetJsonNode = pipelineStageHelper.getInputSetJsonNode(inputSetField, HarnessYamlVersion.V0);
+    assertThat(inputSetJsonNode).isEqualTo(YamlUtils.readAsJsonNode("pipeline:\n  a:\n    b: c\n"));
+    verify(pipelineStageHelperV1, times(0)).getInputSetJsonNode(inputSetField);
 
-    pipelineStageHelper.getInputSetYaml(inputSetField, PipelineVersion.V1);
-    verify(pipelineStageHelperV1, times(1)).getInputSet(inputSetField);
+    pipelineStageHelper.getInputSetJsonNode(inputSetField, HarnessYamlVersion.V1);
+    verify(pipelineStageHelperV1, times(1)).getInputSetJsonNode(inputSetField);
 
-    assertThatThrownBy(() -> pipelineStageHelper.getInputSetYaml(inputSetField, "V2"))
+    assertThatThrownBy(() -> pipelineStageHelper.getInputSetJsonNode(inputSetField, "V2"))
         .isInstanceOf(InvalidRequestException.class);
   }
   @NotNull

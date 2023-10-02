@@ -6,7 +6,6 @@
  */
 
 package io.harness.k8s;
-
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -18,18 +17,17 @@ import static io.harness.network.Http.joinHostPort;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
-import static io.fabric8.kubernetes.client.Config.KUBERNETES_KUBECONFIG_FILE;
-import static io.fabric8.kubernetes.client.Config.KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH;
-import static io.fabric8.kubernetes.client.Config.KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH;
-import static io.fabric8.kubernetes.client.utils.Utils.isNotNullOrEmpty;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static okhttp3.ConnectionSpec.CLEARTEXT;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.k8s.apiclient.ApiClientFactoryImpl;
@@ -46,6 +44,7 @@ import io.harness.yaml.YamlUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.fabric8.istio.api.networking.v1alpha3.HTTPRouteDestination;
@@ -66,12 +65,17 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.internal.SSLUtils;
-import io.fabric8.kubernetes.client.utils.Utils;
 import io.fabric8.openshift.client.NamespacedOpenShiftClient;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.util.KubeConfig;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.Proxy;
@@ -79,15 +83,18 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
@@ -109,12 +116,14 @@ import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_K8S})
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class KubernetesHelperService {
   static {
-    System.setProperty("kubernetes.backwardsCompatibilityInterceptor.disable", "false");
+    System.setProperty(KubeConfigConstants.KUBERNETES_BACKWARD_COMPATIBILITY_INTERCEPTOR_DISABLE, "false");
   }
   @Inject private OidcTokenRetriever oidcTokenRetriever;
 
@@ -332,14 +341,14 @@ public class KubernetesHelperService {
 
       httpClientBuilder.addInterceptor(chain -> {
         Request request = chain.request();
-        if (isNotNullOrEmpty(config.getUsername()) && isNotNullOrEmpty(config.getPassword())) {
+        if (isNotEmpty(config.getUsername()) && isNotEmpty(config.getPassword())) {
           Request authReq =
               chain.request()
                   .newBuilder()
                   .addHeader("Authorization", Credentials.basic(config.getUsername(), config.getPassword()))
                   .build();
           return chain.proceed(authReq);
-        } else if (isNotNullOrEmpty(config.getOauthToken())) {
+        } else if (isNotEmpty(config.getOauthToken())) {
           Request authReq =
               chain.request().newBuilder().addHeader("Authorization", "Bearer " + config.getOauthToken()).build();
           return chain.proceed(authReq);
@@ -499,19 +508,19 @@ public class KubernetesHelperService {
   public static KubernetesConfig getKubernetesConfigFromServiceAccount(String namespace) {
     KubernetesConfigBuilder kubernetesConfigBuilder = KubernetesConfig.builder().namespace(namespace);
 
-    String masterHost = Utils.getSystemPropertyOrEnvVar("KUBERNETES_SERVICE_HOST", (String) null);
-    String masterPort = Utils.getSystemPropertyOrEnvVar("KUBERNETES_SERVICE_PORT", (String) null);
+    String masterHost = getSystemPropertyOrEnvVar(KubeConfigConstants.KUBERNETES_SERVICE_HOST_PROPERTY, null);
+    String masterPort = getSystemPropertyOrEnvVar(KubeConfigConstants.KUBERNETES_SERVICE_PORT_PROPERTY, null);
     if (masterHost != null && masterPort != null) {
       String hostPort = joinHostPort(masterHost, masterPort);
       kubernetesConfigBuilder.masterUrl("https://" + hostPort);
     }
 
-    String caCert = getFileContent(KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH);
+    String caCert = getFileContent(KubeConfigConstants.KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH);
     if (isNotBlank(caCert)) {
       kubernetesConfigBuilder.caCert(caCert.toCharArray());
     }
 
-    String serviceAccountToken = getFileContent(KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH);
+    String serviceAccountToken = getFileContent(KubeConfigConstants.KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH);
     if (isNotBlank(serviceAccountToken)) {
       kubernetesConfigBuilder.serviceAccountTokenSupplier(() -> serviceAccountToken);
     }
@@ -522,26 +531,25 @@ public class KubernetesHelperService {
   public static KubernetesConfig getKubernetesConfigFromDefaultKubeConfigFile(String namespace) {
     KubernetesConfigBuilder kubernetesConfigBuilder = KubernetesConfig.builder().namespace(namespace);
 
-    File kubeConfigFile = new File(Utils.getSystemPropertyOrEnvVar(
-        KUBERNETES_KUBECONFIG_FILE, new File(getHomeDir(), ".kube" + File.separator + "config").toString()));
+    File kubeConfigFile = new File(getSystemPropertyOrEnvVar(KubeConfigConstants.KUBERNETES_KUBECONFIG_FILE,
+        new File(getHomeDir(), ".kube" + File.separator + "config").toString()));
     boolean kubeConfigFileExists = Files.isRegularFile(kubeConfigFile.toPath());
 
     if (kubeConfigFileExists) {
-      String kubeconfigContents;
       try {
         Path kubeConfigPath = kubeConfigFile.toPath();
-        kubeconfigContents = new String(Files.readAllBytes(kubeConfigPath), StandardCharsets.UTF_8);
-        Config config = Config.fromKubeconfig(null, kubeconfigContents, kubeConfigFile.getPath());
+        KubeConfig kubernetesConfig = KubeConfig.loadKubeConfig(new StringReader(Files.readString(kubeConfigPath)));
 
-        return kubernetesConfigBuilder.masterUrl(config.getMasterUrl())
-            .username(getCharArray(config.getUsername()))
-            .password(getCharArray(config.getPassword()))
-            .caCert(getCharArray(config.getCaCertData()))
-            .clientCert(getCharArray(config.getClientCertData()))
-            .clientKey(getCharArray(config.getClientKeyData()))
-            .clientKeyPassphrase(getCharArray(config.getClientKeyPassphrase()))
-            .serviceAccountTokenSupplier(config.getOauthToken() != null ? config::getOauthToken : null)
-            .clientKeyAlgo(config.getClientKeyAlgo())
+        return kubernetesConfigBuilder.masterUrl(kubernetesConfig.getServer())
+            .username(getCharArray(kubernetesConfig.getUsername()))
+            .password(getCharArray(kubernetesConfig.getPassword()))
+            .caCert(getCharArray(kubernetesConfig.getCertificateAuthorityData()))
+            .clientCert(getCharArray(kubernetesConfig.getClientCertificateData()))
+            .clientKey(getCharArray(kubernetesConfig.getClientKeyData()))
+            .clientKeyPassphrase(getCharArray(KubeConfigConstants.DEFAULT_CLIENT_KEY_PASSPHRASE))
+            .serviceAccountTokenSupplier(
+                () -> kubernetesConfig.getCredentials().getOrDefault(KubeConfigConstants.TOKEN_KEY, null))
+            .clientKeyAlgo(getKeyAlgorithm(kubernetesConfig.getClientKeyFile(), kubernetesConfig.getClientKeyData()))
             .build();
       } catch (IOException e) {
         log.error("Could not load Kubernetes config file from {}", kubeConfigFile.getPath(), e);
@@ -558,7 +566,7 @@ public class KubernetesHelperService {
   }
 
   public static boolean isRunningInCluster() {
-    return Utils.getSystemPropertyOrEnvVar("KUBERNETES_SERVICE_HOST", (String) null) != null;
+    return getSystemPropertyOrEnvVar(KubeConfigConstants.KUBERNETES_SERVICE_HOST_PROPERTY, null) != null;
   }
 
   private static String getFileContent(String filename) {
@@ -570,5 +578,63 @@ public class KubernetesHelperService {
       noop(); // Ignore
     }
     return "";
+  }
+
+  private static String getKeyAlgorithm(String clientKeyFile, String clientKeyData) throws IOException {
+    InputStream keyInputStream = getInputStreamFromDataOrFile(clientKeyData, clientKeyFile);
+    if (keyInputStream != null) {
+      return getKeyAlgorithm(keyInputStream);
+    }
+    return KubeConfigConstants.DEFAULT_CLIENT_KEY_ALGORITHM;
+  }
+
+  private static String getKeyAlgorithm(InputStream inputStream) throws IOException {
+    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+    String algorithm = KubeConfigConstants.DEFAULT_CLIENT_KEY_ALGORITHM;
+    String line;
+    while ((line = bufferedReader.readLine()) != null) {
+      if (line.contains("BEGIN EC PRIVATE KEY")) {
+        algorithm = "EC";
+      } else if (line.contains("BEGIN RSA PRIVATE KEY")) {
+        algorithm = "RSA";
+      }
+    }
+    return algorithm;
+  }
+
+  private static ByteArrayInputStream getInputStreamFromDataOrFile(String data, String file) throws IOException {
+    if (data != null) {
+      byte[] bytes;
+      try {
+        bytes = Base64.getDecoder().decode(data);
+      } catch (Exception ex) {
+        bytes = data.getBytes();
+      }
+      return new ByteArrayInputStream(bytes);
+    } else {
+      return file != null
+          ? new ByteArrayInputStream((new String(Files.readAllBytes(Paths.get(file)))).trim().getBytes())
+          : null;
+    }
+  }
+
+  @VisibleForTesting
+  public static String getSystemPropertyOrEnvVar(String systemPropertyName, String defaultValue) {
+    return getSystemPropertyOrEnvVar(
+        systemPropertyName, convertSystemPropertyNameToEnvVar(systemPropertyName), defaultValue);
+  }
+
+  private static String convertSystemPropertyNameToEnvVar(String systemPropertyName) {
+    return systemPropertyName.toUpperCase(Locale.ROOT).replaceAll("[.-]", "_");
+  }
+
+  private static String getSystemPropertyOrEnvVar(String systemPropertyName, String envVarName, String defaultValue) {
+    String answer = System.getProperty(systemPropertyName);
+    if (isNotEmpty(answer)) {
+      return answer;
+    } else {
+      answer = System.getenv(envVarName);
+      return isNotEmpty(answer) ? answer : defaultValue;
+    }
   }
 }

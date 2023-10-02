@@ -15,6 +15,7 @@ import io.harness.migration.NGMigration;
 import io.harness.migration.beans.MigrationType;
 import io.harness.migrations.timescale.CreateInstanceStatsDayTable;
 import io.harness.migrations.timescale.CreateInstanceStatsHourTable;
+import io.harness.migrations.timescale.CreateInstanceStatsIteratorTable;
 import io.harness.migrations.timescale.CreateInstanceStatsTable;
 import io.harness.migrations.timescale.InitTriggerFunctions;
 
@@ -41,6 +42,7 @@ public class InstanceStatsTimeScaleMigrationDetails implements MigrationDetails 
         .add(Pair.of(2, CreateInstanceStatsTable.class))
         .add(Pair.of(3, CreateInstanceStatsHourTable.class))
         .add(Pair.of(4, CreateInstanceStatsDayTable.class))
+        .add(Pair.of(5, CreateInstanceStatsIteratorTable.class))
         .build();
   }
 }

@@ -34,7 +34,6 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -45,6 +44,7 @@ import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
@@ -77,7 +77,7 @@ public class CloudformationDeleteStackStep extends CdTaskExecutable<Cloudformati
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     List<EntityDetail> entityDetailList = new ArrayList<>();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
@@ -98,8 +98,9 @@ public class CloudformationDeleteStackStep extends CdTaskExecutable<Cloudformati
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<CloudformationTaskNGResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepBaseParameters stepParameters, ThrowingSupplier<CloudformationTaskNGResponse> responseDataSupplier)
+      throws Exception {
     log.info("Handling Task Result With Security Context for the DeleteStack Step");
     StepResponseBuilder builder = StepResponse.builder();
     CloudformationTaskNGResponse response = responseDataSupplier.get();
@@ -117,7 +118,7 @@ public class CloudformationDeleteStackStep extends CdTaskExecutable<Cloudformati
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     CloudformationDeleteStackStepParameters parameters =
         (CloudformationDeleteStackStepParameters) stepParameters.getSpec();
     log.info("Starting execution Obtain Task after Rbac for the DeleteStack Step");
@@ -193,7 +194,7 @@ public class CloudformationDeleteStackStep extends CdTaskExecutable<Cloudformati
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 }

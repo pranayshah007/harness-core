@@ -25,7 +25,7 @@ public enum ServiceNowFieldTypeNG {
   @JsonProperty("integer") INTEGER(Collections.singletonList("integer")),
   @JsonProperty("boolean") BOOLEAN(Collections.singletonList("boolean")),
   @JsonProperty("string") STRING(Collections.singletonList("string")),
-  @JsonProperty("option") OPTION(Collections.singletonList("option")),
+  @JsonProperty("option") OPTION(Arrays.asList("option", "choice")),
   @JsonProperty("unknown") UNKNOWN(Collections.emptyList());
 
   @Getter private List<String> snowInternalTypes;

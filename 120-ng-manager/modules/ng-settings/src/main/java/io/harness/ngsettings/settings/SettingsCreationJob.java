@@ -136,7 +136,10 @@ public class SettingsCreationJob {
       Set<String> removedIdentifiers = Sets.difference(currentIdentifiers, latestIdentifiers);
 
       Map<String, String> settingIdMap = new HashMap<>();
+      Map<String, SettingConfiguration> currentSettingsMap = new HashMap<>();
+
       currentSettings.forEach(settingConfiguration -> {
+        currentSettingsMap.put(settingConfiguration.getIdentifier(), settingConfiguration);
         settingIdMap.put(settingConfiguration.getIdentifier(), settingConfiguration.getId());
         settingConfiguration.setId(null);
       });
@@ -147,6 +150,8 @@ public class SettingsCreationJob {
         setting.setId(settingIdMap.get(setting.getIdentifier()));
         try {
           settingsService.upsertSettingConfiguration(setting);
+          log.info("Performed upsert setting operation - \n Current config- {} \n Updated config- {}",
+              currentSettingsMap.get(setting.getIdentifier()), setting);
         } catch (Exception exception) {
           log.error(String.format("Error while updating setting [%s]", setting.getIdentifier()), exception);
           throw exception;

@@ -8,6 +8,7 @@
 package io.harness.delegate.beans.connector.awssecretmanager.outcome;
 
 import io.harness.SecretManagerDescriptionConstants;
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerCredentialSpecDTO;
@@ -29,6 +30,7 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@RecasterAlias("io.harness.delegate.beans.connector.awssecretmanager.outcome.AwsSecretManagerCredentialOutcomeDTO")
 public class AwsSecretManagerCredentialOutcomeDTO {
   @NotNull @Schema(description = SecretManagerDescriptionConstants.AWS_CREDENTIAL) AwsSecretManagerCredentialType type;
 

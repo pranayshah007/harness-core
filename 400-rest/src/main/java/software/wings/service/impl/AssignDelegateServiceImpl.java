@@ -8,14 +8,15 @@
 package software.wings.service.impl;
 
 import static io.harness.beans.DelegateTask.Status.QUEUED;
+import static io.harness.beans.DelegateTask.Status.STARTED;
 import static io.harness.data.structure.CollectionUtils.trimmedLowercaseSet;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.NgSetupFields.NG;
 import static io.harness.delegate.task.TaskFailureReason.EXPIRED;
+import static io.harness.delegate.utils.DelegateServiceConstants.HEARTBEAT_EXPIRY_TIME;
 import static io.harness.persistence.HPersistence.upsertReturnNewOptions;
-import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static software.wings.service.impl.DelegateSelectionLogsServiceImpl.CAN_NOT_ASSIGN_DELEGATE_SCOPE_GROUP;
 import static software.wings.service.impl.DelegateSelectionLogsServiceImpl.CAN_NOT_ASSIGN_OWNER;
@@ -25,8 +26,10 @@ import static software.wings.service.impl.DelegateSelectionLogsServiceImpl.CAN_N
 
 import static com.google.common.cache.CacheLoader.InvalidCacheLoadException;
 import static java.lang.System.currentTimeMillis;
+import static java.util.Collections.EMPTY_LIST;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -42,12 +45,10 @@ import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.delegate.beans.DelegateActivity;
 import io.harness.delegate.beans.DelegateEntityOwner;
-import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateProfileScopingRule;
 import io.harness.delegate.beans.DelegateScope;
-import io.harness.delegate.beans.DelegateSelectionLogParams;
 import io.harness.delegate.beans.NgSetupFields;
 import io.harness.delegate.beans.NoAvailableDelegatesException;
 import io.harness.delegate.beans.TaskGroup;
@@ -89,10 +90,9 @@ import com.google.inject.Singleton;
 import dev.morphia.FindAndModifyOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
+import io.dropwizard.util.Lists;
+import java.nio.channels.Selector;
 import java.security.SecureRandom;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -107,7 +107,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
@@ -124,9 +123,6 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 public class AssignDelegateServiceImpl implements AssignDelegateService, DelegateTaskRetryObserver {
   public static final String SCOPE_WILDCARD = "*";
   private static final SecureRandom random = new SecureRandom();
-  public static final long MAX_DELEGATE_LAST_HEARTBEAT = (5 * 60 * 1000L) + (15 * 1000L); // 5 minutes 15 seconds
-  public static final long MAX_DELEGATE_LONG_LAST_HEARTBEAT = TimeUnit.MINUTES.toMillis(8);
-
   public static final String ERROR_MESSAGE =
       "Delegate selection log: Delegate id: %s, Name: %s, Host name: %s, Profile name: %s, %s with note: %s at: %s";
 
@@ -135,12 +131,28 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   private static final long WHITELIST_REFRESH_INTERVAL = TimeUnit.MINUTES.toMillis(10);
 
   private static final String NO_ACTIVE_DELEGATES = "Account has no active delegates";
-  private static final String NON_CONNECTED_DELEGATES = "Non active delegates";
+  public static final String NON_CONNECTED_DELEGATES = "Non active delegates";
 
   public static final String PIPELINE = "pipeline";
   public static final String STAGE = "stage";
   public static final String STEP_GROUP = "stepGroup";
   public static final String STEP = "step";
+
+  private static final String NOT_ASSIGNED_ERROR_MSG =
+      "Active eligible delegates were unable to acquire the delegate task. Delegates may have lost connectivity or lacked the resources to run new tasks.\n\n";
+  private static final String VALIDATION_ERROR_MSG = "Validation Failure\n";
+  private static final String STEP_EXPIRY_STARTED_STATE_MSG =
+      "The delegate task timed out. Check the delegate %s logs for failures.\n\n";
+  private static final String STEP_EXPIRY_QUEUED_STATE_MSG =
+      "The delegate task timed out before verification of eligible delegates %s to acquire the task. Check your step time out for details.\n\n";
+  private static final String EXPIRED_DEFAULT = "The delegate task expired. Check your time-out configuration.\n\n";
+  private static final String NON_ACTIVE_DELEGATE_MSG =
+      "There are no active delegates available for the account. The following delegates %s are inactive.\n\n";
+  private static final String NO_ELIGIBLE_DELEGATE_MSG =
+      "There are no eligible delegates available in the account to execute the task.\n\n";
+  private static final String TIME_OUT_ERR_MSG = "Delegate %s failed to complete the task and timed out.\n\n";
+  private static final String DELEGATE_DISCONNECT_ERR_MSG =
+      "The delegate %s disconnected while executing the task.\n\n";
 
   @Inject private DelegateSelectionLogsService delegateSelectionLogsService;
   @Inject private DelegateService delegateService;
@@ -150,6 +162,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   @Inject private FeatureFlagService featureFlagService;
   @Inject private InfrastructureMappingService infrastructureMappingService;
   @Inject private DelegateCache delegateCache;
+  @Inject private DelegateDao delegateDao;
   @Inject private DelegateTaskServiceClassic delegateTaskServiceClassic;
 
   @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
@@ -172,7 +185,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   private LoadingCache<String, List<Delegate>> accountDelegatesCache =
       CacheBuilder.newBuilder()
           .maximumSize(1000)
-          .expireAfterWrite(MAX_DELEGATE_LAST_HEARTBEAT / 3, TimeUnit.MILLISECONDS)
+          .expireAfterWrite(HEARTBEAT_EXPIRY_TIME.toMillis() / 3, TimeUnit.MILLISECONDS)
           .build(new CacheLoader<String, List<Delegate>>() {
             @Override
             public List<Delegate> load(String accountId) {
@@ -187,13 +200,14 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
                   .project(DelegateKeys.delegateGroupId, true)
                   .project(DelegateKeys.owner, true)
                   .project(DelegateKeys.ng, true)
+                  .project(DelegateKeys.hostName, true)
                   .asList();
             }
           });
 
   @Override
   public boolean canAssign(String delegateId, DelegateTask task) {
-    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId);
     if (delegate == null) {
       return false;
     }
@@ -619,7 +633,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
           if (!result.isPresent() || result.get().getLastUpdatedAt() < currentTimeMillis() - WHITELIST_TTL
               || !result.get().isValidated()) {
             matching = false;
-            Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+            Delegate delegate = delegateCache.get(task.getAccountId(), delegateId);
             if (delegate == null) {
               break;
             }
@@ -644,7 +658,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
       return false;
     }
 
-    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId);
     if (delegate == null) {
       return false;
     }
@@ -807,84 +821,194 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   }
 
   @Override
-  public String getActiveDelegateAssignmentErrorMessage(TaskFailureReason reason, DelegateTask delegateTask) {
-    //@TODO : Move this capabilitySpecific error message: getCapabilityValidationError()
-    log.info("Delegate task is terminated");
+  public String getDelegateTaskAssignmentFailureMessage(
+      DelegateTask delegateTask, TaskFailureReason taskFailureReason) {
+    List<String> delegateName = isNotEmpty(delegateTask.getDelegateId())
+        ? getDelegateNames(List.of(delegateTask.getDelegateId()), delegateTask.getAccountId())
+        : EMPTY_LIST;
 
-    String errorMessage = "Unknown";
-    List<DelegateSelectionLogParams> delegateSelectionLogs =
-        delegateSelectionLogsService.fetchTaskSelectionLogs(delegateTask.getAccountId(), delegateTask.getUuid());
+    List<String> eligibleDelegateNames = isNotEmpty(delegateTask.getEligibleToExecuteDelegateIds())
+        ? getDelegateNames(Lists.of(delegateTask.getEligibleToExecuteDelegateIds()), delegateTask.getAccountId())
+        : EMPTY_LIST;
 
-    if (reason != EXPIRED && isNotEmpty(delegateSelectionLogs)) {
-      return delegateSelectionLogs.stream()
-          .map(selectionLog
-              -> String.format(String.format(ERROR_MESSAGE, selectionLog.getDelegateId(),
-                  selectionLog.getDelegateName(), selectionLog.getDelegateHostName(),
-                  selectionLog.getDelegateProfileName(), selectionLog.getConclusion(), selectionLog.getMessage(),
-                  LocalDateTime.ofInstant(
-                      Instant.ofEpochMilli(selectionLog.getEventTimestamp()), ZoneId.systemDefault()))))
-          .distinct()
-          .collect(Collectors.joining(", "));
+    List<String> nonAssignableDelegates = isNotEmpty(delegateTask.getNonAssignableDelegates())
+            && isNotEmpty(delegateTask.getNonAssignableDelegates().get(NON_CONNECTED_DELEGATES))
+        ? getDelegateNames(Lists.of(delegateTask.getNonAssignableDelegates().get(NON_CONNECTED_DELEGATES)),
+            delegateTask.getAccountId())
+        : EMPTY_LIST;
+
+    StringBuilder errorMessage = new StringBuilder();
+    String err = "default";
+    switch (taskFailureReason) {
+      case NOT_ASSIGNED:
+        // for any of the following scenarios task in queued state
+        // 1: Task broadcast to delegates but not acquired by any delegate within time out
+        // 2: Task broadcast to delegates but not  acquired by any delegate and exceeded max broadcast attempts
+        // 3: Task failed to broadcast to delegates and failed on task time out
+        err = String.format(NOT_ASSIGNED_ERROR_MSG, eligibleDelegateNames);
+        break;
+      case VALIDATION_FAILED:
+        // Validation failure already covered below
+        err = EMPTY;
+        break;
+      case EXPIRED:
+        if (delegateTask.getStatus() == STARTED) {
+          // delegate task assigned to delegate but task unable to complete within task time out or step time out
+          err = String.format(STEP_EXPIRY_STARTED_STATE_MSG, delegateName);
+          break;
+        }
+        if (delegateTask.getStatus() == QUEUED) {
+          // for any of the following scenarios task in queued state
+          // 1: Task broadcast to delegates, validation failed for delegates and step config timed out
+          // 2: Task broadcast to delegates, no delegate tried to acquire the task and step config timed out
+          // 3: Task broadcast to delegates, validation not completed for all delegates and step config timed out
+          // 4: Task failed to broadcast to delegates and step config timed out
+          err = String.format(STEP_EXPIRY_QUEUED_STATE_MSG, eligibleDelegateNames);
+          break;
+        }
+        // default message used for other states like "Parked" and "aborted"
+        err = EXPIRED_DEFAULT;
+        break;
+      case DELEGATE_DISCONNECTED:
+        // Error message on delegate disconnect while executing task
+        err = String.format(DELEGATE_DISCONNECT_ERR_MSG, delegateName);
+        break;
+      case TIMED_OUT:
+        // Unable to complete task within task expiry
+        err = String.format(TIME_OUT_ERR_MSG, delegateName);
+        break;
+      case NO_ELIGIBLE_DELEGATES:
+        err = NO_ELIGIBLE_DELEGATE_MSG;
+        break;
+      case NO_ACTIVE_DELEGATES:
+        err = String.format(NON_ACTIVE_DELEGATE_MSG, nonAssignableDelegates);
+        break;
+      default:
+        err = NO_ELIGIBLE_DELEGATE_MSG;
+    }
+    errorMessage.append(err);
+
+    if (taskFailureReason.equals(TaskFailureReason.DELEGATE_DISCONNECTED)
+        || taskFailureReason.equals(TaskFailureReason.TIMED_OUT)) {
+      // no need to show non-selected delegates in case of already assigned delegates
+      return errorMessage.toString();
     }
 
-    try {
-      // We are skipping invocation of the delegateSelectionLogsService.save intentionally, because we do not need to
-      // track selection logs here, we just want retrieveActiveDelegates method to respect cg/ng isolation, if necessary
-      final List<String> activeDelegates = retrieveActiveDelegates(delegateTask.getAccountId(), delegateTask);
-      final List<String> whitelistedDelegates = connectedWhitelistedDelegates(delegateTask);
-      final Map<String, Set<String>> delegateToValidatedCriterion = buildDelegateToValidatedCriterion(delegateTask);
-      final Set<String> requiredCapabilitiesCriterion = fetchRequiredCapabilitiesCriterion(delegateTask);
+    if (taskFailureReason.equals(TaskFailureReason.NO_ELIGIBLE_DELEGATES)) {
+      // for pre-processed failures, no need to further check rest of the failures
+      return errorMessage.append(getNoEligibleDelegateErrorMessage(delegateTask)).toString();
+    }
+    final List<String> activeDelegates = retrieveActiveDelegates(delegateTask.getAccountId(), delegateTask);
 
-      if (activeDelegates.isEmpty()) {
-        errorMessage = "There were no active delegates to complete the task.";
-      } else if (whitelistedDelegates.isEmpty()) {
-        StringBuilder msg = new StringBuilder();
-        for (String delegateId : activeDelegates) {
-          Delegate delegate = delegateCache.get(delegateTask.getAccountId(), delegateId, false);
+    errorMessage.append(getCapabilityErrorMessage(delegateTask))
+        .append(getSelectorMismatchErrorMessage(delegateTask, activeDelegates))
+        .append(getScopeMismatchErrorMessage(delegateTask, activeDelegates));
+    return errorMessage.toString();
+  }
+
+  private String getCapabilityErrorMessage(DelegateTask delegateTask) {
+    StringBuilder capabilityErrorMessage = new StringBuilder();
+    if (isNotEmpty(delegateTask.getValidationCompleteDelegateIds())
+        && delegateTask.getValidationCompleteDelegateIds().containsAll(
+            delegateTask.getEligibleToExecuteDelegateIds())) {
+      List<ExecutionCapability> capabilityList = delegateTask.getExecutionCapabilities()
+                                                     .stream()
+                                                     .filter(capability -> !(capability instanceof Selector))
+                                                     .collect(toList());
+      capabilityList.forEach(capability -> {
+        if (isNotEmpty(capability.getCapabilityValidationError())) {
+          String capabilityErrors = String.format("%s : [%s]", capability.getCapabilityValidationError(),
+              getValidationFailedDelegates(capability.fetchCapabilityBasis(),
+                  Lists.of(delegateTask.getEligibleToExecuteDelegateIds()), delegateTask.getAccountId()));
+          capabilityErrorMessage.append(capabilityErrors).append('\n');
+        }
+      });
+    }
+    return capabilityErrorMessage.toString();
+  }
+
+  private String getNoEligibleDelegateErrorMessage(DelegateTask delegateTask) {
+    StringBuilder noEligibleDelegateErrorMessage = new StringBuilder();
+    if (isNotEmpty(delegateTask.getNonAssignableDelegates())
+        && isNotEmpty(delegateTask.getNonAssignableDelegates().keySet())) {
+      noEligibleDelegateErrorMessage.append(String.join(" , ", delegateTask.getNonAssignableDelegates().keySet()));
+    }
+    return noEligibleDelegateErrorMessage.toString();
+  }
+
+  private String getSelectorMismatchErrorMessage(DelegateTask delegateTask, List<String> activeDelegates) {
+    StringBuilder selectorMismatchErrorMessage = new StringBuilder();
+    List<String> selectorMismatchedDelegates = new ArrayList<>();
+    for (String delegateId : activeDelegates) {
+      Delegate delegate = delegateCache.get(delegateTask.getAccountId(), delegateId);
+      boolean canAssignSelector = canAssignSelectors(delegate, delegateTask.getExecutionCapabilities());
+      boolean canAssignOwner = canAssignOwner(delegate, delegateTask.getSetupAbstractions());
+      if (!canAssignSelector && canAssignOwner) {
+        selectorMismatchedDelegates.add(delegate.getHostName());
+      }
+    }
+    if (isNotEmpty(selectorMismatchedDelegates)) {
+      List<String> taskSelectors = new ArrayList<>();
+      List<SelectorCapability> selectorCapabilities =
+          delegateTaskServiceClassic.fetchTaskSelectorCapabilities(delegateTask.getExecutionCapabilities());
+      selectorCapabilities.forEach(
+          capability -> taskSelectors.add(capability.getSelectorOrigin().concat(capability.getSelectors().toString())));
+      if (isNotEmpty(taskSelectors)) {
+        selectorMismatchErrorMessage
+            .append(String.format(
+                "\nA delegate was not selected because of an incompatible selector [%s] with the following delegates",
+                taskSelectors))
+            .append(selectorMismatchedDelegates);
+      }
+    }
+    selectorMismatchErrorMessage.append('\n');
+    return selectorMismatchErrorMessage.toString();
+  }
+
+  private String getScopeMismatchErrorMessage(DelegateTask delegateTask, List<String> activeDelegates) {
+    StringBuilder scopeMismatchErrorMessage = new StringBuilder();
+    List<String> scopeMismatchedDelegates = new ArrayList<>();
+    for (String delegateId : activeDelegates) {
+      Delegate delegate = delegateCache.get(delegateTask.getAccountId(), delegateId);
+      boolean canAssignScope = canAssignDelegateScopes(delegate, delegateTask);
+      if (!canAssignScope) {
+        scopeMismatchedDelegates.add(delegate.getHostName());
+      }
+    }
+    if (isNotEmpty(scopeMismatchedDelegates)) {
+      scopeMismatchErrorMessage.append("\nDelegate Scope mismatch with following delegate(s) : ");
+      scopeMismatchErrorMessage.append(scopeMismatchedDelegates);
+    }
+    return scopeMismatchErrorMessage.toString();
+  }
+
+  private List<String> getDelegateNames(List<String> delegateIds, String accountId) {
+    return delegateIds.stream()
+        .filter(Objects::nonNull)
+        .map(delegateId -> delegateCache.get(accountId, delegateId))
+        .filter(Objects::nonNull)
+        .map(Delegate::getHostName)
+        .collect(Collectors.toList());
+  }
+
+  private List<String> getValidationFailedDelegates(String criteria, List<String> delegateIds, String accountId) {
+    List<String> delegateNames = new ArrayList<>();
+    for (String delegateId : delegateIds) {
+      try {
+        Optional<DelegateConnectionResult> result =
+            delegateConnectionResultCache.get(ImmutablePair.of(delegateId, criteria));
+        if (result.isPresent() && !result.get().isValidated()) {
+          Delegate delegate = delegateCache.get(accountId, delegateId);
           if (delegate != null) {
-            msg.append(" ===> ").append(delegate.getHostName()).append(": ");
-            boolean canAssignScope = canAssignDelegateScopes(delegate, delegateTask);
-            boolean canAssignTags = canAssignSelectors(delegate, delegateTask.getExecutionCapabilities());
-
-            Set<String> validatedCriterion =
-                delegateToValidatedCriterion.getOrDefault(delegateId, new HashSet<String>());
-            boolean capabilitySatisfied = validatedCriterion.containsAll(requiredCapabilitiesCriterion);
-            boolean prevMessageExists = false;
-            if (!capabilitySatisfied) {
-              Set<String> missingCapabilities = SetUtils.difference(requiredCapabilitiesCriterion, validatedCriterion);
-              msg.append("\"Missing Capabilities: ").append(missingCapabilities).append('\"');
-              prevMessageExists = true;
-            }
-            if (!canAssignScope) {
-              msg.append(prevMessageExists ? " - " : "");
-              msg.append("\"Not in scope\"");
-              prevMessageExists = true;
-            }
-            if (!canAssignTags) {
-              msg.append(prevMessageExists ? " - " : "");
-              msg.append("\"Tag mismatch: ").append(getDelegateTags(delegate).orElse(emptyList())).append('\"');
-            }
-
-            if (!prevMessageExists) {
-              msg.append("Unknown error");
-            }
-            msg.append('\n');
+            String delegateName = isNotEmpty(delegate.getHostName()) ? delegate.getHostName() : delegate.getUuid();
+            delegateNames.add(delegateName);
           }
         }
-        String taskTagsMsg = isNotEmpty(delegateTask.getTags()) ? " Task tags: " + delegateTask.getTags() : "";
-        errorMessage =
-            "None of the active delegates were eligible to complete the task." + taskTagsMsg + "\n\n" + msg.toString();
-      } else if (delegateTask.getDelegateId() != null) {
-        Delegate delegate = delegateCache.get(delegateTask.getAccountId(), delegateTask.getDelegateId(), false);
-        errorMessage = "Delegate task timed out. Delegate: "
-            + (delegate != null ? delegate.getHostName() : "not found: " + delegateTask.getDelegateId());
-      } else {
-        errorMessage = "Delegate task was never assigned or/and task timed out.";
+      } catch (Exception e) {
+        log.error("Exception while getting delegate connection result");
       }
-    } catch (Exception e) {
-      log.error("Execution exception", e);
     }
-    return errorMessage;
+    return delegateNames;
   }
 
   @Override
@@ -960,8 +1084,6 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
       boolean isTaskNg = task.isNGTask(task.getSetupAbstractions());
       accountDelegates = accountDelegates.stream().filter(delegate -> delegate.isNg() == isTaskNg).collect(toList());
       if (isEmpty(accountDelegates)) {
-        task.getNonAssignableDelegates().putIfAbsent(NO_ACTIVE_DELEGATES, Collections.emptyList());
-        delegateTaskServiceClassic.addToTaskActivityLog(task, NO_ACTIVE_DELEGATES);
         return List.of();
       }
 
@@ -1051,7 +1173,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   }
 
   private boolean canAssignDelegateBySelectors(String delegateId, DelegateTask task) {
-    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId);
     if (delegate == null) {
       return false;
     }
@@ -1076,7 +1198,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
 
   @Override
   public boolean canAssignTask(String delegateId, DelegateTask task) {
-    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId);
     if (delegate == null) {
       return false;
     }
@@ -1125,7 +1247,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
 
   @Override
   public boolean canAssignTaskV2(String delegateId, DelegateTask task) {
-    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId);
     if (delegate == null) {
       return false;
     }
@@ -1136,7 +1258,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
         canAssignTaskToDelegate(delegate.getSupportedTaskTypes(), task.getTaskDataV2().getTaskType());
     if (!canAssignTaskToDelegate) {
       final String taskNotAssignedReasonPhrase =
-          CAN_NOT_ASSIGN_TASK_GROUP + " {" + task.getTaskDataV2().getTaskType() + "} ";
+          String.format("%s %s", task.getTaskDataV2().getTaskType(), CAN_NOT_ASSIGN_TASK_GROUP);
       task.getNonAssignableDelegates().putIfAbsent(taskNotAssignedReasonPhrase, new ArrayList<>());
       task.getNonAssignableDelegates().get(taskNotAssignedReasonPhrase).add(delegateName);
       log.debug("Delegate {} does not support task {} which is of type {}", delegateId, task.getUuid(),
@@ -1184,13 +1306,12 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   @Override
   public List<Delegate> fetchActiveDelegates(DelegateTask delegateTask) {
     List<Delegate> accountDelegates = getAccountDelegates(delegateTask.getAccountId());
-    long oldestAcceptableHeartBeat = currentTimeMillis() - MAX_DELEGATE_LONG_LAST_HEARTBEAT;
-    List<Delegate> nonConnectedDelegates =
-        accountDelegates.stream()
-            .filter(delegate -> delegate.getLastHeartBeat() < oldestAcceptableHeartBeat)
-            .collect(Collectors.toList());
+    List<Delegate> nonConnectedDelegates = accountDelegates.stream()
+                                               .filter(Objects::nonNull)
+                                               .filter(delegate -> !delegateDao.isDelegateHeartBeatUpToDate(delegate))
+                                               .collect(Collectors.toList());
     List<String> nonConnectedDelegatesIds =
-        nonConnectedDelegates.stream().map(Delegate::getHostName).collect(Collectors.toList());
+        nonConnectedDelegates.stream().filter(Objects::nonNull).map(Delegate::getHostName).collect(Collectors.toList());
     if (isNotEmpty(nonConnectedDelegatesIds)) {
       delegateTask.getNonAssignableDelegates().putIfAbsent(NON_CONNECTED_DELEGATES, nonConnectedDelegatesIds);
     }
@@ -1198,70 +1319,8 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     return accountDelegates.stream()
         .filter(delegate
             -> delegate.getStatus() == DelegateInstanceStatus.ENABLED
-                && delegate.getLastHeartBeat() > oldestAcceptableHeartBeat)
+                && delegateDao.isDelegateHeartBeatUpToDate(delegate))
         .collect(toList());
-  }
-
-  /**
-   * Create a Map of delegateId to successfully validated criterion for a given delegate task.
-   *
-   * @param delegateTask for which status is needed
-   * @return map from delegate to set of validated criterion
-   */
-  private Map<String, Set<String>> buildDelegateToValidatedCriterion(DelegateTask delegateTask) {
-    Map<String, Set<String>> results = new HashMap<>();
-
-    if (delegateTask.getExecutionCapabilities() == null || delegateTask.getEligibleToExecuteDelegateIds() == null) {
-      return results;
-    }
-
-    // Get all required capabilities.
-    Set<String> requiredCapabilitiesCriterion = delegateTask.getExecutionCapabilities()
-                                                    .stream()
-                                                    .map(ExecutionCapability::fetchCapabilityBasis)
-                                                    .collect(Collectors.toSet());
-
-    // Create set of eligible delegate ids.
-    Set<String> eligibleDelegateIds = new HashSet<>(delegateTask.getEligibleToExecuteDelegateIds());
-
-    // Read all connection results for request criterion
-    List<DelegateConnectionResult> delegateConnectionResults =
-        persistence.createQuery(DelegateConnectionResult.class, excludeAuthority)
-            .filter(DelegateConnectionResultKeys.accountId, delegateTask.getAccountId())
-            .field(DelegateConnectionResultKeys.criteria)
-            .in(requiredCapabilitiesCriterion)
-            .asList();
-
-    for (DelegateConnectionResult connectionResult : delegateConnectionResults) {
-      if (!eligibleDelegateIds.contains(connectionResult.getDelegateId())) {
-        continue;
-      }
-
-      Set<String> validatedCriterion = results.getOrDefault(connectionResult.getDelegateId(), new HashSet<String>());
-      if (connectionResult.isValidated()) {
-        validatedCriterion.add(connectionResult.getCriteria());
-      }
-    }
-
-    return results;
-  }
-
-  /**
-   * Read capabilities from the delegate task and return capability basis for each one.
-   *
-   * @return Set of capability basis.
-   */
-  private Set<String> fetchRequiredCapabilitiesCriterion(DelegateTask delegateTask) {
-    Set<String> requiredCapabilitiesCriterion = null;
-    if (delegateTask.getExecutionCapabilities() != null) {
-      requiredCapabilitiesCriterion = delegateTask.getExecutionCapabilities()
-                                          .stream()
-                                          .map(ExecutionCapability::fetchCapabilityBasis)
-                                          .collect(Collectors.toSet());
-    } else {
-      requiredCapabilitiesCriterion = new HashSet<>();
-    }
-    return requiredCapabilitiesCriterion;
   }
 
   private List<Delegate> getDelegatesWithOwnerShipCriteriaMatch(DelegateTask task, List<Delegate> delegates) {
@@ -1315,12 +1374,10 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   }
 
   private List<String> identifyActiveDelegateIds(List<Delegate> accountDelegates, String accountId) {
-    long oldestAcceptableHeartBeat = currentTimeMillis() - MAX_DELEGATE_LAST_HEARTBEAT;
-
     Map<DelegateActivity, List<Delegate>> delegatesMap =
         accountDelegates.stream().collect(Collectors.groupingBy(delegate -> {
           if (DelegateInstanceStatus.ENABLED == delegate.getStatus()) {
-            if (delegate.getLastHeartBeat() > oldestAcceptableHeartBeat) {
+            if (delegateDao.isDelegateHeartBeatUpToDate(delegate)) {
               return DelegateActivity.ACTIVE;
             } else {
               return DelegateActivity.DISCONNECTED;
@@ -1379,16 +1436,4 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   }
 
   private enum ScopeMatchResult { SCOPE_MATCHED, ALLOWED_WILDCARD, SCOPE_NOT_MATCHED }
-
-  private Optional<List<String>> getDelegateTags(Delegate delegate) {
-    if (delegate.isNg()) {
-      DelegateGroup delegateGroup =
-          delegateCache.getDelegateGroup(delegate.getAccountId(), delegate.getDelegateGroupId());
-      Set<String> delegateTags =
-          (delegateGroup != null && delegateGroup.getTags() != null) ? delegateGroup.getTags() : new HashSet<>();
-      List<String> tags = new ArrayList<>(delegateTags);
-      return Optional.of(tags);
-    }
-    return Optional.ofNullable(delegate.getTags());
-  }
 }

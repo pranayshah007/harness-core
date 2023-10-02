@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.pcf;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.INVALID_INFRA_STATE;
@@ -46,8 +45,11 @@ import static java.lang.String.format;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.task.tas.TasNgConfigMapper;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -108,6 +110,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @NoArgsConstructor
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
@@ -251,10 +254,11 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
             "Revert not required as no application got created or renamed", ERROR, CommandExecutionStatus.FAILURE);
       }
     } catch (Exception e) {
-      log.error(CLOUD_FOUNDRY_LOG_PREFIX + "Exception in reverting app names", e);
-      logCallback.saveExecutionLog(format("\n\n ----------  Failed to revert app names : %s",
-                                       ExceptionMessageSanitizer.sanitizeMessage(e.getMessage())),
-          ERROR, CommandExecutionStatus.FAILURE);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error(CLOUD_FOUNDRY_LOG_PREFIX + "Exception in reverting app names", sanitizedException);
+      logCallback.saveExecutionLog(
+          format("\n\n ----------  Failed to revert app names : %s", sanitizedException.getMessage()), ERROR,
+          CommandExecutionStatus.FAILURE);
     }
   }
 
@@ -325,7 +329,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
       CfRequestConfig cfRequestConfig, LogCallback logCallback, File workingDirectory, int timeoutInMins)
       throws PivotalClientApiException {
     ApplicationSummary currentActiveApplication =
-        pcfCommandTaskBaseHelper.findCurrentActiveApplication(previousReleases, cfRequestConfig, logCallback);
+        pcfCommandTaskBaseHelper.findCurrentActiveApplicationNG(previousReleases, cfRequestConfig, logCallback);
     if (currentActiveApplication == null) {
       return null;
     }
@@ -340,8 +344,10 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
     try {
       isAutoScalarEnabled = cfDeploymentManager.checkIfAppHasAutoscalarEnabled(cfAppAutoscalarRequestData, logCallback);
     } catch (PivotalClientApiException e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       logCallback.saveExecutionLog(
           "Failed while fetching autoscalar state: " + encodeColor(currentActiveApplication.getName()), LogLevel.ERROR);
+      logCallback.saveExecutionLog(sanitizedException.getMessage(), LogLevel.ERROR);
     }
     return TasApplicationInfo.builder()
         .applicationName(currentActiveApplication.getName())
@@ -356,6 +362,9 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
   private TasApplicationInfo getInActiveApplicationInfo(TasApplicationInfo activeApplicationInfo,
       List<ApplicationSummary> previousReleases, CfRequestConfig cfRequestConfig, LogCallback logCallback,
       File workingDirectory, int timeoutInMins) throws PivotalClientApiException {
+    if (activeApplicationInfo == null) {
+      return null;
+    }
     ApplicationSummary inActiveApplication =
         findCurrentInActiveApplication(activeApplicationInfo, previousReleases, cfRequestConfig, logCallback);
     if (inActiveApplication == null) {
@@ -372,8 +381,10 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
     try {
       isAutoScalarEnabled = cfDeploymentManager.checkIfAppHasAutoscalarEnabled(cfAppAutoscalarRequestData, logCallback);
     } catch (PivotalClientApiException e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       logCallback.saveExecutionLog(
           "Failed while fetching autoscalar state: " + encodeColor(inActiveApplication.getName()), LogLevel.ERROR);
+      logCallback.saveExecutionLog(sanitizedException.getMessage(), LogLevel.ERROR);
     }
     return TasApplicationInfo.builder()
         .applicationName(inActiveApplication.getName())
@@ -451,7 +462,17 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
   void deleteOlderApplications(List<ApplicationSummary> previousReleases, CfRequestConfig cfRequestConfig,
       CfBlueGreenSetupRequestNG setupRequestNG, CfAppAutoscalarRequestData appAutoscalarRequestData,
       LogCallback logCallback, TasApplicationInfo currentProdInfo, TasApplicationInfo inActiveApplicationInfo) {
-    if (isEmpty(previousReleases) || previousReleases.size() == 1) {
+    if (isEmpty(previousReleases)) {
+      return;
+    }
+    if (previousReleases.size() == 1) {
+      ApplicationSummary applicationSummary = previousReleases.get(0);
+      if (PcfConstants.isInterimApp(applicationSummary.getName())) {
+        logCallback.saveExecutionLog(
+            "# Deleting previous deployment interim app: " + encodeColor(applicationSummary.getName()));
+        deleteApplication(applicationSummary, cfRequestConfig, logCallback);
+        previousReleases.remove(applicationSummary);
+      }
       return;
     }
 
@@ -497,9 +518,11 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
       cfDeploymentManager.deleteApplication(cfRequestConfig);
       //      appsDeleted.add(applicationSummary.getName());
     } catch (PivotalClientApiException e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       executionLogCallback.saveExecutionLog("Failed while deleting application: "
               + encodeColor(applicationSummary.getName()) + ", Continuing for next one",
           LogLevel.ERROR);
+      executionLogCallback.saveExecutionLog(sanitizedException.getMessage(), LogLevel.ERROR);
     }
   }
   void downsizeApplicationToZero(ApplicationSummary applicationSummary, CfRequestConfig cfRequestConfig,
@@ -533,7 +556,9 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
             cfRequestConfig, applicationDetail.getUrls(), executionLogCallback);
       }
     } catch (PivotalClientApiException exception) {
-      log.warn(ExceptionMessageSanitizer.sanitizeException(exception).getMessage());
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(exception);
+      log.warn(sanitizedException.getMessage());
+      executionLogCallback.saveExecutionLog(sanitizedException.getMessage(), LogLevel.WARN);
     }
   }
 
@@ -543,7 +568,9 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
       // Remove Env Variable "HARNESS__STATUS__IDENTIFIER"
       cfDeploymentManager.unsetEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback);
     } catch (PivotalClientApiException exception) {
-      log.warn(ExceptionMessageSanitizer.sanitizeException(exception).getMessage());
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(exception);
+      log.warn(sanitizedException.getMessage());
+      executionLogCallback.saveExecutionLog(sanitizedException.getMessage(), LogLevel.WARN);
     }
   }
 
@@ -551,7 +578,9 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
     try {
       cfDeploymentManager.resizeApplication(cfRequestConfig, executionLogCallback);
     } catch (PivotalClientApiException exception) {
-      log.warn(ExceptionMessageSanitizer.sanitizeException(exception).getMessage());
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(exception);
+      log.warn(sanitizedException.getMessage());
+      executionLogCallback.saveExecutionLog(sanitizedException.getMessage(), LogLevel.WARN);
     }
   }
 
@@ -585,6 +614,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.warn("Failed to remove temp files created", sanitizedException);
+      Misc.logAllMessages(sanitizedException, executionLogCallback);
     }
   }
 

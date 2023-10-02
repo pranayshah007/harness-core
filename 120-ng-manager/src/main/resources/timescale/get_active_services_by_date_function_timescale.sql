@@ -8,7 +8,7 @@ SET SEARCH_PATH = "public";
 DROP FUNCTION IF EXISTS get_active_services_by_date;
 
 CREATE OR REPLACE FUNCTION get_active_services_by_date(
-    p_account_id TEXT
+  p_account_id TEXT
 , p_begin_date DATE
 , p_end_date DATE
 , p_sum_by_month BOOL DEFAULT FALSE
@@ -34,8 +34,8 @@ BEGIN
 
     v_interim_begin_date := '1900-01-01';
     v_loop_count := -1;  -- so the first increment will be 0
-
-    WHILE v_interim_begin_date < (p_end_date - '1 DAY'::interval) LOOP
+    -- function generates reports, including reports for p_begin_date and p_end_date days
+    WHILE v_interim_begin_date < p_end_date LOOP
             v_query_start_time := clock_timestamp();
             v_loop_count := v_loop_count + 1;
 
@@ -53,27 +53,79 @@ BEGIN
             END IF;
 
             INSERT INTO _tmp_tbl_active_services_by_date_range(report_date, service_licenses)
-            SELECT v_interim_begin_date as report_day_or_month_date, sum(licensesConsumedPerService) as service_licenses
+            SELECT
+                v_interim_begin_date AS report_day_or_month_date,
+                SUM(licensesConsumedPerService) AS service_licenses
             FROM
-                (SELECT serviceid,
+                (
+                    SELECT
                         CASE
-                            WHEN instancesPerServices.instanceCount <= 20
+                            WHEN instancesPerServices.instanceCount IS NULL OR instancesPerServices.instanceCount <= 20
                                 THEN 1
-                            WHEN  instancesPerServices.instanceCount > 20
+                            WHEN instancesPerServices.instanceCount > 20
                                 THEN CEILING(instancesPerServices.instanceCount / 20.0)
-                            END as licensesConsumedPerService
-                 FROM
-                     (SELECT PERCENTILE_DISC(0.95) WITHIN GROUP (ORDER BY instancesPerServicesReportedAt.instancecount) AS instanceCount,
-                             orgid, projectid, serviceid
-                      FROM (SELECT date_trunc('minute', reportedat) AS reportedat, orgid, projectid, serviceid, SUM(instancecount) AS instancecount
-                            FROM ng_instance_stats
-                            WHERE accountid = p_account_id
-                              -- always follow pattern of >= begin date and < end date
-                              AND reportedat >= v_interim_begin_date AND reportedat < v_interim_end_date
-                            GROUP BY orgid, projectid, serviceid, date_trunc('minute', reportedat)
-                            ORDER BY reportedat DESC
-                           ) instancesPerServicesReportedAt
-                      GROUP BY orgid, projectid, serviceid) instancesPerServices
+                            END AS licensesConsumedPerService
+                    FROM
+                        -- List all deployed services during specific day or month from service_infra_info table
+                        (
+                            SELECT
+                                orgidentifier AS orgIdentifier,
+                                projectidentifier AS projectIdentifier,
+                                service_id AS serviceIdentifier
+                            FROM
+                                service_infra_info
+                            WHERE
+                                accountid = p_account_id
+                                -- Report has to be generated for last 30 days including the current reported day(v_interim_begin_date).
+                                -- For example report for 2023-06-05 day, time range interval
+                                -- will be from: 2023-05-07 00:00:00 including the whole May 07, to: 2023-06-06 00:00:00 including the whole Jun 05
+                                -- It's overall 30 days.
+                                AND service_startts >= EXTRACT(EPOCH FROM DATE (v_interim_begin_date - INTERVAL '29 day')) * 1000
+                                AND service_startts < EXTRACT(EPOCH FROM DATE (v_interim_end_date::timestamp)) * 1000
+                            GROUP BY
+                                orgidentifier,
+                                projectidentifier,
+                                service_id
+                        ) activeServices
+                        LEFT JOIN
+                        -- List services percentile instances count during specific day or month from ng_instance_stats table
+                        (
+                            SELECT
+                                PERCENTILE_DISC(.95) WITHIN GROUP (ORDER BY instancesPerServicesReportedAt.instanceCount) AS instanceCount,
+                                orgid,
+                                projectid,
+                                serviceid
+                            FROM
+                                (
+                                    SELECT
+                                        DATE_TRUNC('minute', reportedat) AS reportedat,
+                                        orgid,
+                                        projectid,
+                                        serviceid,
+                                        SUM(instancecount) AS instanceCount
+                                    FROM
+                                        ng_instance_stats
+                                    WHERE
+                                        accountid = p_account_id
+                                        -- Report has to be generated for last 30 days including the current reported day(v_interim_begin_date).
+                                        -- For example report for 2023-06-05 day, time range interval
+                                        -- will be from: 2023-05-07 00:00:00 including the whole May 07, to: 2023-06-06 00:00:00 including the whole Jun 05
+                                        -- It's overall 30 days.
+                                        AND reportedat >= v_interim_begin_date - INTERVAL '29 day'
+                                        AND reportedat < v_interim_end_date
+                                    GROUP BY
+                                        orgid,
+                                        projectid,
+                                        serviceid,
+                                        DATE_TRUNC('minute', reportedat)
+                                ) instancesPerServicesReportedAt
+                            GROUP BY
+                                orgid,
+                                projectid,
+                                serviceid
+                        ) instancesPerServices ON activeServices.orgIdentifier = instancesPerServices.orgid
+                            AND activeServices.projectIdentifier = instancesPerServices.projectid
+                            AND activeServices.serviceIdentifier = instancesPerServices.serviceid
                 ) servicesLicenses;
 
 

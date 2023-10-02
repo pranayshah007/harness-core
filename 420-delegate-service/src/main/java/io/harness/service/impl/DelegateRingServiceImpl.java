@@ -7,6 +7,7 @@
 
 package io.harness.service.impl;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.utils.DelegateRingConstants.RING_NAME_1;
 import static io.harness.delegate.utils.DelegateRingConstants.RING_NAME_2;
 import static io.harness.delegate.utils.DelegateRingConstants.RING_NAME_3;
@@ -84,6 +85,24 @@ public class DelegateRingServiceImpl implements DelegateRingService {
   @Override
   public String getWatcherVersions(final String accountId) {
     return accountDataProvider.getDelegateRing(accountId).getWatcherVersions();
+  }
+
+  public String getJREVersion(final String accountId, final boolean isDelegate) {
+    String jreVersionFromRing = "";
+    try {
+      if (isDelegate) {
+        jreVersionFromRing = accountDataProvider.getDelegateRing(accountId).getDelegateJREVersion();
+      } else {
+        jreVersionFromRing = accountDataProvider.getDelegateRing(accountId).getWatcherJREVersion();
+      }
+      if (isNotEmpty(jreVersionFromRing)) {
+        return jreVersionFromRing;
+      }
+    } catch (Exception ex) {
+      log.error("Unable to fetch jre version from ring", ex);
+      throw new IllegalStateException("Unable to fetch jre version");
+    }
+    return jreVersionFromRing;
   }
 
   @Override

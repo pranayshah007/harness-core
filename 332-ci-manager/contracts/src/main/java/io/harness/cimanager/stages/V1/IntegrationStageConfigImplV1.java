@@ -6,10 +6,12 @@
  */
 
 package io.harness.cimanager.stages.V1;
-
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.yaml.extended.platform.V1.Arch;
 import io.harness.beans.yaml.extended.platform.V1.OS;
 import io.harness.beans.yaml.extended.platform.V1.PlatformV1;
@@ -40,6 +42,7 @@ import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.CI)
 @Data
 @Builder

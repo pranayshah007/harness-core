@@ -2258,6 +2258,9 @@
         "type"
       ],
       "properties": {
+        "accountIdentifier": {
+          "type": "string"
+        },
         "description": {
           "type": "string"
         },
@@ -3473,7 +3476,8 @@
               "enum": [
                 "UsernamePassword",
                 "ApiClientToken",
-                "None"
+                "None",
+                "Bearer Token(HTTP Header)"
               ]
             },
             "delegateSelectors": {
@@ -3623,7 +3627,8 @@
           "type": "string",
           "enum": [
             "InheritFromDelegate",
-            "ManualConfig"
+            "ManualConfig",
+            "OidcAuthentication"
           ]
         }
       },
@@ -3963,6 +3968,65 @@
       "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "GithubApp": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/GithubHttpCredentialsSpecDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "privateKeyRef"
+          ],
+          "properties": {
+            "applicationId": {
+              "type": "string"
+            },
+            "applicationIdRef": {
+              "type": "string"
+            },
+            "installationId": {
+              "type": "string"
+            },
+            "installationIdRef": {
+              "type": "string"
+            },
+            "privateKeyRef": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "applicationIdRef"
+              ]
+            },
+            {
+              "required": [
+                "applicationId"
+              ]
+            }
+          ]
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "installationIdRef"
+              ]
+            },
+            {
+              "required": [
+                "installationId"
+              ]
+            }
+          ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "GithubAppSpec": {
       "allOf": [
         {
@@ -4142,8 +4206,25 @@
               "enum": [
                 "UsernamePassword",
                 "UsernameToken",
-                "OAuth"
+                "OAuth",
+                "GithubApp"
               ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GithubApp"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GithubApp"
+              }
             }
           }
         },
@@ -6752,7 +6833,7 @@
         },
         "versionLabel": {
           "type": "string",
-          "pattern": "^[0-9a-zA-Z][^\\s]{0,63}$"
+          "pattern": "^[0-9a-zA-Z][^\\s/&]{0,63}$"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6890,6 +6971,9 @@
               "items": {
                 "type": "string"
               }
+            },
+            "enableCache": {
+              "type": "boolean"
             },
             "k8sAuthEndpoint": {
               "type": "string"

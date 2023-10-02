@@ -9,6 +9,9 @@ package io.harness.freeze.service.impl;
 
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.entity.FrozenExecution;
 import io.harness.freeze.mappers.FrozenExecutionMapper;
@@ -25,6 +28,8 @@ import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import org.springframework.transaction.support.TransactionTemplate;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_FREEZE})
 @Singleton
 @Slf4j
 public class FrozenExecutionServiceImpl implements FrozenExecutionService {

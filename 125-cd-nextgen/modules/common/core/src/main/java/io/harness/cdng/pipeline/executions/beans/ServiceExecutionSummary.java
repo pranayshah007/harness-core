@@ -11,6 +11,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.ArtifactSummary;
+import io.harness.cdng.manifest.yaml.summary.ManifestStoreInfo;
 
 import java.util.List;
 import lombok.Builder;
@@ -28,6 +29,7 @@ public class ServiceExecutionSummary {
   String deploymentType;
   boolean gitOpsEnabled;
   ArtifactsSummary artifacts;
+  ManifestStoreInfo manifestInfo;
 
   @Data
   @Builder

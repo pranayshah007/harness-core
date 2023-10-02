@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.ssh;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.manifest.ManifestStoreType.BITBUCKET;
 import static io.harness.cdng.manifest.ManifestStoreType.GIT;
@@ -19,7 +18,10 @@ import static io.harness.filestore.utils.FileStoreNodeUtils.mapFileNodes;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.configfile.ConfigFileOutcome;
@@ -60,6 +62,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @Singleton
 @OwnedBy(CDP)
 public class SshWinRmConfigFileHelper {
@@ -89,14 +92,14 @@ public class SshWinRmConfigFileHelper {
   }
 
   public FileDelegateConfig getFileDelegateConfig(
-      Map<String, ConfigFileOutcome> configFilesOutcome, Ambiance ambiance, boolean shouldRenderConfigFiles) {
+      Map<String, ConfigFileOutcome> configFilesOutcome, Ambiance ambiance) {
     List<StoreDelegateConfig> stores = new ArrayList<>(configFilesOutcome.size());
     for (ConfigFileOutcome configFileOutcome : configFilesOutcome.values()) {
       StoreConfig storeConfig = configFileOutcome.getStore();
       if (storeConfig != null) {
         switch (storeConfig.getKind()) {
           case HARNESS_STORE_TYPE:
-            stores.add(buildHarnessStoreDelegateConfig(ambiance, (HarnessStore) storeConfig, shouldRenderConfigFiles));
+            stores.add(buildHarnessStoreDelegateConfig(ambiance, (HarnessStore) storeConfig));
             break;
           case GITHUB:
           case GIT:
@@ -114,8 +117,7 @@ public class SshWinRmConfigFileHelper {
     return FileDelegateConfig.builder().stores(stores).build();
   }
 
-  private HarnessStoreDelegateConfig buildHarnessStoreDelegateConfig(
-      Ambiance ambiance, HarnessStore harnessStore, boolean shouldRenderConfigFiles) {
+  private HarnessStoreDelegateConfig buildHarnessStoreDelegateConfig(Ambiance ambiance, HarnessStore harnessStore) {
     harnessStore = (HarnessStore) cdExpressionResolver.updateExpressions(ambiance, harnessStore);
     List<String> files = ParameterFieldHelper.getParameterFieldValue(harnessStore.getFiles());
     List<String> secretFiles = ParameterFieldHelper.getParameterFieldValue(harnessStore.getSecretFiles());
@@ -141,9 +143,7 @@ public class SshWinRmConfigFileHelper {
       });
     }
 
-    if (shouldRenderConfigFiles) {
-      renderConfigFilesParameters(ambiance, configFileParameters);
-    }
+    renderConfigFilesParameters(ambiance, configFileParameters);
 
     return HarnessStoreDelegateConfig.builder().configFiles(configFileParameters).build();
   }
@@ -181,6 +181,10 @@ public class SshWinRmConfigFileHelper {
         // At this point we don't have secret content as it will be retrieved on delegate side, hence skipping rendering
         // for secret files. Generally we don't want to touch secret as it is not safe and might raise security
         // concerns.
+        continue;
+      }
+
+      if (configFileParameter.getFileContent() == null) {
         continue;
       }
 

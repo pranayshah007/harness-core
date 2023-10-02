@@ -6,7 +6,6 @@
  */
 
 package software.wings.graphql.datafetcher.execution;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.ADD_MANIFEST_COLLECTION_STEP;
 import static io.harness.beans.FeatureName.BYPASS_HELM_FETCH;
@@ -21,8 +20,11 @@ import static software.wings.beans.SSHExecutionCredential.Builder.aSSHExecutionC
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.CreatedByType;
 import io.harness.beans.ExecutionStatus;
@@ -86,6 +88,8 @@ import lombok.extern.slf4j.Slf4j;
  * workflow and workflow execution.
  * Ideally, we should have two separate adapters.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @Singleton
 @Slf4j

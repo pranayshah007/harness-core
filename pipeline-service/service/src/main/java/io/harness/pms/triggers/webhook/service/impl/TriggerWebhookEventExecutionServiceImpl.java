@@ -12,11 +12,17 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.HeaderConfig;
 import io.harness.eventsframework.webhookpayloads.webhookdata.EventHeader;
 import io.harness.eventsframework.webhookpayloads.webhookdata.TriggerExecutionDTO;
 import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
+import io.harness.exception.InvalidRequestException;
+import io.harness.logging.AutoLogContext;
+import io.harness.logging.NgTriggerAutoLogContext;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
@@ -33,10 +39,12 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Singleton
 @Slf4j
 @OwnedBy(PIPELINE)
@@ -53,7 +61,7 @@ public class TriggerWebhookEventExecutionServiceImpl implements TriggerWebhookEv
           ngTriggerElementMapper
               .toNGTriggerWebhookEvent(triggerExecutionDTO.getWebhookDto().getAccountId(), null, null,
                   triggerExecutionDTO.getWebhookDto().getJsonPayload(),
-                  prepareHeaders(triggerExecutionDTO.getWebhookDto()))
+                  prepareHeaders(triggerExecutionDTO.getWebhookDto()), null)
               .uuid(triggerExecutionDTO.getWebhookDto().getEventId())
               .createdAt(triggerExecutionDTO.getWebhookDto().getTime())
               .build();
@@ -109,5 +117,23 @@ public class TriggerWebhookEventExecutionServiceImpl implements TriggerWebhookEv
                    .values(eventHeader.getValuesList().stream().collect(toList()))
                    .build())
         .collect(toList());
+  }
+
+  @Override
+  public void handleEvent(
+      TriggerExecutionDTO triggerExecutionDTO, Map<String, String> metadataMap, long messageTimeStamp, long readTs) {
+    if (triggerExecutionDTO == null) {
+      return;
+    }
+
+    try {
+      try (NgTriggerAutoLogContext ignore0 =
+               new NgTriggerAutoLogContext("eventId", triggerExecutionDTO.getWebhookDto().getEventId(),
+                   triggerExecutionDTO.getAccountId(), AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
+        processEvent(triggerExecutionDTO);
+      }
+    } catch (Exception e) {
+      throw new InvalidRequestException("Exception while processing TriggerExecutionDto event", e);
+    }
   }
 }

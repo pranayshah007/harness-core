@@ -6,11 +6,13 @@
  */
 
 package io.harness.steps.pipelinestage;
-
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.stages.stage.StageInfoConfig;
@@ -34,6 +36,7 @@ import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Data
 @Builder
@@ -63,7 +66,8 @@ public class PipelineStageConfig implements StageInfoConfig {
   private ParameterField<Map<String, Object>> pipelineInputs;
 
   // Outputs
-  private List<PipelineStageOutputs> outputs;
+
+  @VariableExpression(skipVariableExpression = true) private List<PipelineStageOutputs> outputs;
   private List<String> inputSetReferences;
 
   // For StageInfoConfig Framework Execution

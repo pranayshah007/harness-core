@@ -17,9 +17,7 @@ import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -45,9 +43,7 @@ import io.harness.eventsframework.schemas.entitysetupusage.EntityDetailWithSetup
 import io.harness.eventsframework.schemas.entitysetupusage.EntityDetailWithSetupUsageDetailProtoDTO.PipelineDetailType;
 import io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreateV2DTO;
 import io.harness.exception.InvalidRequestException;
-import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
-import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -57,7 +53,6 @@ import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.merger.helpers.InputSetYamlHelper;
 import io.harness.pms.pipeline.references.FilterCreationGitMetadata;
 import io.harness.pms.pipeline.references.FilterCreationParams;
-import io.harness.pms.rbac.InternalReferredEntityExtractor;
 import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
@@ -96,14 +91,12 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
   private static final String PROJECT_ID = "projectId";
   @Mock private EntitySetupUsageClient entitySetupUsageClient;
   @Mock private Producer eventProducer;
-  @Mock private InternalReferredEntityExtractor internalReferredEntityExtractor;
   @Mock private GitSyncSdkService gitSyncSdkService;
   @InjectMocks private PipelineSetupUsageHelper pipelineSetupUsageHelper;
 
   @Before
   public void init() {
     MockitoAnnotations.initMocks(this);
-    when(internalReferredEntityExtractor.extractInternalEntities(any(), anyList())).thenReturn(new ArrayList<>());
   }
 
   @After
@@ -400,7 +393,8 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
     pipelineSetupUsageHelper.publishSetupUsageEvent(
         FilterCreationParams.builder()
             .pipelineEntity(pipelineEntity)
-            .filterCreationGitMetadata(FilterCreationGitMetadata.builder().repo("repo").branch("branch").build())
+            .filterCreationGitMetadata(
+                FilterCreationGitMetadata.builder().repo("repo").branch("branch").isGitDefaultBranch(true).build())
             .build(),
         referredEntities);
 
@@ -487,79 +481,35 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
   @Test
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
-  public void testShouldPublishSetupUsageForGitXInlinePipeline() {
-    PipelineEntity pipelineEntity =
-        PipelineEntity.builder().accountId(ACCOUNT_ID).orgIdentifier(ORG_ID).projectIdentifier(PROJECT_ID).build();
-    doReturn(true).when(gitSyncSdkService).isGitSimplificationEnabled(ACCOUNT_ID, ORG_ID, PROJECT_ID);
-    GitEntityInfo gitEntityInfo = GitEntityInfo.builder().storeType(StoreType.INLINE).build();
-    GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
-    assertTrue(pipelineSetupUsageHelper.shouldPublishSetupUsage(pipelineEntity));
+  public void testShouldPublishSetupUsageForCreationAndUpdationForRemotePipeline() {
+    FilterCreationGitMetadata gitMetadata = null;
+    PipelineEntity pipelineEntity = PipelineEntity.builder().storeType(StoreType.REMOTE).build();
+    assertFalse(pipelineSetupUsageHelper.shouldPublishSetupUsage(pipelineEntity, gitMetadata));
+  }
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testShouldPublishSetupUsageForCreationAndUpdationForInlinePipeline() {
+    FilterCreationGitMetadata gitMetadata = null;
+    PipelineEntity pipelineEntity = PipelineEntity.builder().storeType(StoreType.INLINE).build();
+    assertTrue(pipelineSetupUsageHelper.shouldPublishSetupUsage(pipelineEntity, gitMetadata));
   }
 
   @Test
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
-  public void testShouldPublishSetupUsageForGitXRemotePipelineDefaultBranch() {
-    PipelineEntity pipelineEntity =
-        PipelineEntity.builder().accountId(ACCOUNT_ID).orgIdentifier(ORG_ID).projectIdentifier(PROJECT_ID).build();
-    doReturn(true).when(gitSyncSdkService).isGitSimplificationEnabled(ACCOUNT_ID, ORG_ID, PROJECT_ID);
-    GitEntityInfo gitEntityInfo = GitEntityInfo.builder()
-                                      .repoName("repoName")
-                                      .storeType(StoreType.REMOTE)
-                                      .isDefaultBranch(true)
-                                      .branch("branch")
-                                      .build();
-    GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
-    assertTrue(pipelineSetupUsageHelper.shouldPublishSetupUsage(pipelineEntity));
+  public void testShouldPublishSetupUsageForGetDefaultBranchForRemotePipeline() {
+    FilterCreationGitMetadata gitMetadata = FilterCreationGitMetadata.builder().isGitDefaultBranch(true).build();
+    PipelineEntity pipelineEntity = PipelineEntity.builder().storeType(StoreType.REMOTE).build();
+    assertTrue(pipelineSetupUsageHelper.shouldPublishSetupUsage(pipelineEntity, gitMetadata));
   }
 
   @Test
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
-  public void testShouldPublishSetupUsageForGitXRemotePipelineNonDefaultBranch() {
-    PipelineEntity pipelineEntity =
-        PipelineEntity.builder().accountId(ACCOUNT_ID).orgIdentifier(ORG_ID).projectIdentifier(PROJECT_ID).build();
-    doReturn(true).when(gitSyncSdkService).isGitSimplificationEnabled(ACCOUNT_ID, ORG_ID, PROJECT_ID);
-    GitEntityInfo gitEntityInfo = GitEntityInfo.builder()
-                                      .repoName("repoName")
-                                      .storeType(StoreType.REMOTE)
-                                      .isDefaultBranch(false)
-                                      .branch("branch")
-                                      .build();
-    GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
-    assertFalse(pipelineSetupUsageHelper.shouldPublishSetupUsage(pipelineEntity));
-  }
-
-  @Test
-  @Owner(developers = ADITHYA)
-  @Category(UnitTests.class)
-  public void testShouldPublishSetupUsageForImportFlow() {
-    PipelineEntity pipelineEntity = PipelineEntity.builder()
-                                        .accountId(ACCOUNT_ID)
-                                        .orgIdentifier(ORG_ID)
-                                        .projectIdentifier(PROJECT_ID)
-                                        .storeType(StoreType.REMOTE)
-                                        .build();
-    doReturn(true).when(gitSyncSdkService).isGitSimplificationEnabled(ACCOUNT_ID, ORG_ID, PROJECT_ID);
-    GitEntityInfo gitEntityInfo = GitEntityInfo.builder()
-                                      .repoName("repoName")
-                                      .connectorRef("connectorRef")
-                                      .isDefaultBranch(false)
-                                      .branch("branch")
-                                      .build();
-    GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
-    assertFalse(pipelineSetupUsageHelper.shouldPublishSetupUsage(pipelineEntity));
-  }
-
-  @Test
-  @Owner(developers = ADITHYA)
-  @Category(UnitTests.class)
-  public void testShouldPublishSetupUsageForGitSyncRemotePipeline() {
-    PipelineEntity pipelineEntity =
-        PipelineEntity.builder().accountId(ACCOUNT_ID).orgIdentifier(ORG_ID).projectIdentifier(PROJECT_ID).build();
-    doReturn(false).when(gitSyncSdkService).isGitSimplificationEnabled(ACCOUNT_ID, ORG_ID, PROJECT_ID);
-    GitEntityInfo gitEntityInfo = GitEntityInfo.builder().repoName("repoName").branch("branch").build();
-    GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
-    assertTrue(pipelineSetupUsageHelper.shouldPublishSetupUsage(pipelineEntity));
+  public void testShouldPublishSetupUsageForGetNonDefaultBranch() {
+    FilterCreationGitMetadata gitMetadata = FilterCreationGitMetadata.builder().isGitDefaultBranch(false).build();
+    PipelineEntity pipelineEntity = PipelineEntity.builder().storeType(StoreType.REMOTE).build();
+    assertFalse(pipelineSetupUsageHelper.shouldPublishSetupUsage(pipelineEntity, gitMetadata));
   }
 }

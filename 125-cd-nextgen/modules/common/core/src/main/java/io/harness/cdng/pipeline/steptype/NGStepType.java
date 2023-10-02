@@ -12,7 +12,10 @@ import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_C
 import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_DELETE_STACK;
 import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_ROLLBACK_STACK;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.executions.steps.StepSpecTypeConstants;
 
@@ -25,6 +28,10 @@ import java.util.List;
 /*
    Todo: Change StepSpecTypeConstants.PLACEHOLDER to their respective type once the StepInfo for those is implemented.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVERLESS, HarnessModuleComponent.CDS_INFRA_PROVISIONERS,
+        HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_GITOPS})
 @OwnedBy(CDP)
 public enum NGStepType {
   // gitops steps
@@ -32,9 +39,17 @@ public enum NGStepType {
   GITOPS_MERGE_PR(
       "Merge PR", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes", StepSpecTypeConstants.GITOPS_MERGE_PR),
 
+  @JsonProperty(StepSpecTypeConstants.GITOPS_REVERT_PR)
+  GITOPS_REVERT_PR("Revert PR", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes",
+      StepSpecTypeConstants.GITOPS_REVERT_PR),
+
   @JsonProperty(StepSpecTypeConstants.GITOPS_SYNC)
   GITOPS_SYNC(
       "GitOps Sync", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes", StepSpecTypeConstants.GITOPS_SYNC),
+
+  @JsonProperty(StepSpecTypeConstants.UPDATE_GITOPS_APP)
+  UPDATE_GITOPS_APP("Update GitOps App", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes",
+      StepSpecTypeConstants.UPDATE_GITOPS_APP),
 
   // k8s steps
   @JsonProperty("APPLY")
@@ -278,7 +293,8 @@ public enum NGStepType {
   AWS_SAM_DEPLOY(
       "AWS SAM Deploy", Arrays.asList(ServiceDefinitionType.AWS_SAM), "AWS SAM", StepSpecTypeConstants.AWS_SAM_DEPLOY),
   @JsonProperty(StepSpecTypeConstants.DOWNLOAD_MANIFESTS)
-  DOWNLOAD_MANIFESTS("Download Manifests", Arrays.asList(ServiceDefinitionType.AWS_SAM), "AWS SAM",
+  DOWNLOAD_MANIFESTS("Download Manifests",
+      Arrays.asList(ServiceDefinitionType.AWS_SAM, ServiceDefinitionType.SERVERLESS_AWS_LAMBDA), "DOWNLOAD MANIFESTS",
       StepSpecTypeConstants.DOWNLOAD_MANIFESTS),
   @JsonProperty(StepSpecTypeConstants.AWS_SAM_BUILD)
   AWS_SAM_BUILD(
@@ -318,7 +334,38 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2)
   SERVERLESS_AWS_LAMBDA_DEPLOY_V2("Serverless Aws Lambda Deploy V2",
       Collections.singletonList(ServiceDefinitionType.SERVERLESS_AWS_LAMBDA), "Serverless Aws Lambda",
-      StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2);
+      StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2),
+  @JsonProperty(StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2)
+  SERVERLESS_AWS_LAMBDA_PACKAGE_V2("Serverless Aws Lambda Package V2",
+      Collections.singletonList(ServiceDefinitionType.SERVERLESS_AWS_LAMBDA), "Serverless Aws Lambda",
+      StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2),
+  @JsonProperty(StepSpecTypeConstants.AWS_CDK_BOOTSTRAP)
+  AWS_CDK_BOOTSTRAP("AWS CDK Bootstrap", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/AWS CDK Bootstrap", StepSpecTypeConstants.AWS_CDK_BOOTSTRAP),
+  @JsonProperty(StepSpecTypeConstants.AWS_CDK_SYNTH)
+  AWS_CDK_SYNTH("AWS CDK Synth", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/AWS CDK Synth", StepSpecTypeConstants.AWS_CDK_SYNTH),
+  @JsonProperty(StepSpecTypeConstants.AWS_CDK_DIFF)
+  AWS_CDK_DIFF("AWS CDK Diff", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/AWS CDK Diff", StepSpecTypeConstants.AWS_CDK_DIFF),
+  @JsonProperty(StepSpecTypeConstants.AWS_CDK_DEPLOY)
+  AWS_CDK_DEPLOY("AWS CDK Deploy", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/AWS CDK Deploy", StepSpecTypeConstants.AWS_CDK_DEPLOY),
+  @JsonProperty(StepSpecTypeConstants.AWS_CDK_DESTROY)
+  AWS_CDK_DESTROY("AWS CDK Destroy", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/AWS CDK Destroy", StepSpecTypeConstants.AWS_CDK_DESTROY),
+  @JsonProperty(StepSpecTypeConstants.AWS_CDK_ROLLBACK)
+  AWS_CDK_ROLLBACK("AWS CDK Rollback", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/AWS CDK Rollback", StepSpecTypeConstants.AWS_CDK_ROLLBACK),
+  @JsonProperty(StepSpecTypeConstants.ECS_SERVICE_SETUP)
+  ECS_SERVICE_SETUP(
+      "ECS Service Setup", Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_SERVICE_SETUP),
+  @JsonProperty(StepSpecTypeConstants.ECS_UPGRADE_CONTAINER)
+  ECS_UPGRADE_CONTAINER("ECS Upgrade Container", Arrays.asList(ServiceDefinitionType.ECS), "ECS",
+      StepSpecTypeConstants.ECS_UPGRADE_CONTAINER),
+  @JsonProperty(StepSpecTypeConstants.ECS_BASIC_ROLLBACK)
+  ECS_BASIC_ROLLBACK(
+      "ECS Basic Rollback", Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_BASIC_ROLLBACK);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

@@ -6,10 +6,12 @@
  */
 
 package io.harness.serializer.morphia;
-
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.gitsync.caching.entity.GitDefaultBranchCache;
 import io.harness.gitsync.caching.entity.GitFileCache;
 import io.harness.gitsync.common.beans.AzureRepoSCM;
@@ -30,11 +32,14 @@ import io.harness.gitsync.core.fullsync.entity.GitFullSyncJob;
 import io.harness.gitsync.gitfileactivity.beans.GitFileActivity;
 import io.harness.gitsync.gitfileactivity.beans.GitFileActivitySummary;
 import io.harness.gitsync.gitsyncerror.beans.GitSyncError;
+import io.harness.gitsync.gitxwebhooks.entity.GitXWebhook;
+import io.harness.gitsync.gitxwebhooks.entity.GitXWebhookEvent;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
 
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @OwnedBy(DX)
 public class GitSyncMorphiaClassesRegistrar implements MorphiaRegistrar {
   @Override
@@ -54,6 +59,8 @@ public class GitSyncMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(GitFullSyncJob.class);
     set.add(GitFileCache.class);
     set.add(GitDefaultBranchCache.class);
+    set.add(GitXWebhook.class);
+    set.add(GitXWebhookEvent.class);
     set.add(UserSourceCodeManager.class);
     set.add(AzureRepoSCM.class);
     set.add(GithubSCM.class);

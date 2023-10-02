@@ -22,7 +22,11 @@ fi
 
 cp ${HOME}/.bazel-dirs/bin/idp-service/src/main/java/io/harness/idp/app/module_deploy.jar idp-service-capsule.jar
 cp ../../idp-service/config/config.yml .
-
+cp ../../idp-service/config/keystore.jks .
+cp ../../idp-service/config/key.pem .
+cp ../../idp-service/config/cert.pem .
+cp ../../idp-service/src/main/resources/redisson-jcache.yaml .
+cp ../../idp-service/src/main/resources/enterprise-redisson-jcache.yaml .
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 

@@ -9,10 +9,14 @@ package io.harness.eventsframework;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @UtilityClass
 @OwnedBy(PL)
 public final class EventsFrameworkMetadataConstants {
@@ -26,6 +30,8 @@ public final class EventsFrameworkMetadataConstants {
   public static final String UPSERT_ACTION = "upsert";
   public static final String DELETE_ACTION = "delete";
   public static final String NG_USER_CLEANUP_ACTION = "ngUserCleanUp";
+  public static final String DISABLE_IP_ALLOWLIST = "disableIPAllowlist";
+  public static final String DISABLE_TRIGGERS = "disableTriggers";
   public static final String FLUSH_CREATE_ACTION = "flushCreate";
 
   public static final String PROJECT_ENTITY = "project";
@@ -70,6 +76,8 @@ public final class EventsFrameworkMetadataConstants {
   public static final String INVITE = "invite";
 
   public static final String SETTINGS = "settings";
+  public static final String SETTINGS_GROUP_IDENTIFIER = "settingGroupIdentifier";
+  public static final String SETTINGS_CATEGORY = "settingCategory";
 
   public static final String SCM = "sourceCodeManager";
   public static final String STAGE_EXEC_INFO = "stageExecutionInfo";
@@ -78,6 +86,8 @@ public final class EventsFrameworkMetadataConstants {
   // deprecated, use setupusage and entityActivity channel.
   public static final String SETUP_USAGE_ENTITY = "setupUsage";
   public static final String ACCOUNT_ENTITY = "account";
+
+  public static final String NOTIFICATION_ENTITY = "notification";
 
   public static final String REFERRED_ENTITY_TYPE = "referredEntityType";
   public static final String CONNECTOR_ENTITY_TYPE = "connectorType";
@@ -100,7 +110,19 @@ public final class EventsFrameworkMetadataConstants {
   // CCM
   public static final String CCM_FOLDER = "ccmFolder";
   public static final String CCM_RULE = "ccmRule";
+  public static final String CCM_BUDGET = "ccmBudget";
 
   // IDP
   public static final String ASYNC_CATALOG_IMPORT_ENTITY = "asyncCatalogImport";
+
+  public static final String CD_ACCOUNT_EXECUTION_METADATA = "cdAccountExecutionMetadata";
+  public static final String DEPLOYMENT_SUMMARY_NG = "deploymentSummaryNG";
+  public static final String DEPLOYMENT_ACCOUNTS = "DeploymentAccounts";
+  public static final String INSTANCE_DEPLOYMENT_INFO = "instanceDeploymentInfo";
+  public static final String INSTANCE_NG = "instanceNG";
+
+  // SEI
+  public static final String SEI_CONFIGURATION_SETTINGS = "seiconfigurationsettings";
+  public static final String SEI_COLLECTIONS = "seicollections";
+  public static final String SEI_INSIGHTS = "seiinsights";
 }

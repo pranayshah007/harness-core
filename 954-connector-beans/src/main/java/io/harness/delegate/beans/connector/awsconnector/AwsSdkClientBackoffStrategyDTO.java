@@ -7,6 +7,8 @@
 
 package io.harness.delegate.beans.connector.awsconnector;
 
+import io.harness.annotation.RecasterAlias;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -29,6 +31,7 @@ import lombok.experimental.FieldDefaults;
 @JsonDeserialize(using = AwsSdkClientBackoffStrategyDTODeserializer.class)
 @Schema(
     name = "AwsSdkClientBackoffStrategy", description = "This contains details of the AWS SDK Client Backoff Strategy")
+@RecasterAlias("io.harness.delegate.beans.connector.awsconnector.AwsSdkClientBackoffStrategyDTO")
 public class AwsSdkClientBackoffStrategyDTO {
   @NotNull @JsonProperty("type") AwsSdkClientBackoffStrategyType awsSdkClientBackoffStrategyType;
 

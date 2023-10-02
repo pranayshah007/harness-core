@@ -15,6 +15,7 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
@@ -65,6 +66,11 @@ public final class BusinessMapping implements PersistentEntity, UuidAware, Creat
                  .name("accountId_name")
                  .field(BusinessMappingKeys.accountId)
                  .field(BusinessMappingKeys.name)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_decreasing_lastUpdatedAt")
+                 .field(BusinessMappingKeys.accountId)
+                 .descSortField(BusinessMappingKeys.lastUpdatedAt)
                  .build())
         .build();
   }

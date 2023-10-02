@@ -250,7 +250,7 @@ public class OrchestrationServiceImpl implements OrchestrationService {
         try (AnalysisStateMachineContext stateMachineContext =
                  new AnalysisStateMachineContext(currentlyExecutingStateMachine)) {
           metricService.recordDuration(CVNGMetricsUtils.STATE_MACHINE_EVALUATION_TIME,
-              Duration.between(clock.instant(), currentlyExecutingStateMachine.getAnalysisStartTime()));
+              Duration.between(currentlyExecutingStateMachine.getAnalysisStartTime(), clock.instant()));
         }
         orchestrateNewAnalysisStateMachine(
             orchestrator.getVerificationTaskId(), currentlyExecutingStateMachine.getTotalRetryCountToBePropagated());

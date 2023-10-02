@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlAuth;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlImage;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlPrismaCloudToolData;
 import io.harness.yaml.sto.variables.STOYamlGenericConfig;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -40,6 +41,8 @@ public class PrismaCloudStepInfo extends STOGenericStepInfo {
   private static final String PRODUCT_NAME = "twistlock";
 
   @JsonProperty protected STOYamlAuth auth;
+
+  @JsonProperty("tool") protected STOYamlPrismaCloudToolData tool;
 
   @JsonProperty protected STOYamlImage image;
 

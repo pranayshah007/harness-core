@@ -28,7 +28,7 @@ import lombok.experimental.SuperBuilder;
 @OwnedBy(HarnessTeam.CV)
 @SuperBuilder
 @NoArgsConstructor
-public abstract class BlueGreenCanaryVerificationJobSpec extends VerificationJobSpec {
+public abstract class BlueGreenCanaryVerificationJobSpec extends HostLevelVerificationJobSpec {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH, value = "Example: 50, You can put max upto 50.")
   ParameterField<String> trafficSplitPercentage;
 

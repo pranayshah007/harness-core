@@ -17,6 +17,7 @@ import lombok.Value;
 @Value
 @Builder
 public class OrchestrationRestrictionConfiguration {
+  @JsonProperty("maxNestedLevelsCount") int maxNestedLevelsCount;
   @JsonProperty("useRestrictionForFree") boolean useRestrictionForFree;
   @JsonProperty("useRestrictionForTeam") boolean useRestrictionForTeam;
   @JsonProperty("useRestrictionForEnterprise") boolean useRestrictionForEnterprise;

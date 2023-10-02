@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.plan.creation;
-
 import static io.harness.cf.pipeline.FeatureFlagStageFilterJsonCreator.FEATURE_FLAG_SUPPORTED_TYPE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.GROUP;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGE;
@@ -15,8 +14,11 @@ import static io.harness.steps.StepSpecTypeConstants.FLAG_CONFIGURATION;
 import static io.harness.steps.StepSpecTypeConstants.PIPELINE_ROLLBACK_STAGE;
 import static io.harness.steps.StepSpecTypeConstants.RESOURCE_CONSTRAINT;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cf.pipeline.CfExecutionPMSPlanCreator;
 import io.harness.cf.pipeline.FeatureFlagStageFilterJsonCreator;
 import io.harness.cf.pipeline.FeatureFlagStagePlanCreator;
@@ -87,6 +89,7 @@ import io.harness.steps.jira.JiraStepVariableCreator;
 import io.harness.steps.jira.JiraUpdateStepVariableCreator;
 import io.harness.steps.jira.create.JiraCreateStepPlanCreator;
 import io.harness.steps.jira.update.JiraUpdateStepPlanCreator;
+import io.harness.steps.pipelinestage.PipelineStageOutputsVariableCreator;
 import io.harness.steps.pipelinestage.PipelineStageVariableCreator;
 import io.harness.steps.policy.step.PolicyStepPlanCreator;
 import io.harness.steps.policy.variables.PolicyStepVariableCreator;
@@ -109,6 +112,7 @@ import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoProvider {
@@ -205,6 +209,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     variableCreators.add(new QueueStepVariableCreator());
     variableCreators.add(new CustomApprovalStepVariableCreator());
     variableCreators.add(new PipelineStageVariableCreator());
+    variableCreators.add(new PipelineStageOutputsVariableCreator());
     variableCreators.add(new WaitStepVariableCreator());
     variableCreators.add(
         new EmptyVariableCreator(STAGE, ImmutableSet.of(FEATURE_FLAG_SUPPORTED_TYPE, PIPELINE_ROLLBACK_STAGE)));

@@ -10,7 +10,10 @@ package io.harness.cdng.k8s;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.exception.WingsException.USER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -23,7 +26,6 @@ import io.harness.delegate.task.k8s.K8sTaskType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -41,11 +43,13 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import com.google.inject.Inject;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(CDP)
 public class K8sBGSwapServicesStep extends CdTaskExecutable<K8sDeployResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
@@ -65,15 +69,15 @@ public class K8sBGSwapServicesStep extends CdTaskExecutable<K8sDeployResponse> {
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // Noop
   }
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters StepBaseParameters, StepInputPackage inputPackage) {
     K8sBGSwapServicesStepParameters k8sBGSwapServicesStepParameters =
-        (K8sBGSwapServicesStepParameters) stepElementParameters.getSpec();
+        (K8sBGSwapServicesStepParameters) StepBaseParameters.getSpec();
     String bgStepFqn = k8sBGSwapServicesStepParameters.getBlueGreenStepFqn();
     String bgSwapServicesFqn = k8sBGSwapServicesStepParameters.getBlueGreenSwapServicesStepFqn();
     if (EmptyPredicate.isNotEmpty(bgSwapServicesFqn) || EmptyPredicate.isNotEmpty(bgStepFqn)) {
@@ -117,7 +121,7 @@ public class K8sBGSwapServicesStep extends CdTaskExecutable<K8sDeployResponse> {
             .k8sInfraDelegateConfig(cdStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
             .commandName(K8S_BG_SWAP_SERVICES_COMMAND_NAME)
             .taskType(K8sTaskType.SWAP_SERVICE_SELECTORS)
-            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
+            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(StepBaseParameters))
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(AmbianceUtils.getAccountId(ambiance)))
             .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(ambiance))
             .releaseName(cdStepHelper.getReleaseName(ambiance, infrastructure))
@@ -125,15 +129,14 @@ public class K8sBGSwapServicesStep extends CdTaskExecutable<K8sDeployResponse> {
 
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);
     return k8sStepHelper
-        .queueK8sTask(stepElementParameters, swapServiceSelectorsRequest, ambiance,
+        .queueK8sTask(StepBaseParameters, swapServiceSelectorsRequest, ambiance,
             K8sExecutionPassThroughData.builder().infrastructure(infrastructure).build())
         .getTaskRequest();
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
-      StepElementParameters stepElementParameters, ThrowingSupplier<K8sDeployResponse> responseSupplier)
-      throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepBaseParameters StepBaseParameters, ThrowingSupplier<K8sDeployResponse> responseSupplier) throws Exception {
     K8sDeployResponse executionResponse = responseSupplier.get();
     StepResponseBuilder stepResponseBuilder =
         StepResponse.builder().unitProgressList(executionResponse.getCommandUnitsProgress().getUnitProgresses());
@@ -160,7 +163,7 @@ public class K8sBGSwapServicesStep extends CdTaskExecutable<K8sDeployResponse> {
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 }

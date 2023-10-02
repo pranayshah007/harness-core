@@ -50,10 +50,25 @@ public class RecastObjectCreator implements RecastObjectFactory {
     }
   }
 
+  public Object createGivenInstance(RecasterMap recasterMap) {
+    Class<?> clazz = recasterMap.getEncodedValue().getClass();
+    InstanceConstructor<?> instanceConstructor =
+        instanceConstructors.computeIfAbsent(clazz, c -> makeInstanceConstructor(clazz));
+    try {
+      return instanceConstructor.construct();
+    } catch (Exception e) {
+      throw new RecasterException("Failed to instantiate " + clazz.getName(), e);
+    }
+  }
+
   private <T> InstanceConstructor<T> makeInstanceConstructor(Class<T> clazz) {
     final Constructor<T> constructor = noArgsConstructorOrNull(clazz);
     if (constructor != null) {
       return () -> newInstance(constructor);
+    }
+
+    if (clazz.isArray()) {
+      return () -> null;
     }
     if (!Collection.class.isAssignableFrom(clazz)) {
       return () -> objenesis.newInstance(clazz);
@@ -87,8 +102,6 @@ public class RecastObjectCreator implements RecastObjectFactory {
           return (T) createList(null);
         } else if (Map.class.isAssignableFrom(clazz)) {
           return (T) createMap(null);
-        } else if (Set.class.isAssignableFrom(clazz)) {
-          return (T) createSet(null);
         }
       }
       throw new RecasterException("No usable constructor for " + clazz.getName(), e);

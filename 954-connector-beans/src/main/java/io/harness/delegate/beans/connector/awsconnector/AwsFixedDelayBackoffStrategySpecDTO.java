@@ -9,6 +9,7 @@ package io.harness.delegate.beans.connector.awsconnector;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -26,6 +27,7 @@ import lombok.Data;
 @ApiModel("AwsFixedDelayBackoffStrategy")
 @Schema(name = "AwsFixedDelayBackoffStrategy",
     description = "Simple backoff strategy that always uses a fixed delay for the delay before the next retry attempt.")
+@RecasterAlias("io.harness.delegate.beans.connector.awsconnector.AwsFixedDelayBackoffStrategySpecDTO")
 public class AwsFixedDelayBackoffStrategySpecDTO implements AwsSdkClientBackoffStrategySpecDTO {
   long fixedBackoff;
   int retryCount;

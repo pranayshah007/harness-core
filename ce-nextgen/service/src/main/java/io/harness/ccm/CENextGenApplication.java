@@ -36,6 +36,8 @@ import io.harness.health.HealthService;
 import io.harness.licensing.usage.resources.LicenseUsageResource;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.MetricRegistryModule;
+import io.harness.metrics.jobs.RecordMetricsJob;
+import io.harness.metrics.service.api.MetricService;
 import io.harness.migration.MigrationProvider;
 import io.harness.migration.NGMigrationSdkInitHelper;
 import io.harness.migration.NGMigrationSdkModule;
@@ -64,6 +66,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
@@ -169,6 +172,12 @@ public class CENextGenApplication extends Application<CENextGenConfiguration> {
       }
     });
     modules.add(new CENextGenModule(configuration));
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(MetricRegistry.class).toInstance(metricRegistry);
+      }
+    });
     modules.add(new MetricRegistryModule(metricRegistry));
     modules.add(NGMigrationSdkModule.getInstance());
 
@@ -215,6 +224,7 @@ public class CENextGenApplication extends Application<CENextGenConfiguration> {
     MaintenanceController.forceMaintenance(false);
     createConsumerThreadsToListenToEvents(environment, injector);
     initializeEnforcementSdk(injector);
+    initializeMonitoring(injector);
   }
 
   private void registerRequestContextFilter(Environment environment) {
@@ -370,6 +380,11 @@ public class CENextGenApplication extends Application<CENextGenConfiguration> {
 
     injector.getInstance(EnforcementSdkRegisterService.class)
         .initialize(restrictionUsageRegisterConfiguration, customConfig);
+  }
+
+  private void initializeMonitoring(Injector injector) {
+    injector.getInstance(MetricService.class).initializeMetrics();
+    injector.getInstance(RecordMetricsJob.class).scheduleMetricsTasks();
   }
 
   private void registerYamlSdk(Injector injector) {

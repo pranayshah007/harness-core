@@ -16,7 +16,7 @@ import io.harness.cvng.beans.DataCollectionTaskDTO.DataCollectionTaskResult.Data
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.core.beans.demo.DemoMetricParams;
 import io.harness.cvng.core.beans.demo.DemoTemplate;
-import io.harness.cvng.core.beans.dependency.ServiceDependencyMetadata;
+import io.harness.cvng.core.beans.dependency.DependencyMetadataType;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.entities.AnalysisInfo;
@@ -182,8 +182,7 @@ public class CVNGDemoPerpetualTaskServiceImpl implements CVNGDemoPerpetualTaskSe
             .stream()
             .filter(serviceDependency
                 -> serviceDependency.getDependencyMetadata() != null
-                    && serviceDependency.getDependencyMetadata().getType()
-                        == ServiceDependencyMetadata.DependencyMetadataType.KUBERNETES)
+                    && serviceDependency.getDependencyMetadata().getType() == DependencyMetadataType.KUBERNETES)
             .findAny();
     if (serviceDependencyDTO.isPresent()) {
       MonitoredService kubernetesMonitoredService = monitoredServiceService.getMonitoredService(

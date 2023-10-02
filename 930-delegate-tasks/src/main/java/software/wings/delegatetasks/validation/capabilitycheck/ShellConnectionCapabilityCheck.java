@@ -95,7 +95,7 @@ public class ShellConnectionCapabilityCheck implements CapabilityCheck {
 
   @VisibleForTesting
   void performTest(SshSessionConfig expectedSshConfig) throws Exception {
-    if (expectedSshConfig.isUseSshClient()) {
+    if (expectedSshConfig.isUseSshClient() || expectedSshConfig.isVaultSSH()) {
       SshClientManager.test(expectedSshConfig);
     } else {
       getSSHSession(expectedSshConfig).disconnect();

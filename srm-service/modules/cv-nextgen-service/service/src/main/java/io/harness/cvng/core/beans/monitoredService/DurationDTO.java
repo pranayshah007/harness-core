@@ -24,4 +24,21 @@ public enum DurationDTO {
   public Duration getDuration() {
     return duration;
   }
+
+  public static DurationDTO findClosestGreaterDurationDTO(Duration targetDuration) {
+    DurationDTO bestFit = null;
+    Duration smallestDifference = null;
+
+    for (DurationDTO dto : DurationDTO.values()) {
+      Duration difference = dto.getDuration().minus(targetDuration);
+
+      if (difference.compareTo(Duration.ZERO) >= 0
+          && (smallestDifference == null || difference.compareTo(smallestDifference) < 0)) {
+        smallestDifference = difference;
+        bestFit = dto;
+      }
+    }
+
+    return bestFit;
+  }
 }

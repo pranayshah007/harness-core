@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
 import static io.harness.rule.OwnerRule.SRIDHAR;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -32,6 +33,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.filter.FilterType;
+import io.harness.filter.dto.FilterDTO;
+import io.harness.filter.service.FilterService;
+import io.harness.ng.core.dto.PollingTriggerStatusUpdateDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.SettingValueType;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
@@ -95,6 +100,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Mock NGSettingsClient settingsClient;
   @Mock PmsFeatureFlagService pmsFeatureFlagService;
   @Mock Call<ResponseDTO<SettingValueResponseDTO>> request;
+  @Mock FilterService filterService;
   @InjectMocks NGTriggerResourceImpl ngTriggerResource;
   @Mock NGTriggerElementMapper ngTriggerElementMapper;
 
@@ -392,6 +398,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
         ngTriggerResource.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER).getData();
     assertThat(responseDTO).isEqualTo(ngTriggerResponseDTO);
   }
+
   @Test(expected = EntityNotFoundException.class)
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
@@ -403,6 +410,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
         ngTriggerResource.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER).getData();
     assertThat(responseDTO).isEqualTo(ngTriggerResponseDTO);
   }
+
   @Test
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
@@ -649,16 +657,17 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testListServicesWithDESCSort() {
-    Criteria criteria = TriggerFilterHelper.createCriteriaForGetList("", "", "", "", null, "", false);
+    Criteria criteria = TriggerFilterHelper.createCriteriaForGetList("", "", "", "", null, "", false, "", null, null);
     Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, NGTriggerEntityKeys.createdAt));
     final Page<NGTriggerEntity> serviceList = new PageImpl<>(Collections.singletonList(ngTriggerEntity), pageable, 1);
     doReturn(serviceList).when(ngTriggerService).list(criteria, pageable);
 
+    when(filterService.get("", "", "", "", FilterType.TRIGGER)).thenReturn(FilterDTO.builder().build());
     when(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, false, false, true))
         .thenReturn(ngTriggerDetailsResponseDTO);
 
     List<NGTriggerDetailsResponseDTO> content =
-        ngTriggerResource.getListForTarget("", "", "", "", "", 0, 10, null, "").getData().getContent();
+        ngTriggerResource.getListForTarget("", "", "", "", "", 0, 10, null, "", null).getData().getContent();
 
     assertThat(content).isNotNull();
     assertThat(content.size()).isEqualTo(1);
@@ -785,5 +794,22 @@ public class NGTriggerResourceImplTest extends CategoryTest {
     assertThat(responseDTO.getCatalog().size()).isEqualTo(1);
     assertThat(responseDTO.getCatalog().get(0).getCategory()).isEqualTo(NGTriggerType.WEBHOOK);
     assertThat(responseDTO.getCatalog().get(0).getTriggerCatalogType().size()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testUpdateTriggerPollingStatus() {
+    PollingTriggerStatusUpdateDTO statusUpdate = PollingTriggerStatusUpdateDTO.builder()
+                                                     .signatures(Collections.singletonList("sig"))
+                                                     .success(true)
+                                                     .errorMessage("")
+                                                     .lastCollectedVersions(Collections.singletonList("1.0"))
+                                                     .lastCollectedTime(123L)
+                                                     .build();
+    when(ngTriggerService.updateTriggerPollingStatus(eq("account"), eq(statusUpdate))).thenReturn(true);
+    ResponseDTO<Boolean> response = ngTriggerResource.updateTriggerPollingStatus("account", statusUpdate);
+    assertThat(response.getData()).isTrue();
+    verify(ngTriggerService, times(1)).updateTriggerPollingStatus(eq("account"), eq(statusUpdate));
   }
 }

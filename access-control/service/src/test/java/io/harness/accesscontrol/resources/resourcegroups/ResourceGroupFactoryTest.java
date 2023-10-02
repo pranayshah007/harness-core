@@ -7,6 +7,7 @@
 
 package io.harness.accesscontrol.resources.resourcegroups;
 
+import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 import static io.harness.rule.OwnerRule.REETIKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,6 +44,20 @@ public class ResourceGroupFactoryTest {
                                             .includedScopes(null)
                                             .resourceFilter(ResourceFilter.builder().includeAllResources(true).build())
                                             .build();
+    Set<ResourceSelector> resourceSelector = resourceGroupFactory.buildResourceSelector(resourceGroupDTO);
+    assertThat(resourceSelector.size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void ResourceGroup_WithIncludedScopesButEmptyResourcesFilter_ReturnsZeroResourceSelectors() {
+    ResourceGroupDTO resourceGroupDTO =
+        ResourceGroupDTO.builder()
+            .identifier("rg1")
+            .includedScopes(List.of(ScopeSelector.builder().filter(ScopeFilterType.EXCLUDING_CHILD_SCOPES).build()))
+            .resourceFilter(ResourceFilter.builder().includeAllResources(false).build())
+            .build();
     Set<ResourceSelector> resourceSelector = resourceGroupFactory.buildResourceSelector(resourceGroupDTO);
     assertThat(resourceSelector.size()).isEqualTo(0);
   }

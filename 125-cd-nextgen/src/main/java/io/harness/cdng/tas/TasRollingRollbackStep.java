@@ -9,14 +9,17 @@ package io.harness.cdng.tas;
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.execution.tas.TasStageExecutionDetails;
-import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -42,12 +45,10 @@ import io.harness.exception.AccessDeniedException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
-import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.pcf.CfCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -56,7 +57,6 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
@@ -64,6 +64,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
@@ -80,6 +81,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class TasRollingRollbackStep extends CdTaskExecutable<CfCommandResponseNG> {
@@ -96,19 +98,20 @@ public class TasRollingRollbackStep extends CdTaskExecutable<CfCommandResponseNG
   @Inject private StepHelper stepHelper;
   @Inject private TasStepHelper tasStepHelper;
   @Inject private InstanceInfoService instanceInfoService;
-  @Inject private EngineExpressionService engineExpressionService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NG_SVC_ENV_REDESIGN)) {
       throw new AccessDeniedException(
-          "CDS_TAS_NG FF is not enabled for this account. Please contact harness customer care.",
+          "NG_SVC_ENV_REDESIGN FF is not enabled for this account. Please contact harness customer care.",
           ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
     }
   }
+
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     TasRollingRollbackStepParameters tasRollingRollbackStepParameters =
         (TasRollingRollbackStepParameters) stepParameters.getSpec();
 
@@ -141,24 +144,22 @@ public class TasRollingRollbackStep extends CdTaskExecutable<CfCommandResponseNG
     TasManifestsPackage unresolvedTasManifestsPackage =
         tasStageExecutionDetails == null ? null : tasStageExecutionDetails.getTasManifestsPackage();
 
-    CDExpressionResolveFunctor cdExpressionResolveFunctor =
-        new CDExpressionResolveFunctor(engineExpressionService, ambiance);
     if (unresolvedTasManifestsPackage != null
         && EmptyPredicate.isNotEmpty(unresolvedTasManifestsPackage.getManifestYml())) {
-      resolvedTasManifestsPackage.setManifestYml((String) ExpressionEvaluatorUtils.updateExpressions(
-          unresolvedTasManifestsPackage.getManifestYml(), cdExpressionResolveFunctor));
+      resolvedTasManifestsPackage.setManifestYml(
+          (String) cdExpressionResolver.updateExpressions(ambiance, unresolvedTasManifestsPackage.getManifestYml()));
     }
 
     if (unresolvedTasManifestsPackage != null
         && EmptyPredicate.isNotEmpty(unresolvedTasManifestsPackage.getAutoscalarManifestYml())) {
-      resolvedTasManifestsPackage.setAutoscalarManifestYml((String) ExpressionEvaluatorUtils.updateExpressions(
-          unresolvedTasManifestsPackage.getAutoscalarManifestYml(), cdExpressionResolveFunctor));
+      resolvedTasManifestsPackage.setAutoscalarManifestYml((String) cdExpressionResolver.updateExpressions(
+          ambiance, unresolvedTasManifestsPackage.getAutoscalarManifestYml()));
     }
 
     List<String> varsYamlList = new ArrayList<>();
     if (unresolvedTasManifestsPackage != null && unresolvedTasManifestsPackage.getVariableYmls() != null) {
       for (String varsYaml : unresolvedTasManifestsPackage.getVariableYmls()) {
-        varsYamlList.add((String) ExpressionEvaluatorUtils.updateExpressions(varsYaml, cdExpressionResolveFunctor));
+        varsYamlList.add((String) cdExpressionResolver.updateExpressions(ambiance, varsYaml));
       }
       resolvedTasManifestsPackage.setVariableYmls(varsYamlList);
     }
@@ -214,8 +215,8 @@ public class TasRollingRollbackStep extends CdTaskExecutable<CfCommandResponseNG
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
-      StepElementParameters stepElementParameters, ThrowingSupplier<CfCommandResponseNG> responseDataSupplier)
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepBaseParameters StepBaseParameters, ThrowingSupplier<CfCommandResponseNG> responseDataSupplier)
       throws Exception {
     StepResponseBuilder builder = StepResponse.builder();
 
@@ -246,8 +247,8 @@ public class TasRollingRollbackStep extends CdTaskExecutable<CfCommandResponseNG
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   private List<ServerInstanceInfo> getServerInstanceInfoList(CfRollingRollbackResponseNG response, Ambiance ambiance) {

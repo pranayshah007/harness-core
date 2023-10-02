@@ -14,21 +14,21 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expressio
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
-import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import java.util.Map;
-import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
@@ -36,6 +36,8 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_SERVERLESS})
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @NoArgsConstructor
@@ -46,11 +48,6 @@ public class ServerlessAwsLambdaV2BaseStepInfo {
   @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
-
-  @NotNull
-  @VariableExpression(skipVariableExpression = true)
-  @YamlSchemaTypes(value = {string})
-  private ParameterField<Map<String, JsonNode>> settings;
 
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> image;
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> connectorRef;
@@ -71,7 +68,5 @@ public class ServerlessAwsLambdaV2BaseStepInfo {
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.ImagePullPolicy")
   private ParameterField<ImagePullPolicy> imagePullPolicy;
 
-  @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  private ParameterField<String> serverlessVersion;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> serverlessVersion;
 }

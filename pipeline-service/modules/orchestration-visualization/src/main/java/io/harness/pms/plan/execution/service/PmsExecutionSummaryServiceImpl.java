@@ -9,21 +9,32 @@ package io.harness.pms.plan.execution.service;
 
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
+import io.harness.AbortInfoHelper;
 import io.harness.OrchestrationStepTypes;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ExecutionErrorInfo;
 import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
+import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.execution.PlanExecution;
+import io.harness.execution.PlanExecutionMetadata;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
+import io.harness.plan.Node;
 import io.harness.plan.NodeType;
 import io.harness.plancreator.strategy.StrategyType;
 import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.data.stepparameters.PmsStepParameters;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.execution.utils.PlanExecutionProjectionConstants;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.plan.execution.ExecutionSummaryUpdateUtils;
 import io.harness.pms.plan.execution.LayoutNodeGraphConstants;
@@ -34,6 +45,7 @@ import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO.GraphLayoutNod
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 
 import com.google.inject.Inject;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -46,12 +58,16 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.CloseableIterator;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryService {
   @Inject NodeExecutionService nodeExecutionService;
+  @Inject PlanService planService;
   @Inject private PmsExecutionSummaryRepository pmsExecutionSummaryRepository;
-  @Inject private PmsGraphStepDetailsService pmsGraphStepDetailsService;
+  @Inject AbortInfoHelper abortInfoHelper;
+  @Inject private NodeExecutionInfoService nodeExecutionInfoService;
+  @Inject private PlanExecutionMetadataService planExecutionMetadataService;
 
   /**
    * Performs the following:
@@ -105,7 +121,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
       // For parallelism, the maxConcurrency cannot be defined via yaml, so we are ignoring its addition in graph.
       if (!graphLayoutNode.get(nodeExecution.getNodeId()).getNodeType().equals(StrategyType.PARALLELISM.name())) {
         ConcurrentChildInstance concurrentChildInstance =
-            pmsGraphStepDetailsService.fetchConcurrentChildInstance(nodeExecution.getUuid());
+            nodeExecutionInfoService.fetchConcurrentChildInstance(nodeExecution.getUuid());
         if (concurrentChildInstance != null && !nodeExecution.getExecutableResponses().isEmpty()) {
           update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getNodeId()
                   + ".moduleInfo.maxConcurrency.value",
@@ -162,8 +178,10 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
   @Override
   public void regenerateStageLayoutGraph(String planExecutionId, List<NodeExecution> nodeExecutions) {
     Update update = new Update();
+    PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataService.getWithFieldsIncludedFromSecondary(
+        planExecutionId, PlanExecutionProjectionConstants.fieldsForPostProdRollback);
     for (NodeExecution nodeExecution : nodeExecutions) {
-      ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution);
+      ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution, planExecutionMetadata);
     }
     Criteria criteria = Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionId);
     Query query = new Query(criteria);
@@ -184,13 +202,13 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     }
 
     ConcurrentChildInstance concurrentChildInstance =
-        pmsGraphStepDetailsService.fetchConcurrentChildInstance(strategyNodeExecution.getUuid());
+        nodeExecutionInfoService.fetchConcurrentChildInstance(strategyNodeExecution.getUuid());
     if (concurrentChildInstance != null && !strategyNodeExecution.getExecutableResponses().isEmpty()) {
-      if (strategyNodeExecution.getNode().getStepParameters().containsKey("strategyType")
-          && !strategyNodeExecution.getNode()
-                  .getStepParameters()
-                  .get("strategyType")
-                  .equals(StrategyType.PARALLELISM.name())) {
+      Node node = planService.fetchNode(strategyNodeExecution.getPlanId(), strategyNodeExecution.getNodeId());
+      // TODO: Revisit this logic seems to violating a few principles
+      PmsStepParameters parameters = node.getStepParameters();
+      if (parameters.containsKey("strategyType")
+          && !parameters.get("strategyType").equals(StrategyType.PARALLELISM.name())) {
         update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + strategyNodeExecution.getNodeId()
                 + ".moduleInfo.maxConcurrency.value",
             strategyNodeExecution.getExecutableResponses().get(0).getChildren().getMaxConcurrency());
@@ -238,6 +256,13 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
   }
 
   @Override
+  public void updateNotes(String planExecutionId, Boolean notesExistForPlanExecutionId) {
+    Update update = new Update();
+    update.set(PlanExecutionSummaryKeys.notesExistForPlanExecutionId, notesExistForPlanExecutionId);
+    update(planExecutionId, update);
+  }
+
+  @Override
   public boolean handleNodeExecutionUpdateFromGraphUpdate(
       String planExecutionId, NodeExecution nodeExecution, Update update) {
     // Update strategy node data if it is not an identity node and strategy node
@@ -254,7 +279,10 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
       ExecutionSummaryUpdateUtils.updateNextIdOfStageBeforePipelineRollback(
           update, nodeExecution.getNodeId(), previousStagePlanNodeId);
     }
-    return ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution) || updateRequired;
+    PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataService.getWithFieldsIncludedFromSecondary(
+        planExecutionId, PlanExecutionProjectionConstants.fieldsForPostProdRollback);
+    return ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution, planExecutionMetadata)
+        || updateRequired;
   }
 
   @Override
@@ -291,6 +319,35 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
       pmsExecutionSummaryRepository.deleteAllByPlanExecutionIdIn(planExecutionIds);
       return true;
     });
+  }
+
+  @Override
+  public void updateTTL(String planExecutionId, Date ttlDate) {
+    if (EmptyPredicate.isEmpty(planExecutionId)) {
+      return;
+    }
+    Criteria planExecutionIdCriteria = Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionId);
+    Query query = new Query(planExecutionIdCriteria);
+    Update ops = new Update();
+    ops.set(PlanExecutionSummaryKeys.validUntil, ttlDate);
+    pmsExecutionSummaryRepository.multiUpdate(query, ops);
+  }
+
+  @Override
+  public Update updateStatusOps(PlanExecution planExecution, Update summaryEntityUpdate) {
+    ExecutionStatus status = ExecutionStatus.getExecutionStatus(planExecution.getStatus());
+
+    summaryEntityUpdate.set(
+        PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.internalStatus, planExecution.getStatus());
+    summaryEntityUpdate.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.status, status);
+    if (status == ExecutionStatus.ABORTED) {
+      summaryEntityUpdate.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.abortedBy,
+          abortInfoHelper.fetchAbortedByInfoFromInterrupts(planExecution.getUuid()));
+    }
+    if (StatusUtils.isFinalStatus(status.getEngineStatus())) {
+      summaryEntityUpdate.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.endTs, planExecution.getEndTs());
+    }
+    return summaryEntityUpdate;
   }
 
   /**

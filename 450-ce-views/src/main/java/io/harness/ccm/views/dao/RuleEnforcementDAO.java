@@ -7,27 +7,37 @@
 
 package io.harness.ccm.views.dao;
 
+import static io.harness.beans.FeatureName.CCM_ENABLE_AZURE_CLOUD_ASSET_GOVERNANCE_UI;
+
 import io.harness.ccm.views.entities.RuleEnforcement;
 import io.harness.ccm.views.entities.RuleEnforcement.RuleEnforcementId;
+import io.harness.ccm.views.helper.RuleCloudProviderType;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
-import dev.morphia.query.UpdateOperations;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Update;
 
 @Singleton
 @Slf4j
 public class RuleEnforcementDAO {
   @Inject private HPersistence hPersistence;
+  @Inject private MongoTemplate mongoTemplate;
+  @Inject private FeatureFlagService featureFlagService;
 
   public boolean save(RuleEnforcement ruleEnforcement) {
-    log.info("created: {}", hPersistence.save(ruleEnforcement));
-    return hPersistence.save(ruleEnforcement) != null;
+    RuleEnforcement savedRuleEnforcement = mongoTemplate.save(ruleEnforcement);
+    log.info("created: {}", savedRuleEnforcement);
+    return savedRuleEnforcement != null;
   }
 
   public boolean delete(String accountId, String uuid) {
@@ -41,58 +51,56 @@ public class RuleEnforcementDAO {
   }
 
   public void updateCount(RuleEnforcement rule) {
-    Query<RuleEnforcement> query = hPersistence.createQuery(RuleEnforcement.class)
-                                       .field(RuleEnforcementId.accountId)
-                                       .equal(rule.getAccountId())
-                                       .field(RuleEnforcementId.uuid)
-                                       .equal(rule.getUuid());
-    UpdateOperations<RuleEnforcement> updateOperations = hPersistence.createUpdateOperations(RuleEnforcement.class);
-    updateOperations.set(RuleEnforcementId.runCount, rule.getRunCount());
-    hPersistence.update(query, updateOperations);
+    Criteria criteria = Criteria.where(RuleEnforcementId.accountId)
+                            .is(rule.getAccountId())
+                            .and(RuleEnforcementId.uuid)
+                            .is(rule.getUuid());
+    org.springframework.data.mongodb.core.query.Query query =
+        new org.springframework.data.mongodb.core.query.Query(criteria);
+    Update update = new Update();
+    update.set(RuleEnforcementId.runCount, rule.getRunCount());
+    FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true);
+    mongoTemplate.findAndModify(query, update, options, RuleEnforcement.class);
   }
 
-  public RuleEnforcement update(RuleEnforcement rule) {
-    Query<RuleEnforcement> query = hPersistence.createQuery(RuleEnforcement.class)
-                                       .field(RuleEnforcementId.accountId)
-                                       .equal(rule.getAccountId())
-                                       .field(RuleEnforcementId.uuid)
-                                       .equal(rule.getUuid());
-    UpdateOperations<RuleEnforcement> updateOperations = hPersistence.createUpdateOperations(RuleEnforcement.class);
-    if (rule.getName() != null) {
-      if (fetchByName(rule.getAccountId(), rule.getName(), true) != null) {
+  public RuleEnforcement update(RuleEnforcement ruleEnforcement) {
+    RuleEnforcement existingRuleEnforcement =
+        fetchById(ruleEnforcement.getAccountId(), ruleEnforcement.getUuid(), false);
+    if (ruleEnforcement.getName() != null) {
+      if (fetchByName(ruleEnforcement.getAccountId(), ruleEnforcement.getName(), true) != null) {
         throw new InvalidRequestException("Rule Enforcement with the given name already exits");
       }
-      updateOperations.set(RuleEnforcementId.name, rule.getName());
+      existingRuleEnforcement.setName(ruleEnforcement.getName());
     }
-    if (rule.getRuleIds() != null) {
-      updateOperations.set(RuleEnforcementId.ruleIds, rule.getRuleIds());
+    if (ruleEnforcement.getRuleIds() != null) {
+      existingRuleEnforcement.setRuleIds(ruleEnforcement.getRuleIds());
     }
-    if (rule.getRuleSetIDs() != null) {
-      updateOperations.set(RuleEnforcementId.ruleSetIDs, rule.getRuleSetIDs());
+    if (ruleEnforcement.getRuleSetIDs() != null) {
+      existingRuleEnforcement.setRuleSetIDs(ruleEnforcement.getRuleSetIDs());
     }
-    if (rule.getExecutionSchedule() != null) {
-      updateOperations.set(RuleEnforcementId.executionSchedule, rule.getExecutionSchedule());
+    if (ruleEnforcement.getExecutionSchedule() != null) {
+      existingRuleEnforcement.setExecutionSchedule(ruleEnforcement.getExecutionSchedule());
     }
-    if (rule.getExecutionTimezone() != null) {
-      updateOperations.set(RuleEnforcementId.executionTimezone, rule.getExecutionTimezone());
+    if (ruleEnforcement.getExecutionTimezone() != null) {
+      existingRuleEnforcement.setExecutionTimezone(ruleEnforcement.getExecutionTimezone());
     }
-    if (rule.getTargetAccounts() != null) {
-      updateOperations.set(RuleEnforcementId.targetAccounts, rule.getTargetAccounts());
+    if (ruleEnforcement.getTargetAccounts() != null) {
+      existingRuleEnforcement.setTargetAccounts(ruleEnforcement.getTargetAccounts());
     }
-    if (rule.getTargetRegions() != null) {
-      updateOperations.set(RuleEnforcementId.targetRegions, rule.getTargetRegions());
+    if (ruleEnforcement.getTargetRegions() != null) {
+      existingRuleEnforcement.setTargetRegions(ruleEnforcement.getTargetRegions());
     }
-    if (rule.getIsDryRun() != null) {
-      updateOperations.set(RuleEnforcementId.isDryRun, rule.getIsDryRun());
+    if (ruleEnforcement.getIsDryRun() != null) {
+      existingRuleEnforcement.setIsDryRun(ruleEnforcement.getIsDryRun());
     }
-    if (rule.getIsEnabled() != null) {
-      updateOperations.set(RuleEnforcementId.isEnabled, rule.getIsEnabled());
+    if (ruleEnforcement.getIsEnabled() != null) {
+      existingRuleEnforcement.setIsEnabled(ruleEnforcement.getIsEnabled());
     }
 
-    hPersistence.update(query, updateOperations);
-    log.info("Updated rule: {}", rule.getUuid());
+    RuleEnforcement updatedRuleEnforcement = mongoTemplate.save(existingRuleEnforcement);
+    log.info("Updated rule: {}", updatedRuleEnforcement.getUuid());
 
-    return query.asList().get(0);
+    return updatedRuleEnforcement;
   }
 
   public RuleEnforcement fetchByName(String accountId, String name, boolean create) {
@@ -132,11 +140,12 @@ public class RuleEnforcementDAO {
   }
 
   public List<RuleEnforcement> list(String accountId) {
-    return hPersistence.createQuery(RuleEnforcement.class)
-        .field(RuleEnforcementId.accountId)
-        .equal(accountId)
-        .order(Sort.ascending(RuleEnforcementId.name))
-        .asList();
+    Query<RuleEnforcement> query =
+        hPersistence.createQuery(RuleEnforcement.class).field(RuleEnforcementId.accountId).equal(accountId);
+    if (featureFlagService.isNotEnabled(CCM_ENABLE_AZURE_CLOUD_ASSET_GOVERNANCE_UI, accountId)) {
+      query.field(RuleEnforcementId.cloudProvider).notEqual(RuleCloudProviderType.AZURE);
+    }
+    return query.order(Sort.ascending(RuleEnforcementId.name)).asList();
   }
 
   public List<RuleEnforcement> ruleEnforcement(String accountId, List<String> ruleIds) {
@@ -163,6 +172,15 @@ public class RuleEnforcementDAO {
         .equal(accountId)
         .field(RuleEnforcementId.uuid)
         .in(ruleEnforcementId)
+        .asList();
+  }
+
+  public List<RuleEnforcement> listEnforcementsWithGivenRule(String accountId, String ruleId) {
+    return hPersistence.createQuery(RuleEnforcement.class)
+        .field(RuleEnforcementId.accountId)
+        .equal(accountId)
+        .field(RuleEnforcementId.ruleIds)
+        .contains(ruleId)
         .asList();
   }
 

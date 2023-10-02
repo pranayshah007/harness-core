@@ -129,6 +129,9 @@ Create the name of the delegate upgrader image to use
 {{- if .Values.global.chaos.enabled }}
 {{- $flags = printf "%s,%s" $flags .Values.featureFlags.CHAOS }}
 {{- end }}
+{{- if .Values.global.cet.enabled }}
+{{- $flags = printf "%s,%s" $flags .Values.featureFlags.CET }}
+{{- end }}
 {{- $length2 := len .Values.featureFlags.ADDITIONAL }}
 {{- if gt $length2 0}}
 {{- $flags = printf "%s,%s" $flags .Values.featureFlags.ADDITIONAL }}

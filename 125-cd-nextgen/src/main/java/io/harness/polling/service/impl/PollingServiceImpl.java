@@ -6,14 +6,20 @@
  */
 
 package io.harness.polling.service.impl;
+import static io.harness.remote.client.NGRestUtils.getResponse;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.dto.PollingInfoForTriggers;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.dto.PollingTriggerStatusUpdateDTO;
 import io.harness.observer.Subject;
+import io.harness.pipeline.triggers.TriggersClient;
 import io.harness.polling.bean.ArtifactPolledResponse;
 import io.harness.polling.bean.GitPollingPolledResponse;
 import io.harness.polling.bean.ManifestPolledResponse;
@@ -31,17 +37,21 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
 public class PollingServiceImpl implements PollingService {
+  private int MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS = 10;
   @Inject private PollingRepository pollingRepository;
   @Inject private PollingDocumentMapper pollingDocumentMapper;
+  @Inject private TriggersClient triggersClient;
   @Inject @Getter private final Subject<PollingServiceObserver> subject = new Subject<>();
 
   @Override
@@ -49,7 +59,8 @@ public class PollingServiceImpl implements PollingService {
     validatePollingDocument(pollingDocument);
     PollingDocument savedPollingDoc = pollingRepository.addSubscribersToExistingPollingDoc(
         pollingDocument.getAccountId(), pollingDocument.getOrgIdentifier(), pollingDocument.getProjectIdentifier(),
-        pollingDocument.getPollingType(), pollingDocument.getPollingInfo(), pollingDocument.getSignatures());
+        pollingDocument.getPollingType(), pollingDocument.getPollingInfo(), pollingDocument.getSignatures(),
+        pollingDocument.getSignaturesLock());
     // savedPollingDoc will be null if we couldn't find polling doc with the same entries as pollingDocument.
     if (savedPollingDoc == null) {
       // Setting uuid as null so that on saving database generates a new uuid and does not use the old one as some other
@@ -73,6 +84,19 @@ public class PollingServiceImpl implements PollingService {
   @Override
   public PollingDocument get(String accountId, String pollingDocId) {
     return pollingRepository.findByUuidAndAccountId(pollingDocId, accountId);
+  }
+
+  @Override
+  public List<PollingDocument> getMany(String accountId, List<String> pollingDocIds) {
+    return pollingRepository.findManyByUuidsAndAccountId(pollingDocIds, accountId);
+  }
+
+  @Override
+  public List<String> getUuidsBySignatures(String accountId, List<String> signatures) {
+    return pollingRepository.findUuidsBySignaturesAndAccountId(signatures, accountId)
+        .stream()
+        .map(PollingDocument::getUuid)
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -139,7 +163,9 @@ public class PollingServiceImpl implements PollingService {
 
   @Override
   public boolean unsubscribe(PollingItem pollingItem) {
-    PollingDocument pollingDocument = pollingDocumentMapper.toPollingDocument(pollingItem);
+    /* Here we create the PollingDocument without PollingInfo, since MultiRegionArtifact triggers don't send
+     this data when making an `unsubscribe` request - and this data is not needed anyway for unsubscription. */
+    PollingDocument pollingDocument = pollingDocumentMapper.toPollingDocumentWithoutPollingInfo(pollingItem);
     delete(pollingDocument);
     return true;
   }
@@ -218,5 +244,27 @@ public class PollingServiceImpl implements PollingService {
         .polledResponse(polledResponse)
         .perpetualTaskId(pollingDocument.getPerpetualTaskId())
         .build();
+  }
+
+  @Override
+  public boolean updateTriggerPollingStatus(String accountId, List<String> signatures, boolean success,
+      String errorMessage, List<String> lastCollectedVersions) {
+    // Truncate `lastCollectedVersions` list to at most 10 items, in order to avoid large payloads.
+    if (lastCollectedVersions != null && lastCollectedVersions.size() > MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS) {
+      lastCollectedVersions = lastCollectedVersions.subList(0, MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS);
+    }
+    PollingTriggerStatusUpdateDTO statusUpdate = PollingTriggerStatusUpdateDTO.builder()
+                                                     .signatures(signatures)
+                                                     .success(success)
+                                                     .errorMessage(errorMessage)
+                                                     .lastCollectedVersions(lastCollectedVersions)
+                                                     .lastCollectedTime(System.currentTimeMillis())
+                                                     .build();
+    try {
+      return getResponse(triggersClient.updateTriggerPollingStatus(accountId, statusUpdate));
+    } catch (Exception e) {
+      log.error("Failed to update triggers' polling Status for accountId {}, signatures {}", accountId, signatures, e);
+      return false;
+    }
   }
 }

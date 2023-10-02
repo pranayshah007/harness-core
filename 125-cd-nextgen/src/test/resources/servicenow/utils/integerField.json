@@ -1,0 +1,18 @@
+{
+  "filterable": true,
+  "canmatch": true,
+  "cangroup": true,
+  "label": "Child Incidents",
+  "type": "integer",
+  "max_unit": "days",
+  "mandatory": false,
+  "default": "",
+  "base_type": "integer",
+  "read_only": false,
+  "hint": "Number of child Incidents related to this Problem",
+  "name": "child_incidents",
+  "column_type": "element",
+  "internal_type": "integer",
+  "cansort": true,
+  "max_length": 40
+}

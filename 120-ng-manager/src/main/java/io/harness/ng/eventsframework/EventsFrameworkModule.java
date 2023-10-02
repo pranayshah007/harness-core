@@ -103,6 +103,9 @@ public class EventsFrameworkModule extends AbstractModule {
           .toInstance(
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
       bind(Producer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.MODULE_LICENSE))
+          .toInstance(NoOpProducer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME));
+      bind(Producer.class)
           .annotatedWith(Names.named(WEBHOOK_EVENTS_STREAM))
           .toInstance(NoOpProducer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME));
       bind(Producer.class)
@@ -193,6 +196,11 @@ public class EventsFrameworkModule extends AbstractModule {
           .annotatedWith(Names.named(EventsFrameworkConstants.USERMEMBERSHIP))
           .toInstance(RedisProducer.of(EventsFrameworkConstants.USERMEMBERSHIP, redissonClient,
               EventsFrameworkConstants.USER_MEMBERSHIP_TOPIC_SIZE, NG_MANAGER.getServiceId(),
+              redisConfig.getEnvNamespace()));
+      bind(Producer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.MODULE_LICENSE))
+          .toInstance(RedisProducer.of(EventsFrameworkConstants.MODULE_LICENSE, redissonClient,
+              EventsFrameworkConstants.MODULE_LICENSE_TOPIC_SIZE, NG_MANAGER.getServiceId(),
               redisConfig.getEnvNamespace()));
       bind(Producer.class)
           .annotatedWith(Names.named(WEBHOOK_EVENTS_STREAM))

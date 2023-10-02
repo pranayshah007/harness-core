@@ -10,6 +10,7 @@ package io.harness.delegate.task.shell.ssh;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.shell.ssh.CommandHandler.RESOLVED_ENV_VARIABLES_KEY;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_AND_DOWNLOAD_ARTIFACT_NOT_SUPPORTED_FOR_GITHUB_PACKAGE_ARTIFACT_HINT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_AZURE_UNIVERSAL_PACKAGE_ARTIFACT_HINT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.FAILED_TO_COPY_ARTIFACT_HINT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.FAILED_TO_COPY_SSH_CONFIG_FILE_HINT;
 import static io.harness.rule.OwnerRule.ACASIAN;
@@ -19,6 +20,7 @@ import static io.harness.rule.OwnerRule.VITALIE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -43,6 +45,7 @@ import io.harness.delegate.task.ssh.NgInitCommandUnit;
 import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.AzureArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.GithubPackagesArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
@@ -54,6 +57,7 @@ import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -421,6 +425,32 @@ public class SshCopyCommandHandlerTest extends CategoryTest {
             -> sshCopyCommandHandler.handle(getParameters(false, artifactDelegateConfig, getFileDelegateConfig()),
                 copyCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext))
         .isInstanceOf(HintException.class);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testCopyArtifactWithAzureUniversalArtifactDelegate_Fails() {
+    doReturn(fileBasedSshScriptExecutorNG).when(sshScriptExecutorFactory).getFileBasedExecutor(any());
+    when(fileBasedSshScriptExecutorNG.copyFiles(any())).thenReturn(CommandExecutionStatus.SUCCESS);
+
+    AzureArtifactDelegateConfig azureArtifactDelegateConfig =
+        AzureArtifactDelegateConfig.builder().packageType("upack").build();
+
+    assertThatThrownBy(
+        ()
+            -> sshCopyCommandHandler.handle(getParameters(false, azureArtifactDelegateConfig, getFileDelegateConfig()),
+                copyCommandUnit, logStreamingTaskClient, commandUnitsProgress, taskContext))
+        .isInstanceOf(HintException.class)
+        .hasMessage(COPY_ARTIFACT_NOT_SUPPORTED_FOR_AZURE_UNIVERSAL_PACKAGE_ARTIFACT_HINT);
+
+    ArgumentCaptor<LogLevel> logLevelArgCaptor = ArgumentCaptor.forClass(LogLevel.class);
+    ArgumentCaptor<CommandExecutionStatus> commandExecutionStatusArgCaptor =
+        ArgumentCaptor.forClass(CommandExecutionStatus.class);
+    verify(logCallback)
+        .saveExecutionLog(anyString(), logLevelArgCaptor.capture(), commandExecutionStatusArgCaptor.capture());
+    assertThat(logLevelArgCaptor.getValue()).isEqualTo(LogLevel.ERROR);
+    assertThat(commandExecutionStatusArgCaptor.getValue()).isEqualTo(CommandExecutionStatus.FAILURE);
   }
 
   @Test

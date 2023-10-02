@@ -35,6 +35,7 @@ public class DliteVmStageInfraDetails implements StageInfraDetails {
   String workDir;
   Map<String, String> volToMountPathMap; // host volume name to mount path mapping
   String harnessImageConnectorRef;
+  boolean distributed;
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
 
   @Builder.Default @NotNull private Type type = Type.DLITE_VM;

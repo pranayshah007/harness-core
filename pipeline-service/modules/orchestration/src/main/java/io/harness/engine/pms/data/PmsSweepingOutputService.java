@@ -13,6 +13,7 @@ import io.harness.data.ExecutionSweepingOutputInstance;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.refobjects.RefObject;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -34,4 +35,11 @@ public interface PmsSweepingOutputService extends Resolver {
    * @param planExecutionIds
    */
   void deleteAllSweepingOutputInstances(Set<String> planExecutionIds);
+
+  /**
+   * Updates all sweeping output instances for given planExecutionId
+   * Uses - unique_levelRuntimeIdUniqueIdx2
+   * @param planExecutionId
+   */
+  void updateTTL(String planExecutionId, Date ttlDate);
 }

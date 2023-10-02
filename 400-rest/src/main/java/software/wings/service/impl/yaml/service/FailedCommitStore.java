@@ -22,7 +22,7 @@ import lombok.Value;
 @Singleton
 public class FailedCommitStore {
   private final Cache<Commit, Boolean> commitsWhichExceedLimit =
-      CacheBuilder.newBuilder().expireAfterAccess(30, TimeUnit.MINUTES).build();
+      CacheBuilder.newBuilder().expireAfterWrite(30, TimeUnit.MINUTES).build();
 
   public boolean didExceedLimit(Commit commit) {
     return commitsWhichExceedLimit.getIfPresent(commit) != null;

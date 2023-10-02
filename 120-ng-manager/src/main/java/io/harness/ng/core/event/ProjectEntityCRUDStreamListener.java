@@ -6,7 +6,6 @@
  */
 
 package io.harness.ng.core.event;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
@@ -15,7 +14,10 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ORGANI
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.RESTORE_ACTION;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.eventsframework.consumer.Message;
@@ -33,6 +35,7 @@ import io.harness.ng.core.services.ProjectService;
 import io.harness.ng.core.utils.ServiceOverrideV2ValidationHelper;
 import io.harness.service.infrastructuremapping.InfrastructureMappingService;
 import io.harness.service.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoService;
+import io.harness.service.releasedetailsmapping.ReleaseDetailsMappingService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -44,6 +47,8 @@ import java.util.function.BooleanSupplier;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(PL)
 @Slf4j
 @Singleton
@@ -59,6 +64,8 @@ public class ProjectEntityCRUDStreamListener implements MessageListener {
 
   private final InstanceSyncPerpetualTaskInfoService instanceSyncPerpetualTaskInfoService;
   private final InfrastructureMappingService infrastructureMappingService;
+
+  private final ReleaseDetailsMappingService releaseDetailsMappingService;
   private final ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
 
   @Inject
@@ -66,6 +73,7 @@ public class ProjectEntityCRUDStreamListener implements MessageListener {
       ServiceOverrideService serviceOverrideService, ServiceOverridesServiceV2 serviceOverridesServiceV2,
       InfrastructureEntityService infraService, ServiceEntityService serviceEntityService,
       ClusterService clusterService, InfrastructureMappingService infrastructureMappingService,
+      ReleaseDetailsMappingService releaseDetailsMappingService,
       InstanceSyncPerpetualTaskInfoService instanceSyncPerpetualTaskInfoService,
       EnvironmentGroupService environmentGroupService, ServiceOverrideV2ValidationHelper overrideV2ValidationHelper) {
     this.projectService = projectService;
@@ -77,6 +85,7 @@ public class ProjectEntityCRUDStreamListener implements MessageListener {
     this.clusterService = clusterService;
     this.environmentGroupService = environmentGroupService;
     this.infrastructureMappingService = infrastructureMappingService;
+    this.releaseDetailsMappingService = releaseDetailsMappingService;
     this.instanceSyncPerpetualTaskInfoService = instanceSyncPerpetualTaskInfoService;
     this.overrideV2ValidationHelper = overrideV2ValidationHelper;
   }
@@ -160,8 +169,11 @@ public class ProjectEntityCRUDStreamListener implements MessageListener {
     boolean infraMappingDeleted = processQuietly(
         () -> infrastructureMappingService.deleteAllFromProj(accountIdentifier, orgIdentifier, projIdentifier));
 
+    boolean releaseDetailsMappingDeleted = processQuietly(
+        () -> releaseDetailsMappingService.deleteAllFromProj(accountIdentifier, orgIdentifier, projIdentifier));
+
     return envDeleted && infraDeleted && serviceDeleted && clustersDeleted && serviceOverridesDeleted
-        && infraMappingDeleted;
+        && infraMappingDeleted && releaseDetailsMappingDeleted;
   }
 
   boolean processQuietly(BooleanSupplier b) {

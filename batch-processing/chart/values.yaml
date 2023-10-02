@@ -2,6 +2,8 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
+  commonAnnotations: {}
+  commonLabels: {}
   loadbalancerURL: "https://test"
   database:
     postgres:
@@ -39,6 +41,10 @@ global:
       userKey: ""
       passwordKey: ""
       extraArgs: ""
+      certName: ""
+      certKey: ""
+    clickhouse:
+      enabled: false
   ingress:
     enabled: false
     className: harness
@@ -54,12 +60,23 @@ global:
   # image pull secrets to use for every image
   imagePullSecrets: []
   stackDriverLoggingEnabled: false
+  proxy:
+    enabled: false
+    host: localhost
+    port: 80
+    username: ""
+    password: ""
+    protocol: http
+  awsServiceEndpointUrls:
+    enabled: false
+    endPointRegion: us-east-2
+    stsEndPointUrl: https://sts.us-east-2.amazonaws.com
+    ecsEndPointUrl: https://ecs.us-east-2.amazonaws.com
+    cloudwatchEndPointUrl: https://monitoring.us-east-2.amazonaws.com
 
 replicaCount: 1
 
 isolatedReplica: 0
-
-
 
 java:
   memory: "7168"
@@ -69,7 +86,7 @@ image:
   repository: harness/batch-processing-signed
   pullPolicy: Always
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "78605-000"
+  tag: "80807-000"
   digest: ""
 # image pull secrets to use for batch-processing image
   imagePullSecrets: []
@@ -79,7 +96,7 @@ imageClickhouseEnabled:
   repository: harness/batch-processing-signed
   pullPolicy: Always
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "78605-000"
+  tag: "80807-000"
   digest: ""
 # image pull secrets to use for batch-processing image
   imagePullSecrets: []
@@ -135,15 +152,16 @@ podSecurityContext: {}
 securityContext: {}
 
 service:
+  annotations: {}
   type: ClusterIP
   port: 6340
 
 autoscaling:
   enabled: false
   minReplicas: 1
-  maxReplicas: 2
-  targetCPUUtilizationPercentage: 80
-# targetMemoryUtilizationPercentage: 80
+  maxReplicas: 100
+  targetCPU: ""
+  targetMemory: ""
 
 nodeSelector: {}
 
@@ -162,7 +180,6 @@ awsAccountTagsCollectionJobConfig:
   enabled: true
 
 clickhouse:
-  enabled: false
   username: "default"
   password:
     name: clickhouse
@@ -171,12 +188,43 @@ clickhouse:
 workloadIdentity:
   enabled: false
 
+cliProxy:
+  enabled: false
+  host: localhost
+  port: 80
+  username: ""
+  password: ""
+  protocol: http
+
 resources:
   limits:
-    cpu: "1024m"
     memory: "10Gi"
   requests:
     cpu: "1024m"
     memory: "10Gi"
 
 additionalConfigs: {}
+java17flags: ""
+
+# extraVolumes:
+#   - name: volume-test
+#     configMap:
+#       name: test-config
+#       # readOnly: true
+extraVolumes: []
+
+# extraVolumeMounts:
+#   - name: volume-test
+#     mountPath: /opt/harness/config
+extraVolumeMounts: []
+
+CF_CLIENT_API_KEY: "BATCH_PROCESSING_ON_PREM"
+
+lifecycleHooks: {}
+# lifecycleHooks:
+#   postStart:
+#     exec:
+#       command:
+#   preStop:
+#     exec:
+#       command:

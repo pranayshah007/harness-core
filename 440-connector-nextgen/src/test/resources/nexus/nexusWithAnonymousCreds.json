@@ -3,6 +3,7 @@
     "name": "name",
     "identifier": "identifier",
     "description": "description",
+    "accountIdentifier": "accountIdentifier",
     "orgIdentifier": "orgIdentifier",
     "projectIdentifier": "projectIdentifier",
     "tags": {

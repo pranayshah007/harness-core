@@ -8,6 +8,7 @@
 package io.harness.resourcegroup.reconciliation;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.RESOUCE_GROUP_SERVICE;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
 import static java.time.Duration.ofHours;
@@ -23,6 +24,8 @@ import io.harness.resourcegroup.framework.v2.service.ResourceGroupService;
 import io.harness.resourcegroup.framework.v2.service.ResourceGroupValidator;
 import io.harness.resourcegroup.v2.model.ResourceGroup;
 import io.harness.resourcegroup.v2.model.ResourceGroup.ResourceGroupKeys;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.ServicePrincipal;
 
 import com.google.inject.Inject;
 import lombok.AllArgsConstructor;
@@ -43,10 +46,15 @@ public class ResourceGroupAsyncReconciliationHandler implements MongoPersistence
 
   @Override
   public void handle(ResourceGroup resourceGroup) {
-    boolean updated = resourceGroupValidator.sanitizeResourceSelectors(resourceGroup);
-    if (updated) {
-      resourceGroupService.update(
-          ResourceGroupMapper.toDTO(resourceGroup), Boolean.TRUE.equals(resourceGroup.getHarnessManaged()));
+    try {
+      SecurityContextBuilder.setContext(new ServicePrincipal(RESOUCE_GROUP_SERVICE.getServiceId()));
+      boolean updated = resourceGroupValidator.sanitizeResourceSelectors(resourceGroup);
+      if (updated) {
+        resourceGroupService.update(
+            ResourceGroupMapper.toDTO(resourceGroup), Boolean.TRUE.equals(resourceGroup.getHarnessManaged()));
+      }
+    } finally {
+      SecurityContextBuilder.unsetCompleteContext();
     }
   }
 

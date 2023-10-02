@@ -8,6 +8,7 @@
 package io.harness.idp.events.eventlisteners.eventhandler;
 
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACTION;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ASYNC_CATALOG_IMPORT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
@@ -76,7 +77,12 @@ public class EntityCrudStreamListener implements MessageListener {
           String resourceIdentifier = entityChangeDTO.getIdentifier().getValue();
 
           String lockName = String.format(LOCK_NAME_FORMAT, accountIdentifier, entityType, resourceIdentifier);
-          AcquiredLock lock = resourceLocker.acquireLock(lockName);
+          AcquiredLock lock;
+          if (entityType.equals(ASYNC_CATALOG_IMPORT_ENTITY)) {
+            lock = resourceLocker.acquireLock(lockName, 5);
+          } else {
+            lock = resourceLocker.acquireLock(lockName);
+          }
           try {
             eventMessageHandler.handleMessage(message, entityChangeDTO, action);
             log.info("Completed processing the crud event with the id {}", messageId);

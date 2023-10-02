@@ -1,0 +1,81 @@
+{
+  "@type": "MessageCard",
+  "themeColor": "#FFFFFF",
+  "summary": "Harness SRM Notification",
+  "sections": [
+    {
+      "activityTitle": "${HEADER_MESSAGE}",
+      "activitySubtitle": "Trigger: ${TRIGGER_MESSAGE}",
+      "facts": [
+        {
+            "name": "Monitored Service",
+            "value": "${MONITORED_SERVICE_NAME}"
+        },
+        {
+            "name": "Account Name",
+            "value": "${ACCOUNT_NAME}"
+        },
+        {
+            "name": "Organization Name",
+            "value": "${ORG_NAME}"
+        },
+        {
+            "name": "Project Name",
+            "value": "${PROJECT_NAME}"
+        },
+        {
+            "name": "Monitored Service",
+            "value": "${MONITORED_SERVICE_NAME}"
+        },
+        {
+            "name": "Configured Analysis Duration",
+            "value": "${ANALYSIS_DURATION}"
+        },
+        {
+            "name": "Started",
+            "value": "${ANALYSIS_STARTED_AT}"
+        },
+        {
+            "name": "Ended",
+            "value": "${ANALYSIS_ENDED_AT}"
+        },
+        {
+            "name": "Change events",
+            "value": "${TOTAL_CE_COUNT}"
+        },
+        {
+            "name": "Deployments",
+            "value": "${DEPLOYMENT}"
+        },
+        {
+            "name": "Infra events",
+            "value": "${INFRASTRUCTURE}"
+        },
+        {
+            "name": "Alerts",
+            "value": "${ALERTS}"
+        },
+        {
+            "name": "Feature flag",
+            "value": "${FEATURE_FLAG}"
+        },
+        {
+            "name": "Chaos events",
+            "value": "${CHAOS_EXPERIMENT}"
+        },
+        {
+            "name": "Service Health",
+            "value": "${SERVICE_HEALTH_SUMMARY}"
+        },
+        {
+            "name": "SLO Performance",
+            "value": "${SLO_SUMMARY} ${SLO_PERFORMANCE}"
+        },
+        {
+            "name": "View Service Health details",
+            "value": "[${URL}](${URL})"
+        },
+      ],
+    }
+  ]
+}

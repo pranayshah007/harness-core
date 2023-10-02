@@ -92,8 +92,9 @@ public class VariableFunctor implements SdkFunctor {
       default:
         throw new UnsupportedOperationException(String.format("Variables are not supported in [%s] scope", scopeLevel));
     }
-    String notFoundMessage =
-        String.format("Variable with identifier [%s] not found in scope [%s]", identifier, scopeLevel);
+    String notFoundMessage = String.format(
+        "Variable with identifier [%s] not found in scope [%s] (account : %s, org: %s, project: %s)", identifier,
+        scopeLevel, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
     if (!responseDTOOptional.isPresent()) {
       throw new NotFoundException(notFoundMessage);
     }
@@ -101,7 +102,9 @@ public class VariableFunctor implements SdkFunctor {
     if (variableResponse.getVariable() != null && variableResponse.getVariable().getVariableConfig() != null) {
       return responseDTOOptional.get().getVariable().getVariableConfig().getValue();
     } else {
-      log.error("Response variable has null data for variable [{}] in scope [{}]", identifier, scopeLevel);
+      log.error("Response variable has null data for variable [{}] in scope [{}] (account : {}, org: {}, project: {})",
+          identifier, scopeLevel, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(),
+          ngAccess.getProjectIdentifier());
       throw new NotFoundException(notFoundMessage);
     }
   }

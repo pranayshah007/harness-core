@@ -22,8 +22,8 @@ import lombok.experimental.FieldDefaults;
 public class AwsRecommendationAdhocDTO implements RecommendationAdhocDTO {
   String roleArn;
   String externalId;
-  String identifier;
   String targetAccountId;
+  String cloudConnectorId;
 
   @Override
   public String getRoleInfo() {

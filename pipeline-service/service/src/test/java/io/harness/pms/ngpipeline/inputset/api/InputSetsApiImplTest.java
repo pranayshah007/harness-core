@@ -28,7 +28,7 @@ import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.service.InputSetValidationHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.PipelineEntity;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.rule.Owner;
 import io.harness.spec.server.pipeline.v1.model.GitImportInfo;
 import io.harness.spec.server.pipeline.v1.model.GitMoveDetails;
@@ -138,7 +138,7 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
     inputSetCreateRequestBody.setIdentifier(inputSet);
     inputSetCreateRequestBody.setName(inputSetName);
     inputSetCreateRequestBody.setInputSetYaml(inputSetYaml);
-    doReturn(PipelineVersion.V0).when(inputSetsApiUtils).inputSetVersion(any(), any());
+    doReturn(HarnessYamlVersion.V0).when(inputSetsApiUtils).inputSetVersion(any(), any());
     Response response = inputSetsApiImpl.createInputSet(inputSetCreateRequestBody, pipeline, org, project, account);
     InputSetResponseBody responseBody = (InputSetResponseBody) response.getEntity();
     assertEquals(responseBody.getInputSetYaml(), inputSetYaml);
@@ -206,7 +206,7 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
   @Category(UnitTests.class)
   public void testUpdateInputSet() {
     doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), anyBoolean());
-    doReturn(PipelineVersion.V0).when(inputSetsApiUtils).inputSetVersion(any(), any());
+    doReturn(HarnessYamlVersion.V0).when(inputSetsApiUtils).inputSetVersion(any(), any());
     doReturn(inputSetResponseBody).when(inputSetsApiUtils).getInputSetResponse(any());
     InputSetUpdateRequestBody inputSetUpdateRequestBody = new InputSetUpdateRequestBody();
     inputSetUpdateRequestBody.setIdentifier(inputSet);

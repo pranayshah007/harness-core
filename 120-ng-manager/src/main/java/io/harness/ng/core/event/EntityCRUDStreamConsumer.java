@@ -6,16 +6,18 @@
  */
 
 package io.harness.ng.core.event;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_SYNC_ENTITY_STREAM;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.API_KEY_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.AZURE_ARM_CONFIG_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CD_ACCOUNT_EXECUTION_METADATA;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CD_TELEMETRY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CLOUDFORMATION_CONFIG_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DEPLOYMENT_ACCOUNTS;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DEPLOYMENT_SUMMARY_NG;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENVIRONMENT_GROUP_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.FILE_ENTITY;
@@ -25,6 +27,8 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.GITOPS
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.GIT_COMMIT;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.GIT_PROCESS_REQUEST;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.GIT_TO_HARNESS_PROGRESS;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.INSTANCE_DEPLOYMENT_INFO;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.INSTANCE_NG;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.INVITE;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.LICENSE_MODULES;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.POLLING_DOCUMENT;
@@ -45,7 +49,10 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_S
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.VARIABLE_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.YAML_CHANGE_SET;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
@@ -66,6 +73,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(PL)
 @Slf4j
 @Singleton
@@ -110,7 +118,12 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
       @Named(SCM + ENTITY_CRUD) MessageListener sourceCodeManagerEventListener,
       @Named(STAGE_EXEC_INFO + ENTITY_CRUD) MessageListener stageExecutionInfoEventListener,
       @Named(YAML_CHANGE_SET + ENTITY_CRUD) MessageListener yamlChangeSetEventListener,
-      @Named(FILE_ENTITY + ENTITY_CRUD) MessageListener fileEntityCRUDStreamListener, QueueController queueController) {
+      @Named(FILE_ENTITY + ENTITY_CRUD) MessageListener fileEntityCRUDStreamListener,
+      @Named(CD_ACCOUNT_EXECUTION_METADATA + ENTITY_CRUD) MessageListener accountExecutionMetadataCRUDStreamListener,
+      @Named(DEPLOYMENT_ACCOUNTS + ENTITY_CRUD) MessageListener deploymentAccountsCRUDStreamListener,
+      @Named(DEPLOYMENT_SUMMARY_NG + ENTITY_CRUD) MessageListener deploymentSummaryNGCRUDStreamListener,
+      @Named(INSTANCE_DEPLOYMENT_INFO + ENTITY_CRUD) MessageListener instanceDeploymentInfoCRUDStreamListener,
+      @Named(INSTANCE_NG + ENTITY_CRUD) MessageListener instanceNGCRUDStreamListener, QueueController queueController) {
     this.redisConsumer = redisConsumer;
     this.queueController = queueController;
     messageListenersList = new ArrayList<>();
@@ -146,6 +159,11 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
     messageListenersList.add(gitopsClusterCleanupProcessor);
     messageListenersList.add(customDeploymentEntityCRUDStreamEventListener);
     messageListenersList.add(fileEntityCRUDStreamListener);
+    messageListenersList.add(accountExecutionMetadataCRUDStreamListener);
+    messageListenersList.add(deploymentAccountsCRUDStreamListener);
+    messageListenersList.add(deploymentSummaryNGCRUDStreamListener);
+    messageListenersList.add(instanceDeploymentInfoCRUDStreamListener);
+    messageListenersList.add(instanceNGCRUDStreamListener);
     processorMap = new HashMap<>();
     processorMap.put(SETUP_USAGE_ENTITY, setupUsageChangeEventMessageProcessor);
   }

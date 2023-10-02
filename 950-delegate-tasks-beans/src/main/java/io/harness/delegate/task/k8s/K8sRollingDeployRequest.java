@@ -51,4 +51,5 @@ public class K8sRollingDeployRequest implements K8sDeployRequest {
   boolean useDeclarativeRollback;
   @Expression(ALLOW_SECRETS) Map<String, String> k8sCommandFlags;
   @Expression(ALLOW_SECRETS) List<ServiceHookDelegateConfig> serviceHooks;
+  boolean disableFabric8;
 }

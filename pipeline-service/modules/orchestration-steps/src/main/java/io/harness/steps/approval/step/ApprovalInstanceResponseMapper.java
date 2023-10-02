@@ -16,6 +16,7 @@ import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.jira.JiraIssueKeyNG;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.servicenow.ServiceNowTicketKeyNG;
+import io.harness.steps.approval.ApprovalUtils;
 import io.harness.steps.approval.step.beans.ApprovalInstanceDetailsDTO;
 import io.harness.steps.approval.step.beans.ApprovalInstanceResponseDTO;
 import io.harness.steps.approval.step.custom.beans.CustomApprovalInstanceDetailsDTO;
@@ -62,23 +63,52 @@ public class ApprovalInstanceResponseMapper {
         .type(instance.getType())
         .status(instance.getStatus())
         .deadline(instance.getDeadline())
-        .details(toApprovalInstanceDetailsDTO(instance))
+        .details(toApprovalInstanceDetailsDTO(instance, false))
         .createdAt(instance.getCreatedAt())
         .lastModifiedAt(instance.getLastModifiedAt())
         .errorMessage(instance.getErrorMessage())
         .build();
   }
 
-  private ApprovalInstanceDetailsDTO toApprovalInstanceDetailsDTO(ApprovalInstance instance) {
+  /**
+   * shouldAddDelegateMetadata adds information related to delegate task such as latest delegate task id and task name
+   * to the DTO
+   *
+   * preferably shouldAddDelegateMetadata should only be set true when mapping for internal APIs where delegate
+   * information is required such as getApprovalInstance
+   *
+   *
+   * *
+   */
+  public ApprovalInstanceResponseDTO toApprovalInstanceResponseDTO(
+      ApprovalInstance instance, boolean shouldAddDelegateMetadata) {
+    if (instance == null) {
+      return null;
+    }
+
+    return ApprovalInstanceResponseDTO.builder()
+        .id(instance.getId())
+        .type(instance.getType())
+        .status(instance.getStatus())
+        .deadline(instance.getDeadline())
+        .details(toApprovalInstanceDetailsDTO(instance, shouldAddDelegateMetadata))
+        .createdAt(instance.getCreatedAt())
+        .lastModifiedAt(instance.getLastModifiedAt())
+        .errorMessage(instance.getErrorMessage())
+        .build();
+  }
+
+  private ApprovalInstanceDetailsDTO toApprovalInstanceDetailsDTO(
+      ApprovalInstance instance, boolean shouldAddDelegateMetadata) {
     switch (instance.getType()) {
       case HARNESS_APPROVAL:
         return toHarnessApprovalInstanceDetailsDTO((HarnessApprovalInstance) instance);
       case JIRA_APPROVAL:
-        return toJiraApprovalInstanceDetailsDTO((JiraApprovalInstance) instance);
+        return toJiraApprovalInstanceDetailsDTO((JiraApprovalInstance) instance, shouldAddDelegateMetadata);
       case SERVICENOW_APPROVAL:
-        return toServiceNowApprovalInstanceDetailsDTO((ServiceNowApprovalInstance) instance);
+        return toServiceNowApprovalInstanceDetailsDTO((ServiceNowApprovalInstance) instance, shouldAddDelegateMetadata);
       case CUSTOM_APPROVAL:
-        return toCustomApprovalInstanceDetailsDTO((CustomApprovalInstance) instance);
+        return toCustomApprovalInstanceDetailsDTO((CustomApprovalInstance) instance, shouldAddDelegateMetadata);
       default:
         return null;
     }
@@ -105,20 +135,29 @@ public class ApprovalInstanceResponseMapper {
         .build();
   }
 
-  private ApprovalInstanceDetailsDTO toJiraApprovalInstanceDetailsDTO(JiraApprovalInstance instance) {
+  private ApprovalInstanceDetailsDTO toJiraApprovalInstanceDetailsDTO(
+      JiraApprovalInstance instance, boolean shouldAddDelegateMetadata) {
     JiraConnectorDTO connectorDTO = jiraApprovalHelperService.getJiraConnector(
         AmbianceUtils.getAccountId(instance.getAmbiance()), AmbianceUtils.getOrgIdentifier(instance.getAmbiance()),
         AmbianceUtils.getProjectIdentifier(instance.getAmbiance()), instance.getConnectorRef());
 
-    return JiraApprovalInstanceDetailsDTO.builder()
-        .connectorRef(instance.getConnectorRef())
-        .issue(new JiraIssueKeyNG(connectorDTO.getJiraUrl(), instance.getIssueKey(), instance.getTicketFields()))
-        .approvalCriteria(instance.getApprovalCriteria())
-        .rejectionCriteria(instance.getRejectionCriteria())
-        .build();
+    JiraApprovalInstanceDetailsDTO jiraApprovalInstanceDetailsDTO =
+        JiraApprovalInstanceDetailsDTO.builder()
+            .connectorRef(instance.getConnectorRef())
+            .issue(new JiraIssueKeyNG(connectorDTO.getJiraUrl(), instance.getIssueKey(), instance.getTicketFields()))
+            .approvalCriteria(instance.getApprovalCriteria())
+            .rejectionCriteria(instance.getRejectionCriteria())
+            .build();
+
+    if (shouldAddDelegateMetadata) {
+      jiraApprovalInstanceDetailsDTO.setLatestDelegateTaskId(instance.getLatestDelegateTaskId());
+      jiraApprovalInstanceDetailsDTO.setDelegateTaskName(ApprovalUtils.getDelegateTaskName(instance));
+    }
+    return jiraApprovalInstanceDetailsDTO;
   }
 
-  private ApprovalInstanceDetailsDTO toServiceNowApprovalInstanceDetailsDTO(ServiceNowApprovalInstance instance) {
+  private ApprovalInstanceDetailsDTO toServiceNowApprovalInstanceDetailsDTO(
+      ServiceNowApprovalInstance instance, boolean shouldAddDelegateMetadata) {
     ServiceNowConnectorDTO connectorDTO = serviceNowApprovalHelperService.getServiceNowConnector(
         AmbianceUtils.getAccountId(instance.getAmbiance()), AmbianceUtils.getOrgIdentifier(instance.getAmbiance()),
         AmbianceUtils.getProjectIdentifier(instance.getAmbiance()), instance.getConnectorRef());
@@ -131,20 +170,35 @@ public class ApprovalInstanceResponseMapper {
       fields = null;
     }
 
-    return ServiceNowApprovalInstanceDetailsDTO.builder()
-        .connectorRef(instance.getConnectorRef())
-        .ticket(new ServiceNowTicketKeyNG(
-            connectorDTO.getServiceNowUrl(), instance.getTicketNumber(), instance.getTicketType(), fields))
-        .approvalCriteria(instance.getApprovalCriteria())
-        .rejectionCriteria(instance.getRejectionCriteria())
-        .changeWindowSpec(instance.getChangeWindow())
-        .build();
+    ServiceNowApprovalInstanceDetailsDTO serviceNowApprovalInstanceDetailsDTO =
+        ServiceNowApprovalInstanceDetailsDTO.builder()
+            .connectorRef(instance.getConnectorRef())
+            .ticket(new ServiceNowTicketKeyNG(
+                connectorDTO.getServiceNowUrl(), instance.getTicketNumber(), instance.getTicketType(), fields))
+            .approvalCriteria(instance.getApprovalCriteria())
+            .rejectionCriteria(instance.getRejectionCriteria())
+            .changeWindowSpec(instance.getChangeWindow())
+            .build();
+
+    if (shouldAddDelegateMetadata) {
+      serviceNowApprovalInstanceDetailsDTO.setLatestDelegateTaskId(instance.getLatestDelegateTaskId());
+      serviceNowApprovalInstanceDetailsDTO.setDelegateTaskName(ApprovalUtils.getDelegateTaskName(instance));
+    }
+    return serviceNowApprovalInstanceDetailsDTO;
   }
 
-  private ApprovalInstanceDetailsDTO toCustomApprovalInstanceDetailsDTO(CustomApprovalInstance instance) {
-    return CustomApprovalInstanceDetailsDTO.builder()
-        .approvalCriteria(instance.getApprovalCriteria())
-        .rejectionCriteria(instance.getRejectionCriteria())
-        .build();
+  private ApprovalInstanceDetailsDTO toCustomApprovalInstanceDetailsDTO(
+      CustomApprovalInstance instance, boolean shouldAddDelegateMetadata) {
+    CustomApprovalInstanceDetailsDTO customApprovalInstanceDetailsDTO =
+        CustomApprovalInstanceDetailsDTO.builder()
+            .approvalCriteria(instance.getApprovalCriteria())
+            .rejectionCriteria(instance.getRejectionCriteria())
+            .build();
+
+    if (shouldAddDelegateMetadata) {
+      customApprovalInstanceDetailsDTO.setLatestDelegateTaskId(instance.getLatestDelegateTaskId());
+      customApprovalInstanceDetailsDTO.setDelegateTaskName(ApprovalUtils.getDelegateTaskName(instance));
+    }
+    return customApprovalInstanceDetailsDTO;
   }
 }

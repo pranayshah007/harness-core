@@ -14,7 +14,10 @@ import static io.harness.gitsync.common.scmerrorhandling.ScmErrorCodeToHttpStatu
 
 import io.harness.ScopeIdentifiers;
 import io.harness.account.AccountClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EntityReference;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
@@ -58,10 +61,13 @@ import io.harness.gitsync.RepoDetails;
 import io.harness.gitsync.UpdateFileRequest;
 import io.harness.gitsync.UserDetailsRequest;
 import io.harness.gitsync.UserDetailsResponse;
+import io.harness.gitsync.ValidateRepoRequest;
+import io.harness.gitsync.ValidateRepoResponse;
 import io.harness.gitsync.beans.GitRepositoryDTO;
 import io.harness.gitsync.common.beans.BranchSyncStatus;
 import io.harness.gitsync.common.beans.GitBranch;
 import io.harness.gitsync.common.beans.GitSyncDirection;
+import io.harness.gitsync.common.beans.GitXSettingsParams;
 import io.harness.gitsync.common.beans.InfoForGitPush;
 import io.harness.gitsync.common.beans.ScmCacheDetails;
 import io.harness.gitsync.common.beans.ScmCacheState;
@@ -135,6 +141,8 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_GITX, HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @Singleton
 @OwnedBy(DX)
@@ -237,6 +245,30 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
                   yamlGitConfigDTO.getOrganizationIdentifier(), yamlGitConfigDTO.getProjectIdentifier(),
                   yamlGitConfigDTO.getIdentifier(), yamlGitConfigDTO.getRepo(), pushInfo.getBranchName(),
                   Arrays.asList(ScmGitUtils.createFilePath(pushInfo.getFolderPath(), pushInfo.getFilePath()))));
+    }
+  }
+
+  @Override
+  public ValidateRepoResponse validateRepo(ValidateRepoRequest validateRepoRequest) {
+    try {
+      scmFacilitatorService.validateRepo(validateRepoRequest.getScope().getAccountIdentifier(),
+          validateRepoRequest.getScope().getOrgIdentifier(), validateRepoRequest.getScope().getProjectIdentifier(),
+          validateRepoRequest.getConnectorRef(), validateRepoRequest.getRepo());
+      return ValidateRepoResponse.newBuilder().setIsValid(true).setStatusCode(HTTP_200).build();
+    } catch (WingsException ex) {
+      ScmException scmException = ScmExceptionUtils.getScmException(ex);
+      if (scmException == null) {
+        return ValidateRepoResponse.newBuilder()
+            .setIsValid(false)
+            .setError(prepareDefaultErrorDetails(ex))
+            .setStatusCode(ex.getCode().getStatus().getCode())
+            .build();
+      }
+      return ValidateRepoResponse.newBuilder()
+          .setIsValid(false)
+          .setError(prepareDefaultErrorDetails(ex))
+          .setStatusCode(ScmErrorCodeToHttpStatusCodeMapping.getHttpStatusCode(scmException.getCode()))
+          .build();
     }
   }
 
@@ -508,7 +540,10 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
             .title(createPRRequest.getTitle())
             .build());
 
-    return CreatePRResponse.newBuilder().setStatusCode(200).setPrNumber(scmCreatePRResponseDTO.getPrNumber()).build();
+    return CreatePRResponse.newBuilder()
+        .setStatusCode(HTTP_200)
+        .setPrNumber(scmCreatePRResponseDTO.getPrNumber())
+        .build();
   }
 
   @Override
@@ -701,6 +736,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
               .setBlobId(scmGetFileResponseDTO.getBlobId())
               .setFilePath(filepath)
               .setFileUrl(getFileUrl(scmGetFileResponseDTO, scope, gitRepositoryDTO, filepath, connectorRef))
+              .setIsGitDefaultBranch(scmGetFileResponseDTO.isGitDefaultBranch())
               .build());
     }
     return getFileResponseOrBuilder.build();
@@ -731,6 +767,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
                                 scmCommitFileResponseDTO.getCommitId(), gitRepositoryDTO))
                             .setRepoUrl(scmFacilitatorService.getRepoUrl(
                                 scope, createFileRequest.getConnectorRef(), createFileRequest.getRepoName()))
+                            .setIsGitDefaultBranch(scmCommitFileResponseDTO.isGitDefaultBranch())
                             .build())
         .build();
   }
@@ -749,6 +786,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
                             .setFileUrl(gitFilePathHelper.getFileUrl(scope, updateFileRequest.getConnectorRef(),
                                 updateFileRequest.getBranchName(), updateFileRequest.getFilePath(),
                                 scmCommitFileResponseDTO.getCommitId(), gitRepositoryDTO))
+                            .setIsGitDefaultBranch(scmCommitFileResponseDTO.isGitDefaultBranch())
                             .build())
         .build();
   }
@@ -804,6 +842,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
         .setCacheState(getCacheState(cacheDetails.getScmCacheState()))
         .setLastUpdateAt(cacheDetails.getLastUpdatedAt())
         .setTtlLeft(cacheDetails.getCacheExpiryTTL())
+        .setIsSyncEnabled(cacheDetails.isSyncEnabled())
         .build();
   }
 
@@ -830,6 +869,9 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
         .scope(scope)
         .useCache(getFileRequest.getCacheRequestParams().getUseCache())
         .getOnlyFileContent(getFileRequest.getGetOnlyFileContent())
+        .gitXSettingsParams(GitXSettingsParams.builder()
+                                .applyRepoAllowListFilter(getFileRequest.getGitSettings().getApplyRepoAllowListFilter())
+                                .build())
         .build();
   }
 

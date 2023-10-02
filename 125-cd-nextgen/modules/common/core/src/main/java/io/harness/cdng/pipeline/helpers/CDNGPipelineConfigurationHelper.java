@@ -6,10 +6,12 @@
  */
 
 package io.harness.cdng.pipeline.helpers;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ExecutionStrategyType;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.deploymentmetadata.DeploymentMetadataServiceHelper;
@@ -20,6 +22,7 @@ import io.harness.cdng.pipeline.StepCategory;
 import io.harness.cdng.pipeline.StepData;
 import io.harness.cdng.pipeline.steptype.NGStepType;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.steps.matrix.StrategyParameters;
@@ -39,6 +42,8 @@ import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_ECS})
 @OwnedBy(CDP)
 public class CDNGPipelineConfigurationHelper {
   @Inject private CdEnumFilter enumFilter;
@@ -63,8 +68,8 @@ public class CDNGPipelineConfigurationHelper {
   }
 
   public String getExecutionStrategyYaml(ServiceDefinitionType serviceDefinitionType,
-      ExecutionStrategyType executionStrategyType, boolean includeVerify, String deploymentMetaDataYaml)
-      throws IOException {
+      ExecutionStrategyType executionStrategyType, boolean includeVerify, String deploymentMetaDataYaml,
+      String accountIdentifier) throws IOException {
     // Note: Additional condition for GitOps is added because we do not want to show the GitOps Strategy in
     // the UI but also provide the support to UI for default yaml
     ClassLoader classLoader = this.getClass().getClassLoader();
@@ -74,6 +79,11 @@ public class CDNGPipelineConfigurationHelper {
       if (ServiceDefinitionType.GOOGLE_CLOUD_FUNCTIONS.equals(serviceDefinitionType)) {
         executionStrategyTypeValue = deploymentMetadataServiceHelper.filterStrategyTypeOnDeploymentMetadata(
             serviceDefinitionType, deploymentMetaDataYaml, executionStrategyType);
+      }
+      if (ServiceDefinitionType.SERVERLESS_AWS_LAMBDA.equals(serviceDefinitionType)
+          && ExecutionStrategyType.BASIC.equals(executionStrategyType) && EmptyPredicate.isNotEmpty(accountIdentifier)
+          && featureFlagHelper.isEnabled(accountIdentifier, FeatureName.CDS_SERVERLESS_V2)) {
+        executionStrategyTypeValue = "basic-plugin";
       }
       return Resources.toString(
           Objects.requireNonNull(classLoader.getResource(
@@ -111,7 +121,8 @@ public class CDNGPipelineConfigurationHelper {
       return cdngPipelineExecutionStrategyHelperV2.generateBasicYaml(
           accountIdentifier, serviceDefinitionType, includeVerify, strategyParameters);
     } else {
-      return getExecutionStrategyYaml(serviceDefinitionType, executionStrategyType, includeVerify, null);
+      return getExecutionStrategyYaml(
+          serviceDefinitionType, executionStrategyType, includeVerify, null, accountIdentifier);
     }
   }
 

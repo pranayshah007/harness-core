@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngtriggers.helpers;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogItem;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogType;
@@ -21,6 +23,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import javax.ejb.Singleton;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @Singleton
 public class TriggerCatalogHelper {
   @Inject TriggerCatalogFilter enumFilter;
@@ -30,7 +33,6 @@ public class TriggerCatalogHelper {
         Arrays.stream(TriggerCatalogType.values())
             .filter(enumFilter.filter(accountIdentifier, FeatureName.CD_TRIGGER_V2))
             .filter(enumFilter.filter(accountIdentifier, FeatureName.NG_SVC_ENV_REDESIGN))
-            .filter(enumFilter.filter(accountIdentifier, FeatureName.BAMBOO_ARTIFACT_NG))
             .collect(Collectors.groupingBy(catalogType -> TriggerCatalogType.getTriggerCategory(catalogType)));
     return triggerCategoryListMap.entrySet()
         .stream()

@@ -9,12 +9,17 @@ package io.harness.cdng.visitor;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.utilities.VisitorParentPathUtils;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(CDC)
 public interface YamlTypes {
   String GITOPS_MERGE_PR = StepSpecTypeConstants.GITOPS_MERGE_PR;
@@ -75,6 +80,9 @@ public interface YamlTypes {
   String ECS_BLUE_GREEN_CREATE_SERVICE = StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE;
   String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS;
   String ECS_BLUE_GREEN_ROLLBACK = StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK;
+  String ECS_SERVICE_SETUP = StepSpecTypeConstants.ECS_SERVICE_SETUP;
+  String ECS_UPGRADE_CONTAINER = StepSpecTypeConstants.ECS_UPGRADE_CONTAINER;
+  String ECS_BASIC_ROLLBACK = StepSpecTypeConstants.ECS_BASIC_ROLLBACK;
 
   String AZURE_SLOT_DEPLOYMENT = StepSpecTypeConstants.AZURE_SLOT_DEPLOYMENT;
   String AZURE_TRAFFIC_SHIFT = StepSpecTypeConstants.AZURE_TRAFFIC_SHIFT;
@@ -110,7 +118,7 @@ public interface YamlTypes {
   String SERVICE_SECTION = "serviceSection";
   String SERVICE_ENTITY = "service";
   String SERVICE_REF = "serviceRef";
-  String SERVICE_USE_FROM_STAGE = "useFromStage";
+  String USE_FROM_STAGE = "useFromStage";
   String SERVICE_DEFINITION = "serviceDefinition";
   String SERVICE_SPEC = "spec";
   String SERVICE_OVERRIDE = "serviceOverrides";
@@ -183,6 +191,7 @@ public interface YamlTypes {
 
   String ELASTIGROUP_SERVICE_SETTINGS_STEP = "Elastigroup_Service_Settings";
   String AZURE_SERVICE_SETTINGS_STEP = "Azure_Service_Settings";
+  String ASG_SERVICE_SETTINGS_STEP = "Asg_Service_Settings";
 
   String APPLICATION_SETTINGS = "applicationSettings";
   String CONNECTION_STRINGS = "connectionStrings";
@@ -230,4 +239,10 @@ public interface YamlTypes {
   String SERVERLESS_AWS_LAMBDA_ROLLBACK_V2 = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2;
   String SERVERLESS_AWS_LAMBDA_DEPLOY_V2 = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2;
   String SERVERLESS_AWS_LAMBDA_PACKAGE_V2 = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2;
+  String AWS_CDK_BOOTSTRAP = StepSpecTypeConstants.AWS_CDK_BOOTSTRAP;
+  String AWS_CDK_SYNTH = StepSpecTypeConstants.AWS_CDK_SYNTH;
+  String AWS_CDK_DIFF = StepSpecTypeConstants.AWS_CDK_DIFF;
+  String AWS_CDK_DEPLOY = StepSpecTypeConstants.AWS_CDK_DEPLOY;
+  String AWS_CDK_DESTROY = StepSpecTypeConstants.AWS_CDK_DESTROY;
+  String AWS_CDK_ROLLBACK = StepSpecTypeConstants.AWS_CDK_ROLLBACK;
 }

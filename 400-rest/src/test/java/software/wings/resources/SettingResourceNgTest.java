@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.when;
 
@@ -26,7 +26,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretText;
 import io.harness.category.element.UnitTests;
-import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
 import io.harness.rule.Owner;
 import io.harness.secretmanagers.SecretManagerConfigService;
@@ -90,7 +89,7 @@ public class SettingResourceNgTest extends WingsBaseTest {
                                         .port(465)
                                         .fromAddress("sendgrid.net")
                                         .username("testSecret")
-                                        .encryptedPassword("testSecret")
+                                        .password("testSecret".toCharArray())
                                         .build();
     attributeWithMetaCharPassword = Builder.aSettingAttribute()
                                         .withName("smtp.test.secret")
@@ -104,22 +103,15 @@ public class SettingResourceNgTest extends WingsBaseTest {
   @Test
   @Owner(developers = VIKAS_M)
   @Category(UnitTests.class)
-  public void testSaveSmtpSetting_withEmptyPassword_throwsInvalidRequestWithSpecificMessage() {
+  public void testSaveSmtpSetting_withEmptyPassword_shouldNotCreateSecret() {
     SecretManagerConfig secretManagerConfig = KmsConfig.builder().build();
     when(secretManagerConfigService.getDefaultSecretManager(ACCOUNT_ID)).thenReturn(secretManagerConfig);
     when(settingsService.getGlobalSettingAttributesByType(ACCOUNT_ID, SettingVariableTypes.SMTP.name()))
         .thenReturn(new ArrayList<>());
-    doThrow(new InvalidRequestException("Cannot create empty secret"))
-        .when(secretManager)
-        .saveSecretText(any(String.class), any(SecretText.class), any(Boolean.class));
-    ArgumentCaptor<SecretText> argumentCaptor = ArgumentCaptor.forClass(SecretText.class);
-    try {
-      settingResourceNg.save(APP_ID, ACCOUNT_ID, settingAttributeWithEmptyPassword);
-    } catch (InvalidRequestException e) {
-      assertThat(e.getMessage()).isEqualTo("Cannot create empty secret");
-    }
-    verify(secretManager).saveSecretText(any(String.class), argumentCaptor.capture(), any(Boolean.class));
-    assertThat(argumentCaptor.getValue().getValue()).isEqualTo("");
+    when(settingsService.saveWithPruning(any(), any(), any()))
+        .thenReturn(Builder.aSettingAttribute().withValue(new SmtpConfig()).build());
+    settingResourceNg.save(APP_ID, ACCOUNT_ID, settingAttributeWithEmptyPassword);
+    verify(secretManager, times(0)).saveSecretText(any(String.class), any(), any(Boolean.class));
   }
 
   @Test
@@ -130,17 +122,10 @@ public class SettingResourceNgTest extends WingsBaseTest {
     when(secretManagerConfigService.getDefaultSecretManager(ACCOUNT_ID)).thenReturn(secretManagerConfig);
     when(settingsService.getGlobalSettingAttributesByType(ACCOUNT_ID, SettingVariableTypes.SMTP.name()))
         .thenReturn(new ArrayList<>());
-    doThrow(new InvalidRequestException("Cannot create empty secret"))
-        .when(secretManager)
-        .saveSecretText(any(String.class), any(SecretText.class), any(Boolean.class));
-    ArgumentCaptor<SecretText> argumentCaptor = ArgumentCaptor.forClass(SecretText.class);
-    try {
-      settingResourceNg.save(APP_ID, ACCOUNT_ID, getSettingAttributeWithNullPassword);
-    } catch (InvalidRequestException e) {
-      assertThat(e.getMessage()).isEqualTo("Cannot create empty secret");
-    }
-    verify(secretManager).saveSecretText(any(String.class), argumentCaptor.capture(), any(Boolean.class));
-    assertThat(argumentCaptor.getValue().getValue()).isEqualTo("");
+    when(settingsService.saveWithPruning(any(), any(), any()))
+        .thenReturn(Builder.aSettingAttribute().withValue(new SmtpConfig()).build());
+    settingResourceNg.save(APP_ID, ACCOUNT_ID, getSettingAttributeWithNullPassword);
+    verify(secretManager, times(0)).saveSecretText(any(String.class), any(), any(Boolean.class));
   }
 
   @Test
@@ -166,7 +151,6 @@ public class SettingResourceNgTest extends WingsBaseTest {
       assertThat(e).isEqualTo(SecretManagementException.class);
     }
     verify(secretManager).saveSecretText(any(String.class), argumentCaptor.capture(), any(Boolean.class));
-    assertThat(argumentCaptor.getValue().getValue()).isEqualTo("");
   }
 
   @Test

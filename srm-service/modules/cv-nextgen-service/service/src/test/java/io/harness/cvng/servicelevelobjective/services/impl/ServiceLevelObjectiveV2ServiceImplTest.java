@@ -12,6 +12,8 @@ import static io.harness.cvng.servicelevelobjective.entities.SLIState.BAD;
 import static io.harness.cvng.servicelevelobjective.entities.SLIState.GOOD;
 import static io.harness.cvng.servicelevelobjective.entities.SLIState.NO_DATA;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.eraro.ErrorCode.FAILED_TO_ACQUIRE_PERSISTENT_LOCK;
+import static io.harness.exception.WingsException.SRE;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAPIL;
@@ -24,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -74,6 +77,7 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveFilter;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricSpec;
@@ -100,6 +104,9 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV
 import io.harness.cvng.servicelevelobjective.transformer.ServiceLevelObjectiveDetailsTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLOTargetTransformer;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.PersistentLockException;
+import io.harness.lock.AcquiredLock;
+import io.harness.lock.PersistentLocker;
 import io.harness.ng.beans.PageResponse;
 import io.harness.notification.notificationclient.NotificationResultWithoutStatus;
 import io.harness.outbox.OutboxEvent;
@@ -142,16 +149,16 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Inject CVNGLogService cvngLogService;
   @Inject NotificationRuleService notificationRuleService;
   @Inject HPersistence hPersistence;
+
   @Mock CompositeSLOServiceImpl compositeSLOService;
   @Mock SideKickService sideKickService;
-
+  @Mock PersistentLocker mockedPersistentLocker;
   @Mock FakeNotificationClient notificationClient;
 
   @Inject private OutboxService outboxService;
   @Inject private SLIRecordService sliRecordService;
 
   @Inject private Map<SLOTargetType, SLOTargetTransformer> sloTargetTypeSLOTargetTransformerMap;
-
   @Inject private ServiceLevelObjectiveDetailsTransformer serviceLevelObjectiveDetailsTransformer;
 
   private BuilderFactory builderFactory;
@@ -182,6 +189,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(compositeSLOService, "sideKickService", sideKickService, true);
     FieldUtils.writeField(compositeSLOService, "clock", clock, true);
     FieldUtils.writeField(serviceLevelObjectiveV2Service, "sideKickService", sideKickService, true);
+    FieldUtils.writeField(serviceLevelObjectiveV2Service, "persistentLocker", mockedPersistentLocker, true);
     when(compositeSLOService.isReferencedInCompositeSLO(any(), any())).thenCallRealMethod();
     when(compositeSLOService.getReferencedCompositeSLOs(any(), any())).thenCallRealMethod();
     when(compositeSLOService.shouldReset(any(), any())).thenCallRealMethod();
@@ -1945,6 +1953,53 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testUpdate_whenEntityLocked() {
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    createMonitoredService();
+    ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse =
+        serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
+    sloDTO.setName("newName");
+    when(mockedPersistentLocker.waitToAcquireLock(any(), any(), any()))
+        .thenThrow(new PersistentLockException("Lock not acquired", FAILED_TO_ACQUIRE_PERSISTENT_LOCK, SRE));
+    assertThatThrownBy(() -> serviceLevelObjectiveV2Service.update(projectParams, sloDTO.getIdentifier(), sloDTO))
+        .isInstanceOf(PersistentLockException.class);
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testUpdate_whenEntityLockedWhileDeleting() {
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    createMonitoredService();
+    ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse =
+        serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(sloDTO);
+    serviceLevelObjectiveV2Service.delete(projectParams, sloDTO.getIdentifier());
+    when(mockedPersistentLocker.waitToAcquireLock(any(), any(), any()))
+        .thenThrow(new PersistentLockException("Lock not acquired", FAILED_TO_ACQUIRE_PERSISTENT_LOCK, SRE));
+    assertThatThrownBy(() -> serviceLevelObjectiveV2Service.update(projectParams, sloDTO.getIdentifier(), sloDTO))
+        .isInstanceOf(PersistentLockException.class);
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testUpdate_lockClose() {
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    createMonitoredService();
+    ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse =
+        serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    sloDTO.setName("newName");
+    AcquiredLock acquiredLock = mock(AcquiredLock.class);
+    when(mockedPersistentLocker.waitToAcquireLock(any(), any(), any())).thenReturn(acquiredLock);
+    serviceLevelObjectiveV2Service.update(projectParams, sloDTO.getIdentifier(), sloDTO);
+    verify(acquiredLock).close();
+  }
+
+  @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testGet_IdentifierBasedQuery() {
@@ -2128,6 +2183,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                                                 .errorBudgetRisk(ErrorBudgetRisk.UNHEALTHY)
                                                 .build();
     hPersistence.save(sloHealthIndicator);
+
     sloDTO = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder()
                  .identifier("id5")
                  .userJourneyRefs(Collections.singletonList("uj2"))
@@ -2139,6 +2195,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                              .errorBudgetRisk(ErrorBudgetRisk.UNHEALTHY)
                              .build();
     hPersistence.save(sloHealthIndicator);
+
     sloDTO =
         builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder()
             .identifier("id2")
@@ -2162,19 +2219,59 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                              .errorBudgetRisk(ErrorBudgetRisk.EXHAUSTED)
                              .build();
     hPersistence.save(sloHealthIndicator);
+
     sloDTO = builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder()
                  .identifier("id3")
                  .userJourneyRefs(Collections.singletonList("uj3"))
                  .build();
+    SimpleServiceLevelObjectiveSpec spec = (SimpleServiceLevelObjectiveSpec) sloDTO.getSpec();
+    spec.setMonitoredServiceRef(monitoredServiceDTO.getIdentifier());
+    sloDTO.setSpec(spec);
     serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    sloHealthIndicator = builderFactory.sLOHealthIndicatorBuilder()
+                             .serviceLevelObjectiveIdentifier(sloDTO.getIdentifier())
+                             .errorBudgetRemainingPercentage(60)
+                             .errorBudgetRisk(ErrorBudgetRisk.OBSERVE)
+                             .build();
+    hPersistence.save(sloHealthIndicator);
+
+    ServiceLevelObjectiveV2DTO compositeSLODTO =
+        builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+            .name("compositeSLO")
+            .identifier("compositeSLO")
+            .userJourneyRefs(Collections.singletonList("uj1, uj3"))
+            .spec(CompositeServiceLevelObjectiveSpec.builder()
+                      .serviceLevelObjectivesDetails(
+                          Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef("id1")
+                                            .weightagePercentage(75.0)
+                                            .projectIdentifier(builderFactory.getContext().getProjectIdentifier())
+                                            .orgIdentifier(builderFactory.getContext().getOrgIdentifier())
+                                            .accountId(builderFactory.getContext().getAccountId())
+                                            .build(),
+                              ServiceLevelObjectiveDetailsDTO.builder()
+                                  .serviceLevelObjectiveRef("id3")
+                                  .weightagePercentage(25.0)
+                                  .projectIdentifier(builderFactory.getContext().getProjectIdentifier())
+                                  .orgIdentifier(builderFactory.getContext().getOrgIdentifier())
+                                  .accountId(builderFactory.getContext().getAccountId())
+                                  .build()))
+                      .build())
+            .build();
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), compositeSLODTO);
+    sloHealthIndicator = builderFactory.sLOHealthIndicatorBuilder()
+                             .serviceLevelObjectiveIdentifier(compositeSLODTO.getIdentifier())
+                             .errorBudgetRemainingPercentage(30)
+                             .monitoredServiceIdentifier(null)
+                             .errorBudgetRisk(ErrorBudgetRisk.NEED_ATTENTION)
+                             .build();
+    hPersistence.save(sloHealthIndicator);
 
     SLORiskCountResponse sloRiskCountResponse = serviceLevelObjectiveV2Service.getRiskCount(projectParams,
         SLODashboardApiFilter.builder()
             .userJourneyIdentifiers(Arrays.asList("uj1"))
-            .sliTypes(Arrays.asList(ServiceLevelIndicatorType.AVAILABILITY))
             .targetTypes(Arrays.asList(SLOTargetType.ROLLING))
             .build());
-
     assertThat(sloRiskCountResponse.getTotalCount()).isEqualTo(1);
     assertThat(sloRiskCountResponse.getRiskCounts()).hasSize(5);
     assertThat(sloRiskCountResponse.getRiskCounts()
@@ -2187,6 +2284,31 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     assertThat(sloRiskCountResponse.getRiskCounts()
                    .stream()
                    .filter(rc -> rc.getErrorBudgetRisk().equals(ErrorBudgetRisk.UNHEALTHY))
+                   .findAny()
+                   .get()
+                   .getCount())
+        .isEqualTo(1);
+
+    sloRiskCountResponse = serviceLevelObjectiveV2Service.getRiskCount(projectParams,
+        SLODashboardApiFilter.builder()
+            .type(ServiceLevelObjectiveType.COMPOSITE)
+            .targetTypes(Arrays.asList(SLOTargetType.ROLLING))
+            .build());
+    assertThat(sloRiskCountResponse.getTotalCount()).isEqualTo(2);
+    assertThat(sloRiskCountResponse.getRiskCounts()
+                   .stream()
+                   .filter(rc -> rc.getErrorBudgetRisk().equals(ErrorBudgetRisk.NEED_ATTENTION))
+                   .findAny()
+                   .get()
+                   .getCount())
+        .isEqualTo(1);
+
+    sloRiskCountResponse = serviceLevelObjectiveV2Service.getRiskCount(
+        projectParams, SLODashboardApiFilter.builder().envIdentifiers(Arrays.asList("env1")).build());
+    assertThat(sloRiskCountResponse.getTotalCount()).isEqualTo(3);
+    assertThat(sloRiskCountResponse.getRiskCounts()
+                   .stream()
+                   .filter(rc -> rc.getErrorBudgetRisk().equals(ErrorBudgetRisk.OBSERVE))
                    .findAny()
                    .get()
                    .getCount())

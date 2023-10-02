@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.artifactstream;
 
 import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
+import static io.harness.ngmigration.utils.NGMigrationConstants.TRIGGER_TAG_VALUE_DEFAULT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
@@ -30,7 +31,6 @@ import software.wings.beans.trigger.Trigger;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,7 +39,7 @@ public class ACRArtifactStreamMapper implements ArtifactStreamMapper {
   @Override
   public PrimaryArtifact getArtifactDetails(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, ArtifactStream artifactStream,
-      Map<CgEntityId, NGYamlFile> migratedEntities) {
+      Map<CgEntityId, NGYamlFile> migratedEntities, String version) {
     AcrArtifactStream acrArtifactStream = (AcrArtifactStream) artifactStream;
     NgEntityDetail connector =
         migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(acrArtifactStream.getSettingId()).build())
@@ -52,7 +52,7 @@ public class ACRArtifactStreamMapper implements ArtifactStreamMapper {
                   .registry(ParameterField.createValueField(acrArtifactStream.getRegistryName()))
                   .repository(ParameterField.createValueField(acrArtifactStream.getRepositoryName()))
                   .subscriptionId(ParameterField.createValueField(acrArtifactStream.getSubscriptionId()))
-                  .tag(ParameterField.createValueField("<+input>"))
+                  .tag(ParameterField.createValueField(version == null ? "<+input>" : version))
                   .build())
         .build();
   }
@@ -66,11 +66,11 @@ public class ACRArtifactStreamMapper implements ArtifactStreamMapper {
   public ArtifactTypeSpec getTriggerSpec(Map<CgEntityId, CgEntityNode> entities, ArtifactStream artifactStream,
       Map<CgEntityId, NGYamlFile> migratedEntities, Trigger trigger) {
     String connectorRef = getConnectorRef(migratedEntities, artifactStream);
-    List<TriggerEventDataCondition> eventConditions = Collections.emptyList();
+    List<TriggerEventDataCondition> eventConditions = getEventConditions(trigger);
     String registry = PLEASE_FIX_ME;
     String repository = PLEASE_FIX_ME;
     String subscriptionId = PLEASE_FIX_ME;
-    String tag = PLEASE_FIX_ME;
+    String tag = TRIGGER_TAG_VALUE_DEFAULT;
 
     if (artifactStream != null) {
       AcrArtifactStream acrArtifactStream = (AcrArtifactStream) artifactStream;

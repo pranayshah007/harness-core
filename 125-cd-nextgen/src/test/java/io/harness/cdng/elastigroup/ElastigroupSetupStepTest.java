@@ -9,11 +9,15 @@ package io.harness.cdng.elastigroup;
 
 import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -22,6 +26,7 @@ import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.elastigroup.beans.ElastigroupExecutionPassThroughData;
 import io.harness.cdng.elastigroup.beans.ElastigroupSetupDataOutcome;
+import io.harness.cdng.elastigroup.beans.ElastigroupStepExceptionPassThroughData;
 import io.harness.cdng.elastigroup.beans.ElastigroupStepExecutorParams;
 import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
 import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
@@ -30,6 +35,7 @@ import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandReque
 import io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -45,6 +51,7 @@ import io.harness.tasks.ResponseData;
 
 import software.wings.beans.TaskType;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import org.junit.Rule;
 import org.junit.Test;
@@ -97,7 +104,10 @@ public class ElastigroupSetupStepTest extends CDNGTestBase {
     ElastigroupInfrastructureOutcome elastigroupInfrastructureOutcome =
         ElastigroupInfrastructureOutcome.builder().build();
     ElastigroupExecutionPassThroughData elastigroupExecutionPassThroughData =
-        ElastigroupExecutionPassThroughData.builder().infrastructure(elastigroupInfrastructureOutcome).build();
+        ElastigroupExecutionPassThroughData.builder()
+            .infrastructure(elastigroupInfrastructureOutcome)
+            .elastigroupConfiguration(elastigroupJson)
+            .build();
     SpotInstConfig spotInstConfig = SpotInstConfig.builder().build();
     doReturn(spotInstConfig)
         .when(elastigroupStepCommonHelper)
@@ -259,6 +269,51 @@ public class ElastigroupSetupStepTest extends CDNGTestBase {
     verify(elastigroupStepCommonHelper)
         .queueElastigroupTask(eq(stepElementParameters), any(), eq(anAmbiance()), eq(passThroughData), eq(true),
             eq(TaskType.ELASTIGROUP_SETUP_COMMAND_TASK_NG));
+  }
+
+  @Test
+  @Owner(developers = {VLICA})
+  @Category(UnitTests.class)
+  public void executeElasticGroupTaskAndExceptionThrownWhenParsingJson() throws Exception {
+    // Given
+    StepElementParameters stepElementParameters =
+        StepElementParameters.builder()
+            .spec(ElastigroupSetupStepParameters.infoBuilder()
+                      .name(ParameterField.createValueField("name"))
+                      .instances(ElastigroupInstances.builder()
+                                     .type(ElastigroupInstancesType.FIXED)
+                                     .spec(ElastigroupFixedInstances.builder()
+                                               .min(ParameterField.createValueField(1))
+                                               .desired(ParameterField.createValueField(2))
+                                               .max(ParameterField.createValueField(4))
+                                               .build())
+                                     .build())
+                      .build())
+            .build();
+    ElastigroupExecutionPassThroughData passThroughData =
+        ElastigroupExecutionPassThroughData.builder().elastigroupConfiguration("{dummy-json:config}").build();
+
+    String errorMessage = "End of input at line 123";
+
+    when(elastigroupStepCommonHelper.generateConfigFromJson(any())).thenThrow(new RuntimeException(errorMessage));
+
+    NGLogCallback mockCallback = mock(NGLogCallback.class);
+    doReturn(mockCallback).when(elastigroupStepCommonHelper).getLogCallback(anyString(), any(), anyBoolean());
+
+    when(elastigroupStepCommonHelper.stepFailureTaskResponseWithMessage(any(), anyString()))
+        .thenReturn(
+            TaskChainResponse.builder()
+                .chainEnd(true)
+                .passThroughData(ElastigroupStepExceptionPassThroughData.builder().errorMessage(errorMessage).build())
+                .build());
+
+    // When
+    TaskChainResponse taskChainResponse = elastigroupSetupStep.executeElastigroupTask(anAmbiance(),
+        stepElementParameters, passThroughData, UnitProgressData.builder().unitProgresses(new ArrayList<>()).build());
+
+    ElastigroupStepExceptionPassThroughData exceptionPassThroughData =
+        (ElastigroupStepExceptionPassThroughData) taskChainResponse.getPassThroughData();
+    assertThat(exceptionPassThroughData.getErrorMessage()).isEqualTo(errorMessage);
   }
 
   private Ambiance anAmbiance() {

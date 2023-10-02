@@ -24,6 +24,7 @@ public class GitStatusCheckParams {
   String repo;
   String owner;
   String sha;
+  String prNumber;
   String identifier;
   String target_url;
   String userName;

@@ -19,10 +19,12 @@ import org.springframework.core.convert.converter.Converter;
 
 @OwnedBy(PIPELINE)
 public abstract class ProtoWriteConverter<T extends Message> implements Converter<T, Document> {
+  private final JsonFormat.Printer jsonPrinter = JsonFormat.printer();
+
   @SneakyThrows
   @Override
   public Document convert(T entity) {
-    String entityJson = JsonFormat.printer().print(entity);
+    String entityJson = jsonPrinter.print(entity);
     return Document.parse(entityJson);
   }
 }

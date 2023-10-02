@@ -66,7 +66,7 @@ public class TriggerWebhookEventExecutionServiceImplTest extends CategoryTest {
             .build();
     doReturn(TriggerWebhookEvent.builder())
         .when(ngTriggerElementMapper)
-        .toNGTriggerWebhookEvent(any(), any(), any(), any(), any());
+        .toNGTriggerWebhookEvent(any(), any(), any(), any(), any(), any());
     doReturn(Optional.of(NGTriggerEntity.builder()
                              .accountId("accountId")
                              .orgIdentifier("orgId")

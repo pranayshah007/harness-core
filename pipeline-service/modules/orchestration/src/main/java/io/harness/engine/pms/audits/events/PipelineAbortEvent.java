@@ -23,8 +23,8 @@ public class PipelineAbortEvent extends NodeExecutionEvent {
 
   @Builder
   public PipelineAbortEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String planExecutionId, TriggeredInfo triggeredInfo) {
-    super(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId);
+      String pipelineIdentifier, String planExecutionId, TriggeredInfo triggeredInfo, Integer runSequence) {
+    super(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId, runSequence);
     this.triggeredInfo = triggeredInfo;
   }
 

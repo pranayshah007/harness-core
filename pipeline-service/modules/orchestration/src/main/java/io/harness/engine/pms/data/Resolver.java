@@ -19,6 +19,8 @@ import javax.validation.constraints.NotNull;
 public interface Resolver {
   String resolve(Ambiance ambiance, RefObject refObject);
 
+  String resolveUsingLevelRuntimeIdx(String planExecutionId, List<String> levelRuntimeIdx, RefObject refObject);
+
   default String consume(@NotNull Ambiance ambiance, @NotNull String name, String value, String groupName) {
     Level producedBy = AmbianceUtils.obtainCurrentLevel(ambiance);
     if (EmptyPredicate.isEmpty(groupName)) {

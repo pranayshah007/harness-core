@@ -44,6 +44,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 
 @Log4j
 public class AggregateStreamingServiceImpl implements AggregateStreamingService {
+  public static final int MAX_STREAMING_DESTINATIONS = 10000;
   private final StreamingDestinationRepository streamingDestinationRepository;
   private final StreamingBatchRepository streamingBatchRepository;
   private final StreamingService streamingService;
@@ -100,10 +101,15 @@ public class AggregateStreamingServiceImpl implements AggregateStreamingService 
   }
 
   private long getFailedBatchCount(String accountIdentifier) {
+    Page<String> activeDestinationIdentifiers = streamingDestinationRepository.findAllStreamingDestinationIdentifiers(
+        Criteria.where(StreamingDestinationKeys.accountIdentifier).is(accountIdentifier),
+        Pageable.ofSize(MAX_STREAMING_DESTINATIONS));
     Criteria criteria = Criteria.where(StreamingBatchDTOKeys.accountIdentifier)
                             .is(accountIdentifier)
                             .and(StreamingBatchDTOKeys.status)
-                            .is(BatchStatus.FAILED);
+                            .is(BatchStatus.FAILED)
+                            .and(StreamingBatchDTOKeys.streamingDestinationIdentifier)
+                            .in(activeDestinationIdentifiers.getContent());
     return streamingBatchRepository.count(criteria);
   }
 

@@ -10,6 +10,7 @@ package io.harness.artifacts.jenkins.service;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.logging.LogLevel.INFO;
 import static io.harness.threading.Morpheus.quietSleep;
 import static io.harness.threading.Morpheus.sleep;
 
@@ -26,6 +27,9 @@ import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.jenkins.beans.JenkinsInternalConfig;
 import io.harness.artifacts.jenkins.client.JenkinsClient;
@@ -40,6 +44,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.UnauthorizedException;
 import io.harness.exception.WingsException;
+import io.harness.logging.LogCallback;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.common.BuildDetailsComparator;
@@ -96,6 +101,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.HttpResponseException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Slf4j
 public class JenkinsRegistryUtils {
   public static final String TOKEN_FIELD = "Bearer Token(HTTP Header)";
@@ -654,8 +660,8 @@ public class JenkinsRegistryUtils {
     return folderJob;
   }
 
-  public QueueReference trigger(
-      String jobName, JenkinsInternalConfig jenkinsInternalConfig, Map<String, String> parameters) throws IOException {
+  public QueueReference trigger(String jobName, JenkinsInternalConfig jenkinsInternalConfig,
+      Map<String, String> parameters, LogCallback executionLogCallback) throws IOException {
     Job job = getJob(jobName, jenkinsInternalConfig);
     if (job == null) {
       throw new ArtifactServerException("No job [" + jobName + "] found", USER);
@@ -663,6 +669,7 @@ public class JenkinsRegistryUtils {
 
     QueueReference queueReference;
     try {
+      executionLogCallback.saveExecutionLog("Job Url: " + job.getUrl(), INFO);
       log.info("Triggering job {} ", job.getUrl());
       if (isEmpty(parameters)) {
         ExtractHeader location = job.getClient().post(job.getUrl() + "build", null, ExtractHeader.class, true);

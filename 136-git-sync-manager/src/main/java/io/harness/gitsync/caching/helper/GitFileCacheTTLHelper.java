@@ -6,9 +6,11 @@
  */
 
 package io.harness.gitsync.caching.helper;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.gitsync.GitServiceConfiguration;
 import io.harness.gitsync.caching.beans.CacheDetails;
 import io.harness.gitsync.caching.beans.CacheDetails.CacheDetailsBuilder;
@@ -19,6 +21,7 @@ import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.Date;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class GitFileCacheTTLHelper {
   private GitServiceConfiguration gitServiceConfiguration;

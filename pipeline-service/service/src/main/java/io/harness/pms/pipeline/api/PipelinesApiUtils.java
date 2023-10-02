@@ -42,25 +42,39 @@ import io.harness.spec.server.commons.v1.model.PolicySet;
 import io.harness.spec.server.pipeline.v1.model.CacheResponseMetadataDTO;
 import io.harness.spec.server.pipeline.v1.model.ExecutorInfo;
 import io.harness.spec.server.pipeline.v1.model.ExecutorInfo.TriggerTypeEnum;
+import io.harness.spec.server.pipeline.v1.model.FixedValueFieldDependencyDetailsDTO;
 import io.harness.spec.server.pipeline.v1.model.GitCreateDetails;
 import io.harness.spec.server.pipeline.v1.model.GitDetails;
 import io.harness.spec.server.pipeline.v1.model.GitImportInfo;
 import io.harness.spec.server.pipeline.v1.model.GitMoveDetails;
 import io.harness.spec.server.pipeline.v1.model.GitUpdateDetails;
+import io.harness.spec.server.pipeline.v1.model.InputDetailsPerFieldDTO;
 import io.harness.spec.server.pipeline.v1.model.NodeInfo;
 import io.harness.spec.server.pipeline.v1.model.ParentStageInfo;
 import io.harness.spec.server.pipeline.v1.model.PipelineCreateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineInputSchemaDetailsResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody.StoreTypeEnum;
 import io.harness.spec.server.pipeline.v1.model.PipelineUpdateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineYamlInputDTO;
+import io.harness.spec.server.pipeline.v1.model.PipelineYamlInputDetailsDTO;
+import io.harness.spec.server.pipeline.v1.model.PipelineYamlInputMetadataDTO;
 import io.harness.spec.server.pipeline.v1.model.RecentExecutionInfo;
 import io.harness.spec.server.pipeline.v1.model.RecentExecutionInfo.ExecutionStatusEnum;
+import io.harness.spec.server.pipeline.v1.model.RuntimeInputDependencyDetailsDTO;
 import io.harness.spec.server.pipeline.v1.model.TemplateValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.YAMLSchemaErrorWrapper;
+import io.harness.spec.server.pipeline.v1.model.YamlInputDependencyDetailsDTO;
+import io.harness.spec.server.pipeline.v1.model.YamlInputType;
 import io.harness.utils.ApiUtils;
+import io.harness.yaml.schema.inputs.beans.DependencyDetails;
+import io.harness.yaml.schema.inputs.beans.InputDetails;
+import io.harness.yaml.schema.inputs.beans.InputMetadata;
+import io.harness.yaml.schema.inputs.beans.SchemaInputType;
+import io.harness.yaml.schema.inputs.beans.YamlInputDetails;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -150,6 +164,17 @@ public class PipelinesApiUtils {
     cacheResponseMetadataDTO.setTtlLeft(cacheResponseMetadata.getTtlLeft());
     cacheResponseMetadataDTO.setLastUpdatedAt(cacheResponseMetadata.getLastUpdatedAt());
     return cacheResponseMetadataDTO;
+  }
+
+  public static PipelineInputSchemaDetailsResponseBody getPipelineInputSchemaDetailsResponseBody(
+      List<YamlInputDetails> yamlInputDetailsList) {
+    PipelineInputSchemaDetailsResponseBody responseBody = new PipelineInputSchemaDetailsResponseBody();
+    List<PipelineYamlInputDetailsDTO> pipelineYamlInputDetailsDTOList = new ArrayList<>();
+    yamlInputDetailsList.forEach(
+        yamlInputDetails -> pipelineYamlInputDetailsDTOList.add(toPipelineYamlInputDetailsDTO(yamlInputDetails)));
+
+    responseBody.setInputs(pipelineYamlInputDetailsDTOList);
+    return responseBody;
   }
 
   public static List<String> getModules(PipelineEntity pipelineEntity) {
@@ -249,6 +274,7 @@ public class PipelinesApiUtils {
     responseBody.setConnectorRef(pipelineDTO.getConnectorRef());
     responseBody.setValid((pipelineDTO.getIsDraft() == null) ? null : !pipelineDTO.getIsDraft());
     responseBody.setGitDetails(getGitDetails(pipelineDTO.getGitDetails()));
+    responseBody.setYamlVersion(pipelineDTO.getYamlVersion());
     if (pipelineDTO.getRecentExecutionsInfo() != null) {
       responseBody.setRecentExecutionInfo(pipelineDTO.getRecentExecutionsInfo()
                                               .stream()
@@ -533,6 +559,91 @@ public class PipelinesApiUtils {
         return io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
       default:
         throw new InvalidRequestException("Invalid move config type provided.");
+    }
+  }
+
+  private static PipelineYamlInputDetailsDTO toPipelineYamlInputDetailsDTO(YamlInputDetails yamlInputDetails) {
+    PipelineYamlInputDetailsDTO pipelineYamlInputDetailsDTO = new PipelineYamlInputDetailsDTO();
+    pipelineYamlInputDetailsDTO.setDetails(toPipelineYamlInputDTO(yamlInputDetails.getInputDetails()));
+    pipelineYamlInputDetailsDTO.setMetadata(toPipelineYamlInputMetadataDTO(yamlInputDetails.getInputMetadata()));
+    return pipelineYamlInputDetailsDTO;
+  }
+
+  private static PipelineYamlInputDTO toPipelineYamlInputDTO(InputDetails inputDetails) {
+    PipelineYamlInputDTO pipelineYamlInputDTO = new PipelineYamlInputDTO();
+    pipelineYamlInputDTO.setName(inputDetails.getName());
+    pipelineYamlInputDTO.setDescription(inputDetails.getDescription());
+    pipelineYamlInputDTO.setType(getYamlInputType(inputDetails.getType()));
+    pipelineYamlInputDTO.setRequired(inputDetails.isRequired());
+    return pipelineYamlInputDTO;
+  }
+
+  private static PipelineYamlInputMetadataDTO toPipelineYamlInputMetadataDTO(InputMetadata inputMetadata) {
+    PipelineYamlInputMetadataDTO pipelineYamlInputMetadataDTO = new PipelineYamlInputMetadataDTO();
+    if (inputMetadata != null) {
+      pipelineYamlInputMetadataDTO.setFieldProperties(
+          toInputDetailsPerFieldDTOList(inputMetadata.getInputDetailsPerFieldList()));
+      pipelineYamlInputMetadataDTO.setDependencies(
+          toYamlInputDependencyDetailsDTO(inputMetadata.getDependencyDetails()));
+    }
+    return pipelineYamlInputMetadataDTO;
+  }
+
+  private static List<InputDetailsPerFieldDTO> toInputDetailsPerFieldDTOList(
+      List<InputMetadata.InputDetailsPerField> inputDetailsPerFieldList) {
+    List<InputDetailsPerFieldDTO> inputDetailsPerFieldDTOList = new ArrayList<>();
+    if (isNotEmpty(inputDetailsPerFieldList)) {
+      inputDetailsPerFieldList.forEach(inputDetailsPerField -> {
+        InputDetailsPerFieldDTO inputDetailsPerFieldDTO = new InputDetailsPerFieldDTO();
+        inputDetailsPerFieldDTO.setInputType(inputDetailsPerField.getInputType());
+        inputDetailsPerFieldDTO.setInternalType(inputDetailsPerField.getInternalAPIType());
+        inputDetailsPerFieldDTOList.add(inputDetailsPerFieldDTO);
+      });
+    }
+    return inputDetailsPerFieldDTOList;
+  }
+
+  private static YamlInputDependencyDetailsDTO toYamlInputDependencyDetailsDTO(DependencyDetails dependencyDetails) {
+    YamlInputDependencyDetailsDTO yamlInputDependencyDetailsDTO = new YamlInputDependencyDetailsDTO();
+    List<FixedValueFieldDependencyDetailsDTO> fixedValueFieldDependencyDetailsDTOList = new ArrayList<>();
+    List<RuntimeInputDependencyDetailsDTO> runtimeInputDependencyDetailsDTOList = new ArrayList<>();
+
+    if (dependencyDetails != null) {
+      if (dependencyDetails.getRuntimeInputDependencyDetailsList() != null) {
+        dependencyDetails.getRuntimeInputDependencyDetailsList().forEach(inputDependencyDetails -> {
+          RuntimeInputDependencyDetailsDTO runtimeInputDependencyDetailsDTO = new RuntimeInputDependencyDetailsDTO();
+          runtimeInputDependencyDetailsDTO.setInputName(inputDependencyDetails.getInputName());
+          runtimeInputDependencyDetailsDTO.setFieldName(inputDependencyDetails.getFieldName());
+          runtimeInputDependencyDetailsDTOList.add(runtimeInputDependencyDetailsDTO);
+        });
+      }
+      if (dependencyDetails.getFixedValueDependencyDetailsList() != null) {
+        dependencyDetails.getFixedValueDependencyDetailsList().forEach(constantDependencyDetails -> {
+          FixedValueFieldDependencyDetailsDTO fixedValueFieldDependencyDetailsDTO =
+              new FixedValueFieldDependencyDetailsDTO();
+          fixedValueFieldDependencyDetailsDTO.setFieldName(constantDependencyDetails.getPropertyName());
+          fixedValueFieldDependencyDetailsDTO.setFieldValue(constantDependencyDetails.getFieldValue());
+          fixedValueFieldDependencyDetailsDTO.setFieldInputType(constantDependencyDetails.getPropertyType());
+          fixedValueFieldDependencyDetailsDTOList.add(fixedValueFieldDependencyDetailsDTO);
+        });
+      }
+    }
+
+    yamlInputDependencyDetailsDTO.setRequiredFixedValues(fixedValueFieldDependencyDetailsDTOList);
+    yamlInputDependencyDetailsDTO.setRequiredRuntimeInputs(runtimeInputDependencyDetailsDTOList);
+    return yamlInputDependencyDetailsDTO;
+  }
+
+  private static YamlInputType getYamlInputType(SchemaInputType schemaInputType) {
+    switch (schemaInputType) {
+      case String:
+        return YamlInputType.STRING;
+      case Boolean:
+        return YamlInputType.BOOLEAN;
+      case Integer:
+        return YamlInputType.INTEGER;
+      default:
+        return YamlInputType.OBJECT;
     }
   }
 }

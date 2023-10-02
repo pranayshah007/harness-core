@@ -18,11 +18,9 @@ import io.harness.beans.stages.IACMStageNode;
 import io.harness.beans.steps.IACMStepSpecTypeConstants;
 import io.harness.beans.yaml.extended.cache.Caching;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.beans.yaml.extended.infrastrucutre.OSType;
-import io.harness.beans.yaml.extended.platform.ArchType;
 import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.beans.yaml.extended.runtime.Runtime;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
@@ -103,12 +101,6 @@ public class IACMStageFilterJsonCreator extends GenericStageFilterJsonCreatorV2<
     if (runtime != null) {
       if (platform.getValue() == null) {
         throw new CIStageExecutionException("Platform field is required if the runtime field is present");
-      }
-      if (platform.getValue().getOs() != null && platform.getValue().getOs().getValue() != OSType.Linux) {
-        throw new CIStageExecutionException("Only Linux OS is currently supported");
-      }
-      if (platform.getValue().getArch() != null && platform.getValue().getArch().getValue() == ArchType.Arm64) {
-        throw new CIStageExecutionException("Only Amd64 Arch is currently supported");
       }
     }
   }

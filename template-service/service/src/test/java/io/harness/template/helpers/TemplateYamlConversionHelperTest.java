@@ -7,10 +7,13 @@
 
 package io.harness.template.helpers;
 
+import static io.harness.ng.core.template.TemplateEntityConstants.PIPELINE;
+import static io.harness.ng.core.template.TemplateEntityConstants.SECRET_MANAGER;
 import static io.harness.ng.core.template.TemplateEntityConstants.STAGE;
 import static io.harness.ng.core.template.TemplateEntityConstants.STEP;
 import static io.harness.ng.core.template.TemplateEntityConstants.STEP_GROUP;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,6 +30,8 @@ import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.handler.DummyParallelYamlConversionHandler;
 import io.harness.template.handler.DummyReplaceYamlConversionHandler;
+import io.harness.template.handler.PipelineTemplateYamlConversionHandler;
+import io.harness.template.handler.SecretManagerTemplateYamlConversionHandler;
 import io.harness.template.handler.StepGroupTemplateYamlConversionHandler;
 import io.harness.template.handler.TemplateYamlConversionHandler;
 import io.harness.template.handler.TemplateYamlConversionHandlerRegistry;
@@ -103,6 +108,32 @@ public class TemplateYamlConversionHelperTest extends TemplateServiceTestBase {
         TemplateEntity.builder().templateEntityType(TemplateEntityType.STEPGROUP_TEMPLATE).yaml(yaml).build());
     assertThat(newYaml).isNotNull();
     assertThat(newYaml).isEqualTo(readFile("stepgroup-template-replace-stageType.yaml"));
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testValidPipelineTemplate() {
+    templateYamlConversionHandlerRegistry.register(PIPELINE, new PipelineTemplateYamlConversionHandler());
+    String filename = "template-pipeline.yaml";
+    String yaml = readFile(filename);
+    String newYaml = templateYamlConversionHelper.convertTemplateYamlToEntityYaml(
+        TemplateEntity.builder().templateEntityType(TemplateEntityType.PIPELINE_TEMPLATE).yaml(yaml).build());
+    assertThat(newYaml).isNotNull();
+    assertThat(newYaml).isEqualTo(readFile("template-pipeline-replace.yaml"));
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testValidSecretManagerTemplate() {
+    templateYamlConversionHandlerRegistry.register(SECRET_MANAGER, new SecretManagerTemplateYamlConversionHandler());
+    String filename = "secretManagerTemplate.yaml";
+    String yaml = readFile(filename);
+    String newYaml = templateYamlConversionHelper.convertTemplateYamlToEntityYaml(
+        TemplateEntity.builder().templateEntityType(TemplateEntityType.SECRET_MANAGER_TEMPLATE).yaml(yaml).build());
+    assertThat(newYaml).isNotNull();
+    assertThat(newYaml).isEqualTo(readFile("secretManagerTemplate-replace.yaml"));
   }
 
   @Test

@@ -27,6 +27,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
@@ -54,6 +55,7 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -83,6 +85,7 @@ public class TasRouteMappingStepTest extends CDNGTestBase {
   @Mock private CDStepHelper cdStepHelper;
   @Mock private StepHelper stepHelper;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Mock private CDExpressionResolver cdExpressionResolver;
   @Mock private TasStepHelper tasStepHelper;
   @Mock private KryoSerializer kryoSerializer;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
@@ -135,7 +138,7 @@ public class TasRouteMappingStepTest extends CDNGTestBase {
     StepElementParameters stepElementParameters =
         StepElementParameters.builder().type("BasicAppSetup").spec(parameters).build();
     assertThatThrownBy(() -> tasRouteMappingStep.validateResources(ambiance, stepElementParameters))
-        .hasMessage("CDS_TAS_NG FF is not enabled for this account. Please contact harness customer care.");
+        .hasMessage("NG_SVC_ENV_REDESIGN FF is not enabled for this account. Please contact harness customer care.");
   }
 
   private Ambiance getAmbiance() {
@@ -154,7 +157,7 @@ public class TasRouteMappingStepTest extends CDNGTestBase {
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void testGetStepParametersClass() {
-    assertThat(tasRouteMappingStep.getStepParametersClass()).isEqualTo(StepElementParameters.class);
+    assertThat(tasRouteMappingStep.getStepParametersClass()).isEqualTo(StepBaseParameters.class);
   }
 
   @Test

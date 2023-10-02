@@ -20,7 +20,6 @@ import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.YOGESH;
 import static io.harness.rule.OwnerRule.vivekveman;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -42,7 +41,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.exception.YamlException;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.dto.RepoListResponseDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.impl.EntitySetupUsageServiceImpl;
@@ -84,17 +85,17 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import junitparams.JUnitParamsRunner;
+import junitparams.Parameters;
 import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -107,7 +108,7 @@ import retrofit2.Call;
 import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDC)
-@RunWith(Parameterized.class)
+@RunWith(JUnitParamsRunner.class)
 public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Mock private OutboxService outboxService;
   @Mock private EntitySetupUsageServiceImpl entitySetupUsageService;
@@ -128,19 +129,6 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   private static final String PROJECT_ID = "PROJECT_ID";
   private static final String SERVICE_ID = "serviceId";
 
-  private String pipelineInputYamlPath;
-  private String actualEntityYamlPath;
-  private String mergedInputYamlPath;
-  private boolean isMergedYamlEmpty;
-
-  public ServiceEntityServiceImplTest(String pipelineInputYamlPath, String actualEntityYamlPath,
-      String mergedInputYamlPath, boolean isMergedYamlEmpty) {
-    this.pipelineInputYamlPath = pipelineInputYamlPath;
-    this.actualEntityYamlPath = actualEntityYamlPath;
-    this.mergedInputYamlPath = mergedInputYamlPath;
-    this.isMergedYamlEmpty = isMergedYamlEmpty;
-  }
-
   @Before
   public void setup() {
     entitySetupUsageService = mock(EntitySetupUsageServiceImpl.class);
@@ -153,15 +141,15 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     Reflect.on(serviceEntityService).set("overrideV2ValidationHelper", overrideV2ValidationHelper);
     when(serviceEntityValidatorFactory.getServiceEntityValidator(any())).thenReturn(noOpServiceEntityValidator);
   }
-  @Parameterized.Parameters
-  public static Collection<Object[]> data() {
-    return asList(new Object[][] {
+
+  private Object[][] data() {
+    return new Object[][] {
         {"service/serviceInputs-with-few-values-fixed.yaml", "service/service-with-primaryArtifactRef-runtime.yaml",
             "service/serviceInputs-merged.yaml", false},
         {"service/serviceInputs-with-few-values-fixed.yaml", "service/service-with-no-runtime-input.yaml",
             "infrastructure/empty-file.yaml", true},
         {"infrastructure/empty-file.yaml", "service/service-with-primaryArtifactRef-fixed.yaml",
-            "service/merged-service-input-fixed-prime-artifact.yaml", false}});
+            "service/merged-service-input-fixed-prime-artifact.yaml", false}};
   }
 
   @Test
@@ -786,7 +774,9 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Test
   @Owner(developers = INDER)
   @Category(UnitTests.class)
-  public void testMergeServiceInputs() {
+  @Parameters(method = "data")
+  public void testMergeServiceInputs(String pipelineInputYamlPath, String actualEntityYamlPath,
+      String mergedInputYamlPath, boolean isMergedYamlEmpty) {
     String yaml = readFile(actualEntityYamlPath);
     ServiceEntity createRequest = ServiceEntity.builder()
                                       .accountId(ACCOUNT_ID)
@@ -846,7 +836,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     // List down all services accessible from that scope
     // project level
     Criteria criteriaFromServiceFilter =
-        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", null, false, true);
+        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", null, false, true, null);
     Pageable pageRequest = PageUtils.getPageRequest(0, 10, null);
     Page<ServiceEntity> list = serviceEntityService.list(criteriaFromServiceFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
@@ -855,7 +845,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
 
     // org level
     criteriaFromServiceFilter =
-        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", "ORG_ID", null, null, false, true);
+        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", "ORG_ID", null, null, false, true, null);
     list = serviceEntityService.list(criteriaFromServiceFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
     // services from org,account scopes
@@ -863,7 +853,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
 
     // account level
     criteriaFromServiceFilter =
-        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", null, null, null, false, true);
+        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", null, null, null, false, true, null);
     list = serviceEntityService.list(criteriaFromServiceFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
     // services from acc scope
@@ -875,7 +865,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Category(UnitTests.class)
   public void testCreateCriteriaForGetListWithOptionalOrgAndProject() {
     Criteria criteriaFromServiceFilter =
-        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", null, null, null, false, false);
+        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", null, null, null, false, false, null);
 
     assertThat(criteriaFromServiceFilter.getCriteriaObject()).containsKey("accountId");
     assertThat(criteriaFromServiceFilter.getCriteriaObject()).containsKey("orgIdentifier");
@@ -1240,8 +1230,8 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     String yaml = readFile(filename);
     ManifestsResponseDTO responseDTO = serviceEntityService.getManifestIdentifiers(yaml, SERVICE_ID);
     assertThat(responseDTO).isNotNull();
-    assertThat(responseDTO.getIdentifiers()).isNotNull().isNotEmpty().hasSize(2);
-    assertThat(responseDTO.getIdentifiers()).hasSameElementsAs(Arrays.asList("mani_i1", "mani_i2"));
+    assertThat(responseDTO.getIdentifiers()).isNotNull().isNotEmpty().hasSize(1);
+    assertThat(responseDTO.getIdentifiers()).hasSameElementsAs(Arrays.asList("mani_i1"));
   }
 
   @Test
@@ -1282,8 +1272,45 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   public void testGetEmptyManifestIdentifiersListServiceV2() {
     String filename = "service/service-with-no-manifests.yaml";
     String yaml = readFile(filename);
-    ManifestsResponseDTO responseDTO = serviceEntityService.getManifestIdentifiers(yaml, SERVICE_ID);
-    assertThat(responseDTO).isEqualTo(new ManifestsResponseDTO());
+    assertThat(serviceEntityService.getManifestIdentifiers(yaml, SERVICE_ID)).isEqualTo(new ManifestsResponseDTO());
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testFailGetManifestIdentifiersServiceV2YamlExceptionServiceDefinition() {
+    assertThatThrownBy(()
+                           -> serviceEntityService.getManifestIdentifiers("service:\n"
+                                   + "  serviceDefinition:",
+                               SERVICE_ID))
+        .isInstanceOf(YamlException.class)
+        .hasMessage("Yaml provided for service " + SERVICE_ID + " does not have service definition field.");
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testListRepoWithRemoteServices() {
+    ServiceEntity serviceEntity = ServiceEntity.builder()
+                                      .accountId("ACCOUNT_ID")
+                                      .identifier("IDENTIFIER")
+                                      .orgIdentifier("ORG_ID")
+                                      .projectIdentifier("PROJECT_ID")
+                                      .name("Service")
+                                      .type(ServiceDefinitionType.NATIVE_HELM)
+                                      .gitOpsEnabled(true)
+                                      .storeType(StoreType.REMOTE)
+                                      .connectorRef("githubRepoConnector")
+                                      .fallBackBranch("feature")
+                                      .repo("githubRepoName")
+                                      .build();
+
+    serviceEntityService.create(serviceEntity);
+
+    RepoListResponseDTO repoListResponseDTO =
+        serviceEntityService.getListOfRepos("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", false);
+    assertThat(repoListResponseDTO).isNotNull();
+    assertThat(repoListResponseDTO.getRepositories().get(0)).isEqualTo("githubRepoName");
   }
 
   private String readFile(String filename) {

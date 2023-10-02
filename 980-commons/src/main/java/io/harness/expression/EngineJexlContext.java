@@ -7,7 +7,10 @@
 
 package io.harness.expression;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Value;
@@ -74,5 +77,18 @@ public class EngineJexlContext implements JexlContext {
   public boolean isFeatureFlagEnabled(String featureName) {
     return originalMap.containsKey(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY)
         && originalMap.get(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY).toString().contains(featureName);
+  }
+
+  public void removeFeatureFlag(String featureName) {
+    if (!originalMap.containsKey(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY)) {
+      return;
+    }
+    String featureFlags = originalMap.get(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY).toString();
+    List<String> flagsList = new ArrayList<>(Arrays.asList(featureFlags.split(",")));
+
+    if (flagsList.contains(featureName)) {
+      flagsList.remove(featureName);
+    }
+    originalMap.put(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY, String.join(",", flagsList));
   }
 }

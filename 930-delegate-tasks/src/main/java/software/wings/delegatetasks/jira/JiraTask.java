@@ -6,11 +6,13 @@
  */
 
 package software.wings.delegatetasks.jira;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.data.structure.EmptyPredicate;
@@ -91,6 +93,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
@@ -944,7 +947,8 @@ public class JiraTask extends AbstractDelegateRunnableTask {
   // IDENTIFY WHICH EXCEPTION SHOULD BE LOGGED AS WARNING INSTEAD OF ERROR
   @VisibleForTesting
   boolean isWarningException(JiraException e) {
-    return e.getCause() instanceof SSLHandshakeException;
+    return e.getCause() instanceof SSLHandshakeException
+        || (e.getCause() instanceof RestException && ((RestException) e.getCause()).getHttpStatusCode() == 429);
   }
 
   public String getIssueUrl(JiraConfig jiraConfig, String issueKey) {

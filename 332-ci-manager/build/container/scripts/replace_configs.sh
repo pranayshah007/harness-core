@@ -55,6 +55,10 @@ if [[ "" != "$LE_IMAGE" ]]; then
   export LE_IMAGE; yq -i '.ciExecutionServiceConfig.liteEngineImage=env(LE_IMAGE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$TMATE_ENDPOINT" ]]; then
+  export TMATE_ENDPOINT; yq -i '.ciExecutionServiceConfig.tmateEndpoint=env(TMATE_ENDPOINT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$GIT_CLONE_IMAGE" ]]; then
   export GIT_CLONE_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.gitCloneConfig.image=env(GIT_CLONE_IMAGE)' $CONFIG_FILE
 fi
@@ -215,6 +219,10 @@ if [[ "" != "$DLC_GCS_REGION" ]]; then
   export DLC_GCS_REGION; yq -i '.ciExecutionServiceConfig.dockerLayerCachingGCSConfig.region=env(DLC_GCS_REGION)' $CONFIG_FILE
 fi
 
+if [[ "" != "DLC_GCS_PROJECT_ID" ]]; then
+  export DLC_GCS_PROJECT_ID; yq -i '.ciExecutionServiceConfig.dockerLayerCachingGCSConfig.projectId=env(DLC_GCS_PROJECT_ID)' $CONFIG_FILE
+fi
+
 if [[ "" != "$HOSTED_VM_SPLIT_LINUX_AMD64_POOL" ]]; then
   export HOSTED_VM_SPLIT_LINUX_AMD64_POOL; yq -i '.ciExecutionServiceConfig.hostedVmConfig.splitLinuxAmd64Pool=env(HOSTED_VM_SPLIT_LINUX_AMD64_POOL)' $CONFIG_FILE
 fi
@@ -353,10 +361,6 @@ if [[ "" != "$SHOULD_CONFIGURE_WITH_PMS" ]]; then
   export SHOULD_CONFIGURE_WITH_PMS; yq -i '.shouldConfigureWithPMS=env(SHOULD_CONFIGURE_WITH_PMS)' $CONFIG_FILE
 fi
 
-if [[ "" != "$PMS_MONGO_URI" ]]; then
-  export PMS_MONGO_URI=${PMS_MONGO_URI//\\&/&}; yq -i '.pmsMongo.uri=env(PMS_MONGO_URI)' $CONFIG_FILE
-fi
-
 if [[ "" != "$GRPC_SERVER_PORT" ]]; then
   export GRPC_SERVER_PORT; yq -i '.pmsSdkGrpcServerConfig.connectors[0].port=env(GRPC_SERVER_PORT)' $CONFIG_FILE
 fi
@@ -465,19 +469,28 @@ fi
 
 if [[ "$CACHE_CONFIG_USE_SENTINEL" == "true" ]]; then
   yq -i 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
+  if [[ "" != "$CACHE_CONFIG_SENTINEL_MASTER_NAME" ]]; then
+    export CACHE_CONFIG_SENTINEL_MASTER_NAME; yq -i '.sentinelServersConfig.masterName=env(CACHE_CONFIG_SENTINEL_MASTER_NAME)' $REDISSON_CACHE_FILE
+  fi
+
+  if [[ "" != "$CACHE_CONFIG_REDIS_SENTINELS" ]]; then
+    IFS=',' read -ra SENTINEL_URLS <<< "$CACHE_CONFIG_REDIS_SENTINELS"
+    INDEX=0
+    for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
+      export REDIS_SENTINEL_URL; export INDEX; yq -i '.sentinelServersConfig.sentinelAddresses.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $REDISSON_CACHE_FILE
+      INDEX=$(expr $INDEX + 1)
+    done
+  fi
 fi
 
-if [[ "" != "$CACHE_CONFIG_SENTINEL_MASTER_NAME" ]]; then
-  export CACHE_CONFIG_SENTINEL_MASTER_NAME; yq -i '.sentinelServersConfig.masterName=env(CACHE_CONFIG_SENTINEL_MASTER_NAME)' $REDISSON_CACHE_FILE
+if [[ "" != "$CACHE_CONFIG_REDIS_USERNAME" ]]; then
+  export CACHE_CONFIG_REDIS_USERNAME; yq -i '.singleServerConfig.username=env(CACHE_CONFIG_REDIS_USERNAME)' $REDISSON_CACHE_FILE
+  export CACHE_CONFIG_REDIS_USERNAME; yq -i '.singleServerConfig.username=env(CACHE_CONFIG_REDIS_USERNAME)' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
-if [[ "" != "$CACHE_CONFIG_REDIS_SENTINELS" ]]; then
-  IFS=',' read -ra SENTINEL_URLS <<< "$CACHE_CONFIG_REDIS_SENTINELS"
-  INDEX=0
-  for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    export REDIS_SENTINEL_URL; export INDEX; yq -i '.sentinelServersConfig.sentinelAddresses.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $REDISSON_CACHE_FILE
-    INDEX=$(expr $INDEX + 1)
-  done
+if [[ "" != "$CACHE_CONFIG_REDIS_PASSWORD" ]]; then
+  export CACHE_CONFIG_REDIS_PASSWORD; yq -i '.singleServerConfig.password=env(CACHE_CONFIG_REDIS_PASSWORD)' $REDISSON_CACHE_FILE
+  export CACHE_CONFIG_REDIS_PASSWORD; yq -i '.singleServerConfig.password=env(CACHE_CONFIG_REDIS_PASSWORD)' $ENTERPRISE_REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$REDIS_NETTY_THREADS" ]]; then

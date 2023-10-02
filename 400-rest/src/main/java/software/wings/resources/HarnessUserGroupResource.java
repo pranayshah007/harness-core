@@ -132,4 +132,12 @@ public class HarnessUserGroupResource {
         harnessUserGroupService.toHarnessSupportUser(harnessUserGroupService.listAllHarnessSupportUserInternal());
     return new RestResponse<>(supportUsers);
   }
+
+  @GET
+  @Path("is-harness-support-user-id")
+  @NextGenManagerAuth
+  public RestResponse<Boolean> isHarnessSupportUserId(@QueryParam("userId") String userId) {
+    boolean harnessSupportUser = harnessUserGroupService.isHarnessSupportUser(userId);
+    return new RestResponse<>(harnessSupportUser);
+  }
 }

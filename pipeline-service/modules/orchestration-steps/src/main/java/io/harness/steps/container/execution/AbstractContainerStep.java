@@ -1,7 +1,8 @@
 /*
  * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
- * that can be found in the licenses directory at the root of this repository, also available at
+ * that can be found in the licenses directory at the root of this repository,
+ * also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
@@ -13,35 +14,43 @@ import static java.util.Collections.singletonList;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
+import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.execution.CIDelegateTaskExecutor;
 import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logstreaming.LogStreamingHelper;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.plugin.ContainerStepExecutionResponseHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.StepUtils;
+import io.harness.steps.container.utils.ConnectorUtils;
+import io.harness.steps.container.utils.ContainerSpecUtils;
 import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.steps.plugin.ContainerStepSpec;
+import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
+import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ResponseData;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.time.Duration;
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -50,12 +59,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<StepElementParameters> {
-  @Inject private ContainerStepCleanupHelper containerStepCleanupHelper;
   @Inject private ContainerRunStepHelper containerRunStepHelper;
   @Inject private SerializedResponseDataHelper serializedResponseDataHelper;
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private CIDelegateTaskExecutor taskExecutor;
   @Inject private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
+  @Inject private PmsFeatureFlagService featureFlagService;
+  @Inject private ConnectorUtils connectorUtils;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Override
@@ -83,7 +93,18 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
         - (System.currentTimeMillis() - startTs);
     timeout = Math.max(timeout, 100);
     log.info("Timeout for container step left {}", timeout);
-    String parkedTaskId = taskExecutor.queueParkedDelegateTask(ambiance, timeout, accountId);
+    List<TaskSelector> delegateSelectors = new ArrayList<>();
+
+    if (featureFlagService.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CD_CONTAINER_STEP_DELEGATE_SELECTOR)
+        && ContainerStepInfra.Type.KUBERNETES_DIRECT.equals(containerStepInfo.getInfrastructure().getType())) {
+      ConnectorDetails k8sConnector = connectorUtils.getConnectorDetails(
+          AmbianceUtils.getNgAccess(ambiance), getK8sConnectorRef(containerStepInfo));
+      delegateSelectors =
+          ContainerSpecUtils.mergeStepAndConnectorOriginDelegateSelectors(containerStepInfo, k8sConnector);
+    }
+
+    String parkedTaskId = taskExecutor.queueParkedDelegateTask(ambiance, timeout, accountId, delegateSelectors);
     TaskData runStepTaskData = containerRunStepHelper.getRunStepTask(ambiance, containerStepInfo,
         AmbianceUtils.getAccountId(ambiance), getLogPrefix(ambiance), timeout, parkedTaskId);
     String liteEngineTaskId = taskExecutor.queueTask(ambiance, runStepTaskData, accountId);
@@ -119,10 +140,10 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
     if (response instanceof K8sTaskExecutionResponse
         && (((K8sTaskExecutionResponse) response).getCommandExecutionStatus() == CommandExecutionStatus.FAILURE
             || ((K8sTaskExecutionResponse) response).getCommandExecutionStatus() == CommandExecutionStatus.SKIPPED)) {
-      abortTasks(allCallbackIds, callbackId, ambiance);
+      abortTasks(allCallbackIds, callbackId);
     }
     if (response instanceof ErrorNotifyResponseData) {
-      abortTasks(allCallbackIds, callbackId, ambiance);
+      abortTasks(allCallbackIds, callbackId);
     }
   }
 
@@ -138,10 +159,10 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
   }
 
   private String getLogPrefix(Ambiance ambiance) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance, "STEP");
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    return LogStreamingStepClientFactory.getLogBaseKey(ambiance, StepCategory.STEP.name());
   }
-  private void abortTasks(List<String> allCallbackIds, String callbackId, Ambiance ambiance) {
+
+  private void abortTasks(List<String> allCallbackIds, String callbackId) {
     List<String> callBackIds =
         allCallbackIds.stream().filter(cid -> !cid.equals(callbackId)).collect(Collectors.toList());
     callBackIds.forEach(callbackId1
@@ -149,5 +170,10 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
             ErrorNotifyResponseData.builder()
                 .errorMessage("Delegate is not able to connect to created build farm")
                 .build()));
+  }
+
+  private String getK8sConnectorRef(ContainerStepSpec containerStepInfo) {
+    ContainerK8sInfra containerK8sInfra = (ContainerK8sInfra) containerStepInfo.getInfrastructure();
+    return containerK8sInfra.getSpec().getConnectorRef().getValue();
   }
 }

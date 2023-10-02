@@ -42,12 +42,18 @@ import com.google.gson.Gson;
 import io.fabric8.utils.Lists;
 import java.net.ConnectException;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
@@ -58,6 +64,9 @@ import retrofit2.Response;
 @Slf4j
 @OwnedBy(CE)
 public class K8sNodeRecommendationTasklet implements Tasklet {
+  private Map<String, String> clusterIdToClusterName;
+  private Map<String, String> clusterNameToClusterId;
+
   @Autowired private K8sRecommendationDAO k8sRecommendationDAO;
   @Autowired private RecommendationCrudService recommendationCrudService;
   @Autowired private BanzaiRecommenderClient banzaiRecommenderClient;
@@ -72,11 +81,20 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
     String accountId = jobConstants.getAccountId();
 
     List<NodePoolId> nodePoolIdList = k8sRecommendationDAO.getUniqueNodePools(accountId);
+    populateClusterMaps(nodePoolIdList);
+    // If this is a rerun of failed batchJob, do not compute recommendation for already updated recommendations
+    List<NodePoolId> alreadyUpdatedNodepools = recommendationCrudService.getNodepoolsAlreadyUpdated(
+        accountId, jobConstants, new ArrayList<>(clusterNameToClusterId.keySet()), clusterNameToClusterId);
 
     for (NodePoolId nodePoolId : nodePoolIdList) {
       if (nodePoolId.getNodepoolname() == null) {
         log.info("There is a node with node_pool_name as null in [accountId:{}, clusterId:{}], skipping",
             jobConstants.getAccountId(), nodePoolId.getClusterid());
+        continue;
+      }
+      if (alreadyUpdatedNodepools.contains(nodePoolId)) {
+        log.info("Nodepool recommendation already computed for nodepool name: {} with cluster id: {}",
+            nodePoolId.getNodepoolname(), nodePoolId.getClusterid());
         continue;
       }
       if (k8sRecommendationDAO.fetchDistinctInstanceFamilies(jobConstants, nodePoolId).size() > 1) {
@@ -107,6 +125,19 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
     }
 
     return null;
+  }
+
+  void populateClusterMaps(List<NodePoolId> nodePoolIdList) {
+    Set<String> uniqueClusterIds = nodePoolIdList.stream().map(NodePoolId::getClusterid).collect(Collectors.toSet());
+    clusterIdToClusterName = new HashMap<>();
+    clusterNameToClusterId = new HashMap<>();
+    for (String clusterId : uniqueClusterIds) {
+      if (StringUtils.isNotEmpty(clusterId)) {
+        String clusterName = clusterHelper.fetchClusterName(clusterId);
+        clusterIdToClusterName.put(clusterId, clusterName);
+        clusterNameToClusterId.put(clusterName, clusterId);
+      }
+    }
   }
 
   private void createTotalResourceUsageAndInsert(@NonNull JobConstants jobConstants, @NonNull NodePoolId nodePoolId) {
@@ -149,8 +180,9 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
     RecommendationOverviewStats stats = getMonthlyCostAndSaving(serviceProvider, recommendation);
     log.info("The monthly stat is: {}", stats);
 
-    final String clusterName = clusterHelper.fetchClusterName(nodePoolId.getClusterid());
-    recommendationCrudService.upsertNodeRecommendation(mongoEntityId, jobConstants, nodePoolId, clusterName, stats);
+    final String clusterName = clusterIdToClusterName.get(nodePoolId.getClusterid());
+    recommendationCrudService.upsertNodeRecommendation(
+        mongoEntityId, jobConstants, nodePoolId, clusterName, stats, serviceProvider.getCloudProvider().name());
     ignoreListService.updateNodeRecommendationState(
         mongoEntityId, jobConstants.getAccountId(), clusterName, nodePoolId.getNodepoolname());
   }

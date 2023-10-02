@@ -6,12 +6,14 @@
  */
 
 package io.harness.gitaware.helper;
-
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.context.GlobalContext;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitsync.beans.StoreType;
@@ -28,8 +30,10 @@ import io.harness.persistence.gitaware.GitAware;
 
 import java.util.HashMap;
 import java.util.Map;
+import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @UtilityClass
 @OwnedBy(DX)
 public class GitAwareContextHelper {
@@ -96,6 +100,35 @@ public class GitAwareContextHelper {
         .commitId(scmGitMetaData.getCommitId())
         .fileUrl(scmGitMetaData.getFileUrl())
         .build();
+  }
+
+  public EntityGitDetails updateEntityGitDetailsFromScmGitMetadata(@NonNull EntityGitDetails existingDetails) {
+    ScmGitMetaData scmGitMetaData = getScmGitMetaData();
+
+    if (scmGitMetaData == null) {
+      return existingDetails;
+    }
+
+    if (isEmpty(existingDetails.getObjectId())) {
+      existingDetails.setObjectId(scmGitMetaData.getBlobId());
+    }
+    if (isEmpty(existingDetails.getBranch())) {
+      existingDetails.setBranch(scmGitMetaData.getBranchName());
+    }
+    if (isEmpty(existingDetails.getRepoName())) {
+      existingDetails.setRepoName(scmGitMetaData.getRepoName());
+    }
+    if (isEmpty(existingDetails.getFilePath())) {
+      existingDetails.setFilePath(scmGitMetaData.getFilePath());
+    }
+    if (isEmpty(existingDetails.getCommitId())) {
+      existingDetails.setCommitId(scmGitMetaData.getCommitId());
+    }
+    if (isEmpty(existingDetails.getFileUrl())) {
+      existingDetails.setFileUrl(scmGitMetaData.getFileUrl());
+    }
+
+    return existingDetails;
   }
 
   public CacheResponse getCacheResponseFromScmGitMetadata() {
@@ -246,5 +279,13 @@ public class GitAwareContextHelper {
 
   private boolean isPresent(String val) {
     return !isEmpty(val) && !DEFAULT.equals(val);
+  }
+
+  public boolean isGitDefaultBranch() {
+    ScmGitMetaData scmGitMetaData = getScmGitMetaData();
+    if (scmGitMetaData == null) {
+      return false;
+    }
+    return Boolean.TRUE.equals(scmGitMetaData.getIsGitDefaultBranch());
   }
 }

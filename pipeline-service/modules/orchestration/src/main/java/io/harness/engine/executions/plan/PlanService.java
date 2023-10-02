@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.plan.Node;
 import io.harness.plan.Plan;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -21,7 +22,10 @@ import java.util.Set;
 public interface PlanService {
   Plan save(Plan plan);
 
+  // These 2 methods uses the index planNodeId_nodeId in nodeEntity collection
   <T extends Node> T fetchNode(String planId, String nodeId);
+
+  <T extends Node> Set<T> fetchAllNodes(String planId, Set<String> nodeIds);
 
   List<Node> fetchNodes(String planId);
 
@@ -38,7 +42,15 @@ public interface PlanService {
    * Uses - id index
    * @param nodeEntityIds
    */
-  void deleteNodesForGivenIds(Set<String> nodeEntityIds);
+  // This  method uses the index planNodeId_nodeId in nodeEntity collection
+  void deleteNodesForGivenIds(String planId, Set<String> nodeEntityIds);
+
+  /**
+   * Updates all nodeEntity for given planId with ttlExpiry
+   * Uses - planId_idx index
+   * @param planId
+   */
+  void updateTTLForNodesForGivenPlanId(String planId, Date ttlDate);
 
   /**
    * Delete all Plans for given uuids
@@ -46,4 +58,11 @@ public interface PlanService {
    * @param planIds
    */
   void deletePlansForGivenIds(Set<String> planIds);
+
+  /**
+   * Updates TTL for all Plans for given uuids
+   * Uses - id index
+   * @param planId
+   */
+  void updateTTLForPlans(String planId, Date ttlDate);
 }

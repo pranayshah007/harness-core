@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl;
-
 import static io.harness.annotations.dev.HarnessModule._930_DELEGATE_TASKS;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -17,7 +16,10 @@ import static io.harness.validation.Validator.equalCheck;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.utils.ArtifactType.DOCKER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.artifactory.ArtifactoryClientImpl;
 import io.harness.artifactory.ArtifactoryConfigRequest;
@@ -50,6 +52,9 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Created by sgurubelli on 6/28/17.
  */
+
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @TargetModule(_930_DELEGATE_TASKS)
 @OwnedBy(CDC)
 @Singleton

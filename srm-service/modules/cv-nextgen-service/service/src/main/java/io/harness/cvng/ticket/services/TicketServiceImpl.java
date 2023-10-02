@@ -15,6 +15,10 @@ import io.harness.cvng.ticket.clients.TicketServiceRestClientService;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,6 +32,7 @@ public class TicketServiceImpl implements TicketService {
     log.info("Creating ticket for feedbackId {}", feedbackId);
     TicketResponseDto existingTicket = getTicketForFeedbackId(feedbackId);
     Preconditions.checkState(Objects.isNull(existingTicket), "Ticket already created for feedbackId " + feedbackId);
+    populateFeedbackIdInExternalIdentifiers(feedbackId, ticketRequestDto);
     TicketResponseDto createdTicket =
         ticketServiceRestClientService.createTicket(projectPathParams, ticketRequestDto, authToken);
     TicketResponseDto ticketResponseDto =
@@ -35,6 +40,15 @@ public class TicketServiceImpl implements TicketService {
     updateLogFeedbackWithTicket(feedbackId, projectPathParams, ticketResponseDto);
     log.info("Created ticket for feedbackId {} with ticketId {}", feedbackId, createdTicket.getId());
     return ticketResponseDto;
+  }
+
+  private static void populateFeedbackIdInExternalIdentifiers(String feedbackId, TicketRequestDto ticketRequestDto) {
+    Map<String, List<String>> identifiers = ticketRequestDto.getIdentifiers();
+    if (identifiers == null) {
+      identifiers = new HashMap<>();
+      ticketRequestDto.setIdentifiers(identifiers);
+    }
+    identifiers.put("feedbackId", Collections.singletonList(feedbackId));
   }
 
   private void updateLogFeedbackWithTicket(

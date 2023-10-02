@@ -1,6 +1,6 @@
 # ng-manager
 
-![Version: 0.3.4](https://img.shields.io/badge/Version-0.3.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.1](https://img.shields.io/badge/AppVersion-0.0.1-informational?style=flat-square)
+![Version: 0.10.2](https://img.shields.io/badge/Version-0.10.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.80209](https://img.shields.io/badge/AppVersion-0.0.80209-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -14,12 +14,15 @@ A Helm chart for Kubernetes
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| additionalConfigs | object | `{}` |  |
 | affinity | object | `{}` |  |
+| allowedOrigins | string | `""` |  |
 | appLogLevel | string | `"INFO"` |  |
-| autoscaling.enabled | bool | `true` |  |
+| autoscaling.enabled | bool | `false` |  |
 | autoscaling.maxReplicas | int | `100` |  |
 | autoscaling.minReplicas | int | `1` |  |
-| autoscaling.targetCPUUtilizationPercentage | int | `80` |  |
+| autoscaling.targetCPU | string | `""` |  |
+| autoscaling.targetMemory | string | `""` |  |
 | ceGcpSetupConfigGcpProjectId | string | `"placeHolderGcpProjectId"` |  |
 | ceSecret.access_key.key | string | `"AWS_ACCESS_KEY"` |  |
 | ceSecret.access_key.name | string | `"nextgen-ce"` |  |
@@ -29,9 +32,20 @@ A Helm chart for Kubernetes
 | ceSecret.secret_key.name | string | `"nextgen-ce"` |  |
 | ceSecret.template_url.key | string | `"AWS_TEMPLATE_LINK"` |  |
 | ceSecret.template_url.name | string | `"nextgen-ce"` |  |
+| extraEnvVars | list | `[]` |  |
+| extraVolumeMounts | list | `[]` |  |
+| extraVolumes | list | `[]` |  |
 | fullnameOverride | string | `""` |  |
+| global.awsServiceEndpointUrls.cloudwatchEndPointUrl | string | `"https://monitoring.us-east-2.amazonaws.com"` |  |
+| global.awsServiceEndpointUrls.ecsEndPointUrl | string | `"https://ecs.us-east-2.amazonaws.com"` |  |
+| global.awsServiceEndpointUrls.enabled | bool | `false` |  |
+| global.awsServiceEndpointUrls.endPointRegion | string | `"us-east-2"` |  |
+| global.awsServiceEndpointUrls.stsEndPointUrl | string | `"https://sts.us-east-2.amazonaws.com"` |  |
 | global.ccm.enabled | bool | `false` |  |
+| global.cg.enabled | bool | `false` |  |
 | global.chaos.enabled | bool | `false` |  |
+| global.commonAnnotations | object | `{}` |  |
+| global.commonLabels | object | `{}` |  |
 | global.database.mongo.extraArgs | string | `""` |  |
 | global.database.mongo.hosts | list | `[]` | provide default values if mongo.installed is set to false |
 | global.database.mongo.installed | bool | `true` |  |
@@ -46,6 +60,15 @@ A Helm chart for Kubernetes
 | global.database.postgres.protocol | string | `"postgres"` |  |
 | global.database.postgres.secretName | string | `""` |  |
 | global.database.postgres.userKey | string | `""` |  |
+| global.database.redis.extraArgs | string | `""` |  |
+| global.database.redis.hosts | list | `["redis:6379"]` | provide default values if redis.installed is set to false |
+| global.database.redis.installed | bool | `true` |  |
+| global.database.redis.passwordKey | string | `"redis-password"` |  |
+| global.database.redis.protocol | string | `"redis"` |  |
+| global.database.redis.secretName | string | `"redis-secret"` |  |
+| global.database.redis.userKey | string | `"redis-user"` |  |
+| global.database.timescaledb.certKey | string | `""` |  |
+| global.database.timescaledb.certName | string | `""` |  |
 | global.database.timescaledb.extraArgs | string | `""` |  |
 | global.database.timescaledb.hosts | list | `["timescaledb-single-chart:5432"]` | provide default values if mongo.installed is set to false |
 | global.database.timescaledb.installed | bool | `true` |  |
@@ -61,23 +84,46 @@ A Helm chart for Kubernetes
 | global.istio.enabled | bool | `false` | create virtualServices objects |
 | global.istio.gateway | object | `{"create":false}` | create gateway and use in virtualservice |
 | global.istio.virtualService | object | `{"gateways":null,"hosts":null}` | if gateway not created, use specified gateway and host |
+| global.kubeVersion | string | `""` |  |
 | global.license.cg | string | `""` |  |
 | global.license.ng | string | `""` |  |
 | global.loadbalancerURL | string | `""` |  |
 | global.opa.enabled | bool | `false` |  |
+| global.proxy.enabled | bool | `false` |  |
+| global.proxy.host | string | `"localhost"` |  |
+| global.proxy.password | string | `""` |  |
+| global.proxy.port | int | `80` |  |
+| global.proxy.protocol | string | `"http"` |  |
+| global.proxy.username | string | `""` |  |
+| global.secrets.app.external.enabled | bool | `false` |  |
+| global.secrets.app.external.kind.csiSecretDriver | bool | `false` |  |
+| global.secrets.app.external.kind.externalSecrets | bool | `false` |  |
+| global.secrets.database.external.enabled | bool | `false` |  |
+| global.secrets.database.external.kind.csiSecretDriver | bool | `false` |  |
+| global.secrets.database.external.kind.externalSecrets | bool | `false` |  |
+| global.smtpCreateSecret.SMTP_HOST | string | `""` |  |
+| global.smtpCreateSecret.SMTP_PASSWORD | string | `""` |  |
+| global.smtpCreateSecret.SMTP_PORT | string | `"465"` |  |
+| global.smtpCreateSecret.SMTP_USERNAME | string | `""` |  |
+| global.smtpCreateSecret.SMTP_USE_SSL | string | `"true"` |  |
+| global.smtpCreateSecret.enabled | bool | `false` |  |
+| global.stackDriverLoggingEnabled | bool | `false` |  |
+| global.useExternalSecrets | bool | `false` |  |
 | image.digest | string | `""` |  |
 | image.imagePullSecrets | list | `[]` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.registry | string | `"docker.io"` |  |
 | image.repository | string | `"harness/ng-manager-signed"` |  |
-| image.tag | string | `"76019"` |  |
+| image.tag | string | `"80209"` |  |
 | imagePullSecrets | object | `{}` |  |
+| ingress.annotations | object | `{}` |  |
 | initContainer.image.digest | string | `""` |  |
 | initContainer.image.imagePullSecrets | list | `[]` |  |
 | initContainer.image.registry | string | `"docker.io"` |  |
 | initContainer.image.repository | string | `"busybox"` |  |
 | initContainer.image.tag | string | `"1.35.0"` |  |
 | java.memory | string | `"4096m"` |  |
+| java17flags | string | `""` |  |
 | maxSurge | int | `1` |  |
 | maxUnavailable | int | `0` |  |
 | mongoSecrets.password.key | string | `"mongodb-root-password"` |  |
@@ -104,12 +150,12 @@ A Helm chart for Kubernetes
 | probes.startupProbe.periodSeconds | int | `10` |  |
 | probes.startupProbe.timeoutSeconds | int | `2` |  |
 | replicaCount | int | `1` |  |
-| resources.limits.cpu | int | `2` |  |
 | resources.limits.memory | string | `"8192Mi"` |  |
 | resources.requests.cpu | int | `2` |  |
 | resources.requests.memory | string | `"200Mi"` |  |
 | securityContext.runAsNonRoot | bool | `true` |  |
 | securityContext.runAsUser | int | `65534` |  |
+| service.annotations | object | `{}` |  |
 | service.gitsyncgrpcport | int | `13002` |  |
 | service.grpcport | int | `9979` |  |
 | service.port | int | `7090` |  |
@@ -121,6 +167,7 @@ A Helm chart for Kubernetes
 | timescaleSecret.password.key | string | `"timescaledbPostgresPassword"` |  |
 | timescaleSecret.password.name | string | `"harness-secrets"` |  |
 | tolerations | list | `[]` |  |
+| virtualService.annotations | object | `{}` |  |
 | waitForInitContainer.image.digest | string | `""` |  |
 | waitForInitContainer.image.imagePullSecrets | list | `[]` |  |
 | waitForInitContainer.image.pullPolicy | string | `"IfNotPresent"` |  |

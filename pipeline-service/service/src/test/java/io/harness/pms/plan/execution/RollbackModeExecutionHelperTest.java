@@ -7,6 +7,7 @@
 
 package io.harness.pms.plan.execution;
 
+import static io.harness.pms.contracts.execution.ExecutionMode.SYNC;
 import static io.harness.pms.contracts.plan.ExecutionMode.PIPELINE_ROLLBACK;
 import static io.harness.pms.contracts.plan.ExecutionMode.POST_EXECUTION_ROLLBACK;
 import static io.harness.rule.OwnerRule.BRIJESH;
@@ -15,12 +16,13 @@ import static io.harness.rule.OwnerRule.NAMAN;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanService;
 import io.harness.execution.NodeExecution;
-import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
@@ -44,7 +46,6 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.helpers.PrincipalInfoHelper;
-import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.rule.Owner;
 
 import java.util.Collections;
@@ -53,7 +54,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
@@ -66,7 +66,8 @@ import org.springframework.data.util.CloseableIterator;
 public class RollbackModeExecutionHelperTest extends CategoryTest {
   @Spy RollbackModeExecutionHelper rollbackModeExecutionHelper;
   @Mock NodeExecutionService nodeExecutionService;
-  @Mock PipelineMetadataService pipelineMetadataService;
+
+  @Mock PlanService planService;
   @Mock PrincipalInfoHelper principalInfoHelper;
   @Mock RollbackModeYamlTransformer rollbackModeYamlTransformer;
 
@@ -79,15 +80,13 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
   public void setUp() {
     MockitoAnnotations.openMocks(this);
     rollbackModeExecutionHelper = new RollbackModeExecutionHelper(
-        nodeExecutionService, pipelineMetadataService, principalInfoHelper, rollbackModeYamlTransformer);
+        nodeExecutionService, planService, principalInfoHelper, rollbackModeYamlTransformer);
   }
 
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testTransformExecutionMetadata() {
-    int newRunSeq = 13134;
-    doReturn(newRunSeq).when(pipelineMetadataService).incrementExecutionCounter(account, org, project, pipeline);
     ExecutionPrincipalInfo newPrincipalInfo =
         ExecutionPrincipalInfo.newBuilder().setPrincipalType(PrincipalType.USER).build();
     doReturn(newPrincipalInfo).when(principalInfoHelper).getPrincipalInfoFromSecurityContext();
@@ -104,20 +103,19 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
     String newId = "newId";
     ExecutionTriggerInfo newTriggerInfo =
         ExecutionTriggerInfo.newBuilder().setTriggeredBy(TriggeredBy.newBuilder().setIdentifier("ds").build()).build();
-    ExecutionMetadata newMetadata = rollbackModeExecutionHelper.transformExecutionMetadata(oldExecutionMetadata, newId,
-        newTriggerInfo, account, org, project, POST_EXECUTION_ROLLBACK,
-        PipelineStageInfo.newBuilder().setHasParentPipeline(true).build(), null);
+    ExecutionMetadata newMetadata =
+        rollbackModeExecutionHelper.transformExecutionMetadata(oldExecutionMetadata, newId, newTriggerInfo,
+            POST_EXECUTION_ROLLBACK, PipelineStageInfo.newBuilder().setHasParentPipeline(true).build(), null);
     assertThat(newMetadata.getExecutionUuid()).isEqualTo(newId);
     assertThat(newMetadata.getTriggerInfo()).isEqualTo(newTriggerInfo);
-    assertThat(newMetadata.getRunSequence()).isEqualTo(newRunSeq);
     assertThat(newMetadata.getPrincipalInfo()).isEqualTo(newPrincipalInfo);
     assertThat(newMetadata.getExecutionMode()).isEqualTo(POST_EXECUTION_ROLLBACK);
     assertThat(newMetadata.getPipelineStageInfo().getHasParentPipeline()).isTrue();
     assertThat(newMetadata.getPostExecutionRollbackInfoCount()).isEqualTo(0);
     assertThat(newMetadata.getOriginalPlanExecutionIdForRollbackMode()).isEqualTo("oldId");
     assertThat(rollbackModeExecutionHelper
-                   .transformExecutionMetadata(oldExecutionMetadata, newId, newTriggerInfo, account, org, project,
-                       POST_EXECUTION_ROLLBACK, null, null)
+                   .transformExecutionMetadata(
+                       oldExecutionMetadata, newId, newTriggerInfo, POST_EXECUTION_ROLLBACK, null, null)
                    .getPipelineStageInfo()
                    .getHasParentPipeline())
         .isFalse();
@@ -133,20 +131,18 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
                                                   .setStrategyMetadata(StrategyMetadata.newBuilder().build())
                                                   .build())
                                    .build())
-                     .planNode(PlanNode.builder().uuid("planNodeUuid").build())
+                     .nodeId("planNodeUuid")
                      .build()))
         .when(nodeExecutionService)
-        .getAllWithFieldIncluded(new HashSet<>(stageNodeExecutionIds), NodeProjectionUtils.fieldsForNodeAndAmbiance);
+        .getAllWithFieldIncluded(
+            new HashSet<>(stageNodeExecutionIds), NodeProjectionUtils.fieldsForRollbackTransformer);
 
     newMetadata = rollbackModeExecutionHelper.transformExecutionMetadata(oldExecutionMetadata, newId, newTriggerInfo,
-        account, org, project, POST_EXECUTION_ROLLBACK,
-        PipelineStageInfo.newBuilder().setHasParentPipeline(true).build(), stageNodeExecutionIds);
+        POST_EXECUTION_ROLLBACK, PipelineStageInfo.newBuilder().setHasParentPipeline(true).build(),
+        stageNodeExecutionIds);
 
-    assertThat(newMetadata.getPostExecutionRollbackInfoCount()).isEqualTo(1);
-    assertThat(newMetadata.getPostExecutionRollbackInfo(0).getPostExecutionRollbackStageId()).isEqualTo("setupId");
-    assertThat(newMetadata.getPostExecutionRollbackInfo(0).getRollbackStageStrategyMetadata())
-        .isEqualTo(StrategyMetadata.newBuilder().build());
-    assertThat(newMetadata.getPostExecutionRollbackInfo(0).getOriginalStageExecutionId()).isEqualTo("runtime123");
+    assertThat(newMetadata.getOriginalPlanExecutionIdForRollbackMode())
+        .isEqualTo(oldExecutionMetadata.getExecutionUuid());
   }
 
   @Test
@@ -177,17 +173,39 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
     assertThat(newMetadata.getPlanExecutionId()).isEqualTo(newId);
     assertThat(newMetadata.getStagesExecutionMetadata()).isNull();
     assertThat(newMetadata.getProcessedYaml()).isEqualTo(transformed);
+    assertThat(newMetadata.getPostExecutionRollbackInfos().size()).isEqualTo(0);
 
     List<String> stageNodeExecutionIds = Collections.singletonList("stageNodeExecutionId");
     String stageFqn = "pipeline.stages.stage1";
+
     doReturn(Collections.singletonList(
-                 NodeExecution.builder().planNode(PlanNode.builder().stageFqn(stageFqn).build()).build()))
+                 NodeExecution.builder()
+                     .stageFqn(stageFqn)
+                     .ambiance(Ambiance.newBuilder()
+                                   .addLevels(Level.newBuilder()
+                                                  .setSetupId("setupId")
+                                                  .setRuntimeId("runtime123")
+                                                  .setStrategyMetadata(StrategyMetadata.newBuilder().build())
+                                                  .build())
+                                   .build())
+                     .nodeId("planNodeUuid")
+                     .mode(SYNC)
+                     .build()))
         .when(nodeExecutionService)
-        .getAllWithFieldIncluded(new HashSet<>(stageNodeExecutionIds), Set.of(NodeExecutionKeys.planNode));
+        .getAllWithFieldIncluded(
+            new HashSet<>(stageNodeExecutionIds), NodeProjectionUtils.fieldsForRollbackTransformer);
     newMetadata = rollbackModeExecutionHelper.transformPlanExecutionMetadata(
         oldPlanExecutionMetadata, newId, POST_EXECUTION_ROLLBACK, stageNodeExecutionIds, null);
     assertThat(newMetadata.getStagesExecutionMetadata().getStageIdentifiers().size()).isEqualTo(1);
     assertThat(newMetadata.getStagesExecutionMetadata().getStageIdentifiers().get(0)).isEqualTo(stageFqn);
+
+    assertThat(newMetadata.getPostExecutionRollbackInfos().size()).isEqualTo(1);
+    assertThat(newMetadata.getPostExecutionRollbackInfos().get(0).getPostExecutionRollbackStageId())
+        .isEqualTo("setupId");
+    assertThat(newMetadata.getPostExecutionRollbackInfos().get(0).getRollbackStageStrategyMetadata())
+        .isEqualTo(StrategyMetadata.newBuilder().build());
+    assertThat(newMetadata.getPostExecutionRollbackInfos().get(0).getOriginalStageExecutionId())
+        .isEqualTo("runtime123");
   }
 
   @Test
@@ -212,8 +230,14 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
                                     Collections.singletonList(AdviserObtainment.newBuilder().build())))
                                 .skipGraphType(SkipType.NOOP)
                                 .build();
-    NodeExecution nodeExecutionForUuid1 =
-        NodeExecution.builder().planNode(toBeReplaced).stepType(stepType).uuid("nodeExecForUuid1").build();
+
+    NodeExecution nodeExecutionForUuid1 = NodeExecution.builder()
+                                              .nodeId(toBeReplaced.getUuid())
+                                              .stepType(stepType)
+                                              .ambiance(Ambiance.newBuilder().setPlanId("planId1").build())
+                                              .uuid("nodeExecForUuid1")
+                                              .build();
+
     List<NodeExecution> nodeExecutionList = Collections.singletonList(nodeExecutionForUuid1);
 
     PlanNode tobePreserved = PlanNode.builder().uuid("uuid2").stepType(stepType).skipGraphType(SkipType.NOOP).build();
@@ -227,6 +251,7 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
         .fetchNodeExecutionsForGivenStageFQNs(prevExecId, Collections.singletonList("pipeline.stages.s1"),
             NodeProjectionUtils.fieldsForIdentityNodeCreation);
 
+    when(planService.fetchNode("planId1", toBeReplaced.getUuid())).thenReturn(toBeReplaced);
     Plan transformedPlan = rollbackModeExecutionHelper.transformPlanForRollbackMode(createdPlan, prevExecId,
         Collections.singletonList("uuid2"), POST_EXECUTION_ROLLBACK, Collections.singletonList("pipeline.stages.s1"));
     List<Node> nodes = transformedPlan.getPlanNodes();

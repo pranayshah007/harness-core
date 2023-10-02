@@ -68,6 +68,14 @@ public enum BuildTool {
     public TIBuildTool toTIBuildTool() {
       return TIBuildTool.UNITTEST;
     }
+  },
+
+  @JsonProperty("rspec")
+  RSPEC("rspec") {
+    @Override
+    public TIBuildTool toTIBuildTool() {
+      return TIBuildTool.RSPEC;
+    }
   };
 
   private final String yamlName;

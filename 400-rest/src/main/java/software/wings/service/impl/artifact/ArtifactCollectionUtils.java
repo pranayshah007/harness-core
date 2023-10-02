@@ -14,6 +14,7 @@ import static io.harness.data.encoding.EncodingUtils.decodeBase64;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.validation.Validator.notNullCheck;
@@ -797,8 +798,9 @@ public class ArtifactCollectionUtils {
     DelegateTaskBuilder delegateTaskBuilder = DelegateTask.builder()
                                                   .accountId(accountId)
                                                   .rank(DelegateTaskRank.OPTIONAL)
+                                                  .waitId(generateUuid())
                                                   .data(TaskData.builder()
-                                                            .async(false)
+                                                            .async(true)
                                                             .taskType(TaskType.BUILD_SOURCE_TASK.name())
                                                             .parameters(new Object[] {parametersBuilder.build()})
                                                             .timeout(TimeUnit.MINUTES.toMillis(1))

@@ -70,6 +70,8 @@ public class InstanceBillingData {
   private double usageDurationSeconds;
   private long endTimestamp;
   private long startTimestamp;
+  private long usageStopTime;
+  private long usageStartTime;
 
   private BigDecimal storageBillingAmount;
   private BigDecimal storageActualIdleCost;

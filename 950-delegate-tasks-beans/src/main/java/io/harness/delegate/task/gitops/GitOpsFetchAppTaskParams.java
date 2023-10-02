@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.scm.GitCapabilityHelper;
-import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
@@ -38,8 +37,7 @@ public class GitOpsFetchAppTaskParams implements TaskParameters, ExecutionCapabi
     List<ExecutionCapability> capabilities = new ArrayList<>();
     GitStoreDelegateConfig gitStoreDelegateConfig = gitFetchFilesConfig.getGitStoreDelegateConfig();
     capabilities.addAll(GitCapabilityHelper.fetchRequiredExecutionCapabilities(
-        ScmConnectorMapper.toGitConfigDTO(gitFetchFilesConfig.getGitStoreDelegateConfig().getGitConfigDTO()),
-        gitStoreDelegateConfig.getEncryptedDataDetails(), gitStoreDelegateConfig.getSshKeySpecDTO()));
+        gitStoreDelegateConfig, gitStoreDelegateConfig.getEncryptedDataDetails()));
     capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
         gitStoreDelegateConfig.getEncryptedDataDetails(), maskingEvaluator));
     return capabilities;

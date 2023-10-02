@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.integrationstage;
+package io.harness.ci.execution.integrationstage;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveArchType;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
@@ -37,7 +37,7 @@ public class DockerInitializeTaskParamsBuilder {
   public CIVmInitializeTaskParams getDockerInitializeTaskParams(
       InitializeStepInfo initializeStepInfo, Ambiance ambiance) {
     return vmInitializeTaskParamsBuilder.getVmInitializeParams(
-        initializeStepInfo, ambiance, "", Collections.emptyList());
+        initializeStepInfo, ambiance, "", Collections.emptyList(), false);
   }
 
   public String getHostedPoolId(ParameterField<Platform> platform) {

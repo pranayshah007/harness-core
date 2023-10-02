@@ -116,10 +116,13 @@ public class ThirdPartyCallHandlerTest extends DelegateTestBase {
     assertThat(apiCallLogCaptor.getValue().getRequests().get(1).getName()).isEqualTo("Request Method");
     assertThat(apiCallLogCaptor.getValue().getRequests().get(2).getName()).isEqualTo("Request Headers");
     assertThat(apiCallLogCaptor.getValue().getRequests().get(3).getName()).isEqualTo("Request Body");
-    assertThat(apiCallLogCaptor.getValue().getResponses().size()).isEqualTo(2);
-    assertThat(apiCallLogCaptor.getValue().getResponses().get(1).getName()).isEqualTo("Response Body");
+    assertThat(apiCallLogCaptor.getValue().getResponses().size()).isEqualTo(4);
+    assertThat(apiCallLogCaptor.getValue().getResponses().get(1).getName()).isEqualTo("Response Size");
+    assertThat(apiCallLogCaptor.getValue().getResponses().get(1).getValue()).isEqualTo("44 bytes");
+    assertThat(apiCallLogCaptor.getValue().getResponses().get(2).getName()).isEqualTo("Response Time Taken");
+    assertThat(apiCallLogCaptor.getValue().getResponses().get(3).getName()).isEqualTo("Response Body");
     assertThat(apiCallLogCaptor.getValue().getResponses().get(0).getValue()).isEqualTo("500");
-    assertThat(apiCallLogCaptor.getValue().getResponses().get(1).getValue())
+    assertThat(apiCallLogCaptor.getValue().getResponses().get(3).getValue())
         .isEqualTo("{\"error\":\"Error Message\",\"isAPIError\":false}");
   }
   @Test
@@ -151,7 +154,11 @@ public class ThirdPartyCallHandlerTest extends DelegateTestBase {
     assertThat(apiCallLogCaptor.getValue().getRequests().get(1).getName()).isEqualTo("Request Method");
     assertThat(apiCallLogCaptor.getValue().getRequests().get(2).getName()).isEqualTo("Request Headers");
     assertThat(apiCallLogCaptor.getValue().getRequests().get(3).getName()).isEqualTo("Request Body");
-    assertThat(apiCallLogCaptor.getValue().getResponses().size()).isEqualTo(2);
+    assertThat(apiCallLogCaptor.getValue().getResponses().size()).isEqualTo(4);
+    assertThat(apiCallLogCaptor.getValue().getResponses().get(0).getName()).isEqualTo("Status Code");
+    assertThat(apiCallLogCaptor.getValue().getResponses().get(1).getName()).isEqualTo("Response Size");
+    assertThat(apiCallLogCaptor.getValue().getResponses().get(2).getName()).isEqualTo("Response Time Taken");
+    assertThat(apiCallLogCaptor.getValue().getResponses().get(3).getName()).isEqualTo("Response Body");
   }
 
   @Test

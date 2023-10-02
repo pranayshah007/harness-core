@@ -1326,7 +1326,7 @@ public class GitClientImpl implements GitClient {
       protected Session createSession(Host hc, String user, String host, int port, FS fs) throws JSchException {
         SshSessionConfig sshSessionConfig = createSshSessionConfig(settingAttribute, host);
         sshSessionConfig.setPort(port); // use port from repo URL
-        if (sshSessionConfig.isUseSshClient()) {
+        if (sshSessionConfig.isUseSshClient() || sshSessionConfig.isVaultSSH()) {
           return ((JschConnection) SshFactory.getSshClient(sshSessionConfig).getConnection()).getSession();
         } else {
           return getSSHSession(sshSessionConfig);

@@ -145,7 +145,7 @@ public class Constraint {
     }
 
     do {
-      List<Consumer> consumers = registry.loadConsumers(id, unit);
+      List<Consumer> consumers = registry.loadConsumers(id, unit, false);
       final int usedPermits = getUsedPermits(consumers);
       State state = calculateConsumerState(consumers, permits, usedPermits);
 
@@ -182,8 +182,9 @@ public class Constraint {
     return registry.consumerFinished(id, unit, consumerId, null);
   }
 
-  public RunnableConsumers runnableConsumers(ConstraintUnit unit, ConstraintRegistry registry) {
-    final List<Consumer> consumers = registry.loadConsumers(id, unit);
+  public RunnableConsumers runnableConsumers(
+      ConstraintUnit unit, ConstraintRegistry registry, boolean hitSecondaryNode) {
+    final List<Consumer> consumers = registry.loadConsumers(id, unit, hitSecondaryNode);
     int usedPermits = getUsedPermits(consumers);
 
     final RunnableConsumersBuilder builder = RunnableConsumers.builder().usedPermits(usedPermits);

@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.notification.beans.ChangeImpactConditionSpec;
 import io.harness.cvng.notification.beans.ChangeObservedConditionSpec;
+import io.harness.cvng.notification.beans.DeploymentImpactReportConditionSpec;
 import io.harness.cvng.notification.beans.ErrorTrackingConditionSpec;
 import io.harness.cvng.notification.beans.HealthScoreConditionSpec;
 import io.harness.cvng.notification.beans.MonitoredServiceChangeEventType;
@@ -99,6 +100,10 @@ public class MonitoredServiceNotificationRuleConditionTransformer
             .errorTrackingEventTypes(errorTrackingConditionSpec.getErrorTrackingEventTypes())
             .errorTrackingEventStatus(errorTrackingConditionSpec.getErrorTrackingEventStatus())
             .build();
+      case DEPLOYMENT_IMPACT_REPORT:
+        DeploymentImpactReportConditionSpec deploymentImpactReportConditionSpec =
+            (DeploymentImpactReportConditionSpec) condition.getSpec();
+        return MonitoredServiceNotificationRule.MonitoredServiceDeploymentImpactReportCondition.builder().build();
       default:
         throw new InvalidArgumentsException(
             "Invalid Monitored Service Notification Rule Condition Type: " + condition.getType());
@@ -142,6 +147,11 @@ public class MonitoredServiceNotificationRuleConditionTransformer
             .errorTrackingEventTypes(codeErrorCondition.getErrorTrackingEventTypes())
             .errorTrackingEventStatus(codeErrorCondition.getErrorTrackingEventStatus())
             .build();
+      case DEPLOYMENT_IMPACT_REPORT:
+        MonitoredServiceNotificationRule
+            .MonitoredServiceDeploymentImpactReportCondition deploymentImpactReportConditionSpec =
+            (MonitoredServiceNotificationRule.MonitoredServiceDeploymentImpactReportCondition) condition;
+        return DeploymentImpactReportConditionSpec.builder().build();
       default:
         throw new InvalidArgumentsException(
             "Invalid Monitored Service Notification Rule Condition Type: " + condition.getType());

@@ -7,12 +7,17 @@ awsEntityToBucketMapping {"name": "unique_accountId_awsConnectorIdentifier", "un
 azureRecommendation {"name": "unique_accountId_recommendationId", "unique": true} {"accountId": 1, "recommendationId": 1}
 azureRecommendation {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 batchJobInterval {"name": "accountId_batchJobType", "unique": true} {"accountId": 1, "batchJobType": 1}
+batchJobScheduledData {"name": "accountId_batchJobType_jobInstanceId", "background": true} {"accountId": 1, "batchJobType": 1, "jobInstanceId": 1}
 batchJobScheduledData {"name": "accountId_batchJobType_startAt", "background": true} {"accountId": 1, "batchJobType": 1, "startAt": 1}
 batchJobScheduledData {"name": "accountId_batchJobType_validRun_endAt", "background": true} {"accountId": 1, "batchJobType": 1, "validRun": 1, "endAt": -1}
 batchJobScheduledData {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 budgetGroups {"name": "accountId_1", "background": true} {"accountId": 1}
 budgets {"name": "accountId_1", "background": true} {"accountId": 1}
+businessMapping {"name": "accountId_decreasing_lastUpdatedAt", "background": true} {"accountId": 1, "lastUpdatedAt": -1}
 businessMapping {"name": "accountId_name", "background": true} {"accountId": 1, "name": 1}
+businessMappingHistory {"name": "accountId_businessMappingId_endAt", "background": true} {"accountId": 1, "businessMappingId": 1, "endAt": 1}
+businessMappingHistory {"name": "accountId_endAt_startAt", "background": true} {"accountId": 1, "endAt": 1, "startAt": 1}
+businessMappingHistory {"name": "accountId_startAt", "background": true} {"accountId": 1, "startAt": 1}
 cache {"name": "accountId_1", "background": true} {"accountId": 1}
 cache {"name": "unique_commutative", "unique": true} {"_id": 1, "contextValue": 1}
 cache {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
@@ -23,6 +28,7 @@ ceExceptionRecord {"name": "accountId_clusterId_createdAt", "background": true} 
 ceMetadataRecord {"name": "accountId", "unique": true} {"accountId": 1}
 ceReportSchedule {"name": "account_enabled_type", "background": true} {"accountId": 1, "enabled": 1, "name": 1, "viewsId": 1}
 ceView {"name": "accountId_folderId", "background": true} {"accountId": 1, "folderId": 1}
+ceView {"name": "accountId_viewType", "background": true} {"accountId": 1, "viewType": 1}
 ceViewFolder {"name": "accountId", "background": true} {"accountId": 1}
 clusterRecords {"name": "accountId_k8sBaseConnectorRefIdentifier", "unique": true} {"accountId": 1, "k8sBaseConnectorRefIdentifier": 1}
 ec2Recommendation {"name": "unique_accountId_awsAccountId_instanceId", "unique": true} {"accountId": 1, "awsAccountId": 1, "instanceId": 1}
@@ -43,7 +49,10 @@ governanceRule {"name": "sort2", "background": true} {"name": 1, "accountId": 1,
 governanceRuleEnforcement {"name": "ruleEnforcement", "background": true} {"name": 1, "accountId": 1, "cloudProvider": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 governanceRuleEnforcement {"name": "sort1", "background": true} {"name": 1, "accountId": 1, "lastUpdatedAt": 1}
 governanceRuleEnforcement {"name": "sort2", "background": true} {"name": 1, "accountId": 1, "createdAt": 1}
+governanceRuleExecution {"name": "accountId_decreasing_lastUpdatedAt_executionType", "background": true} {"accountId": 1, "lastUpdatedAt": -1, "executionType": 1}
+governanceRuleExecution {"name": "accountId_decreasing_lastUpdatedAt_ruleIdentifier_executionType", "background": true} {"accountId": 1, "lastUpdatedAt": -1, "ruleIdentifier": 1, "executionType": 1}
 governanceRuleExecution {"name": "jobIdentifier", "background": true} {"jobId": 1}
+governanceRuleExecution {"name": "resourceTypeCount", "background": true} {"accountId": 1, "resourceType": 1, "executionType": 1, "lastUpdatedAt": 1}
 governanceRuleExecution {"name": "ruleExecution", "background": true} {"accountId": 1, "cloudProvider": 1, "ruleEnforcementIdentifier": 1, "rulePackIdentifier": 1, "ruleIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 governanceRuleExecution {"name": "ruleIdentifier", "background": true} {"ruleIdentifier": 1}
 governanceRuleExecution {"name": "sort1", "background": true} {"accountId": 1, "cloudProvider": 1, "lastUpdatedAt": 1}
@@ -66,6 +75,7 @@ instanceData {"name": "instanceId_1", "background": true} {"instanceId": 1}
 instanceData {"name": "ttl_1", "background": true, "expireAfterSeconds": 0} {"ttl": 1}
 k8sNodeRecommendation {"name": "unique_accountId_clusterid_nodepoolname", "unique": true} {"accountId": 1, "nodePoolId.clusterid": 1, "nodePoolId.nodepoolname": 1}
 k8sNodeRecommendation {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
+k8sWorkload {"name": "accountId_clusterId_kind_name_namespace_decreasing_lastUpdatedAt", "background": true} {"accountId": 1, "clusterId": 1, "kind": 1, "name": 1, "namespace": 1, "lastUpdatedAt": -1}
 k8sWorkload {"name": "accountId_clusterId_namespace_name_lastUpdatedAt", "background": true} {"accountId": 1, "clusterId": 1, "namespace": 1, "name": 1, "lastUpdatedAt": -1}
 k8sWorkload {"name": "accountId_lastUpdatedAt", "background": true} {"accountId": 1, "lastUpdatedAt": 1}
 k8sWorkload {"name": "accountId_name_labels", "background": true} {"accountId": 1, "name": 1, "labels": 1}
@@ -75,8 +85,10 @@ k8sWorkloadRecommendation {"name": "accountId_dirty", "background": true} {"acco
 k8sWorkloadRecommendation {"name": "estimatedSavings_1", "background": true} {"estimatedSavings": 1}
 k8sWorkloadRecommendation {"name": "ttl_1", "background": true, "expireAfterSeconds": 0} {"ttl": 1}
 k8sWorkloadRecommendation {"name": "unique_accountId_clusterId_namespace_workloadName_workloadType", "unique": true} {"accountId": 1, "clusterId": 1, "namespace": 1, "workloadName": 1, "workloadType": 1}
+k8sYaml {"name": "accountId_createdAt", "background": true} {"accountId": 1, "createdAt": 1}
 k8sYaml {"name": "accountId_hash", "background": true} {"accountId": 1, "hash": 1}
 k8sYaml {"name": "hash_1", "unique": true} {"hash": 1}
+k8sYaml {"name": "ttl_1", "background": true, "expireAfterSeconds": 0} {"ttl": 1}
 lastReceivedPublishedMessage {"name": "no_dup", "unique": true} {"accountId": 1, "identifier": 1}
 managedAccount {"name": "accountId_mspAccountId", "unique": true} {"accountId": 1, "mspAccountId": 1}
 managedAccount {"name": "mspAccountId_1", "background": true} {"mspAccountId": 1}

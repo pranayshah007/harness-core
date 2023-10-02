@@ -6,14 +6,18 @@
  */
 
 package software.wings.beans;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.TaskGroup;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_K8S, HarnessModuleComponent.CDS_TRADITIONAL})
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)
 public enum TaskType {
@@ -491,9 +495,26 @@ public enum TaskType {
   SERVERLESS_ROLLBACK_V2_TASK(TaskGroup.SERVERLESS_NG, "Serverless Rollback V2 Task"),
   K8S_COMMAND_TASK_NG_RANCHER(TaskGroup.K8S_NG, "K8s Task for NG Rancher deployments"),
   HELM_COMMAND_TASK_NG_RANCHER(TaskGroup.HELM, "Helm Task for NG Rancher deployments"),
-  HELM_FETCH_CHART_MANIFEST_TASK(TaskGroup.HELM, "Fetch helm chart", true),
+  HELM_FETCH_CHART_MANIFEST_TASK(TaskGroup.HELM, "Fetch helm chart"),
   COMMAND_TASK_NG_WITH_GITHUB_PACKAGE_ARTIFACT(TaskGroup.COMMAND_TASK_NG, "Command Task"),
-  INSTANCE_SYNC_V2_NG_SUPPORT(TaskGroup.K8S_NG, "Instance sync V2 support for NG");
+  INSTANCE_SYNC_V2_NG_SUPPORT(TaskGroup.K8S_NG, "Instance sync V2 support for NG"),
+  COMMAND_TASK_NG_WITH_AZURE_UNIVERSAL_PACKAGE_ARTIFACT(TaskGroup.COMMAND_TASK_NG, "Command Task"),
+  TERRAGRUNT_PLAN_TASK_NG_V2(TaskGroup.TERRAGRUNT, "Terragrunt Plan Task V2", false),
+  TERRAGRUNT_APPLY_TASK_NG_V2(TaskGroup.TERRAGRUNT, "Terragrunt Apply Task V2", false),
+  TERRAGRUNT_DESTROY_TASK_NG_V2(TaskGroup.TERRAGRUNT, "Terragrunt Destroy Task V2", false),
+  ECR_HELM_API_LIST_TAGS_TASK(TaskGroup.HELM, "Task to query OCI Helm ECR Config Type Docker API List Tags"),
+  AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG_V2(TaskGroup.ASG, "AWS Asg Prepare Rollback Data V2"),
+  AWS_ASG_ROLLING_DEPLOY_TASK_NG_V2(TaskGroup.ASG, "AWS Asg Rolling Deploy V2"),
+  AWS_ASG_ROLLING_ROLLBACK_TASK_NG_V2(TaskGroup.ASG, "AWS Asg Rolling Rollback V2"),
+  AWS_ASG_CANARY_DEPLOY_TASK_NG_V2(TaskGroup.ASG, "AWS Asg Canary Deploy V2"),
+  AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG_V2(TaskGroup.ASG, "AWS Asg Blue Green Prepare Rollback Data V2"),
+  AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG_V2(TaskGroup.ASG, "AWS Asg Blue Green Deploy V2"),
+  AWS_ASG_BLUE_GREEN_SWAP_SERVICE_TASK_NG_V2(TaskGroup.ASG, "AWS Asg Blue Green Swap Service V2"),
+  AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG_V2(TaskGroup.ASG, "AWS Asg Blue Green Rollback V2"),
+  DLITE_CI_VM_EXECUTE_TASK_V2(TaskGroup.CI, true),
+  DLITE_CI_VM_CLEANUP_TASK_V2(TaskGroup.CI, true),
+  COMMAND_TASK_NG_WITH_GCS_ARTIFACT(
+      TaskGroup.COMMAND_TASK_NG, "Task to handle GCS artifact type with SSH/WinRm deployments");
 
   private final TaskGroup taskGroup;
   private final String displayName;

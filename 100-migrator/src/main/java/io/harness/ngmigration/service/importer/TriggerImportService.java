@@ -7,10 +7,15 @@
 
 package io.harness.ngmigration.service.importer;
 
-import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
+import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
 
+import static software.wings.ngmigration.NGMigrationEntityType.TRIGGER;
+
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.WorkflowType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -21,13 +26,14 @@ import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.dto.ImportDTO;
+import io.harness.ngmigration.dto.ImportError;
+import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.dto.SaveSummaryDTO;
 import io.harness.ngmigration.dto.TriggerFilter;
 import io.harness.ngmigration.service.DiscoveryService;
 import io.harness.ngmigration.service.MigrationTemplateUtils;
 import io.harness.ngmigration.service.artifactstream.ArtifactStreamFactory;
 import io.harness.ngmigration.service.artifactstream.ArtifactStreamMapper;
-import io.harness.ngmigration.service.trigger.WebhookFactory;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.config.NgTriggerConfigSchemaWrapper;
@@ -44,43 +50,61 @@ import io.harness.ngtriggers.beans.source.scheduled.ScheduledTriggerConfig;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
 import io.harness.ngtriggers.beans.source.webhook.v2.custom.CustomTriggerSpec;
 import io.harness.persistence.HPersistence;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.ServiceHttpClientConfig;
-import io.harness.serializer.JsonUtils;
-import io.harness.utils.YamlPipelineUtils;
 
 import software.wings.beans.Base;
+import software.wings.beans.Environment;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamType;
+import software.wings.beans.trigger.ArtifactSelection;
 import software.wings.beans.trigger.ArtifactTriggerCondition;
 import software.wings.beans.trigger.ScheduledTriggerCondition;
 import software.wings.beans.trigger.Trigger;
 import software.wings.beans.trigger.Trigger.TriggerKeys;
-import software.wings.beans.trigger.WebHookTriggerCondition;
+import software.wings.infra.InfrastructureDefinition;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryResult;
 import software.wings.ngmigration.NGMigrationEntityType;
+import software.wings.service.intfc.EnvironmentService;
+import software.wings.service.intfc.InfrastructureDefinitionService;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
+import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class TriggerImportService implements ImportService {
+  @Inject private EnvironmentService environmentService;
+  @Inject private InfrastructureDefinitionService infrastructureDefinitionService;
   @Inject DiscoveryService discoveryService;
   @Inject HPersistence hPersistence;
   @Inject private MigrationTemplateUtils migrationTemplateUtils;
   @Inject @Named("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceClientConfig;
   @Inject WorkflowImportService workflowImportService;
+
+  private final ObjectMapper objectMapper = new ObjectMapper();
 
   public DiscoveryResult discover(ImportDTO importConnectorDTO) {
     TriggerFilter filter = (TriggerFilter) importConnectorDTO.getFilter();
@@ -121,6 +145,16 @@ public class TriggerImportService implements ImportService {
       return;
     }
 
+    List<Trigger> triggers = discoveryResult.getEntities()
+                                 .keySet()
+                                 .stream()
+                                 .filter(cgEntityId -> cgEntityId.getType().equals(NGMigrationEntityType.TRIGGER))
+                                 .map(cgEntityId -> discoveryResult.getEntities().get(cgEntityId).getEntity())
+                                 .map(entity -> (Trigger) entity)
+                                 .collect(Collectors.toList());
+
+    Set<String> workflowIds = getWorkflowIds(triggers);
+
     Map<CgEntityId, NGYamlFile> yamlFileMap = summaryDTO.getNgYamlFiles()
                                                   .stream()
                                                   .filter(ngYamlFile -> ngYamlFile.getCgBasicInfo() != null)
@@ -130,32 +164,39 @@ public class TriggerImportService implements ImportService {
                                                              .id(yamlFile.getCgBasicInfo().getId())
                                                              .type(yamlFile.getCgBasicInfo().getType())
                                                              .build(),
-                                                      yamlFile -> yamlFile));
+                                                      yamlFile -> yamlFile, (yamlFile1, yamlFile2) -> yamlFile1));
 
     MigrationInputDTO inputDTO = MigratorUtility.getMigrationInput(authToken, importDTO);
     PmsClient pmsClient = MigratorUtility.getRestClient(inputDTO, pipelineServiceClientConfig, PmsClient.class);
-    workflowImportService.createWorkflowsAsPipeline(authToken, importDTO, discoveryResult, summaryDTO);
 
-    List<Trigger> triggers = discoveryResult.getEntities()
-                                 .keySet()
-                                 .stream()
-                                 .filter(cgEntityId -> cgEntityId.getType().equals(NGMigrationEntityType.TRIGGER))
-                                 .map(cgEntityId -> discoveryResult.getEntities().get(cgEntityId).getEntity())
-                                 .map(entity -> (Trigger) entity)
-                                 .collect(Collectors.toList());
+    if (EmptyPredicate.isNotEmpty(workflowIds)) {
+      workflowImportService.createWorkflowsAsPipeline(authToken, importDTO, discoveryResult, summaryDTO, workflowIds);
+    }
 
     for (Trigger trigger : triggers) {
-      NgTriggerConfigSchemaWrapper triggerWrapper =
-          generateTriggerPayload(inputDTO, discoveryResult, yamlFileMap, trigger);
-      if (triggerWrapper != null) {
-        createTrigger(inputDTO, pmsClient, triggerWrapper);
+      NGYamlFile yamlFile = generateTriggerPayload(inputDTO, discoveryResult, yamlFileMap, trigger);
+      if (yamlFile != null) {
+        MigrationImportSummaryDTO triggerImportSummary = createTrigger(inputDTO, pmsClient, yamlFile);
+        DiscoveryService.addToSummary(summaryDTO, yamlFile, triggerImportSummary);
       }
     }
   }
 
-  private void createTrigger(
-      MigrationInputDTO inputDTO, PmsClient pmsClient, NgTriggerConfigSchemaWrapper triggerConfigSchemaWrapper) {
-    String yaml = YamlPipelineUtils.writeYamlString(triggerConfigSchemaWrapper).replaceFirst("!<trigger>", "");
+  private static Set<String> getWorkflowIds(List<Trigger> triggers) {
+    if (EmptyPredicate.isEmpty(triggers)) {
+      return new HashSet<>();
+    }
+    return triggers.stream()
+        .filter(trigger -> WorkflowType.ORCHESTRATION.equals(trigger.getWorkflowType()))
+        .map(Trigger::getWorkflowId)
+        .collect(Collectors.toSet());
+  }
+
+  private MigrationImportSummaryDTO createTrigger(
+      MigrationInputDTO inputDTO, PmsClient pmsClient, NGYamlFile ngYamlFile) {
+    NgTriggerConfigSchemaWrapper triggerConfigSchemaWrapper = (NgTriggerConfigSchemaWrapper) ngYamlFile.getYaml();
+    String yaml = YamlUtils.writeYamlString(triggerConfigSchemaWrapper.getTrigger());
+
     try {
       Response<ResponseDTO<NGTriggerResponseDTO>> resp =
           pmsClient
@@ -165,44 +206,123 @@ public class TriggerImportService implements ImportService {
                   RequestBody.create(MediaType.parse("application/yaml"), yaml))
               .execute();
       log.info("Trigger creation Response details {} {}", resp.code(), resp.message());
-      if (resp.code() >= 400) {
-        log.info("Trigger yaml is \n - {}", yaml);
-      }
-      if (resp.code() >= 200 && resp.code() < 300) {
-        return;
-      }
-      log.info("The Yaml of the generated data was - {}", yaml);
-      Map<String, Object> error = null;
-      error = JsonUtils.asObject(
-          resp.errorBody() != null ? resp.errorBody().string() : "{}", new TypeReference<Map<String, Object>>() {});
-      log.error(String.format(
-          "There was error creating the trigger. Response from NG - %s with error body errorBody -  %s", resp, error));
+      log.info("Trigger yaml is \n - {}", yaml);
+      return MigratorUtility.handleEntityMigrationResp(ngYamlFile, resp);
     } catch (Exception e) {
       log.error("Error creating the trigger", e);
+      return MigrationImportSummaryDTO.builder()
+          .errors(Lists.newArrayList(
+              ImportError.builder().message(e.getMessage()).entity(ngYamlFile.getCgBasicInfo()).build()))
+          .build();
     }
   }
 
-  private NgTriggerConfigSchemaWrapper generateTriggerPayload(MigrationInputDTO inputDTO,
-      DiscoveryResult discoveryResult, Map<CgEntityId, NGYamlFile> yamlFileMap, Trigger trigger) {
+  private NGYamlFile generateTriggerPayload(MigrationInputDTO inputDTO, DiscoveryResult discoveryResult,
+      Map<CgEntityId, NGYamlFile> yamlFileMap, Trigger trigger) {
     NgEntityDetail pipelineDetail = getPipelineIdentifier(trigger, yamlFileMap);
     if (pipelineDetail == null) {
       return null;
     }
-    NGTriggerConfigV2 triggerConfig =
-        NGTriggerConfigV2.builder()
-            .identifier(MigratorUtility.generateIdentifier(trigger.getName(), inputDTO.getIdentifierCaseFormat()))
-            .orgIdentifier(inputDTO.getOrgIdentifier())
-            .projectIdentifier(inputDTO.getProjectIdentifier())
-            .description(trigger.getDescription())
-            .name(MigratorUtility.generateName(trigger.getName()))
-            .enabled(false)
-            .pipelineIdentifier(pipelineDetail.getIdentifier())
-            .source(getSourceInfo(discoveryResult, trigger, yamlFileMap))
-            .inputYaml(migrationTemplateUtils.getPipelineInput(
-                inputDTO, pipelineDetail, inputDTO.getDestinationAccountIdentifier()))
-            .build();
 
-    return NgTriggerConfigSchemaWrapper.builder().trigger(triggerConfig).build();
+    CgEntityId entityId = CgEntityId.builder().type(TRIGGER).id(trigger.getUuid()).build();
+    String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, trigger.getName());
+    String identifier = MigratorUtility.generateIdentifierDefaultName(
+        inputDTO.getOverrides(), entityId, name, inputDTO.getIdentifierCaseFormat());
+    String projectIdentifier = inputDTO.getProjectIdentifier();
+    String orgIdentifier = inputDTO.getOrgIdentifier();
+    String description = StringUtils.isBlank(trigger.getDescription()) ? "" : trigger.getDescription();
+
+    Map<String, Object> inputDetails = new HashMap<>();
+    JsonNode inputNode = getInputDetails(inputDTO, pipelineDetail, inputDetails);
+    ArrayNode stagesNode = (ArrayNode) inputDetails.get("stages");
+
+    if (stagesNode != null) {
+      for (int i = 0; i < stagesNode.size(); i++) {
+        JsonNode stageNode = stagesNode.get(i);
+        Optional<ArtifactSelection> firstArtifactSelection = trigger.getArtifactSelections().stream().findFirst();
+
+        if (firstArtifactSelection.isPresent()) {
+          ArtifactSelection artifactSelection = firstArtifactSelection.get();
+          String triggerServiceRef = artifactSelection.getServiceName();
+          String serviceNGId =
+              MigratorUtility.generateIdentifier(triggerServiceRef, inputDTO.getIdentifierCaseFormat());
+          String serviceRef = stageNode.at("/stage/template/templateInputs/spec/service/serviceRef").asText();
+          if (RUNTIME_INPUT.equals(serviceRef) && !RUNTIME_INPUT.equals(triggerServiceRef)) {
+            ObjectNode serviceNode = (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/service");
+            serviceNode.put("serviceRef", serviceNGId);
+          }
+
+          Map<String, String> workflowVariables = trigger.getWorkflowVariables();
+          if (workflowVariables != null) {
+            String envCGId = workflowVariables.get("Environment");
+            if (envCGId != null) {
+              Environment env = environmentService.get(trigger.getAppId(), envCGId);
+              String envNGId = MigratorUtility.generateIdentifier(env.getName(), inputDTO.getIdentifierCaseFormat());
+
+              String envRef = stageNode.at("/stage/template/templateInputs/spec/environment/environmentRef").asText();
+              if (RUNTIME_INPUT.equals(envRef) && envNGId != null) {
+                ObjectNode envNode = (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/environment");
+                envNode.put("environmentRef", envNGId);
+              }
+            }
+
+            String pattern = ".*InfraDefinition.*";
+            Pattern regexPattern = Pattern.compile(pattern);
+            String infraCGId = null;
+            for (Map.Entry<String, String> entry : workflowVariables.entrySet()) {
+              String key = entry.getKey();
+              String value = entry.getValue();
+              Matcher matcher = regexPattern.matcher(key);
+              if (matcher.matches()) {
+                infraCGId = value;
+              }
+            }
+            if (infraCGId != null) {
+              InfrastructureDefinition infra = infrastructureDefinitionService.get(trigger.getAppId(), infraCGId);
+              if (infra != null) {
+                String infraNGId =
+                    MigratorUtility.generateIdentifier(infra.getName(), inputDTO.getIdentifierCaseFormat());
+                String infraRef =
+                    stageNode.at("/stage/template/templateInputs/spec/environment/infrastructureDefinitions").asText();
+                if (RUNTIME_INPUT.equals(infraRef) && infraNGId != null) {
+                  ObjectNode infraNodeObj =
+                      (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/environment");
+                  JsonNode infraNode = objectMapper.createObjectNode().put("identifier", infraNGId);
+                  ArrayNode infraArrayNode = objectMapper.createArrayNode().add(infraNode);
+                  infraNodeObj.set("infrastructureDefinitions", infraArrayNode);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // We need to get the FG trigger inputs & set it
+    NGTriggerConfigV2 triggerConfig = NGTriggerConfigV2.builder()
+                                          .identifier(identifier)
+                                          .orgIdentifier(orgIdentifier)
+                                          .projectIdentifier(projectIdentifier)
+                                          .description(description)
+                                          .name(name)
+                                          .enabled(false)
+                                          .pipelineIdentifier(pipelineDetail.getIdentifier())
+                                          .source(getSourceInfo(discoveryResult, trigger, yamlFileMap))
+                                          .inputYaml(inputNode != null ? inputNode.toString() : null)
+                                          .build();
+
+    return NGYamlFile.builder()
+        .type(TRIGGER)
+        .filename("triggers/" + trigger.getName() + ".yaml")
+        .yaml(NgTriggerConfigSchemaWrapper.builder().trigger(triggerConfig).build())
+        .ngEntityDetail(NgEntityDetail.builder()
+                            .entityType(TRIGGER)
+                            .identifier(identifier)
+                            .orgIdentifier(orgIdentifier)
+                            .projectIdentifier(projectIdentifier)
+                            .build())
+        .cgBasicInfo(trigger.getCgBasicInfo())
+        .build();
   }
 
   private NgEntityDetail getPipelineIdentifier(Trigger trigger, Map<CgEntityId, NGYamlFile> yamlFileMap) {
@@ -225,15 +345,20 @@ public class TriggerImportService implements ImportService {
     switch (trigger.getCondition().getConditionType()) {
       case WEBHOOK:
         type = NGTriggerType.WEBHOOK;
-        spec = WebhookFactory.getHandler((WebHookTriggerCondition) trigger.getCondition())
-                   .getConfig((WebHookTriggerCondition) trigger.getCondition(), yamlFileMap);
+        spec = WebhookTriggerConfigV2.builder()
+                   .spec(CustomTriggerSpec.builder().build())
+                   .type(WebhookTriggerType.CUSTOM)
+                   .build();
+        //        spec = WebhookFactory.getHandler((WebHookTriggerCondition) trigger.getCondition())
+        //            .getConfig((WebHookTriggerCondition) trigger.getCondition(), yamlFileMap);
         break;
       case SCHEDULED:
         ScheduledTriggerCondition scheduledTriggerCondition = (ScheduledTriggerCondition) trigger.getCondition();
         type = NGTriggerType.SCHEDULED;
+        String expression = scheduledTriggerCondition.getCronExpression().replace("?", "*");
         spec = ScheduledTriggerConfig.builder()
                    .type("Cron")
-                   .spec(CronTriggerSpec.builder().expression(scheduledTriggerCondition.getCronExpression()).build())
+                   .spec(CronTriggerSpec.builder().type("UNIX").expression(expression).build())
                    .build();
         break;
       case NEW_ARTIFACT:
@@ -253,8 +378,6 @@ public class TriggerImportService implements ImportService {
                    .spec(artifactStreamMapper.getTriggerSpec(
                        discoveryResult.getEntities(), artifactStream, yamlFileMap, trigger))
                    .build();
-        ((ArtifactTriggerConfig) spec).setArtifactRef(PLEASE_FIX_ME);
-        ((ArtifactTriggerConfig) spec).setStageIdentifier(PLEASE_FIX_ME);
         break;
       case NEW_MANIFEST:
         // TODO
@@ -267,10 +390,30 @@ public class TriggerImportService implements ImportService {
         type = NGTriggerType.WEBHOOK;
         spec = WebhookTriggerConfigV2.builder()
                    .type(WebhookTriggerType.CUSTOM)
-                   .spec(CustomTriggerSpec.builder().jexlCondition("__PLEASE_FIX_ME__").build())
+                   .spec(CustomTriggerSpec.builder().build())
                    .build();
     }
 
     return NGTriggerSourceV2.builder().type(type).spec(spec).build();
+  }
+
+  private JsonNode getInputDetails(
+      MigrationInputDTO inputDTO, NgEntityDetail pipelineDetail, Map<String, Object> inputDetails) {
+    String inputYaml =
+        migrationTemplateUtils.getPipelineInput(inputDTO, pipelineDetail, inputDTO.getDestinationAccountIdentifier());
+
+    JsonNode inputNode;
+    if (StringUtils.isBlank(inputYaml)) {
+      return null;
+    }
+    try {
+      inputNode = YamlUtils.read(inputYaml, JsonNode.class);
+    } catch (Exception ex) {
+      log.warn("Error when getting inputs - ", ex);
+      return null;
+    }
+    inputDetails.put("identifier", inputNode.at("/pipeline/identifier"));
+    inputDetails.put("stages", inputNode.at("/pipeline/stages"));
+    return inputNode;
   }
 }

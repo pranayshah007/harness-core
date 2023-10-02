@@ -59,6 +59,7 @@ public class CIBuildStatusPushTask extends AbstractDelegateRunnableTask {
         .repo(params.getRepo())
         .owner(params.getOwner())
         .sha(params.getSha())
+        .prNumber(params.getPrNumber())
         .identifier(params.getIdentifier())
         .target_url(params.getTarget_url())
         .userName(params.getUserName())

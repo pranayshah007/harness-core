@@ -6,15 +6,16 @@
  */
 
 package io.harness.engine.executions.step;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -29,7 +30,6 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.repositories.StepExecutionEntityRepository;
-import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -40,12 +40,12 @@ import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 @OwnedBy(CDP)
 public class StepExecutionEntityServiceImpl implements StepExecutionEntityService {
-  @Inject private PmsFeatureFlagHelper pmsFeatureFlagHelper;
   private StepExecutionEntityRepository stepExecutionEntityRepository;
 
   @Override
@@ -89,25 +89,22 @@ public class StepExecutionEntityServiceImpl implements StepExecutionEntityServic
   @Override
   public StepExecutionEntity updateStepExecutionEntity(Ambiance ambiance, FailureInfo failureInfo,
       StepExecutionDetails stepExecutionDetails, String stepName, Status status) {
-    if (pmsFeatureFlagHelper.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STEP_EXECUTION_DATA_SYNC)) {
-      try {
-        return updateStepExecutionEntity(ambiance,
-            StepExecutionEntityUpdateDTO.builder()
-                .stepName(stepName)
-                .failureInfo(failureInfo)
-                .stepExecutionDetails(stepExecutionDetails)
-                .build(),
-            status);
-      } catch (Exception ex) {
-        log.error(
-            String.format(
-                "Unable to update step execution entity, accountIdentifier: %s, orgIdentifier: %s, projectIdentifier: %s, planExecutionId: %s, stageExecutionId: %s, stepExecutionId: %s",
-                AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
-                AmbianceUtils.getProjectIdentifier(ambiance), ambiance.getPlanExecutionId(),
-                ambiance.getStageExecutionId(), AmbianceUtils.obtainCurrentRuntimeId(ambiance)),
-            ex);
-      }
+    try {
+      return updateStepExecutionEntity(ambiance,
+          StepExecutionEntityUpdateDTO.builder()
+              .stepName(stepName)
+              .failureInfo(failureInfo)
+              .stepExecutionDetails(stepExecutionDetails)
+              .build(),
+          status);
+    } catch (Exception ex) {
+      log.error(
+          String.format(
+              "[CustomDashboard]: Unable to update step execution entity, accountIdentifier: %s, orgIdentifier: %s, projectIdentifier: %s, planExecutionId: %s, stageExecutionId: %s, stepExecutionId: %s",
+              AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+              AmbianceUtils.getProjectIdentifier(ambiance), ambiance.getPlanExecutionId(),
+              ambiance.getStageExecutionId(), AmbianceUtils.obtainCurrentRuntimeId(ambiance)),
+          ex);
     }
     return null;
   }

@@ -14,7 +14,11 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.steps.constants.ArtifactsStepV2Constants;
+import io.harness.cdng.aws.asg.AsgServiceSettingsStep;
 import io.harness.cdng.azure.webapp.AzureServiceSettingsStep;
 import io.harness.cdng.configfile.steps.ConfigFilesStepV2;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
@@ -23,6 +27,7 @@ import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.elastigroup.ElastigroupServiceSettingsStep;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.helper.EnvironmentInfraFilterUtils;
+import io.harness.cdng.environment.yaml.EnvironmentInfraUseFromStage;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.hooks.steps.ServiceHooksStep;
@@ -68,6 +73,8 @@ import javax.validation.constraints.NotNull;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @UtilityClass
 public class ServiceAllInOnePlanCreatorUtils {
   /**
@@ -93,11 +100,15 @@ public class ServiceAllInOnePlanCreatorUtils {
         ? useServiceYamlFromStage(serviceYamlV2.getUseFromStage(), specField)
         : serviceYamlV2;
 
+    final EnvironmentYamlV2 finalEnvironmentYamlV2 = useFromStage(environmentYamlV2)
+        ? useEnvironmentYamlFromStage(environmentYamlV2.getUseFromStage(), specField)
+        : environmentYamlV2;
+
     final LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
 
     // add nodes for artifacts/manifests/files
     final List<String> childrenNodeIds = addChildrenNodes(planCreationResponseMap, serviceType);
-    ParameterField<Map<String, Object>> serviceOverrideInputs = environmentYamlV2.getServiceOverrideInputs();
+    ParameterField<Map<String, Object>> serviceOverrideInputs = finalEnvironmentYamlV2.getServiceOverrideInputs();
     if (finalServiceYaml.getServiceRef().isExpression()
         && finalServiceYaml.getServiceRef().getExpressionValue().equals(SERVICE_REF_EXPRESSION)) {
       serviceOverrideInputs =
@@ -105,11 +116,11 @@ public class ServiceAllInOnePlanCreatorUtils {
     }
 
     ParameterField<String> infraRef = ParameterField.createValueField(null);
-    if (ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinitions())
-        && isNotEmpty(environmentYamlV2.getInfrastructureDefinitions().getValue())) {
-      infraRef = environmentYamlV2.getInfrastructureDefinitions().getValue().get(0).getIdentifier();
-    } else if (ParameterField.isNotNull(environmentYamlV2.getInfrastructureDefinition())) {
-      infraRef = environmentYamlV2.getInfrastructureDefinition().getValue().getIdentifier();
+    if (ParameterField.isNotNull(finalEnvironmentYamlV2.getInfrastructureDefinitions())
+        && isNotEmpty(finalEnvironmentYamlV2.getInfrastructureDefinitions().getValue())) {
+      infraRef = finalEnvironmentYamlV2.getInfrastructureDefinitions().getValue().get(0).getIdentifier();
+    } else if (ParameterField.isNotNull(finalEnvironmentYamlV2.getInfrastructureDefinition())) {
+      infraRef = finalEnvironmentYamlV2.getInfrastructureDefinition().getValue().getIdentifier();
     }
     final ServiceStepV3ParametersBuilder stepParameters = ServiceStepV3Parameters.builder()
                                                               .serviceRef(finalServiceYaml.getServiceRef())
@@ -118,8 +129,8 @@ public class ServiceAllInOnePlanCreatorUtils {
                                                               .childrenNodeIds(childrenNodeIds)
                                                               .serviceOverrideInputs(serviceOverrideInputs)
                                                               .deploymentType(serviceType)
-                                                              .envRef(environmentYamlV2.getEnvironmentRef())
-                                                              .envInputs(environmentYamlV2.getEnvironmentInputs())
+                                                              .envRef(finalEnvironmentYamlV2.getEnvironmentRef())
+                                                              .envInputs(finalEnvironmentYamlV2.getEnvironmentInputs())
                                                               .envGroupRef(envGroupRef);
 
     return createPlanNode(kryoSerializer, serviceNodeId, nextNodeId, planCreationResponseMap, stepParameters.build());
@@ -265,7 +276,7 @@ public class ServiceAllInOnePlanCreatorUtils {
             .stepParameters(new EmptyStepParameters())
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
-                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
                     .build())
             .skipExpressionChain(true)
             .skipGraphType(SkipType.SKIP_TREE)
@@ -351,6 +362,27 @@ public class ServiceAllInOnePlanCreatorUtils {
       planCreationResponseMap.put(
           elastigroupSettingsNode.getUuid(), PlanCreationResponse.builder().planNode(elastigroupSettingsNode).build());
     }
+
+    // Add ASG settings node
+    if (serviceType == ServiceDefinitionType.ASG) {
+      PlanNode asgSettingsNode =
+          PlanNode.builder()
+              .uuid("asg-settings-" + UUIDGenerator.generateUuid())
+              .stepType(AsgServiceSettingsStep.STEP_TYPE)
+              .name(PlanCreatorConstants.ASG_SERVICE_SETTINGS_NODE)
+              .identifier(YamlTypes.ASG_SERVICE_SETTINGS_STEP)
+              .stepParameters(new EmptyStepParameters())
+              .facilitatorObtainment(
+                  FacilitatorObtainment.newBuilder()
+                      .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                      .build())
+              .skipExpressionChain(true)
+              .build();
+      nodeIds.add(asgSettingsNode.getUuid());
+      planCreationResponseMap.put(
+          asgSettingsNode.getUuid(), PlanCreationResponse.builder().planNode(asgSettingsNode).build());
+    }
+
     return nodeIds;
   }
 
@@ -441,5 +473,73 @@ public class ServiceAllInOnePlanCreatorUtils {
       }
     }
     return true;
+  }
+
+  public static boolean useFromStage(EnvironmentYamlV2 environmentYamlV2) {
+    return environmentYamlV2.getUseFromStage() != null && environmentYamlV2.getUseFromStage().getStage() != null;
+  }
+
+  public static EnvironmentYamlV2 useEnvironmentYamlFromStage(
+      @NotNull EnvironmentInfraUseFromStage useFromStage, YamlField specField) {
+    final YamlField environmentField = specField.getNode().getField(YamlTypes.ENVIRONMENT_YAML);
+    String stage = useFromStage.getStage();
+    if (stage.isBlank()) {
+      throw new InvalidRequestException("Stage identifier is empty in useFromStage");
+    }
+
+    try {
+      YamlField propagatedFromStageConfig = PlanCreatorUtils.getStageConfig(environmentField, stage);
+      if (propagatedFromStageConfig == null) {
+        throw new InvalidArgumentsException(
+            "Stage with identifier [" + stage + "] given for environment propagation does not exist.");
+      }
+
+      DeploymentStageNode stageElementConfig =
+          YamlUtils.read(propagatedFromStageConfig.getNode().toString(), DeploymentStageNode.class);
+      DeploymentStageConfig deploymentStage = stageElementConfig.getDeploymentStageConfig();
+      if (deploymentStage != null) {
+        validateEnvironmentInDeploymentStageConfig(deploymentStage, stage, specField);
+        return deploymentStage.getEnvironment();
+      } else {
+        throw new InvalidArgumentsException("Stage identifier given in useFromStage doesn't exist");
+      }
+    } catch (IOException ex) {
+      throw new InvalidRequestException("Cannot parse stage: " + stage);
+    }
+  }
+
+  private void validateEnvironmentInDeploymentStageConfig(
+      DeploymentStageConfig deploymentStage, String stage, YamlField specField) {
+    if (deploymentStage.getEnvironment() != null && useFromStage(deploymentStage.getEnvironment())) {
+      throw new InvalidArgumentsException("Invalid identifier [" + stage
+          + "] given in useFromStage. Cannot reference a stage which also has useFromStage parameter");
+    }
+
+    if (deploymentStage.getEnvironment() == null) {
+      if (deploymentStage.getEnvironments() != null) {
+        throw new InvalidRequestException(
+            "Propagate from stage is not supported with multi environment deployments, hence not possible to propagate environment from that stage");
+      }
+      throw new InvalidRequestException(String.format(
+          "Could not find environment in stage [%s], hence not possible to propagate environment from that stage",
+          stage));
+    }
+
+    if (deploymentStage.getEnvironmentGroup() != null) {
+      throw new InvalidRequestException(
+          "Propagate from stage is not supported with environment group deployments, hence not possible to propagate environment from that stage");
+    }
+
+    if (deploymentStage.getDeploymentType() != null && isNotBlank(deploymentStage.getDeploymentType().getYamlName())
+        && specField.getNode().getField("deploymentType").getNode() != null) {
+      if (!deploymentStage.getDeploymentType().getYamlName().equals(
+              specField.getNode().getField("deploymentType").getNode().asText())) {
+        throw new InvalidRequestException(String.format(
+            "Deployment type: [%s] of stage: [%s] does not match with deployment type: [%s] of stage: [%s] from which environment propagation is configured",
+            specField.getNode().getField("deploymentType").getNode().asText(),
+            specField.getNode().getParentNode().getIdentifier(), deploymentStage.getDeploymentType().getYamlName(),
+            stage));
+      }
+    }
   }
 }

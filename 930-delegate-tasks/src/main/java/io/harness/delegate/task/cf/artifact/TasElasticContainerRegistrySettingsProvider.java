@@ -9,8 +9,11 @@ package io.harness.delegate.task.cf.artifact;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.connector.helper.DecryptionHelper;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -27,6 +30,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
 public class TasElasticContainerRegistrySettingsProvider extends AbstractTasRegistrySettingsProvider {

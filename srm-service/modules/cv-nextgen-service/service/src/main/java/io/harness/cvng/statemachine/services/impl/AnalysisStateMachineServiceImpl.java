@@ -12,7 +12,10 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
+import io.harness.cvng.beans.CVNGTaskMetadataConstants;
+import io.harness.cvng.beans.cvnglog.CVNGLogTag;
 import io.harness.cvng.core.services.api.ExecutionLogService;
+import io.harness.cvng.core.utils.CVNGTaskMetadataUtils;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
 import io.harness.cvng.metrics.services.impl.MetricContextBuilder;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
@@ -31,6 +34,7 @@ import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import dev.morphia.query.Sort;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -76,8 +80,9 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
       stateMachine.setStatus(AnalysisStatus.RUNNING);
     }
     hPersistence.save(stateMachine);
+    List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(stateMachine.getUuid());
     executionLogService.getLogger(stateMachine)
-        .log(stateMachine.getLogLevel(), "Analysis state machine status: " + stateMachine.getStatus());
+        .log(stateMachine.getLogLevel(), cvngLogTags, "Analysis state machine status: " + stateMachine.getStatus());
   }
 
   @Override
@@ -110,9 +115,10 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
           analysisStateMachine.getVerificationTaskId(), analysisStateMachine.getAnalysisStartTime(),
           analysisStateMachine.getAnalysisEndTime(), STATE_MACHINE_IGNORE_MINUTES);
       analysisStateMachine.setStatus(AnalysisStatus.IGNORED);
+      List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(analysisStateMachine.getUuid());
       executionLogService.getLogger(analysisStateMachine)
-          .log(
-              analysisStateMachine.getLogLevel(), "Analysis state machine status: " + analysisStateMachine.getStatus());
+          .log(analysisStateMachine.getLogLevel(), cvngLogTags,
+              "Analysis state machine status: " + analysisStateMachine.getStatus());
       return Optional.of(analysisStateMachine);
     }
     return Optional.empty();
@@ -124,6 +130,10 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
       log.info("The next attempt time for the statemachine {} is {}. skipping for now", analysisStateMachine.getUuid(),
           analysisStateMachine.getNextAttemptTime());
       return analysisStateMachine.getCurrentState().getStatus();
+    }
+    if (analysisStateMachine.getFirstPickedAt() == null) {
+      analysisStateMachine.setFirstPickedAt(clock.instant());
+      hPersistence.save(analysisStateMachine);
     }
     log.info("Executing state machine {} for verificationTask {}", analysisStateMachine.getUuid(),
         analysisStateMachine.getVerificationTaskId());
@@ -210,9 +220,32 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
       }
     }
     hPersistence.save(analysisStateMachine);
+    List<CVNGLogTag> cvngLogTags = getCvngLogTags(analysisStateMachine, clock);
     executionLogService.getLogger(analysisStateMachine)
-        .log(analysisStateMachine.getLogLevel(), "Analysis state machine status: " + analysisStateMachine.getStatus());
+        .log(analysisStateMachine.getLogLevel(), cvngLogTags,
+            "Analysis state machine status: " + analysisStateMachine.getStatus());
     return analysisStateMachine.getCurrentState().getStatus();
+  }
+
+  private static List<CVNGLogTag> getCvngLogTags(AnalysisStateMachine analysisStateMachine, Clock clock) {
+    List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(analysisStateMachine.getUuid());
+    if (analysisStateMachine.getTotalRetryCount() > 0) {
+      cvngLogTags.add(CVNGTaskMetadataUtils.getCvngLogTag(
+          CVNGTaskMetadataConstants.RETRY_COUNT, String.valueOf(analysisStateMachine.getTotalRetryCount())));
+    }
+    if (AnalysisStatus.getFinalStates().contains(analysisStateMachine.getStatus())
+        && analysisStateMachine.getFirstPickedAt() != null) {
+      cvngLogTags.add(CVNGTaskMetadataUtils.getCvngLogTag(
+          CVNGTaskMetadataConstants.TASK_TYPE, String.valueOf(analysisStateMachine.getCurrentState().getType())));
+      Duration waitDuration = Duration.between(
+          Instant.ofEpochMilli(analysisStateMachine.getCreatedAt()), analysisStateMachine.getFirstPickedAt());
+      cvngLogTags.addAll(
+          CVNGTaskMetadataUtils.getTaskDurationTags(CVNGTaskMetadataUtils.DurationType.WAIT_DURATION, waitDuration));
+      Duration totalRunningDuration = Duration.between(analysisStateMachine.getFirstPickedAt(), clock.instant());
+      cvngLogTags.addAll(CVNGTaskMetadataUtils.getTaskDurationTags(
+          CVNGTaskMetadataUtils.DurationType.RUNNING_DURATION, totalRunningDuration));
+    }
+    return cvngLogTags;
   }
 
   @Override
@@ -228,6 +261,7 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
     AnalysisStateExecutor analysisStateExecutor = stateTypeAnalysisStateExecutorMap.get(currentState.getType());
     if (currentState.getStatus() == AnalysisStatus.FAILED || currentState.getStatus() == AnalysisStatus.TIMEOUT) {
       analysisStateMachine.setStatus(AnalysisStatus.RUNNING);
+      analysisStateMachine.incrementTotalRetryCount();
       analysisStateExecutor.handleRetry(currentState);
     } else {
       throw new AnalysisStateMachineException(
@@ -235,8 +269,10 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
     }
 
     hPersistence.save(analysisStateMachine);
+    List<CVNGLogTag> cvngLogTags = CVNGTaskMetadataUtils.getCvngLogTagsForTask(analysisStateMachine.getUuid());
     executionLogService.getLogger(analysisStateMachine)
-        .log(analysisStateMachine.getLogLevel(), "Analysis state machine status: " + analysisStateMachine.getStatus());
+        .log(analysisStateMachine.getLogLevel(), cvngLogTags,
+            "Analysis state machine status: " + analysisStateMachine.getStatus());
   }
 
   @Override

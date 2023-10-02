@@ -32,7 +32,6 @@ import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.TerraformCommandFlagType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.provision.ProvisionerOutputHelper;
-import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
@@ -66,6 +65,7 @@ import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
@@ -934,9 +934,7 @@ public class TerraformApplyStepV2Test extends CategoryTest {
 
     StepResponse stepResponse = terraformApplyStepV2.finalizeExecutionWithSecurityContext(
         ambiance, stepElementParameters, terraformPassThroughData, () -> terraformTaskNGResponse);
-    StepResponse.StepOutcome stepOutcome2 = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(1);
 
-    assertThat(stepOutcome2.getName()).isEqualTo(TerraformGitRevisionOutcome.OUTCOME_NAME);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
   }
@@ -983,12 +981,11 @@ public class TerraformApplyStepV2Test extends CategoryTest {
 
     StepResponse stepResponse = terraformApplyStepV2.finalizeExecutionWithSecurityContext(
         ambiance, stepElementParameters, terraformPassThroughData, () -> terraformTaskNGResponse);
-    StepResponse.StepOutcome stepOutcome2 = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(1);
 
-    assertThat(stepOutcome2.getName()).isEqualTo(TerraformGitRevisionOutcome.OUTCOME_NAME);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
     verify(terraformStepHelper, times(1)).getRevisionsMap(any(TerraformPassThroughData.class), any());
+    verify(terraformStepHelper).addTerraformRevisionOutcomeIfRequired(any(), any());
   }
 
   @Test
@@ -1034,7 +1031,7 @@ public class TerraformApplyStepV2Test extends CategoryTest {
   @Owner(developers = VLICA)
   @Category(UnitTests.class)
   public void testGetStepParametersClass() {
-    assertThat(terraformApplyStepV2.getStepParametersClass()).isEqualTo(StepElementParameters.class);
+    assertThat(terraformApplyStepV2.getStepParametersClass()).isEqualTo(StepBaseParameters.class);
   }
 
   @Test

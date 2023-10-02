@@ -61,10 +61,12 @@ public class CyclonedxDTO extends SbomDTO {
     @Data
     public class License {
       InternalLicence license;
+      String expression;
 
       @Data
       public class InternalLicence {
         String name;
+        String id;
       }
     }
 

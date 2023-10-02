@@ -39,12 +39,14 @@ public class AnomalyUtility {
     substitutes.put(AnomalyEntityKeys.clusterName, anomaly.getClusterName());
     substitutes.put(AnomalyEntityKeys.namespace, anomaly.getNamespace());
     substitutes.put(AnomalyEntityKeys.workloadName, anomaly.getWorkloadName());
+    substitutes.put(AnomalyEntityKeys.serviceName, anomaly.getServiceName());
     substitutes.put(AnomalyEntityKeys.gcpProject, anomaly.getGcpProject());
     substitutes.put(AnomalyEntityKeys.gcpProduct, anomaly.getGcpProduct());
     substitutes.put(AnomalyEntityKeys.gcpSKUId, anomaly.getGcpSKUId());
     substitutes.put(AnomalyEntityKeys.gcpSKUDescription, anomaly.getGcpSKUDescription());
     substitutes.put(AnomalyEntityKeys.awsAccount, anomaly.getAwsAccount());
     substitutes.put(AnomalyEntityKeys.awsService, anomaly.getAwsService());
+    substitutes.put(AnomalyEntityKeys.awsUsageType, anomaly.getAwsUsageType());
     substitutes.put(
         AnomalyEntityKeys.actualCost, currencySymbol + getRoundedDoubleValue(anomaly.getActualCost()).toString());
     substitutes.put(
@@ -80,6 +82,8 @@ public class AnomalyUtility {
     substitutes.put("NAMESPACE_URL",
         HarnessNgUrl.getPerspectiveAnomalyUrl(accountId, perspectiveId, perspectiveName, anomaly, baseUrl));
     substitutes.put("WORKLOAD_URL",
+        HarnessNgUrl.getPerspectiveAnomalyUrl(accountId, perspectiveId, perspectiveName, anomaly, baseUrl));
+    substitutes.put("SERVICE_URL",
         HarnessNgUrl.getPerspectiveAnomalyUrl(accountId, perspectiveId, perspectiveName, anomaly, baseUrl));
     substitutes.put("GCP_PROJECT_URL",
         HarnessNgUrl.getPerspectiveAnomalyUrl(accountId, perspectiveId, perspectiveName, anomaly, baseUrl));

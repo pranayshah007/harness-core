@@ -1,0 +1,31 @@
+{
+  "filterable": true,
+  "canmatch": true,
+  "cangroup": true,
+  "label": "Priority",
+  "type": "choice",
+  "max_unit": "days",
+  "mandatory": false,
+  "default": "",
+  "base_type": "string",
+  "read_only": false,
+  "hint": "Sequence in which an Incident or Problem needs to be resolved, based on impact and urgency",
+  "name": "priority",
+  "choice_type": 1,
+  "column_type": "element",
+  "choices": [
+    {
+      "label": "-- None --",
+      "used": false,
+      "reference": false,
+      "image": "",
+      "rawLabel": "-- None --",
+      "missing": false,
+      "selected": false,
+      "value": false
+    }
+  ],
+  "internal_type": "integer",
+  "cansort": true,
+  "max_length": 40
+}

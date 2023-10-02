@@ -20,7 +20,11 @@ import io.harness.exception.WingsException;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(CDC)
@@ -56,5 +60,26 @@ public class ServiceNowUtils {
   @NotNull
   private static String getUrlWithPath(String baseUrl, String ticketType) {
     return baseUrl + (baseUrl.endsWith("/") ? "" : "/") + "nav_to.do?uri=/" + ticketType.toLowerCase();
+  }
+
+  public static Map<String, ServiceNowFieldValueNG> getListOfFieldsFromStringOfFields(
+      String serviceNowFieldJsonNGListAsString) {
+    if (StringUtils.isBlank(serviceNowFieldJsonNGListAsString)) {
+      return Collections.emptyMap();
+    }
+    String[] fieldList = serviceNowFieldJsonNGListAsString.split("\\^");
+
+    Map<String, ServiceNowFieldValueNG> parsedFields = new HashMap<>();
+
+    for (String field : fieldList) {
+      if ("EQ".equals(field)) {
+        break;
+      }
+      String[] keyValue = field.split("=");
+      if (keyValue.length == 2) {
+        parsedFields.put(keyValue[0].trim(), ServiceNowFieldValueNG.builder().value(keyValue[1].trim()).build());
+      }
+    }
+    return parsedFields;
   }
 }

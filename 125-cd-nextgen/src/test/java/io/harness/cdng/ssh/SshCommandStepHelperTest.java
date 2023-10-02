@@ -12,6 +12,7 @@ import static io.harness.cdng.ssh.SshWinRmConstants.FILE_STORE_SCRIPT_ERROR_MSG;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.IVAN;
+import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.VITALIE;
 
 import static java.lang.String.format;
@@ -296,9 +297,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
     doReturn(Arrays.asList(encryptedDataDetail)).when(ngEncryptedDataService).getEncryptionDetails(any(), any());
     doReturn(harnessStore).when(cdExpressionResolver).updateExpressions(any(), any());
     doNothing().when(cdExpressionResolver).updateStoreConfigExpressions(any(), any());
-    doReturn(fileDelegateConfig)
-        .when(sshWinRmConfigFileHelper)
-        .getFileDelegateConfig(any(), eq(ambiance), anyBoolean());
+    doReturn(fileDelegateConfig).when(sshWinRmConfigFileHelper).getFileDelegateConfig(any(), eq(ambiance));
   }
 
   @After
@@ -338,7 +337,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
     PowerMockito.when(CommandStepUtils.getWorkingDirectory(eq(workingDirParam), any(ScriptType.class), anyBoolean()))
         .thenReturn(workingDir);
     PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(env), any())).thenReturn(taskEnv);
-    CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters);
+    CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters, null);
     assertThat(taskParameters).isInstanceOf(SshCommandTaskParameters.class);
     SshCommandTaskParameters sshTaskParameters = (SshCommandTaskParameters) taskParameters;
 
@@ -369,7 +368,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
                 OutputExpressionConstants.SSH_INFRA_DELEGATE_CONFIG_OUTPUT_NAME)));
     doReturn(pdcSshInfraDelegateConfig).when(sshEntityHelper).getSshInfraDelegateConfig(pdcInfrastructure, ambiance);
     PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(env), any())).thenReturn(taskEnv);
-    CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters);
+    CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters, null);
     assertThat(taskParameters).isInstanceOf(SshCommandTaskParameters.class);
     SshCommandTaskParameters sshTaskParameters = (SshCommandTaskParameters) taskParameters;
 
@@ -403,7 +402,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
     PowerMockito.when(CommandStepUtils.getWorkingDirectory(eq(workingDirParam), any(ScriptType.class), anyBoolean()))
         .thenReturn(workingDir);
     PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(env), any())).thenReturn(taskEnv);
-    CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters);
+    CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters, null);
     assertThat(taskParameters).isInstanceOf(WinrmTaskParameters.class);
     WinrmTaskParameters winrmTaskParameters = (WinrmTaskParameters) taskParameters;
 
@@ -436,10 +435,10 @@ public class SshCommandStepHelperTest extends CategoryTest {
         .when(sshEntityHelper)
         .getWinRmInfraDelegateConfig(pdcInfrastructure, ambiance);
     PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(env), any())).thenReturn(taskEnv);
-    CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters);
+    CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters, "45m");
     assertThat(taskParameters).isInstanceOf(WinrmTaskParameters.class);
     WinrmTaskParameters winRmTaskParameters = (WinrmTaskParameters) taskParameters;
-
+    assertThat(taskParameters.getSessionTimeout()).isEqualTo(2700000);
     assertCopyTaskParameters(taskParameters, taskEnv);
     assertThat(winRmTaskParameters.getWinRmInfraDelegateConfig()).isEqualTo(pdcWinRmInfraDelegateConfig);
   }
@@ -509,7 +508,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
             eq(RefObjectUtils.getSweepingOutputRefObject(
                 OutputExpressionConstants.SSH_INFRA_DELEGATE_CONFIG_OUTPUT_NAME)));
     PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(env), any())).thenReturn(taskEnv);
-    CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters);
+    CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters, null);
     assertThat(taskParameters).isInstanceOf(SshCommandTaskParameters.class);
     SshCommandTaskParameters sshTaskParameters = (SshCommandTaskParameters) taskParameters;
     assertThat(sshTaskParameters.getSshInfraDelegateConfig()).isNotNull();
@@ -637,6 +636,285 @@ public class SshCommandStepHelperTest extends CategoryTest {
     assertThat(result.get("var2")).isEqualTo("value2s");
     assertThat(result.get("var3")).isEqualTo("value3p");
     assertThat(result.get("var4")).isEqualTo("value4");
+    assertThat(result.get("var5")).isEqualTo("value5");
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testGetMergedEnvVariablesMapWithOnlyServiceOutcomeVariables() {
+    LinkedHashMap<String, Object> evaluatedStageVariables =
+        new LinkedHashMap<>(Map.of("var1", "value1s", "var2", "value2s"));
+    LinkedHashMap<String, Object> evaluatedPipelineVariables =
+        new LinkedHashMap<>(Map.of("var1", "value1p", "var3", "value3p"));
+    LinkedHashMap<String, Object> envVariables = new LinkedHashMap<>(Map.of("var4", "value4"));
+    LinkedHashMap<String, Object> svcVariables = new LinkedHashMap<>(Map.of("var4", "value5"));
+    LinkedHashMap<String, Object> taskParamEnvVariables = new LinkedHashMap<>(Map.of("var5", "value5"));
+
+    PdcInfrastructureOutcome pdcInfrastructureOutcome =
+        PdcInfrastructureOutcome.builder()
+            .environment(EnvironmentOutcome.builder().variables(envVariables).build())
+            .build();
+
+    CommandStepParameters commandStepParameters =
+        CommandStepParameters.infoBuilder().environmentVariables(taskParamEnvVariables).build();
+
+    doReturn(evaluatedStageVariables)
+        .when(cdExpressionResolver)
+        .evaluateExpression(any(), eq("<+stage.variables>"), any());
+    doReturn(evaluatedPipelineVariables)
+        .when(cdExpressionResolver)
+        .evaluateExpression(any(), eq("<+pipeline.variables>"), any());
+
+    PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(evaluatedStageVariables), any(Map.class)))
+        .thenReturn(evaluatedStageVariables);
+
+    PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(evaluatedPipelineVariables), any(Map.class)))
+        .thenReturn(new HashMap() {
+          {
+            putAll(evaluatedStageVariables);
+            putAll(evaluatedPipelineVariables);
+          }
+        });
+
+    PowerMockito
+        .when(CommandStepUtils.mergeEnvironmentVariables(
+            eq(commandStepParameters.getEnvironmentVariables()), any(Map.class)))
+        .thenReturn(new HashMap() {
+          {
+            putAll(evaluatedStageVariables);
+            putAll(evaluatedPipelineVariables);
+            putAll(svcVariables);
+            putAll(taskParamEnvVariables);
+          }
+        });
+
+    Map<String, String> result =
+        helper.getMergedEnvVariablesMap(ambiance, commandStepParameters, pdcInfrastructureOutcome);
+
+    assertThat(result.get("var1")).isEqualTo("value1p");
+    assertThat(result.get("var2")).isEqualTo("value2s");
+    assertThat(result.get("var3")).isEqualTo("value3p");
+    assertThat(result.get("var4")).isEqualTo("value5");
+    assertThat(result.get("var5")).isEqualTo("value5");
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testGetMergedEnvVariablesMapWithOnlyServiceVariables() {
+    LinkedHashMap<String, Object> evaluatedStageVariables = new LinkedHashMap<>();
+    LinkedHashMap<String, Object> evaluatedPipelineVariables = new LinkedHashMap<>();
+    LinkedHashMap<String, Object> envVariables = new LinkedHashMap<>(Map.of("var4", "value4"));
+    LinkedHashMap<String, Object> svcVariables = new LinkedHashMap<>(Map.of("var4", "value5"));
+    LinkedHashMap<String, Object> svcOverrideVariables = new LinkedHashMap<>(Map.of("var4", "value6"));
+    LinkedHashMap<String, Object> taskParamEnvVariables = new LinkedHashMap<>(Map.of("var5", "value5"));
+
+    PdcInfrastructureOutcome pdcInfrastructureOutcome =
+        PdcInfrastructureOutcome.builder()
+            .environment(EnvironmentOutcome.builder().variables(envVariables).build())
+            .build();
+
+    CommandStepParameters commandStepParameters =
+        CommandStepParameters.infoBuilder().environmentVariables(taskParamEnvVariables).build();
+
+    doReturn(evaluatedStageVariables)
+        .when(cdExpressionResolver)
+        .evaluateExpression(any(), eq("<+stage.variables>"), any());
+    doReturn(evaluatedPipelineVariables)
+        .when(cdExpressionResolver)
+        .evaluateExpression(any(), eq("<+pipeline.variables>"), any());
+
+    PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(evaluatedStageVariables), any(Map.class)))
+        .thenReturn(evaluatedStageVariables);
+
+    PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(evaluatedPipelineVariables), any(Map.class)))
+        .thenReturn(new HashMap() {
+          {
+            putAll(evaluatedStageVariables);
+            putAll(evaluatedPipelineVariables);
+          }
+        });
+
+    PowerMockito
+        .when(CommandStepUtils.mergeEnvironmentVariables(
+            eq(commandStepParameters.getEnvironmentVariables()), any(Map.class)))
+        .thenReturn(new HashMap() {
+          {
+            putAll(evaluatedStageVariables);
+            putAll(evaluatedPipelineVariables);
+            putAll(svcOverrideVariables);
+            putAll(taskParamEnvVariables);
+          }
+        });
+
+    Map<String, String> result =
+        helper.getMergedEnvVariablesMap(ambiance, commandStepParameters, pdcInfrastructureOutcome);
+
+    assertThat(result.get("var4")).isEqualTo("value6");
+    assertThat(result.get("var5")).isEqualTo("value5");
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testGetMergedEnvVariablesMapWithEnvServiceServiceOverrideVariables() {
+    LinkedHashMap<String, Object> evaluatedStageVariables = new LinkedHashMap<>();
+    LinkedHashMap<String, Object> evaluatedPipelineVariables = new LinkedHashMap<>();
+    LinkedHashMap<String, Object> envVariables = new LinkedHashMap<>(Map.of("var4", "value4"));
+    LinkedHashMap<String, Object> taskParamEnvVariables = new LinkedHashMap<>(Map.of("var5", "value5"));
+
+    PdcInfrastructureOutcome pdcInfrastructureOutcome =
+        PdcInfrastructureOutcome.builder()
+            .environment(EnvironmentOutcome.builder().variables(envVariables).build())
+            .build();
+
+    CommandStepParameters commandStepParameters =
+        CommandStepParameters.infoBuilder().environmentVariables(taskParamEnvVariables).build();
+
+    doReturn(evaluatedStageVariables)
+        .when(cdExpressionResolver)
+        .evaluateExpression(any(), eq("<+stage.variables>"), any());
+    doReturn(evaluatedPipelineVariables)
+        .when(cdExpressionResolver)
+        .evaluateExpression(any(), eq("<+pipeline.variables>"), any());
+
+    PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(evaluatedStageVariables), any(Map.class)))
+        .thenReturn(evaluatedStageVariables);
+
+    PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(evaluatedPipelineVariables), any(Map.class)))
+        .thenReturn(new HashMap() {
+          {
+            putAll(evaluatedStageVariables);
+            putAll(evaluatedPipelineVariables);
+          }
+        });
+
+    PowerMockito
+        .when(CommandStepUtils.mergeEnvironmentVariables(
+            eq(commandStepParameters.getEnvironmentVariables()), any(Map.class)))
+        .thenReturn(new HashMap() {
+          {
+            putAll(evaluatedStageVariables);
+            putAll(evaluatedPipelineVariables);
+            putAll(envVariables);
+            putAll(taskParamEnvVariables);
+          }
+        });
+
+    Map<String, String> result =
+        helper.getMergedEnvVariablesMap(ambiance, commandStepParameters, pdcInfrastructureOutcome);
+
+    assertThat(result.get("var4")).isEqualTo("value4");
+    assertThat(result.get("var5")).isEqualTo("value5");
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testGetMergedEnvVariablesMapWithOnlyEnvVariables() {
+    LinkedHashMap<String, Object> evaluatedStageVariables = new LinkedHashMap<>();
+    LinkedHashMap<String, Object> evaluatedPipelineVariables = new LinkedHashMap<>();
+    LinkedHashMap<String, Object> envVariables = new LinkedHashMap<>(Map.of("var4", "value4"));
+    LinkedHashMap<String, Object> taskParamEnvVariables = new LinkedHashMap<>(Map.of("var5", "value5"));
+
+    PdcInfrastructureOutcome pdcInfrastructureOutcome =
+        PdcInfrastructureOutcome.builder()
+            .environment(EnvironmentOutcome.builder().variables(envVariables).build())
+            .build();
+
+    CommandStepParameters commandStepParameters =
+        CommandStepParameters.infoBuilder().environmentVariables(taskParamEnvVariables).build();
+
+    doReturn(evaluatedStageVariables)
+        .when(cdExpressionResolver)
+        .evaluateExpression(any(), eq("<+stage.variables>"), any());
+    doReturn(evaluatedPipelineVariables)
+        .when(cdExpressionResolver)
+        .evaluateExpression(any(), eq("<+pipeline.variables>"), any());
+
+    PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(evaluatedStageVariables), any(Map.class)))
+        .thenReturn(evaluatedStageVariables);
+
+    PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(evaluatedPipelineVariables), any(Map.class)))
+        .thenReturn(new HashMap() {
+          {
+            putAll(evaluatedStageVariables);
+            putAll(evaluatedPipelineVariables);
+          }
+        });
+
+    PowerMockito
+        .when(CommandStepUtils.mergeEnvironmentVariables(
+            eq(commandStepParameters.getEnvironmentVariables()), any(Map.class)))
+        .thenReturn(new HashMap() {
+          {
+            putAll(evaluatedStageVariables);
+            putAll(evaluatedPipelineVariables);
+            putAll(envVariables);
+            putAll(taskParamEnvVariables);
+          }
+        });
+
+    Map<String, String> result =
+        helper.getMergedEnvVariablesMap(ambiance, commandStepParameters, pdcInfrastructureOutcome);
+
+    assertThat(result.get("var4")).isEqualTo("value4");
+    assertThat(result.get("var5")).isEqualTo("value5");
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testGetMergedEnvVariablesMapWithOnlyServiceOverrideVariables() {
+    LinkedHashMap<String, Object> evaluatedStageVariables = new LinkedHashMap<>();
+    LinkedHashMap<String, Object> evaluatedPipelineVariables = new LinkedHashMap<>();
+    LinkedHashMap<String, Object> envVariables = new LinkedHashMap<>(Map.of());
+    LinkedHashMap<String, Object> svcOverrideVariables = new LinkedHashMap<>(Map.of("var4", "value5"));
+    LinkedHashMap<String, Object> taskParamEnvVariables = new LinkedHashMap<>(Map.of("var5", "value5"));
+
+    PdcInfrastructureOutcome pdcInfrastructureOutcome =
+        PdcInfrastructureOutcome.builder()
+            .environment(EnvironmentOutcome.builder().variables(envVariables).build())
+            .build();
+
+    CommandStepParameters commandStepParameters =
+        CommandStepParameters.infoBuilder().environmentVariables(taskParamEnvVariables).build();
+
+    doReturn(evaluatedStageVariables)
+        .when(cdExpressionResolver)
+        .evaluateExpression(any(), eq("<+stage.variables>"), any());
+    doReturn(evaluatedPipelineVariables)
+        .when(cdExpressionResolver)
+        .evaluateExpression(any(), eq("<+pipeline.variables>"), any());
+
+    PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(evaluatedStageVariables), any(Map.class)))
+        .thenReturn(evaluatedStageVariables);
+
+    PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(evaluatedPipelineVariables), any(Map.class)))
+        .thenReturn(new HashMap() {
+          {
+            putAll(evaluatedStageVariables);
+            putAll(evaluatedPipelineVariables);
+          }
+        });
+
+    PowerMockito
+        .when(CommandStepUtils.mergeEnvironmentVariables(
+            eq(commandStepParameters.getEnvironmentVariables()), any(Map.class)))
+        .thenReturn(new HashMap() {
+          {
+            putAll(evaluatedStageVariables);
+            putAll(evaluatedPipelineVariables);
+            putAll(svcOverrideVariables);
+            putAll(taskParamEnvVariables);
+          }
+        });
+
+    Map<String, String> result =
+        helper.getMergedEnvVariablesMap(ambiance, commandStepParameters, pdcInfrastructureOutcome);
+
+    assertThat(result.get("var4")).isEqualTo("value5");
     assertThat(result.get("var5")).isEqualTo("value5");
   }
 

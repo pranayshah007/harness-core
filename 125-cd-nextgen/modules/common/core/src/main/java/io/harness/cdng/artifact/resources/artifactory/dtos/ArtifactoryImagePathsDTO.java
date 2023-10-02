@@ -6,7 +6,9 @@
  */
 
 package io.harness.cdng.artifact.resources.artifactory.dtos;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifactory.ArtifactoryImagePath;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -16,6 +18,7 @@ import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldDefaults;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Value
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)

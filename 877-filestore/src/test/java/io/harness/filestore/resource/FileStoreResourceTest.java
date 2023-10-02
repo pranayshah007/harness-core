@@ -101,8 +101,8 @@ public class FileStoreResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldDeleteFile() {
     doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), eq(FILE_DELETE_PERMISSION));
-    fileStoreResource.delete(ACCOUNT, ORG, PROJECT, IDENTIFIER);
-    verify(fileStoreService).delete(ACCOUNT, ORG, PROJECT, IDENTIFIER);
+    fileStoreResource.delete(ACCOUNT, ORG, PROJECT, IDENTIFIER, false);
+    verify(fileStoreService).delete(ACCOUNT, ORG, PROJECT, IDENTIFIER, false);
   }
 
   @Test
@@ -111,8 +111,8 @@ public class FileStoreResourceTest extends CategoryTest {
   public void shouldDeleteFileWith128CharsIdentifier() {
     String identifier = RandomStringUtils.randomAlphanumeric(128);
     doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), eq(FILE_DELETE_PERMISSION));
-    fileStoreResource.delete(ACCOUNT, ORG, PROJECT, identifier);
-    verify(fileStoreService).delete(ACCOUNT, ORG, PROJECT, identifier);
+    fileStoreResource.delete(ACCOUNT, ORG, PROJECT, identifier, false);
+    verify(fileStoreService).delete(ACCOUNT, ORG, PROJECT, identifier, false);
   }
 
   @Test
@@ -122,7 +122,7 @@ public class FileStoreResourceTest extends CategoryTest {
     doThrow(new NGAccessDeniedException("Principal doesn't have file delete permission", USER, null))
         .when(accessControlClient)
         .checkForAccessOrThrow(any(), any(), eq(FILE_DELETE_PERMISSION));
-    assertThatThrownBy(() -> fileStoreResource.delete(ACCOUNT, ORG, PROJECT, IDENTIFIER))
+    assertThatThrownBy(() -> fileStoreResource.delete(ACCOUNT, ORG, PROJECT, IDENTIFIER, false))
         .isInstanceOf(NGAccessDeniedException.class)
         .hasMessage("Principal doesn't have file delete permission");
   }

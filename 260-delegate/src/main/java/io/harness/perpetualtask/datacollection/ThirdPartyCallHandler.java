@@ -19,6 +19,7 @@ import io.harness.cvng.beans.cvnglog.ApiCallLogDTO;
 import io.harness.cvng.beans.cvnglog.ApiCallLogDTO.ApiCallLogDTOField;
 import io.harness.cvng.beans.cvnglog.TraceableType;
 import io.harness.datacollection.entity.CallDetails;
+import io.harness.datacollection.utils.DataCollectionUtils;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.delegatetasks.DelegateLogService;
@@ -31,6 +32,9 @@ import java.time.Instant;
 import java.util.Set;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.Request;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @Slf4j
 @OwnedBy(CV)
@@ -54,7 +58,8 @@ public class ThirdPartyCallHandler implements Consumer<CallDetails> {
   @Override
   public void accept(CallDetails callDetails) {
     // Actual data coll path TODO remove
-    Preconditions.checkNotNull(callDetails.getRequest(), "Call Details request is null.");
+    Call callDetailsRequest = callDetails.getRequest();
+    Preconditions.checkNotNull(callDetailsRequest, "Call Details request is null.");
     final ApiCallLogDTO cvngLogDTO = ApiCallLogDTO.builder()
                                          .traceableId(requestUuid)
                                          .traceableType(TraceableType.VERIFICATION_TASK)
@@ -64,16 +69,17 @@ public class ThirdPartyCallHandler implements Consumer<CallDetails> {
                                          .requestTime(callDetails.getRequestTime().toEpochMilli())
                                          .responseTime(callDetails.getResponseTime().toEpochMilli())
                                          .build();
-    String encodedURL = callDetails.getRequest().request().url().toString();
+    Request request = callDetailsRequest.request();
+    String encodedURL = request.url().toString();
     cvngLogDTO.addFieldToRequest(ApiCallLogDTOField.builder()
                                      .name(REQUEST_URL)
                                      .type(ApiCallLogDTO.FieldType.URL)
                                      .value(URLDecoder.decode(encodedURL, StandardCharsets.UTF_8))
                                      .build());
-    String method = callDetails.getRequest().request().method();
+    String method = request.method();
     cvngLogDTO.addFieldToRequest(
         ApiCallLogDTOField.builder().type(ApiCallLogDTO.FieldType.TEXT).name(REQUEST_METHOD).value(method).build());
-    Set<String> headerNames = callDetails.getRequest().request().headers().names();
+    Set<String> headerNames = request.headers().names();
     if (headerNames.size() > 0) {
       cvngLogDTO.addFieldToRequest(ApiCallLogDTOField.builder()
                                        .type(ApiCallLogDTO.FieldType.TEXT)
@@ -86,16 +92,18 @@ public class ThirdPartyCallHandler implements Consumer<CallDetails> {
   }
 
   private static void setApiCallLogDTOWithResponse(CallDetails callDetails, ApiCallLogDTO cvngLogDTO) {
-    if (callDetails.getRequest().request().body() != null) {
-      cvngLogDTO.addCallDetailsBodyFieldToRequest(callDetails.getRequest().request());
+    Call request = callDetails.getRequest();
+    if (request.request().body() != null) {
+      cvngLogDTO.addCallDetailsBodyFieldToRequest(request.request());
     }
-    if (callDetails.getResponse() != null && callDetails.getResponse().body() != null) {
-      cvngLogDTO.addFieldToResponse(
-          callDetails.getResponse().code(), callDetails.getResponse().body(), ApiCallLogDTO.FieldType.JSON);
-    } else if (callDetails.getResponse() != null && callDetails.getResponse().errorBody() != null) {
+    Response response = callDetails.getResponse();
+    long responseTimeinMs = callDetails.getResponseTime().toEpochMilli() - callDetails.getRequestTime().toEpochMilli();
+    if (response != null && response.body() != null) {
+      cvngLogDTO.addFieldToResponse(response.code(), responseTimeinMs, response.body(), ApiCallLogDTO.FieldType.JSON);
+    } else if (response != null && response.errorBody() != null) {
       try {
-        cvngLogDTO.addFieldToResponse(callDetails.getResponse().code(), callDetails.getResponse().errorBody().string(),
-            ApiCallLogDTO.FieldType.JSON);
+        cvngLogDTO.addFieldToResponse(response.code(), responseTimeinMs,
+            DataCollectionUtils.getErrorBodyString(response), ApiCallLogDTO.FieldType.JSON);
       } catch (IOException ignored) {
       }
     }

@@ -23,7 +23,10 @@ import static io.harness.ng.core.template.TemplateEntityConstants.STEP_GROUP;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
 import io.harness.account.AccountClientModule;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.audit.client.remote.AuditClientModule;
 import io.harness.callback.DelegateCallback;
@@ -71,6 +74,8 @@ import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.TemplateServiceModuleRegistrars;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.service.ServiceResourceClientModule;
+import io.harness.telemetry.AbstractTelemetryModule;
+import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.template.event.OrgEntityCrudStreamListener;
 import io.harness.template.event.ProjectEntityCrudStreamListener;
 import io.harness.template.events.TemplateOutboxEventHandler;
@@ -84,12 +89,16 @@ import io.harness.template.handler.TemplateYamlConversionHandlerRegistry;
 import io.harness.template.health.HealthResource;
 import io.harness.template.health.HealthResourceImpl;
 import io.harness.template.mappers.TemplateFilterPropertiesMapper;
+import io.harness.template.resources.NGGlobalTemplateResource;
+import io.harness.template.resources.NGGlobalTemplateResourceImpl;
 import io.harness.template.resources.NGTemplateRefreshResource;
 import io.harness.template.resources.NGTemplateRefreshResourceImpl;
 import io.harness.template.resources.NGTemplateResource;
 import io.harness.template.resources.NGTemplateResourceImpl;
 import io.harness.template.resources.NGTemplateSchemaResource;
 import io.harness.template.resources.NGTemplateSchemaResourceImpl;
+import io.harness.template.services.NGGlobalTemplateService;
+import io.harness.template.services.NGGlobalTemplateServiceImpl;
 import io.harness.template.services.NGTemplateSchemaService;
 import io.harness.template.services.NGTemplateSchemaServiceImpl;
 import io.harness.template.services.NGTemplateService;
@@ -135,6 +144,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 import javax.validation.Validation;
@@ -144,6 +154,8 @@ import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProv
 import org.springframework.core.convert.converter.Converter;
 import ru.vyarus.guice.validator.ValidationModule;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @Slf4j
 @OwnedBy(CDC)
 public class TemplateServiceModule extends AbstractModule {
@@ -226,6 +238,13 @@ public class TemplateServiceModule extends AbstractModule {
     install(new OpaClientModule(templateServiceConfiguration.getOpaClientConfig(),
         templateServiceConfiguration.getPolicyManagerSecret(), TEMPLATE_SERVICE.getServiceId()));
 
+    install(new AbstractTelemetryModule() {
+      @Override
+      public TelemetryConfiguration telemetryConfiguration() {
+        return templateServiceConfiguration.getSegmentConfiguration();
+      }
+    });
+
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("taskPollExecutor"))
         .toInstance(new ManagedScheduledExecutorService("TaskPoll-Thread"));
@@ -239,6 +258,7 @@ public class TemplateServiceModule extends AbstractModule {
     bind(NGTemplateSchemaService.class).to(NGTemplateSchemaServiceImpl.class);
     bind(TemplateRefreshService.class).to(TemplateRefreshServiceImpl.class);
     bind(NGTemplateResource.class).to(NGTemplateResourceImpl.class);
+    bind(NGGlobalTemplateResource.class).to(NGGlobalTemplateResourceImpl.class);
     bind(NGTemplateRefreshResource.class).to(NGTemplateRefreshResourceImpl.class);
     bind(NGTemplateSchemaResource.class).to(NGTemplateSchemaResourceImpl.class);
     bind(HealthResource.class).to(HealthResourceImpl.class);
@@ -247,6 +267,7 @@ public class TemplateServiceModule extends AbstractModule {
     bind(PmsFeatureFlagService.class).to(PmsFeatureFlagHelper.class);
     bind(FeatureFlagService.class).to(FeatureFlagServiceImpl.class);
     bind(TemplateAsyncSetupUsageService.class).to(TemplateAsyncSetupUsageServiceImpl.class);
+    bind(NGGlobalTemplateService.class).to(NGGlobalTemplateServiceImpl.class);
     install(new NGSettingsClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
         this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
     install(EnforcementClientModule.getInstance(templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
@@ -409,6 +430,18 @@ public class TemplateServiceModule extends AbstractModule {
             templateServiceConfiguration.getTemplateAsyncSetupUsagePoolConfig().getIdleTime(),
             templateServiceConfiguration.getTemplateAsyncSetupUsagePoolConfig().getTimeUnit(),
             new ThreadFactoryBuilder().setNameFormat("TemplateAsyncSetupUsageExecutorService-%d").build()));
+  }
+
+  @Provides
+  @Singleton
+  @Named("TemplateServiceHelperExecutorService")
+  public ExecutorService templateServiceHelperExecutorService() {
+    return new ManagedExecutorService(
+        ThreadPool.create(templateServiceConfiguration.getTemplateServiceHelperPoolConfig().getCorePoolSize(),
+            templateServiceConfiguration.getTemplateServiceHelperPoolConfig().getMaxPoolSize(),
+            templateServiceConfiguration.getTemplateServiceHelperPoolConfig().getIdleTime(),
+            templateServiceConfiguration.getTemplateServiceHelperPoolConfig().getTimeUnit(),
+            new ThreadFactoryBuilder().setNameFormat("TemplateServiceHelperExecutorService-%d").build()));
   }
 
   private ValidatorFactory getValidatorFactory() {

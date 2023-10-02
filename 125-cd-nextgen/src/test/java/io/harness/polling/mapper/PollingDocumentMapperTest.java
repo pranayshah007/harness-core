@@ -11,6 +11,7 @@ import static io.harness.polling.contracts.Category.ARTIFACT;
 import static io.harness.polling.contracts.Category.MANIFEST;
 import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -237,6 +238,31 @@ public class PollingDocumentMapperTest extends CDNGTestBase {
     assertThat(acrArtifactInfo.getRegistry()).isEqualTo("my-registry");
     assertThat(acrArtifactInfo.getRepository()).isEqualTo("my-repository");
     assertThat(acrArtifactInfo.getConnectorRef()).isEqualTo(CONNECTOR_REF);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testToPollingDocumentWithoutPollingInfo() {
+    DockerHubPayload dockerHubArtifactPayload = DockerHubPayload.newBuilder().setImagePath("my-image").build();
+    PollingPayloadData pollingPayloadData = PollingPayloadData.newBuilder()
+                                                .setConnectorRef(CONNECTOR_REF)
+                                                .setDockerHubPayload(dockerHubArtifactPayload)
+                                                .setType(Type.DOCKER_HUB)
+                                                .build();
+    PollingItem pollingItem = getPollingItem(ARTIFACT, pollingPayloadData);
+
+    PollingDocument pollingDocument = pollingDocumentMapper.toPollingDocumentWithoutPollingInfo(pollingItem);
+    assertThat(pollingDocument).isNotNull();
+    assertThat(pollingDocument.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(pollingDocument.getProjectIdentifier()).isEqualTo(PROJECT_ID);
+    assertThat(pollingDocument.getOrgIdentifier()).isEqualTo(ORG_ID);
+    assertThat(pollingDocument.getFailedAttempts()).isEqualTo(0);
+    assertThat(pollingDocument.getSignatures()).hasSize(1);
+    assertThat(pollingDocument.getSignatures().get(0)).isEqualTo(SIGNATURE);
+    assertThat(pollingDocument.getUuid()).isEqualTo(POLLING_DOC_ID);
+    assertThat(pollingDocument.getPollingInfo()).isNull();
+    assertThat(pollingDocument.getPollingType()).isEqualTo(io.harness.polling.bean.PollingType.ARTIFACT);
   }
 
   private void assertPollingDocument(PollingDocument pollingDocument) {

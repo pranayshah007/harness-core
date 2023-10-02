@@ -20,6 +20,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.eraro.Level;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.PlanExecutionMetadata;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -160,14 +161,15 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
                                 .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), stepPlanNode))
                                 .build();
     NodeExecution stepNodeExecution = NodeExecution.builder()
-                                          .planNode(stepPlanNode)
+                                          .nodeId(stepPlanNode.getUuid())
                                           .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
                                           .status(Status.EXPIRED)
                                           .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
                                           .ambiance(stepAmbiance)
                                           .build();
     Update update = new Update();
-    ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, stepNodeExecution);
+    ExecutionSummaryUpdateUtils.addStageUpdateCriteria(
+        update, stepNodeExecution, PlanExecutionMetadata.builder().build());
     assertThat(update.getUpdateObject().keySet().size()).isEqualTo(0);
 
     // step having stage and pipeline in the ambiance levels
@@ -183,7 +185,8 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
                             .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
                             .build();
     update = new Update();
-    ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, stepNodeExecution);
+    ExecutionSummaryUpdateUtils.addStageUpdateCriteria(
+        update, stepNodeExecution, PlanExecutionMetadata.builder().build());
     assertThat(update.getUpdateObject().keySet().size()).isEqualTo(1);
     Set<String> stringSet = ((Document) update.getUpdateObject().get("$set")).keySet();
     assertThat(stringSet.size()).isEqualTo(1);
@@ -202,7 +205,7 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
     NodeExecution nodeExecution =
         NodeExecution.builder()
             .status(Status.FAILED)
-            .planNode(stagePlanNode)
+            .nodeId(stagePlanNode.getUuid())
             .endTs(System.currentTimeMillis())
             .stepType(StepType.newBuilder().setType("test").setStepCategory(StepCategory.STEP).build())
             .ambiance(stageAmbiance)
@@ -217,7 +220,7 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
                              .build())
             .build();
     Update update = new Update();
-    ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution);
+    ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution, PlanExecutionMetadata.builder().build());
     String prefixLayoutNodeMap = PlanExecutionSummaryKeys.layoutNodeMap + "." + stagePlanNode.getUuid();
     Set<String> stringSet = ((Document) update.getUpdateObject().get("$set")).keySet();
     assertThat(stringSet).containsOnly(prefixLayoutNodeMap + ".status", prefixLayoutNodeMap + ".startTs",
@@ -241,7 +244,7 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
     NodeExecution nodeExecution =
         NodeExecution.builder()
             .status(Status.FAILED)
-            .planNode(strategyPlanNode)
+            .nodeId(strategyPlanNode.getUuid())
             .endTs(System.currentTimeMillis())
             .stepType(StepType.newBuilder().setType(STRATEGY).setStepCategory(StepCategory.STRATEGY).build())
             .ambiance(stageAmbiance)
@@ -256,7 +259,7 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
                              .build())
             .build();
     Update update = new Update();
-    ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution);
+    ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution, PlanExecutionMetadata.builder().build());
     assertThat(update.getUpdateObject().isEmpty()).isTrue();
   }
 
@@ -275,7 +278,7 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
         NodeExecution.builder()
             .uuid(AmbianceUtils.obtainCurrentRuntimeId(stageAmbiance))
             .status(Status.FAILED)
-            .planNode(strategyPlanNode)
+            .nodeId(strategyPlanNode.getUuid())
             .endTs(System.currentTimeMillis())
             .stepType(StepType.newBuilder().setType(STRATEGY).setStepCategory(StepCategory.STRATEGY).build())
             .ambiance(stageAmbiance)
@@ -290,7 +293,7 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
                              .build())
             .build();
     Update update = new Update();
-    ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution);
+    ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution, PlanExecutionMetadata.builder().build());
     String prefixLayoutNodeMap = PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getUuid();
     Set<String> stringSet = ((Document) update.getUpdateObject().get("$set")).keySet();
     assertThat(stringSet).containsOnly(prefixLayoutNodeMap + ".status", prefixLayoutNodeMap + ".startTs",

@@ -40,7 +40,6 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
@@ -52,6 +51,7 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.steps.StepUtils;
@@ -71,7 +71,7 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
   public ElastigroupDeployTaskParameters getElastigroupDeployTaskParameters(
-      ElastigroupDeployStepParameters stepParameters, Ambiance ambiance, StepElementParameters stepElementParameters) {
+      ElastigroupDeployStepParameters stepParameters, Ambiance ambiance, StepBaseParameters stepElementParameters) {
     InfrastructureOutcome infrastructureOutcome = getInfrastructureOutcome(ambiance);
 
     ElastigroupSetupDataOutcome elastigroupSetupOutcome = getElastigroupSetupOutcome(ambiance);
@@ -223,7 +223,7 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
     return (SpotConnectorDTO) connectorDTO.getConnectorConfig();
   }
 
-  public StepResponse handleTaskFailure(Ambiance ambiance, StepElementParameters stepElementParameters, Exception e)
+  public StepResponse handleTaskFailure(Ambiance ambiance, StepBaseParameters stepElementParameters, Exception e)
       throws Exception {
     log.error("Error in elastigroup step: {}", e.getMessage(), e);
 
@@ -259,7 +259,7 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
         .build();
   }
 
-  public StepResponse handleTaskResult(Ambiance ambiance, StepElementParameters stepParameters,
+  public StepResponse handleTaskResult(Ambiance ambiance, StepBaseParameters stepParameters,
       ElastigroupDeployTaskResponse taskResponse, StepResponse.StepOutcome stepOutcome) {
     StepResponseBuilder stepResponseBuilder = StepResponse.builder();
 

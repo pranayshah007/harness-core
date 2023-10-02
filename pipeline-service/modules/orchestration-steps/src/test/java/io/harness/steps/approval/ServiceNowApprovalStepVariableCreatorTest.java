@@ -93,6 +93,7 @@ public class ServiceNowApprovalStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.stage1.spec.execution.steps.servicenow_approval.timeout",
             "pipeline.stages.stage1.spec.execution.steps.servicenow_approval.spec.ticketNumber",
             "pipeline.stages.stage1.spec.execution.steps.servicenow_approval.name",
+            "pipeline.stages.stage1.spec.execution.steps.servicenow_approval.spec.retryInterval",
             "pipeline.stages.stage1.spec.execution.steps.servicenow_approval.when");
 
     // yaml extra properties
@@ -106,7 +107,8 @@ public class ServiceNowApprovalStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.stage1.spec.execution.steps.servicenow_approval.identifier",
             "pipeline.stages.stage1.spec.execution.steps.servicenow_approval.type",
             "pipeline.stages.stage1.spec.execution.steps.servicenow_approval.startTs",
-            "pipeline.stages.stage1.spec.execution.steps.servicenow_approval.endTs");
+            "pipeline.stages.stage1.spec.execution.steps.servicenow_approval.endTs",
+            "pipeline.stages.stage1.spec.execution.steps.servicenow_approval.status");
 
     // yaml output properties
     List<String> fqnOutputPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()

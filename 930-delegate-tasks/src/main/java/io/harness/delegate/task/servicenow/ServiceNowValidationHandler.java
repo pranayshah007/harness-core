@@ -6,7 +6,9 @@
  */
 
 package io.harness.delegate.task.servicenow;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.task.ConnectorValidationHandler;
@@ -18,6 +20,7 @@ import io.harness.servicenow.ServiceNowActionNG;
 import com.google.inject.Inject;
 import java.util.Collections;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 public class ServiceNowValidationHandler implements ConnectorValidationHandler {
   @Inject ServiceNowTaskNgHelper serviceNowTaskNgHelper;
   @Inject NGErrorHelper ngErrorHelper;

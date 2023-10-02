@@ -7,6 +7,9 @@
 
 package io.harness.pms.sdk.core.steps.executables;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncChainExecutableResponse;
 import io.harness.pms.contracts.execution.TaskChainExecutableResponse;
@@ -36,8 +39,11 @@ import java.util.Map;
  * finalizeExecution : This is where the step concludes and responds with step response.
  *
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public interface AsyncChainExecutable<T extends StepParameters>
-    extends Step<T>, Abortable<T, AsyncChainExecutableResponse>, Failable<T>, Progressable<T> {
+    extends Step<T>, Abortable<T, AsyncChainExecutableResponse>, Failable<T>,
+            Expirable<T, AsyncChainExecutableResponse>, Progressable<T> {
   AsyncChainExecutableResponse startChainLink(Ambiance ambiance, T stepParameters, StepInputPackage inputPackage);
 
   AsyncChainExecutableResponse executeNextLink(Ambiance ambiance, T stepParameters, StepInputPackage inputPackage,
@@ -53,5 +59,10 @@ public interface AsyncChainExecutable<T extends StepParameters>
   @Override
   default void handleFailureInterrupt(Ambiance ambiance, T stepParameters, Map<String, String> metadata) {
     // NOOP : By default this is noop as task failure is handled by the PMS but you are free to override it
+  }
+
+  @Override
+  default void handleExpire(Ambiance ambiance, T stepParameters, AsyncChainExecutableResponse executableResponse) {
+    // NOOP : By default this is noop as task expire is handled by the PMS but you are free to override it
   }
 }

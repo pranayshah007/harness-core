@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.buildstate;
+package io.harness.ci.execution.buildstate;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.UNRESOLVED_PARAMETER;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveArchiveFormat;
@@ -52,6 +52,8 @@ import io.harness.beans.steps.stepinfo.DockerStepInfo;
 import io.harness.beans.steps.stepinfo.ECRStepInfo;
 import io.harness.beans.steps.stepinfo.GCRStepInfo;
 import io.harness.beans.steps.stepinfo.GitCloneStepInfo;
+import io.harness.beans.steps.stepinfo.IACMApprovalInfo;
+import io.harness.beans.steps.stepinfo.IACMTerraformPluginInfo;
 import io.harness.beans.steps.stepinfo.RestoreCacheGCSStepInfo;
 import io.harness.beans.steps.stepinfo.RestoreCacheS3StepInfo;
 import io.harness.beans.steps.stepinfo.SaveCacheGCSStepInfo;
@@ -63,19 +65,24 @@ import io.harness.beans.steps.stepinfo.UploadToS3StepInfo;
 import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.beans.yaml.extended.ArchiveFormat;
-import io.harness.ci.integrationstage.BuildEnvironmentUtils;
-import io.harness.ci.serializer.SerializerUtils;
+import io.harness.ci.execution.integrationstage.BuildEnvironmentUtils;
+import io.harness.ci.execution.serializer.SerializerUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
+import io.harness.iacm.execution.IACMStepsUtils;
 import io.harness.ng.core.NGAccess;
 import io.harness.plugin.service.PluginServiceImpl;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.ssca.beans.stepinfo.ProvenanceStepInfo;
+import io.harness.ssca.beans.stepinfo.SlsaVerificationStepInfo;
 import io.harness.ssca.beans.stepinfo.SscaEnforcementStepInfo;
 import io.harness.ssca.beans.stepinfo.SscaOrchestrationStepInfo;
+import io.harness.ssca.execution.ProvenancePluginHelper;
+import io.harness.ssca.execution.SlsaVerificationPluginHelper;
 import io.harness.ssca.execution.SscaEnforcementPluginHelper;
 import io.harness.ssca.execution.SscaOrchestrationPluginUtils;
 import io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils;
@@ -140,9 +147,16 @@ public class PluginSettingUtils extends PluginServiceImpl {
   public static final String PLUGIN_CACHE_TO = "PLUGIN_CACHE_TO";
   public static final String PLUGIN_BUILDER_DRIVER_OPTS = "PLUGIN_BUILDER_DRIVER_OPTS";
   public static final String DOCKER_BUILDKIT_IMAGE = "harness/buildkit:1.0.1";
+  public static final String PLUGIN_METADATA_FILE = "PLUGIN_METADATA_FILE";
+  public static final String PLUGIN_METADATA_FILE_NAME = "buildx-metadata.json";
   @Inject private CodebaseUtils codebaseUtils;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private SscaOrchestrationPluginUtils sscaOrchestrationPluginUtils;
+  @Inject private IACMStepsUtils iacmStepsUtils;
+  @Inject private ProvenancePluginHelper provenancePluginHelper;
+  @Inject private SscaEnforcementPluginHelper sscaEnforcementPluginHelper;
+
+  @Inject private SlsaVerificationPluginHelper slsaVerificationPluginHelper;
 
   @Override
   public Map<String, String> getPluginCompatibleEnvVariables(PluginCompatibleStep stepInfo, String identifier,
@@ -152,7 +166,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
         return getECRStepInfoEnvVariables(
             ambiance, (ECRStepInfo) stepInfo, identifier, infraType, isContainerizedPlugin);
       case ACR:
-        return getACRStepInfoEnvVariables((ACRStepInfo) stepInfo, identifier, infraType);
+        return getACRStepInfoEnvVariables((ACRStepInfo) stepInfo, identifier, infraType, isContainerizedPlugin);
       case GCR:
         return getGCRStepInfoEnvVariables((GCRStepInfo) stepInfo, identifier, infraType, isContainerizedPlugin);
       case DOCKER:
@@ -176,16 +190,28 @@ public class PluginSettingUtils extends PluginServiceImpl {
       case GIT_CLONE:
         final String connectorRef = stepInfo.getConnectorRef().getValue();
         final NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-        final ConnectorDetails gitConnector = codebaseUtils.getGitConnector(ngAccess, connectorRef);
+        final ConnectorDetails gitConnector = codebaseUtils.getGitConnector(
+            ngAccess, connectorRef, ambiance, ((GitCloneStepInfo) stepInfo).getRepoName().getValue());
         return getGitCloneStepInfoEnvVariables((GitCloneStepInfo) stepInfo, ambiance, gitConnector, identifier);
       case SSCA_ORCHESTRATION:
         return sscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(
             (SscaOrchestrationStepInfo) stepInfo, identifier, ambiance, infraType);
       case SSCA_ENFORCEMENT:
-        return SscaEnforcementPluginHelper.getSscaEnforcementStepEnvVariables(
+        return sscaEnforcementPluginHelper.getSscaEnforcementStepEnvVariables(
             (SscaEnforcementStepInfo) stepInfo, identifier, ambiance, infraType);
+      case SLSA_VERIFICATION:
+        return slsaVerificationPluginHelper.getSlsaVerificationStepEnvVariables(
+            (SlsaVerificationStepInfo) stepInfo, identifier, ambiance);
+      case IACM_TERRAFORM_PLUGIN:
+        return iacmStepsUtils.getVariablesForKubernetes(ambiance, (IACMTerraformPluginInfo) stepInfo);
+      case IACM_APPROVAL:
+        return iacmStepsUtils.getVariablesForKubernetes(ambiance, (IACMApprovalInfo) stepInfo);
+      case PROVENANCE:
+        return provenancePluginHelper.getProvenanceStepEnvVariables(
+            (ProvenanceStepInfo) stepInfo, identifier, ambiance);
       default:
-        throw new IllegalStateException("Unexpected value: " + stepInfo.getNonYamlInfo().getStepInfoType());
+        throw new IllegalStateException(
+            "Unexpected value in getPluginCompatibleEnvVariables: " + stepInfo.getNonYamlInfo().getStepInfoType());
     }
   }
 
@@ -195,8 +221,15 @@ public class PluginSettingUtils extends PluginServiceImpl {
       case SSCA_ORCHESTRATION:
         return SscaOrchestrationPluginUtils.getSscaOrchestrationSecretVars((SscaOrchestrationStepInfo) step);
       case SSCA_ENFORCEMENT:
-        return SscaEnforcementPluginHelper.getSscaEnforcementSecretVariables(
+        return sscaEnforcementPluginHelper.getSscaEnforcementSecretVariables(
             (SscaEnforcementStepInfo) step, identifier);
+      case IACM_TERRAFORM_PLUGIN:
+        return iacmStepsUtils.getSecretVariablesForKubernetes((IACMTerraformPluginInfo) step);
+      case PROVENANCE:
+        return provenancePluginHelper.getProvenanceStepSecretVariables((ProvenanceStepInfo) step);
+      case SLSA_VERIFICATION:
+        return slsaVerificationPluginHelper.getSlsaVerificationStepSecretVariables(
+            (SlsaVerificationStepInfo) step, identifier);
       default:
         return new HashMap<>();
     }
@@ -250,7 +283,10 @@ public class PluginSettingUtils extends PluginServiceImpl {
         return map;
       case SSCA_ORCHESTRATION:
       case SSCA_ENFORCEMENT:
+      case SLSA_VERIFICATION:
         return SscaOrchestrationStepPluginUtils.getConnectorSecretEnvMap();
+      case PROVENANCE:
+        return ProvenancePluginHelper.getConnectorSecretEnvMap();
       case UPLOAD_ARTIFACTORY:
         map.put(EnvVariableEnum.ARTIFACTORY_ENDPOINT, PLUGIN_URL);
         map.put(EnvVariableEnum.ARTIFACTORY_USERNAME, PLUGIN_USERNAME);
@@ -353,6 +389,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
           setOptionalEnvironmentVariable(
               map, PLUGIN_BUILDER_DRIVER_OPTS, String.format("image=%s", DOCKER_BUILDKIT_IMAGE));
         }
+        setOptionalEnvironmentVariable(map, PLUGIN_METADATA_FILE, PLUGIN_METADATA_FILE_NAME);
       }
     }
 
@@ -360,7 +397,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
   }
 
   private static Map<String, String> getACRStepInfoEnvVariables(
-      ACRStepInfo stepInfo, String identifier, Type infraType) {
+      ACRStepInfo stepInfo, String identifier, Type infraType, boolean isContainerizedPlugin) {
     Map<String, String> map = new HashMap<>();
     String pluginRepo =
         resolveStringParameter(REPOSITORY, "BuildAndPushACR", identifier, stepInfo.getRepository(), true);
@@ -408,6 +445,24 @@ public class PluginSettingUtils extends PluginServiceImpl {
       getACRStepInfoVariablesForK8s(stepInfo, identifier, map);
     } else if (infraType == Type.VM) {
       PluginServiceImpl.setMandatoryEnvironmentVariable(map, PLUGIN_DAEMON_OFF, "true");
+      if (!isContainerizedPlugin) {
+        // Only populate cache-from and cache-to if we're using the buildx plugin
+        List<String> cacheFromList =
+            resolveListParameter("cacheFrom", "BuildAndPushACR", identifier, stepInfo.getCacheFrom(), false);
+        if (!isEmpty(cacheFromList)) {
+          setOptionalEnvironmentVariable(map, PLUGIN_CACHE_FROM, listToCustomStringSlice(cacheFromList));
+        }
+        String cacheTo =
+            resolveStringParameterV2("cacheTo", "BuildAndPushACR", identifier, stepInfo.getCacheTo(), false);
+        if (!isEmpty(cacheTo)) {
+          setOptionalEnvironmentVariable(map, PLUGIN_CACHE_TO, cacheTo);
+        }
+        if (resolveBooleanParameter(stepInfo.getCaching(), false)) {
+          setOptionalEnvironmentVariable(
+              map, PLUGIN_BUILDER_DRIVER_OPTS, String.format("image=%s", DOCKER_BUILDKIT_IMAGE));
+        }
+        setOptionalEnvironmentVariable(map, PLUGIN_METADATA_FILE, PLUGIN_METADATA_FILE_NAME);
+      }
     }
     return map;
   }
@@ -527,6 +582,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
               map, PLUGIN_BUILDER_DRIVER_OPTS, String.format("image=%s", DOCKER_BUILDKIT_IMAGE));
         }
       }
+      setOptionalEnvironmentVariable(map, PLUGIN_METADATA_FILE, PLUGIN_METADATA_FILE_NAME);
     }
 
     return map;
@@ -603,6 +659,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
           setOptionalEnvironmentVariable(
               map, PLUGIN_BUILDER_DRIVER_OPTS, String.format("image=%s", DOCKER_BUILDKIT_IMAGE));
         }
+        setOptionalEnvironmentVariable(map, PLUGIN_METADATA_FILE, PLUGIN_METADATA_FILE_NAME);
       }
     }
 
@@ -905,6 +962,11 @@ public class PluginSettingUtils extends PluginServiceImpl {
         cacheTo = resolveStringParameter("cacheTo", "BuildAndPushGCR", "", gcrStepInfo.getCacheTo(), false);
         break;
       case ACR:
+        ACRStepInfo acrStepInfo = (ACRStepInfo) stepInfo;
+        caching = resolveBooleanParameter(acrStepInfo.getCaching(), false);
+        cacheFrom = resolveListParameter("cacheFrom", "BuildAndPushACR", "", acrStepInfo.getCacheFrom(), false);
+        cacheTo = resolveStringParameter("cacheTo", "BuildAndPushACR", "", acrStepInfo.getCacheTo(), false);
+        break;
       default:
         return false;
     }
@@ -923,6 +985,8 @@ public class PluginSettingUtils extends PluginServiceImpl {
         GCRStepInfo gcrStepInfo = (GCRStepInfo) stepInfo;
         return resolveBooleanParameter(gcrStepInfo.getCaching(), false);
       case ACR:
+        ACRStepInfo acrStepInfo = (ACRStepInfo) stepInfo;
+        return resolveBooleanParameter(acrStepInfo.getCaching(), false);
       default:
         return false;
     }
@@ -944,6 +1008,9 @@ public class PluginSettingUtils extends PluginServiceImpl {
         repo = resolveStringParameter("imageName", "BuildAndPushGCR", identifier, gcrStepInfo.getImageName(), true);
         return String.format("%s/%s/", accountId, repo);
       case ACR:
+        ACRStepInfo acrStepInfo = (ACRStepInfo) stepInfo;
+        repo = resolveStringParameter("imageName", "BuildAndPushACR", identifier, acrStepInfo.getRepository(), true);
+        return String.format("%s/%s/", accountId, repo);
       default:
         return "";
     }
@@ -1002,6 +1069,21 @@ public class PluginSettingUtils extends PluginServiceImpl {
         gcrStepInfo.setCacheTo(ParameterField.createValueField(cacheToArg));
         return;
       case ACR:
+        ACRStepInfo acrStepInfo = (ACRStepInfo) stepInfo;
+
+        // Append cacheFromArg to the list
+        cacheFrom = resolveListParameter("cacheFrom", "BuildAndPushACR", identifier, acrStepInfo.getCacheFrom(), false);
+        if (isEmpty(cacheFrom)) {
+          cacheFrom = new ArrayList<>();
+        } else {
+          cacheFrom = new ArrayList(cacheFrom);
+        }
+        cacheFrom.add(cacheFromArg);
+        acrStepInfo.setCacheFrom(ParameterField.createValueField(cacheFrom));
+
+        // Overwrite cacheTo with cacheToArg
+        acrStepInfo.setCacheTo(ParameterField.createValueField(cacheToArg));
+        return;
       default:
         return;
     }

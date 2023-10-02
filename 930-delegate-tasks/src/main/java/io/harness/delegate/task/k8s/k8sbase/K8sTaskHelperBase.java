@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.k8s;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -20,6 +19,8 @@ import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.filesystem.FileIo.getFilesUnderPath;
 import static io.harness.filesystem.FileIo.getFilesUnderPathMatchesFirstLine;
 import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
+import static io.harness.helm.HelmConstants.CHARTS_YAML_KEY;
+import static io.harness.helm.HelmConstants.HELM_INSTANCE_LABEL;
 import static io.harness.helm.HelmConstants.HELM_PATH_PLACEHOLDER;
 import static io.harness.helm.HelmConstants.HELM_RELEASE_LABEL;
 import static io.harness.k8s.K8sConstants.KUBERNETES_CHANGE_CAUSE_ANNOTATION;
@@ -36,8 +37,6 @@ import static io.harness.k8s.manifest.ManifestHelper.validateValuesFileContents;
 import static io.harness.k8s.manifest.ManifestHelper.values_filename;
 import static io.harness.k8s.manifest.ManifestHelper.yaml_file_extension;
 import static io.harness.k8s.manifest.ManifestHelper.yml_file_extension;
-import static io.harness.k8s.model.K8sExpressions.canaryDestinationExpression;
-import static io.harness.k8s.model.K8sExpressions.stableDestinationExpression;
 import static io.harness.k8s.model.Kind.ConfigMap;
 import static io.harness.k8s.model.Kind.Namespace;
 import static io.harness.k8s.model.Kind.Secret;
@@ -73,7 +72,10 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FileData;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.configuration.KubernetesCliCommandType;
@@ -82,6 +84,7 @@ import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.container.ContainerInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.CEFeatures;
@@ -95,18 +98,21 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
+import io.harness.delegate.beans.progresstaskstreaming.NGDelegateTaskProgressCallback;
 import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
+import io.harness.delegate.beans.taskprogress.TaskProgressCallback;
 import io.harness.delegate.clienttools.InstallUtils;
 import io.harness.delegate.expression.DelegateExpressionEvaluator;
 import io.harness.delegate.k8s.openshift.OpenShiftDelegateService;
 import io.harness.delegate.service.ExecutionConfigOverrideFromFileOnDelegate;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
 import io.harness.delegate.task.helm.CustomManifestFetchTaskHelper;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.helm.HelmTaskHelperBase;
 import io.harness.delegate.task.k8s.client.K8sApiClient;
@@ -158,10 +164,8 @@ import io.harness.k8s.kubectl.Utils;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.manifest.VersionUtils;
 import io.harness.k8s.model.HarnessAnnotations;
-import io.harness.k8s.model.HarnessLabelValues;
 import io.harness.k8s.model.HarnessLabels;
 import io.harness.k8s.model.HelmVersion;
-import io.harness.k8s.model.IstioDestinationWeight;
 import io.harness.k8s.model.K8sContainer;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
@@ -188,7 +192,6 @@ import io.harness.ng.core.dto.ErrorDetail;
 import io.harness.retry.RetryHelper;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
-import io.harness.serializer.YamlUtils;
 import io.harness.shell.SshSessionConfig;
 import io.harness.yaml.BooleanPatchedRepresenter;
 
@@ -204,19 +207,6 @@ import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.fabric8.istio.api.networking.v1alpha3.Destination;
-import io.fabric8.istio.api.networking.v1alpha3.DestinationRule;
-import io.fabric8.istio.api.networking.v1alpha3.DestinationRuleList;
-import io.fabric8.istio.api.networking.v1alpha3.HTTPRoute;
-import io.fabric8.istio.api.networking.v1alpha3.HTTPRouteDestination;
-import io.fabric8.istio.api.networking.v1alpha3.PortSelector;
-import io.fabric8.istio.api.networking.v1alpha3.Subset;
-import io.fabric8.istio.api.networking.v1alpha3.TCPRoute;
-import io.fabric8.istio.api.networking.v1alpha3.TLSRoute;
-import io.fabric8.istio.api.networking.v1alpha3.VirtualService;
-import io.fabric8.istio.api.networking.v1alpha3.VirtualServiceList;
-import io.fabric8.kubernetes.api.KubernetesHelper;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.github.resilience4j.retry.Retry;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -226,6 +216,7 @@ import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1LoadBalancerIngress;
 import io.kubernetes.client.openapi.models.V1LoadBalancerStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
@@ -233,7 +224,6 @@ import io.kubernetes.client.openapi.models.V1TokenReviewStatus;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -245,6 +235,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -262,7 +253,6 @@ import java.util.stream.Stream;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -278,6 +268,8 @@ import org.zeroturnaround.exec.ProcessResult;
 import org.zeroturnaround.exec.StartedProcess;
 import org.zeroturnaround.exec.stream.LogOutputStream;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_K8S, HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @Slf4j
 @OwnedBy(CDP)
@@ -310,6 +302,7 @@ public class K8sTaskHelperBase {
   @Inject private CustomManifestFetchTaskHelper customManifestFetchTaskHelper;
   @Inject private K8sReleaseHandlerFactory releaseHandlerFactory;
   @Inject private K8sTaskManifestValidator k8sTaskManifestValidator;
+  @Inject private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   private DelegateExpressionEvaluator delegateExpressionEvaluator = new DelegateExpressionEvaluator();
 
@@ -373,8 +366,13 @@ public class K8sTaskHelperBase {
          ByteArrayOutputStream errorCaptureStream = new ByteArrayOutputStream(1024);
          LogOutputStream logErrorStream =
              getExecutionLogOutputStream(executionLogCallback, errorLogLevel, errorCaptureStream)) {
-      return getProcessResponse(command, logOutputStream, logErrorStream, errorCaptureStream,
-          k8sDelegateTaskParams.getWorkingDirectory(), k8sDelegateTaskParams.getKubectlPath(), true);
+      return Retry
+          .decorateCallable(buildRetryAndRegisterListeners(retryConditionForTimeout(),
+                                K8sTaskHelperBase.class.getSimpleName() + ".executeCommand"),
+              ()
+                  -> getProcessResponse(command, logOutputStream, logErrorStream, errorCaptureStream,
+                      k8sDelegateTaskParams.getWorkingDirectory(), k8sDelegateTaskParams.getKubectlPath(), true))
+          .call();
     }
   }
 
@@ -384,8 +382,13 @@ public class K8sTaskHelperBase {
     try (ByteArrayOutputStream errorCaptureStream = new ByteArrayOutputStream(1024);
          LogOutputStream logErrorStream =
              getExecutionLogOutputStream(executionLogCallback, errorLogLevel, errorCaptureStream)) {
-      return getProcessResponse(command, null, logErrorStream, errorCaptureStream,
-          k8sDelegateTaskParams.getWorkingDirectory(), k8sDelegateTaskParams.getKubectlPath(), false);
+      return Retry
+          .decorateCallable(buildRetryAndRegisterListeners(retryConditionForTimeout(),
+                                K8sTaskHelperBase.class.getSimpleName() + ".executeCommandSilentlyWithErrorCapture"),
+              ()
+                  -> getProcessResponse(command, null, logErrorStream, errorCaptureStream,
+                      k8sDelegateTaskParams.getWorkingDirectory(), k8sDelegateTaskParams.getKubectlPath(), false))
+          .call();
     }
   }
 
@@ -436,34 +439,52 @@ public class K8sTaskHelperBase {
       Map<String, String> labels, long timeoutinMillis) throws Exception {
     return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofMillis(timeoutinMillis),
         ()
-            -> kubernetesContainerService.getRunningPodsWithLabels(kubernetesConfig, namespace, labels)
-                   .stream()
-                   .filter(pod
-                       -> pod.getMetadata() != null && pod.getStatus() != null
-                           && pod.getStatus().getContainerStatuses() != null)
-                   .map(pod -> {
-                     V1ObjectMeta metadata = pod.getMetadata();
-                     return K8sPod.builder()
-                         .uid(metadata.getUid())
-                         .name(metadata.getName())
-                         .podIP(pod.getStatus().getPodIP())
-                         .namespace(metadata.getNamespace())
-                         .releaseName(releaseName)
-                         .containerList(pod.getStatus()
-                                            .getContainerStatuses()
-                                            .stream()
-                                            .map(container
-                                                -> K8sContainer.builder()
-                                                       .containerId(container.getContainerID())
-                                                       .name(container.getName())
-                                                       .image(container.getImage())
-                                                       .build())
-                                            .collect(toList()))
-                         // Need to ensure that we're storing labels as registered by kryo map implementation
-                         .labels(metadata.getLabels() != null ? new HashMap<>(metadata.getLabels()) : null)
-                         .build();
-                   })
-                   .collect(toList()));
+            -> mapV1PodsToK8sPods(
+                kubernetesContainerService.getRunningPodsWithLabels(kubernetesConfig, namespace, labels), releaseName));
+  }
+
+  public List<K8sPod> getPodDetailsWithLabels(KubernetesConfig kubernetesConfig, String namespace, String releaseName,
+      List<String> labels, long timeoutinMillis) {
+    try {
+      return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofMillis(timeoutinMillis),
+          ()
+              -> mapV1PodsToK8sPods(
+                  kubernetesContainerService.getRunningPodsWithLabels(kubernetesConfig, namespace, labels),
+                  releaseName));
+
+    } catch (Exception e) {
+      log.warn(format("Failed to get pods for namespace [%s] release [%s] ", namespace, releaseName), e);
+      return Collections.emptyList();
+    }
+  }
+
+  private List<K8sPod> mapV1PodsToK8sPods(List<V1Pod> pods, String releaseName) {
+    return pods.stream()
+        .filter(pod
+            -> pod.getMetadata() != null && pod.getStatus() != null && pod.getStatus().getContainerStatuses() != null)
+        .map(pod -> {
+          V1ObjectMeta metadata = pod.getMetadata();
+          return K8sPod.builder()
+              .uid(metadata.getUid())
+              .name(metadata.getName())
+              .podIP(pod.getStatus().getPodIP())
+              .namespace(metadata.getNamespace())
+              .releaseName(releaseName)
+              .containerList(pod.getStatus()
+                                 .getContainerStatuses()
+                                 .stream()
+                                 .map(container
+                                     -> K8sContainer.builder()
+                                            .containerId(container.getContainerID())
+                                            .name(container.getName())
+                                            .image(container.getImage())
+                                            .build())
+                                 .collect(toList()))
+              // Need to ensure that we're storing labels as registered by kryo map implementation
+              .labels(metadata.getLabels() != null ? new HashMap<>(metadata.getLabels()) : null)
+              .build();
+        })
+        .collect(toList());
   }
 
   public List<K8sPod> getPodDetailsWithTrack(KubernetesConfig kubernetesConfig, String namespace, String releaseName,
@@ -658,217 +679,34 @@ public class K8sTaskHelperBase {
     return targetInstances;
   }
 
-  public List<Subset> generateSubsetsForDestinationRule(List<String> subsetNames) {
-    List<Subset> subsets = new ArrayList<>();
-
-    for (String subsetName : subsetNames) {
-      Subset subset = new Subset();
-      subset.setName(subsetName);
-
-      if (subsetName.equals(HarnessLabelValues.trackCanary)) {
-        Map<String, String> labels = new HashMap<>();
-        labels.put(HarnessLabels.track, HarnessLabelValues.trackCanary);
-        subset.setLabels(labels);
-      } else if (subsetName.equals(HarnessLabelValues.trackStable)) {
-        Map<String, String> labels = new HashMap<>();
-        labels.put(HarnessLabels.track, HarnessLabelValues.trackStable);
-        subset.setLabels(labels);
-      } else if (subsetName.equals(HarnessLabelValues.colorBlue)) {
-        Map<String, String> labels = new HashMap<>();
-        labels.put(HarnessLabels.color, HarnessLabelValues.colorBlue);
-        subset.setLabels(labels);
-      } else if (subsetName.equals(HarnessLabelValues.colorGreen)) {
-        Map<String, String> labels = new HashMap<>();
-        labels.put(HarnessLabels.color, HarnessLabelValues.colorGreen);
-        subset.setLabels(labels);
-      }
-
-      subsets.add(subset);
-    }
-
-    return subsets;
-  }
-
-  private String generateDestination(String host, String subset) {
-    return ISTIO_DESTINATION_TEMPLATE.replace("$ISTIO_DESTINATION_HOST_NAME", host)
-        .replace("$ISTIO_DESTINATION_SUBSET_NAME", subset);
-  }
-
-  private String getDestinationYaml(String destination, String host) {
-    if (canaryDestinationExpression.equals(destination)) {
-      return generateDestination(host, HarnessLabelValues.trackCanary);
-    } else if (stableDestinationExpression.equals(destination)) {
-      return generateDestination(host, HarnessLabelValues.trackStable);
-    } else {
-      return destination;
-    }
-  }
-
-  private List<HTTPRouteDestination> generateDestinationWeights(
-      List<IstioDestinationWeight> istioDestinationWeights, String host, PortSelector portSelector) throws IOException {
-    List<HTTPRouteDestination> destinationWeights = new ArrayList<>();
-
-    for (IstioDestinationWeight istioDestinationWeight : istioDestinationWeights) {
-      String destinationYaml = getDestinationYaml(istioDestinationWeight.getDestination(), host);
-      Destination destination = new YamlUtils().read(destinationYaml, Destination.class);
-      destination.setPort(portSelector);
-
-      HTTPRouteDestination destinationWeight = new HTTPRouteDestination();
-      destinationWeight.setWeight(Integer.parseInt(istioDestinationWeight.getWeight()));
-      destinationWeight.setDestination(destination);
-
-      destinationWeights.add(destinationWeight);
-    }
-
-    return destinationWeights;
-  }
-
-  private String getHostFromRoute(List<HTTPRouteDestination> routes) {
-    if (isEmpty(routes)) {
-      throw new InvalidRequestException("No routes exist in VirtualService", USER);
-    }
-
-    if (null == routes.get(0).getDestination()) {
-      throw new InvalidRequestException("No destination exist in VirtualService", USER);
-    }
-
-    if (isBlank(routes.get(0).getDestination().getHost())) {
-      throw new InvalidRequestException("No host exist in VirtualService", USER);
-    }
-
-    return routes.get(0).getDestination().getHost();
-  }
-
-  private PortSelector getPortSelectorFromRoute(List<HTTPRouteDestination> routes) {
-    return routes.get(0).getDestination().getPort();
-  }
-
-  private void validateRoutesInVirtualService(VirtualService virtualService) {
-    List<HTTPRoute> http = virtualService.getSpec().getHttp();
-    List<TCPRoute> tcp = virtualService.getSpec().getTcp();
-    List<TLSRoute> tls = virtualService.getSpec().getTls();
-
-    if (isEmpty(http)) {
-      throw new InvalidRequestException(
-          "Http route is not present in VirtualService. Only Http routes are allowed", USER);
-    }
-
-    if (isNotEmpty(tcp) || isNotEmpty(tls)) {
-      throw new InvalidRequestException("Only Http routes are allowed in VirtualService for Traffic split", USER);
-    }
-
-    if (http.size() > 1) {
-      throw new InvalidRequestException("Only one route is allowed in VirtualService", USER);
-    }
-  }
-
-  public void updateVirtualServiceWithDestinationWeights(List<IstioDestinationWeight> istioDestinationWeights,
-      VirtualService virtualService, LogCallback executionLogCallback) throws IOException {
-    validateRoutesInVirtualService(virtualService);
-
-    executionLogCallback.saveExecutionLog("\nUpdating VirtualService with destination weights");
-
-    List<HTTPRoute> http = virtualService.getSpec().getHttp();
-    if (isNotEmpty(http)) {
-      String host = getHostFromRoute(http.get(0).getRoute());
-      PortSelector portSelector = getPortSelectorFromRoute(http.get(0).getRoute());
-      http.get(0).setRoute(generateDestinationWeights(istioDestinationWeights, host, portSelector));
-    }
-  }
-
-  private VirtualService updateVirtualServiceManifestFilesWithRoutes(List<KubernetesResource> resources,
-      KubernetesConfig kubernetesConfig, List<IstioDestinationWeight> istioDestinationWeights,
-      LogCallback executionLogCallback) throws IOException {
-    List<KubernetesResource> virtualServiceResources =
-        resources.stream()
-            .filter(
-                kubernetesResource -> kubernetesResource.getResourceId().getKind().equals(Kind.VirtualService.name()))
-            .filter(KubernetesResource::isManaged)
-            .collect(toList());
-
-    if (isEmpty(virtualServiceResources)) {
-      return null;
-    }
-
-    if (virtualServiceResources.size() > 1) {
-      String msg = "\nMore than one VirtualService found. Only one VirtualService can be marked with annotation "
-          + HarnessAnnotations.managed + ": true";
-      executionLogCallback.saveExecutionLog(msg + "\n", ERROR, FAILURE);
-      throw new InvalidRequestException(msg, USER);
-    }
-
-    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
-      kubernetesClient.resources(VirtualService.class, VirtualServiceList.class);
-      KubernetesResource kubernetesResource = virtualServiceResources.get(0);
-      InputStream inputStream = IOUtils.toInputStream(kubernetesResource.getSpec(), UTF_8);
-      VirtualService virtualService = (VirtualService) kubernetesClient.load(inputStream).items().get(0);
-      updateVirtualServiceWithDestinationWeights(istioDestinationWeights, virtualService, executionLogCallback);
-
-      kubernetesResource.setSpec(KubernetesHelper.toYaml(virtualService));
-
-      return virtualService;
-    }
-  }
-
-  public VirtualService updateVirtualServiceManifestFilesWithRoutesForCanary(List<KubernetesResource> resources,
-      KubernetesConfig kubernetesConfig, LogCallback executionLogCallback) throws IOException {
-    List<IstioDestinationWeight> istioDestinationWeights = new ArrayList<>();
-    istioDestinationWeights.add(
-        IstioDestinationWeight.builder().destination(stableDestinationExpression).weight("100").build());
-    istioDestinationWeights.add(
-        IstioDestinationWeight.builder().destination(canaryDestinationExpression).weight("0").build());
-
-    return updateVirtualServiceManifestFilesWithRoutes(
-        resources, kubernetesConfig, istioDestinationWeights, executionLogCallback);
-  }
-
-  public DestinationRule updateDestinationRuleManifestFilesWithSubsets(List<KubernetesResource> resources,
-      List<String> subsets, KubernetesConfig kubernetesConfig, LogCallback executionLogCallback) throws IOException {
-    List<KubernetesResource> destinationRuleResources =
-        resources.stream()
-            .filter(
-                kubernetesResource -> kubernetesResource.getResourceId().getKind().equals(Kind.DestinationRule.name()))
-            .filter(KubernetesResource::isManaged)
-            .collect(toList());
-
-    if (isEmpty(destinationRuleResources)) {
-      return null;
-    }
-
-    if (destinationRuleResources.size() > 1) {
-      String msg = "More than one DestinationRule found. Only one DestinationRule can be marked with annotation "
-          + HarnessAnnotations.managed + ": true";
-      executionLogCallback.saveExecutionLog(msg + "\n", ERROR, FAILURE);
-      throw new InvalidRequestException(msg, USER);
-    }
-
-    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
-      kubernetesClient.resources(DestinationRule.class, DestinationRuleList.class);
-
-      KubernetesResource kubernetesResource = destinationRuleResources.get(0);
-      InputStream inputStream = IOUtils.toInputStream(kubernetesResource.getSpec(), UTF_8);
-      DestinationRule destinationRule = (DestinationRule) kubernetesClient.load(inputStream).items().get(0);
-      destinationRule.getSpec().setSubsets(generateSubsetsForDestinationRule(subsets));
-
-      kubernetesResource.setSpec(KubernetesHelper.toYaml(destinationRule));
-
-      return destinationRule;
-    }
-  }
-
   private String getPodContainerId(K8sPod pod) {
     return isEmpty(pod.getContainerList()) ? EMPTY : pod.getContainerList().get(0).getContainerId();
   }
 
-  private List<K8sPod> getHelmPodDetails(
-      KubernetesConfig kubernetesConfig, String namespace, String releaseName, long timeoutInMillis) throws Exception {
-    Map<String, String> labels = ImmutableMap.of(HELM_RELEASE_LABEL, releaseName);
-    return getPodDetailsWithLabels(kubernetesConfig, namespace, releaseName, labels, timeoutInMillis);
+  private List<K8sPod> getHelmPodDetails(KubernetesConfig kubernetesConfig, String namespace, String releaseName,
+      Map<String, List<String>> workloadLabelSelectors, long timeoutInMillis) throws Exception {
+    if (isNotEmpty(workloadLabelSelectors)) {
+      Set<K8sPod> pods = new HashSet<>();
+      workloadLabelSelectors.forEach(
+          (key, value)
+              -> pods.addAll(getPodDetailsWithLabels(kubernetesConfig, namespace, releaseName, value, timeoutInMillis)
+                                 .stream()
+                                 .filter(this::filterByHelmInstanceLabel)
+                                 .filter(this::filterByHelmReleaseLabel)
+                                 .filter(pod -> filterByWorkloadName(pod, key))
+                                 .collect(toList())));
+      return new ArrayList<>(pods);
+
+    } else {
+      Map<String, String> labels = ImmutableMap.of(HELM_RELEASE_LABEL, releaseName);
+      return getPodDetailsWithLabels(kubernetesConfig, namespace, releaseName, labels, timeoutInMillis);
+    }
   }
 
-  public List<ContainerInfo> getContainerInfos(
-      KubernetesConfig kubernetesConfig, String releaseName, String namespace, long timeoutInMillis) throws Exception {
-    List<K8sPod> helmPods = getHelmPodDetails(kubernetesConfig, namespace, releaseName, timeoutInMillis);
+  public List<ContainerInfo> getContainerInfos(KubernetesConfig kubernetesConfig, String releaseName, String namespace,
+      Map<String, List<String>> workloadLabelSelectors, long timeoutInMillis) throws Exception {
+    List<K8sPod> helmPods =
+        getHelmPodDetails(kubernetesConfig, namespace, releaseName, workloadLabelSelectors, timeoutInMillis);
 
     return helmPods.stream()
         .map(pod
@@ -883,6 +721,18 @@ public class K8sTaskHelperBase {
                    .namespace(pod.getNamespace())
                    .build())
         .collect(Collectors.toList());
+  }
+
+  public List<K8sPod> getHelmPodList(long timeoutInMillis, KubernetesConfig kubernetesConfig, String releaseName,
+      Map<String, List<String>> workloadLabelSelectors, LogCallback logCallback) {
+    String namespace = kubernetesConfig.getNamespace();
+    try {
+      logCallback.saveExecutionLog("\nFetching existing pod list.");
+      return getHelmPodDetails(kubernetesConfig, namespace, releaseName, workloadLabelSelectors, timeoutInMillis);
+    } catch (Exception e) {
+      logCallback.saveExecutionLog(e.getMessage(), ERROR, FAILURE);
+    }
+    return Collections.emptyList();
   }
 
   public Kubectl getOverriddenClient(
@@ -2352,7 +2202,8 @@ public class K8sTaskHelperBase {
     final Map<String, Object> evaluatorResponseContext = new HashMap<>(1);
 
     Predicate<Object> retryCondition = retryConditionForProcessResult();
-    Retry retry = buildRetryAndRegisterListeners(retryCondition);
+    Retry retry = buildRetryAndRegisterListeners(
+        retryCondition, K8sTaskHelperBase.class.getSimpleName() + ".doStatusCheckForCustomResources");
 
     while (true) {
       Callable<ProcessResult> callable = Retry.decorateCallable(retry,
@@ -2396,8 +2247,16 @@ public class K8sTaskHelperBase {
     };
   }
 
-  private Retry buildRetryAndRegisterListeners(Predicate<Object> retryCondition) {
-    Retry exponentialRetry = RetryHelper.getExponentialRetry(this.getClass().getSimpleName(), retryCondition);
+  private static Predicate<Object> retryConditionForTimeout() {
+    return o -> {
+      ProcessResponse p = (ProcessResponse) o;
+      return p.getProcessResult().getExitValue() != 0 && p.getErrorMessage() != null
+          && p.getErrorMessage().contains("Unable to connect to the server");
+    };
+  }
+
+  private static Retry buildRetryAndRegisterListeners(Predicate<Object> retryCondition, String listenerName) {
+    Retry exponentialRetry = RetryHelper.getExponentialRetry(listenerName, retryCondition);
     RetryHelper.registerEventListeners(exponentialRetry);
     return exponentialRetry;
   }
@@ -2466,6 +2325,11 @@ public class K8sTaskHelperBase {
     return new NGDelegateLogCallback(logStreamingTaskClient, commandUnitName, shouldOpenStream, commandUnitsProgress);
   }
 
+  public TaskProgressCallback getTaskProgressCallback(
+      ILogStreamingTaskClient taskProgressStreamingTaskClient, String taskId) {
+    return new NGDelegateTaskProgressCallback(taskProgressStreamingTaskClient, taskId);
+  }
+
   public List<FileData> renderTemplate(K8sDelegateTaskParams k8sDelegateTaskParams,
       ManifestDelegateConfig manifestDelegateConfig, String manifestFilesDirectory, List<String> manifestOverrideFiles,
       String releaseName, String namespace, LogCallback executionLogCallback, Integer timeoutInMin) throws Exception {
@@ -2501,7 +2365,7 @@ public class K8sTaskHelperBase {
 
         String kustomizePath = Paths.get(manifestFilesDirectory, kustomizeYamlFolderPath).toString();
         savingPatchesToDirectory(kustomizePath, manifestOverrideFiles, executionLogCallback);
-        return kustomizeTaskHelper.build(manifestFilesDirectory, k8sDelegateTaskParams.getKustomizeBinaryPath(),
+        return kustomizeTaskHelper.build(manifestFilesDirectory, k8sDelegateTaskParams,
             kustomizeManifest.getPluginPath(), kustomizeYamlFolderPath, executionLogCallback,
             kustomizeManifest.getCommandFlags());
 
@@ -2553,9 +2417,9 @@ public class K8sTaskHelperBase {
 
       case KUSTOMIZE:
         KustomizeManifestDelegateConfig kustomizeManifest = (KustomizeManifestDelegateConfig) manifestDelegateConfig;
-        return kustomizeTaskHelper.buildForApply(k8sDelegateTaskParams.getKustomizeBinaryPath(),
-            kustomizeManifest.getPluginPath(), manifestFilesDirectory, filesList, true, manifestOverrideFiles,
-            executionLogCallback, kustomizeManifest.getCommandFlags());
+        return kustomizeTaskHelper.buildForApply(k8sDelegateTaskParams, kustomizeManifest.getPluginPath(),
+            manifestFilesDirectory, filesList, true, manifestOverrideFiles, executionLogCallback,
+            kustomizeManifest.getCommandFlags());
 
       default:
         throw new UnsupportedOperationException(
@@ -2702,7 +2566,8 @@ public class K8sTaskHelperBase {
 
         scmFetchFilesHelper.downloadFilesUsingScm(manifestFilesDirectory, gitStoreDelegateConfig, executionLogCallback);
       } else {
-        GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
+        GitConfigDTO gitConfigDTO = scmConnectorMapperDelegate.toGitConfigDTO(
+            gitStoreDelegateConfig.getGitConfigDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
         gitDecryptionHelper.decryptGitConfig(gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
         SshSessionConfig sshSessionConfig = gitDecryptionHelper.getSSHSessionConfig(
             gitStoreDelegateConfig.getSshKeySpecDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
@@ -3425,5 +3290,36 @@ public class K8sTaskHelperBase {
           + ": true");
     }
     return kubernetesResourceIds.get(0);
+  }
+  public HelmChartInfo getHelmChartDetails(ManifestDelegateConfig manifestDelegateConfig, String manifestFileDir) {
+    String finalPath = getManifestDirectoryForHelmChartWithSubCharts(
+        manifestFileDir, (HelmChartManifestDelegateConfig) manifestDelegateConfig);
+    try {
+      HelmChartInfo helmChartInfo =
+          helmTaskHelperBase.getHelmChartInfoFromChartsYamlFile(Paths.get(finalPath, CHARTS_YAML_KEY).toString());
+
+      if (helmChartInfo != null) {
+        helmChartInfo.setRepoUrl(manifestDelegateConfig.getStoreDelegateConfig().getRepoUrl());
+      }
+
+      return helmChartInfo;
+    } catch (Exception ex) {
+      log.warn("Unable to retrieve helmChartInfo from the Chart Yaml: " + ExceptionUtils.getMessage(ex));
+      return null;
+    }
+  }
+
+  private boolean filterByHelmInstanceLabel(K8sPod pod) {
+    return !pod.getLabels().containsKey(HELM_INSTANCE_LABEL)
+        || pod.getLabels().get(HELM_INSTANCE_LABEL).equals(pod.getReleaseName());
+  }
+
+  private boolean filterByHelmReleaseLabel(K8sPod pod) {
+    return !pod.getLabels().containsKey(HELM_RELEASE_LABEL)
+        || pod.getLabels().get(HELM_RELEASE_LABEL).equals(pod.getReleaseName());
+  }
+
+  private boolean filterByWorkloadName(K8sPod pod, String workloadName) {
+    return pod.getName().startsWith(workloadName);
   }
 }

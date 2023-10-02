@@ -28,12 +28,14 @@ import lombok.Getter;
 @AllArgsConstructor
 @OwnedBy(IACM)
 public enum IACMStepType {
-  IACM_TERRAFORM_PLUGIN("IACMTerraformPlugin", FeatureName.IACM_ENABLED, IACMTerraformPluginStepNode.class,
-      EntityType.IACM_TERRAFORM_PLUGIN, new IACMTerraformPluginStepPlanCreator(), new String[] {"IACM"}),
-  IACM_APPROVAL("IACMApproval", FeatureName.IACM_ENABLED, IACMApprovalStepNode.class, EntityType.IACM_APPROVAL,
-      new IACMApprovalStepPlanCreator(), new String[] {"IACM"});
+  IACM_TERRAFORM_PLUGIN("IACMTerraformPlugin", "IACM Terraform Plugin", FeatureName.IACM_ENABLED,
+      IACMTerraformPluginStepNode.class, EntityType.IACM_TERRAFORM_PLUGIN, new IACMTerraformPluginStepPlanCreator(),
+      new String[] {"IACM"}),
+  IACM_APPROVAL("IACMApproval", "IACM Approval", FeatureName.IACM_ENABLED, IACMApprovalStepNode.class,
+      EntityType.IACM_APPROVAL, new IACMApprovalStepPlanCreator(), new String[] {"IACM"});
 
   @Getter private String name;
+  @Getter private String displayName;
   @Getter private FeatureName featureName;
   @Getter private Class<?> node;
   @Getter private EntityType entityType;

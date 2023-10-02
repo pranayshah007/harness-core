@@ -84,6 +84,7 @@ public final class AnalysisStateMachine extends VerificationTaskBase
   @FdIndex private AnalysisStatus status;
 
   private long nextAttemptTime;
+  private Instant firstPickedAt;
   private int totalRetryCount;
 
   @NotNull private Integer stateMachineIgnoreMinutes;

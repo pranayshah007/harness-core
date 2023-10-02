@@ -6,12 +6,14 @@
  */
 
 package io.harness.ngtriggers.beans.source.webhook;
-
 import static io.harness.annotations.dev.HarnessTeam.CI;
 
 import static java.util.Collections.emptySet;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -20,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(CI)
 public enum WebhookAction {
   // Github

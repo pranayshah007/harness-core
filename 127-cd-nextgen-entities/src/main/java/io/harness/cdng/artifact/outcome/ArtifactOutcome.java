@@ -7,15 +7,21 @@
 
 package io.harness.cdng.artifact.outcome;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.WithIdentifier;
 import io.harness.cdng.artifact.WithArtifactSummary;
 import io.harness.pms.sdk.core.data.Outcome;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.util.Set;
 
+@CodePulse(
+    module = ProductModule.CDS, components = {HarnessModuleComponent.CDS_ARTIFACTS}, unitCoverageRequired = false)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "artifactType")
 @JsonSubTypes({
   @JsonSubTypes.Type(value = DockerArtifactOutcome.class, name = "Dockerhub")
@@ -36,7 +42,12 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @OwnedBy(HarnessTeam.CDP)
 public interface ArtifactOutcome extends Outcome, WithIdentifier, WithArtifactSummary {
   boolean isPrimaryArtifact();
+
   String getArtifactType();
+
   String getIdentifier();
+
   String getTag();
+
+  Set<String> getMetaTags();
 }

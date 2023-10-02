@@ -24,8 +24,10 @@ import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
 
+import io.harness.beans.FeatureName;
 import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.ProcessTimeLogContext;
@@ -43,6 +45,7 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.mongodb.AggregationOptions;
+import com.mongodb.ReadPreference;
 import dev.morphia.aggregation.AggregationPipeline;
 import dev.morphia.aggregation.Group;
 import dev.morphia.query.Query;
@@ -76,6 +79,7 @@ public class GitChangeSetRunnable implements Runnable {
   @Inject private WingsPersistence wingsPersistence;
   @Inject private ConfigurationController configurationController;
   @Inject private GitChangeSetRunnableHelper gitChangeSetRunnableHelper;
+  @Inject private FeatureFlagService featureFlagService;
 
   @Override
   public void run() {
@@ -299,6 +303,15 @@ public class GitChangeSetRunnable implements Runnable {
     int limit = wingsPersistence.getMaxDocumentLimit(YamlChangeSet.class);
     if (limit > 0) {
       aggregationPipeline.limit(limit);
+    }
+    if (featureFlagService.isGlobalEnabled(FeatureName.CDS_QUERY_OPTIMIZATION_GLOBAL)) {
+      aggregationPipeline
+          .aggregate(ChangeSetGroupingKey.class,
+              AggregationOptions.builder()
+                  .maxTime(wingsPersistence.getMaxTimeMs(YamlChangeSet.class), TimeUnit.MILLISECONDS)
+                  .build(),
+              ReadPreference.secondaryPreferred())
+          .forEachRemaining(keys::add);
     }
     aggregationPipeline
         .aggregate(ChangeSetGroupingKey.class,

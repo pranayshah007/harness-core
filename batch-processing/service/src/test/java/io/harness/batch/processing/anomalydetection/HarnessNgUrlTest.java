@@ -21,7 +21,6 @@ import io.harness.rule.Owner;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -34,18 +33,17 @@ public class HarnessNgUrlTest extends CategoryTest {
 
   @Before
   public void setUp() throws SQLException {
-    baseUrl = "https://qa.harness.io";
+    baseUrl = "https://app.harness.io";
     anomalyData = AnomalyDataStub.getAnomalyData();
   }
 
   @Test
   @Owner(developers = TRUNAPUSHPA)
   @Category(UnitTests.class)
-  @Ignore("Ignoring for now as its flaky")
   public void checkAnomalyNgUrl() throws URISyntaxException {
     assertThat(HarnessNgUrl.getPerspectiveAnomalyUrl(
-                   "zEaak-FLS425IEO7OLzMUg", "Shza0IsVQwm_ZMPiCM45pQ", "Gcp", anomalyData, baseUrl))
+                   "wFHXHD0RRQWoO8tIZT5YVw", "CvFIuPsqQGKeZ_xHHiQ5UA", "GCP", anomalyData, baseUrl))
         .isEqualTo(
-            "https://qa.harness.io/ng/#/account/zEaak-FLS425IEO7OLzMUg/ce/perspectives/Shza0IsVQwm_ZMPiCM45pQ/name/Gcp?filters=[%7B%22field%22:%7B%22fieldId%22:%22gcpProduct%22,%22fieldName%22:%22Product%22,%22identifier%22:%22GCP%22,%22identifierName%22:%22GCP%22%7D,%22operator%22:%22IN%22,%22type%22:%22VIEW_ID_CONDITION%22,%22values%22:[%22MongoDB%20Inc.%20MongoDB%20Atlas%22]%7D,%7B%22field%22:%7B%22fieldId%22:%22gcpProjectId%22,%22fieldName%22:%22Project%22,%22identifier%22:%22GCP%22,%22identifierName%22:%22GCP%22%7D,%22operator%22:%22IN%22,%22type%22:%22VIEW_ID_CONDITION%22,%22values%22:[%22pr10406a87045145c3%22]%7D,%7B%22field%22:%7B%22fieldId%22:%22gcpSKUDescription%22,%22fieldName%22:%22SKUs%22,%22identifier%22:%22GCP%22,%22identifierName%22:%22GCP%22%7D,%22operator%22:%22IN%22,%22type%22:%22VIEW_ID_CONDITION%22,%22values%22:[%22MongoDB%20Atlas%20-%20Elastic%20Billing%20Subscription%20Overage%20Atlas%20Credits%22]%7D]&groupBy=%7B%22fieldId%22:%22gcpSkuDescription%22,%22fieldName%22:%22SKUs%22,%22identifier%22:%22GCP%22,%22identifierName%22:%22GCP%22%7D&timeRange=%7B%22to%22:%222022-08-21%22,%22from%22:%222022-08-03%22%7D&aggregation=%22DAY%22&chartType=%22column%22");
+            "https://app.harness.io/ng/account/wFHXHD0RRQWoO8tIZT5YVw/ce/perspectives/CvFIuPsqQGKeZ_xHHiQ5UA/name/GCP?filters=%5B%7B%22field%22%3A%7B%22fieldId%22%3A%22gcpProduct%22%2C%22fieldName%22%3A%22Product%22%2C%22identifier%22%3A%22GCP%22%2C%22identifierName%22%3A%22GCP%22%7D%2C%22operator%22%3A%22IN%22%2C%22type%22%3A%22VIEW_ID_CONDITION%22%2C%22values%22%3A%5B%22Cloud+Storage%22%5D%7D%2C%7B%22field%22%3A%7B%22fieldId%22%3A%22gcpProjectId%22%2C%22fieldName%22%3A%22Project%22%2C%22identifier%22%3A%22GCP%22%2C%22identifierName%22%3A%22GCP%22%7D%2C%22operator%22%3A%22IN%22%2C%22type%22%3A%22VIEW_ID_CONDITION%22%2C%22values%22%3A%5B%22platform-205701%22%5D%7D%2C%7B%22field%22%3A%7B%22fieldId%22%3A%22gcpSKUDescription%22%2C%22fieldName%22%3A%22SKUs%22%2C%22identifier%22%3A%22GCP%22%2C%22identifierName%22%3A%22GCP%22%7D%2C%22operator%22%3A%22IN%22%2C%22type%22%3A%22VIEW_ID_CONDITION%22%2C%22values%22%3A%5B%22Download+Worldwide+Destinations+%28excluding+Asia+%26+Australia%29%22%5D%7D%5D&groupBy=%7B%22fieldId%22%3A%22gcpSkuDescription%22%2C%22fieldName%22%3A%22SKUs%22%2C%22identifier%22%3A%22GCP%22%2C%22identifierName%22%3A%22GCP%22%7D&timeRange=%7B%22from%22%3A%222023-06-26%22%2C%22to%22%3A%222023-07-03%22%7D&aggregation=%22DAY%22&chartType=%22column%22");
   }
 }

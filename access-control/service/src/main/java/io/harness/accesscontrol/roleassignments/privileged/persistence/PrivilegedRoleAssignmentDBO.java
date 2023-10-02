@@ -60,7 +60,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias(COLLECTION_NAME)
 public class PrivilegedRoleAssignmentDBO implements PersistentEntity, AccessControlEntity {
   public static final String COLLECTION_NAME = "privilegedRoleAssignments";
-
   @Setter @Id @dev.morphia.annotations.Id String id;
   @NotNull final PrincipalType principalType;
   @NotEmpty final String principalIdentifier;

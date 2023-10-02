@@ -6,9 +6,11 @@
  */
 
 package io.harness.artifactory;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
@@ -16,16 +18,19 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(HarnessTeam.CDP)
 public interface ArtifactoryNgService {
   List<BuildDetails> getBuildDetails(
       ArtifactoryConfigRequest artifactoryConfig, String repositoryName, String artifactPath, int maxVersions);
 
-  List<BuildDetails> getArtifactList(
-      ArtifactoryConfigRequest artifactoryConfig, String repositoryName, String artifactPath, int maxVersions);
+  List<BuildDetails> getArtifactList(ArtifactoryConfigRequest artifactoryConfig, String repositoryName,
+      String artifactPath, int maxVersions, String artifactPathFilter, String artifactDirectory);
 
   BuildDetails getLatestArtifact(ArtifactoryConfigRequest artifactoryConfig, String repositoryName,
-      String ArtifactPathDirectory, String artifactPathFilter, String artifactPath, int maxVersions);
+      String ArtifactPathDirectory, String artifactPathFilter, String artifactPath, int maxVersion,
+      String artifactFilter);
 
   Map<String, String> getRepositories(ArtifactoryConfigRequest artifactoryConfig, String packageType);
 

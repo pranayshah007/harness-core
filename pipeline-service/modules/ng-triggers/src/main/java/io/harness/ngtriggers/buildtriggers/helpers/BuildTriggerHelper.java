@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngtriggers.buildtriggers.helpers;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -16,7 +15,10 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.task.artifacts.ami.AMIFilter;
 import io.harness.delegate.task.artifacts.ami.AMITag;
 import io.harness.exception.InvalidArgumentsException;
@@ -26,6 +28,7 @@ import io.harness.jackson.JsonNodeUtils;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
+import io.harness.ngtriggers.beans.entity.metadata.BuildMetadata;
 import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
 import io.harness.ngtriggers.beans.source.artifact.BuildAware;
 import io.harness.ngtriggers.buildtriggers.helpers.dtos.BuildTriggerOpsData;
@@ -62,6 +65,7 @@ import io.harness.yaml.core.variables.NGVariableTrigger;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -74,12 +78,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.util.Strings;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(PIPELINE)
 public class BuildTriggerHelper {
+  public static final String STAGE_IDENTIFIER = "stageIdentifier";
+  public static final String IMAGE_PATH = "imagePath";
+  public static final String CHART_NAME = "ChartName";
+  public static final String HELM_VERSION = "helmVersion";
   private PipelineServiceClient pipelineServiceClient;
   public static final String REPOSITORY_NAME = "repository";
   public static final String REPOSITORY_FORMAT = "repositoryFormat";
@@ -88,6 +99,7 @@ public class BuildTriggerHelper {
   public static final String MAVEN = "maven";
   public static final String NPM = "npm";
   public static final String NUGET = "nuget";
+  public static final String INPUT = "<+input>";
 
   public Optional<String> fetchPipelineYamlForTrigger(TriggerDetails triggerDetails) {
     PMSPipelineResponseDTO response = fetchPipelineForTrigger(triggerDetails);
@@ -154,7 +166,7 @@ public class BuildTriggerHelper {
           "Type filed is not present in Trigger Spec. Its needed for Artifact/Manifest Triggers");
     }
 
-    if (buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity().getWithServiceV2() == false
+    if (!buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity().getWithServiceV2()
         && !typeFromPipeline.asText().equals(typeFromTrigger.asText())) {
       throw new InvalidRequestException(new StringBuilder(128)
                                             .append("Artifact/Manifest Type in Trigger: ")
@@ -182,8 +194,8 @@ public class BuildTriggerHelper {
 
     Map<String, Object> pipelineBuildSpecMap = new HashMap<>();
 
-    if (triggerManifestSpecMap.containsKey("stageIdentifier") && triggerManifestSpecMap.containsKey("manifestRef")) {
-      String stageRef = triggerManifestSpecMap.get("stageIdentifier").asText();
+    if (triggerManifestSpecMap.containsKey(STAGE_IDENTIFIER) && triggerManifestSpecMap.containsKey("manifestRef")) {
+      String stageRef = triggerManifestSpecMap.get(STAGE_IDENTIFIER).asText();
       String buildRef = triggerManifestSpecMap.get("manifestRef").asText();
       List<String> keys = Arrays.asList(
           "pipeline.stages.stage[identifier:STAGE_REF].spec.serviceConfig.serviceDefinition.spec.manifests.manifest[identifier:BUILD_REF]",
@@ -208,8 +220,8 @@ public class BuildTriggerHelper {
 
     Map<String, Object> pipelineBuildSpecMap = new HashMap<>();
 
-    if (triggerArtifactSpecMap.containsKey("stageIdentifier") && triggerArtifactSpecMap.containsKey("artifactRef")) {
-      String stageRef = triggerArtifactSpecMap.get("stageIdentifier").asText();
+    if (triggerArtifactSpecMap.containsKey(STAGE_IDENTIFIER) && triggerArtifactSpecMap.containsKey("artifactRef")) {
+      String stageRef = triggerArtifactSpecMap.get(STAGE_IDENTIFIER).asText();
       String buildRef = triggerArtifactSpecMap.get("artifactRef").asText();
 
       List<String> keys = new ArrayList<>();
@@ -240,6 +252,42 @@ public class BuildTriggerHelper {
         .triggerSpecMap(manifestTriggerSpecMap)
         .triggerDetails(triggerDetails)
         .build();
+  }
+
+  public List<BuildTriggerOpsData> generateBuildTriggerOpsDataForMultiArtifact(TriggerDetails triggerDetails)
+      throws IOException {
+    List<BuildTriggerOpsData> buildTriggerOpsData = new ArrayList<>();
+    JsonNode jsonNode = YamlUtils.readTree(triggerDetails.getNgTriggerEntity().getYaml()).getNode().getCurrJsonNode();
+    ArrayNode sources = (ArrayNode) jsonNode.get("trigger").get("source").get("spec").get("sources");
+    int buildMetadataIndex = 0;
+    for (JsonNode source : sources) {
+      Map<String, Object> triggerArtifactSpecMap = new HashMap<>();
+      triggerArtifactSpecMap.put("type", source.get("spec").get("type"));
+      triggerArtifactSpecMap.put("spec", source.get("spec"));
+      List<BuildMetadata> multiBuildMetadata =
+          triggerDetails.getNgTriggerEntity().getMetadata().getMultiBuildMetadata();
+      String thisSourceSignature = multiBuildMetadata.get(buildMetadataIndex).getPollingConfig().getSignature();
+      /* signaturesToLock is a list of the signatures from the other BuildMetadata present in this same trigger.
+         This list will be used to decide whether all this trigger's pollingDocs contain the same versions
+         before firing the trigger. */
+      List<String> signaturesToLock =
+          multiBuildMetadata.stream()
+              .filter(metadata -> !metadata.getPollingConfig().getSignature().equals(thisSourceSignature))
+              .map(metadata -> metadata.getPollingConfig().getSignature())
+              .collect(toList());
+      /* Here we need to explicitly add `buildMetadata` to BuildTriggerOpsData. This is because MultiRegionArtifact
+      triggers have a list of BuildMetadata, so PollingItemGenerator:getBaseInitializedPollingItem needs a way to
+      explicitly get the BuildMetadata for each PollingItem it will generate. */
+      buildTriggerOpsData.add(BuildTriggerOpsData.builder()
+                                  .pipelineBuildSpecMap(Collections.emptyMap())
+                                  .triggerSpecMap(triggerArtifactSpecMap)
+                                  .triggerDetails(triggerDetails)
+                                  .buildMetadata(multiBuildMetadata.get(buildMetadataIndex))
+                                  .signaturesToLock(signaturesToLock)
+                                  .build());
+      buildMetadataIndex++;
+    }
+    return buildTriggerOpsData;
   }
 
   public BuildTriggerOpsData generateBuildTriggerOpsDataForGitPolling(TriggerDetails triggerDetails) throws Exception {
@@ -407,7 +455,7 @@ public class BuildTriggerHelper {
 
   private void validatePollingItemForGcr(PollingItem pollingItem) {
     GcrPayload gcrPayload = pollingItem.getPollingPayloadData().getGcrPayload();
-    String error = checkFiledValueError("imagePath", gcrPayload.getImagePath());
+    String error = checkFiledValueError(IMAGE_PATH, gcrPayload.getImagePath());
     if (isNotBlank(error)) {
       throw new InvalidRequestException(error);
     }
@@ -420,7 +468,7 @@ public class BuildTriggerHelper {
 
   private void validatePollingItemForDockerRegistry(PollingItem pollingItem) {
     DockerHubPayload dockerHubPayload = pollingItem.getPollingPayloadData().getDockerHubPayload();
-    String error = checkFiledValueError("imagePath", dockerHubPayload.getImagePath());
+    String error = checkFiledValueError(IMAGE_PATH, dockerHubPayload.getImagePath());
     if (isNotBlank(error)) {
       throw new InvalidRequestException(error);
     }
@@ -441,15 +489,14 @@ public class BuildTriggerHelper {
 
     String repositoryFormat = artifactoryRegistryPayload.getRepositoryFormat();
     if (repositoryFormat.equals("generic")) {
-      error = checkFiledValueError("artifactDirectory", artifactoryRegistryPayload.getArtifactDirectory());
-      if (isNotBlank(error)) {
-        throw new InvalidRequestException(error);
-      }
+      error =
+          checkAnyFieldPresent(MutablePair.of("artifactDirectory", artifactoryRegistryPayload.getArtifactDirectory()),
+              MutablePair.of("artifactFilter", artifactoryRegistryPayload.getArtifactFilter()));
     } else {
       error = checkFiledValueError("artifactPath", artifactoryRegistryPayload.getArtifactPath());
-      if (isNotBlank(error)) {
-        throw new InvalidRequestException(error);
-      }
+    }
+    if (isNotBlank(error)) {
+      throw new InvalidRequestException(error);
     }
   }
 
@@ -515,7 +562,7 @@ public class BuildTriggerHelper {
       throw new InvalidRequestException(error);
     }
 
-    error = checkFiledValueError("imagePath", ecrPayload.getImagePath());
+    error = checkFiledValueError(IMAGE_PATH, ecrPayload.getImagePath());
     if (isNotBlank(error)) {
       throw new InvalidRequestException(error);
     }
@@ -534,7 +581,7 @@ public class BuildTriggerHelper {
       throw new InvalidRequestException(error);
     }
 
-    error = checkFiledValueError("repository", acrPayload.getRepository());
+    error = checkFiledValueError(REPOSITORY_NAME, acrPayload.getRepository());
     if (isNotBlank(error)) {
       throw new InvalidRequestException(error);
     }
@@ -547,36 +594,35 @@ public class BuildTriggerHelper {
     }
 
     if (pollingItem.getPollingPayloadData().hasHttpHelmPayload()) {
-      error =
-          checkFiledValueError("ChartName", pollingItem.getPollingPayloadData().getHttpHelmPayload().getChartName());
+      error = checkFiledValueError(CHART_NAME, pollingItem.getPollingPayloadData().getHttpHelmPayload().getChartName());
       if (isNotBlank(error)) {
         throw new InvalidRequestException(error);
       }
 
       error = checkFiledValueError(
-          "helmVersion", pollingItem.getPollingPayloadData().getHttpHelmPayload().getHelmVersion().name());
+          HELM_VERSION, pollingItem.getPollingPayloadData().getHttpHelmPayload().getHelmVersion().name());
       if (isNotBlank(error)) {
         throw new InvalidRequestException(error);
       }
     } else if (pollingItem.getPollingPayloadData().hasS3HelmPayload()) {
-      error = checkFiledValueError("ChartName", pollingItem.getPollingPayloadData().getS3HelmPayload().getChartName());
+      error = checkFiledValueError(CHART_NAME, pollingItem.getPollingPayloadData().getS3HelmPayload().getChartName());
       if (isNotBlank(error)) {
         throw new InvalidRequestException(error);
       }
 
       error = checkFiledValueError(
-          "helmVersion", pollingItem.getPollingPayloadData().getS3HelmPayload().getHelmVersion().name());
+          HELM_VERSION, pollingItem.getPollingPayloadData().getS3HelmPayload().getHelmVersion().name());
       if (isNotBlank(error)) {
         throw new InvalidRequestException(error);
       }
     } else if (pollingItem.getPollingPayloadData().hasGcsHelmPayload()) {
-      error = checkFiledValueError("ChartName", pollingItem.getPollingPayloadData().getGcsHelmPayload().getChartName());
+      error = checkFiledValueError(CHART_NAME, pollingItem.getPollingPayloadData().getGcsHelmPayload().getChartName());
       if (isNotBlank(error)) {
         throw new InvalidRequestException(error);
       }
 
       error = checkFiledValueError(
-          "helmVersion", pollingItem.getPollingPayloadData().getGcsHelmPayload().getHelmVersion().name());
+          HELM_VERSION, pollingItem.getPollingPayloadData().getGcsHelmPayload().getHelmVersion().name());
       if (isNotBlank(error)) {
         throw new InvalidRequestException(error);
       }
@@ -593,6 +639,33 @@ public class BuildTriggerHelper {
     } else {
       return EMPTY;
     }
+  }
+
+  private String checkAnyFieldPresent(Pair<String, String>... fields) {
+    int size = fields.length;
+    for (int i = 0; i < size; i++) {
+      String value = fields[i].getValue();
+      if (!isBlank(value) && !INPUT.equals(value)) {
+        return EMPTY;
+      }
+    }
+    return constructErrorMessage(fields);
+  }
+
+  private String constructErrorMessage(Pair<String, String>... value) {
+    int size = value.length;
+    StringBuilder stringBuilder = new StringBuilder(String.format("%s", value[0].getKey()));
+    for (int i = 1; i < size; i++) {
+      stringBuilder.append(String.format(", %s", value[i].getKey()));
+    }
+
+    stringBuilder.append(" can not be blank or Runtime input.");
+
+    if (size > 1) {
+      return stringBuilder.append(" Please provide concrete value to one of these.").toString();
+    }
+
+    return stringBuilder.append(" Needs to have concrete value").toString();
   }
 
   public String generatePollingDescriptor(PollingResponse pollingResponse) {

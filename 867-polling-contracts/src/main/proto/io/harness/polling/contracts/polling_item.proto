@@ -17,6 +17,7 @@ message PollingItem {
   io.harness.polling.contracts.PollingPayloadData pollingPayloadData = 3;
   string signature = 4;
   string pollingDocId = 5;
+  repeated string signaturesToLock = 6;
 }
 
 message Qualifier {

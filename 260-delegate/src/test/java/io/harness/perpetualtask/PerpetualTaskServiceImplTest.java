@@ -620,7 +620,7 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
     when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
     when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
         .thenReturn(DelegateTask.builder().build());
-    when(delegateService.executeTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+    when(delegateService.queueTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new NoEligibleDelegatesInAccountException(NO_ELIGIBLE_DELEGATES);
     });
     perpetualTaskRecordHandler.assign(perpetualTaskRecord);
@@ -644,7 +644,7 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
     when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
     when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
         .thenReturn(DelegateTask.builder().build());
-    when(delegateService.executeTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+    when(delegateService.queueTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new NoEligibleDelegatesInAccountException(NO_ELIGIBLE_DELEGATES);
     });
 
@@ -663,7 +663,7 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
     when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
     when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
         .thenReturn(DelegateTask.builder().build());
-    when(delegateService.executeTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+    when(delegateService.queueTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new NoEligibleDelegatesInAccountException(NO_ELIGIBLE_DELEGATES);
     });
 
@@ -681,7 +681,7 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
     when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
     when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
         .thenReturn(DelegateTask.builder().build());
-    when(delegateService.executeTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+    when(delegateService.queueTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new NoAvailableDelegatesException();
     });
 
@@ -700,7 +700,7 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
     when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
     when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
         .thenReturn(DelegateTask.builder().build());
-    when(delegateService.executeTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+    when(delegateService.queueTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new NoAvailableDelegatesException();
     });
 
@@ -718,7 +718,7 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
     when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
     when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
         .thenReturn(DelegateTask.builder().build());
-    when(delegateService.executeTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+    when(delegateService.queueTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new NoInstalledDelegatesException();
     });
 
@@ -736,7 +736,7 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
     when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
     when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
         .thenReturn(DelegateTask.builder().build());
-    when(delegateService.executeTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+    when(delegateService.queueTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new DelegateTaskExpiredException("");
     });
 
@@ -754,7 +754,7 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
     when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
     when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
         .thenReturn(DelegateTask.builder().build());
-    when(delegateService.executeTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+    when(delegateService.queueTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new DelegateTaskExpiredException("");
     });
 
@@ -772,7 +772,7 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
     when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
     when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
         .thenReturn(DelegateTask.builder().build());
-    when(delegateService.executeTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+    when(delegateService.queueTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new DelegateTaskValidationFailedException("");
     });
 
@@ -791,7 +791,7 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
     when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
     when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
         .thenReturn(DelegateTask.builder().build());
-    when(delegateService.executeTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+    when(delegateService.queueTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new DelegateTaskValidationFailedException("");
     });
 
@@ -809,7 +809,7 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
     when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
     when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
         .thenReturn(DelegateTask.builder().build());
-    when(delegateService.executeTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+    when(delegateService.queueTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new InvalidArgumentsException("");
     });
 
@@ -828,7 +828,7 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
     when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
     when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
         .thenReturn(DelegateTask.builder().build());
-    when(delegateService.executeTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+    when(delegateService.queueTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new InvalidArgumentsException("");
     });
 
@@ -846,7 +846,7 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
     when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
     when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
         .thenReturn(DelegateTask.builder().build());
-    when(delegateService.executeTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+    when(delegateService.queueTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new InvalidArgumentsException("");
     });
 
@@ -865,7 +865,7 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
     when(clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType())).thenReturn(client);
     when(client.getValidationTask(clientContext(), perpetualTaskRecord.getAccountId()))
         .thenReturn(DelegateTask.builder().build());
-    when(delegateService.executeTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
+    when(delegateService.queueTaskV2(nullable(DelegateTask.class))).thenAnswer(invocation -> {
       throw new InvalidArgumentsException("");
     });
 

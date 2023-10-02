@@ -15,4 +15,6 @@ public interface DelegateInstallationCommandService {
   String getCommand(String commandType, String managerUrl, String accountId, DelegateEntityOwner owner);
   String getTerraformExampleModuleFile(String managerUrl, String accountId, DelegateEntityOwner owner)
       throws IOException;
+
+  String getHelmRepoUrl(String commandType, String managerUrl);
 }

@@ -17,18 +17,13 @@ import com.google.common.collect.ImmutableMap;
 public class ExecutionLogContext extends AutoLogContext {
   // keys
   private static final String TASK_ID = "taskId";
-  private static final String API_REQUEST_URI = "executionUri";
-  private static final String API_ACTION = "executionMethod";
+  private static final String RUNNER_TYPE = "runnerType";
 
   public ExecutionLogContext(String taskId, OverrideBehavior behavior) {
     super(TASK_ID, taskId, behavior);
   }
 
-  public ExecutionLogContext(String taskId, String requestSummary, OverrideBehavior behavior) {
-    super(TASK_ID, taskId, behavior);
-  }
-
-  public ExecutionLogContext(String taskId, String uri, String action, OverrideBehavior behavior) {
-    super(ImmutableMap.of(TASK_ID, taskId, API_REQUEST_URI, uri, API_ACTION, action), behavior);
+  public ExecutionLogContext(String taskId, String runnerType, OverrideBehavior behavior) {
+    super(ImmutableMap.of(TASK_ID, taskId, RUNNER_TYPE, runnerType), behavior);
   }
 }

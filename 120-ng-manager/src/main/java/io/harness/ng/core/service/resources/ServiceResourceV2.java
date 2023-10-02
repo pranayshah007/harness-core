@@ -40,8 +40,11 @@ import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.Scope;
@@ -59,6 +62,9 @@ import io.harness.delegate.task.artifacts.ArtifactSourceConstants;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
+import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
+import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.artifact.ArtifactSourceYamlRequestDTO;
 import io.harness.ng.core.beans.DocumentationConstants;
@@ -69,7 +75,9 @@ import io.harness.ng.core.beans.ServicesYamlMetadataApiInput;
 import io.harness.ng.core.customDeployment.helper.CustomDeploymentYamlHelper;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
+import io.harness.ng.core.dto.RepoListResponseDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.ng.core.remote.utils.ScopeAccessHelper;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
@@ -86,6 +94,7 @@ import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.services.impl.ServiceEntityYamlSchemaHelper;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
+import io.harness.ng.core.utils.GitXUtils;
 import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.pms.yaml.YamlField;
@@ -118,6 +127,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -129,6 +139,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -144,12 +155,15 @@ import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @NextGenManagerAuth
 @Api("/servicesV2")
 @Path("/servicesV2")
@@ -186,6 +200,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @Slf4j
 public class ServiceResourceV2 {
   private final ServiceEntityService serviceEntityService;
+  private final InfrastructureEntityService infrastructureEntityService;
   private final AccessControlClient accessControlClient;
   private final ServiceEntityManagementService serviceEntityManagementService;
   private final OrgAndProjectValidationHelper orgAndProjectValidationHelper;
@@ -225,17 +240,23 @@ public class ServiceResourceV2 {
       @Parameter(description = "Specify whether Service is deleted or not") @QueryParam(
           NGCommonEntityConstants.DELETED_KEY) @DefaultValue("false") boolean deleted,
       @Parameter(description = "Specify true for fetching resolved service yaml", hidden = true) @QueryParam(
-          "fetchResolvedYaml") @DefaultValue("false") boolean fetchResolvedYaml) {
-    Optional<ServiceEntity> serviceEntity =
-        serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, deleted);
+          "fetchResolvedYaml") @DefaultValue("false") boolean fetchResolvedYaml,
+      @Parameter(description = "This contains details of Git Entity like Git Branch info",
+          hidden = true) @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @Parameter(description = "Specifies whether to load the entity from cache", hidden = true) @HeaderParam(
+          "Load-From-Cache") @DefaultValue("false") String loadFromCache,
+      @Parameter(description = "Specifies whether to load the entity from fallback branch", hidden = true) @QueryParam(
+          "loadFromFallbackBranch") @DefaultValue("false") boolean loadFromFallbackBranch) {
+    Optional<ServiceEntity> serviceEntity = serviceEntityService.get(accountId, orgIdentifier, projectIdentifier,
+        serviceIdentifier, deleted, GitXUtils.parseLoadFromCacheHeaderParam(loadFromCache), loadFromFallbackBranch);
     if (serviceEntity.isPresent()) {
       if (EmptyPredicate.isEmpty(serviceEntity.get().getYaml())) {
         NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity.get());
         serviceEntity.get().setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
       }
     } else {
-      throw new NotFoundException(format("Service with identifier [%s] in project [%s], org [%s] not found",
-          serviceIdentifier, projectIdentifier, orgIdentifier));
+      throw new NotFoundException(
+          ServiceElementMapper.getServiceNotFoundError(orgIdentifier, projectIdentifier, serviceIdentifier));
     }
 
     if (featureFlagService.isEnabled(accountId, FeatureName.CDS_ARTIFACTORY_REPOSITORY_URL_MANDATORY)) {
@@ -267,10 +288,14 @@ public class ServiceResourceV2 {
   public ResponseDTO<ServiceResponse>
   create(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @RequestBody(required = true, description = "Details of the Service to be created", content = {
-        @Content(examples = @ExampleObject(name = "Create", summary = "Sample Service create payload",
-                     value = DocumentationConstants.serviceRequestDTO, description = "Sample Service payload"))
-      }) @Valid ServiceRequestDTO serviceRequestDTO) {
+      @RequestBody(required = true, description = "Details of the Service to be created",
+          content =
+          {
+            @Content(examples = @ExampleObject(name = "Create", summary = "Sample Service create payload",
+                         value = DocumentationConstants.serviceRequestDTO, description = "Sample Service payload"))
+          }) @Valid ServiceRequestDTO serviceRequestDTO,
+      @Parameter(description = "This contains details of Git Entity like Git Branch, Git Repository to be created",
+          hidden = true) @BeanParam GitEntityCreateInfoDTO gitEntityCreateInfo) {
     throwExceptionForNoRequestDTO(serviceRequestDTO);
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
@@ -357,10 +382,14 @@ public class ServiceResourceV2 {
   update(@HeaderParam(IF_MATCH) String ifMatch,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @RequestBody(required = true, description = "Details of the Service to be updated", content = {
-        @Content(examples = @ExampleObject(name = "Create", summary = "Sample Service update payload",
-                     value = DocumentationConstants.serviceRequestDTO, description = "Sample Service payload"))
-      }) @Valid ServiceRequestDTO serviceRequestDTO) {
+      @RequestBody(required = true, description = "Details of the Service to be updated",
+          content =
+          {
+            @Content(examples = @ExampleObject(name = "Create", summary = "Sample Service update payload",
+                         value = DocumentationConstants.serviceRequestDTO, description = "Sample Service payload"))
+          }) @Valid ServiceRequestDTO serviceRequestDTO,
+      @Parameter(description = "This contains details of Git Entity like Git Branch information to be updated",
+          hidden = true) @BeanParam GitEntityUpdateInfoDTO gitEntityInfo) {
     throwExceptionForNoRequestDTO(serviceRequestDTO);
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
@@ -405,7 +434,7 @@ public class ServiceResourceV2 {
   }
 
   @GET
-  @ApiOperation(value = "Gets Service list ", nickname = "getServiceList")
+  @ApiOperation(value = "Gets Service list", nickname = "getServiceList")
   @Operation(operationId = "getServiceList", summary = "Gets Service list",
       responses =
       {
@@ -438,9 +467,11 @@ public class ServiceResourceV2 {
       @Parameter(description = "Specify true if all accessible Services are to be included") @QueryParam(
           "includeAllServicesAccessibleAtScope") @DefaultValue("false") boolean includeAllServicesAccessibleAtScope,
       @Parameter(description = "Specify true if services' version info need to be included", hidden = true) @QueryParam(
-          "includeVersionInfo") @DefaultValue("false") boolean includeVersionInfo) {
+          "includeVersionInfo") @DefaultValue("false") boolean includeVersionInfo,
+      @Parameter(description = "Specifies the repo name of the entity", hidden = true) @QueryParam(
+          "repoName") String repoName) {
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, false,
-        searchTerm, type, gitOpsEnabled, includeAllServicesAccessibleAtScope);
+        searchTerm, type, gitOpsEnabled, includeAllServicesAccessibleAtScope, repoName);
     Pageable pageRequest;
     if (isNotEmpty(serviceIdentifiers)) {
       criteria.and(ServiceEntityKeys.identifier).in(serviceIdentifiers);
@@ -535,7 +566,7 @@ public class ServiceResourceV2 {
     checkAccessForListingAtScope(accountId, orgIdentifier, projectIdentifier, serviceIdentifiers);
 
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
-        accountId, orgIdentifier, projectIdentifier, serviceIdentifiers, false, null, null, null, false);
+        accountId, orgIdentifier, projectIdentifier, serviceIdentifiers, false, null, null, null, false, null);
 
     Pageable pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, ServiceKeys.createdAt));
 
@@ -637,7 +668,7 @@ public class ServiceResourceV2 {
         "Unauthorized to list services");
 
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, false,
-        searchTerm, type, gitOpsEnabled, includeAllServicesAccessibleAtScope);
+        searchTerm, type, gitOpsEnabled, includeAllServicesAccessibleAtScope, null);
     if (isNotEmpty(serviceIdentifiers)) {
       criteria.and(ServiceEntityKeys.identifier).in(serviceIdentifiers);
     }
@@ -662,6 +693,11 @@ public class ServiceResourceV2 {
                         .stream()
                         .map(ServiceElementMapper::toAccessListResponseWrapper)
                         .collect(Collectors.toList());
+    }
+    if (featureFlagService.isEnabled(accountId, FeatureName.CDS_SCOPE_INFRA_TO_SERVICES)) {
+      Map<String, List<String>> envRefInfraRefsMapping = new HashMap<>();
+      serviceList = filterByScopedInfrastructures(
+          accountId, orgIdentifier, projectIdentifier, serviceList, envRefInfraRefsMapping);
     }
     List<PermissionCheckDTO> permissionCheckDTOS =
         serviceList.stream().map(CDNGRbacUtility::serviceResponseToPermissionCheckDTO).collect(Collectors.toList());
@@ -723,9 +759,8 @@ public class ServiceResourceV2 {
       return ResponseDTO.newResponse(
           NGEntityTemplateResponseDTO.builder().inputSetTemplateYaml(serviceInputYaml).build());
     } else {
-      // todo: better error message here
-      throw new NotFoundException(format("Service with identifier [%s] in project [%s], org [%s] not found",
-          serviceIdentifier, projectIdentifier, orgIdentifier));
+      throw new NotFoundException(
+          ServiceElementMapper.getServiceNotFoundError(orgIdentifier, projectIdentifier, serviceIdentifier));
     }
   }
 
@@ -808,8 +843,8 @@ public class ServiceResourceV2 {
       return ResponseDTO.newResponse(
           serviceEntityService.getArtifactSourceInputs(serviceEntity.get().getYaml(), serviceIdentifier));
     } else {
-      throw new NotFoundException(format("Service with identifier [%s] in project [%s], org [%s] not found",
-          serviceIdentifier, projectIdentifier, orgIdentifier));
+      throw new NotFoundException(
+          ServiceElementMapper.getServiceNotFoundError(orgIdentifier, projectIdentifier, serviceIdentifier));
     }
   }
 
@@ -1090,6 +1125,22 @@ public class ServiceResourceV2 {
     return filteredAccessControlDtoList;
   }
 
+  private List<ServiceResponse> filterByScopedInfrastructures(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, List<ServiceResponse> serviceResponses,
+      Map<String, List<String>> envRefInfraRefsMapping) {
+    if (CollectionUtils.isEmpty(serviceResponses)) {
+      return serviceResponses;
+    }
+    List<String> currentServiceRefs = serviceResponses.stream()
+                                          .map(serviceResponse -> serviceResponse.getService().getIdentifier())
+                                          .collect(toList());
+    List<String> allowedServiceRefs = infrastructureEntityService.filterServicesByScopedInfrastructures(
+        accountIdentifier, orgIdentifier, projectIdentifier, currentServiceRefs, envRefInfraRefsMapping);
+    return serviceResponses.stream()
+        .filter(serviceResponse -> allowedServiceRefs.contains(serviceResponse.getService().getIdentifier()))
+        .collect(toList());
+  }
+
   private void throwExceptionForNoRequestDTO(List<ServiceRequestDTO> dto) {
     if (dto == null) {
       throw new InvalidRequestException(
@@ -1145,5 +1196,30 @@ public class ServiceResourceV2 {
       serviceEntities = serviceEntityService.list(criteria, pageRequest);
     }
     return serviceEntities;
+  }
+
+  @GET
+  @Path("/list-repo")
+  @Hidden
+  @ApiOperation(value = "Gets all repo list", nickname = "getRepositoryList")
+  @Operation(operationId = "getRepositoryList", summary = "Gets the list of all repositories",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns a list of all the repositories of all Services")
+      })
+
+  public ResponseDTO<RepoListResponseDTO>
+  listRepos(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = "Specify true if all accessible Services are to be included") @QueryParam(
+          "includeAllServicesAccessibleAtScope") boolean includeAllServicesAccessibleAtScope) {
+    RepoListResponseDTO repoListResponseDTO = serviceEntityService.getListOfRepos(
+        accountIdentifier, orgIdentifier, projectIdentifier, includeAllServicesAccessibleAtScope);
+    return ResponseDTO.newResponse(repoListResponseDTO);
   }
 }

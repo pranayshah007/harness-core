@@ -7,14 +7,15 @@
 
 package io.harness.pms.plan.execution.beans;
 
-import static java.time.Duration.ofDays;
-
+import io.harness.abort.AbortedBy;
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.AbortedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.validator.Trimmed;
 import io.harness.dto.FailureInfoDTO;
 import io.harness.engine.executions.retry.RetryExecutionMetadata;
@@ -22,9 +23,6 @@ import io.harness.execution.StagesExecutionMetadata;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.governance.GovernanceMetadata;
-import io.harness.mongo.collation.CollationLocale;
-import io.harness.mongo.collation.CollationStrength;
-import io.harness.mongo.index.Collation;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
@@ -42,6 +40,7 @@ import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.yaml.core.NGLabel;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -49,7 +48,6 @@ import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import dev.morphia.annotations.Entity;
-import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.HashMap;
@@ -73,6 +71,7 @@ import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Value
 @Builder
@@ -97,7 +96,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ChangeDataCapture(table = "runtime_inputs_info", dataStore = "pms-harness", fields = {}, handler = "RuntimeInputsInfo")
 @ChangeDataCapture(table = "stage_execution", dataStore = "pms-harness", fields = {}, handler = "ApprovalStage")
 public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAware {
-  public static final Duration TTL = ofDays(183);
   public static final long TTL_MONTHS = 6;
 
   @Setter @NonFinal @Id @dev.morphia.annotations.Id String uuid;
@@ -154,6 +152,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
 
   ExecutionMode executionMode; // this is used to filter out rollback mode executions from executions list API
   RollbackExecutionInfo rollbackExecutionInfo;
+  Boolean notesExistForPlanExecutionId;
 
   // TTL index
   @Builder.Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
@@ -253,7 +252,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
         .add(
             SortCompoundMongoIndex.builder()
                 .name(
-                    "accountId_orgId_projectId_name_startTs_repo_branch_pipelineIds_status_modules_parent_info_range_WithCollationIdx")
+                    "accountId_orgId_projectId_name_startTs_repo_branch_pipelineIds_status_modules_parent_info_range_idx")
                 .field(PlanExecutionSummaryKeys.accountId)
                 .field(PlanExecutionSummaryKeys.orgIdentifier)
                 .field(PlanExecutionSummaryKeys.projectIdentifier)
@@ -267,8 +266,6 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
                 .ascRangeField(PlanExecutionSummaryKeys.status)
                 .ascRangeField(PlanExecutionSummaryKeys.modules)
                 .ascRangeField(PlanExecutionSummaryKeys.isChildPipeline)
-                .collation(
-                    Collation.builder().locale(CollationLocale.ENGLISH).strength(CollationStrength.SECONDARY).build())
                 .build())
         // Sort queries are added for list page
         .add(SortCompoundMongoIndex.builder()
@@ -295,6 +292,10 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
         + "triggerType";
     public String triggeredBy = PlanExecutionSummaryKeys.executionTriggerInfo + "."
         + "triggeredBy";
+    public String triggerIdentifier = PlanExecutionSummaryKeys.executionTriggerInfo + "."
+        + "triggeredBy"
+        + "."
+        + "triggerIdentifier";
     public String rootExecutionId = PlanExecutionSummaryKeys.retryExecutionMetadata + "."
         + "rootExecutionId";
     public String parentExecutionId = PlanExecutionSummaryKeys.retryExecutionMetadata + "."
@@ -325,5 +326,12 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
 
   public String getRollbackModeExecutionId() {
     return rollbackExecutionInfo != null ? rollbackExecutionInfo.getRollbackModeExecutionId() : null;
+  }
+
+  public String getPipelineVersion() {
+    if (null == pipelineVersion || pipelineVersion.equals("0")) {
+      return HarnessYamlVersion.V0;
+    }
+    return pipelineVersion;
   }
 }

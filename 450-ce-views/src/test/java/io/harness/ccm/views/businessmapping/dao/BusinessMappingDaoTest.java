@@ -8,6 +8,7 @@
 package io.harness.ccm.views.businessmapping.dao;
 
 import static io.harness.persistence.HQuery.excludeValidate;
+import static io.harness.rule.OwnerRule.ANMOL;
 import static io.harness.rule.OwnerRule.SAHILDEEP;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -74,6 +75,42 @@ public class BusinessMappingDaoTest extends CategoryTest {
     verify(query).filter(BusinessMappingKeys.accountId, BusinessMappingTestHelper.TEST_ACCOUNT_ID);
     verify(query).asList();
     assertThat(response).isEqualTo(businessMappings);
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testFindBusinessMappingIdsByAccountId() {
+    final List<BusinessMapping> businessMappings = Collections.singletonList(
+        BusinessMappingTestHelper.getBusinessMappingOnlyWithUuid(BusinessMappingTestHelper.TEST_ID));
+    when(hPersistence.createQuery(BusinessMapping.class)).thenReturn(query);
+    when(query.project(BusinessMappingKeys.uuid, true)).thenReturn(query);
+    when(query.filter(BusinessMappingKeys.accountId, BusinessMappingTestHelper.TEST_ACCOUNT_ID)).thenReturn(query);
+    when(query.asList()).thenReturn(businessMappings);
+    final List<BusinessMapping> response =
+        businessMappingDao.findBusinessMappingIdsByAccountId(BusinessMappingTestHelper.TEST_ACCOUNT_ID);
+    verify(hPersistence).createQuery(BusinessMapping.class);
+    verify(query).filter(BusinessMappingKeys.accountId, BusinessMappingTestHelper.TEST_ACCOUNT_ID);
+    verify(query).project(BusinessMappingKeys.uuid, true);
+    verify(query).asList();
+    assertThat(response).isEqualTo(businessMappings);
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testFindBusinessMappingIdsByAccountId_NoElementsPresent() {
+    when(hPersistence.createQuery(BusinessMapping.class)).thenReturn(query);
+    when(query.project(BusinessMappingKeys.uuid, true)).thenReturn(query);
+    when(query.filter(BusinessMappingKeys.accountId, BusinessMappingTestHelper.TEST_ACCOUNT_ID)).thenReturn(query);
+    when(query.asList()).thenReturn(Collections.emptyList());
+    final List<BusinessMapping> response =
+        businessMappingDao.findBusinessMappingIdsByAccountId(BusinessMappingTestHelper.TEST_ACCOUNT_ID);
+    verify(hPersistence).createQuery(BusinessMapping.class);
+    verify(query).filter(BusinessMappingKeys.accountId, BusinessMappingTestHelper.TEST_ACCOUNT_ID);
+    verify(query).project(BusinessMappingKeys.uuid, true);
+    verify(query).asList();
+    assertThat(response).isEqualTo(Collections.emptyList());
   }
 
   @Test

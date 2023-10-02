@@ -6,7 +6,9 @@
  */
 
 package io.harness.delegate.task.jenkins;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.ConnectorValidationResult.ConnectorValidationResultBuilder;
@@ -23,6 +25,7 @@ import io.harness.errorhandling.NGErrorHelper;
 import com.google.inject.Inject;
 import java.util.Collections;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 public class JenkinsValidationHandler implements ConnectorValidationHandler {
   @Inject private JenkinsArtifactTaskHelper jenkinsArtifactTaskHelper;
   @Inject private NGErrorHelper ngErrorHelper;

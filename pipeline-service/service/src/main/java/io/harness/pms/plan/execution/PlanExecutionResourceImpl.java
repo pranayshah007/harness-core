@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.plan.execution;
-
 import static io.harness.beans.FeatureName.PIE_GET_FILE_CONTENT_ONLY;
 import static io.harness.pms.rbac.PipelineRbacPermissions.PIPELINE_EXECUTE;
 import static io.harness.pms.utils.PmsConstants.PIPELINE;
@@ -21,14 +20,20 @@ import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.retry.RetryHistoryResponseDto;
 import io.harness.engine.executions.retry.RetryInfo;
 import io.harness.engine.executions.retry.RetryLatestExecutionResponseDto;
+import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
+import io.harness.exception.ngexception.NGTemplateException;
+import io.harness.exception.ngexception.PipelineException;
 import io.harness.execution.PlanExecution;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitx.USER_FLOW;
@@ -72,6 +77,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @OwnedBy(HarnessTeam.PIPELINE)
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @PipelineServiceAuth
@@ -98,13 +104,18 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
       @NotNull @ProjectIdentifier String projectIdentifier, String moduleType,
       @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo,
       boolean useFQNIfErrorResponse, boolean notifyOnlyUser, String notes, String inputSetPipelineYaml) {
-    if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
-      ThreadOperationContextHelper.setUserFlow(USER_FLOW.EXECUTION);
+    try {
+      if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
+        ThreadOperationContextHelper.setUserFlow(USER_FLOW.EXECUTION);
+      }
+      PlanExecutionResponseDto planExecutionResponseDto =
+          pipelineExecutor.runPipelineWithInputSetPipelineYaml(accountId, orgIdentifier, projectIdentifier,
+              pipelineIdentifier, moduleType, inputSetPipelineYaml, false, notifyOnlyUser, notes);
+      return ResponseDTO.newResponse(planExecutionResponseDto);
+    } catch (NGTemplateException ex) {
+      throw new PipelineException(
+          PipelineException.PIPELINE_Execution_MESSAGE, ex, ErrorCode.NG_PIPELINE_EXECUTION_EXCEPTION);
     }
-    PlanExecutionResponseDto planExecutionResponseDto =
-        pipelineExecutor.runPipelineWithInputSetPipelineYaml(accountId, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, moduleType, inputSetPipelineYaml, false, notifyOnlyUser, notes);
-    return ResponseDTO.newResponse(planExecutionResponseDto);
   }
 
   @Override
@@ -248,12 +259,12 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   public ResponseDTO<io.harness.engine.executions.retry.RetryInfo> getRetryStages(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, @ResourceIdentifier @NotEmpty String pipelineIdentifier,
-      @NotNull String planExecutionId, GitEntityFindInfoDTO gitEntityBasicInfo) {
+      @NotNull String planExecutionId, GitEntityFindInfoDTO gitEntityBasicInfo, String loadFromCache) {
     if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
       ThreadOperationContextHelper.setUserFlow(USER_FLOW.EXECUTION);
     }
     return ResponseDTO.newResponse(retryExecutionHelper.validateRetry(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId));
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId, loadFromCache));
   }
 
   @Override
@@ -425,7 +436,7 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
     }
 
     RetryInfo retryInfo = retryExecutionHelper.validateRetry(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, previousExecutionId);
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, previousExecutionId, null);
     if (!retryInfo.isResumable()) {
       throw new InvalidRequestException(retryInfo.getErrorMessage());
     }

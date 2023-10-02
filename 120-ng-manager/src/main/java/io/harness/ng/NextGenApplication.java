@@ -36,7 +36,10 @@ import io.harness.SCMGrpcClientModule;
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.accesscontrol.filter.NGScopeAccessCheckFilter;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cache.CacheModule;
 import io.harness.cdng.creator.CDNGModuleInfoProvider;
 import io.harness.cdng.creator.CDNGPlanCreatorProvider;
@@ -53,6 +56,8 @@ import io.harness.cdng.provision.terraform.functor.TerraformHumanReadablePlanFun
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
 import io.harness.cdng.provision.terraformcloud.functor.TerraformCloudPlanJsonFunctor;
 import io.harness.cdng.provision.terraformcloud.functor.TerraformCloudPolicyChecksJsonFunctor;
+import io.harness.cdng.usage.jobs.CDLicenseDailyReportIteratorHandler;
+import io.harness.cdng.usage.task.CDLicenseDailyReportTask;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.cf.AbstractCfModule;
 import io.harness.cf.CfClientConfig;
@@ -67,7 +72,7 @@ import io.harness.connector.entities.Connector;
 import io.harness.connector.gitsync.ConnectorGitSyncHelper;
 import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.credit.schedular.CICreditExpiryIteratorHandler;
-import io.harness.credit.schedular.CreditProvisioningIteratorHandler;
+import io.harness.credit.schedular.ProvisionMonthlyCICreditsHandler;
 import io.harness.credit.schedular.SendProvisionedCICreditsToSegmentHandler;
 import io.harness.enforcement.client.CustomRestrictionRegisterConfiguration;
 import io.harness.enforcement.client.RestrictionUsageRegisterConfiguration;
@@ -95,6 +100,9 @@ import io.harness.gitsync.GitSyncSdkInitHelper;
 import io.harness.gitsync.core.fullsync.GitFullSyncEntityIterator;
 import io.harness.gitsync.core.runnable.GitChangeSetRunnable;
 import io.harness.gitsync.core.webhook.GitSyncEventConsumerService;
+import io.harness.gitsync.core.webhook.createbranchevent.WebhookBranchHookEventQueueProcessor;
+import io.harness.gitsync.core.webhook.pushevent.WebhookPushEventQueueProcessor;
+import io.harness.gitsync.gitxwebhooks.runnable.GitXWebhookProcessorRunnable;
 import io.harness.gitsync.migration.GitSyncMigrationProvider;
 import io.harness.gitsync.server.GitSyncGrpcModule;
 import io.harness.gitsync.server.GitSyncServiceConfiguration;
@@ -133,6 +141,7 @@ import io.harness.ng.core.migration.NGBeanMigrationProvider;
 import io.harness.ng.core.migration.ProjectMigrationProvider;
 import io.harness.ng.core.migration.UserGroupMigrationProvider;
 import io.harness.ng.core.remote.UserGroupRestrictionUsageImpl;
+import io.harness.ng.core.remote.UsersRestrictionUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.ApiKeyRestrictionsUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.ApiTokenRestrictionUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.CloudCostK8sConnectorRestrictionsUsageImpl;
@@ -188,11 +197,16 @@ import io.harness.pms.sdk.core.events.OrchestrationEventHandler;
 import io.harness.pms.sdk.core.execution.expression.SdkFunctor;
 import io.harness.pms.sdk.core.governance.JsonExpansionHandlerInfo;
 import io.harness.pms.sdk.execution.events.facilitators.FacilitatorEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.facilitators.FacilitatorEventRedisConsumerV2;
 import io.harness.pms.sdk.execution.events.interrupts.InterruptEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.node.advise.NodeAdviseEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.node.advise.NodeAdviseRedisConsumerV2;
+import io.harness.pms.sdk.execution.events.node.resume.NodeResumeEventConsumerV2;
 import io.harness.pms.sdk.execution.events.node.resume.NodeResumeEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsumerV2;
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
+import io.harness.pms.sdk.execution.events.progress.NodeProgressEventRedisConsumerV2;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
 import io.harness.pms.serializer.json.PmsBeansJacksonModule;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -294,6 +308,7 @@ import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.server.model.Resource;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(PL)
 @Slf4j
 public class NextGenApplication extends Application<NextGenConfiguration> {
@@ -471,7 +486,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     initializeMonitoring(appConfig, injector);
     registerObservers(injector);
     registerOasResource(appConfig, environment, injector);
-    registerManagedBeans(environment, injector);
+    registerManagedBeans(environment, injector, appConfig);
     initializeEnforcementService(injector, appConfig);
     initializeEnforcementSdk(injector);
     initializeCdMonitoring(appConfig, injector);
@@ -654,9 +669,11 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         .registerIterators(ngIteratorsConfig.getOauthTokenRefreshIteratorConfig().getThreadPoolSize());
     injector.getInstance(BitbucketSCMOAuthTokenRefresher.class)
         .registerIterators(ngIteratorsConfig.getOauthTokenRefreshIteratorConfig().getThreadPoolSize());
+    injector.getInstance(CDLicenseDailyReportIteratorHandler.class)
+        .registerIterator(ngIteratorsConfig.getCdLicenseDailyReportIteratorConfig());
     injector.getInstance(CICreditExpiryIteratorHandler.class).registerIterator(2);
-    injector.getInstance(CreditProvisioningIteratorHandler.class).registerIterator(2);
     injector.getInstance(SendProvisionedCICreditsToSegmentHandler.class).registerIterator(2);
+    injector.getInstance(ProvisionMonthlyCICreditsHandler.class).registerIterators(2);
   }
 
   public void registerJobs(Injector injector) {
@@ -682,11 +699,20 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         injector.getInstance(PipelineEventConsumerController.class);
     pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(CdngOrchestrationEventRedisConsumer.class), 1);
+
+    // V1 will be removed once the change has reached prod
     pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(ProgressEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(NodeAdviseEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventRedisConsumer.class), 2);
+
+    pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumerV2.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumerV2.class), 2);
+    pipelineEventConsumerController.register(injector.getInstance(NodeProgressEventRedisConsumerV2.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeAdviseRedisConsumerV2.class), 2);
+    pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventConsumerV2.class), 2);
+
     pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(PipelineExecutionSummaryCDRedisEventConsumer.class),
         appConfig.getDebeziumConsumersConfigs().getPlanExecutionsSummaryStreaming().getThreads());
@@ -728,6 +754,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
     return PmsSdkConfiguration.builder()
         .deploymentMode(remote ? SdkDeployMode.REMOTE : SdkDeployMode.LOCAL)
+        .streamPerServiceConfiguration(appConfig.isStreamPerServiceConfiguration())
         .moduleType(ModuleType.CD)
         .grpcServerConfig(appConfig.getPmsSdkGrpcServerConfig())
         .pmsGrpcClientConfig(appConfig.getPmsGrpcClientConfig())
@@ -754,6 +781,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     aliases.put("artifact", "artifacts.primary");
     aliases.put("infra", "stage.spec.infrastructure.output");
     aliases.put("INFRA_KEY", "stage.spec.infrastructure.output.infrastructureKey");
+    aliases.put("INFRA_KEY_SHORT_ID", "stage.spec.infrastructure.output.infrastructureKeyShort");
     aliases.put("OnRollbackModeExecution",
         "(<+ambiance.metadata.executionMode> == \"POST_EXECUTION_ROLLBACK\") || (<+ambiance.metadata.executionMode> == \"PIPELINE_ROLLBACK\")");
     return aliases;
@@ -872,7 +900,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     }
   }
 
-  private void registerManagedBeans(Environment environment, Injector injector) {
+  private void registerManagedBeans(Environment environment, Injector injector, NextGenConfiguration appConfig) {
     environment.lifecycle().manage(injector.getInstance(QueueListenerController.class));
     environment.lifecycle().manage(injector.getInstance(NotifierScheduledExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
@@ -880,6 +908,10 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.lifecycle().manage(injector.getInstance(FixInconsistentUserDataMigrationJob.class));
     // Do not remove as it's used for MaintenanceController for shutdown mode
     environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
+    if (appConfig.isUseQueueServiceForWebhookTriggers()) {
+      environment.lifecycle().manage(injector.getInstance(WebhookBranchHookEventQueueProcessor.class));
+      environment.lifecycle().manage(injector.getInstance(WebhookPushEventQueueProcessor.class));
+    }
     createConsumerThreadsToListenToEvents(environment, injector);
   }
 
@@ -959,6 +991,10 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         .scheduleWithFixedDelay(
             injector.getInstance(GitChangeSetRunnable.class), random.nextInt(4), 4L, TimeUnit.SECONDS);
 
+    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("gitXWebhookEvents")))
+        .scheduleWithFixedDelay(
+            injector.getInstance(GitXWebhookProcessorRunnable.class), random.nextInt(4), 4L, TimeUnit.SECONDS);
+
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
         .scheduleWithFixedDelay(injector.getInstance(DelegateSyncServiceImpl.class), 0L, 2L, TimeUnit.SECONDS);
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
@@ -972,6 +1008,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
         .scheduleWithFixedDelay(injector.getInstance(ModuleVersionsMaintenanceTask.class), 0, 3, TimeUnit.HOURS);
+    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
+        .scheduleWithFixedDelay(injector.getInstance(CDLicenseDailyReportTask.class), 0, 3, TimeUnit.HOURS);
   }
 
   private void registerAuthFilters(NextGenConfiguration configuration, Environment environment, Injector injector) {
@@ -1083,6 +1121,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
                     .put(FeatureRestrictionName.MULTIPLE_ORGANIZATIONS, OrgRestrictionsUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_SECRETS, SecretRestrictionUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_USER_GROUPS, UserGroupRestrictionUsageImpl.class)
+                    .put(FeatureRestrictionName.MULTIPLE_USERS, UsersRestrictionUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_SERVICE_ACCOUNTS, ServiceAccountRestrictionUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_VARIABLES, VariableRestrictionUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_CONNECTORS, ConnectorRestrictionUsageImpl.class)

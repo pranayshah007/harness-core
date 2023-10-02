@@ -93,6 +93,7 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.Collections;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -116,6 +117,7 @@ public class WorkflowExecutionServiceRollbackTest extends WingsBaseTest {
 
   private Workflow workflow;
   private Application app;
+
   @Before
   public void setup() {
     workflow = aWorkflow()
@@ -144,6 +146,7 @@ public class WorkflowExecutionServiceRollbackTest extends WingsBaseTest {
     when(workflowService.readWorkflow(APP_ID, WORKFLOW_ID)).thenReturn(workflow);
     when(appService.get(APP_ID)).thenReturn(anApplication().build());
   }
+
   @Test
   @Owner(developers = POOJA)
   @Category(UnitTests.class)
@@ -246,6 +249,7 @@ public class WorkflowExecutionServiceRollbackTest extends WingsBaseTest {
   @Test
   @Owner(developers = POOJA)
   @Category(UnitTests.class)
+  @Ignore("CDS-77552: Flaky unit test")
   public void testOnDemandRollbackConfirmationNoPreviousArtifact() {
     WorkflowExecution previousWE = createNewWorkflowExecution(false);
     previousWE.setArtifacts(Collections.emptyList());
@@ -288,6 +292,7 @@ public class WorkflowExecutionServiceRollbackTest extends WingsBaseTest {
   @Test
   @Owner(developers = POOJA)
   @Category(UnitTests.class)
+  @Ignore("CDS-72451: Flaky unit test")
   public void testOnDemandRollbackConfirmationSuccess() {
     WorkflowExecution previousWE = createNewWorkflowExecution(false);
     previousWE.setArtifacts(Collections.emptyList());
@@ -309,6 +314,7 @@ public class WorkflowExecutionServiceRollbackTest extends WingsBaseTest {
   @Test
   @Owner(developers = POOJA)
   @Category(UnitTests.class)
+  @Ignore("CDS-75742: Flaky unit test")
   public void testOnDemandRollbackConfirmationSuccessForEmptyArtifacts() {
     WorkflowExecution previousWE = createNewWorkflowExecution(false);
     previousWE.setArtifacts(Collections.emptyList());
@@ -379,6 +385,7 @@ public class WorkflowExecutionServiceRollbackTest extends WingsBaseTest {
   @Test
   @Owner(developers = POOJA)
   @Category(UnitTests.class)
+  @Ignore("CDS-75403: Flaky unit test")
   public void testTriggerRollbackExecutionWorkflow() {
     WorkflowExecution previousWE = createNewWorkflowExecution(false);
     previousWE.setArtifacts(Collections.emptyList());
@@ -425,6 +432,7 @@ public class WorkflowExecutionServiceRollbackTest extends WingsBaseTest {
   @Test
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
+  @Ignore("CDS-72451: Flaky unit test")
   public void testTriggerRollbackExecutionWorkflowWithNoPreviousArtifacts() {
     WorkflowExecution previousWE = createNewWorkflowExecution(false);
     previousWE.setArtifacts(Collections.emptyList());

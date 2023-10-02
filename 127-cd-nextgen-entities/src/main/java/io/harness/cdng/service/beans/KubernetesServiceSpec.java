@@ -6,13 +6,16 @@
  */
 
 package io.harness.cdng.service.beans;
-
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.hooks.ServiceHookWrapper;
+import io.harness.cdng.k8s.HarnessRelease;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.manifestConfigs.ManifestConfigurations;
 import io.harness.cdng.service.ServiceSpec;
@@ -34,6 +37,7 @@ import lombok.Getter;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Value
 @Builder
 @JsonTypeName(ServiceSpecType.KUBERNETES)
@@ -53,6 +57,7 @@ public class KubernetesServiceSpec implements ServiceSpec, Visitable {
   List<ConfigFileWrapper> configFiles;
   List<ServiceHookWrapper> hooks;
   ManifestConfigurations manifestConfigurations;
+  HarnessRelease release;
 
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;

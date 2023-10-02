@@ -7,17 +7,25 @@
 
 package io.harness.cvng.core.services.impl;
 
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
+
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.services.api.ActivityService;
+import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogType;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
+import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.CompositeSLODebugResponse;
+import io.harness.cvng.core.beans.ProjectDeletionResponse;
+import io.harness.cvng.core.beans.ProjectDeletionResponse.EntityDetailsDTO;
 import io.harness.cvng.core.beans.SLODebugResponse;
 import io.harness.cvng.core.beans.VerifyStepDebugResponse;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
+import io.harness.cvng.core.beans.sidekick.VerificationTaskCleanupSideKickData;
 import io.harness.cvng.core.entities.CVNGLog;
 import io.harness.cvng.core.entities.DataCollectionTask;
 import io.harness.cvng.core.entities.MonitoringSourcePerpetualTask;
@@ -30,6 +38,7 @@ import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.services.api.ChangeEventService;
 import io.harness.cvng.core.services.api.DataCollectionTaskService;
 import io.harness.cvng.core.services.api.DebugService;
+import io.harness.cvng.core.services.api.SideKickService;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.downtime.beans.EntityType;
@@ -60,17 +69,25 @@ import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.PersistentEntity;
+import io.harness.persistence.UuidAware;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepType;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 public class DebugServiceImpl implements DebugService {
@@ -104,6 +121,12 @@ public class DebugServiceImpl implements DebugService {
   @Inject DebugConfigService debugConfigService;
 
   @Inject private NextGenService nextGenService;
+
+  @Inject private SideKickService sideKickService;
+
+  @Inject private Clock clock;
+
+  @Inject SRMAnalysisStepService srmAnalysisStepService;
 
   public static final Integer RECORDS_BATCH_SIZE = 100;
 
@@ -150,17 +173,19 @@ public class DebugServiceImpl implements DebugService {
       sliIdentifierToSLIRecordMap.put(serviceLevelIndicator.getIdentifier(),
           sliRecordService.getLatestCountSLIRecords(serviceLevelIndicator.getUuid(), 100));
 
-      String verificationTaskId = verificationTaskService.getSLIVerificationTaskId(
+      Optional<String> verificationTaskId = verificationTaskService.getSLIVerificationTaskId(
           projectParams.getAccountIdentifier(), serviceLevelIndicator.getUuid());
 
-      sliIdentifierToAnalysisStateMachineMap.put(serviceLevelIndicator.getIdentifier(),
-          analysisStateMachineService.getExecutingStateMachine(verificationTaskId));
+      if (verificationTaskId.isPresent()) {
+        sliIdentifierToAnalysisStateMachineMap.put(serviceLevelIndicator.getIdentifier(),
+            analysisStateMachineService.getExecutingStateMachine(verificationTaskId.get()));
 
-      sliIdentifierToTimeSeriesRecords.put(serviceLevelIndicator.getIdentifier(),
-          timeSeriesRecordService.getLatestTimeSeriesRecords(verificationTaskId, 100));
+        sliIdentifierToTimeSeriesRecords.put(serviceLevelIndicator.getIdentifier(),
+            timeSeriesRecordService.getLatestTimeSeriesRecords(verificationTaskId.get(), 100));
 
-      sliIdentifierToAnalysisOrchestrator.put(
-          serviceLevelIndicator.getIdentifier(), orchestrationService.getAnalysisOrchestrator(verificationTaskId));
+        sliIdentifierToAnalysisOrchestrator.put(serviceLevelIndicator.getIdentifier(),
+            orchestrationService.getAnalysisOrchestrator(verificationTaskId.get()));
+      }
     }
 
     return SLODebugResponse.builder()
@@ -178,19 +203,44 @@ public class DebugServiceImpl implements DebugService {
   }
 
   @Override
-  public Boolean isProjectDeleted(ProjectParams projectParams) {
+  public ProjectDeletionResponse isProjectDeleted(ProjectParams projectParams) {
+    ProjectDeletionResponse projectDeletionResponse = null;
     if (!nextGenService.isProjectDeleted(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
             projectParams.getProjectIdentifier())) {
-      throw new RuntimeException("Project is not deleted");
+      projectDeletionResponse = ProjectDeletionResponse.builder().isProjectDeleted(false).build();
+      return projectDeletionResponse;
     }
+    projectDeletionResponse = ProjectDeletionResponse.builder().isProjectDeleted(true).build();
+
+    List<EntityDetailsDTO> entityDetailsDTOList = new ArrayList<>();
+
     for (Class<? extends PersistentEntity> clazz : ENTITIES_TO_DELETE_WITH_PROJECT_DELETION) {
       Query<? extends PersistentEntity> query = hPersistence.createQuery(clazz)
                                                     .filter("accountId", projectParams.getAccountIdentifier())
                                                     .filter("orgIdentifier", projectParams.getOrgIdentifier())
                                                     .filter("projectIdentifier", projectParams.getProjectIdentifier());
-      Preconditions.checkArgument(query.asList().isEmpty(), String.format("%s entities are not deleted", clazz));
+
+      List<? extends PersistentEntity> queryList = query.asList();
+
+      if (!queryList.isEmpty()) {
+        EntityDetailsDTO entityDetailsDTO = EntityDetailsDTO.builder().entityName(clazz.toString()).build();
+        List<String> entityIdentifiers = new ArrayList<>();
+        queryList.stream().forEach(entity -> {
+          if (entity instanceof UuidAware) {
+            UuidAware uuidAware = (UuidAware) entity;
+            if (uuidAware.getUuid() == null) {
+              uuidAware.setUuid(generateUuid());
+            }
+            entityIdentifiers.add(uuidAware.getUuid());
+          }
+        });
+        entityDetailsDTO.setEntityIdentifiers(entityIdentifiers);
+        entityDetailsDTOList.add(entityDetailsDTO);
+      }
     }
-    return true;
+    projectDeletionResponse.setEntityDetailsDTOList(entityDetailsDTOList);
+
+    return projectDeletionResponse;
   }
 
   @Override
@@ -222,6 +272,14 @@ public class DebugServiceImpl implements DebugService {
       throw new RuntimeException("Debug Mode is turned off");
     }
     return serviceLevelObjectiveV2Service.forceDelete(projectParams, sloIdentifiers);
+  }
+
+  @Override
+  public boolean forceDeleteCompositeSLO(ProjectParams projectParams, List<String> compositeSloIdentifiers) {
+    if (!debugConfigService.isDebugEnabled()) {
+      throw new RuntimeException("Debug Mode is turned off");
+    }
+    return serviceLevelObjectiveV2Service.forceDeleteCompositeSLO(projectParams, compositeSloIdentifiers);
   }
 
   @Override
@@ -356,10 +414,12 @@ public class DebugServiceImpl implements DebugService {
     ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
         projectParams, simpleServiceLevelObjective.getServiceLevelIndicators().get(0));
     Preconditions.checkNotNull(serviceLevelIndicator, "SLI is not present in database");
-    String verificationTaskId = verificationTaskService.getSLIVerificationTaskId(
+    Optional<String> sliVerificationTaskId = verificationTaskService.getSLIVerificationTaskId(
         projectParams.getAccountIdentifier(), serviceLevelIndicator.getUuid());
-    serviceLevelIndicatorService.enqueueDataCollectionFailureInstanceAndTriggerAnalysis(
-        verificationTaskId, Instant.ofEpochSecond(startTime), Instant.ofEpochSecond(endTime), serviceLevelIndicator);
+    if (sliVerificationTaskId.isPresent()) {
+      serviceLevelIndicatorService.enqueueDataCollectionFailureInstanceAndTriggerAnalysis(sliVerificationTaskId.get(),
+          Instant.ofEpochSecond(startTime), Instant.ofEpochSecond(endTime), serviceLevelIndicator);
+    }
   }
 
   @Override
@@ -422,10 +482,59 @@ public class DebugServiceImpl implements DebugService {
   }
 
   @Override
+  public boolean registerSRMAnalysisStep(SRMAnalysisStepExecutionDetail srmAnalysisStepBody) {
+    if (!debugConfigService.isDebugEnabled()) {
+      throw new RuntimeException("Debug Mode is turned off ");
+    }
+    Ambiance ambiance =
+        Ambiance.newBuilder()
+            .setPlanExecutionId(srmAnalysisStepBody.getPlanExecutionId())
+            .setMetadata(
+                ExecutionMetadata.newBuilder().setPipelineIdentifier(srmAnalysisStepBody.getPipelineId()).build())
+            .addLevels(Level.newBuilder()
+                           .setSetupId(srmAnalysisStepBody.getStageStepId())
+                           .setIdentifier(srmAnalysisStepBody.getStageId())
+                           .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
+                           .build())
+            .addLevels(Level.newBuilder()
+                           .setSetupId(srmAnalysisStepBody.getStageStepId())
+                           .setIdentifier(srmAnalysisStepBody.getStageId())
+                           .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+                           .setRuntimeId(srmAnalysisStepBody.getStepRuntimeId())
+                           .build())
+            .setStageExecutionId(srmAnalysisStepBody.getStageExecutionId())
+            .build();
+    ServiceEnvironmentParams serviceEnvironmentParams =
+        ServiceEnvironmentParams.builder()
+            .accountIdentifier(srmAnalysisStepBody.getAccountId())
+            .orgIdentifier(srmAnalysisStepBody.getOrgIdentifier())
+            .projectIdentifier(srmAnalysisStepBody.getProjectIdentifier())
+            .serviceIdentifier(srmAnalysisStepBody.getServiceIdentifier())
+            .environmentIdentifier(srmAnalysisStepBody.getEnvIdentifier())
+            .build();
+    String executionDetailId = srmAnalysisStepService.createSRMAnalysisStepExecution(ambiance,
+        srmAnalysisStepBody.getMonitoredServiceIdentifier(), null, serviceEnvironmentParams,
+        srmAnalysisStepBody.getAnalysisDuration(), Optional.empty());
+
+    return true;
+  }
+
+  @Override
   public void registerFFChangeEvent(FakeFeatureFlagSRMProducer.FFEventBody ffEventBody) {
     if (!debugConfigService.isDebugEnabled()) {
       throw new RuntimeException("Debug Mode is turned off");
     }
     fakeFeatureFlagSRMProducer.publishEvent(ffEventBody);
+  }
+
+  @Override
+  public void scheduleCleanup(List<String> verificationTaskIds) {
+    if (verificationTaskIds != null) {
+      verificationTaskIds.forEach(verificationTaskId -> {
+        sideKickService.schedule(
+            VerificationTaskCleanupSideKickData.builder().verificationTaskId(verificationTaskId).build(),
+            clock.instant());
+      });
+    }
   }
 }

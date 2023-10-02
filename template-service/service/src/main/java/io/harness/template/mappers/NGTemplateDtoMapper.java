@@ -14,7 +14,10 @@ import static io.harness.ng.core.utils.NGUtils.validate;
 
 import static java.lang.Double.compare;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.NGTemplateReference;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
@@ -26,23 +29,33 @@ import io.harness.gitsync.sdk.CacheResponse;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.gitsync.sdk.EntityValidityDetails;
+import io.harness.jackson.JsonNodeUtils;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.template.CacheResponseMetadataDTO;
+import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateListType;
 import io.harness.ng.core.template.TemplateMetadataSummaryResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
+import io.harness.pms.yaml.HarnessYamlVersion;
+import io.harness.pms.yaml.NGYamlHelper;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.scope.ScopeHelper;
+import io.harness.template.entity.GlobalTemplateEntity;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntityGetResponse;
+import io.harness.template.resources.TemplateRequestInfoDTO;
 import io.harness.template.resources.beans.FilterParamsDTO;
+import io.harness.template.resources.beans.NGTemplateConstants;
 import io.harness.template.resources.beans.PageParamsDTO;
 import io.harness.template.resources.beans.TemplateFilterProperties;
 import io.harness.template.resources.beans.TemplateFilterPropertiesDTO;
 import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 import io.harness.template.resources.beans.yaml.NGTemplateInfoConfig;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.List;
@@ -50,6 +63,8 @@ import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY, HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDC)
 @UtilityClass
 @Slf4j
@@ -79,6 +94,7 @@ public class NGTemplateDtoMapper {
                 ? EntityValidityDetails.builder().valid(false).invalidYaml(templateEntity.getYaml()).build()
                 : EntityValidityDetails.builder().valid(true).build())
         .storeType(templateEntity.getStoreType())
+        .yamlVersion(templateEntity.getHarnessVersion())
         .connectorRef(templateEntity.getConnectorRef())
         .cacheResponseMetadata(getCacheResponse(templateEntity))
         .build();
@@ -103,6 +119,7 @@ public class NGTemplateDtoMapper {
         .version(templateEntity.getVersion())
         .gitDetails(templateEntityGetResponse.getEntityGitDetails())
         .lastUpdatedAt(templateEntity.getLastUpdatedAt())
+        .yamlVersion(templateEntity.getHarnessVersion())
         .entityValidityDetails(templateEntity.isEntityInvalid()
                 ? EntityValidityDetails.builder().valid(false).invalidYaml(templateEntity.getYaml()).build()
                 : EntityValidityDetails.builder().valid(true).build())
@@ -142,6 +159,7 @@ public class NGTemplateDtoMapper {
         .gitDetails(getEntityGitDetailsForListTemplates(templateEntity))
         .lastUpdatedAt(templateEntity.getLastUpdatedAt())
         .icon(templateEntity.getIcon())
+        .yamlVersion(templateEntity.getHarnessVersion())
         .entityValidityDetails(templateEntity.isEntityInvalid()
                 ? EntityValidityDetails.builder().valid(false).invalidYaml(templateEntity.getYaml()).build()
                 : EntityValidityDetails.builder().valid(true).build())
@@ -170,6 +188,7 @@ public class NGTemplateDtoMapper {
         .createdAt(templateEntity.getCreatedAt())
         .storeType(templateEntity.getStoreType())
         .connectorRef(templateEntity.getConnectorRef())
+        .yamlVersion(templateEntity.getHarnessVersion())
         .build();
   }
 
@@ -202,6 +221,47 @@ public class NGTemplateDtoMapper {
         .fullyQualifiedIdentifier(templateReference.getFullyQualifiedName())
         .childType(templateConfig.getTemplateInfoConfig().fetchChildType())
         .build();
+  }
+
+  public TemplateEntity toSimplifiedTemplateEntityResponse(
+      String accountId, String orgId, String projectId, TemplateRequestInfoDTO requestInfoDTO) {
+    JsonNode templateNode = YamlUtils.readAsJsonNode(requestInfoDTO.getYaml()).get(YAMLFieldNameConstants.SPEC);
+    NGTemplateReference templateReference = NGTemplateReference.builder()
+                                                .accountIdentifier(accountId)
+                                                .orgIdentifier(orgId)
+                                                .projectIdentifier(projectId)
+                                                .identifier(requestInfoDTO.getIdentifier())
+                                                .versionLabel(requestInfoDTO.getLabel())
+                                                .build();
+    TemplateEntityType templateEntityType =
+        TemplateEntityType.getTemplateType(templateNode.get(YAMLFieldNameConstants.TYPE).asText());
+    return TemplateEntity.builder()
+        .yaml(requestInfoDTO.getYaml())
+        .identifier(requestInfoDTO.getIdentifier())
+        .versionLabel(requestInfoDTO.getLabel())
+        .accountId(accountId)
+        .orgIdentifier(orgId)
+        .projectIdentifier(projectId)
+        .name(requestInfoDTO.getName())
+        .harnessVersion(HarnessYamlVersion.V1)
+        .tags(TagMapper.convertToList(requestInfoDTO.getTags()))
+        //            .icon(templateConfig.getTemplateInfoConfig().getIcon())
+        .templateEntityType(templateEntityType)
+        .description(requestInfoDTO.getDescription())
+        .templateScope(ScopeHelper.getScope(orgId, projectId, accountId))
+        .fullyQualifiedIdentifier(templateReference.getFullyQualifiedName())
+        .childType(fetchChildTypeFromTemplateSpec(templateNode.get(YAMLFieldNameConstants.SPEC), templateEntityType))
+        .build();
+  }
+
+  private String fetchChildTypeFromTemplateSpec(JsonNode specNode, TemplateEntityType templateEntityType) {
+    if (specNode == null) {
+      return null;
+    }
+    if (templateEntityType == TemplateEntityType.STEPGROUP_TEMPLATE) {
+      return JsonNodeUtils.getString(specNode, NGTemplateConstants.STAGE_TYPE);
+    }
+    return JsonNodeUtils.getString(specNode, NGTemplateConstants.TYPE);
   }
 
   public FilterParamsDTO prepareFilterParamsDTO(String searchTerm, String filterIdentifier,
@@ -296,12 +356,41 @@ public class NGTemplateDtoMapper {
     }
   }
 
+  public TemplateEntity toTemplateEntity(
+      String accountId, String orgId, String projectId, TemplateRequestInfoDTO requestInfoDTO) {
+    try {
+      if (HarnessYamlVersion.isV1(NGYamlHelper.getVersion(requestInfoDTO.getYaml()))) {
+        return toSimplifiedTemplateEntityResponse(accountId, orgId, projectId, requestInfoDTO);
+      }
+      NGTemplateConfig templateConfig = getTemplateConfigOrThrow(requestInfoDTO.getYaml());
+      return toTemplateEntityResponse(accountId, orgId, projectId, templateConfig, requestInfoDTO.getYaml());
+    } catch (IOException e) {
+      throw new InvalidRequestException("Cannot create template entity due to " + e.getMessage());
+    }
+  }
+
   public TemplateEntity toTemplateEntity(String accountId, String orgId, String projectId, String templateIdentifier,
       String versionLabel, String templateYaml) {
     try {
       NGTemplateConfig templateConfig = getTemplateConfigOrThrow(templateYaml);
       validateTemplateYaml(templateConfig, orgId, projectId, templateIdentifier, versionLabel);
       return toTemplateEntityResponse(accountId, orgId, projectId, templateConfig, templateYaml);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Cannot create template entity due to " + e.getMessage());
+    }
+  }
+
+  public TemplateEntity toTemplateEntity(String accountId, String orgId, String projectId, String templateIdentifier,
+      String versionLabel, TemplateRequestInfoDTO requestInfoDTO) {
+    try {
+      if (HarnessYamlVersion.isV1(NGYamlHelper.getVersion(requestInfoDTO.getYaml()))) {
+        TemplateEntity templateEntity = toSimplifiedTemplateEntityResponse(accountId, orgId, projectId, requestInfoDTO);
+        validateSimplifiedTemplateYaml(templateEntity, templateIdentifier, versionLabel);
+        return templateEntity;
+      }
+      NGTemplateConfig templateConfig = getTemplateConfigOrThrow(requestInfoDTO.getYaml());
+      validateTemplateYaml(templateConfig, orgId, projectId, templateIdentifier, versionLabel);
+      return toTemplateEntityResponse(accountId, orgId, projectId, templateConfig, requestInfoDTO.getYaml());
     } catch (IOException e) {
       throw new InvalidRequestException("Cannot create template entity due to " + e.getMessage());
     }
@@ -365,6 +454,20 @@ public class NGTemplateDtoMapper {
     }
     validateIconForTemplate(templateConfig.getTemplateInfoConfig().getIcon());
   }
+
+  private void validateSimplifiedTemplateYaml(
+      TemplateEntity templateEntity, String templateIdentifier, String versionLabel) {
+    if (templateEntity.getVersionLabel() == null) {
+      throw new InvalidRequestException("Template VersionLabel is Not Present");
+    }
+    if (!templateEntity.getIdentifier().equals(templateIdentifier)) {
+      throw new InvalidRequestException("Template Identifier for template is not matching as in template yaml.");
+    }
+    if (!templateEntity.getVersionLabel().equals(versionLabel)) {
+      throw new InvalidRequestException("VersionLabel for template is not matching as in template yaml.");
+    }
+  }
+
   @VisibleForTesting
   protected void validateIconForTemplate(String iconWithFormat) {
     if (iconWithFormat == null || iconWithFormat.length() == 0) {
@@ -433,5 +536,86 @@ public class NGTemplateDtoMapper {
     } else {
       return BOOLEAN_TRUE_VALUE.equalsIgnoreCase(loadFromCache);
     }
+  }
+
+  public TemplateResponseDTO writeTemplateResponseDto(GlobalTemplateEntity globalTemplateEntity) {
+    return TemplateResponseDTO.builder()
+        .accountId(globalTemplateEntity.getAccountId())
+        .orgIdentifier(globalTemplateEntity.getOrgIdentifier())
+        .projectIdentifier(globalTemplateEntity.getProjectIdentifier())
+        .yaml(globalTemplateEntity.getYaml())
+        .identifier(globalTemplateEntity.getIdentifier())
+        .description(globalTemplateEntity.getDescription())
+        .name(globalTemplateEntity.getName())
+        .isStableTemplate(globalTemplateEntity.isStableTemplate())
+        .childType(globalTemplateEntity.getChildType())
+        .templateEntityType(globalTemplateEntity.getTemplateEntityType())
+        .templateScope(globalTemplateEntity.getTemplateScope())
+        .versionLabel(globalTemplateEntity.getVersionLabel())
+        .tags(TagMapper.convertToMap(globalTemplateEntity.getTags()))
+        .version(globalTemplateEntity.getVersion())
+        .icon(globalTemplateEntity.getIcon())
+        .gitDetails(getEntityGitDetails(globalTemplateEntity))
+        .lastUpdatedAt(globalTemplateEntity.getLastUpdatedAt())
+        .entityValidityDetails(globalTemplateEntity.isEntityInvalid()
+                ? EntityValidityDetails.builder().valid(false).invalidYaml(globalTemplateEntity.getYaml()).build()
+                : EntityValidityDetails.builder().valid(true).build())
+        .storeType(globalTemplateEntity.getStoreType())
+        .connectorRef(globalTemplateEntity.getConnectorRef())
+        .cacheResponseMetadata(getCacheResponse(globalTemplateEntity))
+        .build();
+  }
+
+  public GlobalTemplateEntity toGlobalTemplateEntity(
+      String accountId, String templateYaml, String readMe, String filePath) {
+    try {
+      NGTemplateConfig templateConfig = getTemplateConfigOrThrow(templateYaml);
+      return toGlobalTemplateEntityResponse(accountId, templateConfig, templateYaml, readMe, filePath);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Cannot create template entity due to " + e.getMessage());
+    }
+  }
+
+  public GlobalTemplateEntity toGlobalTemplateEntityResponse(
+      String accountId, NGTemplateConfig templateConfig, String yaml, String readMe, String filePath) {
+    validateTemplateYaml(templateConfig, null, null);
+    NGTemplateReference templateReference = NGTemplateReference.builder()
+                                                .accountIdentifier(accountId)
+                                                .identifier(templateConfig.getTemplateInfoConfig().getIdentifier())
+                                                .versionLabel(templateConfig.getTemplateInfoConfig().getVersionLabel())
+                                                .build();
+    String description = (String) templateConfig.getTemplateInfoConfig().getDescription().fetchFinalValue();
+    description = description == null ? "" : description;
+    return GlobalTemplateEntity.builder()
+        .yaml(yaml)
+        .identifier(templateConfig.getTemplateInfoConfig().getIdentifier())
+        .versionLabel(templateConfig.getTemplateInfoConfig().getVersionLabel())
+        .accountId(accountId)
+        .name(templateConfig.getTemplateInfoConfig().getName())
+        .description(description)
+        .tags(TagMapper.convertToList(templateConfig.getTemplateInfoConfig().getTags()))
+        .icon(templateConfig.getTemplateInfoConfig().getIcon())
+        .templateEntityType(templateConfig.getTemplateInfoConfig().getType())
+        .templateScope(getScopeFromTemplateDto(templateConfig.getTemplateInfoConfig()))
+        .fullyQualifiedIdentifier(templateReference.getFullyQualifiedName())
+        .childType(templateConfig.getTemplateInfoConfig().fetchChildType())
+        .readMe(readMe)
+        .filePath(filePath)
+        .build();
+  }
+
+  public EntityGitDetails getEntityGitDetails(GlobalTemplateEntity globalTemplateEntity) {
+    return globalTemplateEntity.getStoreType() == null
+        ? EntityGitDetailsMapper.mapEntityGitDetails(globalTemplateEntity)
+        : globalTemplateEntity.getStoreType() == StoreType.REMOTE
+        ? GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()
+        : EntityGitDetails.builder().build();
+  }
+
+  public CacheResponseMetadataDTO getCacheResponse(GlobalTemplateEntity templateEntity) {
+    if (templateEntity.getStoreType() == StoreType.REMOTE) {
+      return getCacheResponse();
+    }
+    return null;
   }
 }

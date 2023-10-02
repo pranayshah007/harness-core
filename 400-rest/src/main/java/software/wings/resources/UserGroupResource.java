@@ -116,7 +116,7 @@ public class UserGroupResource {
       pageRequest.setFilters(Lists.newArrayList(searchFilter));
     }
     PageResponse<UserGroup> pageResponse =
-        userGroupService.list(accountId, pageRequest, loadUsers, searchTermType, searchTerm);
+        userGroupService.list(accountId, pageRequest, loadUsers, searchTermType, searchTerm, false);
     return getPublicUserGroups(pageResponse);
   }
 
@@ -363,7 +363,7 @@ public class UserGroupResource {
                                              .addFilter("accountId", Operator.EQ, accountId)
                                              .addFieldsIncluded("_id", "name", "notificationSettings")
                                              .build();
-    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, false, null, null);
+    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, false, null, null, false);
     return getPublicUserGroups(pageResponse);
   }
 

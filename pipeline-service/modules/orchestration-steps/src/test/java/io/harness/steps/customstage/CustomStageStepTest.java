@@ -17,16 +17,21 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.rule.Owner;
+import io.harness.utils.PmsFeatureFlagHelper;
 
+import java.util.concurrent.ExecutorService;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
 public class CustomStageStepTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+  @Mock private PmsFeatureFlagHelper pmsFeatureFlagHelper;
+  @Mock ExecutorService dashboardExecutorService;
 
   @InjectMocks CustomStageStep customStageStep;
 

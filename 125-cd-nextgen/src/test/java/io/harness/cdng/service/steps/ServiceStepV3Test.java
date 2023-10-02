@@ -7,6 +7,8 @@
 
 package io.harness.cdng.service.steps;
 
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
@@ -123,6 +125,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -150,6 +153,7 @@ public class ServiceStepV3Test extends CategoryTest {
   @Mock private NGSettingsClient ngSettingsClient;
   @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
   @Mock ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
+  @Spy @InjectMocks private ServiceStepV3Helper serviceStepV3Helper;
 
   private AutoCloseable mocks;
   @InjectMocks private ServiceStepV3 step = new ServiceStepV3();
@@ -319,7 +323,7 @@ public class ServiceStepV3Test extends CategoryTest {
             .build(),
         null);
 
-    assertThat(response.getLogKeysCount()).isEqualTo(1);
+    assertThat(response.getLogKeysCount()).isEqualTo(2);
 
     ArgumentCaptor<ExecutionSweepingOutput> captor = ArgumentCaptor.forClass(ExecutionSweepingOutput.class);
     ArgumentCaptor<String> stringCaptor = ArgumentCaptor.forClass(String.class);
@@ -365,7 +369,7 @@ public class ServiceStepV3Test extends CategoryTest {
             .build(),
         null);
 
-    assertThat(response.getLogKeysCount()).isEqualTo(1);
+    assertThat(response.getLogKeysCount()).isEqualTo(2);
 
     ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
     verify(freezeEvaluateService, times(1)).getActiveManualFreezeEntities(any(), any(), any(), captor.capture());
@@ -399,7 +403,7 @@ public class ServiceStepV3Test extends CategoryTest {
             .build(),
         null);
 
-    assertThat(response.getLogKeysCount()).isEqualTo(1);
+    assertThat(response.getLogKeysCount()).isEqualTo(2);
 
     ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
     verify(freezeEvaluateService, times(1)).getActiveManualFreezeEntities(any(), any(), any(), captor.capture());
@@ -432,7 +436,7 @@ public class ServiceStepV3Test extends CategoryTest {
             .build(),
         null);
 
-    assertThat(response.getLogKeysCount()).isEqualTo(1);
+    assertThat(response.getLogKeysCount()).isEqualTo(2);
 
     ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
     verify(freezeEvaluateService, times(1)).getActiveManualFreezeEntities(any(), any(), any(), captor.capture());
@@ -465,7 +469,7 @@ public class ServiceStepV3Test extends CategoryTest {
             .build(),
         null);
 
-    assertThat(response.getLogKeysCount()).isEqualTo(1);
+    assertThat(response.getLogKeysCount()).isEqualTo(2);
   }
 
   @Test
@@ -668,7 +672,7 @@ public class ServiceStepV3Test extends CategoryTest {
             .build(),
         null);
 
-    assertThat(response.getLogKeysCount()).isEqualTo(1);
+    assertThat(response.getLogKeysCount()).isEqualTo(2);
 
     ArgumentCaptor<ExecutionSweepingOutput> captor = ArgumentCaptor.forClass(ExecutionSweepingOutput.class);
     ArgumentCaptor<String> stringCaptor = ArgumentCaptor.forClass(String.class);
@@ -723,7 +727,7 @@ public class ServiceStepV3Test extends CategoryTest {
             .build(),
         null);
 
-    assertThat(response.getLogKeysCount()).isEqualTo(1);
+    assertThat(response.getLogKeysCount()).isEqualTo(2);
     ArgumentCaptor<List> secretVariablesCaptor = ArgumentCaptor.forClass(List.class);
     verify(serviceStepsHelper).checkForAccessOrThrow(any(Ambiance.class), secretVariablesCaptor.capture());
     List<NGVariable> variables = secretVariablesCaptor.getValue();
@@ -761,7 +765,7 @@ public class ServiceStepV3Test extends CategoryTest {
             .build(),
         null);
 
-    assertThat(response.getLogKeysCount()).isEqualTo(1);
+    assertThat(response.getLogKeysCount()).isEqualTo(2);
     ArgumentCaptor<EnvironmentOutcome> envOutcomeCaptor = ArgumentCaptor.forClass(EnvironmentOutcome.class);
     verify(sweepingOutputService).consume(any(Ambiance.class), anyString(), envOutcomeCaptor.capture(), anyString());
     EnvironmentOutcome envOutcome = envOutcomeCaptor.getValue();
@@ -813,7 +817,7 @@ public class ServiceStepV3Test extends CategoryTest {
             .build(),
         null);
 
-    assertThat(response.getLogKeysCount()).isEqualTo(1);
+    assertThat(response.getLogKeysCount()).isEqualTo(2);
 
     ArgumentCaptor<VariablesSweepingOutput> varOutputCaptor = ArgumentCaptor.forClass(VariablesSweepingOutput.class);
     verify(sweepingOutputService).consume(any(Ambiance.class), anyString(), varOutputCaptor.capture(), anyString());
@@ -867,7 +871,7 @@ public class ServiceStepV3Test extends CategoryTest {
             .build(),
         null);
 
-    assertThat(response.getLogKeysCount()).isEqualTo(1);
+    assertThat(response.getLogKeysCount()).isEqualTo(2);
 
     ArgumentCaptor<ExecutionSweepingOutput> captor = ArgumentCaptor.forClass(ExecutionSweepingOutput.class);
     ArgumentCaptor<String> stringCaptor = ArgumentCaptor.forClass(String.class);
@@ -919,6 +923,62 @@ public class ServiceStepV3Test extends CategoryTest {
     ServiceStepOutcome outcome = (ServiceStepOutcome) stepResponse.getStepOutcomes().iterator().next().getOutcome();
     assertThat(outcome.getName()).isEqualTo("service-name");
     assertThat(outcome.getIdentifier()).isEqualTo("service-id");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ABHINAV2)
+  @Category(UnitTests.class)
+  public void testWithReleaseOpt() {
+    StepResponse stepResponse = getStepResponse("Kubernetes", ServiceDefinitionType.KUBERNETES);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getStepOutcomes().size()).isEqualTo(1);
+    ServiceStepOutcome outcome = (ServiceStepOutcome) stepResponse.getStepOutcomes().iterator().next().getOutcome();
+    assertThat(outcome.getRelease()).isNotNull();
+    assertThat(outcome.getRelease().getName()).isEqualTo("testsvc");
+
+    stepResponse = getStepResponse("Ssh", ServiceDefinitionType.SSH);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getStepOutcomes().size()).isEqualTo(1);
+    outcome = (ServiceStepOutcome) stepResponse.getStepOutcomes().iterator().next().getOutcome();
+    assertThat(outcome.getRelease()).isNull();
+  }
+
+  private StepResponse getStepResponse(String serviceType, ServiceDefinitionType definitionType) {
+    ServiceEntity service = ServiceEntity.builder()
+                                .accountId("accountId")
+                                .orgIdentifier("orgId")
+                                .projectIdentifier("projectId")
+                                .identifier("service-id")
+                                .name("service-name")
+                                .type(definitionType)
+                                .yaml(getServiceYaml(serviceType))
+                                .build();
+
+    Environment environment = testEnvEntity();
+    doReturn(ServiceSweepingOutput.builder().finalServiceYaml(service.getYaml()).build())
+        .when(sweepingOutputService)
+        .resolve(any(Ambiance.class),
+            eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3Constants.SERVICE_SWEEPING_OUTPUT)));
+
+    return step.handleChildrenResponse(buildAmbiance(),
+        ServiceStepV3Parameters.builder()
+            .serviceRef(ParameterField.createValueField(service.getIdentifier()))
+            .envRef(ParameterField.createValueField(environment.getIdentifier()))
+            .childrenNodeIds(new ArrayList<>())
+            .build(),
+        Map.of("taskid1", StepResponseNotifyData.builder().nodeUuid("nodeuuid").status(Status.SUCCEEDED).build()));
+  }
+
+  private String getServiceYaml(String serviceType) {
+    return "service:\n"
+        + "  name: service-name\n"
+        + "  identifier: service-id\n"
+        + "  tags: {}\n"
+        + "  serviceDefinition:\n"
+        + "    spec:\n"
+        + "      release:\n"
+        + "        name: testsvc\n"
+        + "    type: " + serviceType + "\n";
   }
 
   @Test
@@ -1357,6 +1417,7 @@ public class ServiceStepV3Test extends CategoryTest {
                                                .setPrincipal("prinicipal")
                                                .setPrincipalType(io.harness.pms.contracts.plan.PrincipalType.USER)
                                                .build())
+                         .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
                          .build())
         .build();
   }

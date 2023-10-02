@@ -174,6 +174,7 @@ public class LogMLAnalysisGenerator implements Runnable {
 
         LearningEngineExperimentalAnalysisTaskBuilder experimentalAnalysisTaskBuilder =
             LearningEngineExperimentalAnalysisTask.builder()
+                .accountId(context.getAccountId())
                 .query(Lists.newArrayList(query.split(" ")))
                 .workflow_id(context.getWorkflowId())
                 .workflow_execution_id(context.getWorkflowExecutionId())

@@ -7,6 +7,7 @@
 
 package io.harness.cdlicense.impl;
 
+import static io.harness.beans.FeatureName.CD_MAKE_CD_LICENSE_USAGE_REPORTS_ASYNC;
 import static io.harness.cdlicense.bean.CgCdLicenseUsageConstants.INSTANCE_COUNT_PERCENTILE_DISC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -18,15 +19,26 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 import io.harness.cdlicense.bean.CgActiveServicesUsageInfo;
 import io.harness.cdlicense.bean.CgServiceInstancesUsageInfo;
 import io.harness.cdlicense.bean.CgServiceUsage;
+import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +53,8 @@ public class CgCdLicenseUsageServiceImpl implements CgCdLicenseUsageService {
   private static final int ACTIVE_SERVICES_LICENSE_USAGE_REPORT_PERIOD_DAYS = 30;
 
   @Inject private CgCdLicenseUsageQueryHelper cgCdLicenseUsageQueryHelper;
+  @Inject private FeatureFlagService featureFlagService;
+  @Inject @Named("cgCdLicenseUsageExecutor") private ExecutorService executorService;
 
   @Override
   public CgActiveServicesUsageInfo getActiveServiceLicenseUsage(String accountId) {
@@ -70,10 +84,20 @@ public class CgCdLicenseUsageServiceImpl implements CgCdLicenseUsageService {
   }
 
   @VisibleForTesting
-  Map<String, Pair<Long, Integer>> queryPercentileInstanceForServices(String accountId, List<String> svcIds) {
+  protected Map<String, Pair<Long, Integer>> queryPercentileInstanceForServices(String accountId, List<String> svcIds) {
     if (isEmpty(svcIds)) {
       return Collections.emptyMap();
     }
+
+    if (featureFlagService.isEnabled(CD_MAKE_CD_LICENSE_USAGE_REPORTS_ASYNC, accountId)) {
+      return queryPercentileInstanceForServicesAsync(accountId, svcIds);
+    }
+
+    return queryPercentileInstanceForServicesSync(accountId, svcIds);
+  }
+
+  private Map<String, Pair<Long, Integer>> queryPercentileInstanceForServicesSync(
+      String accountId, List<String> svcIds) {
     Map<String, Pair<Long, Integer>> result = new HashMap<>();
 
     int fromIndex;
@@ -87,6 +111,40 @@ public class CgCdLicenseUsageServiceImpl implements CgCdLicenseUsageService {
           INSTANCE_COUNT_PERCENTILE_DISC));
 
     } while (toIndex < svcIds.size());
+
+    return result;
+  }
+
+  private Map<String, Pair<Long, Integer>> queryPercentileInstanceForServicesAsync(
+      String accountId, List<String> svcIds) {
+    Map<String, Pair<Long, Integer>> result = new ConcurrentHashMap<>();
+    List<Future<Map<String, Pair<Long, Integer>>>> futures = new ArrayList<>();
+    int fromIndex;
+    int toIndex = 0;
+
+    do {
+      fromIndex = toIndex;
+      toIndex = Math.min(svcIds.size(), toIndex + SLICE_SIZE);
+
+      List<String> subList = svcIds.subList(fromIndex, toIndex);
+      Callable<Map<String, Pair<Long, Integer>>> task = ()
+          -> cgCdLicenseUsageQueryHelper.getServicesPercentileInstanceCountAndLicenseUsage(
+              accountId, subList, ACTIVE_SERVICES_LICENSE_USAGE_REPORT_PERIOD_DAYS, INSTANCE_COUNT_PERCENTILE_DISC);
+
+      Future<Map<String, Pair<Long, Integer>>> future = executorService.submit(task);
+      futures.add(future);
+
+    } while (toIndex < svcIds.size());
+
+    for (Future<Map<String, Pair<Long, Integer>>> future : futures) {
+      try {
+        Map<String, Pair<Long, Integer>> partialResult = future.get(15, TimeUnit.SECONDS);
+        result.putAll(partialResult);
+      } catch (InterruptedException | ExecutionException | TimeoutException e) {
+        log.error("Failed to get CgCdLicenseUsage for accountId: {}", accountId, e);
+        throw new WingsException("Failed to get CgCdLicenseUsage, please contact support");
+      }
+    }
 
     return result;
   }

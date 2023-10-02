@@ -6,7 +6,6 @@
  */
 
 package io.harness.chartmuseum;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.chartmuseum.ChartMuseumConstants.ADDRESS_BIND_CODE;
 import static io.harness.chartmuseum.ChartMuseumConstants.ADDRESS_BIND_ERROR;
@@ -35,7 +34,10 @@ import static io.harness.threading.Morpheus.sleep;
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.version.Version;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -62,6 +64,7 @@ import org.zeroturnaround.exec.ProcessExecutor;
 import org.zeroturnaround.exec.ProcessResult;
 import org.zeroturnaround.exec.StartedProcess;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(CDP)
 @Slf4j
 @Singleton

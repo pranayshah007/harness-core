@@ -13,6 +13,7 @@ import static io.harness.accesscontrol.permissions.PermissionStatus.STAGING;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.KARAN;
 
+import static java.util.Set.of;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -73,7 +74,7 @@ public class ACLServiceImplTest extends AccessControlCoreTestBase {
     when(permissionService.list(
              PermissionFilter.builder().statusFilter(Sets.newHashSet(INACTIVE, EXPERIMENTAL, STAGING)).build()))
         .thenReturn(disabledPermissions);
-    when(inMemoryPermissionRepository.getResourceTypeBy(any())).thenReturn("");
+    when(inMemoryPermissionRepository.getResourceTypesApplicableToPermission(any())).thenReturn(of());
 
     Principal principal = Principal.of(PrincipalType.USER, randomAlphabetic(10));
     List<PermissionCheck> permissionChecks = new ArrayList<>();

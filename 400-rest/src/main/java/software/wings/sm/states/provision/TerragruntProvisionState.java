@@ -6,7 +6,6 @@
  */
 
 package software.wings.sm.states.provision;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.EnvironmentType.ALL;
 import static io.harness.beans.ExecutionStatus.FAILED;
@@ -69,8 +68,11 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.BreakDependencyOn;
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
@@ -153,6 +155,8 @@ import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_SERVERLESS})
 @FieldNameConstants(onlyExplicitlyIncluded = true, innerTypeName = "TerragruntProvisionStateKeys")
 @OwnedBy(CDP)
 @Slf4j
@@ -374,6 +378,14 @@ public abstract class TerragruntProvisionState extends State {
       exportPlanToApplyStep = true;
     }
 
+    boolean encryptDecryptPlanForHarnessSMOnManager = terragruntStateHelper.isHarnessSecretManager(secretManagerConfig)
+        && featureFlagService.isEnabled(CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_CG, context.getAccountId());
+    if (secretManagerConfig != null) {
+      // We are overriding the secret manager account id to actual account id because in case of harness sm it
+      // comes out to be GOBAL_ACCOUNT_ID which fails to call the manager APIs due to authentication
+      secretManagerConfig.setAccountId(context.getAccountId());
+    }
+
     TerragruntProvisionParameters parameters =
         TerragruntProvisionParameters.builder()
             .accountId(executionContext.getApp().getAccountId())
@@ -410,10 +422,7 @@ public abstract class TerragruntProvisionState extends State {
             .planName(getPlanName(context))
             .pathToModule(pathToModule)
             .runAll(runAll)
-            .encryptDecryptPlanForHarnessSMOnManager(
-                featureFlagService.isEnabled(
-                    CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_CG, context.getAccountId())
-                && terragruntStateHelper.isHarnessSecretManager(secretManagerConfig))
+            .encryptDecryptPlanForHarnessSMOnManager(encryptDecryptPlanForHarnessSMOnManager)
             .useAutoApproveFlag(featureFlagService.isEnabled(TG_USE_AUTO_APPROVE_FLAG, context.getAccountId()))
             .build();
 
@@ -507,6 +516,14 @@ public abstract class TerragruntProvisionState extends State {
             terragruntProvisioner.getSecretManagerId(), context.getAccountId())
         : null;
 
+    boolean encryptDecryptPlanForHarnessSMOnManager = terragruntStateHelper.isHarnessSecretManager(secretManagerConfig)
+        && featureFlagService.isEnabled(CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_CG, context.getAccountId());
+    if (secretManagerConfig != null) {
+      // We are overriding the secret manager account id to actual account id because in case of harness sm it
+      // comes out to be GOBAL_ACCOUNT_ID which fails to call the manager APIs due to authentication
+      secretManagerConfig.setAccountId(context.getAccountId());
+    }
+
     ExecutionContextImpl executionContext = (ExecutionContextImpl) context;
     TerragruntProvisionParameters parameters =
         TerragruntProvisionParameters.builder()
@@ -543,10 +560,7 @@ public abstract class TerragruntProvisionState extends State {
             .planName(getPlanName(context))
             .pathToModule(pathToModule)
             .runAll(runAll)
-            .encryptDecryptPlanForHarnessSMOnManager(
-                featureFlagService.isEnabled(
-                    CDS_TERRAFORM_TERRAGRUNT_PLAN_ENCRYPTION_ON_MANAGER_CG, executionContext.getAccountId())
-                && terragruntStateHelper.isHarnessSecretManager(secretManagerConfig))
+            .encryptDecryptPlanForHarnessSMOnManager(encryptDecryptPlanForHarnessSMOnManager)
             .useAutoApproveFlag(featureFlagService.isEnabled(TG_USE_AUTO_APPROVE_FLAG, context.getAccountId()))
             .build();
     return createAndRunTask(activityId, executionContext, parameters, element.getDelegateTag());

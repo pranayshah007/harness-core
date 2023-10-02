@@ -23,6 +23,7 @@ import io.harness.exception.HintException;
 import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.expression.functors.ExpressionFunctor;
+import io.harness.expression.functors.NGJsonFunctor;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableList;
@@ -362,6 +363,7 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
             .put("f", "abc")
             .put("g", "def")
             .put("h", "v2")
+            .put("i", "v")
             .put("company", "harness")
             .put("nested1", "<+nested2>")
             .put("nested2", "<+nested3>")
@@ -378,10 +380,17 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
                     .put("v5", "archit-harness")
                     .put("v6", "<+secrets.getValue('org.v2')>")
                     .put("v7", "<+secret1>")
+                    .put("v8", "<+company>/archit-<+f>")
+                    .put("v9", "<+company>/archit-<+f1>")
                     .build())
             .put("var1", "'archit' + <+company>")
             .put("var2", "'archit<+f>' + <+company>")
             .put("var3", "concatenate1")
+            .put("var4", "[\"abc\", \"def\"]")
+            .put("var5", "[{\"abc\":\"def\"},{\"efg\":\"hij\"}]")
+            .put("var6", "[{\"lmn\":\"pqr\"},{\"stu\":\"<+f>\"}]")
+            .put("var7", "[{\"stu\":\"<+f>\"},{\"u\":{\"vw\":\"xyz\"}}]")
+            .put("var8", "[{\"lmn\":\"pqr\"},{\"stu\":\"<+f>\"},{\"u\":{\"vw\":\"<+g>\"}}]")
             .put(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY, Arrays.asList("PIE_EXPRESSION_CONCATENATION"))
             .build());
     // concat expressions
@@ -405,6 +414,9 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(evaluator.evaluateExpression("'expression' + <+var2> + '-<+g>'"))
         .isEqualTo("expressionarchitabcharness-def");
 
+    // : concatenation expression
+    assertThat(evaluator.resolve("expression-<+var2>: <+g>", true)).isEqualTo("expression-architabcharness: def");
+
     // Complex concatenate expressions
     assertThat(evaluator.resolve("<+variables.v1>", true)).isEqualTo("abcdef");
     assertThat(evaluator.evaluateExpression("<+variables.v1>")).isEqualTo("abcdef");
@@ -413,6 +425,48 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     // Nested expression contains string concatenation
     assertThat(evaluator.resolve("<+variables.v3>", true)).isEqualTo("abcdefharness");
     assertThat(evaluator.evaluateExpression("<+variables.v3>")).isEqualTo("abcdefharness");
+    assertThat(evaluator.resolve("<+variables.v8>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("harness/archit-abc");
+    assertThat(evaluator.resolve("<+variables.v9>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("harness/archit-<+f1>");
+
+    // OR operators
+    assertThat(
+        evaluator.evaluateExpression("<+c2.status> == \"SUCCEEDED1\" || <+c2.anotherStatus> == \"IGNORE_FAILED\""))
+        .isEqualTo(true);
+    // AND operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" && <+c2.anotherStatus> == \"IGNORE_FAILED\""))
+        .isEqualTo(true);
+    // Not operator
+    assertThat(
+        evaluator.evaluateExpression("(<+c2.status> == \"RUNNING\") && (<+c2.anotherStatus> != \"IGNORE_FAILED\")"))
+        .isEqualTo(false);
+    // EQ operator
+    assertThat(
+        evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" && (<+c2.anotherStatus> eq \"IGNORE_FAILED\")"))
+        .isEqualTo(true);
+    // NE operator
+    assertThat(
+        evaluator.evaluateExpression("(<+c2.status> == \"RUNNING\") && (<+c2.anotherStatus> ne \"IGNORE_FAILED\")"))
+        .isEqualTo(false);
+    // and operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
+        .isEqualTo(false);
+    // or operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" or <+c2.anotherStatus> != \"IGNORE_FAILED\""))
+        .isEqualTo(true);
+    // =~ operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> =~ \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
+        .isEqualTo(false);
+    // !~ operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> !~ \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
+        .isEqualTo(false);
+    // size operator
+    assertThat(evaluator.resolve("<+size(<+variables.v8>)>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("18");
+    // empty operator
+    assertThat(evaluator.resolve("<+empty(<+variables.v8>)>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("false");
 
     // Complex double nesting with concatenate expressions with prefix combinations
     assertThat(evaluator.resolve("<+c1.<+var3>>", true)).isEqualTo("harness");
@@ -422,21 +476,41 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(evaluator.evaluateExpression("harness<+variables.v4><+variables.v3>"))
         .isEqualTo("harnessabcdefabcdefharness");
 
-    // Functors having concat expressions should work
+    assertThat(evaluator.resolve("\"<+json.select(\"a.b\", \"{\\\"a\\\" : {\\\"b\\\" : \\\"c\\\"}}\")>\"", true))
+        .isEqualTo("\"c\"");
+    // Functors having concatenation expressions should work
     assertThat(evaluator.resolve("<+secrets.getValue(\"abc\")>", true))
         .isEqualTo("${ngSecretManager.obtain(\"abc\", 123)}");
+    //    assertThat(evaluator.resolve("\"<+secrets.getValue(\\\"abc\\\")>\"", true))
+    //        .isEqualTo("\"${ngSecretManager.obtain(\"abc\", 123)}\"");
     assertThat(evaluator.resolve("<+secrets.getValue(\"<+f>\")>", true))
         .isEqualTo("${ngSecretManager.obtain(\"abc\", 123)}");
+    //    assertThat(evaluator.resolve("\"<+secrets.getValue(\\\"<+f>\\\")>\"", true))
+    //        .isEqualTo("\"${ngSecretManager.obtain(\"abc\", 123)}\"");
     assertThat(evaluator.resolve("<+secrets.getValue(\"harness_<+f>_india\")>", true))
         .isEqualTo("${ngSecretManager.obtain(\"harness_abc_india\", 123)}");
+    //    assertThat(evaluator.resolve("\"<+secrets.getValue(\\\"harness_<+f>_india\\\")>\"", true))
+    //        .isEqualTo("\"${ngSecretManager.obtain(\"harness_abc_india\", 123)}\"");
     assertThat(evaluator.resolve("<+secrets.getValue(\"harness_<+f>_india_<+g>\")>", true))
         .isEqualTo("${ngSecretManager.obtain(\"harness_abc_india_def\", 123)}");
+    //    assertThat(evaluator.resolve("\"<+secrets.getValue(\\\"harness_<+f>_india_<+g>\\\")>\"", true))
+    //        .isEqualTo("\"${ngSecretManager.obtain(\"harness_abc_india_def\", 123)}\"");
     assertThat(evaluator.resolve("<+secrets.getValue(\"harness_\" + <+f> + \"_india_\" + <+g>)>", true))
         .isEqualTo("${ngSecretManager.obtain(\"harness_abc_india_def\", 123)}");
+    //    assertThat(evaluator.resolve("\"<+secrets.getValue(\\\"harness_\\\" + <+f> + \\\"_india_\\\" + <+g>)>\"",
+    //    true))
+    //        .isEqualTo("\"${ngSecretManager.obtain(\"harness_abc_india_def\", 123)}\"");
     assertThat(evaluator.resolve("<+secrets.getValue(<+f> + \"_india_\" + <+g>)>", true))
         .isEqualTo("${ngSecretManager.obtain(\"abc_india_def\", 123)}");
+    //    assertThat(evaluator.resolve("\"<+secrets.getValue(<+f> + \\\"_india_\\\" + <+g>)>\"", true))
+    //        .isEqualTo("\"${ngSecretManager.obtain(\"abc_india_def\", 123)}\"");
     assertThat(evaluator.resolve("<+secrets.getValue(\"<+f>_india_<+g>\")>", true))
         .isEqualTo("${ngSecretManager.obtain(\"abc_india_def\", 123)}");
+    //    assertThat(evaluator.resolve("\"<+secrets.getValue(\\\"<+f>_india_<+g>\\\")>\"", true))
+    //        .isEqualTo("\"${ngSecretManager.obtain(\"abc_india_def\", 123)}\"");
+
+    // Functors having 2nd param as expression shouldn't cause issue in evaluation
+    assertThat(evaluator.resolve("<+json.list(\"$\", <+var4>)>", true)).isEqualTo("[\"abc\",\"def\"]");
 
     // Ternary operators
     assertThat(evaluator.resolve("<+ <+a>==5?<+f>:<+g> >", true)).isEqualTo("abc");
@@ -456,6 +530,8 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     // an expression used in path of existing expression
     assertThat(evaluator.resolve("<+variables.<+h>>", true)).isEqualTo("harnessabcdef");
     assertThat(evaluator.evaluateExpression("<+variables.<+h>>")).isEqualTo("harnessabcdef");
+    assertThat(evaluator.resolve("<+variables[<+i> + '5']>", true)).isEqualTo("archit-harness");
+    assertThat(evaluator.resolve("<+variables[<+i> + '2']>", true)).isEqualTo("harnessabcdef");
 
     // Unresolved expressions partially should be resolved
     assertThat(evaluator.resolve("<+nested1>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
@@ -475,6 +551,12 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(evaluator.renderExpression("<+a> + <+b> = <+<+a> + <+b>>")).isEqualTo("5 + 12 = 17");
     assertThat(evaluator.renderExpression("<+<+a> > + <+ <+b>> = <+<+a> + <+b>>")).isEqualTo("5 + 12 = 17");
     assertThat(evaluator.renderExpression("<+f> + <+g> = <+<+f> + \" + \" + <+g>>")).isEqualTo("abc + def = abc + def");
+
+    assertThat(evaluator.resolve("<+var5>", true)).isEqualTo("[{\"abc\":\"def\"},{\"efg\":\"hij\"}]");
+    assertThat(evaluator.resolve("<+var6>", true)).isEqualTo("[{\"lmn\":\"pqr\"},{\"stu\":\"abc\"}]");
+    assertThat(evaluator.resolve("<+var7>", true)).isEqualTo("[{\"stu\":\"abc\"},{\"u\":{\"vw\":\"xyz\"}}]");
+    assertThat(evaluator.resolve("<+var8>", true))
+        .isEqualTo("[{\"lmn\":\"pqr\"},{\"stu\":\"abc\"},{\"u\":{\"vw\":\"def\"}}]");
   }
 
   @Test
@@ -491,6 +573,7 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
             .put("f", "abc")
             .put("g", "def")
             .put("h", "v2")
+            .put("i", "v")
             .put("productValues", Arrays.asList(1, 2, 3))
             .put("variableValues", Arrays.asList("v1", "v2", "v3"))
             .put("company", "harness")
@@ -509,13 +592,21 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
                     .put("v5", "archit-harness")
                     .put("v6", "<+secrets.getValue('org.v2')>")
                     .put("v7", "<+secret1>")
+                    .put("v8", "<+company>/archit-<+f>")
+                    .put("v9", "<+company>/archit-<+f1>")
                     .build())
             .put("var1", "'archit' + <+company>")
             .put("var2", "'archit<+f>' + <+company>")
             .put("var3", "concatenate1")
+            .put("var4", "[\"abc\", \"def\"]")
+            .put("var5", "[{\"abc\":\"def\"},{\"efg\":\"hij\"}]")
+            .put("var6", "[{\"lmn\":\"pqr\"},{\"stu\":\"<+f>\"}]")
+            .put("var7", "[{\"stu\":\"<+f>\"},{\"u\":{\"vw\":\"xyz\"}}]")
+            .put("var8", "[{\"lmn\":\"pqr\"},{\"stu\":\"<+f>\"},{\"u\":{\"vw\":\"<+g>\"}}]")
             .put(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY,
                 Arrays.asList("PIE_EXPRESSION_CONCATENATION", "PIE_EXECUTION_JSON_SUPPORT"))
             .build());
+
     // concat expressions
     assertThat(evaluator.resolve("archit-<+company>", true)).isEqualTo("archit-harness");
     assertThat(evaluator.evaluateExpression("archit-<+company>")).isEqualTo("archit-harness");
@@ -537,6 +628,9 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(evaluator.evaluateExpression("'expression' + <+var2> + '-<+g>'"))
         .isEqualTo("expressionarchitabcharness-def");
 
+    // : concatenation expression
+    assertThat(evaluator.resolve("expression-<+var2>: <+g>", true)).isEqualTo("expression-architabcharness: def");
+
     // Complex concatenate expressions
     assertThat(evaluator.resolve("<+variables.v1>", true)).isEqualTo("abcdef");
     assertThat(evaluator.evaluateExpression("<+variables.v1>")).isEqualTo("abcdef");
@@ -546,6 +640,11 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(evaluator.evaluateExpression("<+variables.v3>")).isEqualTo("abcdef");
     assertThat(evaluator.resolve("harness<+variables.v4><+variables.v3>", true)).isEqualTo("harnessabcdefabcdef");
     assertThat(evaluator.evaluateExpression("harness<+variables.v4><+variables.v3>")).isEqualTo("harnessabcdefabcdef");
+    assertThat(evaluator.resolve("<+variables.v8>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("harness/archit-abc");
+    assertThat(evaluator.resolve("<+variables.v9>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("harness/archit-<+f1>");
+
     // Nested concatenate expression in script
     // Note In script mode -> concatenate expressions can be using + operator between them only
     assertThat(evaluator.evaluateExpression("<+ var traverse = function(key) {\n"
@@ -560,19 +659,35 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
                    + "                          traverse(<+variableValues>)  >"))
         .isEqualTo("v1abcdefv2abcdefv3abcdef");
 
-    // Functors having concat expressions should work
+    // Functors having concatenation expressions should work
     assertThat(evaluator.resolve("<+secrets.getValue(\"<+f>\")>", true))
         .isEqualTo("${ngSecretManager.obtain(\"abc\", 123)}");
+    //    assertThat(evaluator.resolve("\"<+secrets.getValue(\\\"<+f>\\\")>\"", true))
+    //        .isEqualTo("\"${ngSecretManager.obtain(\"abc\", 123)}\"");
     assertThat(evaluator.resolve("<+secrets.getValue(\"harness_<+f>_india\")>", true))
         .isEqualTo("${ngSecretManager.obtain(\"harness_abc_india\", 123)}");
+    //    assertThat(evaluator.resolve("\"<+secrets.getValue(\\\"harness_<+f>_india\\\")>\"", true))
+    //        .isEqualTo("\"${ngSecretManager.obtain(\"harness_abc_india\", 123)}\"");
     assertThat(evaluator.resolve("<+secrets.getValue(\"harness_<+f>_india_<+g>\")>", true))
         .isEqualTo("${ngSecretManager.obtain(\"harness_abc_india_def\", 123)}");
+    //    assertThat(evaluator.resolve("\"<+secrets.getValue(\\\"harness_<+f>_india_<+g>\\\")>\"", true))
+    //        .isEqualTo("\"${ngSecretManager.obtain(\"harness_abc_india_def\", 123)}\"");
     assertThat(evaluator.resolve("<+secrets.getValue(\"harness_\" + <+f> + \"_india_\" + <+g>)>", true))
         .isEqualTo("${ngSecretManager.obtain(\"harness_abc_india_def\", 123)}");
+    //    assertThat(evaluator.resolve("\"<+secrets.getValue(\\\"harness_\\\" + <+f> + \\\"_india_\\\" + <+g>)>\"",
+    //    true))
+    //        .isEqualTo("\"${ngSecretManager.obtain(\"harness_abc_india_def\", 123)}\"");
     assertThat(evaluator.resolve("<+secrets.getValue(<+f> + \"_india_\" + <+g>)>", true))
         .isEqualTo("${ngSecretManager.obtain(\"abc_india_def\", 123)}");
+    //    assertThat(evaluator.resolve("\"<+secrets.getValue(<+f> + \\\"_india_\\\" + <+g>)>\"", true))
+    //        .isEqualTo("\"${ngSecretManager.obtain(\"abc_india_def\", 123)}\"");
     assertThat(evaluator.resolve("<+secrets.getValue(\"<+f>_india_<+g>\")>", true))
         .isEqualTo("${ngSecretManager.obtain(\"abc_india_def\", 123)}");
+    //    assertThat(evaluator.resolve("\"<+secrets.getValue(\\\"<+f>_india_<+g>\\\")>\"", true))
+    //        .isEqualTo("\"${ngSecretManager.obtain(\"abc_india_def\", 123)}\"");
+
+    // Functors having 2nd param as expression shouldn't cause issue in evaluation
+    assertThat(evaluator.resolve("<+json.list(\"$\", <+var4>)>", true)).isEqualTo("[\"abc\",\"def\"]");
 
     // Ternary operators
     assertThat(evaluator.resolve("<+ <+a>==5?<+f>:<+g> >", true)).isEqualTo("abc");
@@ -582,6 +697,44 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(evaluator.resolve("<+ <+a>==5?<+<+f>+'harness'>:<+<+g>+'def'> >", true)).isEqualTo("abcharness");
     assertThat(evaluator.resolve("<+ <+a>==<+a>?<+<+f>+'harness'>:<+<+g>+'def'> >", true)).isEqualTo("abcharness");
     assertThat(evaluator.resolve("<+ <+a>==<+b>?<+<+f>+'harness'>:<+<+g>+'def'> >", true)).isEqualTo("defdef");
+
+    // OR operators
+    assertThat(
+        evaluator.evaluateExpression("<+c2.status> == \"SUCCEEDED1\" || <+c2.anotherStatus> == \"IGNORE_FAILED\""))
+        .isEqualTo(true);
+    // AND operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" && <+c2.anotherStatus> == \"IGNORE_FAILED\""))
+        .isEqualTo(true);
+    // Not operator
+    assertThat(
+        evaluator.evaluateExpression("(<+c2.status> == \"RUNNING\") && (<+c2.anotherStatus> != \"IGNORE_FAILED\")"))
+        .isEqualTo(false);
+    // EQ operator
+    assertThat(
+        evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" && (<+c2.anotherStatus> eq \"IGNORE_FAILED\")"))
+        .isEqualTo(true);
+    // NE operator
+    assertThat(
+        evaluator.evaluateExpression("(<+c2.status> == \"RUNNING\") && (<+c2.anotherStatus> ne \"IGNORE_FAILED\")"))
+        .isEqualTo(false);
+    // and operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
+        .isEqualTo(false);
+    // or operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> == \"RUNNING\" or <+c2.anotherStatus> != \"IGNORE_FAILED\""))
+        .isEqualTo(true);
+    // =~ operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> =~ \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
+        .isEqualTo(false);
+    // !~ operator
+    assertThat(evaluator.evaluateExpression("<+c2.status> !~ \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
+        .isEqualTo(false);
+    // size operator
+    assertThat(evaluator.resolve("<+size(<+variables.v8>)>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("18");
+    // empty operator
+    assertThat(evaluator.resolve("<+empty(<+variables.v8>)>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .isEqualTo("false");
 
     // Complex double nesting with concatenate expressions with prefix combinations
     assertThat(evaluator.resolve("<+c1.<+var3>>", true)).isEqualTo("harness");
@@ -594,6 +747,8 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     // an expression used in path of existing expression
     assertThat(evaluator.resolve("<+variables.<+h>>", true)).isEqualTo("harnessabcdef");
     assertThat(evaluator.evaluateExpression("<+variables.<+h>>")).isEqualTo("harnessabcdef");
+    assertThat(evaluator.resolve("<+variables[<+i> + '5']>", true)).isEqualTo("archit-harness");
+    assertThat(evaluator.resolve("<+variables[<+i> + '2']>", true)).isEqualTo("harnessabcdef");
 
     // Unresolved expressions partially should be resolved
     assertThat(evaluator.resolve("<+nested1>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
@@ -624,6 +779,12 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     assertThat(evaluator.renderExpression("<+a> + <+b> = <+<+a> + <+b>>")).isEqualTo("5 + 12 = 17");
     assertThat(evaluator.renderExpression("<+<+a> > + <+ <+b>> = <+<+a> + <+b>>")).isEqualTo("5 + 12 = 17");
     assertThat(evaluator.renderExpression("<+f> + <+g> = <+<+f> + \" + \" + <+g>>")).isEqualTo("abc + def = abc + def");
+
+    assertThat(evaluator.resolve("<+var5>", true)).isEqualTo("[{\"abc\":\"def\"},{\"efg\":\"hij\"}]");
+    assertThat(evaluator.resolve("<+var6>", true)).isEqualTo("[{\"lmn\":\"pqr\"},{\"stu\":\"abc\"}]");
+    assertThat(evaluator.resolve("<+var7>", true)).isEqualTo("[{\"stu\":\"abc\"},{\"u\":{\"vw\":\"xyz\"}}]");
+    assertThat(evaluator.resolve("<+var8>", true))
+        .isEqualTo("[{\"lmn\":\"pqr\"},{\"stu\":\"abc\"},{\"u\":{\"vw\":\"def\"}}]");
   }
 
   @Test
@@ -816,7 +977,13 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
       addToContext("nestedConcatenate",
           new ImmutableMap.Builder<String, Object>()
               .put("c1", new ImmutableMap.Builder<String, Object>().put("concatenate1", "harness").build())
+              .put("c2",
+                  new ImmutableMap.Builder<String, Object>()
+                      .put("status", "RUNNING")
+                      .put("anotherStatus", "IGNORE_FAILED")
+                      .build())
               .build());
+      addToContext("json", new NGJsonFunctor());
     }
 
     @NotNull

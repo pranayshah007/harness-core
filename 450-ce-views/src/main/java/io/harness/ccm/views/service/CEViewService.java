@@ -13,6 +13,7 @@ import io.harness.ccm.views.dto.LinkedPerspectives;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.CEViewFolder;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
+import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewState;
 import io.harness.ccm.views.graphql.QLCEView;
 import io.harness.ccm.views.graphql.QLCEViewSortCriteria;
@@ -34,6 +35,8 @@ public interface CEViewService {
   HashMap<String, String> getPerspectiveIdAndFolderId(String accountId, List<String> ceViewIds);
   void updateBusinessMappingName(String accountId, String buinessMappingUuid, String newBusinessMappingName);
   CEView updateTotalCost(CEView ceView);
+  void updateAllPerspectiveWithPerspectivePreferenceDefaultSettings(
+      String accountId, Set<String> viewPreferencesFieldsToUpdateWithDefaultSettings);
   boolean delete(String uuid, String accountId);
   List<QLCEView> getAllViews(String accountId, boolean includeDefault, QLCEViewSortCriteria sortCriteria);
   List<QLCEView> getAllViews(
@@ -55,4 +58,5 @@ public interface CEViewService {
   String getSampleFolderId(String accountId);
   boolean setFolderId(
       CEView ceView, Set<String> allowedFolderIds, List<CEViewFolder> ceViewFolders, String defaultFolderId);
+  Set<ViewFieldIdentifier> getDataSourcesFromCloudProviderField(ViewIdCondition viewIdCondition, String accountId);
 }

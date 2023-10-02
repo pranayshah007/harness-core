@@ -8,6 +8,9 @@
 package software.wings.service.impl.yaml.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.CDS_CG_FORCE_UPSERTYAML_RETURN_ENTITY;
+import static io.harness.beans.FeatureName.SPG_CG_ADDING_VALIDATION_OF_ENTITY_NULL;
+import static io.harness.beans.FeatureName.SPG_TRIPLE_TIMEOUT_FOR_ZIP_YAML_UPSERT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
@@ -204,6 +207,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -915,7 +919,8 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
 
     // do not process commits which exceed limits
     // if you process them, the processing throws validation errors which populates the Alerts page with GitSyncErrors
-    if (failedCommitStore.didExceedLimit(new FailedCommitStore.Commit(commitId, accountId))) {
+    if (isNotEmpty(commitId) && failedCommitStore.didExceedLimit(new FailedCommitStore.Commit(commitId, accountId))) {
+      log.warn("CommitId: {} blocked by rate limit", commitId);
       return;
     }
 
@@ -978,7 +983,13 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
 
     try {
       checkThatEntityIdInChangeAndInYamlIsSame(yamlSyncHandler, accountId, change.getFilePath(), changeContext);
-      yamlSyncHandler.upsertFromYaml(changeContext, changeContextList);
+
+      if (featureFlagService.isEnabled(CDS_CG_FORCE_UPSERTYAML_RETURN_ENTITY, accountId)) {
+        PersistentEntity entity = (PersistentEntity) yamlSyncHandler.upsertFromYaml(changeContext, changeContextList);
+        changeContext.setEntity(entity);
+      } else {
+        yamlSyncHandler.upsertFromYaml(changeContext, changeContextList);
+      }
 
       // Handling for tags
       harnessTagYamlHelper.upsertTagLinksIfRequired(changeContext);
@@ -986,7 +997,9 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
     } catch (WingsException e) {
       if (e.getCode() == ErrorCode.USAGE_LIMITS_EXCEEDED) {
         log.info("Usage Limit Exceeded. Account: {}. Message: {}", change.getAccountId(), e.getMessage());
-        failedCommitStore.exceededLimit(new FailedCommitStore.Commit(commitId, accountId));
+        if (isNotEmpty(commitId)) {
+          failedCommitStore.exceededLimit(new FailedCommitStore.Commit(commitId, accountId));
+        }
       }
       throw e;
     }
@@ -1181,11 +1194,19 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
                           unauthorizedFiles);
                     }
                   });
-          return future.get(30, TimeUnit.SECONDS);
+          int durationInSecondsToWait = 30;
+          if (featureFlagService.isEnabled(SPG_TRIPLE_TIMEOUT_FOR_ZIP_YAML_UPSERT, accountId)) {
+            durationInSecondsToWait = 90;
+          }
+          return future.get(durationInSecondsToWait, TimeUnit.SECONDS);
         }
       }
       return null;
     } catch (Exception ex) {
+      if (ex instanceof TimeoutException) {
+        log.warn(format("Upload zip file process for account %s timed out while waiting for completion", accountId));
+        throw new WingsException("Timed out waiting for process to finish, try again in few minutes");
+      }
       log.warn(format("Unable to process uploaded zip file for account %s, error: %s", accountId, ex));
       throw new InvalidArgumentsException("Unable to open zip file or some error in content of zip file", USER, ex);
     }
@@ -1301,11 +1322,21 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
         // added tracability due to many recent issues
         doTracing(accountId, yamlFilePath, changeContext);
 
+        if (entityId == null && featureFlagService.isEnabled(SPG_CG_ADDING_VALIDATION_OF_ENTITY_NULL, accountId)) {
+          return FileOperationStatus.builder()
+              .status(FileOperationStatus.Status.FAILED)
+              .errorMssg("Usage limit reached. Please try again in few minutes")
+              .yamlFilePath(changeContext.getChange().getFilePath())
+              .build();
+        }
+        String dumpedYaml = software.wings.yaml.YamlHelper.toYamlString(changeContext.getYaml());
+
         return FileOperationStatus.builder()
             .status(FileOperationStatus.Status.SUCCESS)
             .errorMssg("")
             .yamlFilePath(changeContext.getChange().getFilePath())
             .entityId(entityId)
+            .entityYaml(dumpedYaml)
             .build();
       }
     } catch (YamlProcessingException ex) {

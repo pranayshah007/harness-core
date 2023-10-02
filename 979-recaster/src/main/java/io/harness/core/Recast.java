@@ -78,8 +78,16 @@ public class Recast {
     return recaster.fromMap(map, entityClazz);
   }
 
+  public <T> T fromMap(final Map<String, Object> map, final Class<T> entityClazz, boolean newRecastFlow) {
+    return recaster.fromMap(map, entityClazz, newRecastFlow);
+  }
+
   public Map<String, Object> toMap(final Object entity) {
-    Map<String, Object> map = recaster.toMap(entity);
+    return toMap(entity, false);
+  }
+
+  public Map<String, Object> toMap(final Object entity, boolean newRecastFlow) {
+    Map<String, Object> map = recaster.toMap(entity, newRecastFlow);
     return map == null ? null : new LinkedHashMap<>(map);
   }
 }

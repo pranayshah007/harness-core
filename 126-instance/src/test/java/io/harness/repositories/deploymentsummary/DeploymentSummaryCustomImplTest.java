@@ -8,6 +8,7 @@
 package io.harness.repositories.deploymentsummary;
 
 import static io.harness.rule.OwnerRule.ARVIND;
+import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
@@ -15,7 +16,9 @@ import static junit.framework.TestCase.assertFalse;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.InstancesTestBase;
@@ -41,6 +44,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.transaction.TransactionTimedOutException;
 
 public class DeploymentSummaryCustomImplTest extends InstancesTestBase {
   private static final String INFRA_MAPPING_ID = "TEST_INFRA_MAPPING_ID";
@@ -144,6 +148,62 @@ public class DeploymentSummaryCustomImplTest extends InstancesTestBase {
     deploymentSummaryCustom.fetchNthRecordFromNow(5, INSTANCE_SYNC_KEY, null);
   }
 
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testDeleteWithAccountOrgAndProject() {
+    Criteria criteria = new Criteria();
+    criteria.and(DeploymentSummaryKeys.accountIdentifier)
+        .is(ACCOUNT_ID)
+        .and(DeploymentSummaryKeys.orgIdentifier)
+        .is(ORG_ID)
+        .and(DeploymentSummaryKeys.projectIdentifier)
+        .is(PROJECT_ID);
+    Query query = new Query(criteria);
+    ArgumentCaptor<Query> queryArgumentCaptor = ArgumentCaptor.forClass(Query.class);
+
+    deploymentSummaryCustom.delete(ACCOUNT_ID, ORG_ID, PROJECT_ID);
+
+    verify(mongoTemplate).remove(queryArgumentCaptor.capture(), eq(DeploymentSummary.class));
+    assertThat(queryArgumentCaptor.getValue().getQueryObject()).isEqualTo(query.getQueryObject());
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testDeleteWithOnlyAccountId() {
+    Criteria criteria = new Criteria();
+    criteria.and(DeploymentSummaryKeys.accountIdentifier).is(ACCOUNT_ID);
+    Query query = new Query(criteria);
+    ArgumentCaptor<Query> queryArgumentCaptor = ArgumentCaptor.forClass(Query.class);
+
+    deploymentSummaryCustom.delete(ACCOUNT_ID, null, null);
+
+    verify(mongoTemplate).remove(queryArgumentCaptor.capture(), eq(DeploymentSummary.class));
+    assertThat(queryArgumentCaptor.getValue().getQueryObject()).isEqualTo(query.getQueryObject());
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testDeleteWithoutAccountId() {
+    boolean result = deploymentSummaryCustom.delete(null, null, null);
+
+    verifyNoInteractions(mongoTemplate);
+    assertFalse(result);
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testDeleteWithAccountOrgAndProjectRetries() {
+    when(mongoTemplate.remove(any(), eq(DeploymentSummary.class)))
+        .thenThrow(new TransactionTimedOutException("Failed"));
+
+    deploymentSummaryCustom.delete(ACCOUNT_ID, ORG_ID, PROJECT_ID);
+
+    verify(mongoTemplate, times(3)).remove(any(), eq(DeploymentSummary.class));
+  }
   private InfrastructureMappingDTO mockInfraMappingDTO() {
     return InfrastructureMappingDTO.builder()
         .id(INFRA_MAPPING_ID)

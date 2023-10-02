@@ -17,6 +17,7 @@ import static io.harness.k8s.model.HelmVersion.V380;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ACHYUTH;
+import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.RAGHVENDRA;
@@ -91,6 +92,7 @@ import software.wings.beans.settings.helm.OciHelmRepoConfig;
 import software.wings.delegatetasks.validation.capabilities.HelmCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams;
 import software.wings.helpers.ext.helm.request.HelmChartConfigParams;
+import software.wings.helpers.ext.helm.request.HelmChartConfigParams.HelmChartConfigParamsBuilder;
 import software.wings.helpers.ext.helm.request.HelmInstallCommandRequest;
 import software.wings.helpers.ext.k8s.request.K8sValuesLocation;
 import software.wings.service.intfc.security.EncryptionService;
@@ -353,13 +355,24 @@ public class HelmTaskHelperTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = ABOSII)
+  @Owner(developers = {ABOSII, MLUKIC})
   @Category(UnitTests.class)
-  public void testDownloadChartFilesForGCSHelmRepo() throws Exception {
+  public void testDownloadChartFilesForGCSHelmRepoNotUsingCache() throws Exception {
+    testDownloadChartFilesForGCSHelmRepo(false);
+  }
+
+  @Test
+  @Owner(developers = {ABOSII, MLUKIC})
+  @Category(UnitTests.class)
+  public void testDownloadChartFilesForGCSHelmRepoUsingCache() throws Exception {
+    testDownloadChartFilesForGCSHelmRepo(true);
+  }
+
+  private void testDownloadChartFilesForGCSHelmRepo(boolean useCache) throws Exception {
     GCSHelmRepoConfig gcsHelmRepoConfig =
         GCSHelmRepoConfig.builder().accountId("accountId").bucketName("bucketName").build();
 
-    HelmChartConfigParams gcsConfigParams = getHelmChartConfigParams(gcsHelmRepoConfig);
+    HelmChartConfigParams gcsConfigParams = getHelmChartConfigParamsBuilder(gcsHelmRepoConfig, useCache).build();
 
     Path outputTemporaryDir = Files.createTempDirectory("chartFile");
     ProcessResult successfulResult = new ProcessResult(0, null);
@@ -368,20 +381,31 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         .when(cgChartmuseumClientFactory)
         .createClient(eq(gcsHelmRepoConfig), any(), any(), any(), eq(false));
     doReturn(successfulResult).when(processExecutor).execute();
-    doReturn("cache").when(helmTaskHelper).getCacheDir(anyString(), anyBoolean(), eq(HelmVersion.V3));
+    doReturn("dir/cache").when(helmTaskHelper).getCacheDir(anyString(), anyBoolean(), eq(HelmVersion.V3));
     helmTaskHelper.downloadChartFiles(gcsConfigParams, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null);
-    verifyFetchChartFilesProcessExecutor(outputTemporaryDir.toString());
+    verifyFetchChartFilesProcessExecutor(outputTemporaryDir.toString(), useCache);
     deleteDirectoryAndItsContentIfExists(outputTemporaryDir.toString());
   }
 
   @Test
-  @Owner(developers = ABOSII)
+  @Owner(developers = {ABOSII, MLUKIC})
   @Category(UnitTests.class)
-  public void testDownloadChartFilesForAwsS3HelmRepo() throws Exception {
+  public void testDownloadChartFilesForAwsS3HelmRepoNotUsingCache() throws Exception {
+    testDownloadChartFilesForAwsS3HelmRepo(false);
+  }
+
+  @Test
+  @Owner(developers = {ABOSII, MLUKIC})
+  @Category(UnitTests.class)
+  public void testDownloadChartFilesForAwsS3HelmRepoUsingCache() throws Exception {
+    testDownloadChartFilesForAwsS3HelmRepo(true);
+  }
+
+  private void testDownloadChartFilesForAwsS3HelmRepo(boolean useCache) throws Exception {
     AmazonS3HelmRepoConfig s3HelmRepoConfig =
         AmazonS3HelmRepoConfig.builder().accountId("accountId").bucketName("bucketName").build();
 
-    HelmChartConfigParams awsConfigParams = getHelmChartConfigParams(s3HelmRepoConfig);
+    HelmChartConfigParams awsConfigParams = getHelmChartConfigParamsBuilder(s3HelmRepoConfig, useCache).build();
 
     Path outputTemporaryDir = Files.createTempDirectory("chartFile");
     ProcessResult successfulResult = new ProcessResult(0, null);
@@ -391,27 +415,27 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         .createClient(eq(s3HelmRepoConfig), any(), any(), any(), eq(false));
     doReturn(successfulResult).when(processExecutor).execute();
     doNothing().when(helmTaskHelper).initHelm(anyString(), any(), anyLong());
-    doReturn("cache").when(helmTaskHelper).getCacheDir(anyString(), anyBoolean(), eq(HelmVersion.V3));
+    doReturn("dir/cache").when(helmTaskHelper).getCacheDir(anyString(), anyBoolean(), eq(HelmVersion.V3));
     doReturn("resource-dir").when(helmTaskHelper).createNewDirectoryAtPath(anyString());
 
     helmTaskHelper.downloadChartFiles(awsConfigParams, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null);
-    verifyFetchChartFilesProcessExecutor(outputTemporaryDir.toString());
+    verifyFetchChartFilesProcessExecutor(outputTemporaryDir.toString(), useCache);
     deleteDirectoryAndItsContentIfExists(outputTemporaryDir.toString());
   }
 
-  private void verifyFetchChartFilesProcessExecutor(String outputDirectory) throws Exception {
+  private void verifyFetchChartFilesProcessExecutor(String outputDirectory, boolean isUseCache) throws Exception {
     verify(helmTaskHelperBase, times(1))
         .createProcessExecutor(
-            eq("v3/helm repo add repoName http://127.0.0.1:1234  --repository-config cache/repo-repoName.yaml"),
+            eq("v3/helm repo add repoName http://127.0.0.1:1234  --repository-config dir/cache/repo-repoName.yaml"),
             eq(outputDirectory), eq(LONG_TIMEOUT_INTERVAL), anyMap());
     verify(helmTaskHelperBase, times(1))
         .createProcessExecutor(
-            eq("v3/helm pull repoName/chartName  --untar  --repository-config cache/repo-repoName.yaml"),
+            eq("v3/helm pull repoName/chartName  --untar  --repository-config dir/cache/repo-repoName.yaml"),
             eq(outputDirectory), eq(LONG_TIMEOUT_INTERVAL), anyMap());
-    verify(helmTaskHelperBase, times(1))
-        .createProcessExecutor(eq("v3/helm repo remove repoName --repository-config cache/repo-repoName.yaml"),
+    verify(helmTaskHelperBase, times(isUseCache ? 0 : 1))
+        .createProcessExecutor(eq("v3/helm repo remove repoName --repository-config dir/cache/repo-repoName.yaml"),
             eq(null), eq(LONG_TIMEOUT_INTERVAL), anyMap());
-    verify(processExecutor, times(4)).execute();
+    verify(processExecutor, times(isUseCache ? 3 : 4)).execute();
   }
 
   @Test
@@ -482,10 +506,21 @@ public class HelmTaskHelperTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = ABOSII)
+  @Owner(developers = {ABOSII, MLUKIC})
   @Category(UnitTests.class)
-  public void testDownloadChartFilesForEmptyHelmRepo() throws Exception {
-    HelmChartConfigParams emptyHelmRepoConfig = getHelmChartConfigParams(null);
+  public void testDownloadChartFilesForEmptyHelmRepoNotUsingCache() throws Exception {
+    testDownloadChartFilesForEmptyHelmRepo(false);
+  }
+
+  @Test
+  @Owner(developers = {ABOSII, MLUKIC})
+  @Category(UnitTests.class)
+  public void testDownloadChartFilesForEmptyHelmRepoUsingCache() throws Exception {
+    testDownloadChartFilesForEmptyHelmRepo(true);
+  }
+
+  private void testDownloadChartFilesForEmptyHelmRepo(boolean useCache) throws Exception {
+    HelmChartConfigParams emptyHelmRepoConfig = getHelmChartConfigParamsBuilder(null, useCache).build();
     Path outputTemporaryDir = Files.createTempDirectory("chartFile");
 
     ProcessResult successfulResult = new ProcessResult(0, null);
@@ -506,7 +541,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
     verify(helmTaskHelperBase, times(2))
         .createProcessExecutor("v3/helm pull repoName/chartName  --untar ", outputTemporaryDir.toString(),
             LONG_TIMEOUT_INTERVAL, emptyMap());
-    verify(helmTaskHelperBase, times(1))
+    verify(helmTaskHelperBase, times(useCache ? 0 : 1))
         .createProcessExecutor("v3/helm repo remove repoName", null, LONG_TIMEOUT_INTERVAL, emptyMap());
     deleteDirectoryAndItsContentIfExists(outputTemporaryDir.toString());
   }
@@ -625,14 +660,14 @@ public class HelmTaskHelperTest extends WingsBaseTest {
     verify(executionLogCallback, atLeastOnce()).saveExecutionLog(format("Helm version: %s", V2));
   }
 
-  private HelmChartConfigParams getHelmChartConfigParams(HelmRepoConfig repoConfig) {
+  private HelmChartConfigParamsBuilder getHelmChartConfigParamsBuilder(HelmRepoConfig repoConfig, boolean useCache) {
     SettingValue connectorConfig = null;
     if (repoConfig instanceof GCSHelmRepoConfig) {
       connectorConfig = GcpConfig.builder().accountId("accountId").build();
     }
 
     return HelmChartConfigParams.builder()
-        .useCache(true)
+        .useCache(useCache)
         .chartName("chartName")
         .helmRepoConfig(repoConfig)
         .connectorConfig(connectorConfig)
@@ -640,8 +675,10 @@ public class HelmTaskHelperTest extends WingsBaseTest {
             ImmutableList.of(EncryptedDataDetail.builder().fieldName("aws-accessKey").build()))
         .encryptedDataDetails(ImmutableList.of(EncryptedDataDetail.builder().fieldName("aws-secretKey").build()))
         .helmVersion(V3)
-        .repoName("repoName")
-        .build();
+        .repoName("repoName");
+  }
+  private HelmChartConfigParams getHelmChartConfigParams(HelmRepoConfig repoConfig) {
+    return getHelmChartConfigParamsBuilder(repoConfig, true).build();
   }
 
   private HelmChartSpecification getHelmChartSpecification(String url) {
@@ -1067,18 +1104,26 @@ public class HelmTaskHelperTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = PRABU)
+  @Owner(developers = {PRABU, MLUKIC})
   @Category(UnitTests.class)
   public void testReturnEmptyHelmChartsForEmptyResponse() throws Exception {
     HttpHelmRepoConfig httpHelmRepoConfig =
         HttpHelmRepoConfig.builder().accountId(ACCOUNT_ID).chartRepoUrl("http://127.0.0.1:1234").build();
-    HelmChartCollectionParams helmChartCollectionParams =
+    HelmChartCollectionParams helmChartCollectionParamsWithCache =
         HelmChartCollectionParams.builder()
             .accountId(ACCOUNT_ID)
             .appId(APP_ID)
             .appManifestId(MANIFEST_ID)
             .serviceId(SERVICE_ID)
-            .helmChartConfigParams(getHelmChartConfigParams(httpHelmRepoConfig))
+            .helmChartConfigParams(getHelmChartConfigParamsBuilder(httpHelmRepoConfig, true).build())
+            .build();
+    HelmChartCollectionParams helmChartCollectionParamsWithoutCache =
+        HelmChartCollectionParams.builder()
+            .accountId(ACCOUNT_ID)
+            .appId(APP_ID)
+            .appManifestId(MANIFEST_ID)
+            .serviceId(SERVICE_ID)
+            .helmChartConfigParams(getHelmChartConfigParamsBuilder(httpHelmRepoConfig, false).build())
             .build();
     doReturn("cache").when(helmTaskHelperBase).getCacheDirForManifestCollection(any(), anyString(), anyBoolean());
     doReturn(new ProcessResult(0, null)).when(processExecutor).execute();
@@ -1092,10 +1137,16 @@ public class HelmTaskHelperTest extends WingsBaseTest {
             eq("dir"), any());
 
     assertThatExceptionOfType(InvalidRequestException.class)
-        .isThrownBy(() -> helmTaskHelper.fetchChartVersions(helmChartCollectionParams, "dir", 10000))
+        .isThrownBy(() -> helmTaskHelper.fetchChartVersions(helmChartCollectionParamsWithCache, "dir", 10000))
         .withMessageContaining("No chart with the given name found. Chart might be deleted at source");
-    verify(processExecutor, times(3)).execute();
+    verify(processExecutor, times(2)).execute();
     verify(helmTaskHelper, times(1)).initHelm("dir", V3, 10000);
+
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(() -> helmTaskHelper.fetchChartVersions(helmChartCollectionParamsWithoutCache, "dir", 10000))
+        .withMessageContaining("No chart with the given name found. Chart might be deleted at source");
+    verify(processExecutor, times(5)).execute();
+    verify(helmTaskHelper, times(2)).initHelm("dir", V3, 10000);
 
     doReturn("No results Found")
         .when(helmTaskHelper)
@@ -1103,14 +1154,25 @@ public class HelmTaskHelperTest extends WingsBaseTest {
             eq("v3/helm search repo repoName/chartName -l --devel --max-col-width 300 --repository-config cache/repo-repoName.yaml"),
             eq("dir"), any(), any());
     assertThatExceptionOfType(InvalidRequestException.class)
-        .isThrownBy(() -> helmTaskHelper.fetchChartVersions(helmChartCollectionParams, "dir", 10000))
+        .isThrownBy(() -> helmTaskHelper.fetchChartVersions(helmChartCollectionParamsWithCache, "dir", 10000))
         .withMessageContaining("No chart with the given name found. Chart might be deleted at source");
   }
 
   @Test
-  @Owner(developers = PRABU)
+  @Owner(developers = {PRABU, MLUKIC})
   @Category(UnitTests.class)
-  public void testFetchVersionsFromHttp() throws Exception {
+  public void testFetchVersionsFromHttpNotUsingCache() throws Exception {
+    testFetchVersionsFromHttp(false);
+  }
+
+  @Test
+  @Owner(developers = {PRABU, MLUKIC})
+  @Category(UnitTests.class)
+  public void testFetchVersionsFromHttpUsingCache() throws Exception {
+    testFetchVersionsFromHttp(true);
+  }
+
+  private void testFetchVersionsFromHttp(boolean useCache) throws Exception {
     HttpHelmRepoConfig httpHelmRepoConfig =
         HttpHelmRepoConfig.builder().accountId(ACCOUNT_ID).chartRepoUrl("http://127.0.0.1:1234").build();
     HelmChartCollectionParams helmChartCollectionParams =
@@ -1119,7 +1181,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
             .appId(APP_ID)
             .appManifestId(MANIFEST_ID)
             .serviceId(SERVICE_ID)
-            .helmChartConfigParams(getHelmChartConfigParams(httpHelmRepoConfig))
+            .helmChartConfigParams(getHelmChartConfigParamsBuilder(httpHelmRepoConfig, useCache).build())
             .build();
 
     doReturn(new ProcessResult(0, null)).when(processExecutor).execute();
@@ -1140,7 +1202,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
     assertThat(helmCharts.get(0).getApplicationManifestId()).isEqualTo(MANIFEST_ID);
     assertThat(helmCharts.get(0).getVersion()).isEqualTo("1.0.2");
     assertThat(helmCharts.get(1).getVersion()).isEqualTo("1.0.1");
-    verify(processExecutor, times(2)).execute();
+    verify(processExecutor, times(useCache ? 1 : 2)).execute();
 
     doReturn(getHelmCollectionResult("11.0.1"))
         .when(helmTaskHelper)
@@ -1202,12 +1264,23 @@ public class HelmTaskHelperTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = PRABU)
+  @Owner(developers = {PRABU, MLUKIC})
   @Category(UnitTests.class)
-  public void testFetchHelmVersionsForV2() throws Exception {
+  public void testFetchHelmVersionsForV2NotUsingCache() throws Exception {
+    testFetchHelmVersionsForV2(false);
+  }
+
+  @Test
+  @Owner(developers = {PRABU, MLUKIC})
+  @Category(UnitTests.class)
+  public void testFetchHelmVersionsForV2UsingCache() throws Exception {
+    testFetchHelmVersionsForV2(true);
+  }
+
+  public void testFetchHelmVersionsForV2(boolean useCache) throws Exception {
     HttpHelmRepoConfig httpHelmRepoConfig =
         HttpHelmRepoConfig.builder().accountId(ACCOUNT_ID).chartRepoUrl("http://127.0.0.1:1234").build();
-    HelmChartConfigParams helmChartConfigParams = getHelmChartConfigParams(httpHelmRepoConfig);
+    HelmChartConfigParams helmChartConfigParams = getHelmChartConfigParamsBuilder(httpHelmRepoConfig, useCache).build();
     helmChartConfigParams.setHelmVersion(V2);
     HelmChartCollectionParams helmChartCollectionParams = HelmChartCollectionParams.builder()
                                                               .accountId(ACCOUNT_ID)
@@ -1238,7 +1311,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
     assertThat(helmCharts.get(0).getVersion()).isEqualTo("1.0.2");
     assertThat(helmCharts.get(1).getVersion()).isEqualTo("1.0.1");
     // For helm version 2, we execute another command for helm init apart from add repo
-    verify(processExecutor, times(3)).execute();
+    verify(processExecutor, times(useCache ? 2 : 3)).execute();
     verify(helmTaskHelper, times(1)).initHelm("dir", V2, 10000);
   }
 
@@ -1288,12 +1361,23 @@ public class HelmTaskHelperTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = PRABU)
+  @Owner(developers = {PRABU, MLUKIC})
   @Category({UnitTests.class})
-  public void testCleanupAfterCollection() throws Exception {
+  public void testCleanupAfterCollectionNotUsingCache() throws Exception {
+    testCleanupAfterCollection(false);
+  }
+
+  @Test
+  @Owner(developers = {PRABU, MLUKIC})
+  @Category({UnitTests.class})
+  public void testCleanupAfterCollectionUsingCache() throws Exception {
+    testCleanupAfterCollection(true);
+  }
+
+  private void testCleanupAfterCollection(boolean useCache) throws Exception {
     GCSHelmRepoConfig gcsHelmRepoConfig =
         GCSHelmRepoConfig.builder().accountId(ACCOUNT_ID).bucketName("bucketName").build();
-    HelmChartConfigParams helmChartConfigParams = getHelmChartConfigParams(gcsHelmRepoConfig);
+    HelmChartConfigParams helmChartConfigParams = getHelmChartConfigParamsBuilder(gcsHelmRepoConfig, useCache).build();
     HelmChartCollectionParams helmChartCollectionParams = HelmChartCollectionParams.builder()
                                                               .accountId(ACCOUNT_ID)
                                                               .appId(APP_ID)
@@ -1307,7 +1391,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
 
     helmTaskHelper.cleanupAfterCollection(helmChartCollectionParams, "dir", 10000);
     verify(helmTaskHelper, times(1)).cleanup("dir");
-    verify(processExecutor, times(1)).execute();
+    verify(processExecutor, times(useCache ? 0 : 1)).execute();
   }
 
   @Test

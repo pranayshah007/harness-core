@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import javax.ws.rs.BadRequestException;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -31,7 +32,7 @@ public class DatadogQueryUtils {
   public static Pair<String, List<String>> processCompositeQuery(
       String rawQuery, String SII, boolean isCollectHostData) {
     if (!isValidQuery(rawQuery)) {
-      throw new RuntimeException("Invalid Query : " + rawQuery);
+      throw new BadRequestException("Invalid Datadog Query : " + rawQuery);
     }
     boolean isCompositeQuery = StringUtils.countMatches(rawQuery, DELIMITER_SEMICOLON) > 0;
     String formula = getFormula(rawQuery, isCompositeQuery);

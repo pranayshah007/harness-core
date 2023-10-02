@@ -12,8 +12,8 @@ import static io.harness.rule.OwnerRule.ANKIT;
 import static io.harness.rule.OwnerRule.PHOENIKX;
 import static io.harness.rule.OwnerRule.RUSHABH;
 import static io.harness.rule.OwnerRule.UJJAWAL;
-import static io.harness.rule.OwnerRule.UNKNOWN;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static software.wings.beans.Account.Builder.anAccount;
 import static software.wings.beans.User.Builder.anUser;
@@ -266,17 +266,17 @@ public class TwoFactorAuthenticationManagerTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = UNKNOWN)
+  @Owner(developers = VIKAS_M)
   @Category(UnitTests.class)
-  public void shouldDisableTwoFactorAuthenticationForAdminEnforce() {
+  public void shouldNotDisableTwoFactorAuthenticationForAdminEnforce() {
     Account account = accountService.save(getAccount(AccountType.PAID, true), false);
 
     User user = getUser(true);
     user.setAccounts(Arrays.asList(account));
 
-    // Should not allow disable
+    // Should allow disable
     twoFactorAuthenticationManager.disableTwoFactorAuthentication(user);
-    assertThat(user.isTwoFactorAuthenticationEnabled()).isTrue();
+    assertThat(user.isTwoFactorAuthenticationEnabled()).isFalse();
   }
 
   @Test

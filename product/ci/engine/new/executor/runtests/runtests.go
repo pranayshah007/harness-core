@@ -69,7 +69,7 @@ func (e *runTestsStep) getDiffFiles(ctx context.Context) ([]types.File, error) {
 	if err != nil {
 		return []types.File{}, err
 	}
-	chFiles, err := getChFiles(ctx, workspace, e.log, e.procWriter)
+	chFiles, err := getChFiles(ctx, workspace, "", false, e.log, e.procWriter)
 	if err != nil {
 		e.log.Errorw("failed to get changed files in runTests step", "step_id", e.id, zap.Error(err))
 		return []types.File{}, err

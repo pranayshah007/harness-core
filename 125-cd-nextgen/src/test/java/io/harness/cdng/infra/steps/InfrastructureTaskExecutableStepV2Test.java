@@ -8,6 +8,7 @@
 package io.harness.cdng.infra.steps;
 
 import static io.harness.ng.core.environment.beans.EnvironmentType.PreProduction;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -108,6 +109,7 @@ import io.harness.pms.contracts.plan.PrincipalType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
+import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
@@ -192,9 +194,9 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
   public void setUp() throws Exception {
     this.mocks = MockitoAnnotations.openMocks(this);
 
-    doReturn(ServiceStepOutcome.builder().type("ssh").build())
+    doReturn(OptionalOutcome.builder().outcome(ServiceStepOutcome.builder().type("ssh").build()).found(true).build())
         .when(outcomeService)
-        .resolve(any(), eq(RefObjectUtils.getOutcomeRefObject("service")));
+        .resolveOptional(any(), eq(RefObjectUtils.getOutcomeRefObject("service")));
 
     doReturn(EnvironmentOutcome.builder().type(PreProduction).build())
         .when(sweepingOutputService)
@@ -382,7 +384,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
     assertThat(asyncExecutableResponse.getLogKeysCount()).isEqualTo(1);
     assertThat(asyncExecutableResponse.getLogKeys(0))
         .isEqualTo(
-            "accountId:ACCOUNT_ID/orgId:ORG_ID/projectId:PROJECT_ID/pipelineId:/runSequence:0/level0:infrastructure-commandUnit:Execute");
+            "accountId:ACCOUNT_ID/orgId:ORG_ID/projectId:PROJECT_ID/pipelineId:pipelineIdentifier/runSequence:0/level0:infrastructure-commandUnit:Execute");
 
     verify(resolver, times(1)).updateExpressions(any(Ambiance.class), any(Infrastructure.class));
   }
@@ -842,8 +844,8 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
                    .stream()
                    .map(e -> e.getKey() + ":" + e.getValue())
                    .collect(Collectors.toSet()))
-        .containsExactlyInAnyOrder("orgId:ORG_ID", "pipelineId:", "runSequence:0", "level0:infrastructure",
-            "accountId:ACCOUNT_ID", "projectId:PROJECT_ID");
+        .containsExactlyInAnyOrder("orgId:ORG_ID", "pipelineId:pipelineIdentifier", "runSequence:0",
+            "level0:infrastructure", "accountId:ACCOUNT_ID", "projectId:PROJECT_ID");
     assertThat(request.getTaskSetupAbstractions()
                    .entrySet()
                    .stream()
@@ -873,6 +875,8 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
                                                .setPrincipalType(PrincipalType.USER)
                                                .setShouldValidateRbac(true)
                                                .build())
+                         .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                         .setPipelineIdentifier("pipelineIdentifier")
                          .build())
         .build();
   }

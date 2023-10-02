@@ -7,6 +7,9 @@
 
 package io.harness.freeze.mappers;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.entity.FrozenExecution;
@@ -16,6 +19,8 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import java.util.List;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_FREEZE})
 @UtilityClass
 public class FrozenExecutionMapper {
   public FrozenExecution toFreezeWithExecution(Ambiance ambiance, List<FreezeSummaryResponseDTO> manualFreezeConfigs,

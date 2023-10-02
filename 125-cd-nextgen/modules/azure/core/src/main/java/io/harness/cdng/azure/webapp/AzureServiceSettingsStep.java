@@ -7,6 +7,7 @@
 
 package io.harness.cdng.azure.webapp;
 
+import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_STEP_COMMAND_UNIT;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.APPLICATION_SETTINGS;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.CONNECTION_STRINGS;
 import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.STARTUP_COMMAND;
@@ -94,8 +95,8 @@ public class AzureServiceSettingsStep implements SyncExecutable<EmptyStepParamet
 
     checkForAccessOrThrow(ambiance, serviceSpec);
 
-    final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
-
+    final NGLogCallback logCallback =
+        serviceStepsHelper.getServiceLogCallback(ambiance, false, SERVICE_STEP_COMMAND_UNIT);
     final List<StepResponse.StepOutcome> outcomes = new ArrayList<>();
 
     // Process azure settings

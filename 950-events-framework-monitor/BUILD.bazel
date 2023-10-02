@@ -19,6 +19,9 @@ java_binary(
     ],
     visibility = ["//visibility:public"],
     runtime_deps = [
+        "@maven//:io_opencensus_opencensus_api",
+        "@maven//:io_opencensus_opencensus_exporter_stats_stackdriver",
+        "@maven//:io_opencensus_opencensus_impl",
         "@maven//:javax_ws_rs_javax_ws_rs_api",
     ],
     deps = [

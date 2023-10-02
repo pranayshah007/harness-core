@@ -15,13 +15,14 @@ import static software.wings.security.EnvFilter.FilterType.NON_PROD;
 import static software.wings.security.EnvFilter.FilterType.PROD;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_SECRETS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EncryptedData;
-import io.harness.beans.FeatureName;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretScopeMetadata;
 import io.harness.exception.SecretManagementException;
-import io.harness.ff.FeatureFlagService;
 import io.harness.secrets.setupusage.SecretSetupUsageService;
 
 import software.wings.beans.Base;
@@ -48,6 +49,7 @@ import java.util.Set;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 @Singleton
 @ValidateOnExecution
@@ -58,7 +60,6 @@ public class SecretsRBACServiceImpl implements SecretsRBACService {
   private final UserService userService;
   private final AppService appService;
   private final EnvironmentService envService;
-  @Inject private FeatureFlagService featureFlagService;
 
   @Inject
   public SecretsRBACServiceImpl(UsageRestrictionsService usageRestrictionsService,
@@ -108,9 +109,6 @@ public class SecretsRBACServiceImpl implements SecretsRBACService {
 
     Set<String> appsByAccountId = appService.getAppIdsAsSetByAccountId(accountId);
     Map<String, List<Base>> appIdEnvMapForAccount = envService.getAppIdEnvMap(appsByAccountId, accountId);
-    if (featureFlagService.isGlobalEnabled(FeatureName.SPG_ENVIRONMENT_QUERY_LOGS)) {
-      log.info("[GetAppIdEnvMap] SecretsRBACServiceImpl:hasAccessToReadSecrets - debug log");
-    }
 
     for (SecretScopeMetadata secretScopeMetadata : secretsScopeMetadata) {
       if (!usageRestrictionsService.hasAccess(accountId, isAccountAdmin, appId, envId, false,
@@ -140,9 +138,6 @@ public class SecretsRBACServiceImpl implements SecretsRBACService {
 
     Set<String> appsByAccountId = appService.getAppIdsAsSetByAccountId(accountId);
     Map<String, List<Base>> appIdEnvMapForAccount = envService.getAppIdEnvMap(appsByAccountId, accountId);
-    if (featureFlagService.isGlobalEnabled(FeatureName.SPG_ENVIRONMENT_QUERY_LOGS)) {
-      log.info("[GetAppIdEnvMap] SecretsRBACServiceImpl:filterSecretsByReadPermission - debug log");
-    }
 
     for (SecretScopeMetadata secretScopeMetadata : secretsScopeMetadata) {
       if (usageRestrictionsService.hasAccess(accountId, isAccountAdmin, appId, envId, forUsageInNewApp,

@@ -15,6 +15,7 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
+import io.harness.idp.configmanager.service.ConfigEnvVariablesService;
 import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.configmanager.utils.ConfigType;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -34,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AppConfigApiImpl implements AppConfigApi {
   private ConfigManagerService configManagerService;
+  private ConfigEnvVariablesService configEnvVariablesService;
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
@@ -41,6 +43,7 @@ public class AppConfigApiImpl implements AppConfigApi {
     try {
       AppConfig appConfig = body.getAppConfig();
       configManagerService.validateSchemaForPlugin(appConfig.getConfigs(), appConfig.getConfigId());
+      configEnvVariablesService.validateConfigEnvVariables(appConfig);
       AppConfig savedOrUpdatedAppConfig =
           configManagerService.saveUpdateAndMergeConfigForAccount(appConfig, harnessAccount, ConfigType.PLUGIN);
       AppConfigResponse appConfigResponse = new AppConfigResponse();

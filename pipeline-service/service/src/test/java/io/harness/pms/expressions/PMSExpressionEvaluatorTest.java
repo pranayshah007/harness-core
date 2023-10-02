@@ -10,6 +10,7 @@ package io.harness.pms.expressions;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.SHALINI;
 
 import static java.util.Arrays.asList;
 import static junit.framework.TestCase.assertEquals;
@@ -41,7 +42,9 @@ import io.harness.execution.PlanExecution;
 import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.EngineJexlContext;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.expression.field.dummy.DummyOrchestrationField;
+import io.harness.plan.NodeType;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -53,6 +56,7 @@ import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.expressions.functors.RemoteExpressionFunctor;
 import io.harness.pms.sdk.PmsSdkInstance;
 import io.harness.pms.sdk.PmsSdkInstanceService;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.rule.Owner;
@@ -76,6 +80,7 @@ import org.springframework.data.util.CloseableIterator;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
   @Mock private PlanExecutionService planExecutionService;
+
   @Mock NodeExecutionService nodeExecutionService;
   @Mock PmsOutcomeService pmsOutcomeService;
   @Mock PmsSdkInstanceService pmsSdkInstanceService;
@@ -113,8 +118,10 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
     nodeExecution1 =
         NodeExecution.builder()
             .uuid(nodeExecution1Id)
+            .identifier("pipeline")
+            .group(StepOutcomeGroup.PIPELINE.name())
             .ambiance(ambianceBuilder.addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution1Id, planNode1)).build())
-            .planNode(planNode1)
+            .nodeType(NodeType.PLAN_NODE.name())
             .resolvedStepParameters(prepareStepParameters("pipelineResolvedValue"))
             .build();
 
@@ -122,24 +129,28 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
     nodeExecution2 =
         NodeExecution.builder()
             .uuid(nodeExecution2Id)
+            .identifier("stages")
+            .group(StepOutcomeGroup.STAGES.name())
             .ambiance(ambianceBuilder.addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution1Id, planNode1))
                           .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution2Id, planNode2))
                           .build())
-            .planNode(planNode2)
             .resolvedStepParameters(prepareStepParameters("stagesResolvedValue"))
+            .nodeType(NodeType.PLAN_NODE.name())
             .parentId(nodeExecution1Id)
             .build();
 
     planNode3 = preparePlanNode(false, "stage", "stageValue", "STAGE");
     nodeExecution3 =
         NodeExecution.builder()
+            .identifier("stage")
+            .group(StepOutcomeGroup.STAGE.name())
             .uuid(nodeExecution3Id)
             .ambiance(ambianceBuilder.addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution1Id, planNode1))
                           .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution2Id, planNode2))
                           .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution3Id, planNode3))
                           .build())
-            .planNode(planNode3)
             .resolvedStepParameters(prepareStepParameters("stageResolvedValue"))
+            .nodeType(NodeType.PLAN_NODE.name())
             .parentId(nodeExecution2Id)
             .build();
 
@@ -147,27 +158,28 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
     nodeExecution4 =
         NodeExecution.builder()
             .uuid(nodeExecution4Id)
+            .identifier("d")
             .ambiance(ambianceBuilder.addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution1Id, planNode1))
                           .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution2Id, planNode2))
                           .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution3Id, planNode3))
                           .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution4Id, planNode4))
                           .build())
-            .planNode(planNode4)
             .resolvedStepParameters(prepareStepParameters("dResolvedValue"))
             .parentId(nodeExecution3Id)
             .nextId(nodeExecution5Id)
+            .nodeType(NodeType.PLAN_NODE.name())
             .build();
 
     planNode5 = preparePlanNode(false, "e", "ei1", null);
     nodeExecution5 =
         NodeExecution.builder()
             .uuid(nodeExecution5Id)
+            .identifier("e")
             .ambiance(ambianceBuilder.addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution1Id, planNode1))
                           .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution2Id, planNode2))
                           .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution3Id, planNode3))
                           .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution5Id, planNode5))
                           .build())
-            .planNode(planNode5)
             .resolvedStepParameters(prepareStepParameters("eResolvedValue"))
             .previousId(nodeExecution4Id)
             .parentId(nodeExecution3Id)
@@ -305,6 +317,75 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
         engineExpressionEvaluator.evaluateExpression("<+" + OrchestrationConstants.STAGE_SUCCESS + ">");
     assertThat(stageSuccess).isInstanceOf(Boolean.class);
     assertThat((Boolean) stageSuccess).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testRetryCountExpressionWithoutRetryIds() {
+    String uuid = generateUuid();
+    PlanNode planNode = preparePlanNode(false, "step", "stepValue", "STEP");
+    NodeExecution nodeExecution =
+        NodeExecution.builder()
+            .identifier("step")
+            .ambiance(Ambiance.newBuilder().addLevels(PmsLevelUtils.buildLevelFromNode(uuid, planNode)).build())
+            .uuid(uuid)
+            .build();
+    Ambiance newAmbiance = Ambiance.newBuilder()
+                               .setPlanExecutionId(planExecutionId)
+                               .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution.getUuid(), planNode))
+                               .build();
+    when(nodeExecutionService.getWithFieldsIncluded(
+             nodeExecution.getUuid(), NodeProjectionUtils.fieldsForExpressionEngine))
+        .thenReturn(nodeExecution);
+    List<NodeExecution> nodeExecutionsList = Collections.singletonList(nodeExecution);
+    CloseableIterator<NodeExecution> iterator =
+        PipelineServiceTestHelper.createCloseableIterator(nodeExecutionsList.iterator());
+    when(nodeExecutionService.fetchChildrenNodeExecutionsIterator(
+             planExecutionId, uuid, NodeProjectionUtils.fieldsForExpressionEngine))
+        .thenReturn(iterator);
+    PmsSdkInstance pmsSdkInstance =
+        PmsSdkInstance.builder().staticAliases(new PipelineServiceApplication().getStaticAliases()).build();
+    doReturn(ImmutableMap.of("cd", pmsSdkInstance)).when(pmsSdkInstanceService).getSdkInstanceCacheValue();
+    EngineExpressionEvaluator engineExpressionEvaluator = prepareEngineExpressionEvaluator(newAmbiance);
+    Object retryCount =
+        engineExpressionEvaluator.evaluateExpression("<+step.retryCount>", ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
+    assertThat((Integer) retryCount).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testRetryCountExpressionWithRetryIds() {
+    String uuid = generateUuid();
+    PlanNode planNode = preparePlanNode(false, "step", "stepValue", "STEP");
+    NodeExecution nodeExecution =
+        NodeExecution.builder()
+            .identifier("step")
+            .ambiance(Ambiance.newBuilder().addLevels(PmsLevelUtils.buildLevelFromNode(uuid, planNode)).build())
+            .uuid(uuid)
+            .retryIds(List.of("id1", "id2", "id3"))
+            .build();
+    Ambiance newAmbiance = Ambiance.newBuilder()
+                               .setPlanExecutionId(planExecutionId)
+                               .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution.getUuid(), planNode))
+                               .build();
+    when(nodeExecutionService.getWithFieldsIncluded(
+             nodeExecution.getUuid(), NodeProjectionUtils.fieldsForExpressionEngine))
+        .thenReturn(nodeExecution);
+    List<NodeExecution> nodeExecutionsList = Collections.singletonList(nodeExecution);
+    CloseableIterator<NodeExecution> iterator =
+        PipelineServiceTestHelper.createCloseableIterator(nodeExecutionsList.iterator());
+    when(nodeExecutionService.fetchChildrenNodeExecutionsIterator(
+             planExecutionId, uuid, NodeProjectionUtils.fieldsForExpressionEngine))
+        .thenReturn(iterator);
+    PmsSdkInstance pmsSdkInstance =
+        PmsSdkInstance.builder().staticAliases(new PipelineServiceApplication().getStaticAliases()).build();
+    doReturn(ImmutableMap.of("cd", pmsSdkInstance)).when(pmsSdkInstanceService).getSdkInstanceCacheValue();
+    EngineExpressionEvaluator engineExpressionEvaluator = prepareEngineExpressionEvaluator(newAmbiance);
+    Object retryCount =
+        engineExpressionEvaluator.evaluateExpression("<+step.retryCount>", ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
+    assertThat((Integer) retryCount).isEqualTo(3);
   }
 
   @Test

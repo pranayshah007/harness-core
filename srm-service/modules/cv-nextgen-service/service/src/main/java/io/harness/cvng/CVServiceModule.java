@@ -71,12 +71,14 @@ import io.harness.cvng.cdng.services.api.CDStageMetaDataService;
 import io.harness.cvng.cdng.services.api.CVNGStepService;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
 import io.harness.cvng.cdng.services.api.PipelineStepMonitoredServiceResolutionService;
+import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
 import io.harness.cvng.cdng.services.api.VerifyStepDemoService;
 import io.harness.cvng.cdng.services.impl.CDStageMetaDataServiceImpl;
 import io.harness.cvng.cdng.services.impl.CVNGStepServiceImpl;
 import io.harness.cvng.cdng.services.impl.CVNGStepTaskServiceImpl;
 import io.harness.cvng.cdng.services.impl.ConfiguredPipelineStepMonitoredServiceResolutionServiceImpl;
 import io.harness.cvng.cdng.services.impl.DefaultPipelineStepMonitoredServiceResolutionServiceImpl;
+import io.harness.cvng.cdng.services.impl.SRMAnalysisStepServiceImpl;
 import io.harness.cvng.cdng.services.impl.TemplatePipelineStepMonitoredServiceResolutionServiceImpl;
 import io.harness.cvng.cdng.services.impl.VerifyStepDemoServiceImpl;
 import io.harness.cvng.client.ErrorTrackingService;
@@ -188,6 +190,10 @@ import io.harness.cvng.core.services.impl.AppDynamicsDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.AppDynamicsServiceImpl;
 import io.harness.cvng.core.services.impl.AwsPrometheusDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.AwsServiceImpl;
+import io.harness.cvng.core.services.impl.AzureLogsDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.AzureLogsNextGenHealthSourceHelper;
+import io.harness.cvng.core.services.impl.AzureMetricsDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.AzureMetricsNextGenHealthSourceHelper;
 import io.harness.cvng.core.services.impl.CVConfigServiceImpl;
 import io.harness.cvng.core.services.impl.CVNGLogServiceImpl;
 import io.harness.cvng.core.services.impl.CVNGYamlSchemaServiceImpl;
@@ -199,7 +205,10 @@ import io.harness.cvng.core.services.impl.CustomHealthLogDataCollectionInfoMappe
 import io.harness.cvng.core.services.impl.CustomHealthMetricDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.CustomHealthServiceImpl;
 import io.harness.cvng.core.services.impl.DataCollectionTaskServiceImpl;
+import io.harness.cvng.core.services.impl.DatadogLogDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.DatadogLogNextGenHealthSourceHelper;
 import io.harness.cvng.core.services.impl.DatadogMetricDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.DatadogMetricNextGenHealthSourceHelper;
 import io.harness.cvng.core.services.impl.DatadogServiceImpl;
 import io.harness.cvng.core.services.impl.DebugServiceImpl;
 import io.harness.cvng.core.services.impl.DeeplinkURLServiceImpl;
@@ -230,6 +239,7 @@ import io.harness.cvng.core.services.impl.PagerDutyServiceImpl;
 import io.harness.cvng.core.services.impl.PagerdutyChangeSourceUpdateHandler;
 import io.harness.cvng.core.services.impl.ParseSampleDataServiceImpl;
 import io.harness.cvng.core.services.impl.PrometheusDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.PrometheusNextGenHealthSourceHelper;
 import io.harness.cvng.core.services.impl.PrometheusServiceImpl;
 import io.harness.cvng.core.services.impl.SLIDataCollectionTaskServiceImpl;
 import io.harness.cvng.core.services.impl.SRMTelemetrySentStatusServiceImpl;
@@ -260,7 +270,6 @@ import io.harness.cvng.core.services.impl.demo.changesource.CDNGChangeSourceDemo
 import io.harness.cvng.core.services.impl.demo.changesource.KubernetesChangeSourceDemoDataGenerator;
 import io.harness.cvng.core.services.impl.demo.changesource.PagerdutyChangeSourceDemoDataGenerator;
 import io.harness.cvng.core.services.impl.monitoredService.ChangeSourceServiceImpl;
-import io.harness.cvng.core.services.impl.monitoredService.DatadogLogDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.monitoredService.HealthSourceServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.MSHealthReportServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.MonitoredServiceServiceImpl;
@@ -335,6 +344,7 @@ import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGen
 import io.harness.cvng.notification.services.impl.BurnRateTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.ChangeImpactTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.ChangeObservedTemplateDataGenerator;
+import io.harness.cvng.notification.services.impl.DeploymentImpactReportTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.FireHydrantTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.HealthScoreTemplateDataGenerator;
@@ -457,6 +467,7 @@ import io.harness.govern.ProviderMethodInterceptor;
 import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
 import io.harness.lock.DistributedLockImplementation;
+import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.MongoPersistence;
 import io.harness.opaclient.OpaClientModule;
 import io.harness.outbox.TransactionOutboxModule;
@@ -466,6 +477,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.api.impl.OutboxDaoImpl;
 import io.harness.outbox.api.impl.OutboxServiceImpl;
 import io.harness.persistence.HPersistence;
+import io.harness.pipeline.remote.PipelineRemoteClientModule;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
@@ -547,6 +559,9 @@ public class CVServiceModule extends AbstractModule {
                 .setUncaughtExceptionHandler((t, e) -> log.error("error while processing task", e))
                 .build()));
     install(PrimaryVersionManagerModule.getInstance());
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("taskPollExecutor"))
+        .toInstance(new ManagedScheduledExecutorService("TaskPoll-Thread"));
     install(new TemplateResourceClientModule(verificationConfiguration.getTemplateServiceClientConfig(),
         verificationConfiguration.getTemplateServiceSecret(), AuthorizationServiceHeader.CV_NEXT_GEN.getServiceId()));
     install(new AccountClientModule(getManagerClientConfig(verificationConfiguration.getManagerClientConfig()),
@@ -723,6 +738,15 @@ public class CVServiceModule extends AbstractModule {
     dataSourceTypeDataCollectionInfoMapperMapBinder.addBinding(DataSourceType.SPLUNK_SIGNALFX_METRICS)
         .to(SignalFXMetricDataCollectionInfoMapper.class)
         .in(Scopes.SINGLETON);
+    dataSourceTypeDataCollectionInfoMapperMapBinder.addBinding(DataSourceType.GRAFANA_LOKI_LOGS)
+        .to(GrafanaLokiLogDataCollectionInfoMapper.class)
+        .in(Scopes.SINGLETON);
+    dataSourceTypeDataCollectionInfoMapperMapBinder.addBinding(DataSourceType.AZURE_LOGS)
+        .to(AzureLogsDataCollectionInfoMapper.class)
+        .in(Scopes.SINGLETON);
+    dataSourceTypeDataCollectionInfoMapperMapBinder.addBinding(DataSourceType.AZURE_METRICS)
+        .to(AzureMetricsDataCollectionInfoMapper.class)
+        .in(Scopes.SINGLETON);
     MapBinder<DataSourceType, DataCollectionSLIInfoMapper> dataSourceTypeDataCollectionSLIInfoMapperMapBinder =
         MapBinder.newMapBinder(binder(), DataSourceType.class, DataCollectionSLIInfoMapper.class);
     dataSourceTypeDataCollectionSLIInfoMapperMapBinder.addBinding(DataSourceType.PROMETHEUS)
@@ -761,8 +785,8 @@ public class CVServiceModule extends AbstractModule {
     dataSourceTypeDataCollectionSLIInfoMapperMapBinder.addBinding(DataSourceType.SPLUNK_SIGNALFX_METRICS)
         .to(SignalFXMetricDataCollectionInfoMapper.class)
         .in(Scopes.SINGLETON);
-    dataSourceTypeDataCollectionInfoMapperMapBinder.addBinding(DataSourceType.GRAFANA_LOKI_LOGS)
-        .to(GrafanaLokiLogDataCollectionInfoMapper.class)
+    dataSourceTypeDataCollectionSLIInfoMapperMapBinder.addBinding(DataSourceType.AZURE_METRICS)
+        .to(AzureMetricsDataCollectionInfoMapper.class)
         .in(Scopes.SINGLETON);
     MapBinder<MonitoredServiceSpecType, PipelineStepMonitoredServiceResolutionService>
         verifyStepCvConfigServiceMapBinder = MapBinder.newMapBinder(
@@ -886,6 +910,21 @@ public class CVServiceModule extends AbstractModule {
     dataSourceTypeNextGenHelperMapBinder.addBinding(DataSourceType.GRAFANA_LOKI_LOGS)
         .to(GrafanaLokiLogNextGenHealthSourceHelper.class)
         .in(Scopes.SINGLETON);
+    dataSourceTypeNextGenHelperMapBinder.addBinding(DataSourceType.AZURE_LOGS)
+        .to(AzureLogsNextGenHealthSourceHelper.class)
+        .in(Scopes.SINGLETON);
+    dataSourceTypeNextGenHelperMapBinder.addBinding(DataSourceType.AZURE_METRICS)
+        .to(AzureMetricsNextGenHealthSourceHelper.class)
+        .in(Scopes.SINGLETON);
+    dataSourceTypeNextGenHelperMapBinder.addBinding(DataSourceType.DATADOG_LOG)
+        .to(DatadogLogNextGenHealthSourceHelper.class)
+        .in(Scopes.SINGLETON);
+    dataSourceTypeNextGenHelperMapBinder.addBinding(DataSourceType.DATADOG_METRICS)
+        .to(DatadogMetricNextGenHealthSourceHelper.class)
+        .in(Scopes.SINGLETON);
+    dataSourceTypeNextGenHelperMapBinder.addBinding(DataSourceType.PROMETHEUS)
+        .to(PrometheusNextGenHealthSourceHelper.class)
+        .in(Scopes.SINGLETON);
     MapBinder<DataSourceType, CVConfigUpdatableEntity> dataSourceTypeCVConfigMapBinder =
         MapBinder.newMapBinder(binder(), DataSourceType.class, CVConfigUpdatableEntity.class);
 
@@ -1007,6 +1046,11 @@ public class CVServiceModule extends AbstractModule {
     bind(DowntimeService.class).to(DowntimeServiceImpl.class);
     bind(EntityUnavailabilityStatusesService.class).to(EntityUnavailabilityStatusesServiceImpl.class);
     bind(AnnotationService.class).to(AnnotationServiceImpl.class);
+    install(new PipelineRemoteClientModule(
+        ServiceHttpClientConfig.builder()
+            .baseUrl(verificationConfiguration.getPipelineServiceClientConfig().getBaseUrl())
+            .build(),
+        verificationConfiguration.getPipelineServiceSecret(), CV_NEXT_GEN.getServiceId()));
     install(NgLicenseHttpClientModule.getInstance(verificationConfiguration.getNgManagerClientConfig(),
         verificationConfiguration.getNgManagerServiceSecret(), CV_NEXT_GEN.getServiceId()));
 
@@ -1050,6 +1094,9 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     secondaryEventsTypeToDetailsMapBinder.addBinding(SecondaryEventsType.ERROR_BUDGET_RESET)
         .to(SLOErrorBudgetResetServiceImpl.class)
+        .in(Scopes.SINGLETON);
+    secondaryEventsTypeToDetailsMapBinder.addBinding(SecondaryEventsType.SRM_ANALYSIS_IMPACT)
+        .to(SRMAnalysisStepServiceImpl.class)
         .in(Scopes.SINGLETON);
 
     bindAnalysisStateExecutor();
@@ -1207,6 +1254,7 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
 
     bind(StateMachineMessageProcessor.class).to(StateMachineMessageProcessorImpl.class);
+    bind(SRMAnalysisStepService.class).to(SRMAnalysisStepServiceImpl.class);
 
     MapBinder<SLIMetricType, SLIAnalyserService> sliAnalyserServiceMapBinder =
         MapBinder.newMapBinder(binder(), SLIMetricType.class, SLIAnalyserService.class);
@@ -1299,6 +1347,10 @@ public class CVServiceModule extends AbstractModule {
     notificationRuleConditionTypeTemplateDataGeneratorMapBinder
         .addBinding(NotificationRuleConditionType.FIRE_HYDRANT_REPORT)
         .to(FireHydrantTemplateDataGenerator.class)
+        .in(Scopes.SINGLETON);
+    notificationRuleConditionTypeTemplateDataGeneratorMapBinder
+        .addBinding(NotificationRuleConditionType.DEPLOYMENT_IMPACT_REPORT)
+        .to(DeploymentImpactReportTemplateDataGenerator.class)
         .in(Scopes.SINGLETON);
 
     ServiceHttpClientConfig serviceHttpClientConfig = this.verificationConfiguration.getAuditClientConfig();

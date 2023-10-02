@@ -295,6 +295,10 @@ if [[ "" != "$LOG_STREAMING_SERVICE_TOKEN" ]]; then
   export LOG_STREAMING_SERVICE_TOKEN; yq -i '.logStreamingServiceConfig.serviceToken=env(LOG_STREAMING_SERVICE_TOKEN)' $CONFIG_FILE
 fi
 
+if [[ "" != "$CANNY_TOKEN" ]]; then
+  export CANNY_TOKEN; yq -i '.cannyApiConfig.token=env(CANNY_TOKEN)' $CONFIG_FILE
+fi
+
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
   yq -i 'del(.logging.appenders.[] | select(.type == "console"))' $CONFIG_FILE
   yq -i '(.logging.appenders.[] | select(.type == "gke-console") | .stackdriverLogEnabled) = true' $CONFIG_FILE
@@ -355,6 +359,18 @@ replace_key_value redisLockConfig.retryInterval $REDIS_RETRY_INTERVAL
 replace_key_value redisLockConfig.retryAttempts $REDIS_RETRY_ATTEMPTS
 replace_key_value redisLockConfig.timeout $REDIS_TIMEOUT
 
+if [[ "" != "$HSQS_BASE_URL" ]]; then
+  export HSQS_BASE_URL; yq -i '.queueServiceClientConfig.httpClientConfig.baseUrl=env(HSQS_BASE_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$HSQS_TOPIC" ]]; then
+  export HSQS_TOPIC; yq -i '.queueServiceClientConfig.topic=env(HSQS_TOPIC)' $CONFIG_FILE
+fi
+
+if [[ "" != "$HSQS_AUTH_TOKEN" ]]; then
+  export HSQS_AUTH_TOKEN; yq -i '.queueServiceClientConfig.queueServiceSecret=env(HSQS_AUTH_TOKEN)' $CONFIG_FILE
+fi
+
 if [[ "" != "$LOCK_CONFIG_REDIS_URL" ]]; then
   export LOCK_CONFIG_REDIS_URL; yq -i '.singleServerConfig.address=env(LOCK_CONFIG_REDIS_URL)' $REDISSON_CACHE_FILE
 fi
@@ -399,22 +415,28 @@ if [[ "" != "$SIGNUP_TARGET_ENV" ]]; then
   export SIGNUP_TARGET_ENV; yq -i '.signupTargetEnv=env(SIGNUP_TARGET_ENV)' $CONFIG_FILE
 fi
 
+if [[ "" != "$LOCK_CONFIG_REDIS_USERNAME" ]]; then
+  export LOCK_CONFIG_REDIS_USERNAME; yq -i '.singleServerConfig.username=env(LOCK_CONFIG_REDIS_USERNAME)' $REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$LOCK_CONFIG_REDIS_PASSWORD" ]]; then
+  export LOCK_CONFIG_REDIS_PASSWORD; yq -i '.singleServerConfig.password=env(LOCK_CONFIG_REDIS_PASSWORD)' $REDISSON_CACHE_FILE
+fi
+
 if [[ "$LOCK_CONFIG_USE_SENTINEL" == "true" ]]; then
   yq -i 'del(.singleServerConfig)' $REDISSON_CACHE_FILE
-fi
-
-if [[ "" != "$LOCK_CONFIG_SENTINEL_MASTER_NAME" ]]; then
-  export LOCK_CONFIG_SENTINEL_MASTER_NAME; yq -i '.sentinelServersConfig.masterName=env(LOCK_CONFIG_SENTINEL_MASTER_NAME)' $REDISSON_CACHE_FILE
-fi
-
-if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
-  IFS=',' read -ra SENTINEL_URLS <<< "$LOCK_CONFIG_REDIS_SENTINELS"
-  INDEX=0
-  for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
-    export REDIS_SENTINEL_URL; export INDEX; yq -i '.redisLockConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
-    export REDIS_SENTINEL_URL; export INDEX; yq -i '.sentinelServersConfig.sentinelAddresses.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $REDISSON_CACHE_FILE
-    INDEX=$(expr $INDEX + 1)
-  done
+  if [[ "" != "$LOCK_CONFIG_SENTINEL_MASTER_NAME" ]]; then
+    export LOCK_CONFIG_SENTINEL_MASTER_NAME; yq -i '.sentinelServersConfig.masterName=env(LOCK_CONFIG_SENTINEL_MASTER_NAME)' $REDISSON_CACHE_FILE
+  fi
+  if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
+    IFS=',' read -ra SENTINEL_URLS <<< "$LOCK_CONFIG_REDIS_SENTINELS"
+    INDEX=0
+    for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
+      export REDIS_SENTINEL_URL; export INDEX; yq -i '.redisLockConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+      export REDIS_SENTINEL_URL; export INDEX; yq -i '.sentinelServersConfig.sentinelAddresses.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $REDISSON_CACHE_FILE
+      INDEX=$(expr $INDEX + 1)
+    done
+  fi
 fi
 
 if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
@@ -612,3 +634,16 @@ replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
 replace_key_value signupDomainDenylistConfig.gcsCreds "$MINING_GCS_CREDS"
 replace_key_value signupDomainDenylistConfig.projectId "$MINING_GCS_PROJECT_ID"
 replace_key_value signupDomainDenylistConfig.bucketName "$MINING_GCS_BUCKET_NAME"
+
+replace_key_value proxy.enabled "$PROXY_ENABLED"
+replace_key_value proxy.host "$PROXY_HOST"
+replace_key_value proxy.port "$PROXY_PORT"
+replace_key_value proxy.username "$PROXY_USERNAME"
+replace_key_value proxy.password "$PROXY_PASSWORD"
+replace_key_value proxy.protocol "$PROXY_PROTOCOL"
+
+replace_key_value awsServiceEndpointUrls.enabled "$AWS_SERVICE_ENDPOINT_URLS_ENABLED"
+replace_key_value awsServiceEndpointUrls.endPointRegion "$AWS_SERVICE_ENDPOINT_URLS_ENDPOINT_REGION"
+replace_key_value awsServiceEndpointUrls.stsEndPointUrl "$AWS_SERVICE_ENDPOINT_URLS_STS_ENDPOINT_URL"
+replace_key_value awsServiceEndpointUrls.ecsEndPointUrl "$AWS_SERVICE_ENDPOINT_URLS_ECS_ENDPOINT_URL"
+replace_key_value awsServiceEndpointUrls.cloudwatchEndPointUrl "$AWS_SERVICE_ENDPOINT_URLS_CLOUDWATCH_ENDPOINT_URL"

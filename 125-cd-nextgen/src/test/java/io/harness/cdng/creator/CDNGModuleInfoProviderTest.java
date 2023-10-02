@@ -21,9 +21,33 @@ import io.harness.cdng.artifact.GcrArtifactSummary;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
+import io.harness.cdng.gitops.beans.GitOpsLinkedAppsOutcome;
 import io.harness.cdng.gitops.steps.GitopsClustersOutcome;
 import io.harness.cdng.gitops.steps.Metadata;
+import io.harness.cdng.helm.ReleaseHelmChartOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
+import io.harness.cdng.manifest.outcome.HelmChartOutcome;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
+import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
+import io.harness.cdng.manifest.yaml.GcsStoreConfig;
+import io.harness.cdng.manifest.yaml.GithubStore;
+import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
+import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome.HelmChartManifestOutcomeBuilder;
+import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
+import io.harness.cdng.manifest.yaml.K8sManifestOutcome.K8sManifestOutcomeBuilder;
+import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
+import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome.KustomizeManifestOutcomeBuilder;
+import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.OciHelmChartConfig;
+import io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome;
+import io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome.OpenshiftManifestOutcomeBuilder;
+import io.harness.cdng.manifest.yaml.OpenshiftParamManifestOutcome;
+import io.harness.cdng.manifest.yaml.OpenshiftParamManifestOutcome.OpenshiftParamManifestOutcomeBuilder;
+import io.harness.cdng.manifest.yaml.S3StoreConfig;
+import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
+import io.harness.cdng.manifest.yaml.harness.HarnessStore;
+import io.harness.cdng.manifest.yaml.kinds.kustomize.OverlayConfiguration;
+import io.harness.cdng.manifest.yaml.summary.ManifestStoreInfo;
 import io.harness.cdng.pipeline.executions.beans.CDPipelineModuleInfo;
 import io.harness.cdng.pipeline.executions.beans.CDStageModuleInfo;
 import io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary;
@@ -31,6 +55,8 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.freeze.service.FreezeEvaluateService;
+import io.harness.gitops.models.Application;
+import io.harness.k8s.model.HelmVersion;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -39,17 +65,23 @@ import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
+import io.harness.pms.sdk.core.data.Outcome;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.utils.NGFeatureFlagHelperService;
 
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -105,7 +137,8 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
     CDPipelineModuleInfo pipelineLevelModuleInfo = (CDPipelineModuleInfo) provider.getPipelineLevelModuleInfo(event);
 
     assertThat(pipelineLevelModuleInfo.getServiceIdentifiers()).containsExactlyInAnyOrder("s1");
-    assertThat(pipelineLevelModuleInfo.getArtifactDisplayNames()).containsExactlyInAnyOrder("imagePath:tag");
+    assertThat(pipelineLevelModuleInfo.getArtifactDisplayNames())
+        .containsAll(Lists.newArrayList("imagePath", "imagePath:tag", "tag"));
   }
 
   @Test
@@ -134,6 +167,28 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
     assertThat(pipelineLevelModuleInfo.getEnvIdentifiers()).containsExactlyInAnyOrder("env1");
     assertThat(pipelineLevelModuleInfo.getEnvironmentTypes()).containsExactlyInAnyOrder(EnvironmentType.Production);
     assertThat(pipelineLevelModuleInfo.getInfrastructureTypes()).containsExactlyInAnyOrder("KubernetesDirect");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testGetPipelineLevelModuleInfo_HelmOutcome() {
+    Ambiance ambiance = buildAmbiance(StepType.newBuilder()
+                                          .setType(ExecutionNodeType.DEPLOYMENT_STAGE_STEP.getName())
+                                          .setStepCategory(StepCategory.STEP)
+                                          .build());
+
+    doReturn(OptionalOutcome.builder()
+                 .found(true)
+                 .outcome(ReleaseHelmChartOutcome.builder().name("todolist").version("0.2.0").build())
+                 .build())
+        .when(outcomeService)
+        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject("releaseHelmChartOutcome"));
+
+    OrchestrationEvent event = OrchestrationEvent.builder().ambiance(ambiance).status(Status.SUCCEEDED).build();
+    CDPipelineModuleInfo pipelineLevelModuleInfo = (CDPipelineModuleInfo) provider.getPipelineLevelModuleInfo(event);
+
+    assertThat(pipelineLevelModuleInfo.getHelmChartVersions().get(0)).isEqualTo("0.2.0");
   }
 
   @Test
@@ -235,7 +290,11 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
                                           .setType(ExecutionNodeType.SERVICE_SECTION.getName())
                                           .setStepCategory(StepCategory.STEP)
                                           .build());
-
+    K8sManifestOutcomeBuilder k8sManifestOutcome = K8sManifestOutcome.builder();
+    GithubStore githubStore = GithubStore.builder().branch(ParameterField.createValueField("branch")).build();
+    Map<String, ManifestOutcome> manifestOutcomeMap = new HashMap<>();
+    manifestOutcomeMap.put("service", k8sManifestOutcome.store(githubStore).build());
+    Outcome manifestsOutcomeOptional = new ManifestsOutcome(manifestOutcomeMap);
     doReturn(OptionalOutcome.builder()
                  .found(true)
                  .outcome(ServiceStepOutcome.builder()
@@ -252,6 +311,9 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
                  .build())
         .when(outcomeService)
         .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject("artifacts"));
+    doReturn(OptionalOutcome.builder().found(true).outcome(manifestsOutcomeOptional).build())
+        .when(outcomeService)
+        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject("manifests"));
 
     OrchestrationEvent event = OrchestrationEvent.builder().ambiance(ambiance).status(Status.SUCCEEDED).build();
     CDStageModuleInfo stageLevelModuleInfo = (CDStageModuleInfo) provider.getStageLevelModuleInfo(event);
@@ -564,6 +626,246 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
                        .envGroupId("eg1")
                        .scope(ScopeLevel.PROJECT.name())
                        .build());
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MANAVJOT)
+  @Category(UnitTests.class)
+  public void shouldPopulateGitOpsAppNamesInStageModuleInfo() {
+    Ambiance ambiance = buildAmbiance(StepType.newBuilder()
+                                          .setType(ExecutionNodeType.GITOPS_FETCH_LINKED_APPS.getYamlType())
+                                          .setStepCategory(StepCategory.STEP)
+                                          .build());
+
+    Application app1 =
+        Application.builder().name("test1").identifier("test1").agentIdentifier("agent1").url("url1").build();
+
+    Application app2 =
+        Application.builder().name("test2").identifier("test2").agentIdentifier("agent1").url("url2").build();
+
+    Application app3 =
+        Application.builder().name("TEST3").identifier("TEST3").agentIdentifier("account.agent2").url("url3").build();
+
+    GitOpsLinkedAppsOutcome gitOpsLinkedAppsOutcome =
+        GitOpsLinkedAppsOutcome.builder().apps(Arrays.asList(app1, app2, app3)).build();
+
+    doReturn(OptionalOutcome.builder().found(true).outcome(gitOpsLinkedAppsOutcome).build())
+        .when(outcomeService)
+        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject("GITOPS_LINKED_APPS_OUTCOME"));
+
+    OrchestrationEvent event = OrchestrationEvent.builder().ambiance(ambiance).status(Status.SUCCEEDED).build();
+    CDPipelineModuleInfo pipelineLevelModuleInfo = (CDPipelineModuleInfo) provider.getPipelineLevelModuleInfo(event);
+
+    List<String> appIdentifiers = pipelineLevelModuleInfo.getGitOpsAppIdentifiers();
+    assertThat(appIdentifiers).hasSize(3);
+    assertThat(appIdentifiers).containsExactlyInAnyOrder("agent1:test1", "agent1:test2", "account.agent2:test3");
+  }
+  @Test
+  @Owner(developers = OwnerRule.TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testManifestOutcomeMapper() {
+    String folderPath = "folderPath";
+    List<String> paths = new ArrayList<>();
+    paths.add("sample/path/1");
+    paths.add("sample/path/2");
+    ParameterField<List<String>> pathParam = ParameterField.createValueField(paths);
+
+    GithubStore githubStore = GithubStore.builder()
+                                  .branch(ParameterField.createValueField("branch"))
+                                  .commitId(ParameterField.createValueField("commitId"))
+                                  .folderPath(ParameterField.createValueField(folderPath))
+                                  .repoName(ParameterField.createValueField("repoName"))
+                                  .build();
+
+    S3StoreConfig s3StoreConfig = S3StoreConfig.builder()
+                                      .bucketName(ParameterField.createValueField("bucketName"))
+                                      .region(ParameterField.createValueField("region"))
+                                      .folderPath(ParameterField.createValueField(folderPath))
+                                      .build();
+
+    OciHelmChartConfig ociHelmChartConfig =
+        OciHelmChartConfig.builder().basePath(ParameterField.createValueField("basePath")).build();
+
+    GcsStoreConfig gcsStoreConfig = GcsStoreConfig.builder()
+                                        .bucketName(ParameterField.createValueField("bucketName"))
+                                        .folderPath(ParameterField.createValueField(folderPath))
+                                        .build();
+
+    HarnessStore harnessStore = HarnessStore.builder().files(pathParam).build();
+
+    CustomRemoteStoreConfig customRemoteStoreConfig = CustomRemoteStoreConfig.builder()
+                                                          .filePath(ParameterField.createValueField(folderPath))
+                                                          .extractionScript(ParameterField.createValueField("script"))
+                                                          .build();
+
+    K8sManifestOutcomeBuilder k8sManifestOutcome =
+        K8sManifestOutcome.builder().identifier("k8sManifest").valuesPaths(pathParam);
+
+    HelmChartManifestOutcomeBuilder helmChartManifestOutcomeBuilder =
+        HelmChartManifestOutcome.builder()
+            .chartName(ParameterField.createValueField("chartName"))
+            .chartVersion(ParameterField.createValueField("chartVersion"))
+            .helmVersion(HelmVersion.V3)
+            .subChartPath(ParameterField.createValueField("subChartPath"));
+
+    ValuesManifestOutcome valuesManifestOutcome =
+        ValuesManifestOutcome.builder().identifier("value").store(harnessStore).order(1).build();
+    OverlayConfiguration overlayConfiguration =
+        new OverlayConfiguration(ParameterField.createValueField("/overlay/path"));
+    OverlayConfiguration overlayConfigurationEmpty = new OverlayConfiguration(ParameterField.createValueField(null));
+
+    KustomizeManifestOutcomeBuilder kustomizeManifestOutcomeBuilder =
+        KustomizeManifestOutcome.builder().overlayConfiguration(ParameterField.createValueField(overlayConfiguration));
+
+    KustomizeManifestOutcomeBuilder kustomizeManifestOutcomeBuilderEmpty =
+        KustomizeManifestOutcome.builder().overlayConfiguration(
+            ParameterField.createValueField(overlayConfigurationEmpty));
+    KustomizeManifestOutcomeBuilder kustomizeManifestOutcomeBuilderNull =
+        KustomizeManifestOutcome.builder().overlayConfiguration(null);
+
+    OpenshiftManifestOutcomeBuilder openshiftManifestOutcomeBuilder = OpenshiftManifestOutcome.builder();
+    OpenshiftParamManifestOutcomeBuilder openshiftParamManifestOutcomeBuilder = OpenshiftParamManifestOutcome.builder();
+    // Testing Git
+    Map<String, ManifestOutcome> manifestOutcomeMap = new HashMap<>();
+    manifestOutcomeMap.put("service", k8sManifestOutcome.store(githubStore).build());
+    Optional<ManifestsOutcome> manifestsOutcomeOptional = Optional.of(new ManifestsOutcome(manifestOutcomeMap));
+    ManifestStoreInfo manifestInfo = provider.mapManifestsOutcomeToSummary(manifestsOutcomeOptional);
+    assertThat(manifestInfo.getBranch()).isEqualTo("branch");
+    assertThat(manifestInfo.getCommitId()).isEqualTo("commitId");
+    assertThat(manifestInfo.getFolderPath()).isEqualTo(folderPath);
+    assertThat(manifestInfo.getRepoName()).isEqualTo("repoName");
+
+    // Testing oci and multi manifest
+    manifestOutcomeMap = new HashMap<>();
+    manifestOutcomeMap.put("service", helmChartManifestOutcomeBuilder.store(ociHelmChartConfig).build());
+    manifestOutcomeMap.put("values", valuesManifestOutcome);
+    manifestsOutcomeOptional = Optional.of(new ManifestsOutcome(manifestOutcomeMap));
+    manifestInfo = provider.mapManifestsOutcomeToSummary(manifestsOutcomeOptional);
+    assertThat(manifestInfo.getChartName()).isEqualTo("chartName");
+    assertThat(manifestInfo.getChartVersion()).isEqualTo("chartVersion");
+    assertThat(manifestInfo.getHelmVersion()).isEqualTo("V3");
+    assertThat(manifestInfo.getSubChartPath()).isEqualTo("subChartPath");
+    assertThat(manifestInfo.getFolderPath()).isEqualTo("basePath");
+
+    // Testing S3
+    manifestOutcomeMap = new HashMap<>();
+    manifestOutcomeMap.put("service", helmChartManifestOutcomeBuilder.store(s3StoreConfig).build());
+    manifestsOutcomeOptional = Optional.of(new ManifestsOutcome(manifestOutcomeMap));
+    manifestInfo = provider.mapManifestsOutcomeToSummary(manifestsOutcomeOptional);
+    assertThat(manifestInfo.getBucketName()).isEqualTo("bucketName");
+    assertThat(manifestInfo.getRegion()).isEqualTo("region");
+    assertThat(manifestInfo.getFolderPath()).isEqualTo(folderPath);
+
+    // Testing Gcs
+    manifestOutcomeMap = new HashMap<>();
+    manifestOutcomeMap.put("service", helmChartManifestOutcomeBuilder.store(gcsStoreConfig).build());
+    manifestsOutcomeOptional = Optional.of(new ManifestsOutcome(manifestOutcomeMap));
+    manifestInfo = provider.mapManifestsOutcomeToSummary(manifestsOutcomeOptional);
+    assertThat(manifestInfo.getBucketName()).isEqualTo("bucketName");
+    assertThat(manifestInfo.getFolderPath()).isEqualTo(folderPath);
+
+    // Testing Harness
+    manifestOutcomeMap = new HashMap<>();
+    manifestOutcomeMap.put("service", helmChartManifestOutcomeBuilder.store(harnessStore).build());
+    manifestsOutcomeOptional = Optional.of(new ManifestsOutcome(manifestOutcomeMap));
+    manifestInfo = provider.mapManifestsOutcomeToSummary(manifestsOutcomeOptional);
+    assertThat(manifestInfo.getPaths()).isEqualTo(paths);
+
+    // Testing Custom
+    manifestOutcomeMap = new HashMap<>();
+    manifestOutcomeMap.put("service", helmChartManifestOutcomeBuilder.store(customRemoteStoreConfig).build());
+    manifestsOutcomeOptional = Optional.of(new ManifestsOutcome(manifestOutcomeMap));
+    manifestInfo = provider.mapManifestsOutcomeToSummary(manifestsOutcomeOptional);
+    assertThat(manifestInfo.getFolderPath()).isEqualTo(folderPath);
+    // Testing Helm chart manifest outcome
+    HelmChartOutcome helmChartOutcome = HelmChartOutcome.builder().name("chartName2").version("chartVersion2").build();
+    manifestOutcomeMap = new HashMap<>();
+    manifestOutcomeMap.put(
+        "service", helmChartManifestOutcomeBuilder.store(customRemoteStoreConfig).helm(helmChartOutcome).build());
+    manifestsOutcomeOptional = Optional.of(new ManifestsOutcome(manifestOutcomeMap));
+    manifestInfo = provider.mapManifestsOutcomeToSummary(manifestsOutcomeOptional);
+    assertThat(manifestInfo.getFolderPath()).isEqualTo(folderPath);
+    assertThat(manifestInfo.getChartName()).isEqualTo("chartName2");
+    assertThat(manifestInfo.getChartVersion()).isEqualTo("chartVersion2");
+
+    // Testing Kustomize and overlay
+    manifestOutcomeMap = new HashMap<>();
+    manifestOutcomeMap.put("service", kustomizeManifestOutcomeBuilder.store(githubStore).build());
+    manifestsOutcomeOptional = Optional.of(new ManifestsOutcome(manifestOutcomeMap));
+    manifestInfo = provider.mapManifestsOutcomeToSummary(manifestsOutcomeOptional);
+    assertThat(manifestInfo.getFolderPath()).isEqualTo(folderPath + "/overlay/path");
+    // Testing Kustomize with empty folder path
+    manifestOutcomeMap = new HashMap<>();
+    manifestOutcomeMap.put("service", kustomizeManifestOutcomeBuilderEmpty.store(githubStore).build());
+    manifestsOutcomeOptional = Optional.of(new ManifestsOutcome(manifestOutcomeMap));
+    manifestInfo = provider.mapManifestsOutcomeToSummary(manifestsOutcomeOptional);
+    assertThat(manifestInfo.getFolderPath()).isEqualTo(folderPath);
+    // Testing Kustomize with null folder path
+    manifestOutcomeMap = new HashMap<>();
+    manifestOutcomeMap.put("service", kustomizeManifestOutcomeBuilderNull.store(githubStore).build());
+    manifestsOutcomeOptional = Optional.of(new ManifestsOutcome(manifestOutcomeMap));
+    manifestInfo = provider.mapManifestsOutcomeToSummary(manifestsOutcomeOptional);
+    assertThat(manifestInfo.getFolderPath()).isEqualTo(folderPath);
+    // Testing Kustomize with null folder path and overlay
+    manifestOutcomeMap = new HashMap<>();
+    manifestOutcomeMap.put("service", kustomizeManifestOutcomeBuilder.store(harnessStore).build());
+    manifestsOutcomeOptional = Optional.of(new ManifestsOutcome(manifestOutcomeMap));
+    manifestInfo = provider.mapManifestsOutcomeToSummary(manifestsOutcomeOptional);
+    assertThat(manifestInfo.getFolderPath()).isEqualTo("/overlay/path");
+    // Testing Kustomize with final folder null
+    manifestOutcomeMap = new HashMap<>();
+    manifestOutcomeMap.put("service", kustomizeManifestOutcomeBuilderNull.store(harnessStore).build());
+    manifestsOutcomeOptional = Optional.of(new ManifestsOutcome(manifestOutcomeMap));
+    manifestInfo = provider.mapManifestsOutcomeToSummary(manifestsOutcomeOptional);
+    assertThat(manifestInfo.getFolderPath()).isNull();
+    // openshift with openshift taskparams
+    manifestOutcomeMap = new HashMap<>();
+    manifestOutcomeMap.put("values", openshiftParamManifestOutcomeBuilder.store(harnessStore).build());
+    manifestOutcomeMap.put("service", openshiftManifestOutcomeBuilder.store(githubStore).build());
+    manifestsOutcomeOptional = Optional.of(new ManifestsOutcome(manifestOutcomeMap));
+    manifestInfo = provider.mapManifestsOutcomeToSummary(manifestsOutcomeOptional);
+    assertThat(manifestInfo.getFolderPath()).isEqualTo(folderPath);
+
+    // Testing Empty optional
+    manifestsOutcomeOptional = Optional.empty();
+    manifestInfo = provider.mapManifestsOutcomeToSummary(manifestsOutcomeOptional);
+    assertThat(manifestInfo).isEqualTo(ManifestStoreInfo.builder().build());
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TARUN_UBA)
+  @Category(UnitTests.class)
+  public void shouldPopulateHelmManifestInfoInStageModuleInfo() {
+    String folderPath = "folderPath";
+    List<String> paths = new ArrayList<>();
+    paths.add("sample/path/1");
+    paths.add("sample/path/2");
+    ParameterField<List<String>> pathParam = ParameterField.createValueField(paths);
+
+    GithubStore githubStore = GithubStore.builder()
+                                  .branch(ParameterField.createValueField("branch"))
+                                  .commitId(ParameterField.createValueField("commitId"))
+                                  .folderPath(ParameterField.createValueField(folderPath))
+                                  .repoName(ParameterField.createValueField("repoName"))
+                                  .build();
+
+    K8sManifestOutcomeBuilder k8sManifestOutcome =
+        K8sManifestOutcome.builder().identifier("k8sManifest").valuesPaths(pathParam);
+
+    Optional<ReleaseHelmChartOutcome> manifestHelmChartOutcome =
+        Optional.of(ReleaseHelmChartOutcome.builder().name("todolist").version("0.2.0").build());
+
+    Map<String, ManifestOutcome> manifestOutcomeMap = new HashMap<>();
+    manifestOutcomeMap.put("service", k8sManifestOutcome.store(githubStore).build());
+    Optional<ManifestsOutcome> manifestsOutcomeOptional = Optional.of(new ManifestsOutcome(manifestOutcomeMap));
+    ManifestStoreInfo manifestInfo =
+        provider.mapManifestsOutcomeToSummary(manifestsOutcomeOptional, manifestHelmChartOutcome);
+    assertThat(manifestInfo.getBranch()).isEqualTo("branch");
+    assertThat(manifestInfo.getCommitId()).isEqualTo("commitId");
+    assertThat(manifestInfo.getFolderPath()).isEqualTo(folderPath);
+    assertThat(manifestInfo.getRepoName()).isEqualTo("repoName");
+    assertThat(manifestInfo.getChartName()).isEqualTo("todolist");
+    assertThat(manifestInfo.getChartVersion()).isEqualTo("0.2.0");
   }
 
   public Ambiance buildAmbiance(StepType stepType) {

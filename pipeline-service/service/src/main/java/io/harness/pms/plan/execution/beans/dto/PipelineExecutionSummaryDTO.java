@@ -9,8 +9,8 @@ package io.harness.pms.plan.execution.beans.dto;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.abort.AbortedBy;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.AbortedBy;
 import io.harness.data.validator.Trimmed;
 import io.harness.dto.FailureInfoDTO;
 import io.harness.gitsync.beans.StoreType;
@@ -50,6 +50,8 @@ public class PipelineExecutionSummaryDTO {
   @Trimmed @NotEmpty String projectIdentifier;
   String planExecutionId;
   String name;
+  // Stores the pipeline yaml version
+  String yamlVersion;
 
   ExecutionStatus status;
 
@@ -90,4 +92,5 @@ public class PipelineExecutionSummaryDTO {
   AbortedBy abortedBy;
 
   ExecutionMode executionMode;
+  boolean notesExistForPlanExecutionId;
 }

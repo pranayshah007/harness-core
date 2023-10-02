@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -56,7 +57,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -197,7 +197,7 @@ public class GitConnectorValidatorTest extends CategoryTest {
     on(gitValidationHandler).set("gitCommandTaskHandler", gitCommandTaskHandler);
     on(gitValidationHandler).set("gitDecryptionHelper", gitDecryptionHelper);
     when(gitValidationHandler.validate(any(), any())).thenCallRealMethod();
-    when(connectorTypeToConnectorValidationHandlerMap.get(ArgumentMatchers.eq("Git"))).thenReturn(gitValidationHandler);
+    when(connectorTypeToConnectorValidationHandlerMap.get(eq("Git"))).thenReturn(gitValidationHandler);
 
     ConnectorValidationResult connectorValidationResult =
         ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build();
@@ -209,8 +209,7 @@ public class GitConnectorValidatorTest extends CategoryTest {
 
     on(scmConnectorValidationParamsProvider)
         .set("gitConfigAuthenticationInfoHelper", gitConfigAuthenticationInfoHelper);
-    when(connectorValidationParamsProviderMap.get(ArgumentMatchers.eq("Git")))
-        .thenReturn(scmConnectorValidationParamsProvider);
+    when(connectorValidationParamsProviderMap.get(eq("Git"))).thenReturn(scmConnectorValidationParamsProvider);
 
     ConnectorValidationResult validationResult = gitConnectorValidator.validate(
         gitConfig, "accountIdentifier", "orgIdentifier", "projectIdentifier", "identifier");

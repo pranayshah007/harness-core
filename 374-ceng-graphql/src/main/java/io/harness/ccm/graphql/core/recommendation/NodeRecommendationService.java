@@ -68,6 +68,7 @@ public class NodeRecommendationService {
         .nodePoolId(recommendation.getNodePoolId())
         .totalResourceUsage(recommendation.getTotalResourceUsage())
         .jiraDetails(recommendation.getJiraDetails())
+        .serviceNowDetails(recommendation.getServiceNowDetails())
         .build();
   }
 

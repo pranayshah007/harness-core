@@ -20,7 +20,6 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.SkipRollbackException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -28,6 +27,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
@@ -47,18 +47,18 @@ public class ElastigroupRollbackStep extends CdTaskExecutable<ElastigroupRollbac
   @Inject private ElastigroupRollbackStepHelper stepHelper;
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // Noop
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     try {
       ElastigroupRollbackStepParameters elastigroupRollbackStepParameters =
           (ElastigroupRollbackStepParameters) stepParameters.getSpec();
@@ -88,8 +88,9 @@ public class ElastigroupRollbackStep extends CdTaskExecutable<ElastigroupRollbac
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<ElastigroupRollbackTaskResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepBaseParameters stepParameters, ThrowingSupplier<ElastigroupRollbackTaskResponse> responseDataSupplier)
+      throws Exception {
     ElastigroupRollbackTaskResponse taskResponse;
     try {
       taskResponse = responseDataSupplier.get();

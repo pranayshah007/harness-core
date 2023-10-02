@@ -6,6 +6,12 @@
 load("@rules_java//java:defs.bzl", "java_library")
 load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
 
+filegroup(
+    name = "java_srcs",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+)
+
 java_library(
     name = "module",
     srcs = glob(["*.java"]),
@@ -15,6 +21,7 @@ java_library(
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/manifest/mappers:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/manifest/steps/outcome:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/manifest/steps/output:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/manifest/steps/task:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/service/steps:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/service/steps/constants:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/service/steps/helpers:module",

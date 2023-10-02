@@ -10,4 +10,8 @@ package io.harness.eraro;
 public class ErrorMessageConstants {
   public static final String FORCE_DELETE_SETTING_NOT_ENABLED =
       "Force Delete is not enabled for this account. Please go to Account Resources > Default Settings > Enable Force Delete of Harness Resources to enable this.";
+
+  public static final String INVALID_JWT_TOKEN = "Invalid JWT Token received, failed to decode the token";
+
+  public static final String TOKEN_EXPIRED = "Token expired";
 }

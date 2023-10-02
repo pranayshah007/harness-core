@@ -28,6 +28,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.istio.IstioTaskHelper;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.KubernetesContainerService;
@@ -69,6 +70,7 @@ public class K8sTrafficSplitTaskHandler extends K8sTaskHandler {
   @Inject private ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper;
   @Inject private K8sTaskHelper k8sTaskHelper;
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
+  @Inject private IstioTaskHelper istioTaskHelper;
 
   private IK8sRelease release;
   private KubernetesConfig kubernetesConfig;
@@ -237,7 +239,7 @@ public class K8sTrafficSplitTaskHandler extends K8sTaskHandler {
       ExecutionLogCallback executionLogCallback) throws IOException {
     List<IstioDestinationWeight> istioDestinationWeights = k8sTrafficSplitTaskParameters.getIstioDestinationWeights();
 
-    k8sTaskHelperBase.updateVirtualServiceWithDestinationWeights(
+    istioTaskHelper.updateVirtualServiceWithDestinationWeights(
         istioDestinationWeights, virtualService, executionLogCallback);
   }
 

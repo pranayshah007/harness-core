@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.k8s;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
@@ -42,12 +41,17 @@ import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FileData;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
+import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sBGDeployRequest;
 import io.harness.delegate.task.k8s.K8sBGDeployResponse;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
@@ -110,6 +114,8 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_K8S})
 @OwnedBy(CDP)
 @NoArgsConstructor
 @Slf4j
@@ -151,7 +157,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     if (!(k8sDeployRequest instanceof K8sBGDeployRequest)) {
       throw new InvalidArgumentsException(Pair.of("k8sDeployRequest", "Must be instance of K8sBGDeployRequest"));
     }
-
+    HelmChartInfo helmChartInfo = null;
     K8sBGDeployRequest k8sBGDeployRequest = (K8sBGDeployRequest) k8sDeployRequest;
     deploymentSkipped = false;
     k8sRequestHandlerContext.setEnabledSupportHPAAndPDB(k8sBGDeployRequest.isEnabledSupportHPAAndPDB());
@@ -177,12 +183,20 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.FETCH_FILES,
         k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
     executionLogCallback.saveExecutionLog("Done.", INFO, SUCCESS);
+
     init(k8sBGDeployRequest, k8sDelegateTaskParams,
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress), serviceHookHandler);
 
     prepareForBlueGreen(k8sDelegateTaskParams,
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Prepare, true, commandUnitsProgress),
         k8sBGDeployRequest.isSkipResourceVersioning(), k8sBGDeployRequest.isPruningEnabled());
+
+    if (k8sBGDeployRequest.getManifestDelegateConfig() instanceof HelmChartManifestDelegateConfig) {
+      helmChartInfo =
+          k8sTaskHelperBase.getHelmChartDetails(k8sBGDeployRequest.getManifestDelegateConfig(), manifestFilesDirectory);
+    }
+    List<K8sPod> existingPodList =
+        k8sBGBaseHandler.getExistingPods(timeoutInMillis, kubernetesConfig, releaseName, executionLogCallback);
 
     if (deploymentSkipped) {
       K8sBGDeployResponse k8sBGDeployResponse = K8sBGDeployResponse.builder().stageDeploymentSkipped(true).build();
@@ -247,8 +261,8 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WrapUp, true, commandUnitsProgress);
 
     k8sBGBaseHandler.wrapUp(k8sDelegateTaskParams, wrapUpLogCallback, client);
-    final List<K8sPod> podList = k8sBGBaseHandler.getAllPods(
-        timeoutInMillis, kubernetesConfig, managedWorkload, primaryColor, stageColor, releaseName);
+    final List<K8sPod> podList = k8sBGBaseHandler.getAllPodsNG(
+        timeoutInMillis, kubernetesConfig, managedWorkload, primaryColor, stageColor, releaseName, existingPodList);
 
     if (!useDeclarativeRollback) {
       ((K8sLegacyRelease) release)
@@ -260,11 +274,14 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     K8sBGDeployResponse k8sBGDeployResponse = K8sBGDeployResponse.builder()
                                                   .releaseNumber(release.getReleaseNumber())
                                                   .k8sPodList(podList)
+                                                  .previousK8sPodList(existingPodList)
                                                   .primaryServiceName(primaryService.getResourceId().getName())
                                                   .stageServiceName(stageService.getResourceId().getName())
                                                   .stageColor(stageColor)
                                                   .primaryColor(primaryColor)
+                                                  .helmChartInfo(helmChartInfo)
                                                   .build();
+
     wrapUpLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
 
     if (k8sBGDeployRequest.isPruningEnabled()) {

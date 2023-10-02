@@ -1,0 +1,41 @@
+#Customer pipeline
+pipeline:
+  identifier: MatrixTest
+  name: MatrixTest
+  projectIdentifier: Test
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        identifier: Build
+        type: CI
+        name: Build
+        description: ""
+        spec:
+          cloneCodebase: false
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: ShobhitK8
+              namespace: harness-qa-delegate
+              automountServiceAccountToken: true
+              nodeSelector: {}
+              os: Linux
+          execution:
+            steps:
+              - step:
+                  identifier: echo
+                  type: Run
+                  name: echo
+                  spec:
+                    connectorRef: account.harnessImage
+                    image: alpine
+                    shell: Sh
+                    command: |-
+                      export ENV_NAME="<+matrix.env>"
+                      echo "Matrix env: ${ENV_NAME}"
+                  strategy:
+                    matrix:
+                      env:
+                        - dev
+                        - int

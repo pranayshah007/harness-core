@@ -193,4 +193,11 @@ public interface AuthSettingsManagerClient {
   @KryoResponse
   Call<RestResponse<LdapSettingsWithEncryptedDataAndPasswordDetail>> getLdapSettingsAndEncryptedPassword(
       @Query("accountId") String accountIdentifier, @Body LDAPTestAuthenticationRequest authenticationRequest);
+
+  @PUT(API_PREFIX + "accounts/public-access")
+  Call<RestResponse<Boolean>> setPublicAccess(
+      @Query("accountId") @NotEmpty String accountId, @Body Boolean publicAccessEnabled);
+
+  @GET(API_PREFIX + "accounts/public-access")
+  Call<RestResponse<Boolean>> getPublicAccess(@Query("accountId") @NotEmpty String accountId);
 }

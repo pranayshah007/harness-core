@@ -159,7 +159,7 @@ public class BudgetGroupDao {
         : Sort.descending(finalBudgetGroupSortType.getColumnName());
 
     final FindOptions options = new FindOptions();
-    if (budgetGroupSortType.equals(BudgetGroupSortType.BUDGET_GROUP_NAME)) {
+    if (finalBudgetGroupSortType.equals(BudgetGroupSortType.BUDGET_GROUP_NAME)) {
       options.collation(Collation.builder().locale(LOCALE_EN).build());
     }
     options.limit(count);

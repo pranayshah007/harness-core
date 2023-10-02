@@ -48,16 +48,19 @@ const (
 	logUploadFf        = "HARNESS_CI_INDIRECT_LOG_UPLOAD_FF"
 	gitBin             = "git"
 	diffFilesCmd       = "%s diff --name-status --diff-filter=MADR HEAD@{1} HEAD -1"
+	diffFilesCmdPush   = "%s diff --name-status --diff-filter=MADR %s"
 	safeDirCommand     = "%s config --global --add safe.directory '*'"
 	harnessStepIndex   = "HARNESS_STEP_INDEX"
 	harnessStepTotal   = "HARNESS_STEP_TOTAL"
 	harnessStageIndex  = "HARNESS_STAGE_INDEX"
 	harnessStageTotal  = "HARNESS_STAGE_TOTAL"
+	delegateLogURLEnv  = "HARNESS_LE_DELEGATE_LOG_URL"
+	delegateTiURLEnv   = "HARNESS_LE_DELEGATE_TI_URL"
 )
 
 // GetChangedFiles executes a shell command and returns a list of files changed in the PR
 // along with their corresponding status
-func GetChangedFiles(ctx context.Context, workspace string, log *zap.SugaredLogger, procWriter io.Writer) ([]types.File, error) {
+func GetChangedFiles(ctx context.Context, workspace, lastSuccessfulCommitID string, isPushTrigger bool, log *zap.SugaredLogger, procWriter io.Writer) ([]types.File, error) {
 	cmdContextFactory := exec.OsCommandContextGracefulWithLog(log)
 	cmd := cmdContextFactory.CmdContext(ctx, "sh", "-c", fmt.Sprintf(safeDirCommand, gitBin)).
 		WithDir(workspace).WithStdout(procWriter).WithStderr(procWriter)
@@ -66,7 +69,12 @@ func GetChangedFiles(ctx context.Context, workspace string, log *zap.SugaredLogg
 		return nil, err
 	}
 
-	cmd = cmdContextFactory.CmdContext(ctx, "sh", "-c", fmt.Sprintf(diffFilesCmd, gitBin)).
+	diffFilesCmdFinal := fmt.Sprintf(diffFilesCmd, gitBin)
+	if isPushTrigger {
+		diffFilesCmdFinal = fmt.Sprintf(diffFilesCmdPush, gitBin, lastSuccessfulCommitID)
+	}
+
+	cmd = cmdContextFactory.CmdContext(ctx, "sh", "-c", diffFilesCmdFinal).
 		WithDir(workspace).WithStdout(procWriter).WithStderr(procWriter)
 	out, err = cmd.Output()
 	if err != nil {
@@ -163,10 +171,6 @@ func GetHTTPRemoteLogger(key string) (*logs.RemoteLogger, error) {
 
 // GetRemoteHTTPClient returns a new HTTP client to talk to log service using information available in env.
 func GetRemoteHTTPClient() (client.Client, error) {
-	l, ok := os.LookupEnv(logSvcEp)
-	if !ok {
-		return nil, fmt.Errorf("log service endpoint variable not set %s", logSvcEp)
-	}
 	account, err := GetAccountId()
 	if err != nil {
 		return nil, err
@@ -175,7 +179,28 @@ func GetRemoteHTTPClient() (client.Client, error) {
 	if !ok {
 		return nil, fmt.Errorf("log service token not set %s", logSvcToken)
 	}
-	return client.NewHTTPClient(l, account, token, false, GetAdditionalCertsDir()), nil
+	certsDir := GetAdditionalCertsDir()
+
+	delegateLogURL, delegateLogURLOk := os.LookupEnv(delegateLogURLEnv)
+	internalLogURL, internalLogURLOk := os.LookupEnv(logSvcEp)
+
+	if delegateLogURLOk && !isUrlSame(delegateLogURL, internalLogURL) {
+		httpClient := client.NewHTTPClient(delegateLogURL, account, token, false, certsDir)
+		err := httpClient.Healthz(context.Background())
+		if err == nil {
+			fmt.Printf("%s env is set with value: %s \n", delegateLogURLEnv, delegateLogURL)
+			return httpClient, nil
+		} else {
+			fmt.Printf("Failed to ping log-service: %w\n", err)
+		}
+	}
+	if internalLogURLOk {
+		fmt.Printf("Using internalLogURL %s:\n", internalLogURL)
+		return client.NewHTTPClient(internalLogURL, account, token, false, certsDir), nil
+	}
+
+	return nil, fmt.Errorf("No usable Log URL found.")
+
 }
 
 // GetLogKey returns a key for log service
@@ -205,7 +230,7 @@ func GetAdditionalCertsDir() string {
 
 // GetTiHTTPClient returns a client to talk to the TI service
 func GetTiHTTPClient(repo, sha, commitLink string, skipVerify bool) ticlient.Client {
-	endpoint, _ := GetTiSvcEp()
+	tiEndpoint, _ := GetTiSvcEp()
 	token, _ := GetTiSvcToken()
 	accountID, _ := GetAccountId()
 	orgID, _ := GetOrgId()
@@ -214,7 +239,20 @@ func GetTiHTTPClient(repo, sha, commitLink string, skipVerify bool) ticlient.Cli
 	buildID, _ := GetBuildId()
 	stageID, _ := GetStageId()
 	certsDir := GetAdditionalCertsDir()
-	return ticlient.NewHTTPClient(endpoint, token, accountID, orgID, projectID, pipelineID, buildID, stageID, repo, sha,
+	delegateTiURL, delegateTiURLOk := os.LookupEnv(delegateTiURLEnv)
+	if delegateTiURLOk && !isUrlSame(delegateTiURL, tiEndpoint) {
+		tiHttpClient := ticlient.NewHTTPClient(delegateTiURL, token, accountID, orgID, projectID, pipelineID, buildID, stageID, repo, sha,
+			commitLink, skipVerify, certsDir)
+		err := tiHttpClient.Healthz(context.Background())
+		if err == nil {
+			fmt.Printf("%s env is set with value: %s\n", delegateTiURLEnv, delegateTiURL)
+			return tiHttpClient
+		} else {
+			fmt.Printf("Failed to ping ti-service: %w\n", err)
+		}
+	}
+
+	return ticlient.NewHTTPClient(tiEndpoint, token, accountID, orgID, projectID, pipelineID, buildID, stageID, repo, sha,
 		commitLink, skipVerify, certsDir)
 }
 
@@ -422,6 +460,18 @@ func IsManualExecution() bool {
 	return false
 }
 
+func IsPushTriggerExecution() bool {
+	if IsManualExecution() {
+		return false
+	}
+	sourceBranch, _ := GetSourceBranch()
+	targetBranch, _ := GetTargetBranch()
+	if sourceBranch == targetBranch {
+		return true
+	}
+	return false
+}
+
 func IsStepParallelismEnabled(envs map[string]string) bool {
 	v1, err1 := GetStepStrategyIteration(envs)
 	v2, err2 := GetStepStrategyIterations(envs)
@@ -466,4 +516,11 @@ func GetStepStrategyIterationsFromEnv() (int, error) {
 		return -1, fmt.Errorf("unable to convert %s from string to int", harnessStepTotal)
 	}
 	return total, nil
+}
+
+func isUrlSame(url1, url2 string) bool {
+	if strings.TrimSuffix(url1, "/") != strings.TrimSuffix(url2, "/") {
+		return false
+	}
+	return true
 }

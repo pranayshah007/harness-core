@@ -7,8 +7,11 @@
 
 package io.harness.idp.proxy.delegate;
 
+import static io.harness.NGCommonEntityConstants.APPLICATION_GZIP_MEDIA_TYPE;
+import static io.harness.NGCommonEntityConstants.APPLICATION_OCTET_STREAM_MEDIA_TYPE;
+import static io.harness.NGCommonEntityConstants.CONTENT_TYPE_HEADER;
 import static io.harness.annotations.dev.HarnessTeam.IDP;
-import static io.harness.idp.proxy.ngmanager.IdpAuthInterceptor.AUTHORIZATION;
+import static io.harness.idp.proxy.services.IdpAuthInterceptor.AUTHORIZATION;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.http.HttpStepResponse;
@@ -43,6 +46,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DelegateProxyApiImpl implements DelegateProxyApi {
   private static final String HEADER_STRING_PATTERN = "%s:%s; ";
+  private static final String HEADER_SEPARATOR = ";";
+  private static final String KEY_VALUE_SEPARATOR = ":";
+
   private final DelegateProxyRequestForwarder delegateProxyRequestForwarder;
   private final DelegateSelectorsCache delegateSelectorsCache;
 
@@ -66,7 +72,7 @@ public class DelegateProxyApiImpl implements DelegateProxyApi {
       log.info("Parsed request body method: {}", backstageProxyRequest.getMethod());
       StringBuilder headerString = new StringBuilder();
       backstageProxyRequest.getHeaders().forEach((key, value) -> {
-        if (!key.equals(AUTHORIZATION)) {
+        if (!key.equalsIgnoreCase(AUTHORIZATION)) {
           headerString.append(String.format(HEADER_STRING_PATTERN, key, value));
         } else {
           log.debug("Skipped logging {} header", AUTHORIZATION);
@@ -91,7 +97,30 @@ public class DelegateProxyApiImpl implements DelegateProxyApi {
             .build();
       }
 
-      return Response.status(httpResponse.getHttpResponseCode()).entity(httpResponse.getHttpResponseBody()).build();
+      Response.ResponseBuilder responseBuilder = Response.status(httpResponse.getHttpResponseCode());
+
+      String responseHeaders = httpResponse.getHeader();
+      boolean isByteResponse = false;
+      if (responseHeaders != null) {
+        for (String header : responseHeaders.split(HEADER_SEPARATOR)) {
+          String[] nameValue = header.split(KEY_VALUE_SEPARATOR);
+          String name = nameValue[0].trim();
+          String value = nameValue[1].trim();
+          if (name.equals(CONTENT_TYPE_HEADER)
+              && (value.equals(APPLICATION_GZIP_MEDIA_TYPE) || value.equals(APPLICATION_OCTET_STREAM_MEDIA_TYPE))) {
+            isByteResponse = true;
+          }
+          responseBuilder.header(name, value);
+        }
+      }
+
+      if (isByteResponse) {
+        responseBuilder.entity(httpResponse.getHttpResponseBodyInBytes());
+      } else {
+        responseBuilder.entity(httpResponse.getHttpResponseBody());
+      }
+
+      return responseBuilder.build();
     }
   }
 

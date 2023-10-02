@@ -3,7 +3,17 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ include "ng-manager.name" . }}
+  {{- if .Values.global.commonLabels }}
+  labels:
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+  {{- end }}
   annotations:
+    {{- if .Values.ingress.annotations }}
+    {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.ingress.annotations "context" $) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.global.commonAnnotations }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
     {{- if .Values.global.ingress.objects.annotations }}
     {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.global.ingress.objects.annotations "context" $) | nindent 4 }}
     {{- end }}
@@ -31,4 +41,250 @@ spec:
         {{- end }}
       secretName: {{ .Values.global.ingress.tls.secretName }}
   {{- end }}
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ng-manager-v1-apis
+  namespace: {{ .Release.Namespace }}
+  {{- if .Values.global.commonLabels }}
+  labels:
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+  {{- end }}
+  annotations:
+    {{- if .Values.global.commonAnnotations }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.global.ingress.objects.annotations }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.ingress.objects.annotations "context" $ ) | nindent 4 }}
+    {{- end }}
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+  ingressClassName: {{ .Values.global.ingress.className | quote }}
+  rules:
+    {{- range .Values.global.ingress.hosts }}
+    - host: {{ . | quote }}
+      http:
+        paths:
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/orgs)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/orgs/.+)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/orgs/.+/projects)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/orgs/.+/projects/.+)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/secrets)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/secrets/.+)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/orgs/.+/secrets)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/orgs/.+/secrets/.+)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/orgs/.+/projects/.+/secrets)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/orgs/.+/projects/.+/secrets/.+)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/connectors)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/connectors/.+)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/orgs/.+/connectors)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/orgs/.+/connectors/.+)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/orgs/.+/projects/.+/connectors)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/orgs/.+/projects/.+/connectors/.+)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/services)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/services/.+)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/orgs/.+/services)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/orgs/.+/services/.+)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/orgs/.+/projects/.+/services)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/orgs/.+/projects/.+/services/.+)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/ip-allowlist)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/ip-allowlist/.+)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/favorites)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/favorites/.+)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/eula/.+)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/gitx-webhooks/.+)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/gitx-webhooks)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: ng-manager
+                port:
+                  number: {{ $.Values.service.port }}
+            path: /(v1/gitx-webhook-events)
+            pathType: ImplementationSpecific
+    {{- end }}
+  {{- if .Values.global.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        {{- range .Values.global.ingress.hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .Values.global.ingress.tls.secretName }}
+  {{- end }}
+
 {{- end }}

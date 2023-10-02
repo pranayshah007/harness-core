@@ -12,12 +12,19 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.BranchFilterDelegateTaskParams;
+import io.harness.beans.BranchFilterParamsDTO;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.GetBatchFileRequestIdentifier;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.PageRequestDTO;
+import io.harness.beans.RepoFilterDelegateTaskParams;
+import io.harness.beans.RepoFilterParamsDTO;
 import io.harness.beans.Scope;
 import io.harness.beans.WebhookEncryptedSecretDTO;
 import io.harness.beans.gitsync.GitFileDetails;
@@ -137,6 +144,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
 // Don't inject this directly go through ScmClientOrchestrator.
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @Slf4j
 @OwnedBy(DX)
 public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilitatorServiceImpl {
@@ -434,6 +443,30 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
   }
 
   @Override
+  public GitDiffResultFileListDTO listCommitsDiffFiles(
+      Scope scope, ScmConnector scmConnector, String initialCommitId, String finalCommitId) {
+    final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetails(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmConnector);
+    final ScmGitRefTaskParams scmGitRefTaskParams = ScmGitRefTaskParams.builder()
+                                                        .gitRefType(GitRefType.COMPARE_COMMITS)
+                                                        .initialCommitId(initialCommitId)
+                                                        .finalCommitId(finalCommitId)
+                                                        .scmConnector(scmConnector)
+                                                        .encryptedDataDetails(encryptionDetails)
+                                                        .build();
+    DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(scope.getAccountIdentifier(),
+        scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmGitRefTaskParams, TaskType.SCM_GIT_REF_TASK);
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+    ScmGitRefTaskResponseData scmGitRefTaskResponseData = (ScmGitRefTaskResponseData) delegateResponseData;
+    try {
+      return PRFileListMapper.toGitDiffResultFileListDTO(
+          CompareCommitsResponse.parseFrom(scmGitRefTaskResponseData.getCompareCommitsResponse()).getFilesList());
+    } catch (InvalidProtocolBufferException e) {
+      throw new UnexpectedException("Unexpected error occurred while doing scm operation");
+    }
+  }
+
+  @Override
   public List<String> listCommits(YamlGitConfigDTO yamlGitConfigDTO, String branch) {
     final ScmConnector scmConnector = getSCMConnectorUsedInGitSyncConfig(yamlGitConfigDTO.getAccountIdentifier(),
         yamlGitConfigDTO.getOrganizationIdentifier(), yamlGitConfigDTO.getProjectIdentifier(),
@@ -671,15 +704,17 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
 
   @Override
   public GetUserReposResponse listUserRepos(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      ScmConnector scmConnector, PageRequestDTO pageRequest) {
+      ScmConnector scmConnector, PageRequestDTO pageRequest, RepoFilterParamsDTO repoFilterParamsDTO) {
     final List<EncryptedDataDetail> encryptionDetails =
         getEncryptedDataDetailsForNewGitX(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector);
-    final ScmGitRefTaskParams scmGitRefTaskParams = ScmGitRefTaskParams.builder()
-                                                        .gitRefType(GitRefType.REPOSITORY_LIST)
-                                                        .scmConnector(scmConnector)
-                                                        .encryptedDataDetails(encryptionDetails)
-                                                        .pageRequest(pageRequest)
-                                                        .build();
+    final ScmGitRefTaskParams scmGitRefTaskParams =
+        ScmGitRefTaskParams.builder()
+            .gitRefType(GitRefType.REPOSITORY_LIST)
+            .scmConnector(scmConnector)
+            .encryptedDataDetails(encryptionDetails)
+            .pageRequest(pageRequest)
+            .repoFilterDelegateTaskParams(buildRepoFilterDelegateTaskParams(repoFilterParamsDTO))
+            .build();
     DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(accountIdentifier, orgIdentifier,
         projectIdentifier, scmGitRefTaskParams, TaskType.SCM_GIT_REF_TASK, DEFAULT_DELEGATE_TASK_TIMEOUT_In_SECONDS);
     final DelegateResponseData delegateResponseData = executeDelegateSyncTaskV2(delegateTaskRequest);
@@ -696,15 +731,18 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
 
   @Override
   public ListBranchesWithDefaultResponse listBranches(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, ScmConnector scmConnector, PageRequestDTO pageRequest) {
+      String projectIdentifier, ScmConnector scmConnector, PageRequestDTO pageRequest,
+      BranchFilterParamsDTO branchFilterParamsDTO) {
     final List<EncryptedDataDetail> encryptionDetails =
         getEncryptedDataDetailsForNewGitX(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector);
-    final ScmGitRefTaskParams scmGitRefTaskParams = ScmGitRefTaskParams.builder()
-                                                        .gitRefType(GitRefType.BRANCH_LIST_WITH_DEFAULT_BRANCH)
-                                                        .scmConnector(scmConnector)
-                                                        .encryptedDataDetails(encryptionDetails)
-                                                        .pageRequest(pageRequest)
-                                                        .build();
+    final ScmGitRefTaskParams scmGitRefTaskParams =
+        ScmGitRefTaskParams.builder()
+            .gitRefType(GitRefType.BRANCH_LIST_WITH_DEFAULT_BRANCH)
+            .scmConnector(scmConnector)
+            .encryptedDataDetails(encryptionDetails)
+            .pageRequest(pageRequest)
+            .branchFilterDelegateTaskParams(buildBranchFilterDelegateTaskParams(branchFilterParamsDTO))
+            .build();
     DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(accountIdentifier, orgIdentifier,
         projectIdentifier, scmGitRefTaskParams, TaskType.SCM_GIT_REF_TASK, DEFAULT_DELEGATE_TASK_TIMEOUT_In_SECONDS);
     final DelegateResponseData delegateResponseData = executeDelegateSyncTaskV2(delegateTaskRequest);
@@ -1219,5 +1257,23 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
   public UserDetailsResponseDTO getUserDetails(UserDetailsRequestDTO userDetailsRequestDTO) {
     // TODO: Implement this flow to obtain user details via delegate
     return null;
+  }
+
+  private RepoFilterDelegateTaskParams buildRepoFilterDelegateTaskParams(RepoFilterParamsDTO repoFilterParamsDTO) {
+    if (repoFilterParamsDTO == null) {
+      return RepoFilterDelegateTaskParams.builder().build();
+    }
+    return RepoFilterDelegateTaskParams.builder()
+        .repoName(repoFilterParamsDTO.getRepoName())
+        .userName(repoFilterParamsDTO.getUserName())
+        .build();
+  }
+
+  private BranchFilterDelegateTaskParams buildBranchFilterDelegateTaskParams(
+      BranchFilterParamsDTO branchFilterParamsDTO) {
+    if (branchFilterParamsDTO == null) {
+      return BranchFilterDelegateTaskParams.builder().build();
+    }
+    return BranchFilterDelegateTaskParams.builder().branchName(branchFilterParamsDTO.getBranchName()).build();
   }
 }

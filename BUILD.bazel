@@ -162,6 +162,7 @@ filegroup(
 load("//tools/bazel/sonarqube:defs.bzl", "sonarqube")
 load("//project/flags:sonarqube_targets_seperated.bzl", "get_sonarqube_targets_seperated")
 
+# For Java Modules, by default language is set to "java" value.
 sonarqube(
     name = "sq_000_399",
     srcs = [],
@@ -210,6 +211,20 @@ sonarqube(
     project_name = "Bazel Portal 900-999-INDIVI",
     scm_info = [":git"],
     sq_properties_filename = "sonar-project-900-999-INDIVI.properties",
+    tags = ["manual"],
+    targets = [],
+)
+
+sonarqube(
+    name = "sonar_go",
+    srcs = [],
+    coverage_report = ":coverage_report",
+    language = "go",
+    modules = get_sonarqube_targets_seperated(),
+    project_key = "portal_bazel_go_modules",
+    project_name = "Bazel Portal GO Modules",
+    scm_info = [":git"],
+    sq_properties_filename = "sonar-project-go.properties",
     tags = ["manual"],
     targets = [],
 )

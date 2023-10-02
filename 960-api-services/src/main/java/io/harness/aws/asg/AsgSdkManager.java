@@ -25,7 +25,10 @@ import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
 import static java.util.stream.Collectors.toSet;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.ecs.ElbV2Client;
 import io.harness.concurrent.HTimeLimiter;
@@ -92,11 +95,14 @@ import com.amazonaws.services.ec2.model.CreateLaunchTemplateRequest;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateResult;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateVersionRequest;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateVersionResult;
+import com.amazonaws.services.ec2.model.DescribeLaunchTemplateVersionsRequest;
+import com.amazonaws.services.ec2.model.DescribeLaunchTemplateVersionsResult;
 import com.amazonaws.services.ec2.model.DescribeLaunchTemplatesRequest;
 import com.amazonaws.services.ec2.model.DescribeLaunchTemplatesResult;
 import com.amazonaws.services.ec2.model.LaunchTemplate;
 import com.amazonaws.services.ec2.model.LaunchTemplateVersion;
 import com.amazonaws.services.ec2.model.RequestLaunchTemplateData;
+import com.amazonaws.services.ec2.model.ResponseLaunchTemplateData;
 import com.google.common.util.concurrent.ExecutionError;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
@@ -133,6 +139,7 @@ import software.amazon.awssdk.services.elasticloadbalancingv2.model.Rule;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.TargetGroupTuple;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.TargetHealthDescription;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @Slf4j
 @OwnedBy(CDP)
 public class AsgSdkManager {
@@ -503,6 +510,19 @@ public class AsgSdkManager {
     return totalNrOfInstances == 0;
   }
 
+  public void downSizeToZero(String asgName) {
+    info("Downsizing ASG `%s` to 0", asgName);
+    UpdateAutoScalingGroupRequest req = new UpdateAutoScalingGroupRequest()
+                                            .withAutoScalingGroupName(asgName)
+                                            .withMinSize(0)
+                                            .withMaxSize(0)
+                                            .withDesiredCapacity(0);
+    asgCall(asgClient -> asgClient.updateAutoScalingGroup(req));
+
+    String operationName = format("Asg %s to reach steady state", asgName);
+    waitReadyState(asgName, this::checkAsgDownsizedToZero, operationName);
+  }
+
   public StartInstanceRefreshResult startInstanceRefresh(
       String asgName, Boolean skipMatching, Integer instanceWarmup, Integer minimumHealthyPercentage) {
     StartInstanceRefreshRequest startInstanceRefreshRequest =
@@ -688,8 +708,7 @@ public class AsgSdkManager {
 
   public void modifySpecificListenerRule(
       String region, String listenerRuleArn, List<String> targetGroupArnsList, AwsInternalConfig awsInternalConfig) {
-    Collection<software.amazon.awssdk.services.elasticloadbalancingv2.model.TargetGroupTuple> targetGroups =
-        new ArrayList<>();
+    Collection<TargetGroupTuple> targetGroups = new ArrayList<>();
     if (isNotEmpty(targetGroupArnsList)) {
       targetGroupArnsList.forEach(targetGroupArn -> {
         TargetGroupTuple targetGroupTuple = TargetGroupTuple.builder().targetGroupArn(targetGroupArn).weight(1).build();
@@ -729,8 +748,7 @@ public class AsgSdkManager {
 
   public void modifyDefaultListenerRule(
       String region, String listenerArn, List<String> targetGroupArnsList, AwsInternalConfig awsInternalConfig) {
-    Collection<software.amazon.awssdk.services.elasticloadbalancingv2.model.TargetGroupTuple> targetGroups =
-        new ArrayList<>();
+    Collection<TargetGroupTuple> targetGroups = new ArrayList<>();
     if (isNotEmpty(targetGroupArnsList)) {
       targetGroupArnsList.forEach(targetGroupArn -> {
         TargetGroupTuple targetGroupTuple = TargetGroupTuple.builder().targetGroupArn(targetGroupArn).weight(1).build();
@@ -910,5 +928,19 @@ public class AsgSdkManager {
       logCallback.saveExecutionLog(formatted, ERROR);
     }
     log.error(formatted);
+  }
+
+  public ResponseLaunchTemplateData getLaunchTemplateData(String templateName, String version) {
+    DescribeLaunchTemplateVersionsRequest req =
+        new DescribeLaunchTemplateVersionsRequest().withLaunchTemplateName(templateName).withVersions(version);
+    DescribeLaunchTemplateVersionsResult describeLaunchTemplateVersionsResult =
+        ec2Call(ec2Client -> ec2Client.describeLaunchTemplateVersions(req));
+    if (isEmpty(describeLaunchTemplateVersionsResult.getLaunchTemplateVersions())) {
+      return null;
+    }
+
+    LaunchTemplateVersion launchTemplateVersion =
+        describeLaunchTemplateVersionsResult.getLaunchTemplateVersions().get(0);
+    return launchTemplateVersion.getLaunchTemplateData();
   }
 }

@@ -9,6 +9,7 @@ package io.harness.cvng.core.jobs;
 
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.entities.ActivityBucket;
+import io.harness.cvng.analysis.entities.SRMAnalysisStepExecutionDetail;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MetricPack;
@@ -53,9 +54,9 @@ public abstract class EntityChangeEventMessageProcessor implements ConsumerMessa
     // Add the service for project level default deletion
     final List<Class<? extends PersistentEntity>> deleteEntitiesWithDefaultHandler =
         Arrays.asList(VerificationJob.class, Activity.class, ActivityBucket.class, MetricPack.class, HeatMap.class,
-            TimeSeriesThreshold.class, CVNGStepTask.class, UserJourney.class, Webhook.class, ServiceDependency.class,
+            TimeSeriesThreshold.class, CVNGStepTask.class, UserJourney.class, ServiceDependency.class,
             SLOHealthIndicator.class, SLOErrorBudgetReset.class, NotificationRule.class,
-            EntityUnavailabilityStatuses.class, Downtime.class);
+            EntityUnavailabilityStatuses.class, Downtime.class, SRMAnalysisStepExecutionDetail.class);
     ENTITIES_MAP = new LinkedHashMap<>();
     deleteEntitiesWithDefaultHandler.forEach(entity -> ENTITIES_MAP.put(entity, DeleteEntityByHandler.class));
 
@@ -69,5 +70,6 @@ public abstract class EntityChangeEventMessageProcessor implements ConsumerMessa
     EXCEPTIONS = new HashSet<>();
     EXCEPTIONS.add(ServiceLevelIndicator.class);
     EXCEPTIONS.add(Annotation.class);
+    EXCEPTIONS.add(Webhook.class);
   }
 }

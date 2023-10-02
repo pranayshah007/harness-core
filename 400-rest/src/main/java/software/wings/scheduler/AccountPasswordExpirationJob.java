@@ -23,8 +23,8 @@ import io.harness.persistence.HIterator;
 import io.harness.scheduler.PersistentScheduler;
 
 import software.wings.beans.Account;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.User;
+import software.wings.beans.account.AccountStatus;
 import software.wings.beans.loginSettings.LoginSettings;
 import software.wings.beans.loginSettings.LoginSettingsService;
 import software.wings.beans.loginSettings.PasswordExpirationPolicy;

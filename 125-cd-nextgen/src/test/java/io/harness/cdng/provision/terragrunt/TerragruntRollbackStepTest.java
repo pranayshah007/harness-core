@@ -25,7 +25,10 @@ import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.manifest.yaml.GitStoreDTO;
+import io.harness.cdng.manifest.yaml.TerragruntCommandFlagType;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
@@ -84,11 +87,13 @@ public class TerragruntRollbackStepTest extends CategoryTest {
 
   @Mock private KryoSerializer kryoSerializer;
   @Mock private TerragruntStepHelper terragruntStepHelper;
+  @Mock private CDExpressionResolver cdExpressionResolver;
   @Mock private PipelineRbacHelper pipelineRbacHelper;
   @Mock private StepHelper stepHelper;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private AccountService accountService;
   @Mock private TerragruntConfigDAL terragruntConfigDAL;
+  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @InjectMocks private TerragruntRollbackStep terragruntRollbackStep = new TerragruntRollbackStep();
 
   @Test
@@ -100,7 +105,13 @@ public class TerragruntRollbackStepTest extends CategoryTest {
                             .putSetupAbstractions("accountId", "test-account")
                             .build();
     TerragruntRollbackStepParameters rollbackSpec =
-        TerragruntRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
+        TerragruntRollbackStepParameters.builder()
+            .commandFlags(List.of(TerragruntCliOptionFlag.builder()
+                                      .commandType(TerragruntCommandFlagType.DESTROY)
+                                      .flag(ParameterField.createValueField("-lock-timeout=0s"))
+                                      .build()))
+            .provisionerIdentifier(ParameterField.createValueField("id"))
+            .build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
 
     doReturn("fullId").when(terragruntStepHelper).generateFullIdentifier("id", ambiance);
@@ -144,6 +155,12 @@ public class TerragruntRollbackStepTest extends CategoryTest {
                                 .encryptionConfig(VaultConfig.builder().build())
                                 .encryptedData(EncryptedRecordData.builder().build())
                                 .build()));
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+    doReturn(new HashMap<String, String>() {
+      { put("DESTROY", "-lock-timeout=0s"); }
+    })
+        .when(terragruntStepHelper)
+        .getTerragruntCliFlags(any());
     Mockito.mockStatic(TaskRequestsUtils.class);
     when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
@@ -153,7 +170,7 @@ public class TerragruntRollbackStepTest extends CategoryTest {
     assertThat(taskRequest).isNotNull();
     verifyStatic(TaskRequestsUtils.class, times(1));
     TaskRequestsUtils.prepareCDTaskRequest(
-        any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terragrunt Destroy Task"), any(), any());
+        any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terragrunt Destroy Task V2"), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
 
@@ -171,6 +188,7 @@ public class TerragruntRollbackStepTest extends CategoryTest {
     assertThat(((InlineStoreDelegateConfig) params.getBackendFilesStore()).getIdentifier())
         .isEqualTo("test-backend-id");
     assertThat(((GitStoreDelegateConfig) params.getConfigFilesStore()).getConnectorName()).isEqualTo("terragrunt");
+    assertThat(params.getTerragruntCommandFlags().get("DESTROY")).isEqualTo("-lock-timeout=0s");
   }
 
   @Test
@@ -182,7 +200,13 @@ public class TerragruntRollbackStepTest extends CategoryTest {
                             .putSetupAbstractions("accountId", "test-account")
                             .build();
     TerragruntRollbackStepParameters rollbackSpec =
-        TerragruntRollbackStepParameters.builder().provisionerIdentifier(ParameterField.createValueField("id")).build();
+        TerragruntRollbackStepParameters.builder()
+            .commandFlags(List.of(TerragruntCliOptionFlag.builder()
+                                      .commandType(TerragruntCommandFlagType.APPLY)
+                                      .flag(ParameterField.createValueField("-lock-timeout=0s"))
+                                      .build()))
+            .provisionerIdentifier(ParameterField.createValueField("id"))
+            .build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
 
     doReturn("fullId").when(terragruntStepHelper).generateFullIdentifier("id", ambiance);
@@ -226,6 +250,12 @@ public class TerragruntRollbackStepTest extends CategoryTest {
                                 .encryptionConfig(VaultConfig.builder().build())
                                 .encryptedData(EncryptedRecordData.builder().build())
                                 .build()));
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+    doReturn(new HashMap<String, String>() {
+      { put("APPLY", "-lock-timeout=0s"); }
+    })
+        .when(terragruntStepHelper)
+        .getTerragruntCliFlags(any());
     Mockito.mockStatic(TaskRequestsUtils.class);
     when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
@@ -235,7 +265,7 @@ public class TerragruntRollbackStepTest extends CategoryTest {
     assertThat(taskRequest).isNotNull();
     verifyStatic(TaskRequestsUtils.class, times(1));
     TaskRequestsUtils.prepareCDTaskRequest(
-        any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terragrunt Apply Task"), any(), any());
+        any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terragrunt Apply Task V2"), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
 
@@ -253,6 +283,7 @@ public class TerragruntRollbackStepTest extends CategoryTest {
     assertThat(((InlineStoreDelegateConfig) params.getBackendFilesStore()).getIdentifier())
         .isEqualTo("test-backend-id");
     assertThat(((GitStoreDelegateConfig) params.getConfigFilesStore()).getConnectorName()).isEqualTo("terragrunt");
+    assertThat(params.getTerragruntCommandFlags().get("APPLY")).isEqualTo("-lock-timeout=0s");
   }
 
   @Test

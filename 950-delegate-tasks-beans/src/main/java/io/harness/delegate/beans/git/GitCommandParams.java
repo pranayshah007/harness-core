@@ -38,6 +38,7 @@ public class GitCommandParams extends ConnectorTaskParams implements TaskParamet
   List<EncryptedDataDetail> encryptionDetails;
   GitBaseRequest gitCommandRequest;
   SSHKeySpecDTO sshKeySpecDTO;
+  boolean githubAppAuthentication;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

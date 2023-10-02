@@ -58,28 +58,29 @@ public class StagesExpressionExtractorTest extends CategoryTest {
         + "      name: <+pipeline.stages.s1.name>\n";
     String pipelineYaml = "pipeline:\n"
         + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: s1\n"
-        + "      description: desc\n"
-        + "      name: s one\n"
-        + "  - stage:\n"
-        + "      identifier: s2\n"
-        + "      description: the description is desc value\n"
-        + "      name: name value\n";
-    String res1 = StagesExpressionExtractor.replaceExpressions(pipelineYamlWithExpressions, null);
+        + "    - stage:\n"
+        + "        identifier: s1\n"
+        + "        description: desc\n"
+        + "        name: s one\n"
+        + "    - stage:\n"
+        + "        identifier: s2\n"
+        + "        description: the description is desc value\n"
+        + "        name: name value\n";
+    String res1 = StagesExpressionExtractor.replaceExpressionsWithJsonNode(pipelineYamlWithExpressions, null);
     assertThat(res1).isEqualTo(pipelineYamlWithExpressions);
 
     Map<String, String> expressionValues = new HashMap<>();
     expressionValues.put("<+pipeline.stages.s1.description>", "desc value");
     expressionValues.put("<+pipeline.stages.s1.name>", "name value");
-    String res2 = StagesExpressionExtractor.replaceExpressions(pipelineYamlWithExpressions, expressionValues);
+    String res2 =
+        StagesExpressionExtractor.replaceExpressionsWithJsonNode(pipelineYamlWithExpressions, expressionValues);
     assertThat(res2).isEqualTo(pipelineYaml);
 
-    String res3 = StagesExpressionExtractor.replaceExpressions(pipelineYaml, expressionValues);
+    String res3 = StagesExpressionExtractor.replaceExpressionsWithJsonNode(pipelineYaml, expressionValues);
     assertThat(res3).isEqualTo(pipelineYaml);
 
     expressionValues.put("pipeline.stages.s1.name", "name value");
-    assertThatThrownBy(() -> StagesExpressionExtractor.replaceExpressions(pipelineYaml, expressionValues))
+    assertThatThrownBy(() -> StagesExpressionExtractor.replaceExpressionsWithJsonNode(pipelineYaml, expressionValues))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
             "pipeline.stages.s1.name is not a syntactically valid pipeline expression. Is the expression surrounded by <+ >?");

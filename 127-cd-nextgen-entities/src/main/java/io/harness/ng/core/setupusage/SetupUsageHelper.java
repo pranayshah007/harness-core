@@ -9,19 +9,28 @@ package io.harness.ng.core.setupusage;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.EventsFrameworkConstants.SETUP_USAGE;
+import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.CONNECTORS;
+import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.FILES;
+import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.SECRETS;
+import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TEMPLATE;
 import static io.harness.ng.core.entitysetupusage.dto.SetupUsageDetailType.ENTITY_REFERRED_BY_INFRA;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
 import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entitysetupusage.EntityDetailWithSetupUsageDetailProtoDTO;
 import io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreateV2DTO;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -33,12 +42,15 @@ import java.util.Set;
 import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @Singleton
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class SetupUsageHelper {
   @Inject @Named(SETUP_USAGE) private Producer producer;
   @Inject private IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
+  final Set<EntityTypeProtoEnum> entityTypesSupportedByNGCore = Sets.newHashSet(TEMPLATE, CONNECTORS, FILES, SECRETS);
 
   public void publishServiceEntitySetupUsage(
       @Valid SetupUsageOwnerEntity entity, Set<EntityDetailProtoDTO> referredEntities) {
@@ -75,6 +87,33 @@ public class SetupUsageHelper {
               .build());
       log.info("Emitted service event with id {} for entityreference {} and accountId {}", messageId,
           entityReferenceDTO, entity.getAccountId());
+    }
+
+    // This is being added to handle the case for entities which were earlier present but have been removed in updated
+    // service
+    for (EntityTypeProtoEnum key : entityTypesSupportedByNGCore) {
+      if (!referredEntityTypeToReferredEntities.containsKey(key.name())) {
+        EntitySetupUsageCreateV2DTO entityReferenceDTO = EntitySetupUsageCreateV2DTO.newBuilder()
+                                                             .setAccountIdentifier(entity.getAccountId())
+                                                             .setReferredByEntity(entityDetail)
+                                                             .setDeleteOldReferredByRecords(true)
+                                                             .build();
+        try {
+          String messageId = producer.send(
+              Message.newBuilder()
+                  .putAllMetadata(ImmutableMap.of("accountId", entity.getAccountId(),
+                      EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, key.name(),
+                      EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
+                  .setData(entityReferenceDTO.toByteString())
+                  .build());
+          log.info("Emitted service event with id {} for entityreference {} and accountId {}", messageId,
+              entityReferenceDTO, entity.getAccountId());
+        } catch (Exception ex) {
+          log.error(
+              "Error deleting the setup usages for the service with the identifier {} in account {} in project {} in org {}",
+              entity.getIdentifier(), entity.getAccountId(), entity.getProjectIdentifier(), entity.getOrgIdentifier());
+        }
+      }
     }
   }
 

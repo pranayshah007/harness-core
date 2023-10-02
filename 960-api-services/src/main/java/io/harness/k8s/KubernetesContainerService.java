@@ -169,6 +169,8 @@ public interface KubernetesContainerService {
 
   List<V1Pod> getRunningPodsWithLabels(KubernetesConfig kubernetesConfig, String namespace, Map<String, String> labels);
 
+  List<V1Pod> getRunningPodsWithLabels(KubernetesConfig kubernetesConfig, String namespace, List<String> labels);
+
   void deleteIstioVirtualService(KubernetesConfig kubernetesConfig, String name);
 
   VirtualService getFabric8IstioVirtualService(KubernetesConfig kubernetesConfig, String name);
@@ -205,4 +207,8 @@ public interface KubernetesContainerService {
   List<V1Secret> getSecretsWithLabelsAndFields(KubernetesConfig kubernetesConfig, String labels, String fields);
 
   V1Status deleteSecrets(KubernetesConfig kubernetesConfig, String labels, String fields);
+
+  void modifyKubeConfigReadableProperties(String path);
+
+  void modifyFileReadableProperties(String path);
 }

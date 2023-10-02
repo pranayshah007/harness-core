@@ -6,12 +6,14 @@
  */
 
 package io.harness.ng.core.migration.background;
-
 import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.account.utils.AccountUtils;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.encryption.Scope;
 import io.harness.migration.NGMigration;
 import io.harness.mongo.MongoPersistence;
@@ -36,6 +38,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 public class UpdateEnvironmentRefValueInServiceOverrideNGMigration implements NGMigration {
   @Inject private MongoPersistence mongoPersistence;

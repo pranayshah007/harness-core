@@ -179,7 +179,8 @@ public class ConnectorUtils {
       GcpManualDetailsDTO credentialConfig = (GcpManualDetailsDTO) credential.getConfig();
       encryptedDataDetails = secretManagerClientService.getEncryptionDetails(ngAccess, credentialConfig);
       return connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails).build();
-    } else if (credential.getGcpCredentialType() == GcpCredentialType.INHERIT_FROM_DELEGATE) {
+    } else if (credential.getGcpCredentialType() == GcpCredentialType.INHERIT_FROM_DELEGATE
+        || credential.getGcpCredentialType() == GcpCredentialType.OIDC_AUTHENTICATION) {
       return connectorDetailsBuilder.build();
     }
     throw new InvalidArgumentsException(format("Unsupported gcp credential type:[%s] on connector:[%s]",

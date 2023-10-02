@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.terraform;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.filestore.FileStoreFetchFilesConfig;
@@ -19,6 +20,7 @@ import lombok.Data;
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @Builder
+@RecasterAlias("io.harness.delegate.task.terraform.RemoteTerraformBackendConfigFileInfo")
 public class RemoteTerraformBackendConfigFileInfo
     implements RemoteTerraformFileInfo, TerraformBackendConfigFileInfo, NestedAnnotationResolver {
   GitFetchFilesConfig gitFetchFilesConfig;

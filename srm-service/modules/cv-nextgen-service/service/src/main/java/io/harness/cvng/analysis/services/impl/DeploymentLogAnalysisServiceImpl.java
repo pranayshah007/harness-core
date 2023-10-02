@@ -7,7 +7,9 @@
 
 package io.harness.cvng.analysis.services.impl;
 
+import static io.harness.beans.FeatureName.SRM_ENABLE_BASELINE_BASED_VERIFICATION;
 import static io.harness.cvng.CVConstants.TAG_DATA_SOURCE;
+import static io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterType.NO_BASELINE_AVAILABLE;
 import static io.harness.cvng.beans.MonitoredServiceDataSourceType.ERROR_TRACKING;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -631,6 +633,21 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
                         .clusterType(ClusterType.BASELINE)
                         .count(eventCountByEventTypeMap.getOrDefault(ClusterType.BASELINE, 0L).intValue())
                         .build());
+
+    // Filter the eventCount based on NO_BASELINE_AVAILABLE, if it's true then only NO_BASELINE_AVAILABLE should be
+    // present, else it shouldn't be part of the eventCount
+    Optional<EventCount> result =
+        eventCounts.stream().filter(event -> NO_BASELINE_AVAILABLE.equals(event.getClusterType())).findFirst();
+    if (featureFlagService.isFeatureFlagEnabled(accountId, SRM_ENABLE_BASELINE_BASED_VERIFICATION.name())
+        && result.isPresent() && result.get().getCount() > 0) {
+      eventCounts.clear();
+      eventCounts.add(result.get());
+    } else {
+      eventCounts = eventCounts.stream()
+                        .filter(eventCount -> !eventCount.getClusterType().equals(NO_BASELINE_AVAILABLE))
+                        .collect(Collectors.toList());
+    }
+
     populateTicketsForLogFeedbacks(logAnalysisRadarChartListDTOPageResponse.getContent());
     return LogAnalysisRadarChartListWithCountDTO.builder()
         .totalClusters(totalClusters)

@@ -9,18 +9,20 @@ package s3
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"path"
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/harness/harness-core/product/log-service/store"
-
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+
+	"github.com/harness/harness-core/product/log-service/logger"
+	"github.com/harness/harness-core/product/log-service/store"
 )
 
 var _ store.Store = (*Store)(nil)
@@ -126,11 +128,73 @@ func (s *Store) UploadLink(ctx context.Context, key string, expire time.Duration
 func (s *Store) Delete(ctx context.Context, key string) error {
 	svc := s3.New(s.session)
 	keyWithPrefix := path.Join("/", s.prefix, key)
+
+	return DeleteUtil(svc, s.bucket, keyWithPrefix)
+}
+
+func DeleteUtil(svc *s3.S3, bucketName string, keyWithPrefix string) error {
 	_, err := svc.DeleteObject(&s3.DeleteObjectInput{
-		Bucket: aws.String(s.bucket),
+		Bucket: aws.String(bucketName),
 		Key:    aws.String(keyWithPrefix),
 	})
 	return err
+}
+
+func (s *Store) Exists(ctx context.Context, key string) (bool, error) {
+	svc := s3.New(s.session)
+	keyWithPrefix := path.Join(s.prefix, key)
+
+	objects, err := ListObjects(svc, ctx, s.bucket, keyWithPrefix, 1)
+	if err != nil {
+		logger.FromContext(ctx).Info("Failed to list objects:", err)
+		return true, err
+	}
+
+	if len(objects) == 0 {
+		return false, nil
+	}
+	return true, nil
+}
+
+func ListObjects(svc *s3.S3, ctx context.Context, bucketName string, keyWithPrefix string, limit int64) ([]*s3.Object, error) {
+	input := &s3.ListObjectsV2Input{
+		Bucket:  aws.String(bucketName),
+		Prefix:  aws.String(keyWithPrefix),
+		MaxKeys: aws.Int64(limit),
+	}
+
+	// Call the ListObjectsV2 API
+	result, err := svc.ListObjectsV2(input)
+	if err != nil {
+		logger.FromContext(ctx).Info("Failed to list objects:", err)
+		return nil, err
+	}
+
+	return result.Contents, nil
+}
+
+func (s *Store) DeleteWithPrefix(ctx context.Context, key string) error {
+	svc := s3.New(s.session)
+	keyWithPrefix := path.Join(s.prefix, key)
+	for {
+		objects, err := ListObjects(svc, ctx, s.bucket, keyWithPrefix, 1000)
+		if err != nil {
+			logger.FromContext(ctx).Info("Failed to list objects:", err)
+			return err
+		}
+		if len(objects) == 0 {
+			logger.FromContext(ctx).Info("All objects deleted for prefix ", keyWithPrefix)
+			return nil
+		}
+		for _, obj := range objects {
+			err = DeleteUtil(svc, s.bucket, *obj.Key)
+			if err != nil {
+				logger.FromContext(ctx).Error("Failed to delete object:", err)
+				return err
+			}
+		}
+		logger.FromContext(ctx).Info(fmt.Sprintf("Deleted %d objects for prefix ", len(objects)))
+	}
 }
 
 // Ping pings the store for readiness
@@ -146,4 +210,29 @@ func (s *Store) Ping() error {
 	}
 
 	return nil
+}
+
+func (s *Store) ListBlobPrefix(ctx context.Context, prefix string, limit int) ([]string, error) {
+	svc := s3.New(s.session)
+
+	var keys []string
+
+	params := &s3.ListObjectsInput{
+		Bucket:  aws.String(s.bucket),
+		Prefix:  aws.String(prefix),
+		MaxKeys: aws.Int64(int64(limit)),
+	}
+
+	err := svc.ListObjectsPages(params, func(p *s3.ListObjectsOutput, lastPage bool) bool {
+		for _, obj := range p.Contents {
+			keys = append(keys, *obj.Key)
+		}
+		return true
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return keys, nil
 }

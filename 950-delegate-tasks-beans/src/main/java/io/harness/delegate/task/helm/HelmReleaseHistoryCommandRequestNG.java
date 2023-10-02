@@ -6,7 +6,9 @@
  */
 
 package io.harness.delegate.task.helm;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.ManifestDelegateConfig;
@@ -19,6 +21,7 @@ import software.wings.beans.ServiceHookDelegateConfig;
 import java.util.List;
 import lombok.Builder;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 public class HelmReleaseHistoryCommandRequestNG extends HelmCommandRequestNG {
   @Builder
   public HelmReleaseHistoryCommandRequestNG(String releaseName, List<String> valuesYamlList,
@@ -27,10 +30,11 @@ public class HelmReleaseHistoryCommandRequestNG extends HelmCommandRequestNG {
       CommandUnitsProgress commandUnitsProgress, LogCallback logCallback, String namespace, HelmVersion helmVersion,
       String commandFlags, String repoName, String workingDir, String kubeConfigLocation, String ocPath,
       String commandName, boolean useLatestKubectlVersion, String gcpKeyPath, String releaseHistoryPrefix,
-      List<ServiceHookDelegateConfig> serviceHooks) {
+      List<ServiceHookDelegateConfig> serviceHooks, boolean sendTaskProgressEvents) {
     super(releaseName, HelmCommandType.RELEASE_HISTORY, valuesYamlList, k8sInfraDelegateConfig, manifestDelegateConfig,
         accountId, k8SteadyStateCheckEnabled, shouldOpenFetchFilesLogStream, commandUnitsProgress, logCallback,
         namespace, helmVersion, commandFlags, repoName, workingDir, kubeConfigLocation, ocPath, commandName,
-        useLatestKubectlVersion, gcpKeyPath, releaseHistoryPrefix, serviceHooks, false, false);
+        useLatestKubectlVersion, gcpKeyPath, releaseHistoryPrefix, serviceHooks, false, false, sendTaskProgressEvents,
+        false, false);
   }
 }

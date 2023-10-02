@@ -6,6 +6,12 @@
 load("@rules_java//java:defs.bzl", "java_library")
 load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
 
+filegroup(
+    name = "java_srcs",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+)
+
 java_library(
     name = "module",
     srcs = glob(["*.java"]),
@@ -15,7 +21,7 @@ java_library(
         "//970-api-services-beans/src/main/java/io/harness/logging:module",
         "//980-commons/src/main/java/io/harness/logging:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
-        "@maven//:com_jcraft_harness_jsch_0_1_54_harness_patch",
+        "@maven//:com_github_mwiede_jsch",
         "@maven//:org_apache_commons_commons_lang3",
         "@maven//:org_zeroturnaround_zt_exec",
     ],

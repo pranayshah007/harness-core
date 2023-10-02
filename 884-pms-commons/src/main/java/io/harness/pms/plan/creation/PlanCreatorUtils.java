@@ -16,8 +16,8 @@ import io.harness.logging.AutoLogContext;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.YamlUpdates;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.OptionUtils;
-import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -51,7 +51,7 @@ public class PlanCreatorUtils {
     }
 
     switch (version) {
-      case PipelineVersion.V1:
+      case HarnessYamlVersion.V1:
         Set<String> keys = supportedTypes.keySet();
         String type = field.getNode().getType();
         if (!EmptyPredicate.isEmpty(type)) {
@@ -67,7 +67,7 @@ public class PlanCreatorUtils {
           return false;
         }
         return keys.contains(field.getName());
-      case PipelineVersion.V0:
+      case HarnessYamlVersion.V0:
         String fieldName = field.getName();
         Set<String> types = supportedTypes.get(fieldName);
         if (EmptyPredicate.isEmpty(types)) {
@@ -204,7 +204,7 @@ public class PlanCreatorUtils {
 
   public Dependency createGlobalDependency(KryoSerializer kryoSerializer, String pipelineVersion, String pipelineYaml) {
     switch (pipelineVersion) {
-      case PipelineVersion.V1:
+      case HarnessYamlVersion.V1:
         return Dependency.newBuilder().putAllMetadata(getOptionsDependency(kryoSerializer, pipelineYaml)).build();
       default:
         return null;

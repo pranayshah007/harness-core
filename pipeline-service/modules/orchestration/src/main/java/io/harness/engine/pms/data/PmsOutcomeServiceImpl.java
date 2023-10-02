@@ -38,10 +38,11 @@ import io.harness.springdata.TransactionHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.mongodb.DuplicateKeyException;
+import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -56,10 +57,12 @@ import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.jexl3.JexlException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
@@ -100,6 +103,25 @@ public class PmsOutcomeServiceImpl implements PmsOutcomeService {
   }
 
   @Override
+  public String resolveUsingLevelRuntimeIdx(String planExecutionId, List<String> levelRuntimeIdx, RefObject refObject) {
+    String name = refObject.getName();
+    Query query = query(where(OutcomeInstanceKeys.planExecutionId).is(planExecutionId))
+                      .addCriteria(where(OutcomeInstanceKeys.name).is(name))
+                      .addCriteria(where(OutcomeInstanceKeys.levelRuntimeIdIdx).in(levelRuntimeIdx));
+
+    List<OutcomeInstance> instances = mongoTemplate.find(query, OutcomeInstance.class);
+
+    // Multiple instances might be returned if the same name was saved at different levels/specificity.
+    OutcomeInstance instance = EmptyPredicate.isEmpty(instances)
+        ? null
+        : instances.stream().max(Comparator.comparing(OutcomeInstance::getLevelRuntimeIdIdx)).orElse(null);
+    if (instance == null) {
+      throw new OutcomeException(format("Could not resolve outcome with name '%s'", name));
+    }
+    return instance.getOutcomeJsonValue();
+  }
+
+  @Override
   public String consumeInternal(Ambiance ambiance, Level producedBy, String name, String value, String groupName) {
     try {
       return transactionHelper.performTransaction(() -> {
@@ -119,7 +141,7 @@ public class PmsOutcomeServiceImpl implements PmsOutcomeService {
         return instance.getUuid();
       });
     } catch (DuplicateKeyException ex) {
-      throw new OutcomeException(format("Outcome with name %s is already saved", name), ex);
+      throw new OutcomeException(format("Outcome with name %s is already saved", name));
     }
   }
 
@@ -171,23 +193,8 @@ public class PmsOutcomeServiceImpl implements PmsOutcomeService {
   }
 
   private String resolveUsingRuntimeId(@NotNull Ambiance ambiance, @NotNull RefObject refObject) {
-    String name = refObject.getName();
-    Query query =
-        query(where(OutcomeInstanceKeys.planExecutionId).is(ambiance.getPlanExecutionId()))
-            .addCriteria(where(OutcomeInstanceKeys.name).is(name))
-            .addCriteria(
-                where(OutcomeInstanceKeys.levelRuntimeIdIdx).in(ResolverUtils.prepareLevelRuntimeIdIndices(ambiance)));
-
-    List<OutcomeInstance> instances = mongoTemplate.find(query, OutcomeInstance.class);
-
-    // Multiple instances might be returned if the same name was saved at different levels/specificity.
-    OutcomeInstance instance = EmptyPredicate.isEmpty(instances)
-        ? null
-        : instances.stream().max(Comparator.comparing(OutcomeInstance::getLevelRuntimeIdIdx)).orElse(null);
-    if (instance == null) {
-      throw new OutcomeException(format("Could not resolve outcome with name '%s'", name));
-    }
-    return instance.getOutcomeJsonValue();
+    return resolveUsingLevelRuntimeIdx(
+        ambiance.getPlanExecutionId(), ResolverUtils.prepareLevelRuntimeIdIndices(ambiance), refObject);
   }
 
   private String resolveUsingProducerSetupId(@NotNull Ambiance ambiance, @NotNull RefObject refObject) {
@@ -320,6 +327,24 @@ public class PmsOutcomeServiceImpl implements PmsOutcomeService {
         PersistenceUtils.getRetryPolicy("[Retrying]: Failed deleting OutcomeInstance; attempt: {}",
             "[Failed]: Failed deleting OutcomeInstance; attempt: {}");
     Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, OutcomeInstance.class));
+  }
+
+  @Override
+  public void updateTTL(String planExecutionId, Date ttlDate) {
+    Criteria criteria = where(OutcomeInstanceKeys.planExecutionId).is(planExecutionId);
+    Query query = new Query(criteria);
+    Update ops = new Update();
+    ops.set(OutcomeInstanceKeys.validUntil, ttlDate);
+    RetryPolicy<Object> retryPolicy =
+        PersistenceUtils.getRetryPolicy("[Retrying]: Failed updating TTL OutcomeInstance; attempt: {}",
+            "[Failed]: Failed updating TTL OutcomeInstance; attempt: {}");
+    Failsafe.with(retryPolicy).get(() -> {
+      UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, OutcomeInstance.class);
+      if (!updateResult.wasAcknowledged()) {
+        log.warn("No OutcomeInstance could be marked as updated TTL for given planExecutionIds - " + planExecutionId);
+      }
+      return true;
+    });
   }
 
   private OptionalOutcome resolveOptionalUsingProducerSetupId(Ambiance ambiance, RefObject refObject) {

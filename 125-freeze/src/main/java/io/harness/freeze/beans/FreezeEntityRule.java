@@ -8,6 +8,9 @@
 package io.harness.freeze.beans;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.validator.EntityName;
 import io.harness.validator.NGRegexValidatorConstants;
 
@@ -17,6 +20,8 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import lombok.Data;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_FREEZE})
 @Data
 @RecasterAlias("io.harness.freeze.beans.FreezeEntityRule")
 public class FreezeEntityRule {

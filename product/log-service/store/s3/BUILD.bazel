@@ -11,6 +11,7 @@ go_library(
     importpath = "github.com/harness/harness-core/product/log-service/store/s3",
     visibility = ["//visibility:public"],
     deps = [
+        "//product/log-service/logger",
         "//product/log-service/store",
         "@com_github_aws_aws_sdk_go//aws",
         "@com_github_aws_aws_sdk_go//aws/credentials",
@@ -24,4 +25,12 @@ go_test(
     name = "s3_test",
     srcs = ["s3_test.go"],
     embed = [":s3"],
+)
+
+load("//:tools/bazel/macros.bzl", "run_analysis")
+
+run_analysis(
+    language = "go",
+    targets = [":s3"],
+    test_targets = [":s3_test"],
 )

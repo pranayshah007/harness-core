@@ -6,18 +6,20 @@
  */
 
 package io.harness.artifacts.githubpackages.service;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.exception.WingsException.USER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.docker.DockerRegistryRestClient;
 import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
 import io.harness.artifacts.docker.beans.DockerInternalConfig;
+import io.harness.artifacts.docker.service.ArtifactUtils;
 import io.harness.artifacts.docker.service.DockerRegistryServiceImpl;
 import io.harness.artifacts.docker.service.DockerRegistryUtils;
-import io.harness.artifacts.gar.service.GARUtils;
 import io.harness.artifacts.githubpackages.beans.GithubMavenMetaData;
 import io.harness.artifacts.githubpackages.beans.GithubPackageTypes;
 import io.harness.artifacts.githubpackages.beans.GithubPackagesInternalConfig;
@@ -65,6 +67,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
@@ -369,7 +372,7 @@ public class GithubPackagesRegistryServiceImpl implements GithubPackagesRegistry
 
   private String getArtifactPath(String org, String packageName, String tag, String username) {
     String artifactPath;
-    if (GARUtils.isSHA(tag)) {
+    if (ArtifactUtils.isSHA(tag)) {
       artifactPath = "ghcr.io/%s/%s@%s";
     } else {
       artifactPath = "ghcr.io/%s/%s:%s";

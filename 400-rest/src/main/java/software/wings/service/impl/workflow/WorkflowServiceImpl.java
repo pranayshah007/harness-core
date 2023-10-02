@@ -6,10 +6,8 @@
  */
 
 package software.wings.service.impl.workflow;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
-import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION;
 import static io.harness.beans.FeatureName.HELM_CHART_AS_ARTIFACT;
 import static io.harness.beans.FeatureName.SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
@@ -35,6 +33,7 @@ import static io.harness.expression.ExpressionEvaluator.DEFAULT_HELMCHART_VARIAB
 import static io.harness.expression.ExpressionEvaluator.matchesVariablePattern;
 import static io.harness.govern.Switch.noop;
 import static io.harness.govern.Switch.unhandled;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.provision.TerraformConstants.INHERIT_APPROVED_PLAN;
@@ -60,7 +59,7 @@ import static software.wings.beans.EntityType.SERVICE;
 import static software.wings.beans.EntityType.WORKFLOW;
 import static software.wings.beans.NotificationRule.NotificationRuleBuilder.aNotificationRule;
 import static software.wings.beans.PhaseStep.PhaseStepBuilder.aPhaseStep;
-import static software.wings.beans.WorkflowExecution.WFE_EXECUTIONS_SEARCH_WORKFLOWID;
+import static software.wings.beans.WorkflowExecution.ACCOUNTID_APPID_WORKFLOWID_CREATEDAT_CDPAGECANDIDATE_STATUS;
 import static software.wings.common.InfrastructureConstants.INFRA_ID_EXPRESSION;
 import static software.wings.common.ProvisionerConstants.GENERIC_ROLLBACK_NAME_FORMAT;
 import static software.wings.common.WorkflowConstants.WORKFLOW_INFRAMAPPING_VALIDATION_MESSAGE;
@@ -120,8 +119,11 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.atteo.evo.inflector.English.plural;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
@@ -342,6 +344,8 @@ import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
  *
  * @author Rishi
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @Singleton
 @ValidateOnExecution
@@ -466,15 +470,14 @@ public class WorkflowServiceImpl implements WorkflowService {
   @Override
   public List<Workflow> list(String accountId, List<String> projectFields, String queryHint) {
     FindOptions findOptions = new FindOptions();
-    if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
-      findOptions.readPreference(ReadPreference.secondaryPreferred());
-    }
+    findOptions.readPreference(ReadPreference.secondaryPreferred());
     Query<Workflow> workflowQuery =
         wingsPersistence.createQuery(Workflow.class).filter(WorkflowKeys.accountId, accountId);
     emptyIfNull(projectFields).forEach(field -> { workflowQuery.project(field, true); });
     if (isNotEmpty(queryHint)) {
       findOptions.hint(BasicDBUtils.getIndexObject(Workflow.mongoIndexes(), queryHint));
     }
+    findOptions.limit(NO_LIMIT);
     return emptyIfNull(workflowQuery.asList(findOptions));
   }
 
@@ -657,8 +660,12 @@ public class WorkflowServiceImpl implements WorkflowService {
    * {@inheritDoc}
    */
   @Override
-  public PageResponse<Workflow> listWorkflowsWithoutOrchestration(PageRequest<Workflow> pageRequest) {
+  public PageResponse<Workflow> listWorkflowsWithoutOrchestration(
+      PageRequest<Workflow> pageRequest, boolean hitSecondary) {
     pageRequest.addFieldsExcluded(WorkflowKeys.orchestration);
+    if (hitSecondary) {
+      return wingsPersistence.querySecondary(Workflow.class, pageRequest);
+    }
     return wingsPersistence.query(Workflow.class, pageRequest);
   }
 
@@ -667,7 +674,7 @@ public class WorkflowServiceImpl implements WorkflowService {
    */
   @Override
   public PageResponse<Workflow> listWorkflows(PageRequest<Workflow> pageRequest) {
-    PageResponse<Workflow> response = listWorkflows(pageRequest, 0, false, null);
+    PageResponse<Workflow> response = listWorkflows(pageRequest, 0, false, null, false);
     return response == null ? new PageResponse<>() : response;
   }
 
@@ -680,10 +687,10 @@ public class WorkflowServiceImpl implements WorkflowService {
    * {@inheritDoc}
    */
   @Override
-  public PageResponse<Workflow> listWorkflows(
-      PageRequest<Workflow> pageRequest, Integer previousExecutionsCount, boolean withTags, String tagFilter) {
-    PageResponse<Workflow> workflows =
-        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.WORKFLOW, withTags, false);
+  public PageResponse<Workflow> listWorkflows(PageRequest<Workflow> pageRequest, Integer previousExecutionsCount,
+      boolean withTags, String tagFilter, boolean hitSecondary) {
+    PageResponse<Workflow> workflows = resourceLookupService.listWithTagFilters(
+        pageRequest, tagFilter, EntityType.WORKFLOW, withTags, hitSecondary, true);
 
     if (workflows != null && workflows.getResponse() != null) {
       for (Workflow workflow : workflows.getResponse()) {
@@ -700,8 +707,8 @@ public class WorkflowServiceImpl implements WorkflowService {
           List<WorkflowExecution> workflowExecutions;
 
           FindOptions findOptions = new FindOptions();
-          findOptions.hint(
-              BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), WFE_EXECUTIONS_SEARCH_WORKFLOWID));
+          findOptions.hint(BasicDBUtils.getIndexObject(
+              WorkflowExecution.mongoIndexes(), ACCOUNTID_APPID_WORKFLOWID_CREATEDAT_CDPAGECANDIDATE_STATUS));
           findOptions.limit(previousExecutionsCount);
           workflowExecutions = wingsPersistence.createAnalyticsQuery(WorkflowExecution.class)
                                    .filter(WorkflowExecutionKeys.workflowId, workflow.getUuid())
@@ -837,7 +844,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     if (workflow == null) {
       return null;
     }
-    workflow.setTagLinks(harnessTagService.getTagLinksWithEntityId(workflow.getAccountId(), workflowId));
+    workflow.setTagLinks(harnessTagService.getTagLinksWithEntityId(workflow.getAccountId(), workflowId, false));
     loadOrchestrationWorkflow(workflow, version);
     return workflow;
   }
@@ -1241,7 +1248,8 @@ public class WorkflowServiceImpl implements WorkflowService {
               .withLimit(PageRequest.UNLIMITED)
               .addFilter(PipelineKeys.appId, EQ, appId)
               .addFilter("pipelineStages.pipelineStageElements.properties.workflowId", EQ, workflowId)
-              .build());
+              .build(),
+          false, accountId);
       if (isNotEmpty(pipelinesWithWorkflowLinked)) {
         updateEnvIdInLinkedPipelines(workflow, envId, pipelinesWithWorkflowLinked);
         pipelineService.savePipelines(pipelinesWithWorkflowLinked, true);
@@ -1474,7 +1482,8 @@ public class WorkflowServiceImpl implements WorkflowService {
             .withLimit(PageRequest.UNLIMITED)
             .addFilter(PipelineKeys.appId, EQ, workflow.getAppId())
             .addFilter("pipelineStages.pipelineStageElements.properties.workflowId", EQ, workflow.getUuid())
-            .build());
+            .build(),
+        false, workflow.getAccountId());
 
     if (isNotEmpty(pipelines)) {
       List<String> pipelineNames = pipelines.stream().map(Pipeline::getName).collect(toList());
@@ -4320,6 +4329,31 @@ public class WorkflowServiceImpl implements WorkflowService {
       }
     }
     return workflowExecutionIds;
+  }
+
+  public WorkflowExecution getLastSuccessfulWorkflowExecution(String accountId, String appId, String serviceId) {
+    if (isEmpty(serviceId)) {
+      return null;
+    }
+    return wingsPersistence.createQuery(WorkflowExecution.class)
+        .filter(WorkflowExecutionKeys.accountId, accountId)
+        .filter(WorkflowExecutionKeys.appId, appId)
+        .filter(WorkflowExecutionKeys.serviceIds, serviceId)
+        .filter(WorkflowExecutionKeys.status, SUCCESS)
+        .order(Sort.descending(WorkflowExecutionKeys.createdAt))
+        .get();
+  }
+
+  public WorkflowExecution getLastWorkflowExecutionByInfrastructure(String accountId, String appId, String infraId) {
+    if (isEmpty(infraId)) {
+      return null;
+    }
+    return wingsPersistence.createQuery(WorkflowExecution.class)
+        .filter(WorkflowExecutionKeys.accountId, accountId)
+        .filter(WorkflowExecutionKeys.appId, appId)
+        .filter(WorkflowExecutionKeys.infraDefinitionIds, infraId)
+        .order(Sort.descending(WorkflowExecutionKeys.createdAt))
+        .get();
   }
 
   @Override

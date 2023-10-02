@@ -6,11 +6,17 @@
  */
 
 package io.harness.gitsync.common.service;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.BranchFilterParameters;
+import io.harness.beans.RepoFilterParameters;
 import io.harness.beans.Scope;
 import io.harness.gitsync.common.dtos.GitBranchesResponseDTO;
+import io.harness.gitsync.common.dtos.GitListBranchesResponse;
+import io.harness.gitsync.common.dtos.GitListRepositoryResponse;
 import io.harness.gitsync.common.dtos.GitRepositoryResponseDTO;
 import io.harness.gitsync.common.dtos.ScmCommitFileResponseDTO;
 import io.harness.gitsync.common.dtos.ScmCreateFileRequestDTO;
@@ -28,6 +34,7 @@ import io.harness.gitsync.common.dtos.ScmGetFileUrlResponseDTO;
 import io.harness.gitsync.common.dtos.ScmListFilesRequestDTO;
 import io.harness.gitsync.common.dtos.ScmListFilesResponseDTO;
 import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
+import io.harness.gitsync.common.dtos.ScmUpdateGitCacheRequestDTO;
 import io.harness.gitsync.common.dtos.UserDetailsRequestDTO;
 import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
 import io.harness.gitsync.common.dtos.UserRepoResponse;
@@ -35,14 +42,19 @@ import io.harness.ng.beans.PageRequest;
 
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_GITX, HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PL)
 public interface ScmFacilitatorService {
   List<String> listBranchesUsingConnector(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String connectorIdentifierRef, String repoURL, PageRequest pageRequest, String searchTerm);
 
   List<GitRepositoryResponseDTO> listReposByRefConnector(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String connectorRef, PageRequest pageRequest, String searchTerm,
-      boolean applyGitXRepoAllowListFilter);
+      String projectIdentifier, String connectorRef, PageRequest pageRequest,
+      RepoFilterParameters repoFilterParameters);
+
+  GitListRepositoryResponse listReposV2(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String connectorRef, PageRequest pageRequest, RepoFilterParameters repoFilterParameters);
 
   ScmCommitFileResponseDTO createFile(ScmCreateFileRequestDTO scmCommitRequestDTO);
 
@@ -57,13 +69,18 @@ public interface ScmFacilitatorService {
   ScmGetBatchFilesResponseDTO getBatchFilesByBranch(
       ScmGetBatchFilesByBranchRequestDTO scmGetBatchFilesByBranchRequestDTO);
 
+  void updateGitCache(ScmUpdateGitCacheRequestDTO scmUpdateGitCacheRequestDTO);
+
   List<UserRepoResponse> listAllReposForOnboardingFlow(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef);
 
   ScmGetFileResponseDTO getFileByCommitId(ScmGetFileByCommitIdRequestDTO scmGetFileByCommitIdRequestDTO);
 
   GitBranchesResponseDTO listBranchesV2(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String connectorRef, String repoName, PageRequest pageRequest, String searchTerm);
+      String connectorRef, String repoName, PageRequest pageRequest, BranchFilterParameters branchFilterParameters);
+
+  GitListBranchesResponse listBranchesV3(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String connectorRef, String repoName, PageRequest pageRequest, BranchFilterParameters branchFilterParameters);
 
   String getDefaultBranch(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef, String repoName);
@@ -78,4 +95,7 @@ public interface ScmFacilitatorService {
   ScmGetFileUrlResponseDTO getFileUrl(ScmGetFileUrlRequestDTO scmGetFileUrlRequestDTO);
 
   UserDetailsResponseDTO getUserDetails(UserDetailsRequestDTO authenticatedUserRequestDTO);
+
+  void validateRepo(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef, String repoName);
 }

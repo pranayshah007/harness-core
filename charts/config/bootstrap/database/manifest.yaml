@@ -1,0 +1,2 @@
+DOCKER_FILE_PATH: <none>
+HELM_CHART_SOURCE_DIRECTORY: harness-core/charts/bootstrap/database

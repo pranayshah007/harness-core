@@ -1,0 +1,11 @@
+Var bodyMap = {}
+Var:bodyMap.put("query", Env:query)
+Var azureTokenBodyMap = {}
+Var:azureTokenBodyMap.put("grant_type", "client_credentials")
+Var:azureTokenBodyMap.put("client_id", Env:clientId)
+Var:azureTokenBodyMap.put("resource", Env:baseUrl)
+Var:azureTokenBodyMap.put("client_secret", Env:clientSecret)
+
+Var response = sync-call-azure(url=Env:url, header=Env:commonHeaders, options=Env:commonOptions, body=Var:bodyMap, bodyType=JSON, method=POST, azureTokenUrl=Env:azureTokenUrl, azureTokenBody=Var:azureTokenBodyMap)
+Var tables = extract(Var:response, "$.tables")
+return Var:tables

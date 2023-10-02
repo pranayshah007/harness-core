@@ -6,7 +6,6 @@
  */
 
 package io.harness.perpetualtask;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
@@ -14,8 +13,11 @@ import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
@@ -34,6 +36,7 @@ import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Builder;
@@ -41,6 +44,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
@@ -128,6 +132,7 @@ public class NativeHelmInstanceSyncPerpetualTaskV2Executor extends AbstractInsta
                    .releaseName(releaseName)
                    .helmChartInfo(releaseDetails.getHelmChartInfo())
                    .helmVersion(releaseDetails.getHelmVersion())
+                   .workloadLabelSelectors(releaseDetails.getWorkloadLabelSelectors())
                    .build())
         .collect(Collectors.toList());
   }
@@ -145,5 +150,6 @@ public class NativeHelmInstanceSyncPerpetualTaskV2Executor extends AbstractInsta
     @NotNull private String releaseName;
     private HelmChartInfo helmChartInfo;
     String helmVersion;
+    private Map<String, List<String>> workloadLabelSelectors;
   }
 }

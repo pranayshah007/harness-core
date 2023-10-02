@@ -9,10 +9,20 @@ package io.harness.delegate.app.modules;
 
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.managerclient.DelegateAgentManagerClientFactory;
+import io.harness.managerclient.DelegateAuthInterceptor;
+import io.harness.security.TokenGenerator;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
 
 public class DelegateManagerClientModule extends AbstractModule {
+  @Provides
+  @Singleton
+  DelegateAuthInterceptor authInterceptor(final TokenGenerator tokenGenerator) {
+    return new DelegateAuthInterceptor(tokenGenerator);
+  }
+
   @Override
   protected void configure() {
     bind(DelegateAgentManagerClient.class).toProvider(DelegateAgentManagerClientFactory.class);

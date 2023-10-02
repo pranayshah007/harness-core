@@ -6,7 +6,6 @@
  */
 
 package io.harness.event.reconciliation.service;
-
 import static io.harness.event.reconciliation.service.DeploymentReconServiceHelper.addTimeQuery;
 import static io.harness.event.reconciliation.service.DeploymentReconServiceHelper.getCompletedExecutionsFromTSDB;
 import static io.harness.event.reconciliation.service.DeploymentReconServiceHelper.isStatusMismatchedInMongoAndTSDB;
@@ -14,6 +13,9 @@ import static io.harness.event.reconciliation.service.DeploymentReconServiceHelp
 import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.event.reconciliation.ReconciliationStatus;
 import io.harness.event.reconciliation.deployment.DeploymentReconRecordRepository;
@@ -46,6 +48,7 @@ import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @Slf4j
 public class DeploymentReconServiceImpl implements DeploymentReconService {

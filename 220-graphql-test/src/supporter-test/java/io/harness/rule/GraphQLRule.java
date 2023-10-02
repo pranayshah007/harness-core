@@ -11,6 +11,7 @@ import static io.harness.cache.CacheBackend.CAFFEINE;
 import static io.harness.cache.CacheBackend.NOOP;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
+import static java.lang.System.getProperty;
 import static org.mockito.Mockito.mock;
 
 import io.harness.AccessControlClientConfiguration;
@@ -39,10 +40,14 @@ import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.hsqs.client.model.QueueServiceClientConfig;
+import io.harness.lock.DistributedLockImplementation;
 import io.harness.logstreaming.LogStreamingServiceConfig;
 import io.harness.module.DelegateServiceModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.notification.MongoBackendConfiguration;
+import io.harness.notification.NotificationClientConfiguration;
+import io.harness.notification.constant.NotificationClientSecrets;
 import io.harness.observer.NoOpRemoteObserverInformerImpl;
 import io.harness.observer.RemoteObserver;
 import io.harness.observer.RemoteObserverInformer;
@@ -58,7 +63,6 @@ import io.harness.serializer.ManagerRegistrars;
 import io.harness.serializer.kryo.TestManagerKryoRegistrar;
 import io.harness.service.impl.DelegateCacheImpl;
 import io.harness.service.intfc.DelegateCache;
-import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
@@ -74,6 +78,7 @@ import software.wings.app.ExecutorConfig;
 import software.wings.app.ExecutorsConfig;
 import software.wings.app.GcpMarketplaceIntegrationModule;
 import software.wings.app.IndexMigratorModule;
+import software.wings.app.JobsFrequencyConfig;
 import software.wings.app.MainConfiguration;
 import software.wings.app.ManagerExecutorModule;
 import software.wings.app.ManagerQueueModule;
@@ -83,8 +88,12 @@ import software.wings.app.TemplateModule;
 import software.wings.app.WingsModule;
 import software.wings.app.YamlModule;
 import software.wings.graphql.provider.QueryLanguageProvider;
+import software.wings.rules.SetupScheduler;
 import software.wings.scheduler.LdapSyncJobConfig;
+import software.wings.security.authentication.MarketPlaceConfig;
 import software.wings.security.authentication.totp.SimpleTotpModule;
+import software.wings.security.authentication.totp.TotpConfig;
+import software.wings.security.authentication.totp.TotpLimit;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -105,6 +114,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import javax.validation.Validation;
 import javax.validation.ValidatorFactory;
 import lombok.Getter;
@@ -144,77 +154,36 @@ public class GraphQLRule implements MethodRule, InjectorRuleMixin, MongoRuleMixi
     initializeLogging();
   }
 
-  protected MainConfiguration getConfiguration(String dbName) {
+  protected MainConfiguration getConfiguration(List<Annotation> annotations, String dbName) {
     MainConfiguration configuration = new MainConfiguration();
     configuration.getPortal().setCompanyName("COMPANY_NAME");
     configuration.getPortal().setUrl("PORTAL_URL");
-    configuration.setApiUrl("API_URL");
     configuration.getPortal().setVerificationUrl("VERIFICATION_PATH");
     configuration.getPortal().setJwtExternalServiceSecret("JWT_EXTERNAL_SERVICE_SECRET");
+    configuration.getPortal().setJwtPasswordSecret("123456789");
     configuration.getPortal().setJwtNextGenManagerSecret("dummy_key");
-    configuration.setNgManagerServiceHttpClientConfig(
-        ServiceHttpClientConfig.builder().baseUrl("http://localhost:7457/").build());
+    configuration.getPortal().setOptionalDelegateTaskRejectAtLimit(10000);
+    configuration.getPortal().setImportantDelegateTaskRejectAtLimit(50000);
+    configuration.getPortal().setCriticalDelegateTaskRejectAtLimit(100000);
+    configuration.setApiUrl("http:localhost:8080");
     configuration.setMongoConnectionFactory(
-        MongoConfig.builder().uri(System.getProperty("mongoUri", "mongodb://localhost:27017/" + dbName)).build());
-    configuration.getBackgroundSchedulerConfig().setAutoStart(System.getProperty("setupScheduler", "false"));
-    configuration.getServiceSchedulerConfig().setAutoStart(System.getProperty("setupScheduler", "false"));
+        MongoConfig.builder().uri(getProperty("mongoUri", "mongodb://localhost:27017/" + dbName)).build());
+    configuration.getBackgroundSchedulerConfig().setAutoStart(getProperty("setupScheduler", "false"));
+    configuration.getServiceSchedulerConfig().setAutoStart(getProperty("setupScheduler", "false"));
 
     configuration.setExecutorsConfig(
         ExecutorsConfig.builder().dataReconciliationExecutorConfig(ExecutorConfig.builder().build()).build());
 
     configuration.setGrpcDelegateServiceClientConfig(
         GrpcClientConfig.builder().target("localhost:9880").authority("localhost").build());
-    configuration.setGrpcClientConfig(
-        GrpcClientConfig.builder().target("localhost:9880").authority("localhost").build());
-
     configuration.setGrpcDMSClientConfig(
         GrpcClientConfig.builder().target("localhost:15011").authority("localhost").build());
     configuration.setDmsSecret("dummy_key");
+    configuration.setGrpcClientConfig(
+        GrpcClientConfig.builder().target("localhost:9880").authority("localhost").build());
 
     configuration.setLogStreamingServiceConfig(
         LogStreamingServiceConfig.builder().baseUrl("http://localhost:8079").serviceToken("token").build());
-
-    configuration.setAccessControlClientConfiguration(
-        AccessControlClientConfiguration.builder()
-            .enableAccessControl(false)
-            .accessControlServiceSecret("token")
-            .accessControlServiceConfig(ServiceHttpClientConfig.builder()
-                                            .baseUrl("http://localhost:9006/api/")
-                                            .readTimeOutSeconds(15)
-                                            .connectTimeOutSeconds(15)
-                                            .build())
-            .build());
-
-    MarketoConfig marketoConfig =
-        MarketoConfig.builder().clientId("client_id").clientSecret("client_secret_id").enabled(false).build();
-    configuration.setMarketoConfig(marketoConfig);
-
-    SegmentConfig segmentConfig = SegmentConfig.builder().enabled(false).url("dummy_url").apiKey("dummy_key").build();
-    configuration.setSegmentConfig(segmentConfig);
-    configuration.setEventsFrameworkConfiguration(
-        EventsFrameworkConfiguration.builder()
-            .redisConfig(RedisConfig.builder().redisUrl("dummyRedisUrl").build())
-            .build());
-    configuration.setFileStorageMode(DataStorageMode.MONGO);
-    configuration.setClusterName("");
-    configuration.setTimeScaleDBConfig(TimeScaleDBConfig.builder().build());
-    configuration.setCfClientConfig(CfClientConfig.builder().build());
-    configuration.setCfMigrationConfig(CfMigrationConfig.builder()
-                                           .account("testAccount")
-                                           .enabled(false)
-                                           .environment("testEnv")
-                                           .org("testOrg")
-                                           .project("testProject")
-                                           .build());
-    configuration.setLdapSyncJobConfig(
-        LdapSyncJobConfig.builder().defaultCronExpression("0 0 23 ? * SAT *").poolSize(3).syncInterval(15).build());
-    SegmentConfiguration segmentConfiguration = SegmentConfiguration.builder()
-                                                    .enabled(false)
-                                                    .url("dummy_url")
-                                                    .apiKey("dummy_key")
-                                                    .certValidationRequired(false)
-                                                    .build();
-    configuration.setSegmentConfiguration(segmentConfiguration);
 
     configuration.setQueueServiceConfig(
         DelegateQueueServiceConfig.builder()
@@ -228,7 +197,90 @@ public class GraphQLRule implements MethodRule, InjectorRuleMixin, MongoRuleMixi
                                                                 .build())
                                           .build())
             .build());
+    configuration.setAccessControlClientConfiguration(
+        AccessControlClientConfiguration.builder()
+            .enableAccessControl(false)
+            .accessControlServiceSecret("token")
+            .accessControlServiceConfig(ServiceHttpClientConfig.builder()
+                                            .baseUrl("http://localhost:9006/api/")
+                                            .readTimeOutSeconds(15)
+                                            .connectTimeOutSeconds(15)
+                                            .build())
+            .build());
+    MarketPlaceConfig marketPlaceConfig =
+        MarketPlaceConfig.builder().azureMarketplaceAccessKey("qwertyu").azureMarketplaceSecretKey("qwertyu").build();
+    configuration.setMarketPlaceConfig(marketPlaceConfig);
 
+    JobsFrequencyConfig jobsFrequencyConfig = JobsFrequencyConfig.builder().build();
+    configuration.setJobsFrequencyConfig(jobsFrequencyConfig);
+
+    if (annotations.stream().anyMatch(SetupScheduler.class ::isInstance)) {
+      configuration.getBackgroundSchedulerConfig().setAutoStart("true");
+      configuration.getServiceSchedulerConfig().setAutoStart("true");
+      configuration.getBackgroundSchedulerConfig().setJobStoreClass(
+          org.quartz.simpl.RAMJobStore.class.getCanonicalName());
+      configuration.getServiceSchedulerConfig().setJobStoreClass(org.quartz.simpl.RAMJobStore.class.getCanonicalName());
+    }
+
+    MarketoConfig marketoConfig =
+        MarketoConfig.builder().clientId("client_id").clientSecret("client_secret_id").enabled(false).build();
+    configuration.setMarketoConfig(marketoConfig);
+
+    SegmentConfig segmentConfig = SegmentConfig.builder().enabled(false).url("dummy_url").apiKey("dummy_key").build();
+    configuration.setSegmentConfig(segmentConfig);
+
+    ServiceHttpClientConfig ngManagerServiceHttpClientConfig =
+        ServiceHttpClientConfig.builder().baseUrl("http://localhost:7457/").build();
+    configuration.setNgManagerServiceHttpClientConfig(ngManagerServiceHttpClientConfig);
+
+    configuration.setDistributedLockImplementation(DistributedLockImplementation.NOOP);
+    configuration.setEventsFrameworkConfiguration(
+        EventsFrameworkConfiguration.builder()
+            .redisConfig(RedisConfig.builder().redisUrl("dummyRedisUrl").build())
+            .build());
+
+    configuration.setFileStorageMode(DataStorageMode.MONGO);
+    configuration.setClusterName("");
+
+    configuration.setCfClientConfig(CfClientConfig.builder().build());
+    configuration.setTimeScaleDBConfig(TimeScaleDBConfig.builder().build());
+    configuration.setCfMigrationConfig(CfMigrationConfig.builder()
+                                           .account("testAccount")
+                                           .enabled(false)
+                                           .environment("testEnv")
+                                           .org("testOrg")
+                                           .project("testProject")
+                                           .build());
+    configuration.setLdapSyncJobConfig(
+        LdapSyncJobConfig.builder().defaultCronExpression("0 0 23 ? * SAT *").poolSize(3).syncInterval(15).build());
+
+    configuration.setDelegateServiceRedisConfig(RedisConfig.builder().redisUrl("rediss://").build());
+    configuration.setTotpConfig(
+        TotpConfig.builder()
+            .secOpsEmail("secops.fake.email@mailnator.com")
+            .incorrectAttemptsUntilSecOpsNotified(50)
+            .limit(TotpLimit.builder().count(10).duration(3).durationUnit(TimeUnit.MINUTES).build())
+            .build());
+    SegmentConfiguration segmentConfiguration = SegmentConfiguration.builder()
+                                                    .enabled(false)
+                                                    .url("dummy_url")
+                                                    .apiKey("dummy_key")
+                                                    .certValidationRequired(false)
+                                                    .build();
+    configuration.setSegmentConfiguration(segmentConfiguration);
+    MongoBackendConfiguration mongoBackendConfiguration =
+        MongoBackendConfiguration.builder().uri("mongodb://localhost:27017/notification").build();
+    mongoBackendConfiguration.setType("MONGO");
+    configuration.setNotificationClientConfiguration(
+        NotificationClientConfiguration.builder()
+            .notificationSecrets(
+                NotificationClientSecrets.builder()
+                    .notificationClientSecret(
+                        "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM")
+                    .build())
+            .notificationClientBackendConfiguration(mongoBackendConfiguration)
+            .serviceHttpClientConfig(ServiceHttpClientConfig.builder().baseUrl("http://localhost:9005").build())
+            .build());
     return configuration;
   }
 
@@ -243,7 +295,6 @@ public class GraphQLRule implements MethodRule, InjectorRuleMixin, MongoRuleMixi
     modules.add(VersionModule.getInstance());
     modules.add(TimeModule.getInstance());
     modules.add(TestMongoModule.getInstance());
-    modules.add(new SpringPersistenceTestModule());
     modules.add(KryoModule.getInstance());
     modules.add(new ProviderModule() {
       @Provides
@@ -340,7 +391,7 @@ public class GraphQLRule implements MethodRule, InjectorRuleMixin, MongoRuleMixi
       }
     });
 
-    MainConfiguration configuration = getConfiguration("graphQL");
+    MainConfiguration configuration = getConfiguration(annotations, "graphQL");
 
     CacheConfigBuilder cacheConfigBuilder =
         CacheConfig.builder().disabledCaches(new HashSet<>()).cacheNamespace("harness-cache");

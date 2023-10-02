@@ -8,10 +8,10 @@
 package io.harness.rule;
 
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
-import io.harness.cvng.exception.BadRequestExceptionMapper;
-import io.harness.cvng.exception.ConstraintViolationExceptionMapper;
 import io.harness.cvng.exception.GenericExceptionMapper;
-import io.harness.cvng.exception.NotFoundExceptionMapper;
+import io.harness.cvng.exception.mapper.BadRequestExceptionMapper;
+import io.harness.cvng.exception.mapper.ConstraintViolationExceptionMapper;
+import io.harness.cvng.exception.mapper.NotFoundExceptionMapper;
 import io.harness.serializer.JsonSubtypeResolver;
 
 import com.codahale.metrics.MetricRegistry;

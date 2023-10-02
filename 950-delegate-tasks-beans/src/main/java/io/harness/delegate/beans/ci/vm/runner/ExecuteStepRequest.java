@@ -13,9 +13,8 @@ import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Value;
 
-@Value
+@Data
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ExecuteStepRequest {
@@ -25,6 +24,8 @@ public class ExecuteStepRequest {
   @JsonProperty("stage_runtime_id") String stageRuntimeID;
   @JsonProperty("start_step_request") Config config;
   @JsonProperty("infra_type") String infraType;
+  @JsonProperty("distributed") boolean distributed;
+  @JsonProperty("task_id") String taskID;
 
   @Data
   @Builder

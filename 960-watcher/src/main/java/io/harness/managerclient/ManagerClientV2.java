@@ -30,6 +30,10 @@ public interface ManagerClientV2 {
   @GET("agent/delegates/configuration")
   Call<RestResponse<DelegateConfiguration>> getDelegateConfiguration(@Query("accountId") String accountId);
 
+  @GET("agent/delegates/jreVersion")
+  Call<RestResponse<String>> getJREVersion(
+      @Query("accountId") String accountId, @Query("isDelegate") boolean isDelegate);
+
   @GET("agent/infra-download/delegate-auth/delegate/{version}")
   Call<RestResponse<String>> getDelegateDownloadUrl(
       @Path("version") String version, @Query("accountId") String accountId);

@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.pipelinestage.helper;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.pipelinestage.step.PipelineStageStep.NESTED_CHAINING_ERROR;
@@ -15,7 +14,10 @@ import static io.harness.pms.pipelinestage.step.PipelineStageStep.NESTED_CHAININ
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
@@ -40,8 +42,8 @@ import io.harness.pms.plan.execution.beans.dto.ChildExecutionDetailDTO.ChildExec
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -63,6 +65,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
@@ -108,10 +111,10 @@ public class PipelineStageHelper {
         pmsPipelineTemplateHelper.resolveTemplateRefsInPipeline(entity, "true");
     String pipelineVersion = entity.getHarnessVersion();
     switch (pipelineVersion) {
-      case PipelineVersion.V0:
+      case HarnessYamlVersion.V0:
         containsPipelineStage(templateMergeResponseDTO.getMergedPipelineYaml());
         break;
-      case PipelineVersion.V1:
+      case HarnessYamlVersion.V1:
         pipelineStageHelperV1.containsPipelineStage(templateMergeResponseDTO.getMergedPipelineYaml());
         break;
       default:
@@ -167,35 +170,15 @@ public class PipelineStageHelper {
         Resource.of("PIPELINE", stepParameters.getPipeline()), PipelineRbacPermissions.PIPELINE_EXECUTE);
   }
 
-  public String getInputSetYaml(YamlField pipelineInputs, String pipelineVersion) {
-    switch (pipelineVersion) {
-      case PipelineVersion.V0:
-        return getInputSetYaml(pipelineInputs);
-      case PipelineVersion.V1:
-        return pipelineStageHelperV1.getInputSet(pipelineInputs);
-      default:
-        throw new InvalidRequestException(String.format("Child pipeline version: %s not supported", pipelineVersion));
-    }
-  }
-
   public JsonNode getInputSetJsonNode(YamlField pipelineInputs, String pipelineVersion) {
     switch (pipelineVersion) {
-      case PipelineVersion.V0:
+      case HarnessYamlVersion.V0:
         return getInputSetJsonNode(pipelineInputs);
-      case PipelineVersion.V1:
+      case HarnessYamlVersion.V1:
         return pipelineStageHelperV1.getInputSetJsonNode(pipelineInputs);
       default:
         throw new InvalidRequestException(String.format("Child pipeline version: %s not supported", pipelineVersion));
     }
-  }
-
-  private String getInputSetYaml(YamlField pipelineInputs) {
-    String inputSetYaml = "";
-    if (pipelineInputs != null) {
-      Map<String, JsonNode> map = getInputSetMapInternal(pipelineInputs);
-      inputSetYaml = YamlUtils.writeYamlString(map);
-    }
-    return inputSetYaml;
   }
 
   private JsonNode getInputSetJsonNode(YamlField pipelineInputs) {
@@ -274,7 +257,14 @@ public class PipelineStageHelper {
   }
 
   public PipelineStageOutcome resolveOutputVariables(Map<String, ParameterField<String>> map, Ambiance ambiance) {
-    Map<String, String> resolvedMap = new HashMap<>();
+    Map<String, Object> resolvedMap = resolveOutputVariables(map);
+
+    return new PipelineStageOutcome((Map<String, Object>) pmsEngineExpressionService.resolve(
+        ambiance, resolvedMap, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
+  }
+
+  public Map<String, Object> resolveOutputVariables(Map<String, ParameterField<String>> map) {
+    Map<String, Object> resolvedMap = new HashMap<>();
 
     for (Map.Entry<String, ParameterField<String>> entry : map.entrySet()) {
       String expression;
@@ -287,9 +277,7 @@ public class PipelineStageHelper {
 
       resolvedMap.put(entry.getKey(), expression);
     }
-
-    return new PipelineStageOutcome((Map<String, Object>) pmsEngineExpressionService.resolve(
-        ambiance, resolvedMap, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
+    return resolvedMap;
   }
 
   public void validateFailureStrategy(ParameterField<List<FailureStrategyConfig>> failureStrategies) {

@@ -26,7 +26,8 @@ public class PipelineResourceRestraintInstanceDeleteObserver implements PlanExec
   @Inject private ResourceRestraintInstanceService resourceRestraintInstanceService;
 
   @Override
-  public void onPlanExecutionsDelete(List<PlanExecution> planExecutionList) {
+  public void onPlanExecutionsDelete(
+      List<PlanExecution> planExecutionList, boolean retainPipelineExecutionDetailsAfterDelete) {
     Set<String> planExecutionIds = planExecutionList.stream().map(PlanExecution::getUuid).collect(Collectors.toSet());
     // Delete all resource restraint instances with pipeline scope and deleted planExecutionIds
     resourceRestraintInstanceService.deleteInstancesForGivenReleaseType(planExecutionIds, HoldingScope.PIPELINE);

@@ -46,7 +46,7 @@ public class InitContainerV2StepInfo implements Visitable, SpecParameters, Conta
   private String stepGroupName;
 
   @NotNull @Valid private ContainerStepInfra infrastructure;
-  @NotExpression private StepsExecutionConfig stepsExecutionConfig;
+  private StepsExecutionConfig stepsExecutionConfig;
   @NotExpression Map<StepInfo, PluginCreationResponseList> pluginsData;
   Map<String, StrategyExpansionData> strategyExpansionMap;
   ParameterField<List<String>> sharedPaths;
@@ -89,5 +89,10 @@ public class InitContainerV2StepInfo implements Visitable, SpecParameters, Conta
   @Override
   public ContainerStepType getType() {
     return ContainerStepType.INIT_CONTAINER_V2;
+  }
+
+  @Override
+  public List<String> excludeKeysFromStepInputs() {
+    return SpecParameters.super.stepInputsKeyExclude();
   }
 }

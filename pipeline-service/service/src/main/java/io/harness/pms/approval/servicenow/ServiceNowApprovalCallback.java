@@ -6,13 +6,15 @@
  */
 
 package io.harness.pms.approval.servicenow;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 import static io.harness.exception.WingsException.USER_SRE;
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGResponse;
 import io.harness.eraro.ErrorCode;
@@ -26,11 +28,13 @@ import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.approval.AbstractApprovalCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.servicenow.ServiceNowTicketNG;
 import io.harness.servicenow.misc.TicketNG;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.CriteriaSpecDTO;
+import io.harness.steps.approval.step.custom.IrregularApprovalInstanceHandler;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.servicenow.entities.ServiceNowApprovalInstance;
 import io.harness.steps.approval.step.servicenow.evaluation.ServiceNowCriteriaEvaluator;
@@ -47,12 +51,14 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @Slf4j
 public class ServiceNowApprovalCallback extends AbstractApprovalCallback implements PushThroughNotifyCallback {
   private final String approvalInstanceId;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private KryoSerializer kryoSerializer;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject private IrregularApprovalInstanceHandler irregularApprovalInstanceHandler;
 
   @Builder
   public ServiceNowApprovalCallback(String approvalInstanceId) {
@@ -64,6 +70,10 @@ public class ServiceNowApprovalCallback extends AbstractApprovalCallback impleme
     ServiceNowApprovalInstance instance = (ServiceNowApprovalInstance) approvalInstanceService.get(approvalInstanceId);
     try (AutoLogContext ignore = instance.autoLogContext()) {
       pushInternal(response, instance);
+    } finally {
+      if (ParameterField.isNotNull(instance.getRetryInterval())) {
+        resetNextIteration(instance);
+      }
     }
   }
 
@@ -79,10 +89,14 @@ public class ServiceNowApprovalCallback extends AbstractApprovalCallback impleme
     ServiceNowTaskNGResponse serviceNowTaskNGResponse;
     try {
       ResponseData responseData = response.values().iterator().next();
-      BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
-      responseData = (ResponseData) (binaryResponseData.isUsingKryoWithoutReference()
-              ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
-              : kryoSerializer.asInflatedObject(binaryResponseData.getData()));
+
+      // fallback : if inflated response is obtained, use it directly
+      if (responseData instanceof BinaryResponseData) {
+        BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
+        responseData = (ResponseData) (binaryResponseData.isUsingKryoWithoutReference()
+                ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
+                : kryoSerializer.asInflatedObject(binaryResponseData.getData()));
+      }
       if (responseData instanceof ErrorNotifyResponseData) {
         handleErrorNotifyResponse(
             logCallback, (ErrorNotifyResponseData) responseData, "Failed to fetch ServiceNow ticket:");
@@ -163,5 +177,9 @@ public class ServiceNowApprovalCallback extends AbstractApprovalCallback impleme
         ngErrorHelper.getErrorSummary(ex.getMessage()));
     logCallback.saveExecutionLog(LogHelper.color(errorMessage, LogColor.Red), LogLevel.ERROR);
     approvalInstanceService.finalizeStatus(instance.getId(), ApprovalStatus.FAILED, errorMessage);
+  }
+  private void resetNextIteration(ServiceNowApprovalInstance instance) {
+    approvalInstanceService.resetNextIterations(instance.getId(), instance.recalculateNextIterations());
+    irregularApprovalInstanceHandler.wakeup();
   }
 }

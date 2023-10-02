@@ -11,12 +11,12 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 
 @OwnedBy(CDP)
 public interface GoogleFunctionsStepExecutor {
-  TaskChainResponse executeTask(Ambiance ambiance, StepElementParameters stepParameters,
+  TaskChainResponse executeTask(Ambiance ambiance, StepBaseParameters stepParameters,
       GoogleFunctionsStepPassThroughData googleFunctionsStepPassThroughData, UnitProgressData unitProgressData);
 }

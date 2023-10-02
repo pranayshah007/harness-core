@@ -8,20 +8,20 @@
  */
 
 package io.harness.cdng.provision.terragrunt;
-
 import static java.util.Objects.requireNonNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.provision.terragrunt.TerragruntConfig.TerragruntConfigKeys;
 import io.harness.expression.EngineExpressionSecretUtils;
-import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -30,6 +30,7 @@ import dev.morphia.query.Sort;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.CDP)
@@ -37,7 +38,7 @@ public class TerragruntConfigDAL {
   private static final String NOT_NULL_MESSAGE = "%s must not be null";
 
   @Inject private HPersistence persistence;
-  @Inject private EngineExpressionService engineExpressionService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
 
   void saveTerragruntConfig(@Nonnull TerragruntConfig terragruntConfig) {
     // NG Secret Manager Functor is reversed to secret.getValue form so that token is not saved inside DB
@@ -52,9 +53,7 @@ public class TerragruntConfigDAL {
     if (terragruntConfig == null) {
       return null;
     }
-    ExpressionEvaluatorUtils.updateExpressions(
-        terragruntConfig, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
-
+    cdExpressionResolver.updateExpressions(ambiance, terragruntConfig);
     return terragruntConfig;
   }
 

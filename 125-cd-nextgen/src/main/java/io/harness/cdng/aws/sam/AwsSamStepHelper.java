@@ -11,8 +11,11 @@ import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DET
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
@@ -20,7 +23,13 @@ import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.cdng.aws.sam.beans.AwsSamValuesYamlDataOutcome;
 import io.harness.cdng.infra.beans.AwsSamInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.manifest.ManifestType;
+import io.harness.cdng.manifest.yaml.AwsSamDirectoryManifestOutcome;
+import io.harness.cdng.manifest.yaml.GitStoreConfig;
+import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AwsSamServerInstanceInfo;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
@@ -31,6 +40,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.plugin.ContainerStepExecutionResponseHelper;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -41,16 +51,24 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class AwsSamStepHelper {
   @Inject protected OutcomeService outcomeService;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+
+  @Inject private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
+
+  private static String SAM_BUILD_DEFAULT_IMAGE = "harnessdev/sam-build:1.82.0-latest";
+  private static String SAM_DEPLOY_DEFAULT_IMAGE = "harnessdev/sam-deploy:1.82.0-latest";
 
   ObjectMapper objectMapper = NG_DEFAULT_OBJECT_MAPPER;
 
@@ -101,16 +119,18 @@ public class AwsSamStepHelper {
       Map<String, ResponseData> responseDataMap) {
     String instances = null;
 
-    StepStatusTaskResponseData stepStatusTaskResponseData = null;
-
-    for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
-      ResponseData responseData = entry.getValue();
-      if (responseData instanceof StepStatusTaskResponseData) {
-        stepStatusTaskResponseData = (StepStatusTaskResponseData) responseData;
-      }
-    }
+    StepStatusTaskResponseData stepStatusTaskResponseData =
+        containerStepExecutionResponseHelper.filterK8StepResponse(responseDataMap);
 
     List<ServerInstanceInfo> serverInstanceInfoList = null;
+
+    if (stepStatusTaskResponseData == null) {
+      log.info("Aws Sam Deploy :  Received stepStatusTaskResponseData as null");
+      return serverInstanceInfoList;
+    } else {
+      log.info(String.format("Aws Sam Deploy :  Received stepStatusTaskResponseData with status %s",
+          stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus()));
+    }
 
     if (stepStatusTaskResponseData != null
         && stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus() == StepExecutionStatus.SUCCESS) {
@@ -119,13 +139,16 @@ public class AwsSamStepHelper {
       if (stepOutput instanceof StepMapOutput) {
         StepMapOutput stepMapOutput = (StepMapOutput) stepOutput;
         String instancesByte64 = stepMapOutput.getMap().get("instances");
+        log.info(String.format("AWS SAM Deploy instances byte64 %s", instancesByte64));
         instances = new String(Base64.getDecoder().decode(instancesByte64));
+        log.info(String.format("AWS SAM Deploy instances %s", instances));
       }
 
       try {
+        log.info(String.format("AWS SAM Deploy: Parsing instances from JSON %s", instances));
         serverInstanceInfoList = Arrays.asList(objectMapper.readValue(instances, AwsSamServerInstanceInfo[].class));
       } catch (Exception e) {
-        log.error("Error while parsing AWS SAM instances", e);
+        log.error(String.format("Error while parsing AWS SAM instances %s", instances), e);
       }
     }
 
@@ -153,6 +176,71 @@ public class AwsSamStepHelper {
           samDeployEnvironmentVariablesMap.put("PLUGIN_USE_IRSA", "false");
         }
       }
+    }
+  }
+
+  public ManifestOutcome getAwsSamDirectoryManifestOutcome(Collection<ManifestOutcome> manifestOutcomes) {
+    List<ManifestOutcome> manifestOutcomeList =
+        manifestOutcomes.stream()
+            .filter(manifestOutcome -> ManifestType.AwsSamDirectory.equals(manifestOutcome.getType()))
+            .collect(Collectors.toList());
+
+    if (manifestOutcomeList.isEmpty() || manifestOutcomeList.size() > 1) {
+      String errorMessage = String.format(
+          "Exactly one manifest of type AwsSamDirectory is required. %s found.", manifestOutcomeList.size());
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage);
+    }
+
+    return manifestOutcomeList.get(0);
+  }
+
+  public ManifestOutcome getAwsSamValuesManifestOutcome(Collection<ManifestOutcome> manifestOutcomes) {
+    List<ManifestOutcome> manifestOutcomeList =
+        manifestOutcomes.stream()
+            .filter(manifestOutcome -> ManifestType.VALUES.equals(manifestOutcome.getType()))
+            .collect(Collectors.toList());
+
+    if (manifestOutcomeList.size() > 1) {
+      String errorMessage = String.format(
+          "At most one manifest of type VALUES yaml can be configured. %s found.", manifestOutcomeList.size());
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage);
+    }
+
+    return manifestOutcomeList.isEmpty() ? null : manifestOutcomeList.get(0);
+  }
+
+  public String getValuesPathFromValuesManifestOutcome(ValuesManifestOutcome valuesManifestOutcome) {
+    GitStoreConfig gitStoreConfig = (GitStoreConfig) valuesManifestOutcome.getStore();
+    return "/harness/" + valuesManifestOutcome.getIdentifier() + "/" + gitStoreConfig.getPaths().getValue().get(0);
+  }
+
+  public String getSamDirectoryPathFromAwsSamDirectoryManifestOutcome(
+      AwsSamDirectoryManifestOutcome awsSamDirectoryManifestOutcome) {
+    GitStoreConfig gitStoreConfig = (GitStoreConfig) awsSamDirectoryManifestOutcome.getStore();
+
+    return awsSamDirectoryManifestOutcome.getIdentifier() + "/" + gitStoreConfig.getPaths().getValue().get(0);
+  }
+
+  public ParameterField<String> getImage(AwsSamBaseStepInfo awsSamBaseStepInfo) {
+    if (awsSamBaseStepInfo instanceof AwsSamBuildStepInfo || awsSamBaseStepInfo instanceof AwsSamBuildStepParameters) {
+      if (awsSamBaseStepInfo.getImage() != null
+          && EmptyPredicate.isNotEmpty(awsSamBaseStepInfo.getImage().getValue())) {
+        return awsSamBaseStepInfo.getImage();
+      } else {
+        return ParameterField.createValueField(SAM_BUILD_DEFAULT_IMAGE);
+      }
+    } else if (awsSamBaseStepInfo instanceof AwsSamDeployStepInfo
+        || awsSamBaseStepInfo instanceof AwsSamDeployStepParameters) {
+      if (awsSamBaseStepInfo.getImage() != null
+          && EmptyPredicate.isNotEmpty(awsSamBaseStepInfo.getImage().getValue())) {
+        return awsSamBaseStepInfo.getImage();
+      } else {
+        return ParameterField.createValueField(SAM_DEPLOY_DEFAULT_IMAGE);
+      }
+    } else {
+      throw new InvalidRequestException("Default Images for SAM Build and SAM Deploy Step only supported");
     }
   }
 }

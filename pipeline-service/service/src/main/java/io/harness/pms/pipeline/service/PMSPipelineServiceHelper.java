@@ -17,16 +17,21 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.ModuleType;
 import io.harness.NGResourceFilterConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.engine.governance.PolicyEvaluationFailureException;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.DuplicateFileImportException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.ngexception.InvalidFieldsDTO;
+import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.filter.FilterType;
@@ -41,6 +46,7 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.governance.PolicySetMetadata;
+import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.pms.filter.creation.FilterCreatorMergeService;
@@ -62,7 +68,8 @@ import io.harness.pms.pipeline.references.FilterCreationParams;
 import io.harness.pms.pipeline.references.PipelineSetupUsageCreationHelper;
 import io.harness.pms.pipeline.validation.PipelineValidationResponse;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YAMLMetadataFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
@@ -76,11 +83,14 @@ import io.harness.yaml.validator.InvalidYamlException;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -90,6 +100,8 @@ import org.bson.Document;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
@@ -105,6 +117,8 @@ public class PMSPipelineServiceHelper {
   @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
   @Inject private final PMSPipelineRepository pmsPipelineRepository;
   @Inject private final PipelineSetupUsageCreationHelper pipelineSetupUsageCreationHelper;
+  @Inject private final PMSPipelineService pmsPipelineService;
+  @Inject @Named("PipelineExecutorService") ExecutorService executorService;
 
   public static String PIPELINE_SAVE = "pipeline_save";
   public static String PIPELINE_SAVE_ACTION_TYPE = "action";
@@ -113,6 +127,9 @@ public class PMSPipelineServiceHelper {
   public static String ORG_ID = "orgId";
   public static String PROJECT_ID = "projectId";
   public static String PIPELINE_ID = "pipelineId";
+  public static String TEMPLATE_REF_PIPELINE = "template_ref_by_pipeline";
+  public static String TEMPLATE_ID = "templateIdentifier";
+  public static String MODULE_NAME = "moduleName";
 
   public static void validatePresenceOfRequiredFields(PipelineEntity pipelineEntity) {
     HashMap<String, String> requiredFieldMap = new HashMap<>();
@@ -161,27 +178,28 @@ public class PMSPipelineServiceHelper {
 
   public PipelineEntity updatePipelineInfo(PipelineEntity pipelineEntity, String pipelineVersion) throws IOException {
     switch (pipelineVersion) {
-      case PipelineVersion.V1:
+      case HarnessYamlVersion.V1:
         return pipelineEntity;
-      case PipelineVersion.V0:
+      case HarnessYamlVersion.V0:
         return updatePipelineInfoInternal(pipelineEntity);
       default:
         throw new IllegalStateException("version not supported");
     }
   }
 
-  public void populateFilterUsingIdentifier(Criteria criteria, String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, @NotNull String filterIdentifier) {
+  public void populateFilterUsingIdentifier(List<Criteria> criteriaList, Criteria criteria, String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, @NotNull String filterIdentifier) {
     FilterDTO pipelineFilterDTO = filterService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, FilterType.PIPELINESETUP);
     if (pipelineFilterDTO == null) {
       throw new InvalidRequestException("Could not find a pipeline filter with the identifier ");
     } else {
-      populateFilter(criteria, (PipelineFilterPropertiesDto) pipelineFilterDTO.getFilterProperties());
+      populateFilter(criteriaList, criteria, (PipelineFilterPropertiesDto) pipelineFilterDTO.getFilterProperties());
     }
   }
 
-  public static void populateFilter(Criteria criteria, @NotNull PipelineFilterPropertiesDto pipelineFilter) {
+  public static void populateFilter(
+      List<Criteria> criteriaList, Criteria criteria, @NotNull PipelineFilterPropertiesDto pipelineFilter) {
     if (EmptyPredicate.isNotEmpty(pipelineFilter.getName())) {
       criteria.and(PipelineEntityKeys.name).is(pipelineFilter.getName());
     }
@@ -189,7 +207,7 @@ public class PMSPipelineServiceHelper {
       criteria.and(PipelineEntityKeys.description).is(pipelineFilter.getDescription());
     }
     if (EmptyPredicate.isNotEmpty(pipelineFilter.getPipelineTags())) {
-      criteria.and(PipelineEntityKeys.tags).in(pipelineFilter.getPipelineTags());
+      addPipelineTagsCriteria(criteriaList, pipelineFilter.getPipelineTags());
     }
     if (EmptyPredicate.isNotEmpty(pipelineFilter.getPipelineIdentifiers())) {
       criteria.and(PipelineEntityKeys.identifier).in(pipelineFilter.getPipelineIdentifiers());
@@ -201,6 +219,31 @@ public class PMSPipelineServiceHelper {
     if (EmptyPredicate.isNotEmpty(pipelineFilter.getRepoName())) {
       criteria.and(PipelineEntityKeys.repo).is(pipelineFilter.getRepoName());
     }
+  }
+
+  public static void addPipelineTagsCriteria(List<Criteria> criteriaList, List<NGTag> pipelineTags) {
+    List<NGTag> ngTagsList = new ArrayList<>();
+    List<String> tags = new ArrayList<>();
+    pipelineTags.forEach(o -> {
+      if (o.getKey() == null) {
+        throw new InvalidRequestException("Key in Pipeline Tags filter cannot be null");
+      } else if (o.getValue() == null) {
+        tags.add(o.getKey());
+      } else {
+        ngTagsList.add(o);
+      }
+    });
+    Criteria tagsCriteria = new Criteria();
+    if (tags.size() > 0 && ngTagsList.size() > 0) {
+      tagsCriteria.orOperator(where(PlanExecutionSummaryKeys.tagsKey).in(tags),
+          where(PlanExecutionSummaryKeys.tagsValue).in(tags), where(PlanExecutionSummaryKeys.tags).in(ngTagsList));
+    } else if (tags.size() > 0) {
+      tagsCriteria.orOperator(
+          where(PlanExecutionSummaryKeys.tagsKey).in(tags), where(PlanExecutionSummaryKeys.tagsValue).in(tags));
+    } else if (ngTagsList.size() > 0) {
+      tagsCriteria = where(PlanExecutionSummaryKeys.tags).in(ngTagsList);
+    }
+    criteriaList.add(tagsCriteria);
   }
 
   public void resolveTemplatesAndValidatePipelineEntity(PipelineEntity pipelineEntity, boolean loadFromCache) {
@@ -300,6 +343,8 @@ public class PMSPipelineServiceHelper {
     } catch (io.harness.yaml.validator.InvalidYamlException ex) {
       ex.setYaml(pipelineEntity.getData());
       throw ex;
+    } catch (NGTemplateException ex) {
+      throw ex;
     } catch (Exception ex) {
       YamlSchemaErrorWrapperDTO errorWrapperDTO =
           YamlSchemaErrorWrapperDTO.builder()
@@ -348,9 +393,9 @@ public class PMSPipelineServiceHelper {
   GovernanceMetadata resolveTemplatesAndValidatePipelineYaml(
       PipelineEntity pipelineEntity, boolean throwExceptionIfGovernanceRulesFails, boolean loadFromCache) {
     switch (pipelineEntity.getHarnessVersion()) {
-      case PipelineVersion.V1:
+      case HarnessYamlVersion.V1:
         return GovernanceMetadata.newBuilder().setDeny(false).build();
-      case PipelineVersion.V0:
+      case HarnessYamlVersion.V0:
         boolean getMergedTemplateWithTemplateReferences =
             pmsFeatureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE);
         // Apply all the templateRefs(if any) then check for schema validation.
@@ -395,13 +440,13 @@ public class PMSPipelineServiceHelper {
     }
 
     criteria.and(PipelineEntityKeys.deleted).is(deleted);
-
+    List<Criteria> criteriaList = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(filterIdentifier) && filterProperties != null) {
       throw new InvalidRequestException("Can not apply both filter properties and saved filter together");
     } else if (EmptyPredicate.isNotEmpty(filterIdentifier) && filterProperties == null) {
-      populateFilterUsingIdentifier(criteria, accountId, orgId, projectId, filterIdentifier);
+      populateFilterUsingIdentifier(criteriaList, criteria, accountId, orgId, projectId, filterIdentifier);
     } else if (EmptyPredicate.isEmpty(filterIdentifier) && filterProperties != null) {
-      PMSPipelineServiceHelper.populateFilter(criteria, filterProperties);
+      populateFilter(criteriaList, criteria, filterProperties);
     }
 
     Criteria moduleCriteria = new Criteria();
@@ -437,32 +482,67 @@ public class PMSPipelineServiceHelper {
               .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
     }
 
-    criteria.andOperator(moduleCriteria, searchCriteria);
+    criteriaList.add(moduleCriteria);
+    criteriaList.add(searchCriteria);
+    criteria.andOperator(criteriaList.toArray(new Criteria[criteriaList.size()]));
 
     return criteria;
   }
 
-  // TODO(Brijesh): Make this async.
   public void sendPipelineSaveTelemetryEvent(PipelineEntity entity, String actionType) {
-    try {
-      HashMap<String, Object> properties = new HashMap<>();
-      properties.put(PIPELINE_NAME, entity.getName());
-      properties.put(ORG_ID, entity.getOrgIdentifier());
-      properties.put(PROJECT_ID, entity.getProjectIdentifier());
-      properties.put(PIPELINE_SAVE_ACTION_TYPE, actionType);
-      properties.put(PipelineInstrumentationConstants.MODULE_NAME,
-          PipelineEntityUtils.getModuleNameFromPipelineEntity(entity, "cd"));
-      properties.put(PipelineInstrumentationConstants.STAGE_TYPES, PipelineInstrumentationUtils.getStageTypes(entity));
-      telemetryReporter.sendTrackEvent(PIPELINE_SAVE, null, entity.getAccountId(), properties,
-          Collections.singletonMap(AMPLITUDE, true), io.harness.telemetry.Category.GLOBAL);
-    } catch (Exception ex) {
-      log.error(
-          format(
-              "Exception while sending telemetry event for pipeline save. accountId: %s, orgId: %s, projectId: %s, pipelineId: %s",
-              entity.getAccountIdentifier(), entity.getOrgIdentifier(), entity.getProjectIdentifier(),
-              entity.getIdentifier()),
-          ex);
-    }
+    executorService.submit(() -> {
+      try {
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put(PIPELINE_NAME, entity.getName());
+        properties.put(ORG_ID, entity.getOrgIdentifier());
+        properties.put(PROJECT_ID, entity.getProjectIdentifier());
+        properties.put(PIPELINE_SAVE_ACTION_TYPE, actionType);
+        properties.put(PipelineInstrumentationConstants.MODULE_NAME,
+            PipelineEntityUtils.getModuleNameFromPipelineEntity(entity, "cd"));
+        properties.put(
+            PipelineInstrumentationConstants.STAGE_TYPES, PipelineInstrumentationUtils.getStageTypes(entity));
+        telemetryReporter.sendTrackEvent(PIPELINE_SAVE, null, entity.getAccountId(), properties,
+            Collections.singletonMap(AMPLITUDE, true), io.harness.telemetry.Category.GLOBAL);
+      } catch (Exception ex) {
+        log.error(
+            format(
+                "Exception while sending telemetry event for pipeline save. accountId: %s, orgId: %s, projectId: %s, pipelineId: %s",
+                entity.getAccountIdentifier(), entity.getOrgIdentifier(), entity.getProjectIdentifier(),
+                entity.getIdentifier()),
+            ex);
+      }
+    });
+  }
+
+  public void sendTemplatesUsedInPipelinesTelemetryEvent(PipelineEntity pipelineEntity, String actionType) {
+    String accountId = pipelineEntity.getAccountId();
+    String orgId = pipelineEntity.getOrgIdentifier();
+    String projectId = pipelineEntity.getProjectIdentifier();
+    executorService.submit(() -> {
+      try {
+        List<EntityDetailProtoDTO> templateReferences = pipelineTemplateHelper.getTemplateReferencesForGivenYaml(
+            accountId, orgId, projectId, pipelineEntity.getYaml());
+        for (EntityDetailProtoDTO reference : templateReferences) {
+          if (reference.hasTemplateRef()) {
+            HashMap<String, Object> properties = new HashMap<>();
+            properties.put(TEMPLATE_ID, reference.getTemplateRef().getIdentifier().getValue());
+            properties.put(PIPELINE_ID, accountId);
+            properties.put(ORG_ID, orgId);
+            properties.put(PROJECT_ID, projectId);
+            properties.put(TEMPLATE_REF_PIPELINE, actionType);
+            properties.put(MODULE_NAME, "cd");
+            telemetryReporter.sendTrackEvent(TEMPLATE_REF_PIPELINE, null, accountId, properties,
+                Collections.singletonMap(AMPLITUDE, true), io.harness.telemetry.Category.GLOBAL);
+          }
+        }
+      } catch (Exception ex) {
+        log.error(
+            format(
+                "Exception while sending telemetry event for template ref by pipeline. accountId: %s, orgId: %s, projectId: %s, pipelineId: %s",
+                accountId, orgId, projectId, pipelineEntity.getIdentifier()),
+            ex);
+      }
+    });
   }
 
   public static InvalidYamlException buildInvalidYamlException(String errorMessage, String pipelineYaml) {
@@ -474,7 +554,8 @@ public class PMSPipelineServiceHelper {
     return new InvalidYamlException(errorMessage, errorWrapperDTO, pipelineYaml);
   }
 
-  public String importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier) {
+  public String importPipelineFromRemote(
+      String accountId, String orgIdentifier, String projectIdentifier, boolean applyRepoAllowListFilter) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     Scope scope = Scope.of(accountId, orgIdentifier, projectIdentifier);
     GitContextRequestParams gitContextRequestParams = GitContextRequestParams.builder()
@@ -482,6 +563,7 @@ public class PMSPipelineServiceHelper {
                                                           .connectorRef(gitEntityInfo.getConnectorRef())
                                                           .filePath(gitEntityInfo.getFilePath())
                                                           .repoName(gitEntityInfo.getRepoName())
+                                                          .applyRepoAllowListFilter(applyRepoAllowListFilter)
                                                           .build();
     return gitAwareEntityHelper.fetchYAMLFromRemote(scope, gitContextRequestParams, Collections.emptyMap());
   }
@@ -496,7 +578,7 @@ public class PMSPipelineServiceHelper {
     }
     // TODO (prashant) : Check with the team
     switch (pipelineVersion) {
-      case PipelineVersion.V1:
+      case HarnessYamlVersion.V1:
         return;
       default:
         checkAndThrowMismatchInImportedPipelineMetadataInternal(
@@ -595,15 +677,30 @@ public class PMSPipelineServiceHelper {
     }
   }
 
-  public void computePipelineReferences(PipelineEntity pipelineEntity, boolean loadFromCache) {
-    if (!loadFromCache && GitAwareContextHelper.isDefaultBranch()) {
-      String branchName = GitAwareContextHelper.getBranchFromGitContext();
-      pipelineSetupUsageCreationHelper.submitTask(
-          FilterCreationParams.builder()
-              .pipelineEntity(pipelineEntity)
-              .filterCreationGitMetadata(
-                  FilterCreationGitMetadata.builder().branch(branchName).repo(pipelineEntity.getRepo()).build())
-              .build());
+  public void computePipelineReferences(PipelineEntity pipelineEntity) {
+    pipelineSetupUsageCreationHelper.submitTask(
+        FilterCreationParams.builder()
+            .pipelineEntity(pipelineEntity)
+            .filterCreationGitMetadata(FilterCreationGitMetadata.builder()
+                                           .branch(GitAwareContextHelper.getBranchFromGitContext())
+                                           .repo(pipelineEntity.getRepo())
+                                           .isGitDefaultBranch(true)
+                                           .build())
+            .build());
+  }
+
+  public void setPermittedPipelines(
+      String accountId, String orgId, String projectId, Criteria criteria, String pipelineIdentifierKey) {
+    /*
+    If user is having all pipeline view permission, we do not need to check for individual pipeline view permission
+     */
+    if (!pmsPipelineService.validateViewPermission(accountId, orgId, projectId)) {
+      List<String> allPipelineIdentifiers = pmsPipelineService.listAllIdentifiers(criteria);
+
+      List<String> permittedPipelineIdentifiers =
+          pmsPipelineService.getPermittedPipelineIdentifier(accountId, orgId, projectId, allPipelineIdentifiers);
+
+      criteria.and(pipelineIdentifierKey).in(permittedPipelineIdentifiers);
     }
   }
 }

@@ -62,12 +62,12 @@ public class ServiceFilterHelperTest extends CategoryTest {
     Update updateOperations = ServiceFilterHelper.getUpdateOperations(serviceEntity);
     Set<String> stringSet = ((Document) updateOperations.getUpdateObject().get("$set")).keySet();
     PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(ServiceEntity.class);
-    Set<String> excludedFields =
-        new HashSet<>(Arrays.asList(ServiceEntityKeys.id, ServiceEntityKeys.createdAt, ServiceEntityKeys.deletedAt,
-            ServiceEntityKeys.version, ServiceEntityKeys.objectIdOfYaml, ServiceEntityKeys.isFromDefaultBranch,
-            ServiceEntityKeys.branch, ServiceEntityKeys.yamlGitConfigRef, ServiceEntityKeys.filePath,
-            ServiceEntityKeys.rootFolder, "class", "templateReference", "data", ServiceEntityKeys.storeType,
-            ServiceEntityKeys.repo, ServiceEntityKeys.connectorRef, ServiceEntityKeys.repoURL));
+    Set<String> excludedFields = new HashSet<>(Arrays.asList(ServiceEntityKeys.id, ServiceEntityKeys.createdAt,
+        ServiceEntityKeys.deletedAt, ServiceEntityKeys.version, ServiceEntityKeys.objectIdOfYaml,
+        ServiceEntityKeys.isFromDefaultBranch, ServiceEntityKeys.branch, ServiceEntityKeys.yamlGitConfigRef,
+        ServiceEntityKeys.filePath, ServiceEntityKeys.rootFolder, "class", "templateReference", "data",
+        ServiceEntityKeys.storeType, ServiceEntityKeys.repo, ServiceEntityKeys.connectorRef, ServiceEntityKeys.repoURL,
+        ServiceEntityKeys.fallBackBranch, "accountIdentifier", "invalidYamlString", "uuid", "entityInvalid"));
 
     for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
       boolean shouldExist =
@@ -103,11 +103,11 @@ public class ServiceFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateCriteriaForGetList1() {
     Criteria criteria =
-        ServiceFilterHelper.createCriteriaForGetList("accId", "orgId", "projId", false, "foo", null, null, false);
+        ServiceFilterHelper.createCriteriaForGetList("accId", "orgId", "projId", false, "foo", null, null, false, null);
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
-            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"$and\": [{\"$or\": [{\"name\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"identifier\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.key\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.value\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}]}]}");
+            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"$and\": [{\"$or\": [{\"name\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"identifier\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.key\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.value\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}]}], \"deleted\": false}");
   }
 
   @Test
@@ -115,11 +115,11 @@ public class ServiceFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateCriteriaForGetList2() {
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
-        "accId", "orgId", "projId", false, "foo", ServiceDefinitionType.KUBERNETES, Boolean.TRUE, false);
+        "accId", "orgId", "projId", false, "foo", ServiceDefinitionType.KUBERNETES, Boolean.TRUE, false, null);
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
-            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"type\": \"KUBERNETES\", \"$and\": [{\"$or\": [{\"name\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"identifier\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.key\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.value\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}]}], \"gitOpsEnabled\": true}");
+            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"$and\": [{\"$or\": [{\"name\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"identifier\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.key\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.value\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}]}], \"deleted\": false, \"type\": \"KUBERNETES\", \"gitOpsEnabled\": true}");
   }
 
   @Test
@@ -127,19 +127,31 @@ public class ServiceFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateCriteriaForGetList3() {
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
-        "accId", "orgId", "projId", false, "foo", ServiceDefinitionType.NATIVE_HELM, null, false);
+        "accId", "orgId", "projId", false, "foo", ServiceDefinitionType.NATIVE_HELM, null, false, null);
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
-            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"type\": \"NATIVE_HELM\", \"$and\": [{\"$or\": [{\"name\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"identifier\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.key\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.value\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}]}]}");
+            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"$and\": [{\"$or\": [{\"name\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"identifier\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.key\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.value\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}]}], \"deleted\": false, \"type\": \"NATIVE_HELM\"}");
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testCreateCriteriaForGetList4() {
+    Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
+        "accId", "orgId", "projId", false, "foo", ServiceDefinitionType.NATIVE_HELM, null, true, null);
+
+    assertThat(criteria.getCriteriaObject().toJson())
+        .isEqualTo(
+            "{\"accountId\": \"accId\", \"$and\": [{\"$or\": [{\"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\"}, {\"orgIdentifier\": \"orgId\", \"projectIdentifier\": null}, {\"orgIdentifier\": null, \"projectIdentifier\": null}]}, {\"$or\": [{\"name\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"identifier\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.key\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.value\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}]}], \"deleted\": false, \"type\": \"NATIVE_HELM\"}");
   }
 
   @Test
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
   public void testCreateCriteriaForGetListScopedRef1() {
-    Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
-        "accId", "orgId", "projId", Collections.singletonList("account.accServ1"), false, null, null, null, false);
+    Criteria criteria = ServiceFilterHelper.createCriteriaForGetList("accId", "orgId", "projId",
+        Collections.singletonList("account.accServ1"), false, null, null, null, false, null);
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
@@ -151,7 +163,7 @@ public class ServiceFilterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateCriteriaForGetListScopedRef2() {
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList("accId", "orgId", "projId",
-        Arrays.asList("account.accServ1", "org.orgServ1", "projServ1"), false, null, null, null, false);
+        Arrays.asList("account.accServ1", "org.orgServ1", "projServ1"), false, null, null, null, false, null);
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(

@@ -12,6 +12,7 @@ import static io.harness.product.ci.scm.proto.SCMGrpc.newBlockingStub;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.govern.ProviderModule;
+import io.harness.grpc.client.SCMGrpcInterceptor;
 import io.harness.product.ci.scm.proto.SCMGrpc;
 
 import com.google.inject.Provides;
@@ -38,6 +39,9 @@ public class SCMGrpcClientModule extends ProviderModule {
   @Provides
   public Channel scmChannel(String connectionUrl) {
     // TODO: Authentication Needs to be added here.
-    return NettyChannelBuilder.forTarget(connectionUrl).usePlaintext().build();
+    return NettyChannelBuilder.forTarget(connectionUrl)
+        .intercept(SCMGrpcInterceptor.INTERCEPTOR)
+        .usePlaintext()
+        .build();
   }
 }

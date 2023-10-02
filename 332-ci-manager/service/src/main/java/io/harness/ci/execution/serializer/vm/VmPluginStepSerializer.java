@@ -5,18 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.serializer.vm;
+package io.harness.ci.execution.serializer.vm;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMapParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
 import static io.harness.beans.steps.CIStepInfoType.GIT_CLONE;
 import static io.harness.beans.steps.CIStepInfoType.SAVE_CACHE_GCS;
 import static io.harness.beans.steps.CIStepInfoType.SAVE_CACHE_S3;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_ARCHIVE_FORMAT;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BACKEND;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BUCKET;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_ENDPOINT;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_REGION;
 import static io.harness.ci.commonconstants.CIExecutionConstants.CACHE_ARCHIVE_TYPE_TAR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.CACHE_GCS_BACKEND;
 import static io.harness.ci.commonconstants.CIExecutionConstants.CACHE_S3_BACKEND;
@@ -29,7 +24,11 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_JSON_KEY
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_SECRET_KEY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.RESTORE_CACHE_STEP_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.SAVE_CACHE_STEP_ID;
-import static io.harness.ci.commonconstants.CIExecutionConstants.WORKSPACE_ID;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_ARCHIVE_FORMAT;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_BACKEND;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_BUCKET;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_ENDPOINT;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_REGION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -44,16 +43,16 @@ import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
-import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.config.CICacheIntelligenceConfig;
 import io.harness.ci.config.CICacheIntelligenceS3Config;
 import io.harness.ci.config.CIExecutionServiceConfig;
-import io.harness.ci.execution.CIExecutionConfigService;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.execution.CIExecutionConfigService;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
+import io.harness.ci.execution.serializer.SerializerUtils;
+import io.harness.ci.execution.utils.CIStepInfoUtils;
+import io.harness.ci.execution.utils.HarnessImageUtils;
 import io.harness.ci.ff.CIFeatureFlagService;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
-import io.harness.ci.serializer.SerializerUtils;
-import io.harness.ci.utils.CIStepInfoUtils;
-import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.steps.VmJunitTestReport;
 import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
@@ -62,6 +61,7 @@ import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
 import io.harness.delegate.beans.ci.vm.steps.VmRunStep.VmRunStepBuilder;
 import io.harness.delegate.beans.ci.vm.steps.VmStepInfo;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.exception.ngexception.IACMStageExecutionException;
 import io.harness.iacm.execution.IACMStepsUtils;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -94,15 +94,12 @@ public class VmPluginStepSerializer {
   @Inject CIStepInfoUtils ciStepInfoUtils;
   @Inject private IACMStepsUtils iacmStepsUtils;
   @Inject private CIFeatureFlagService featureFlagService;
+  @Inject private SerializerUtils serializerUtils;
 
   public VmStepInfo serialize(PluginStepInfo pluginStepInfo, StageInfraDetails stageInfraDetails, String identifier,
       ParameterField<Timeout> parameterFieldTimeout, String stepName, Ambiance ambiance, List<CIRegistry> registries,
       ExecutionSource executionSource, String delegateId) {
     Map<String, String> envVars = new HashMap<>();
-
-    if (iacmStepsUtils.isIACMStep(pluginStepInfo)) {
-      envVars = iacmStepsUtils.getIACMEnvVariables(ambiance, pluginStepInfo);
-    }
     Map<String, JsonNode> settings =
         resolveJsonNodeMapParameter("settings", "Plugin", identifier, pluginStepInfo.getSettings(), false);
     if (executionSource != null && executionSource.getType() == ExecutionSource.Type.MANUAL) {
@@ -128,6 +125,8 @@ public class VmPluginStepSerializer {
       }
       envVars.put("HARNESS_DELEGATE_ID", delegateId);
     }
+    Map<String, String> statusEnvVars = serializerUtils.getStepStatusEnvVars(ambiance);
+    envVars.putAll(statusEnvVars);
     envVars = CIStepInfoUtils.injectAndResolveLoopingVariables(
         ambiance, AmbianceUtils.getAccountId(ambiance), featureFlagService, envVars);
 
@@ -174,8 +173,21 @@ public class VmPluginStepSerializer {
         }
       }
       if (iacmStepsUtils.isIACMStep(pluginStepInfo)) {
-        String workspaceId = pluginStepInfo.getEnvVariables().getValue().get(WORKSPACE_ID).getValue();
-        ConnectorDetails iacmConnector = iacmStepsUtils.retrieveIACMConnectorDetails(ambiance, workspaceId);
+        String connectorRef;
+        String provider;
+        if (envVars.containsKey("PLUGIN_CONNECTOR_REF")) {
+          connectorRef = envVars.get("PLUGIN_CONNECTOR_REF");
+          envVars.remove("PLUGIN_CONNECTOR_REF");
+        } else {
+          throw new IACMStageExecutionException("The connector ref is missing. Check the workspace");
+        }
+        if (envVars.containsKey("PLUGIN_PROVISIONER")) {
+          provider = envVars.get("PLUGIN_PROVISIONER");
+          envVars.remove("PLUGIN_PROVISIONER");
+        } else {
+          throw new IACMStageExecutionException("The provisioner type is missing. Check the workspace");
+        }
+        ConnectorDetails iacmConnector = iacmStepsUtils.retrieveIACMConnectorDetails(ambiance, connectorRef, provider);
         return convertContainerStep(ambiance, identifier, image, connectorIdentifier, envVars, timeout,
             stageInfraDetails, pluginStepInfo, iacmConnector);
       }

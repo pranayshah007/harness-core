@@ -7,21 +7,29 @@
 
 package io.harness.ci.git.checks;
 
+import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SHUBHAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.cistatus.StatusCreationResponse;
 import io.harness.cistatus.service.GithubService;
 import io.harness.cistatus.service.azurerepo.AzureRepoService;
 import io.harness.cistatus.service.bitbucket.BitbucketService;
 import io.harness.cistatus.service.gitlab.GitlabService;
+import io.harness.code.CodeResourceClient;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
+import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO;
@@ -41,11 +49,17 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessType;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessApiAccessType;
+import io.harness.delegate.beans.connector.scm.harness.HarnessAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessConnectorDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessJWTTokenSpecDTO;
 import io.harness.delegate.task.ci.GitSCMType;
 import io.harness.encryption.SecretRefData;
 import io.harness.git.GitTokenRetriever;
 import io.harness.git.checks.GitStatusCheckHelper;
 import io.harness.git.checks.GitStatusCheckParams;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 
 import org.junit.Before;
@@ -54,6 +68,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import retrofit2.Call;
 
 public class GitStatusCheckHelperTest extends CategoryTest {
   @Mock private GithubService githubService;
@@ -61,6 +76,7 @@ public class GitStatusCheckHelperTest extends CategoryTest {
   @Mock private GitlabService gitlabService;
   @Mock private AzureRepoService azureRepoService;
   @Mock private GitTokenRetriever gitTokenRetriever;
+  @Mock private CodeResourceClient codeResourceClient;
   @InjectMocks private GitStatusCheckHelper gitStatusCheckHelper;
 
   private final String DESC = "desc";
@@ -270,7 +286,7 @@ public class GitStatusCheckHelperTest extends CategoryTest {
     ConnectorDetails connectorDetails = ConnectorDetails.builder().connectorConfig(gitConnectorDTO).build();
 
     when(gitTokenRetriever.retrieveAuthToken(GitSCMType.AZURE_REPO, connectorDetails)).thenReturn(TOKEN);
-    when(azureRepoService.sendStatus(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(true);
+    when(azureRepoService.sendStatus(any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(true);
 
     boolean actual = gitStatusCheckHelper.sendStatus(GitStatusCheckParams.builder()
                                                          .sha(SHA)
@@ -279,6 +295,45 @@ public class GitStatusCheckHelperTest extends CategoryTest {
                                                          .gitSCMType(GitSCMType.AZURE_REPO)
                                                          .owner(OWNER)
                                                          .repo(REPO)
+                                                         .state(STATE)
+                                                         .title(TITLE)
+                                                         .target_url(TARGET_URL)
+                                                         .desc(DESC)
+                                                         .connectorDetails(connectorDetails)
+                                                         .build());
+
+    assertThat(actual).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV)
+  @Category(UnitTests.class)
+  public void testPushStatusForHarnessCode() {
+    HarnessConnectorDTO gitConnectorDTO = HarnessConnectorDTO.builder()
+                                              .url("https://harness.io/")
+                                              .apiAccess(HarnessApiAccessDTO.builder()
+                                                             .type(HarnessApiAccessType.JWT_TOKEN)
+                                                             .spec(HarnessJWTTokenSpecDTO.builder().build())
+                                                             .build())
+                                              .connectionType(GitConnectionType.REPO)
+                                              .authentication(HarnessAuthenticationDTO.builder().build())
+                                              .build();
+
+    ConnectorDetails connectorDetails =
+        ConnectorDetails.builder().connectorConfig(gitConnectorDTO).connectorType(ConnectorType.HARNESS).build();
+
+    when(gitTokenRetriever.retrieveAuthToken(GitSCMType.HARNESS, connectorDetails)).thenReturn(TOKEN);
+    Call<StatusCreationResponse> call = mock(Call.class);
+    doReturn(call).when(codeResourceClient).sendStatus(any(), any(), any(), any(), any(), any());
+    mockStatic(NGRestUtils.class);
+    when(NGRestUtils.getGeneralResponse(call)).thenReturn(StatusCreationResponse.builder().build());
+    boolean actual = gitStatusCheckHelper.sendStatus(GitStatusCheckParams.builder()
+                                                         .sha(SHA)
+                                                         .identifier(IDENTIFIER)
+                                                         .buildNumber(BUILD_NUMBER)
+                                                         .gitSCMType(GitSCMType.HARNESS)
+                                                         .owner(OWNER)
+                                                         .repo("ORG/PROJECT/" + REPO)
                                                          .state(STATE)
                                                          .title(TITLE)
                                                          .target_url(TARGET_URL)

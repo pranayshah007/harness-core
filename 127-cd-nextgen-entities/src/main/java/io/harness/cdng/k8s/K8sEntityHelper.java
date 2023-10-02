@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.k8s;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.CDS_K8S_SOCKET_CAPABILITY_CHECK_NG;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
@@ -27,9 +26,14 @@ import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
 import io.harness.account.AccountClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
@@ -75,6 +79,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @OwnedBy(CDP)
 @Singleton
@@ -82,6 +87,7 @@ public class K8sEntityHelper {
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Inject private AccountClient accountClient;
+  @Inject protected CDFeatureFlagHelper cdFeatureFlagHelper;
 
   public static final String CLASS_CAST_EXCEPTION_ERROR =
       "Unsupported Connector for Infrastructure type: [%s]. Connector provided is of type: [%s]. Configure connector of type: [%s] to resolve the issue";
@@ -207,8 +213,11 @@ public class K8sEntityHelper {
           return EksK8sInfraDelegateConfig.builder()
               .namespace(k8sAwsInfrastructure.getNamespace())
               .cluster(k8sAwsInfrastructure.getCluster())
+              .region(k8sAwsInfrastructure.getRegion())
               .awsConnectorDTO((AwsConnectorDTO) connectorDTO.getConnectorConfig())
               .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
+              .addRegionalParam(cdFeatureFlagHelper.isEnabled(
+                  connectorDTO.getAccountIdentifier(), FeatureName.CDS_EKS_ADD_REGIONAL_PARAM))
               .build();
 
         case KUBERNETES_RANCHER:

@@ -22,8 +22,11 @@ import static software.wings.ngmigration.NGMigrationEntityType.SECRET_MANAGER_TE
 
 import static java.util.stream.Collectors.groupingBy;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.ngmigration.beans.DiscoverEntityInput;
@@ -87,6 +90,7 @@ import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class DiscoveryService {
@@ -279,6 +283,7 @@ public class DiscoveryService {
                                             .entities(discoveryResult.getEntities())
                                             .graph(discoveryResult.getLinks())
                                             .inputDTO(inputDTO)
+                                            .root(inputDTO.getRoot())
                                             .build();
 
     return getAllYamlFiles(migrationContext, discoveryResult.getRoot(), leafTracker);
@@ -314,16 +319,7 @@ public class DiscoveryService {
         if (!file.isExists()) {
           MigrationImportSummaryDTO importSummaryDTO =
               ngMigration.migrate(ngClient, pmsClient, templateClient, inputDTO, file);
-          if (importSummaryDTO != null && importSummaryDTO.isSuccess()) {
-            summaryDTO.getStats().get(file.getType()).incrementSuccessfullyMigrated();
-            summaryDTO.getSuccessfullyMigratedDetails().add(MigratedDetails.builder()
-                                                                .cgEntityDetail(file.getCgBasicInfo())
-                                                                .ngEntityDetail(file.getNgEntityDetail())
-                                                                .build());
-          }
-          if (importSummaryDTO != null && EmptyPredicate.isNotEmpty(importSummaryDTO.getErrors())) {
-            summaryDTO.getErrors().addAll(importSummaryDTO.getErrors());
-          }
+          addToSummary(summaryDTO, file, importSummaryDTO);
         } else {
           summaryDTO.getStats().get(file.getType()).incrementAlreadyMigrated();
           summaryDTO.getAlreadyMigratedDetails().add(MigratedDetails.builder()
@@ -340,6 +336,21 @@ public class DiscoveryService {
     }
     summaryDTO.setNgYamlFiles(ngYamlFiles);
     return summaryDTO;
+  }
+
+  public static void addToSummary(
+      SaveSummaryDTO summaryDTO, NGYamlFile file, MigrationImportSummaryDTO importSummaryDTO) {
+    summaryDTO.getStats().putIfAbsent(file.getType(), new EntityMigratedStats());
+    if (importSummaryDTO != null && importSummaryDTO.isSuccess()) {
+      summaryDTO.getStats().get(file.getType()).incrementSuccessfullyMigrated();
+      summaryDTO.getSuccessfullyMigratedDetails().add(MigratedDetails.builder()
+                                                          .cgEntityDetail(file.getCgBasicInfo())
+                                                          .ngEntityDetail(file.getNgEntityDetail())
+                                                          .build());
+    }
+    if (importSummaryDTO != null && EmptyPredicate.isNotEmpty(importSummaryDTO.getErrors())) {
+      summaryDTO.getErrors().addAll(importSummaryDTO.getErrors());
+    }
   }
 
   private void exportZip(List<NGYamlFile> ngYamlFiles, String dirName) {
@@ -478,11 +489,21 @@ public class DiscoveryService {
 
   private void migrateSpecificType(MigrationContext context, CgEntityId entityId, NGMigrationEntityType entityType,
       List<NGYamlFile> files, List<NGSkipDetail> skipDetails) {
-    List<CgEntityId> specificEntities = context.getGraph()
-                                            .keySet()
-                                            .stream()
-                                            .filter(cgEntityId -> entityType.equals(cgEntityId.getType()))
-                                            .collect(Collectors.toList());
+    List<CgEntityId> specificEntities =
+        context.getGraph()
+            .entrySet()
+            .stream()
+            .filter(entry -> entityType.equals(entry.getKey().getType()))
+            .sorted((e1, e2) -> {
+              boolean hasChildrenOfSameType = e2.getValue().stream().anyMatch(
+                  childrenCgEntityId -> childrenCgEntityId.getType().equals(e2.getKey().getType()));
+              if (hasChildrenOfSameType) {
+                return -1;
+              }
+              return 1;
+            })
+            .map(Map.Entry::getKey)
+            .collect(Collectors.toList());
     for (CgEntityId entry : specificEntities) {
       generateYaml(context, entityId, files, skipDetails, entry);
     }

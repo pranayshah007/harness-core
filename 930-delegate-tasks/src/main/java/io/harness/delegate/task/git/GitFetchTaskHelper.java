@@ -6,16 +6,19 @@
  */
 
 package io.harness.delegate.task.git;
-
 import static io.harness.git.model.GitRepositoryType.YAML;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
@@ -32,6 +35,7 @@ import java.io.IOException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class GitFetchTaskHelper {
@@ -41,6 +45,7 @@ public class GitFetchTaskHelper {
   @Inject private GitDecryptionHelper gitDecryptionHelper;
   @Inject private NGGitService ngGitService;
   @Inject private SecretDecryptionService secretDecryptionService;
+  @Inject private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   public static String getCompleteFilePath(String folderPath, String fileKey) {
     if (isBlank(folderPath)) {
@@ -55,9 +60,13 @@ public class GitFetchTaskHelper {
   }
 
   public FetchFilesResult fetchFileFromRepo(GitStoreDelegateConfig gitStoreDelegateConfig, List<String> filePaths,
-      String accountId, GitConfigDTO gitConfigDTO) throws IOException {
+      String accountId, GitConfigDTO gitConfigDTO, boolean supportFolders) throws IOException {
     if (gitStoreDelegateConfig.isOptimizedFilesFetch()) {
-      return scmFetchFilesHelper.fetchFilesFromRepoWithScm(gitStoreDelegateConfig, filePaths);
+      if (supportFolders) {
+        return scmFetchFilesHelper.fetchFilesAndFoldersContentFromRepoWithScm(gitStoreDelegateConfig, filePaths);
+      } else {
+        return scmFetchFilesHelper.fetchFilesFromRepoWithScm(gitStoreDelegateConfig, filePaths);
+      }
     }
     SshSessionConfig sshSessionConfig = gitDecryptionHelper.getSSHSessionConfig(
         gitStoreDelegateConfig.getSshKeySpecDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());

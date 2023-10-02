@@ -8,6 +8,7 @@
 package io.harness.steps.matrix;
 
 import io.harness.plancreator.strategy.StrategyConfig;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -15,7 +16,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface StrategyConfigService {
-  List<ChildrenExecutableResponse.Child> fetchChildren(StrategyConfig strategyConfig, String childNodeId);
+  List<ChildrenExecutableResponse.Child> fetchChildren(
+      StrategyConfig strategyConfig, String childNodeId, Ambiance ambiance);
 
   // YAML Expansion will fail if count is more that the supported limit.
   StrategyInfo expandJsonNode(StrategyConfig strategyConfig, JsonNode jsonNode, Optional<Integer> maxExpansionLimit);

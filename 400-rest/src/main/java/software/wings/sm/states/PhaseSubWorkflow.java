@@ -6,7 +6,6 @@
  */
 
 package software.wings.sm.states;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -15,8 +14,11 @@ import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.api.PhaseExecutionData.PhaseExecutionDataBuilder.aPhaseExecutionData;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.beans.SweepingOutputInstance.Scope;
@@ -43,6 +45,7 @@ import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.persistence.artifact.Artifact;
 import software.wings.service.PhaseSubWorkflowHelperService;
@@ -79,6 +82,8 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Created by rishi on 1/12/17.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 @Slf4j
@@ -280,11 +285,9 @@ public class PhaseSubWorkflow extends SubWorkflowState {
     if (isRollback() && workflowStandardParams.getWorkflowElement() != null) {
       // if last successful deployment found, save it in sweeping output
       if (workflowStandardParams.getWorkflowElement().getLastGoodDeploymentUuid() != null) {
-        WorkflowExecution workflowExecution =
-            workflowExecutionService.getWorkflowExecution(workflowStandardParams.getAppId(),
-                workflowStandardParams.getWorkflowElement()
-                    .getLastGoodDeploymentUuid()); // TODO: performance issue -filter query to get only execution args
-        // and artifacts
+        WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(
+            workflowStandardParams.getAppId(), workflowStandardParams.getWorkflowElement().getLastGoodDeploymentUuid(),
+            WorkflowExecutionKeys.executionArgs);
 
         if (workflowExecution == null) {
           log.error("ERROR: Last Good Deployment ID is not found - lastGoodDeploymentUuid: {}",
@@ -303,7 +306,9 @@ public class PhaseSubWorkflow extends SubWorkflowState {
     if (workflowStandardParams.getWorkflowElement() != null
         && workflowStandardParams.getWorkflowElement().getPipelineDeploymentUuid() != null) {
       WorkflowExecution pipelineExecution = workflowExecutionService.getWorkflowExecution(
-          workflowStandardParams.getAppId(), workflowStandardParams.getWorkflowElement().getPipelineDeploymentUuid());
+          workflowStandardParams.getAppId(), workflowStandardParams.getWorkflowElement().getPipelineDeploymentUuid(),
+          WorkflowExecutionKeys.pipelineExecution);
+
       if (pipelineExecution != null && pipelineExecution.getPipelineExecution().getPipelineStageExecutions() != null) {
         for (PipelineStageExecution pse : pipelineExecution.getPipelineExecution().getPipelineStageExecutions()) {
           if (pse.getWorkflowExecutions() != null) {

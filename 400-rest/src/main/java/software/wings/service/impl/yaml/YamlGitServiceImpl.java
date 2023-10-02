@@ -6,8 +6,6 @@
  */
 
 package software.wings.service.impl.yaml;
-
-import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION;
 import static io.harness.beans.FeatureName.NOTIFY_GIT_SYNC_ERRORS_PER_APP;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageRequest.UNLIMITED;
@@ -64,8 +62,11 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.startsWith;
 
 import io.harness.alert.AlertData;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.PageRequest;
@@ -182,6 +183,8 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * The type Yaml git sync service.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @ValidateOnExecution
 @Singleton
 @Slf4j
@@ -1033,8 +1036,8 @@ public class YamlGitServiceImpl implements YamlGitService {
       }
 
     } catch (Exception ex) {
-      log.error(format(GIT_YAML_LOG_PREFIX + "Unexpected error while processing git->harness change set [%s]",
-                    yamlChangeSet.getUuid()),
+      log.warn(format(GIT_YAML_LOG_PREFIX + "Unexpected error while processing git->harness change set [%s]",
+                   yamlChangeSet.getUuid()),
           ex);
       yamlChangeSetService.updateStatus(accountId, yamlChangeSet.getUuid(), Status.SKIPPED);
     }
@@ -1390,9 +1393,7 @@ public class YamlGitServiceImpl implements YamlGitService {
       fullSync(accountId, accountId, EntityType.ACCOUNT, false);
 
       FindOptions findOptions = new FindOptions();
-      if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
-        findOptions.readPreference(ReadPreference.secondaryPreferred());
-      }
+      findOptions.readPreference(ReadPreference.secondaryPreferred());
 
       try (HIterator<Application> apps = new HIterator<>(wingsPersistence.createQuery(Application.class)
                                                              .filter(ApplicationKeys.accountId, accountId)

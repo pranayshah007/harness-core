@@ -42,7 +42,7 @@ import io.harness.pms.ngpipeline.inputset.helpers.InputSetSanitizer;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.rule.Owner;
 
 import com.google.common.io.Resources;
@@ -416,7 +416,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
                                         .yaml(inputSetYaml)
                                         .inputSetEntityType(InputSetEntityType.INPUT_SET)
                                         .storeType(StoreType.INLINE)
-                                        .harnessVersion(PipelineVersion.V1)
+                                        .harnessVersion(HarnessYamlVersion.V1)
                                         .build();
     // no exception should be thrown
     InputSetValidationHelper.validateInputSet(inputSetService, inputSetEntity, false);

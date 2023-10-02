@@ -1,6 +1,6 @@
 # log-service
 
-![Version: 0.3.0](https://img.shields.io/badge/Version-0.3.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.1](https://img.shields.io/badge/AppVersion-0.0.1-informational?style=flat-square)
+![Version: 0.8.0](https://img.shields.io/badge/Version-0.8.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.1](https://img.shields.io/badge/AppVersion-0.0.1-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -14,16 +14,37 @@ A Helm chart for Kubernetes
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| additionalConfigs | object | `{}` |  |
 | affinity | object | `{}` |  |
+| extraVolumeMounts | list | `[]` |  |
+| extraVolumes | list | `[]` |  |
 | fullnameOverride | string | `""` |  |
+| global.database.redis.extraArgs | string | `""` |  |
+| global.database.redis.hosts | list | `["redis-sentinel-harness-announce-0:26379","redis-sentinel-harness-announce-1:26379","redis-sentinel-harness-announce-2:26379"]` | provide default values if redis.installed is set to false |
+| global.database.redis.installed | bool | `true` |  |
+| global.database.redis.passwordKey | string | `"redis-password"` |  |
+| global.database.redis.protocol | string | `"redis"` |  |
+| global.database.redis.secretName | string | `"redis-secret"` |  |
+| global.database.redis.userKey | string | `"redis-user"` |  |
 | global.imagePullSecrets | list | `[]` |  |
+| global.ingress.className | string | `"harness"` |  |
+| global.ingress.enabled | bool | `false` |  |
+| global.ingress.hosts[0] | string | `"my-host.example.org"` |  |
+| global.ingress.objects.annotations | object | `{}` |  |
+| global.ingress.tls.enabled | bool | `true` |  |
+| global.ingress.tls.secretName | string | `""` |  |
+| global.istio.enabled | bool | `false` |  |
+| global.istio.gateway.create | bool | `false` |  |
+| global.istio.virtualService.gateways | list | `[]` |  |
+| global.istio.virtualService.hosts | list | `[]` |  |
+| global.kubeVersion | string | `""` |  |
 | global.loadbalancerURL | string | `""` |  |
 | image.digest | string | `""` |  |
 | image.imagePullSecrets | list | `[]` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.registry | string | `"docker.io"` |  |
 | image.repository | string | `"harness/log-service-signed"` |  |
-| image.tag | string | `"release-18"` |  |
+| image.tag | string | `"release-91-ubi"` |  |
 | imagePullSecrets | object | `{}` |  |
 | logServiceS3AccessKeyID.key | string | `"root-user"` |  |
 | logServiceS3AccessKeyID.name | string | `"minio"` |  |
@@ -35,8 +56,8 @@ A Helm chart for Kubernetes
 | nodeSelector | object | `{}` |  |
 | podAnnotations | object | `{}` |  |
 | podSecurityContext | object | `{}` |  |
+| redis.disableWatcher | bool | `false` |  |
 | replicaCount | int | `1` |  |
-| resources.limits.cpu | int | `1` |  |
 | resources.limits.memory | string | `"3072Mi"` |  |
 | resources.requests.cpu | int | `1` |  |
 | resources.requests.memory | string | `"3072Mi"` |  |

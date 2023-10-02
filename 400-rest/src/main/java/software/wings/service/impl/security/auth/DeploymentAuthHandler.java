@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl.security.auth;
-
 import static io.harness.annotations.dev.HarnessModule._950_NG_AUTHENTICATION_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION;
@@ -23,7 +22,10 @@ import static software.wings.security.PermissionAttribute.PermissionType.DEPLOYM
 
 import static java.util.Arrays.asList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
@@ -32,6 +34,7 @@ import software.wings.beans.Pipeline;
 import software.wings.beans.User;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.security.AppPermissionSummary;
 import software.wings.security.ExecutableElementsFilter;
 import software.wings.security.PermissionAttribute;
@@ -56,6 +59,8 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * Created by ujjawal on 05/24/20.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @Slf4j
 @OwnedBy(PL)
@@ -148,7 +153,10 @@ public class DeploymentAuthHandler {
   }
 
   public void authorizeWithWorkflowExecutionId(String appId, String workflowExecutionId) {
-    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId);
+    String[] fields = {WorkflowExecutionKeys.envId, WorkflowExecutionKeys.pipelineSummary,
+        WorkflowExecutionKeys.workflowId, WorkflowExecutionKeys.workflowType};
+    WorkflowExecution workflowExecution =
+        workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId, fields);
     authorize(appId, workflowExecution);
   }
 

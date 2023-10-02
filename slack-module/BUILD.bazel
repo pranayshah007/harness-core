@@ -1,0 +1,48 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("@rules_java//java:defs.bzl", "java_binary")
+load("//:tools/bazel/GenTestRules.bzl", "run_tests")
+load("//:tools/bazel/macros.bzl", "run_analysis")
+
+java_library(
+    name = "module",
+    srcs = glob(["src/main/java/**/*.java"]),
+    resources = [
+        "//slack-module/src/main/resources:resource",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//999-annotations:module",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_google_inject_guice",
+    ],
+)
+
+java_library(
+    name = "tests",
+    testonly = True,
+    srcs = glob(["src/test/**/*.java"]),
+    resources = ["//slack-module/src/test/resources:resource"],
+    visibility = ["//visibility:public"],
+    exports = [
+        ":module",
+        "//990-commons-test:module",
+    ],
+)
+
+run_tests()
+
+file_srcs = [
+    "//slack-module/src/main/java/io/harness/slack/resource:java_srcs",
+]
+
+run_analysis(
+    checkstyle_srcs = file_srcs,
+    pmd_srcs = file_srcs,
+    sonarqube_srcs = file_srcs,
+)

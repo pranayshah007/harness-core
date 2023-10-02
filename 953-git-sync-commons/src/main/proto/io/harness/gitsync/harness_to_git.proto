@@ -32,6 +32,7 @@ service HarnessToGitPushInfoService {
   rpc listFiles(ListFilesRequest) returns (ListFilesResponse);
   rpc getBatchFiles(GetBatchFilesRequest) returns (GetBatchFilesResponse);
   rpc getUserDetails(UserDetailsRequest) returns (UserDetailsResponse);
+  rpc validateRepo(ValidateRepoRequest) returns (ValidateRepoResponse);
 }
 
 message PushInfo {
@@ -121,6 +122,7 @@ message GetFileRequest {
   CacheRequestParams cacheRequestParams = 9;
   EntityType entityType = 10;
   bool getOnlyFileContent = 11;
+  GitSettings gitSettings = 12;
 }
 
 message GetFileResponse {
@@ -211,6 +213,7 @@ message GitMetaData {
   string blobId = 5;
   string fileUrl = 6;
   string repoUrl = 7;
+  bool isGitDefaultBranch = 8;
 }
 
 message ErrorDetails {
@@ -356,6 +359,23 @@ message CacheResponseParams {
   CacheState cacheState = 1;
   uint64 lastUpdateAt = 2;
   uint64 ttlLeft = 3;
+  bool isSyncEnabled = 4;
+}
+
+message GitSettings {
+  bool applyRepoAllowListFilter = 1;
+}
+
+message ValidateRepoRequest {
+  ScopeIdentifiers scope = 1;
+  string connectorRef = 2;
+  string repo = 3;
+}
+
+message ValidateRepoResponse {
+  bool isValid = 1;
+  int32 statusCode = 2;
+  ErrorDetails error = 3;
 }
 
 enum ContentType {

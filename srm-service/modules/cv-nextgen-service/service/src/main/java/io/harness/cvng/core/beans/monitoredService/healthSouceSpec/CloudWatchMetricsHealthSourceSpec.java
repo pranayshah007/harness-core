@@ -33,6 +33,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BadRequestException;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -152,8 +153,9 @@ public class CloudWatchMetricsHealthSourceSpec extends MetricHealthSourceSpec {
         .flatMap(cvConfig -> cvConfig.getMetricInfos().stream())
         .forEach(metricInfo -> {
           if (metricInfo.getDeploymentVerification().isEnabled()) {
-            Preconditions.checkNotNull(metricInfo.getResponseMapping().getServiceInstanceJsonPath(),
-                "ServiceInstanceJsonPath should be set for Deployment Verification");
+            if (StringUtils.isEmpty(metricInfo.getResponseMapping().getServiceInstanceJsonPath())) {
+              throw new BadRequestException("ServiceInstanceJsonPath should be set for Deployment Verification");
+            }
           }
         });
     return cvConfigs;

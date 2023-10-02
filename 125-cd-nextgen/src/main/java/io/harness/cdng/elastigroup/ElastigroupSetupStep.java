@@ -7,10 +7,14 @@
 
 package io.harness.cdng.elastigroup;
 
+import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MAX_INSTANCES;
 import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MIN_INSTANCES;
 import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_TARGET_INSTANCES;
 
+import static software.wings.beans.LogHelper.color;
+
+import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -29,10 +33,14 @@ import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
+import io.harness.elastigroup.ElastigroupCommandUnitConstants;
+import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogCallback;
 import io.harness.logging.Misc;
-import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.logging.UnitProgress;
+import io.harness.logging.UnitStatus;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -46,16 +54,20 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupCapacity;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
+import software.wings.beans.LogColor;
+import software.wings.beans.LogWeight;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
@@ -72,7 +84,7 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
   @Override
-  public TaskChainResponse executeElastigroupTask(Ambiance ambiance, StepElementParameters stepParameters,
+  public TaskChainResponse executeElastigroupTask(Ambiance ambiance, StepBaseParameters stepParameters,
       ElastigroupExecutionPassThroughData executionPassThroughData, UnitProgressData unitProgressData) {
     ElastigroupInfrastructureOutcome infrastructureOutcome =
         (ElastigroupInfrastructureOutcome) executionPassThroughData.getInfrastructure();
@@ -100,8 +112,24 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
       elastiGroupOriginalConfig = generateOriginalConfigFromJson(executionPassThroughData.getElastigroupConfiguration(),
           elastigroupSetupStepParameters.getInstances(), ambiance);
     } catch (Exception e) {
+      unitProgressData.getUnitProgresses().add(
+          UnitProgress.newBuilder()
+              .setUnitName(ElastigroupCommandUnitConstants.CREATE_ELASTIGROUP.toString())
+              .setStatus(UnitStatus.FAILURE)
+              .build());
+      LogCallback logCallback = elastigroupStepCommonHelper.getLogCallback(
+          ElastigroupCommandUnitConstants.CREATE_ELASTIGROUP.toString(), ambiance, true);
+      logCallback.saveExecutionLog(color(format("Failed to parse the ElastiGroup Json file, cause: %s",
+                                             e.getCause() != null && StringUtils.isNotBlank(e.getCause().getMessage())
+                                                 ? e.getCause().getMessage()
+                                                 : ExceptionUtils.getMessage(e)),
+                                       LogColor.Red, LogWeight.Bold),
+          ERROR);
+      logCallback.saveExecutionLog(
+          color(format("%s", executionPassThroughData.getElastigroupConfiguration()), LogColor.White, LogWeight.Normal),
+          ERROR, CommandExecutionStatus.FAILURE);
       return elastigroupStepCommonHelper.stepFailureTaskResponseWithMessage(
-          unitProgressData, "Incorrect Elastigroup Json Provided");
+          unitProgressData, "Invalid Elastigroup Json Provided, unable to parse.");
     }
     ElastigroupSetupCommandRequest elastigroupSetupCommandRequest =
         ElastigroupSetupCommandRequest.builder()
@@ -146,17 +174,17 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // nothing
   }
 
   @Override
-  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
+  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance, StepBaseParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
       throws Exception {
     log.info("Calling executeNextLink");
@@ -165,7 +193,7 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
   }
 
   @Override
-  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
+  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepBaseParameters stepParameters,
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     if (passThroughData instanceof ElastigroupStartupScriptFetchFailurePassThroughData) {
       return elastigroupStepCommonHelper.handleStartupScriptTaskFailure(
@@ -250,7 +278,7 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
 
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     ElastigroupExecutionPassThroughData passThroughData =
         ElastigroupExecutionPassThroughData.builder().blueGreen(false).build();
     return elastigroupStepCommonHelper.startChainLink(ambiance, stepParameters, passThroughData);

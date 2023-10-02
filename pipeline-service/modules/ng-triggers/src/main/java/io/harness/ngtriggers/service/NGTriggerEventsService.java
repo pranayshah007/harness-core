@@ -6,7 +6,11 @@
  */
 
 package io.harness.ngtriggers.service;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.dto.PollingInfoForTriggers;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
 import io.harness.pms.execution.ExecutionStatus;
 
@@ -15,8 +19,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 public interface NGTriggerEventsService {
   Criteria formEventCriteria(String accountId, String eventCorrelationId, List<ExecutionStatus> statusList);
+  ResponseDTO<PollingInfoForTriggers> getPollingInfo(String accountId, String pollingDocId);
+  Criteria formTriggerEventCriteria(
+      String accountId, String orgId, String projectId, String targetIdentifier, String artifactType);
+
   Criteria formTriggerEventCriteria(String accountId, String orgId, String projectId, String targetIdentifier,
       String identifier, String searchTerm, List<ExecutionStatus> statusList);
 

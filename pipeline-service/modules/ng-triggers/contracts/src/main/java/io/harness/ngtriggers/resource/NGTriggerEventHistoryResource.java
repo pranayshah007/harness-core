@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngtriggers.resource;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.NGCommonEntityConstants;
@@ -15,7 +14,11 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.dto.PollingInfoForTriggers;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -44,6 +47,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import org.springframework.data.domain.Page;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Api("triggers/eventHistory")
 @Path("triggers/eventHistory")
 @Produces({"application/json", "application/yaml"})
@@ -96,6 +100,34 @@ public interface NGTriggerEventHistoryResource {
       @Parameter(description = NGCommonEntityConstants.SORT_PARAM_MESSAGE) @QueryParam("sort") List<String> sort);
 
   @GET
+  @Path("/artifact-manifest-info")
+  @ApiOperation(value = "Get artifact and manifest trigger event history based on build source type",
+      nickname = "triggerEventHistoryBuildSourceType")
+  @Operation(operationId = "triggerEventHistoryBuildSourceType",
+      summary = "Get artifact and manifest trigger event history based on build source type",
+      description = "Get artifact and manifest trigger event history based on build source type",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the Trigger Event History response")
+      })
+  ResponseDTO<Page<NGTriggerEventHistoryDTO>>
+  listTriggerEventHistory(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = "Identifier of the target pipeline under which trigger resides") @QueryParam(
+          "targetIdentifier") @ResourceIdentifier String targetIdentifier,
+      @Parameter(description = "Type of artifact source") @QueryParam("artifactType") String artifactType,
+      @Parameter(description = PipelineResourceConstants.PIPELINE_SEARCH_TERM_PARAM_MESSAGE) @QueryParam(
+          NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
+      @Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
+      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.SIZE) @DefaultValue("10") int size,
+      @Parameter(description = NGCommonEntityConstants.SORT_PARAM_MESSAGE) @QueryParam("sort") List<String> sort);
+
+  @GET
   @Path("/eventCorrelation/{eventCorrelationId}")
   @ApiOperation(value = "Get Trigger history event correlation", nickname = "triggerHistoryEventCorrelation")
   @Operation(operationId = "triggerHistoryEventCorrelation", summary = "Get Trigger history event correlation",
@@ -114,4 +146,44 @@ public interface NGTriggerEventHistoryResource {
       @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.SIZE) @DefaultValue("10") int size,
       @Parameter(description = NGCommonEntityConstants.SORT_PARAM_MESSAGE) @QueryParam("sort") List<String> sort);
+
+  @GET
+  @Path("/v2/eventCorrelation/{eventCorrelationId}")
+  @ApiOperation(value = "Get Trigger history event correlation V2", nickname = "triggerHistoryEventCorrelationV2")
+  @Operation(operationId = "triggerHistoryEventCorrelationV2", summary = "Get Trigger history event correlation V2",
+      description = "Get Trigger history event correlation V2",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the Trigger catalogue response")
+      })
+  ResponseDTO<Page<NGTriggerEventHistoryDTO>>
+  getTriggerHistoryEventCorrelationV2(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @NotNull @PathParam("eventCorrelationId") String eventCorrelationId,
+      @Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
+      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.SIZE) @DefaultValue("10") int size,
+      @Parameter(description = NGCommonEntityConstants.SORT_PARAM_MESSAGE) @QueryParam("sort") List<String> sort);
+
+  @GET
+  @Path("/polledResponse/{triggerIdentifier}")
+  @ApiOperation(value = "Get all the polled response for a given trigger", nickname = "polledResponseTriggerIdentifier")
+  @Operation(operationId = "polledResponseTriggerIdentifier",
+      summary = "Get all the polled response for a given trigger",
+      description = "Get all the polled response for a given trigger",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the polled response")
+      })
+  ResponseDTO<PollingInfoForTriggers>
+  getPolledResponseForTrigger(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = "Identifier of the target pipeline under which trigger resides") @NotNull @QueryParam(
+          "targetIdentifier") @ResourceIdentifier String targetIdentifier,
+      @PathParam("triggerIdentifier") String triggerIdentifier);
 }

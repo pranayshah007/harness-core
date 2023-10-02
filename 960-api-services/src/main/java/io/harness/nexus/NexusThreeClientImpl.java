@@ -17,7 +17,10 @@ import static io.harness.nexus.NexusHelper.isSuccessful;
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifact.ArtifactUtilities;
 import io.harness.artifacts.beans.BuildDetailsInternal;
@@ -55,6 +58,7 @@ import retrofit2.Call;
 import retrofit2.Response;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
@@ -258,7 +262,20 @@ public class NexusThreeClientImpl {
                 .map(ArtifactFileMetadataInternal::getUrl)
                 .findFirst()
                 .orElse(null);
+    } else if (StringUtils.isNotEmpty(extension)) {
+      url = artifactFileMetadataInternals.stream()
+                .filter(meta -> meta.getFileName().endsWith(extension))
+                .map(ArtifactFileMetadataInternal::getUrl)
+                .findFirst()
+                .orElse(null);
+    } else if (StringUtils.isNotEmpty(classifier)) {
+      url = artifactFileMetadataInternals.stream()
+                .filter(meta -> meta.getFileName().contains(classifier))
+                .map(ArtifactFileMetadataInternal::getUrl)
+                .findFirst()
+                .orElse(null);
     }
+
     return StringUtils.isNotBlank(url) ? url : defaultUrl;
   }
 
@@ -466,13 +483,22 @@ public class NexusThreeClientImpl {
           if (isNotEmpty(classifier)) {
             metadata.put(software.wings.beans.artifact.ArtifactMetadataKeys.classifier, classifier);
           }
+
+          List<ArtifactFileMetadataInternal> artifactFileMetadataList = versionToArtifactDownloadUrls.get(version);
+          String artifactUrl = versionToArtifactUrls.get(version);
+          if (isNotEmpty(artifactFileMetadataList) && versionToArtifactUrls.containsKey(version)
+              && isNotEmpty(artifactUrl)) {
+            artifactFileMetadataList =
+                artifactFileMetadataList.stream().filter(f -> artifactUrl.equals(f.getUrl())).collect(toList());
+          }
+
           return BuildDetailsInternal.builder()
               .number(version)
               .revision(version)
-              .buildUrl(versionToArtifactUrls.get(version))
+              .buildUrl(artifactUrl)
               .metadata(metadata)
               .uiDisplayName("Version# " + version)
-              .artifactFileMetadataList(versionToArtifactDownloadUrls.get(version))
+              .artifactFileMetadataList(artifactFileMetadataList)
               .build();
         })
         .collect(toList());
@@ -656,9 +682,8 @@ public class NexusThreeClientImpl {
     Map<String, List<ArtifactFileMetadataInternal>> nameToArtifactDownloadUrls = new HashMap<>();
     NexusThreeRestClient nexusThreeRestClient = getNexusThreeClient(nexusConfig);
     Response<Nexus3ComponentResponse> response;
-    String continuationToken;
+    String continuationToken = null;
     do {
-      continuationToken = null;
       if (nexusConfig.isHasCredentials()) {
         response = nexusThreeRestClient
                        .getGroupVersions(

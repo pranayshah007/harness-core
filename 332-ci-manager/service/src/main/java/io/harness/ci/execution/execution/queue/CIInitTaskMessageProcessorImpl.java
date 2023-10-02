@@ -8,6 +8,7 @@
 package io.harness.ci.execution.queue;
 
 import io.harness.beans.execution.CIInitTaskArgs;
+import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.ci.enforcement.CIBuildEnforcer;
 import io.harness.ci.execution.queue.ProcessMessageResponse.ProcessMessageResponseBuilder;
 import io.harness.ci.states.V1.InitStepV2DelegateTaskInfo;
@@ -15,10 +16,12 @@ import io.harness.ci.states.V1.InitializeTaskStepV2;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.hsqs.client.model.DequeueResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
+import io.harness.repositories.CIExecutionRepository;
 import io.harness.tasks.FailureResponseData;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -35,7 +38,7 @@ public class CIInitTaskMessageProcessorImpl implements CIInitTaskMessageProcesso
   @Inject @Named("ciInitTaskExecutor") ExecutorService initTaskExecutor;
   @Inject AsyncWaitEngine asyncWaitEngine;
   @Inject WaitNotifyEngine waitNotifyEngine;
-
+  @Inject CIExecutionRepository ciExecutionRepository;
   @Inject SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
 
   @Override
@@ -45,12 +48,15 @@ public class CIInitTaskMessageProcessorImpl implements CIInitTaskMessageProcesso
       String payload = dequeueResponse.getPayload();
       CIInitTaskArgs ciInitTaskArgs = RecastOrchestrationUtils.fromJson(payload, CIInitTaskArgs.class);
       Ambiance ambiance = ciInitTaskArgs.getAmbiance();
+      InitializeStepInfo initializeStepInfo = (InitializeStepInfo) ciInitTaskArgs.getStepElementParameters().getSpec();
       builder.accountId(AmbianceUtils.getAccountId(ambiance));
-      if (!buildEnforcer.checkBuildEnforcement(AmbianceUtils.getAccountId(ambiance))) {
+      if (!buildEnforcer.shouldRun(AmbianceUtils.getAccountId(ambiance), initializeStepInfo.getInfrastructure())) {
         log.info(String.format("skipping execution for account id: %s because of concurrency enforcement failure",
             AmbianceUtils.getAccountId(ambiance)));
         return builder.success(false).build();
       }
+      ciExecutionRepository.updateExecutionStatus(
+          AmbianceUtils.getAccountId(ambiance), ambiance.getStageExecutionId(), Status.RUNNING.toString());
       initTaskExecutor.submit(() -> {
         try {
           asyncWaitEngine.taskAcquired(ciInitTaskArgs.getCallbackId());

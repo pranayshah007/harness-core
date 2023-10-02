@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.ecs;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
@@ -17,6 +18,7 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
+@RecasterAlias("io.harness.delegate.task.ecs.EcsS3FetchFileConfig")
 public class EcsS3FetchFileConfig {
   String identifier;
   String manifestType;

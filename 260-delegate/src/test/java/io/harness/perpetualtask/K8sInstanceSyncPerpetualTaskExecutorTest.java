@@ -26,6 +26,7 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.instancesync.K8sInstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
@@ -70,6 +71,7 @@ public class K8sInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
   private static final String RELEASE_NAME_2 = "releaseName2";
   private static final String PERPETUAL_TASK_ID = "perpetualTaskId";
   private static final String ACCOUNT_ID = "accountId";
+  private static final HelmChartInfo HELM_CHART_INFO = HelmChartInfo.builder().build();
 
   @Inject private KryoSerializer kryoSerializer;
   @Mock private ContainerDeploymentDelegateBaseHelper containerBaseHelper;
@@ -139,6 +141,42 @@ public class K8sInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
 
     List<K8sDeploymentRelease> deploymentReleases =
         getK8sDeploymentReleases(namespacesRN1, RELEASE_NAME_1, namespacesRN2, RELEASE_NAME_2);
+
+    K8sInstanceSyncPerpetualTaskParams message = K8sInstanceSyncPerpetualTaskParams.newBuilder()
+                                                     .setAccountId(ACCOUNT_ID)
+                                                     .addAllK8SDeploymentReleaseList(deploymentReleases)
+                                                     .build();
+    PerpetualTaskExecutionParams perpetualTaskExecutionParams =
+        PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();
+
+    k8sInstanceSyncPerpetualTaskExecutor.runOnce(
+        PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK_ID).build(), perpetualTaskExecutionParams, Instant.EPOCH);
+
+    assertThat(perpetualTaskResponseCaptor.getValue()).isInstanceOf(K8sInstanceSyncPerpetualTaskResponse.class);
+    K8sInstanceSyncPerpetualTaskResponse k8sInstanceSyncPerpetualTaskResponse = perpetualTaskResponseCaptor.getValue();
+    assertThat(k8sInstanceSyncPerpetualTaskResponse.getCommandExecutionStatus())
+        .isEqualTo(CommandExecutionStatus.SUCCESS);
+    List<ServerInstanceInfo> serverInstanceDetails = k8sInstanceSyncPerpetualTaskResponse.getServerInstanceDetails();
+    assertThat(serverInstanceDetails.size()).isEqualTo(4);
+
+    serverInstanceDetails.forEach(serverInstanceInfo -> {
+      K8sServerInstanceInfo k8sServerInstanceInfo = (K8sServerInstanceInfo) serverInstanceInfo;
+      String namespace = k8sServerInstanceInfo.getNamespace();
+      String releaseName = k8sServerInstanceInfo.getReleaseName();
+      assertThat(Arrays.asList("ns1", "ns2").contains(namespace)).isTrue();
+      assertThat(Arrays.asList(RELEASE_NAME_1, RELEASE_NAME_2).contains(releaseName)).isTrue();
+    });
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TARUN_UBA)
+  @Category(UnitTests.class)
+  public void runOnceWithSameNamespacesNoHelmChartInfo() throws Exception {
+    List<String> namespacesRN1 = Arrays.asList("ns1", "ns2");
+    List<String> namespacesRN2 = Arrays.asList("ns1", "ns2");
+
+    List<K8sDeploymentRelease> deploymentReleases =
+        getK8sDeploymentReleasesWithoutHelmChartInfo(namespacesRN1, RELEASE_NAME_1, namespacesRN2, RELEASE_NAME_2);
 
     K8sInstanceSyncPerpetualTaskParams message = K8sInstanceSyncPerpetualTaskParams.newBuilder()
                                                      .setAccountId(ACCOUNT_ID)
@@ -251,7 +289,42 @@ public class K8sInstanceSyncPerpetualTaskExecutorTest extends DelegateTestBase {
     return deploymentReleases;
   }
 
+  private List<K8sDeploymentRelease> getK8sDeploymentReleasesWithoutHelmChartInfo(List<String> namespacesRN1,
+      String releaseName1, List<String> namespacesRN2, String releaseName2) throws Exception {
+    K8sDeploymentRelease k8sDeploymentReleaseOne =
+        getK8sDeploymentReleaseWithoutHelmChartInfo(namespacesRN1, releaseName1);
+    K8sDeploymentRelease k8sDeploymentReleaseTwo =
+        getK8sDeploymentReleaseWithoutHelmChartInfo(namespacesRN2, releaseName2);
+
+    List<K8sDeploymentRelease> deploymentReleases = new ArrayList<>();
+    deploymentReleases.add(k8sDeploymentReleaseOne);
+    deploymentReleases.add(k8sDeploymentReleaseTwo);
+    mockGetPodDetails(k8sDeploymentReleaseOne.getNamespacesList(), k8sDeploymentReleaseOne.getReleaseName());
+    mockGetPodDetails(k8sDeploymentReleaseTwo.getNamespacesList(), k8sDeploymentReleaseTwo.getReleaseName());
+    return deploymentReleases;
+  }
+
   private K8sDeploymentRelease getK8sDeploymentRelease(List<String> namespaces, String releaseName) {
+    DirectK8sInfraDelegateConfig k8sInfraDelegateConfig =
+        DirectK8sInfraDelegateConfig.builder()
+            .namespace(namespaces.get(0))
+            .kubernetesClusterConfigDTO(
+                KubernetesClusterConfigDTO.builder()
+                    .credential(
+                        KubernetesCredentialDTO.builder().config(KubernetesClusterDetailsDTO.builder().build()).build())
+                    .build())
+            .build();
+
+    return K8sDeploymentRelease.newBuilder()
+        .setK8SInfraDelegateConfig(ByteString.copyFrom(kryoSerializer.asBytes(k8sInfraDelegateConfig)))
+        .addAllNamespaces(namespaces)
+        .setReleaseName(releaseName)
+        .setHelmChartInfo(ByteString.copyFrom(kryoSerializer.asBytes(HELM_CHART_INFO)))
+        .build();
+  }
+
+  private K8sDeploymentRelease getK8sDeploymentReleaseWithoutHelmChartInfo(
+      List<String> namespaces, String releaseName) {
     DirectK8sInfraDelegateConfig k8sInfraDelegateConfig =
         DirectK8sInfraDelegateConfig.builder()
             .namespace(namespaces.get(0))

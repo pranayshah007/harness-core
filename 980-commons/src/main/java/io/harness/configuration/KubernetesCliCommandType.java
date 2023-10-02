@@ -6,9 +6,20 @@
  */
 
 package io.harness.configuration;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
-@OwnedBy(CDP) public enum KubernetesCliCommandType { APPLY, SCALE, DELETE, DRY_RUN, STEADY_STATE_CHECK, GENERATE_HASH }
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
+@OwnedBy(CDP)
+public enum KubernetesCliCommandType {
+  APPLY,
+  SCALE,
+  DELETE,
+  DRY_RUN,
+  STEADY_STATE_CHECK,
+  GENERATE_HASH
+}

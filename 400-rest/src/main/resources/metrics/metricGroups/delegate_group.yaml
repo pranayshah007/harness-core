@@ -2,4 +2,5 @@ name: Delegate
 identifier: delegate
 labels:
   - accountId
+  - type
   - version

@@ -252,15 +252,6 @@ body: >-
               padding: 0;
               background-color: #dadcdf;
               ">
-        <span style="
-                 display: none;
-                 font-size: 0px;
-                 line-height: 0px;
-                 max-height: 0px;
-                 max-width: 0px;
-                 opacity: 0;
-                 overflow: hidden;
-                 ">Congratulations!</span>
         <style type="text/css">
             @media screen and (min-width: 600px) {
                 .hide-on-desktop {
@@ -421,7 +412,7 @@ body: >-
                                                                                                         margin: 0;
                                                                                                         text-align: center;
                                                                                                         ">
-                                                                                                       License state in database has been modified. Please follow the below troubleshoot guide to rectify the error.
+                                                                                                       License state has been modified for this on-premise installation. Your harness admin can follow the below troubleshooting steps to rectify the error:
                                                                                                                 </p>
                                                                                                             </div>
                                                                                                         </td>
@@ -467,7 +458,7 @@ body: >-
                                                                                                                                                                         </h0>
                                                                                                                                                                         <br>
                                                                                                                                                                         <ol>
-                                                                                                                                                                            <li>Make sure ng-manager has SMP_LICENSE environment variable. Restart manager and ng-manager pods</li>
+                                                                                                                                                                            <li>Make sure ng-manager has SMP_LICENSE environment variable. Restart ng-manager pods</li>
                                                                                                                                                                             <li>Do helm upgrade with correct license</li>
                                                                                                                                                                             <li>Contact harness support</li>
                                                                                                                                                                         </ol>

@@ -11,6 +11,8 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.SHALINI;
+import static io.harness.rule.OwnerRule.SHIVAM;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,6 +45,7 @@ import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -103,6 +106,9 @@ public class GraphGenerationServiceImplTest extends OrchestrationVisualizationTe
                     .setPlanExecutionId(planExecution.getUuid())
                     .addAllLevels(Collections.singletonList(
                         Level.newBuilder().setSetupId("node1_plan").setNodeType(NodeType.PLAN_NODE.name()).build()))
+                    .setMetadata(ExecutionMetadata.newBuilder()
+                                     .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                     .build())
                     .build())
             .mode(ExecutionMode.SYNC)
             .nodeId("node1_plan")
@@ -133,29 +139,38 @@ public class GraphGenerationServiceImplTest extends OrchestrationVisualizationTe
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
   public void shouldReturnPartialOrchestrationGraph() {
-    GraphVertex dummyStart = GraphVertex.builder()
-                                 .uuid(generateUuid())
-                                 .ambiance(Ambiance.newBuilder()
-                                               .setPlanExecutionId("")
-                                               .addAllLevels(new ArrayList<>())
-                                               .putAllSetupAbstractions(new HashMap<>())
-                                               .build())
-                                 .planNodeId("node1_plan")
-                                 .name("dummyStart")
-                                 .mode(ExecutionMode.SYNC)
-                                 .skipType(SkipType.NOOP)
-                                 .build();
-    GraphVertex dummyFinish = GraphVertex.builder()
-                                  .uuid(generateUuid())
-                                  .ambiance(Ambiance.newBuilder()
-                                                .setPlanExecutionId("")
-                                                .addAllLevels(new ArrayList<>())
-                                                .putAllSetupAbstractions(new HashMap<>())
-                                                .build())
-                                  .planNodeId("node2_plan")
-                                  .name("dummyFinish")
-                                  .skipType(SkipType.NOOP)
-                                  .build();
+    GraphVertex dummyStart =
+        GraphVertex.builder()
+            .uuid(generateUuid())
+            .ambiance(Ambiance.newBuilder()
+                          .setPlanExecutionId("")
+                          .addAllLevels(new ArrayList<>())
+                          .putAllSetupAbstractions(new HashMap<>())
+                          .setMetadata(ExecutionMetadata.newBuilder()
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                           .build())
+                          .build())
+            .planNodeId("node1_plan")
+            .name("dummyStart")
+            .mode(ExecutionMode.SYNC)
+            .skipType(SkipType.NOOP)
+            .build();
+
+    GraphVertex dummyFinish =
+        GraphVertex.builder()
+            .uuid(generateUuid())
+            .ambiance(Ambiance.newBuilder()
+                          .setPlanExecutionId("")
+                          .addAllLevels(new ArrayList<>())
+                          .putAllSetupAbstractions(new HashMap<>())
+                          .setMetadata(ExecutionMetadata.newBuilder()
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                           .build())
+                          .build())
+            .planNodeId("node2_plan")
+            .name("dummyFinish")
+            .skipType(SkipType.NOOP)
+            .build();
 
     OrchestrationGraph orchestrationGraph =
         constructOrchestrationGraphForPartialTest(Lists.newArrayList(dummyStart, dummyFinish));
@@ -262,7 +277,8 @@ public class GraphGenerationServiceImplTest extends OrchestrationVisualizationTe
     assertThat(graphForExecution2).isNotNull();
     assertThat(graphForExecution3).isNotNull();
 
-    graphGenerationServiceImpl.deleteAllGraphMetadataForGivenExecutionIds(Set.of(planExecutionId1, planExecutionId2));
+    graphGenerationServiceImpl.deleteAllGraphMetadataForGivenExecutionIds(
+        Set.of(planExecutionId1, planExecutionId2), false);
 
     graphForExecution1 =
         mongoStore.get(OrchestrationGraph.ALGORITHM_ID, OrchestrationGraph.STRUCTURE_HASH, planExecutionId1, null);
@@ -274,6 +290,49 @@ public class GraphGenerationServiceImplTest extends OrchestrationVisualizationTe
 
     assertThat(graphForExecution1).isNull();
     assertThat(graphForExecution2).isNull();
+    assertThat(graphForExecution3).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testShouldNotDeleteGraphMetadata() {
+    String planExecutionId1 = "EXECUTION_1";
+    OrchestrationGraph graph1 = OrchestrationGraph.builder().cacheKey(planExecutionId1).cacheParams(null).build();
+    OrchestrationGraph graph2 = OrchestrationGraph.builder().cacheKey(planExecutionId1).cacheParams(null).build();
+    String planExecutionId2 = "EXECUTION_2";
+    OrchestrationGraph graph3 = OrchestrationGraph.builder().cacheKey(planExecutionId2).cacheParams(null).build();
+    String planExecutionId3 = "EXECUTION_3";
+    OrchestrationGraph graph4 = OrchestrationGraph.builder().cacheKey(planExecutionId3).cacheParams(null).build();
+    mongoStore.upsert(graph1, SpringCacheEntity.TTL);
+    mongoStore.upsert(graph2, SpringCacheEntity.TTL);
+    mongoStore.upsert(graph3, SpringCacheEntity.TTL);
+    mongoStore.upsert(graph4, SpringCacheEntity.TTL);
+
+    OrchestrationGraph graphForExecution1 =
+        mongoStore.get(OrchestrationGraph.ALGORITHM_ID, OrchestrationGraph.STRUCTURE_HASH, planExecutionId1, null);
+    OrchestrationGraph graphForExecution2 =
+        mongoStore.get(OrchestrationGraph.ALGORITHM_ID, OrchestrationGraph.STRUCTURE_HASH, planExecutionId2, null);
+    OrchestrationGraph graphForExecution3 =
+        mongoStore.get(OrchestrationGraph.ALGORITHM_ID, OrchestrationGraph.STRUCTURE_HASH, planExecutionId3, null);
+
+    assertThat(graphForExecution1).isNotNull();
+    assertThat(graphForExecution2).isNotNull();
+    assertThat(graphForExecution3).isNotNull();
+
+    graphGenerationServiceImpl.deleteAllGraphMetadataForGivenExecutionIds(
+        Set.of(planExecutionId1, planExecutionId2), true);
+
+    graphForExecution1 =
+        mongoStore.get(OrchestrationGraph.ALGORITHM_ID, OrchestrationGraph.STRUCTURE_HASH, planExecutionId1, null);
+    graphForExecution2 =
+        mongoStore.get(OrchestrationGraph.ALGORITHM_ID, OrchestrationGraph.STRUCTURE_HASH, planExecutionId2, null);
+    graphForExecution3 =
+        mongoStore.get(OrchestrationGraph.ALGORITHM_ID, OrchestrationGraph.STRUCTURE_HASH, planExecutionId3, null);
+    verify(orchestrationEventLogRepository, times(1)).deleteAllOrchestrationLogEvents(any());
+
+    assertThat(graphForExecution1).isNotNull();
+    assertThat(graphForExecution2).isNotNull();
     assertThat(graphForExecution3).isNotNull();
   }
 
@@ -290,6 +349,7 @@ public class GraphGenerationServiceImplTest extends OrchestrationVisualizationTe
                  .createdAt(1550L)
                  .build());
     doReturn(logs).when(orchestrationEventLogRepository).findUnprocessedEvents(planExecutionId, 1222L, 1000);
+
     nodeExecutionService.save(
         NodeExecution.builder()
             .uuid(nodeExecutionId)
@@ -297,10 +357,14 @@ public class GraphGenerationServiceImplTest extends OrchestrationVisualizationTe
             .status(Status.SUCCEEDED)
             .ambiance(Ambiance.newBuilder()
                           .addLevels(Level.newBuilder().setNodeType(NodeType.PLAN_NODE.toString()).build())
+                          .setMetadata(ExecutionMetadata.newBuilder()
+                                           .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                           .build())
                           .build())
             .module("cd")
             .resolvedStepParameters(new HashMap<>())
             .build());
+
     assertTrue(
         graphGenerationServiceImpl.updateGraphUnderLock(OrchestrationGraph.builder()
                                                             .planExecutionId(planExecutionId)

@@ -9,6 +9,7 @@ package io.harness.ng.core.dto.secrets;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.models.BaseWinRmSpec;
 import io.harness.ng.core.models.KerberosWinRmConfig;
@@ -32,6 +33,7 @@ import lombok.experimental.SuperBuilder;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(Include.NON_NULL)
 @OwnedBy(CDP)
+@RecasterAlias("io.harness.ng.core.dto.secrets.KerberosWinRmConfigDTO")
 public class KerberosWinRmConfigDTO extends KerberosBaseConfigDTO implements BaseWinRmSpecDTO {
   @Schema(description = "This is the Kerberos either to use SSL/https .") private boolean useSSL = true;
 

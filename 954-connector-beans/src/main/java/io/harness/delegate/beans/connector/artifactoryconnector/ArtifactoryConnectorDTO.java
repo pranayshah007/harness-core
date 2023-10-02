@@ -9,6 +9,7 @@ package io.harness.delegate.beans.connector.artifactoryconnector;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
@@ -43,6 +44,7 @@ import org.hibernate.validator.constraints.URL;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("ArtifactoryConnector")
 @Schema(name = "ArtifactoryConnector", description = "This entity contains the details of the Artifactory Connectors")
+@RecasterAlias("io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO")
 public class ArtifactoryConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
   @URL @NotNull @NotBlank String artifactoryServerUrl;
   @Valid ArtifactoryAuthenticationDTO auth;

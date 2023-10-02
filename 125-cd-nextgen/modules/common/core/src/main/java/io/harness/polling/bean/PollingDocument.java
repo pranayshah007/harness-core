@@ -6,11 +6,13 @@
  */
 
 package io.harness.polling.bean;
-
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
@@ -23,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -32,6 +35,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Data
 @Builder
 @FieldNameConstants(innerTypeName = "PollingDocumentKeys")
@@ -57,6 +61,12 @@ public class PollingDocument implements PersistentEntity, AccountAccess, UuidAwa
                  .field(PollingDocumentKeys.accountId)
                  .field(PollingDocumentKeys.pollingInfo + "." + YAMLFieldNameConstants.CONNECTOR_REF)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_signatures")
+                 .field(PollingDocumentKeys.accountId)
+                 .field(PollingDocumentKeys.signatures)
+                 .build())
+
         .build();
   }
 
@@ -66,6 +76,7 @@ public class PollingDocument implements PersistentEntity, AccountAccess, UuidAwa
   private String orgIdentifier;
   private String projectIdentifier;
   @NotNull private List<String> signatures;
+  private Map<String, List<String>> signaturesLock; // Used for MultiRegionArtifact triggers.
 
   @JsonProperty("type") private PollingType pollingType;
 

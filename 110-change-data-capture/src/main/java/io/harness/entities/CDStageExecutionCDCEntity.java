@@ -6,17 +6,22 @@
  */
 
 package io.harness.entities;
-
 import io.harness.ChangeHandler;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.changehandlers.CDStageExecutionHandler;
+import io.harness.changehandlers.CDStageHelmManifestInfoHandler;
 import io.harness.changehandlers.StageExecutionHandler;
 import io.harness.changehandlers.TagsInfoNGCDChangeDataHandler;
 
 import com.google.inject.Inject;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 public class CDStageExecutionCDCEntity implements CDCEntity<StageExecutionInfo> {
   @Inject private CDStageExecutionHandler cdStageExecutionHandler;
+  @Inject private CDStageHelmManifestInfoHandler cdStageHelmManifestInfoHandler;
   @Inject private StageExecutionHandler stageExecutionHandler;
   @Inject private TagsInfoNGCDChangeDataHandler tagsInfoNGCDChangeDataHandler;
 
@@ -28,6 +33,8 @@ public class CDStageExecutionCDCEntity implements CDCEntity<StageExecutionInfo> 
       return stageExecutionHandler;
     } else if (handlerClass.contentEquals("StageTagsInfoNGCD")) {
       return tagsInfoNGCDChangeDataHandler;
+    } else if (handlerClass.contentEquals("CDStageHelmManifestInfoHandler")) {
+      return cdStageHelmManifestInfoHandler;
     }
     return null;
   }

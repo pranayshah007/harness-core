@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.terraform;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -55,12 +54,16 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryNgService;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.cli.CliResponse;
 import io.harness.connector.service.git.NGGitService;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.connector.task.shell.SshSessionConfigMapper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateFile;
@@ -154,6 +157,8 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Slf4j
 @OwnedBy(CDP)
 public class TerraformBaseHelperImpl implements TerraformBaseHelper {
@@ -182,6 +187,7 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
   @Inject AwsNgConfigMapper awsNgConfigMapper;
   @Inject HarnessSMEncryptionDecryptionHandler harnessSMEncryptionDecryptionHandler;
   @Inject HarnessSMEncryptionDecryptionHandlerNG harnessSMEncryptionDecryptionHandlerNg;
+  @Inject ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   @Override
   public void downloadTfStateFile(String workspace, String accountId, String currentStateFileId, String scriptDirectory)
@@ -274,7 +280,7 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
 
     response = terraformClient.output(terraformExecuteStepRequest.getTfOutputsFile(),
         terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
-        terraformExecuteStepRequest.getScriptDirectory(), logCallback);
+        terraformExecuteStepRequest.getScriptDirectory(), logCallback, terraformExecuteStepRequest.isSkipColorLogs());
 
     TerraformStepResponseBuilder applyResponse = TerraformStepResponse.builder();
     if (terraformPlanStepResponse != null) {
@@ -289,14 +295,14 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
     CliResponse response;
     response = terraformClient.getWorkspaceList(terraformExecuteStepRequest.getTimeoutInMillis(),
         terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(),
-        terraformExecuteStepRequest.getLogCallback());
+        terraformExecuteStepRequest.getLogCallback(), terraformExecuteStepRequest.isSkipColorLogs());
     if (response != null && response.getOutput() != null) {
       List<String> workspacelist = parseOutput(response.getOutput());
       // if workspace is specified in Harness but none exists in the environment, then select a new workspace
       terraformClient.workspace(workspace, workspacelist.contains(workspace),
           terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
           terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(),
-          terraformExecuteStepRequest.getAdditionalCliFlags());
+          terraformExecuteStepRequest.getAdditionalCliFlags(), terraformExecuteStepRequest.isSkipColorLogs());
     }
   }
 
@@ -314,11 +320,11 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
           terraformExecuteStepRequest.getEncryptedTfPlan(), terraformExecuteStepRequest.getScriptDirectory(),
           terraformExecuteStepRequest.getAccountId(), TERRAFORM_PLAN_FILE_OUTPUT_NAME,
           terraformExecuteStepRequest.isEncryptDecryptPlanForHarnessSMOnManager(), terraformExecuteStepRequest.isNG());
-      terraformPlanSummary =
-          analyseTerraformPlanSummaryWithTfClient(terraformExecuteStepRequest.isAnalyseTfPlanSummary(),
-              terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
-              terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(),
-              terraformExecuteStepRequest.getPlanLogOutputStream(), TERRAFORM_PLAN_FILE_OUTPUT_NAME);
+      terraformPlanSummary = analyseTerraformPlanSummaryWithTfClient(
+          terraformExecuteStepRequest.isAnalyseTfPlanSummary(), terraformExecuteStepRequest.getTimeoutInMillis(),
+          terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(),
+          terraformExecuteStepRequest.getLogCallback(), terraformExecuteStepRequest.getPlanLogOutputStream(),
+          TERRAFORM_PLAN_FILE_OUTPUT_NAME, terraformExecuteStepRequest.isSkipColorLogs());
       terraformExecuteStepRequest.getLogCallback().saveExecutionLog(
           color("\nUsing approved terraform plan \n", LogColor.Yellow, LogWeight.Bold), INFO,
           CommandExecutionStatus.RUNNING);
@@ -342,12 +348,11 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
           terraformExecuteStepRequest.getLogCallback());
 
       if (terraformExecuteStepRequest.isSaveTerraformJson() && !terraformExecuteStepRequest.isTerraformCloudCli()) {
-        response =
-            executeTerraformShowCommandWithTfClient(terraformExecuteStepRequest.isTfPlanDestroy() ? DESTROY : APPLY,
-                terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
-                terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(),
-                terraformExecuteStepRequest.getPlanJsonLogOutputStream(),
-                terraformExecuteStepRequest.isUseOptimizedTfPlan());
+        executeTerraformShowCommandWithTfClient(terraformExecuteStepRequest.isTfPlanDestroy() ? DESTROY : APPLY,
+            terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
+            terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(),
+            terraformExecuteStepRequest.getPlanJsonLogOutputStream(),
+            terraformExecuteStepRequest.isUseOptimizedTfPlan(), terraformExecuteStepRequest.isSkipColorLogs());
       }
 
       // Generating Human Readable Representation of the tfplan
@@ -358,7 +363,7 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
             terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
             terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(),
             terraformExecuteStepRequest.getPlanHumanReadableOutputStream(),
-            terraformExecuteStepRequest.isUseOptimizedTfPlan());
+            terraformExecuteStepRequest.isUseOptimizedTfPlan(), terraformExecuteStepRequest.isSkipColorLogs());
       }
 
       terraformPlanSummary = analyseTerraformPlanSummaryWithTfClient(
@@ -366,7 +371,8 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
           terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(),
           terraformExecuteStepRequest.getLogCallback(), terraformExecuteStepRequest.getPlanLogOutputStream(),
           terraformExecuteStepRequest.isTfPlanDestroy() ? TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME
-                                                        : TERRAFORM_PLAN_FILE_OUTPUT_NAME);
+                                                        : TERRAFORM_PLAN_FILE_OUTPUT_NAME,
+          terraformExecuteStepRequest.isSkipColorLogs());
     }
 
     return TerraformStepResponse.builder().cliResponse(response).terraformPlanSummary(terraformPlanSummary).build();
@@ -475,21 +481,22 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
         terraformPlanSummary = analyseTerraformPlanSummaryWithTfClient(
             terraformExecuteStepRequest.isAnalyseTfPlanSummary(), terraformExecuteStepRequest.getTimeoutInMillis(),
             terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback,
-            terraformExecuteStepRequest.getPlanLogOutputStream(), TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME);
+            terraformExecuteStepRequest.getPlanLogOutputStream(), TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME,
+            terraformExecuteStepRequest.isSkipColorLogs());
       }
 
       if (terraformExecuteStepRequest.isSaveTerraformJson()) {
         response = executeTerraformShowCommandWithTfClient(DESTROY, terraformExecuteStepRequest.getTimeoutInMillis(),
             terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback,
             terraformExecuteStepRequest.getPlanJsonLogOutputStream(),
-            terraformExecuteStepRequest.isUseOptimizedTfPlan());
+            terraformExecuteStepRequest.isUseOptimizedTfPlan(), terraformExecuteStepRequest.isSkipColorLogs());
       }
       if (terraformExecuteStepRequest.isSaveTerraformHumanReadablePlan()) {
         response = executeTerraformHumanReadableShowCommandWithTfClient(DESTROY,
             terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
             terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(),
             terraformExecuteStepRequest.getPlanHumanReadableOutputStream(),
-            terraformExecuteStepRequest.isUseOptimizedTfPlan());
+            terraformExecuteStepRequest.isUseOptimizedTfPlan(), terraformExecuteStepRequest.isSkipColorLogs());
       }
     } else {
       if (terraformExecuteStepRequest.getEncryptedTfPlan() == null) {
@@ -515,7 +522,8 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
         terraformPlanSummary = analyseTerraformPlanSummaryWithTfClient(
             terraformExecuteStepRequest.isAnalyseTfPlanSummary(), terraformExecuteStepRequest.getTimeoutInMillis(),
             terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback,
-            terraformExecuteStepRequest.getPlanLogOutputStream(), TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME);
+            terraformExecuteStepRequest.getPlanLogOutputStream(), TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME,
+            terraformExecuteStepRequest.isSkipColorLogs());
 
         TerraformApplyCommandRequest terraformApplyCommandRequest =
             TerraformApplyCommandRequest.builder()
@@ -532,14 +540,14 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
 
   private CliResponse executeTerraformShowCommandWithTfClient(TerraformCommand terraformCommand, long timeoutInMillis,
       Map<String, String> envVars, String scriptDirectory, LogCallback logCallback,
-      PlanJsonLogOutputStream planJsonLogOutputStream, boolean useOptimizedTfPlan)
+      PlanJsonLogOutputStream planJsonLogOutputStream, boolean useOptimizedTfPlan, boolean skipColorLogs)
       throws IOException, InterruptedException, TimeoutException {
     String planName =
         terraformCommand == APPLY ? TERRAFORM_PLAN_FILE_OUTPUT_NAME : TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME;
     logCallback.saveExecutionLog(
         format("%nGenerating JSON representation of %s %n", planName), INFO, CommandExecutionStatus.RUNNING);
-    CliResponse response =
-        terraformClient.show(planName, timeoutInMillis, envVars, scriptDirectory, logCallback, planJsonLogOutputStream);
+    CliResponse response = terraformClient.show(
+        planName, timeoutInMillis, envVars, scriptDirectory, logCallback, planJsonLogOutputStream, skipColorLogs);
     if (!useOptimizedTfPlan && response.getCommandExecutionStatus().equals(CommandExecutionStatus.SUCCESS)) {
       logCallback.saveExecutionLog(
           format("%nJSON representation of %s is exported as a variable %s %n", planName,
@@ -552,12 +560,12 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
 
   private CliResponse executeTerraformHumanReadableShowCommandWithTfClient(TerraformCommand terraformCommand,
       long timeoutInMillis, Map<String, String> envVars, String scriptDirectory, LogCallback logCallback,
-      PlanHumanReadableOutputStream planHumanReadableOutputStream, boolean useOptimizedTfPlan)
+      PlanHumanReadableOutputStream planHumanReadableOutputStream, boolean useOptimizedTfPlan, boolean skipColorLogs)
       throws IOException, InterruptedException, TimeoutException {
     String planName =
         terraformCommand == APPLY ? TERRAFORM_PLAN_FILE_OUTPUT_NAME : TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME;
     CliResponse response = terraformClient.prepareHumanReadablePlan(
-        planName, timeoutInMillis, envVars, scriptDirectory, logCallback, planHumanReadableOutputStream);
+        planName, timeoutInMillis, envVars, scriptDirectory, logCallback, planHumanReadableOutputStream, skipColorLogs);
     if (!useOptimizedTfPlan && response.getCommandExecutionStatus().equals(CommandExecutionStatus.SUCCESS)) {
       logCallback.saveExecutionLog(
           format("%nHuman Readable representation of %s is exported as a variable %s %n", planName,
@@ -571,13 +579,13 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
 
   private TerraformPlanSummary analyseTerraformPlanSummaryWithTfClient(boolean shouldAnalyseTfPlanSymmary,
       long timeoutInMillis, Map<String, String> envVars, String scriptDirectory, LogCallback logCallback,
-      PlanLogOutputStream planLogOutputStream, String planName)
+      PlanLogOutputStream planLogOutputStream, String planName, boolean skipColorLogs)
       throws IOException, InterruptedException, TimeoutException {
     if (shouldAnalyseTfPlanSymmary) {
       logCallback.saveExecutionLog(
           format("%nAnalysing Terraform plan %s %n", planName), INFO, CommandExecutionStatus.RUNNING);
-      CliResponse response =
-          terraformClient.show(planName, timeoutInMillis, envVars, scriptDirectory, logCallback, planLogOutputStream);
+      CliResponse response = terraformClient.show(
+          planName, timeoutInMillis, envVars, scriptDirectory, logCallback, planLogOutputStream, skipColorLogs);
 
       return processTerraformPlanSummary(response.getExitCode(), logCallback, planLogOutputStream);
     }
@@ -1012,7 +1020,12 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
 
   private void handleExceptionWhileCopyingConfigFiles(LogCallback logCallback, String baseDir, Exception ex) {
     log.error(String.format("Exception in copying files to provisioner specific directory", ex.getMessage()), ex);
-    FileUtils.deleteQuietly(new File(baseDir));
+    try {
+      FileIo.deleteDirectoryAndItsContentIfExists(baseDir);
+    } catch (Exception e) {
+      log.warn(format("Failed to delete files in directory %s", baseDir), e);
+      logCallback.saveExecutionLog("Failed to clean up files", WARN);
+    }
     logCallback.saveExecutionLog(
         "Failed copying files to provisioner specific directory", ERROR, CommandExecutionStatus.RUNNING);
     throw new TerraformCommandExecutionException(
@@ -1087,7 +1100,8 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
     if (remoteFileInfo.getGitFetchFilesConfig() != null) {
       GitStoreDelegateConfig gitStoreDelegateConfig =
           remoteFileInfo.getGitFetchFilesConfig().getGitStoreDelegateConfig();
-      GitConfigDTO gitConfigDTO = (GitConfigDTO) gitStoreDelegateConfig.getGitConfigDTO();
+      GitConfigDTO gitConfigDTO = scmConnectorMapperDelegate.toGitConfigDTO(
+          gitStoreDelegateConfig.getGitConfigDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
       if (EmptyPredicate.isNotEmpty(gitStoreDelegateConfig.getPaths())) {
         String commitId = handleGitVarFiles(
             logCallback, accountId, tfVarDirectory, filesDirAbsPath, filePaths, gitStoreDelegateConfig, gitConfigDTO);

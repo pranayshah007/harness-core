@@ -6,7 +6,6 @@
  */
 
 package io.harness.git;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -18,6 +17,7 @@ import static io.harness.exception.WingsException.ADMIN_SRE;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_ADMIN;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
+import static io.harness.filesystem.FileIo.releaseLock;
 import static io.harness.git.Constants.COMMIT_MESSAGE;
 import static io.harness.git.Constants.DEFAULT_FETCH_IDENTIFIER;
 import static io.harness.git.Constants.EXCEPTION_STRING;
@@ -38,7 +38,10 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.eclipse.jgit.transport.RemoteRefUpdate.Status.OK;
 import static org.eclipse.jgit.transport.RemoteRefUpdate.Status.UP_TO_DATE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.GeneralException;
@@ -129,6 +132,7 @@ import org.eclipse.jgit.api.errors.RefAlreadyExistsException;
 import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.errors.NoRemoteRepositoryException;
+import org.eclipse.jgit.errors.NoWorkTreeException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.ObjectReader;
@@ -150,6 +154,8 @@ import org.eclipse.jgit.transport.http.apache.HttpClientConnectionFactory;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.eclipse.jgit.util.SystemReader;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_GITOPS})
 @Singleton
 @Slf4j
 @OwnedBy(CDP)
@@ -162,6 +168,8 @@ public class GitClientV2Impl implements GitClientV2 {
   private static final int SOCKET_CONNECTION_READ_TIMEOUT_SECONDS = 60;
   private static final String REFS_HEADS = "refs/heads/";
   private static final String ORIGIN = "origin/";
+  private static final String REPOSITORY_NOT_FOUND = "Repository not found";
+  private static final String INVALID_PRIVATE_KEY = "invalid privatekey";
 
   @Inject private GitClientHelper gitClientHelper;
   /**
@@ -283,15 +291,16 @@ public class GitClientV2Impl implements GitClientV2 {
       ListRemoteRequest listRemoteRequest = buildListRemoteRequestFromGitBaseRequest(request);
       ListRemoteResult listRemoteResult = listRemote(listRemoteRequest);
       Map<String, String> refs = listRemoteResult.getRemoteList();
+      String branchToClone;
       if (refs.containsKey(REFS_HEADS + request.getBranch())) {
-        cloneCommand.setBranch(isEmpty(request.getBranch()) ? null : request.getBranch());
+        branchToClone = isEmpty(request.getBranch()) ? null : REFS_HEADS + request.getBranch();
         cloneCommand.setNoCheckout(noCheckout);
       } else {
-        String branchToClone = refs.get("HEAD");
-        cloneCommand.setBranch(branchToClone);
-        cloneCommand.setBranchesToClone(Collections.singleton(branchToClone));
+        branchToClone = refs.get("HEAD");
         cloneCommand.setNoCheckout(true);
       }
+      cloneCommand.setBranch(branchToClone);
+      cloneCommand.setBranchesToClone(Collections.singleton(branchToClone));
     }
     try (Git git = cloneCommand.call()) {
     } catch (GitAPIException ex) {
@@ -412,22 +421,12 @@ public class GitClientV2Impl implements GitClientV2 {
         throw new JGitRuntimeException(e.getMessage(), e);
       } else if (e instanceof FailsafeException) {
         String message = e.getMessage();
-        if (message.contains("not authorized")) {
-          throw SCMRuntimeException.builder()
-              .message("Please check your credentials (potential token expiration issue)")
-              .errorCode(ErrorCode.SCM_UNAUTHORIZED)
-              .build();
-        } else if (containsUrlError(message)) {
-          throw SCMRuntimeException.builder()
-              .message("Couldn't connect to given repo")
-              .errorCode(ErrorCode.GIT_CONNECTION_ERROR)
-              .build();
-        } else if (message.contains(TIMEOUT_ERROR)) {
-          throw SCMRuntimeException.builder()
-              .message("Git connection timed out")
-              .errorCode(ErrorCode.CONNECTION_TIMEOUT)
-              .build();
-        }
+        SCMRuntimeException ex = getSCMRuntimeException(message);
+        throw ex;
+      } else if (e instanceof TransportException) {
+        String message = e.getMessage();
+        SCMRuntimeException ex = getSCMRuntimeException(message);
+        throw ex;
       }
       throw new GeneralException(e.getMessage(), e);
     }
@@ -435,10 +434,41 @@ public class GitClientV2Impl implements GitClientV2 {
 
   private boolean containsUrlError(String message) {
     if (message.contains(UPLOAD_PACK_ERROR) || message.contains(INVALID_ADVERTISEMENT_ERROR)
-        || message.contains(REDIRECTION_BLOCKED_ERROR)) {
+        || message.contains(REDIRECTION_BLOCKED_ERROR) || message.contains(REPOSITORY_NOT_FOUND)) {
       return true;
     }
     return false;
+  }
+
+  private SCMRuntimeException getSCMRuntimeException(String message) {
+    if (message.contains("not authorized")) {
+      return SCMRuntimeException.builder()
+          .message("Please check your credentials (potential token expiration issue)")
+          .errorCode(ErrorCode.SCM_UNAUTHORIZED)
+          .build();
+    } else if (containsUrlError(message)) {
+      return SCMRuntimeException.builder()
+          .message("Couldn't connect to given repo")
+          .errorCode(ErrorCode.GIT_CONNECTION_ERROR)
+          .build();
+    } else if (message.contains(TIMEOUT_ERROR)) {
+      return SCMRuntimeException.builder()
+          .message("Git connection timed out")
+          .errorCode(ErrorCode.CONNECTION_TIMEOUT)
+          .build();
+    } else if (message.contains(INVALID_PRIVATE_KEY)) {
+      return SCMRuntimeException.builder()
+          .message("Private key is either malformed or not correct")
+          .errorCode(ErrorCode.INVALID_KEY)
+          .build();
+    } else if (message.contains("Auth fail for methods 'publickey'")) {
+      return SCMRuntimeException.builder()
+          .message("Authorization not successful.")
+          .errorCode(ErrorCode.SSH_CONNECTION_ERROR)
+          .build();
+    } else {
+      return SCMRuntimeException.builder().message(message).errorCode(ErrorCode.GENERAL_ERROR).build();
+    }
   }
 
   private RetryPolicy<Object> getRetryPolicyForCommand(String failedAttemptMessage, String failureMessage) {
@@ -636,14 +666,19 @@ public class GitClientV2Impl implements GitClientV2 {
     CommitResult commitResult = revert(revertRequest);
 
     PushRequest pushRequest = PushRequest.mapFromRevertAndPushRequest(request);
-    RevertAndPushResult revertAndPushResult =
-        RevertAndPushResult.builder().gitCommitResult(commitResult).gitPushResult(push(pushRequest)).build();
-    return revertAndPushResult;
+    return RevertAndPushResult.builder().gitCommitResult(commitResult).gitPushResult(push(pushRequest)).build();
   }
 
   protected CommitResult revert(RevertRequest request) {
+    String localCommitId = request.getCommitId();
+
+    // Setting this null so the ensureRepoLocallyClonedAndUpdated method checkouts the branch instead of a commit which
+    // causes issues while reverting
+    request.setCommitId(null);
     ensureRepoLocallyClonedAndUpdated(request);
 
+    // setting the commitId back
+    request.setCommitId(localCommitId);
     try (Git git = openGit(new File(gitClientHelper.getRepoDirectory(request)), request.getDisableUserGitConfig())) {
       ObjectId commitId = git.getRepository().resolve(request.getCommitId());
       if (commitId == null) {
@@ -655,7 +690,7 @@ public class GitClientV2Impl implements GitClientV2 {
       return CommitResult.builder()
           .commitId(revertCommit.getName())
           .commitTime(revertCommit.getCommitTime())
-          .commitMessage("Harness revert of commit: " + commitToRevert.getId())
+          .commitMessage("Harness revert of " + commitToRevert.getId())
           .build();
     } catch (IOException | GitAPIException ex) {
       log.error(gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + EXCEPTION_STRING, ex);
@@ -942,7 +977,6 @@ public class GitClientV2Impl implements GitClientV2 {
                                              .setForce(forcePush)
                                              .setRefSpecs(new RefSpec(pushRequest.getBranch()))
                                              .call();
-
       RemoteRefUpdate remoteRefUpdate = pushResults.iterator().next().getRemoteUpdates().iterator().next();
       PushResultGit.RefUpdate refUpdate =
           PushResultGit.RefUpdate.builder()
@@ -1437,6 +1471,7 @@ public class GitClientV2Impl implements GitClientV2 {
       CheckoutCommand checkoutCommand = git.checkout().setStartPoint(request.getCommitId()).setCreateBranch(false);
 
       setPathsForCheckout(request.getFilePaths(), checkoutCommand);
+      deleteIndexLockIfExists(git);
       checkoutCommand.call();
       log.info("Successfully Checked out commitId: " + request.getCommitId());
     } catch (Exception ex) {
@@ -1461,6 +1496,7 @@ public class GitClientV2Impl implements GitClientV2 {
                                             .setName(request.getBranch());
 
       setPathsForCheckout(request.getFilePaths(), checkoutCommand);
+      deleteIndexLockIfExists(git);
       checkoutCommand.call();
       log.info("Successfully Checked out Branch: " + request.getBranch());
       return getCommitId(git, request.getBranch());
@@ -1471,6 +1507,15 @@ public class GitClientV2Impl implements GitClientV2 {
           .cause(ex)
           .branch(request.getBranch())
           .build();
+    }
+  }
+
+  void deleteIndexLockIfExists(Git git) {
+    try {
+      File file = git.getRepository().getIndexFile();
+      releaseLock(file);
+    } catch (NoWorkTreeException ex) {
+      log.warn("Work tree is not initialized.");
     }
   }
 

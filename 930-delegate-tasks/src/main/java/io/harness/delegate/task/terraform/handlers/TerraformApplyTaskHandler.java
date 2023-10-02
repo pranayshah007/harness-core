@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.terraform.handlers;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.AMAZON_S3;
@@ -24,7 +23,11 @@ import static io.harness.threading.Morpheus.sleep;
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
@@ -59,10 +62,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FilenameUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Slf4j
 @OwnedBy(CDP)
 public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
   @Inject TerraformBaseHelper terraformBaseHelper;
+  @Inject ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   @Override
   public TerraformTaskNGResponse executeTaskInternal(
@@ -75,6 +81,9 @@ public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
 
     if (taskParameters.getConfigFile() != null) {
       GitStoreDelegateConfig conFileFileGitStore = taskParameters.getConfigFile().getGitStoreDelegateConfig();
+      GitConfigDTO gitConfigDTO = scmConnectorMapperDelegate.toGitConfigDTO(
+          conFileFileGitStore.getGitConfigDTO(), conFileFileGitStore.getEncryptedDataDetails());
+      conFileFileGitStore = conFileFileGitStore.toBuilder().gitConfigDTO(gitConfigDTO).build();
       String scriptPath = FilenameUtils.normalize(conFileFileGitStore.getPaths().get(0));
 
       if (isNotEmpty(conFileFileGitStore.getBranch())) {
@@ -191,6 +200,7 @@ public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
               .encryptDecryptPlanForHarnessSMOnManager(taskParameters.isEncryptDecryptPlanForHarnessSMOnManager())
               .additionalCliFlags(taskParameters.getTerraformCommandFlags())
               .isNG(true)
+              .skipColorLogs(taskParameters.isSkipColorLogs())
               .build();
 
       TerraformStepResponse terraformStepResponse =

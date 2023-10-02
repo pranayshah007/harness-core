@@ -9,8 +9,11 @@ package io.harness.ngmigration.service.step;
 
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.StepOutput;
@@ -19,6 +22,7 @@ import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.expressions.step.ApprovalFunctor;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngmigration.utils.NGMigrationConstants;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
@@ -65,6 +69,8 @@ import software.wings.sm.states.ApprovalState;
 import software.wings.sm.states.ApprovalState.ApprovalStateType;
 
 import com.google.common.collect.Lists;
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -72,8 +78,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public class ApprovalStepMapperImpl extends StepMapper {
   @Override
@@ -95,6 +103,15 @@ public class ApprovalStepMapperImpl extends StepMapper {
                    .id(params.getServiceNowApprovalParams().getSnowConnectorId())
                    .type(NGMigrationEntityType.CONNECTOR)
                    .build());
+    }
+    if (ApprovalStateType.USER_GROUP.equals(state.getApprovalStateType())
+        && CollectionUtils.isNotEmpty(state.getUserGroups())) {
+      List<CgEntityId> userGroupRefs =
+          state.getUserGroups()
+              .stream()
+              .map(userGroupId -> CgEntityId.builder().type(NGMigrationEntityType.USER_GROUP).id(userGroupId).build())
+              .collect(Collectors.toList());
+      refs.addAll(userGroupRefs);
     }
     refs.addAll(secretRefUtils.getSecretRefFromExpressions(accountId, getExpressions(graphNode)));
     return refs;
@@ -183,6 +200,11 @@ public class ApprovalStepMapperImpl extends StepMapper {
     if (StringUtils.isEmpty(sweepingOutputName)) {
       return Collections.emptyList();
     }
+    BasicDBList variables = (BasicDBList) graphNode.getProperties().get("variables");
+
+    List<String> variableNames =
+        variables.stream().map(var -> ((BasicDBObject) var).get("name").toString()).collect(Collectors.toList());
+
     return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
         .stream()
         .map(exp
@@ -195,7 +217,7 @@ public class ApprovalStepMapperImpl extends StepMapper {
                        MigratorUtility.generateIdentifier(phaseStep.getName(), context.getIdentifierCaseFormat()))
                    .expression(exp)
                    .build())
-        .map(ApprovalFunctor::new)
+        .map(so -> variableNames.isEmpty() ? new ApprovalFunctor(so) : new ApprovalFunctor(so, variableNames))
         .collect(Collectors.toList());
   }
 
@@ -204,14 +226,17 @@ public class ApprovalStepMapperImpl extends StepMapper {
     baseSetup(state, harnessApprovalStepNode, context.getInputDTO().getIdentifierCaseFormat());
 
     HarnessApprovalStepInfoBuilder harnessApprovalStepInfoBuilder =
-        HarnessApprovalStepInfo.builder().includePipelineExecutionHistory(ParameterField.createValueField(true));
+        HarnessApprovalStepInfo.builder()
+            .includePipelineExecutionHistory(ParameterField.createValueField(true))
+            .isAutoRejectEnabled(ParameterField.createValueField(false))
+            .approvalMessage(ParameterField.createValueField(
+                "Please review the following information and approve the pipeline progression"));
 
-    harnessApprovalStepInfoBuilder.approvers(
-        Approvers.builder()
-            .disallowPipelineExecutor(ParameterField.createValueField(false))
-            .minimumCount(ParameterField.createValueField(1))
-            .userGroups(ParameterField.createExpressionField(true, "<+input>", null, false))
-            .build());
+    harnessApprovalStepInfoBuilder.approvers(Approvers.builder()
+                                                 .disallowPipelineExecutor(ParameterField.createValueField(false))
+                                                 .minimumCount(ParameterField.createValueField(1))
+                                                 .userGroups(getUserGroups(context, state))
+                                                 .build());
 
     if (EmptyPredicate.isNotEmpty(state.getVariables())) {
       harnessApprovalStepInfoBuilder.approverInputs(
@@ -223,6 +248,8 @@ public class ApprovalStepMapperImpl extends StepMapper {
                          .defaultValue(ParameterField.createValueField(pair.getValue()))
                          .build())
               .collect(Collectors.toList()));
+    } else {
+      harnessApprovalStepInfoBuilder.approverInputs(new ArrayList<>());
     }
 
     harnessApprovalStepNode.setHarnessApprovalStepInfo(harnessApprovalStepInfoBuilder.build());
@@ -238,12 +265,14 @@ public class ApprovalStepMapperImpl extends StepMapper {
     CriteriaSpecWrapper approval = getRuntimeJexl();
 
     if (StringUtils.isNoneBlank(approvalParams.getApprovalField(), approvalParams.getApprovalValue())) {
-      approval = getKeyValueCriteria(approvalParams.getApprovalField(), approvalParams.getApprovalValue());
+      approval = getKeyValueCriteria(
+          StringUtils.capitalize(approvalParams.getApprovalField()), approvalParams.getApprovalValue());
     }
 
     CriteriaSpecWrapper rejection = null;
     if (StringUtils.isNoneBlank(approvalParams.getRejectionField(), approvalParams.getRejectionValue())) {
-      rejection = getKeyValueCriteria(approvalParams.getRejectionField(), approvalParams.getRejectionValue());
+      rejection = getKeyValueCriteria(
+          StringUtils.capitalize(approvalParams.getRejectionField()), approvalParams.getRejectionValue());
     }
 
     JiraApprovalStepInfoBuilder stepInfoBuilder =
@@ -327,7 +356,7 @@ public class ApprovalStepMapperImpl extends StepMapper {
                         .type("Inline")
                         .build())
             .scriptTimeout(ParameterField.createValueField(Timeout.builder().timeoutString("10m").build()))
-            .retryInterval(MigratorUtility.getTimeout(approvalParams.getRetryInterval()))
+            .retryInterval(MigratorUtility.getTimeout(approvalParams.getRetryInterval().longValue()))
             .outputVariables(Collections.emptyList())
             .environmentVariables(Collections.emptyList())
             .shell(ShellType.Bash)
@@ -359,5 +388,21 @@ public class ApprovalStepMapperImpl extends StepMapper {
                                                       .build()))
             .build());
     return criteria;
+  }
+
+  private ParameterField<List<String>> getUserGroups(MigrationContext context, ApprovalState state) {
+    if (CollectionUtils.isNotEmpty(state.getUserGroups())) {
+      return ParameterField.createValueField(
+          state.getUserGroups()
+              .stream()
+              .map(userGroupId
+                  -> MigratorUtility.getIdentifierWithScopeDefaults(context.getMigratedEntities(), userGroupId,
+                      NGMigrationEntityType.USER_GROUP, NGMigrationConstants.RUNTIME_INPUT))
+              .collect(Collectors.toList()));
+    }
+    if (state.isUserGroupAsExpression()) {
+      return ParameterField.createExpressionField(true, state.getUserGroupExpression(), null, false);
+    }
+    return ParameterField.createExpressionField(true, "<+input>", null, false);
   }
 }

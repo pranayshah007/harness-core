@@ -13,6 +13,7 @@
         "name" : "k8s_connector_name",
         "identifier" : null,
         "description" : null,
+        "accountIdentifier" : null,
         "orgIdentifier" : null,
         "projectIdentifier" : null,
         "tags" : null,

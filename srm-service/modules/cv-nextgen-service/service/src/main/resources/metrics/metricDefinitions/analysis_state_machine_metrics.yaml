@@ -2,10 +2,6 @@ name: analysis_state_machine_metrics
 identifier: analysis_state_machine_metrics
 metricGroup: analysis_state_machine
 metrics:
-  - metricName: analysis_state_machine_retry_count
-    metricDefinition: analysis state machine retry count
-    type: Count
-    unit: "1"
   - metricName: orchestrator_state_machine_queue_size_above_five_count
     metricDefinition: orchestrator state machine queue size above five execution count
     type: Count

@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.terragrunt;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -22,6 +21,7 @@ import static io.harness.provision.TerraformConstants.WORKSPACE_STATE_FILE_PATH_
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_INTERNAL_CACHE_FOLDER;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_LOCK_FILE_NAME;
 import static io.harness.provision.TerragruntConstants.TG_BASE_DIR;
+import static io.harness.provision.TerragruntConstants.TG_BASE_DIR_UNIQUE_DIRECTORY;
 import static io.harness.provision.TerragruntConstants.TG_SCRIPT_DIR;
 
 import static software.wings.beans.LogHelper.color;
@@ -29,10 +29,14 @@ import static software.wings.beans.LogHelper.color;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.defaultString;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.cli.CliResponse;
 import io.harness.connector.helper.DecryptionHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.delegate.beans.DelegateFile;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.logstreaming.CommandUnitProgress;
@@ -54,6 +58,7 @@ import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.runtime.TerragruntCliRuntimeException;
 import io.harness.exception.runtime.TerragruntFetchFilesRuntimeException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.filesystem.FileIo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -91,9 +96,12 @@ import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Slf4j
 @Singleton
 @OwnedBy(CDP)
@@ -106,6 +114,7 @@ public class TerragruntTaskService {
   @Inject private EncryptDecryptHelper encryptDecryptHelper;
   @Inject TerraformBaseHelper terraformBaseHelper;
   @Inject private HarnessSMEncryptionDecryptionHandlerNG harnessSMEncryptionDecryptionHandler;
+  @Inject private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   public void decryptTaskParameters(AbstractTerragruntTaskParameters taskParameters) {
     List<Pair<DecryptableEntity, List<EncryptedDataDetail>>> decryptionDetails =
@@ -229,7 +238,7 @@ public class TerragruntTaskService {
 
     TerragruntClient terragruntClient = terragruntClientFactory.getClient(scriptDirectory,
         parameters.getTimeoutInMillis(), terragruntCommandLogCallback,
-        parameters.getRunConfiguration().getRunType().name(), parameters.getEnvVars());
+        parameters.getRunConfiguration().getRunType().name(), parameters.getEnvVars(), parameters.isSkipColorLogs());
     String terragruntWorkingDirectory = null;
     if (TerragruntTaskRunType.RUN_MODULE == parameters.getRunConfiguration().getRunType()) {
       terragruntWorkingDirectory = terragruntClient.terragruntWorkingDirectory();
@@ -254,6 +263,26 @@ public class TerragruntTaskService {
         .varFilesSourceReference(varFilesSourceReference)
         .client(terragruntClient)
         .build();
+  }
+
+  public void mapGitConfig(AbstractTerragruntTaskParameters taskParameters) {
+    taskParameters.setConfigFilesStore(mapGitConfigFromGitFileStore(taskParameters.getConfigFilesStore()));
+    List<StoreDelegateConfig> storeDelegateConfigs = new ArrayList<>();
+    taskParameters.getVarFiles().forEach(
+        storeDelegateConfig -> storeDelegateConfigs.add(mapGitConfigFromGitFileStore(storeDelegateConfig)));
+    taskParameters.setVarFiles(storeDelegateConfigs);
+    taskParameters.setBackendFilesStore(mapGitConfigFromGitFileStore(taskParameters.getBackendFilesStore()));
+  }
+
+  private StoreDelegateConfig mapGitConfigFromGitFileStore(StoreDelegateConfig storeDelegateConfig) {
+    if (storeDelegateConfig instanceof GitStoreDelegateConfig) {
+      GitStoreDelegateConfig gitStoreDelegateConfig = (GitStoreDelegateConfig) storeDelegateConfig;
+      return gitStoreDelegateConfig.toBuilder()
+          .gitConfigDTO(scmConnectorMapperDelegate.toGitConfigDTO(
+              gitStoreDelegateConfig.getGitConfigDTO(), gitStoreDelegateConfig.getEncryptedDataDetails()))
+          .build();
+    }
+    return storeDelegateConfig;
   }
 
   private void cleanupTerragruntLocalFiles(String scriptDirectory) {
@@ -350,16 +379,25 @@ public class TerragruntTaskService {
                   .targets(taskParameters.getTargets())
                   .backendConfigFile(filesContext.getBackendFile())
                   .varFiles(filesContext.getVarFiles())
+                  .additionalCliArgs(taskParameters.getTerragruntCommandFlags())
                   .build())
         .runType(getCliRunType(taskParameters))
         .envVars(taskParameters.getEnvVars())
-        .workingDirectory(filesContext.getScriptDirectory());
+        .workingDirectory(filesContext.getScriptDirectory())
+        .skipColorLogs(taskParameters.isSkipColorLogs());
 
     return baseBuilder;
   }
 
   public static String getBaseDir(String accountId, String entityId) {
     return TG_BASE_DIR.replace("${ACCOUNT_ID}", accountId).replace("${ENTITY_ID}", entityId);
+  }
+
+  public static String getBaseDirWithUniqueDirectory(String accountId, String entityId) {
+    String randomId = RandomStringUtils.randomAlphanumeric(8);
+    return TG_BASE_DIR_UNIQUE_DIRECTORY.replace("${ACCOUNT_ID}", accountId)
+        .replace("${ENTITY_ID}", entityId)
+        .replace("${UNIQUE_DIRECTORY}", randomId);
   }
 
   public static TerragruntRunType getCliRunType(AbstractTerragruntTaskParameters params) {
@@ -419,7 +457,12 @@ public class TerragruntTaskService {
 
   public void cleanDirectoryAndSecretFromSecretManager(
       EncryptedRecordData encryptedTfPlan, EncryptionConfig encryptionConfig, String baseDir, LogCallback logCallback) {
-    FileUtils.deleteQuietly(new File(baseDir));
+    try {
+      FileIo.deleteDirectoryAndItsContentIfExists(baseDir);
+    } catch (Exception e) {
+      log.warn(format("Failed to delete files in directory %s", baseDir), e);
+      logCallback.saveExecutionLog("Failed to clean up files", WARN);
+    }
     if (encryptedTfPlan != null) {
       try {
         boolean isSafelyDeleted = encryptDecryptHelper.deleteEncryptedRecord(encryptionConfig, encryptedTfPlan);

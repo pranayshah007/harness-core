@@ -53,4 +53,9 @@ public class CIBuildInfoRepositoryCustomImpl implements CIBuildInfoRepositoryCus
   public Page<CIBuild> getBuilds(Criteria criteria, Pageable pageable) {
     return findAll(criteria, pageable);
   }
+
+  public void deleteAllByAccountId(String accountId) {
+    Query query = new Query().addCriteria(new Criteria().and(CIBuild.Build.accountIdentifier).is(accountId));
+    mongoTemplate.findAllAndRemove(query, CIBuild.class);
+  }
 }

@@ -8,11 +8,13 @@
 package io.harness.transformers.simplevalue;
 
 import io.harness.beans.CastedField;
+import io.harness.core.Recaster;
 import io.harness.transformers.RecastTransformer;
 import io.harness.utils.RecastReflectionUtils;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
+import java.util.Map;
 
 public class LongRecastTransformer extends RecastTransformer implements SimpleValueTransformer {
   public LongRecastTransformer() {
@@ -36,6 +38,12 @@ public class LongRecastTransformer extends RecastTransformer implements SimpleVa
     if (object instanceof List) {
       final Class<?> type = targetClass.isArray() ? targetClass.getComponentType() : targetClass;
       return RecastReflectionUtils.convertToArray(type, (List<?>) object);
+    }
+
+    // Handling first class recast encoded value
+    if (object instanceof Map) {
+      Object decodedObject = ((Map<String, Object>) object).get(Recaster.ENCODED_VALUE);
+      return decode(targetClass, decodedObject, castedField);
     }
 
     return Long.parseLong(object.toString());

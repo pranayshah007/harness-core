@@ -28,6 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -59,7 +60,14 @@ import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 import io.harness.gitpolling.github.GitPollingWebhookData;
 import io.harness.k8s.model.HelmVersion;
+import io.harness.lock.PersistentLocker;
+import io.harness.lock.noop.AcquiredNoopLock;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngsettings.SettingIdentifiers;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
+import io.harness.polling.artifact.ArtifactCollectionUtilsNg;
 import io.harness.polling.bean.ArtifactPolledResponse;
 import io.harness.polling.bean.GitHubPollingInfo;
 import io.harness.polling.bean.GitPollingInfo;
@@ -86,8 +94,13 @@ import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.utils.NGFeatureFlagHelperService;
 
+import java.io.IOException;
+import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -98,24 +111,40 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDC)
 public class PollingResponseHandlerTest extends CategoryTest {
   private final String PERPETUAL_TASK_ID = "perpetualTaskId";
   private final String POLLING_DOC_ID = "pollingDocId";
   private final String ACCOUNT_ID = "accountId";
+  private final String ORG_ID = "orgId";
+  private final String PROJECT_ID = "projectId";
   private final String SIGNATURE_1 = "signature1";
+  private final String PERPETUAL_TASK_ID_2 = "perpetualTaskId2";
+  private final String POLLING_DOC_ID_2 = "pollingDocId2";
+  private final String SIGNATURE_2 = "signature2";
+  private Call<ResponseDTO<SettingValueResponseDTO>> triggerForAllArtifactsOrManifestsSettingCall;
 
   @InjectMocks private PollingResponseHandler pollingResponseHandler;
   @Mock PollingPerpetualTaskService pollingPerpetualTaskService;
   @Mock PollingService pollingService;
   @Mock NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock PolledItemPublisher polledItemPublisher;
+  @Mock PersistentLocker persistentLocker;
+  @Mock NGSettingsClient settingsClient;
 
   @Before
-  public void setup() {
+  public void setup() throws IOException {
     MockitoAnnotations.initMocks(this);
     when(ngFeatureFlagHelperService.isEnabled(anyString(), any())).thenReturn(false);
+    triggerForAllArtifactsOrManifestsSettingCall = mock(Call.class);
+    when(settingsClient.getSetting(eq(SettingIdentifiers.TRIGGER_FOR_ALL_ARTIFACTS_OR_MANIFESTS), any(), any(), any()))
+        .thenReturn(triggerForAllArtifactsOrManifestsSettingCall);
+    when(triggerForAllArtifactsOrManifestsSettingCall.execute())
+        .thenReturn(
+            Response.success(ResponseDTO.newResponse(SettingValueResponseDTO.builder().value("false").build())));
   }
 
   @Test
@@ -152,6 +181,9 @@ public class PollingResponseHandlerTest extends CategoryTest {
 
     verify(pollingService).get(ACCOUNT_ID, POLLING_DOC_ID);
     verify(pollingService).updateFailedAttempts(ACCOUNT_ID, POLLING_DOC_ID, 1);
+    verify(pollingService)
+        .updateTriggerPollingStatus(ACCOUNT_ID, pollingDocument.getSignatures(), false,
+            delegateResponse.getErrorMessage(), Collections.emptyList());
   }
 
   @Test
@@ -161,7 +193,7 @@ public class PollingResponseHandlerTest extends CategoryTest {
     PollingDelegateResponse delegateResponse = getFailedPollingDelegateResponse();
     PollingDocument pollingDocument = getHttpHelmPollingDocument(null);
 
-    int failedAttempts = 3400;
+    int failedAttempts = 7100;
     for (int i = 0; i < 100; i++) {
       pollingDocument.setFailedAttempts(failedAttempts + i);
       when(pollingService.get(anyString(), anyString())).thenReturn(pollingDocument);
@@ -169,7 +201,10 @@ public class PollingResponseHandlerTest extends CategoryTest {
     }
     verify(pollingService, times(100)).get(ACCOUNT_ID, POLLING_DOC_ID);
     verify(pollingService, times(100)).updateFailedAttempts(eq(ACCOUNT_ID), eq(POLLING_DOC_ID), anyInt());
-    verify(pollingPerpetualTaskService, times(3)).resetPerpetualTask(any());
+    verify(pollingPerpetualTaskService, times(0)).resetPerpetualTask(any());
+    verify(pollingService, times(100))
+        .updateTriggerPollingStatus(ACCOUNT_ID, pollingDocument.getSignatures(), false,
+            delegateResponse.getErrorMessage(), Collections.emptyList());
     verify(pollingPerpetualTaskService).deletePerpetualTask(PERPETUAL_TASK_ID, ACCOUNT_ID);
   }
 
@@ -197,6 +232,16 @@ public class PollingResponseHandlerTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = OwnerRule.VINICIUS)
+  @Category(UnitTests.class)
+  public void testSuccessS3HelmPollingResponseWithDelegateRebalanceWithEnabledSettingForAllManifests()
+      throws IOException {
+    when(triggerForAllArtifactsOrManifestsSettingCall.execute())
+        .thenReturn(Response.success(ResponseDTO.newResponse(SettingValueResponseDTO.builder().value("true").build())));
+    testSuccessResponse(S3_HELM, PollingType.MANIFEST);
+  }
+
+  @Test
   @Owner(developers = OwnerRule.INDER)
   @Category(UnitTests.class)
   public void testSuccessGcsHelmPollingResponseWithDelegateRebalance() {
@@ -216,6 +261,16 @@ public class PollingResponseHandlerTest extends CategoryTest {
   public void testSuccessDockerHubPollingResponseWithDelegateRebalanceWithEnabledForAllArtifacts() {
     when(ngFeatureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.SPG_TRIGGER_FOR_ALL_ARTIFACTS_NG))
         .thenReturn(true);
+    testSuccessResponse(DOCKER_HUB, PollingType.ARTIFACT);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.VINICIUS)
+  @Category(UnitTests.class)
+  public void testSuccessDockerHubPollingResponseWithDelegateRebalanceWithSettingEnabledForAllArtifacts()
+      throws IOException {
+    when(triggerForAllArtifactsOrManifestsSettingCall.execute())
+        .thenReturn(Response.success(ResponseDTO.newResponse(SettingValueResponseDTO.builder().value("true").build())));
     testSuccessResponse(DOCKER_HUB, PollingType.ARTIFACT);
   }
 
@@ -274,6 +329,170 @@ public class PollingResponseHandlerTest extends CategoryTest {
     testSuccessResponse(ACR, PollingType.ARTIFACT);
   }
 
+  @Test
+  @Owner(developers = OwnerRule.VINICIUS)
+  @Category(UnitTests.class)
+  public void testSuccessResponseForMultiRegionArtifactShouldPublish() {
+    // pollingDoc1 receives tag 1.1 and pollingDoc2 already has it, so we SHOULD publish the trigger event.
+    when(ngFeatureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.CDS_NG_TRIGGER_MULTI_ARTIFACTS)).thenReturn(true);
+    PollingDocument pollingDocument1 =
+        PollingDocument.builder()
+            .uuid(POLLING_DOC_ID)
+            .accountId(ACCOUNT_ID)
+            .perpetualTaskId(PERPETUAL_TASK_ID)
+            .signatures(Collections.singletonList(SIGNATURE_1))
+            .signaturesLock(Map.of(SIGNATURE_1, Collections.singletonList(SIGNATURE_2)))
+            .pollingType(PollingType.ARTIFACT)
+            .pollingInfo(DockerHubArtifactInfo.builder().imagePath("imagePath").build())
+            .polledResponse(ArtifactPolledResponse.builder().allPolledKeys(new HashSet<>(Arrays.asList("1.0"))).build())
+            .build();
+    PollingDocument pollingDocument2 =
+        PollingDocument.builder()
+            .uuid(POLLING_DOC_ID_2)
+            .accountId(ACCOUNT_ID)
+            .perpetualTaskId(PERPETUAL_TASK_ID_2)
+            .signatures(Collections.singletonList(SIGNATURE_2))
+            .signaturesLock(Map.of(SIGNATURE_1, Collections.singletonList(SIGNATURE_2)))
+            .pollingType(PollingType.ARTIFACT)
+            .pollingInfo(DockerHubArtifactInfo.builder().imagePath("imagePath2").build())
+            .polledResponse(
+                ArtifactPolledResponse.builder().allPolledKeys(new HashSet<>(Arrays.asList("1.0", "1.1"))).build())
+            .build();
+    PollingDelegateResponse delegateResponse = getPollingDelegateResponse(
+        ArtifactPollingDelegateResponse.builder()
+            .firstCollectionOnDelegate(false)
+            .toBeDeletedKeys(Collections.emptySet())
+            .unpublishedArtifacts(Collections.singletonList(
+                DockerArtifactDelegateResponse.builder().sourceType(DOCKER_REGISTRY).tag("1.1").build()))
+            .build());
+
+    when(pollingService.get(ACCOUNT_ID, POLLING_DOC_ID)).thenReturn(pollingDocument1);
+    when(pollingService.getUuidsBySignatures(eq(ACCOUNT_ID), any()))
+        .thenReturn(Collections.singletonList(POLLING_DOC_ID_2));
+    when(pollingService.getMany(eq(ACCOUNT_ID), any())).thenReturn(Collections.singletonList(pollingDocument2));
+    when(persistentLocker.waitToAcquireLock(any(), any(), any())).thenReturn(AcquiredNoopLock.builder().build());
+    pollingResponseHandler.handlePollingResponse(PERPETUAL_TASK_ID, ACCOUNT_ID, delegateResponse);
+    assertAndGetArtifactPolledResponse(1, 2);
+    verify(pollingService, times(1)).get(ACCOUNT_ID, POLLING_DOC_ID);
+    verify(pollingService, times(1)).getUuidsBySignatures(eq(ACCOUNT_ID), any());
+    verify(pollingService, times(1)).getMany(eq(ACCOUNT_ID), any());
+    verify(persistentLocker, times(1)).waitToAcquireLock(POLLING_DOC_ID, Duration.ofMinutes(1), Duration.ofSeconds(10));
+    verify(persistentLocker, times(1))
+        .waitToAcquireLock(POLLING_DOC_ID_2, Duration.ofMinutes(1), Duration.ofSeconds(10));
+    assertPublishedItem(DOCKER_HUB, 1, 1, PollingType.ARTIFACT);
+    verify(pollingService, times(2))
+        .updateTriggerPollingStatus(ACCOUNT_ID, List.of(SIGNATURE_1), true, null, List.of("1.1"));
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.VINICIUS)
+  @Category(UnitTests.class)
+  public void testSuccessResponseForMultiRegionArtifactShouldNotPublish() {
+    // pollingDoc1 receives tag 1.1 and pollingDoc2 doesn't have it, so we should NOT publish the trigger event.
+    when(ngFeatureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.CDS_NG_TRIGGER_MULTI_ARTIFACTS)).thenReturn(true);
+    PollingDocument pollingDocument1 =
+        PollingDocument.builder()
+            .uuid(POLLING_DOC_ID)
+            .accountId(ACCOUNT_ID)
+            .perpetualTaskId(PERPETUAL_TASK_ID)
+            .signatures(Collections.singletonList(SIGNATURE_1))
+            .signaturesLock(Map.of(SIGNATURE_1, Collections.singletonList(SIGNATURE_2)))
+            .pollingType(PollingType.ARTIFACT)
+            .pollingInfo(DockerHubArtifactInfo.builder().imagePath("imagePath").build())
+            .polledResponse(ArtifactPolledResponse.builder().allPolledKeys(new HashSet<>(Arrays.asList("1.0"))).build())
+            .build();
+    PollingDocument pollingDocument2 =
+        PollingDocument.builder()
+            .uuid(POLLING_DOC_ID_2)
+            .accountId(ACCOUNT_ID)
+            .perpetualTaskId(PERPETUAL_TASK_ID_2)
+            .signatures(Collections.singletonList(SIGNATURE_2))
+            .signaturesLock(Map.of(SIGNATURE_1, Collections.singletonList(SIGNATURE_2)))
+            .pollingType(PollingType.ARTIFACT)
+            .pollingInfo(DockerHubArtifactInfo.builder().imagePath("imagePath2").build())
+            .polledResponse(
+                ArtifactPolledResponse.builder().allPolledKeys(new HashSet<>(Arrays.asList("1.0", "1.2"))).build())
+            .build();
+    PollingDelegateResponse delegateResponse = getPollingDelegateResponse(
+        ArtifactPollingDelegateResponse.builder()
+            .firstCollectionOnDelegate(false)
+            .toBeDeletedKeys(Collections.emptySet())
+            .unpublishedArtifacts(Collections.singletonList(
+                DockerArtifactDelegateResponse.builder().sourceType(DOCKER_REGISTRY).tag("1.1").build()))
+            .build());
+
+    when(pollingService.get(ACCOUNT_ID, POLLING_DOC_ID)).thenReturn(pollingDocument1);
+    when(pollingService.getUuidsBySignatures(eq(ACCOUNT_ID), any()))
+        .thenReturn(Collections.singletonList(POLLING_DOC_ID_2));
+    when(pollingService.getMany(eq(ACCOUNT_ID), any())).thenReturn(Collections.singletonList(pollingDocument2));
+    when(persistentLocker.waitToAcquireLock(any(), any(), any())).thenReturn(AcquiredNoopLock.builder().build());
+    pollingResponseHandler.handlePollingResponse(PERPETUAL_TASK_ID, ACCOUNT_ID, delegateResponse);
+    assertAndGetArtifactPolledResponse(1, 2);
+    verify(pollingService, times(1)).get(ACCOUNT_ID, POLLING_DOC_ID);
+    verify(pollingService, times(1)).getUuidsBySignatures(eq(ACCOUNT_ID), any());
+    verify(pollingService, times(1)).getMany(eq(ACCOUNT_ID), any());
+    verify(persistentLocker, times(1)).waitToAcquireLock(POLLING_DOC_ID, Duration.ofMinutes(1), Duration.ofSeconds(10));
+    verify(persistentLocker, times(1))
+        .waitToAcquireLock(POLLING_DOC_ID_2, Duration.ofMinutes(1), Duration.ofSeconds(10));
+    verify(polledItemPublisher, times(0)).publishPolledItems(any()); // No publishing happens.
+    verify(pollingService, times(1))
+        .updateTriggerPollingStatus(ACCOUNT_ID, List.of(SIGNATURE_1), true, null, List.of("1.1"));
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetSignaturesWithLock() {
+    List<String> signatures = List.of("sig1", "sig2", "sig3", "sig4");
+    Map<String, List<String>> signaturesLock =
+        Map.of("sig1", List.of("sig3", "sig4"), "sig3", List.of("sig5"), "sig4", List.of());
+    List<String> signaturesWithLock = pollingResponseHandler.getSignaturesWithLock(signatures, signaturesLock);
+    assertThat(signaturesWithLock.size()).isEqualTo(2);
+    assertThat(signaturesWithLock.contains("sig1")).isTrue();
+    assertThat(signaturesWithLock.contains("sig2")).isFalse();
+    assertThat(signaturesWithLock.contains("sig3")).isTrue();
+    assertThat(signaturesWithLock.contains("sig4")).isFalse();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetSignaturesWithNoLock() {
+    List<String> signatures = List.of("sig1", "sig2", "sig3", "sig4");
+    Map<String, List<String>> signaturesLock =
+        Map.of("sig1", List.of("sig3", "sig4"), "sig3", List.of("sig5"), "sig4", List.of());
+    PollingDocument pollingDocument1 =
+        PollingDocument.builder()
+            .uuid(POLLING_DOC_ID)
+            .accountId(ACCOUNT_ID)
+            .perpetualTaskId(PERPETUAL_TASK_ID)
+            .signatures(signatures)
+            .signaturesLock(signaturesLock)
+            .pollingType(PollingType.ARTIFACT)
+            .pollingInfo(DockerHubArtifactInfo.builder().imagePath("imagePath").build())
+            .polledResponse(ArtifactPolledResponse.builder().allPolledKeys(new HashSet<>(Arrays.asList("1.0"))).build())
+            .build();
+    List<String> signaturesWithoutLock = pollingResponseHandler.getSignaturesWithNoLock(pollingDocument1);
+    assertThat(signaturesWithoutLock.size()).isEqualTo(2);
+    assertThat(signaturesWithoutLock.contains("sig1")).isFalse();
+    assertThat(signaturesWithoutLock.contains("sig2")).isTrue();
+    assertThat(signaturesWithoutLock.contains("sig3")).isFalse();
+    assertThat(signaturesWithoutLock.contains("sig4")).isTrue();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.VINICIUS)
+  @Category(UnitTests.class)
+  public void testShouldTriggerForAllArtifactsOrManifests() throws IOException {
+    PollingDocument pollingDoc =
+        PollingDocument.builder().accountId(ACCOUNT_ID).orgIdentifier(ORG_ID).projectIdentifier(PROJECT_ID).build();
+    when(triggerForAllArtifactsOrManifestsSettingCall.execute())
+        .thenReturn(Response.success(ResponseDTO.newResponse(SettingValueResponseDTO.builder().value("true").build())));
+    assertThat(pollingResponseHandler.shouldTriggerForAllArtifactsOrManifests(pollingDoc)).isTrue();
+    verify(settingsClient, times(1))
+        .getSetting(SettingIdentifiers.TRIGGER_FOR_ALL_ARTIFACTS_OR_MANIFESTS, ACCOUNT_ID, ORG_ID, PROJECT_ID);
+  }
+
   private void testSuccessResponse(Type type, PollingType pollingType) {
     PollingDocument pollingDocument = getPollingDocumentFromType(type, null);
     PollingDelegateResponse delegateResponse = getPollingDelegateResponse(type, pollingType, true, 0, 1000, -1);
@@ -282,13 +501,28 @@ public class PollingResponseHandlerTest extends CategoryTest {
     when(pollingService.get(ACCOUNT_ID, POLLING_DOC_ID)).thenReturn(pollingDocument);
     pollingResponseHandler.handlePollingResponse(PERPETUAL_TASK_ID, ACCOUNT_ID, delegateResponse);
     PolledResponse polledResponse = null;
+    List<String> polledKeys = null;
     if (pollingType.equals(PollingType.MANIFEST)) {
       polledResponse = validateFirstManifestCollectionOnManager();
+      polledKeys =
+          ((ManifestPollingDelegateResponse) delegateResponse.getPollingResponseInfc()).getUnpublishedManifests();
     } else if (pollingType.equals(PollingType.ARTIFACT)) {
       polledResponse = validateFirstArtifactCollectionOnManager();
+      polledKeys = ((ArtifactPollingDelegateResponse) delegateResponse.getPollingResponseInfc())
+                       .getUnpublishedArtifacts()
+                       .stream()
+                       .map(ArtifactCollectionUtilsNg::getArtifactKey)
+                       .collect(Collectors.toList());
     } else if (pollingType.equals(PollingType.WEBHOOK_POLLING)) {
       polledResponse = validateFirstGitPollingOnManager();
+      polledKeys = ((GitPollingDelegateResponse) delegateResponse.getPollingResponseInfc())
+                       .getUnpublishedEvents()
+                       .stream()
+                       .map(GitPollingWebhookData::getDeliveryId)
+                       .collect(Collectors.toList());
     }
+    verify(pollingService, times(1))
+        .updateTriggerPollingStatus(ACCOUNT_ID, pollingDocument.getSignatures(), true, null, polledKeys);
 
     PollingDocument savedPollingDocument = getPollingDocumentFromType(type, polledResponse);
     PollingDelegateResponse newDelegateResponse = getPollingDelegateResponse(type, pollingType, false, 1001, 1005, -1);
@@ -299,15 +533,31 @@ public class PollingResponseHandlerTest extends CategoryTest {
     verify(pollingService, times(2)).get(ACCOUNT_ID, POLLING_DOC_ID);
 
     PolledResponse newPolledResponse = null;
+    List<String> newPolledKeys = null;
     if (pollingType.equals(PollingType.MANIFEST)) {
       newPolledResponse = assertAndGetManifestPolledResponse(2, 1006);
+      newPolledKeys =
+          ((ManifestPollingDelegateResponse) newDelegateResponse.getPollingResponseInfc()).getUnpublishedManifests();
     } else if (pollingType.equals(PollingType.ARTIFACT)) {
       newPolledResponse = assertAndGetArtifactPolledResponse(2, 1006);
+      newPolledKeys = ((ArtifactPollingDelegateResponse) newDelegateResponse.getPollingResponseInfc())
+                          .getUnpublishedArtifacts()
+                          .stream()
+                          .map(ArtifactCollectionUtilsNg::getArtifactKey)
+                          .collect(Collectors.toList());
     } else if (pollingType.equals(PollingType.WEBHOOK_POLLING)) {
       newPolledResponse = assertAndGetGitPolledResponse(2, 1006);
+      newPolledKeys = ((GitPollingDelegateResponse) newDelegateResponse.getPollingResponseInfc())
+                          .getUnpublishedEvents()
+                          .stream()
+                          .map(GitPollingWebhookData::getDeliveryId)
+                          .collect(Collectors.toList());
     }
 
-    if (ngFeatureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.SPG_TRIGGER_FOR_ALL_ARTIFACTS_NG)) {
+    verify(pollingService, times(1))
+        .updateTriggerPollingStatus(ACCOUNT_ID, pollingDocument.getSignatures(), true, null, newPolledKeys);
+    if (ngFeatureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.SPG_TRIGGER_FOR_ALL_ARTIFACTS_NG)
+        || pollingResponseHandler.shouldTriggerForAllArtifactsOrManifests(pollingDocument)) {
       assertPublishedItem(type, 1, 5, pollingType);
     } else {
       assertPublishedItem(type, 5, 1, pollingType);
@@ -320,7 +570,6 @@ public class PollingResponseHandlerTest extends CategoryTest {
     when(pollingService.get(ACCOUNT_ID, POLLING_DOC_ID)).thenReturn(savedPollingDocument1);
     pollingResponseHandler.handlePollingResponse(PERPETUAL_TASK_ID, ACCOUNT_ID, newDelegateResponse1);
     verify(pollingService, times(3)).get(ACCOUNT_ID, POLLING_DOC_ID);
-
     if (pollingType.equals(PollingType.MANIFEST)) {
       assertAndGetManifestPolledResponse(3, 1009);
     } else if (pollingType.equals(PollingType.ARTIFACT)) {
@@ -328,11 +577,24 @@ public class PollingResponseHandlerTest extends CategoryTest {
     } else if (pollingType.equals(PollingType.WEBHOOK_POLLING)) {
       assertAndGetGitPolledResponse(3, 1009);
     }
-    if (ngFeatureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.SPG_TRIGGER_FOR_ALL_ARTIFACTS_NG)) {
+    verify(pollingService, times(1))
+        .updateTriggerPollingStatus(ACCOUNT_ID, pollingDocument.getSignatures(), true, null,
+            List.of("1006", "1007", "1008", "1009", "1010", "1011"));
+    if (ngFeatureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.SPG_TRIGGER_FOR_ALL_ARTIFACTS_NG)
+        || pollingResponseHandler.shouldTriggerForAllArtifactsOrManifests(pollingDocument)) {
       assertPublishedItem(type, 1, 11, pollingType);
     } else {
       assertPublishedItem(type, 6, 2, pollingType);
     }
+
+    PollingDelegateResponse newDelegateResponse2 = getPollingDelegateResponse(type, pollingType, true, 10, 1000, -1);
+    savedPollingDocument1.setFailedAttempts(1);
+    // Delegate rebalanced, previous polling failed. Response with unpublished keys [10-1000], toBeDeletedKeys = []
+    // But all keys are already stored in the polling document
+    pollingResponseHandler.handlePollingResponse(PERPETUAL_TASK_ID, ACCOUNT_ID, newDelegateResponse2);
+    verify(pollingService, times(1)).updateFailedAttempts(ACCOUNT_ID, pollingDocument.getUuid(), 0);
+    verify(pollingService, times(1))
+        .updateTriggerPollingStatus(ACCOUNT_ID, pollingDocument.getSignatures(), true, null, Collections.emptyList());
   }
 
   private ArtifactPolledResponse assertAndGetArtifactPolledResponse(int nofOfTimes, int expectedSize) {

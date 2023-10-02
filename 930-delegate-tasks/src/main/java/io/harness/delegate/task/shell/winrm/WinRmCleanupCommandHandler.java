@@ -6,12 +6,14 @@
  */
 
 package io.harness.delegate.task.shell.winrm;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.shell.winrm.WinRmUtils.getShellExecutorConfig;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.shell.CommandTaskParameters;
@@ -21,7 +23,6 @@ import io.harness.delegate.task.shell.ssh.CommandHandler;
 import io.harness.delegate.task.ssh.NgCleanupCommandUnit;
 import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.exception.InvalidRequestException;
-import io.harness.logging.LogLevel;
 import io.harness.shell.AbstractScriptExecutor;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ShellExecutorConfig;
@@ -30,6 +31,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Map;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @OwnedBy(CDP)
 @Singleton
 public class WinRmCleanupCommandHandler implements CommandHandler {
@@ -55,7 +58,7 @@ public class WinRmCleanupCommandHandler implements CommandHandler {
     ShellExecutorConfig config = getShellExecutorConfig((WinrmTaskParameters) parameters, commandUnit);
     AbstractScriptExecutor executor =
         shellExecutorFactory.getExecutor(config, logStreamingTaskClient, commandUnitsProgress, true);
-    executor.getLogCallback().saveExecutionLog("Command completed with ExitCode (0)", LogLevel.INFO, SUCCESS);
+    closeLogStreamWithSuccess(executor.getLogCallback());
     return ExecuteCommandResponse.builder().status(SUCCESS).build();
   }
 }

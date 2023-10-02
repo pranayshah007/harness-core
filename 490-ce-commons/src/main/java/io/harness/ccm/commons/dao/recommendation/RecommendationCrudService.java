@@ -15,13 +15,18 @@ import io.harness.ccm.commons.beans.recommendation.RecommendationOverviewStats;
 import io.harness.ccm.commons.beans.recommendation.ResourceId;
 import io.harness.ccm.commons.entities.k8s.recommendation.K8sWorkloadRecommendation;
 
+import java.util.List;
+import java.util.Map;
 import lombok.NonNull;
 
 @OwnedBy(HarnessTeam.CE)
 public interface RecommendationCrudService {
+  List<NodePoolId> getNodepoolsAlreadyUpdated(@NonNull String accountId, @NonNull JobConstants jobConstants,
+      List<String> clusterNames, Map<String, String> clusterNameToClusterId);
+
   void upsertWorkloadRecommendation(@NonNull String uuid, @NonNull ResourceId workloadId, @NonNull String clusterName,
       @NonNull K8sWorkloadRecommendation recommendation);
 
   void upsertNodeRecommendation(String entityUuid, @NonNull JobConstants jobConstants, @NonNull NodePoolId nodePoolId,
-      @NonNull String clusterName, @NonNull RecommendationOverviewStats stats);
+      @NonNull String clusterName, @NonNull RecommendationOverviewStats stats, String cloudProvider);
 }

@@ -20,6 +20,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import org.junit.Rule;
 import org.junit.Test;
@@ -133,13 +134,15 @@ public class PipelineStageHelperV1Test extends CategoryTest {
   @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
-  public void testGetInputSet() throws IOException {
+  public void testGetInputSetJsonNode() throws IOException {
     String inputs = "{\"foo\":\"bar\"}";
     YamlField inputsYamlField = YamlUtils.readTreeWithDefaultObjectMapper(inputs);
-    String inputsJson = pipelineStageHelper.getInputSet(inputsYamlField);
-    assertThat(inputsJson).isEqualTo("{\"inputs\":{\"foo\":\"bar\"}}");
+    JsonNode inputsJson = pipelineStageHelper.getInputSetJsonNode(inputsYamlField);
+    assertThat(inputsJson)
+        .isEqualTo(YamlUtils.readAsJsonNode("inputs:\n"
+            + "  foo: bar"));
 
-    inputsJson = pipelineStageHelper.getInputSet(null);
-    assertThat(inputsJson).isEqualTo("{}");
+    inputsJson = pipelineStageHelper.getInputSetJsonNode(null);
+    assertThat(inputsJson).isEqualTo(null);
   }
 }

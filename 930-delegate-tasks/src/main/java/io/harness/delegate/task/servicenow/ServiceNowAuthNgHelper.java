@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.servicenow;
-
 import static io.harness.adfs.AdfsConstants.ADFS_ACCESS_TOKEN_ENDPOINT;
 import static io.harness.adfs.AdfsConstants.ADFS_CLIENT_ASSERTION_TYPE;
 import static io.harness.adfs.AdfsConstants.ADFS_GRANT_TYPE;
@@ -22,7 +21,10 @@ import static java.util.Objects.isNull;
 import io.harness.adfs.AdfsAccessTokenResponse;
 import io.harness.adfs.AdfsExceptionHandler;
 import io.harness.adfs.AdfsRestClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowADFSDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
@@ -64,6 +66,8 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
  * Only modification at the time of writing this is one additional parameter resource_id is being used to indicate the
  * resource for which token is generated.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @UtilityClass
 @Slf4j
@@ -95,7 +99,39 @@ public class ServiceNowAuthNgHelper {
       return getAuthTokenUsingAdfs(serviceNowADFSDTO);
     } else if (ServiceNowAuthType.REFRESH_TOKEN.equals(serviceNowAuthType)) {
       ServiceNowRefreshTokenDTO serviceNowRefreshTokenDTO = (ServiceNowRefreshTokenDTO) serviceNowAuthCredentialsDTO;
-      return getAuthTokenUsingRefreshToken(serviceNowRefreshTokenDTO);
+      return getAuthTokenUsingRefreshToken(serviceNowRefreshTokenDTO, false);
+    } else {
+      throw new InvalidRequestException(
+          String.format("Unsupported auth type in servicenow connector: %s", serviceNowAuthType));
+    }
+  }
+
+  public static String getAuthToken(ServiceNowConnectorDTO decryptedServiceNowConnectorDTO, boolean fetchFromCache) {
+    if (isNull(decryptedServiceNowConnectorDTO)) {
+      return null;
+    }
+    if (isNull(decryptedServiceNowConnectorDTO.getAuth())
+        || isNull(decryptedServiceNowConnectorDTO.getAuth().getCredentials())) {
+      // means somehow auth type is not present (not easily possible as migration done)
+      return getAuthTokenUsingUserNamePassword(decryptedServiceNowConnectorDTO.getUsername(),
+          decryptedServiceNowConnectorDTO.getUsernameRef(), decryptedServiceNowConnectorDTO.getPasswordRef());
+    }
+
+    ServiceNowAuthType serviceNowAuthType = decryptedServiceNowConnectorDTO.getAuth().getAuthType();
+    ServiceNowAuthCredentialsDTO serviceNowAuthCredentialsDTO =
+        decryptedServiceNowConnectorDTO.getAuth().getCredentials();
+
+    if (ServiceNowAuthType.USER_PASSWORD.equals(serviceNowAuthType)) {
+      ServiceNowUserNamePasswordDTO serviceNowUserNamePasswordDTO =
+          (ServiceNowUserNamePasswordDTO) serviceNowAuthCredentialsDTO;
+      return getAuthTokenUsingUserNamePassword(serviceNowUserNamePasswordDTO.getUsername(),
+          serviceNowUserNamePasswordDTO.getUsernameRef(), serviceNowUserNamePasswordDTO.getPasswordRef());
+    } else if (ServiceNowAuthType.ADFS.equals(serviceNowAuthType)) {
+      ServiceNowADFSDTO serviceNowADFSDTO = (ServiceNowADFSDTO) serviceNowAuthCredentialsDTO;
+      return getAuthTokenUsingAdfs(serviceNowADFSDTO);
+    } else if (ServiceNowAuthType.REFRESH_TOKEN.equals(serviceNowAuthType)) {
+      ServiceNowRefreshTokenDTO serviceNowRefreshTokenDTO = (ServiceNowRefreshTokenDTO) serviceNowAuthCredentialsDTO;
+      return getAuthTokenUsingRefreshToken(serviceNowRefreshTokenDTO, fetchFromCache);
     } else {
       throw new InvalidRequestException(
           String.format("Unsupported auth type in servicenow connector: %s", serviceNowAuthType));
@@ -165,7 +201,8 @@ public class ServiceNowAuthNgHelper {
    *
    * Tested using ServiceNow and Okta as authentication severs.
    */
-  private static String getAuthTokenUsingRefreshToken(ServiceNowRefreshTokenDTO serviceNowRefreshTokenDTO) {
+  private static String getAuthTokenUsingRefreshToken(
+      ServiceNowRefreshTokenDTO serviceNowRefreshTokenDTO, boolean fetchFromCache) {
     String refreshToken = new String(serviceNowRefreshTokenDTO.getRefreshTokenRef().getDecryptedValue());
     String clientId = new String(serviceNowRefreshTokenDTO.getClientIdRef().getDecryptedValue());
     String clientSecret = isNull(serviceNowRefreshTokenDTO.getClientSecretRef())
@@ -175,7 +212,7 @@ public class ServiceNowAuthNgHelper {
     String scope = serviceNowRefreshTokenDTO.getScope();
     String tokenUrl = serviceNowRefreshTokenDTO.getTokenUrl();
 
-    return RefreshTokenAuthNgHelper.getAuthToken(refreshToken, clientId, clientSecret, scope, tokenUrl, true);
+    return RefreshTokenAuthNgHelper.getAuthToken(refreshToken, clientId, clientSecret, scope, tokenUrl, fetchFromCache);
   }
 
   private static AdfsRestClient getAdfsRestClient(String url) {

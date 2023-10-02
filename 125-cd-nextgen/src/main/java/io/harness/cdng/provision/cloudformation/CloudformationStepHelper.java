@@ -17,10 +17,13 @@ import static io.harness.delegate.task.cloudformation.CloudformationTaskType.CRE
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
-import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.k8s.K8sStepHelper;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.ManifestStoreType;
@@ -60,20 +63,17 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
-import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.logging.UnitProgress;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -81,6 +81,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -119,11 +120,12 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(CDP)
 @Singleton
 public class CloudformationStepHelper {
-  @Inject private EngineExpressionService engineExpressionService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private K8sStepHelper k8sStepHelper;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
@@ -140,7 +142,7 @@ public class CloudformationStepHelper {
   public static final String DEFAULT_TIMEOUT = "10m";
 
   public TaskChainResponse startChainLink(CloudformationStepExecutor cloudformationStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters) {
+      StepBaseParameters stepElementParameters) {
     CloudformationCreateStackStepParameters cloudformationCreateStackStepParameters =
         (CloudformationCreateStackStepParameters) stepElementParameters.getSpec();
     CloudformationCreateStackStepConfigurationParameters stepConfiguration =
@@ -203,7 +205,7 @@ public class CloudformationStepHelper {
   }
 
   public TaskChainResponse executeNextLink(CloudformationStepExecutor cloudformationStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, PassThroughData passThroughData,
+      StepBaseParameters stepElementParameters, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     CloudformationCreateStackStepParameters cloudformationCreateStackStepParameters =
         (CloudformationCreateStackStepParameters) stepElementParameters.getSpec();
@@ -291,8 +293,8 @@ public class CloudformationStepHelper {
     return (CloudFormationInheritOutput) output.getOutput();
   }
 
-  public CloudformationConfig getCloudformationConfig(Ambiance ambiance, StepElementParameters stepParameters,
-      CloudFormationCreateStackPassThroughData passThroughData) {
+  public CloudformationConfig getCloudformationConfig(
+      Ambiance ambiance, StepBaseParameters stepParameters, CloudFormationCreateStackPassThroughData passThroughData) {
     CloudformationCreateStackStepParameters cloudformationCreateStackStepParameters =
         (CloudformationCreateStackStepParameters) stepParameters.getSpec();
     CloudformationCreateStackStepConfigurationParameters stepConfiguration =
@@ -449,7 +451,7 @@ public class CloudformationStepHelper {
   }
 
   private CloudformationTaskNGParameters getCloudformationTaskNGParameters(Ambiance ambiance,
-      StepElementParameters stepElementParameters, AwsConnectorDTO awsConnectorDTO, Map<String, String> parameters,
+      StepBaseParameters stepElementParameters, AwsConnectorDTO awsConnectorDTO, Map<String, String> parameters,
       String templateBody, String templateUrl, String tags, CommandUnitsProgress commandUnitsProgress) {
     CloudformationCreateStackStepParameters cloudformationCreateStackStepParameters =
         (CloudformationCreateStackStepParameters) stepElementParameters.getSpec();
@@ -481,13 +483,12 @@ public class CloudformationStepHelper {
             .timeoutInMs(StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), DEFAULT_TIMEOUT))
             .commandUnitsProgress(commandUnitsProgress)
             .build();
-    ExpressionEvaluatorUtils.updateExpressions(
-        cloudformationTaskNGParameters, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+    cdExpressionResolver.updateExpressions(ambiance, cloudformationTaskNGParameters);
     return cloudformationTaskNGParameters;
   }
 
   private TaskChainResponse handleAwsS3FetchFileResponse(CloudformationStepExecutor cloudformationStepExecutor,
-      Ambiance ambiance, StepElementParameters stepElementParameters,
+      Ambiance ambiance, StepBaseParameters stepElementParameters,
       CloudformationCreateStackStepConfigurationParameters stepConfiguration,
       CloudFormationCreateStackPassThroughData cloudFormationCreateStackPassThroughData,
       AwsS3FetchFilesResponse responseData) {
@@ -537,7 +538,7 @@ public class CloudformationStepHelper {
   }
 
   private TaskChainResponse handleGitFetchResponse(CloudformationStepExecutor cloudformationStepExecutor,
-      Ambiance ambiance, StepElementParameters stepElementParameters,
+      Ambiance ambiance, StepBaseParameters stepElementParameters,
       CloudformationCreateStackStepConfigurationParameters stepConfiguration,
       CloudFormationCreateStackPassThroughData cloudFormationCreateStackPassThroughData,
       GitFetchResponse responseData) {
@@ -665,17 +666,19 @@ public class CloudformationStepHelper {
     SSHKeySpecDTO sshKeySpecDTO =
         gitConfigAuthenticationInfoHelper.getSSHKey(gitConfigDTO, AmbianceUtils.getAccountId(ambiance),
             AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
-    List<EncryptedDataDetail> encryptedDataDetails =
-        gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(gitConfigDTO, sshKeySpecDTO, basicNGAccessObject);
+
     String repoName = gitStoreConfig.getRepoName() != null ? gitStoreConfig.getRepoName().getValue() : null;
     if (gitConfigDTO.getGitConnectionType() == GitConnectionType.ACCOUNT) {
       String repoUrl = cdStepHelper.getGitRepoUrl(gitConfigDTO, repoName);
       gitConfigDTO.setUrl(repoUrl);
       gitConfigDTO.setGitConnectionType(GitConnectionType.REPO);
     }
-
+    ScmConnector scmConnector = cdStepHelper.getScmConnector(
+        (ScmConnector) connectorDTO.getConnectorConfig(), basicNGAccessObject.getAccountIdentifier(), gitConfigDTO);
+    List<EncryptedDataDetail> encryptedDataDetails =
+        gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(scmConnector, sshKeySpecDTO, basicNGAccessObject);
     return GitStoreDelegateConfig.builder()
-        .gitConfigDTO(gitConfigDTO)
+        .gitConfigDTO(scmConnector)
         .sshKeySpecDTO(sshKeySpecDTO)
         .encryptedDataDetails(encryptedDataDetails)
         .fetchType(gitStoreConfig.getGitFetchType())
@@ -687,7 +690,7 @@ public class CloudformationStepHelper {
   }
 
   private TaskChainResponse getGitFetchFileTaskChainResponse(Ambiance ambiance,
-      List<GitFetchFilesConfig> gitFetchFilesConfigs, StepElementParameters stepElementParameters,
+      List<GitFetchFilesConfig> gitFetchFilesConfigs, StepBaseParameters stepElementParameters,
       CloudFormationCreateStackPassThroughData passThroughData) {
     GitFetchRequest gitFetchRequest = GitFetchRequest.builder()
                                           .gitFetchFilesConfigs(gitFetchFilesConfigs)
@@ -717,7 +720,7 @@ public class CloudformationStepHelper {
   }
 
   private TaskChainResponse getS3FetchFileTaskChainResponse(Ambiance ambiance,
-      List<AwsS3FetchFileDelegateConfig> awsS3FetchFileDelegateConfigs, StepElementParameters stepElementParameters,
+      List<AwsS3FetchFileDelegateConfig> awsS3FetchFileDelegateConfigs, StepBaseParameters stepElementParameters,
       CloudFormationCreateStackPassThroughData passThroughData, CommandUnitsProgress commandUnitsProgress) {
     AwsS3FetchFilesTaskParams awsS3FetchFilesTaskParams = AwsS3FetchFilesTaskParams.builder()
                                                               .fetchFileDelegateConfigs(awsS3FetchFileDelegateConfigs)
@@ -813,6 +816,6 @@ public class CloudformationStepHelper {
   }
 
   public String renderValue(Ambiance ambiance, @NonNull String valueFileContent) {
-    return engineExpressionService.renderExpression(ambiance, valueFileContent);
+    return cdExpressionResolver.renderExpression(ambiance, valueFileContent);
   }
 }

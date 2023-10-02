@@ -8,9 +8,11 @@
 package io.harness.pms.serializer.recaster;
 
 import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.PRASHANT;
+import static io.harness.rule.OwnerRule.SHALINI;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
@@ -28,11 +30,13 @@ import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.ParameterFieldValueWrapper;
 import io.harness.rule.Owner;
+import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -54,6 +58,124 @@ public class RecastOrchestrationUtilsTest extends CategoryTest {
     String simpleJson = RecastOrchestrationUtils.toSimpleJson(null);
     assertThat(simpleJson).isNotNull();
     assertThat(simpleJson).isEqualTo("{}");
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestForString() {
+    String s = "abc";
+    String json = RecastOrchestrationUtils.toJson(s, true);
+    Object response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo("abc");
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestForInteger() {
+    Integer s = new Integer(1);
+    String json = RecastOrchestrationUtils.toJson(s, true);
+    Object response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s);
+
+    int s1 = 2;
+    json = RecastOrchestrationUtils.toJson(s1, true);
+    response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s1);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestForBoolean() {
+    boolean s = true;
+    String json = RecastOrchestrationUtils.toJson(s, true);
+    Object response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(true);
+
+    Boolean s1 = new Boolean(false);
+    json = RecastOrchestrationUtils.toJson(s1, true);
+    response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s1);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestForLong() {
+    Long s = new Long(1);
+    String json = RecastOrchestrationUtils.toJson(s, true);
+    Object response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s);
+
+    long s1 = 2l;
+    json = RecastOrchestrationUtils.toJson(s1, true);
+    response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s1);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestForDouble() {
+    Double s = new Double(1);
+    String json = RecastOrchestrationUtils.toJson(s, true);
+    Object response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s);
+
+    double s1 = 2;
+    json = RecastOrchestrationUtils.toJson(s1, true);
+    response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s1);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestForFloat() {
+    Float s = new Float(1);
+    String json = RecastOrchestrationUtils.toJson(s, true);
+    Object response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s);
+
+    float s1 = 2;
+    json = RecastOrchestrationUtils.toJson(s1, true);
+    response = RecastOrchestrationUtils.fromJson(json, Object.class, true);
+    assertThat(response).isEqualTo(s1);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestForStringArray() {
+    String[] s = new String[] {"a", "b"};
+    String json = RecastOrchestrationUtils.toJson(s);
+    Object response = RecastOrchestrationUtils.fromJson(json, Object.class);
+    assertThat(response).isInstanceOf(ArrayList.class);
+    assertThat(((ArrayList) response).size()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestForIntArray() {
+    int[] s = new int[] {1, 2};
+    String json = RecastOrchestrationUtils.toJson(s);
+    Object response = RecastOrchestrationUtils.fromJson(json, Object.class);
+    assertThat(response).isInstanceOf(ArrayList.class);
+    assertThat((ArrayList) response).containsExactly(1, 2);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestForBooleanArray() {
+    boolean[] s = new boolean[] {true, false};
+    String json = RecastOrchestrationUtils.toJson(s);
+    Object response = RecastOrchestrationUtils.fromJson(json, Object.class);
+    assertThat(response).isInstanceOf(ArrayList.class);
+    assertThat((ArrayList) response).containsExactly(true, false);
   }
 
   @Test
@@ -303,6 +425,22 @@ public class RecastOrchestrationUtilsTest extends CategoryTest {
     ParameterFieldValueWrapper<Map<String, Object>> wrapper;
   }
 
+  public enum EnumA {
+    ABC,
+    B;
+  }
+
+  @Data
+  @AllArgsConstructor
+  public static class DummyD {
+    ParameterField<Timeout> timeoutParameterField;
+    ParameterField<Integer> integerParameterField;
+    ParameterField<Boolean> booleanParameterField;
+    ParameterField<Double> doubleParameterField;
+    ParameterField<String> stringParameterField;
+    ParameterField<EnumA> enumParameterField;
+  }
+
   @Data
   @Builder
   public static class ParameterDummy {
@@ -388,6 +526,61 @@ public class RecastOrchestrationUtilsTest extends CategoryTest {
     assertEquals(innerMap2.get("recasterF1"), "foo");
     assertEquals(innerMap2.get("f2"), "bar");
     assertEquals(innerMap2.get("f3"), "fooBar");
+  }
+
+  // Testing that parameterField values should be typeCasted into their expected types when in json, the type is
+  // different, For eg: in json we have string "10" for integerParameterField, but expected is integer, so, it will be
+  // typeCasted to integer
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testParameterFieldCastedValues() {
+    // case when values can be typeCasted
+    DummyD d = RecastOrchestrationUtils.fromJson(
+        "{\"__recast\":\"io.harness.pms.serializer.recaster.RecastOrchestrationUtilsTest$DummyD\",\"timeoutParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"10s\"},\"valueClass\":\"io.harness.yaml.core.timeout.Timeout\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"integerParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"10\"},\"valueClass\":\"java.lang.Integer\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"booleanParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"true\"},\"valueClass\":\"java.lang.Boolean\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"doubleParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"1.2\"},\"valueClass\":\"java.lang.Double\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"stringParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"abc\"},\"valueClass\":\"java.lang.String\",\"typeString\":true,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"enumParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"ABC\"},\"valueClass\":\"io.harness.pms.serializer.recaster.RecastOrchestrationUtilsTest$EnumA\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}}}",
+        DummyD.class);
+    assertEquals(d.getBooleanParameterField().getValue().getClass(), Boolean.class);
+    assertEquals(d.getTimeoutParameterField().getValue().getClass(), Timeout.class);
+    assertEquals(d.getDoubleParameterField().getValue().getClass(), Double.class);
+    assertEquals(d.getIntegerParameterField().getValue().getClass(), Integer.class);
+    assertEquals(d.getStringParameterField().getValue().getClass(), String.class);
+    assertEquals(d.getBooleanParameterField().getValue(), Boolean.TRUE);
+    assertEquals(d.getEnumParameterField().getValue(), EnumA.ABC);
+    assertEquals(d.getEnumParameterField().getValue().getClass(), EnumA.class);
+    assertEquals(
+        d.getTimeoutParameterField().getValue(), Timeout.builder().timeoutString("10s").timeoutInMillis(10000).build());
+    assertEquals(d.getDoubleParameterField().getValue(), 1.2);
+    assertEquals(d.getIntegerParameterField().getValue(), (Integer) 10);
+    assertEquals(d.getStringParameterField().getValue(), "abc");
+    // case when values can't be typeCasted
+    d = RecastOrchestrationUtils.fromJson(
+        "{\"__recast\":\"io.harness.pms.serializer.recaster.RecastOrchestrationUtilsTest$DummyD\",\"timeoutParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"100\"},\"valueClass\":\"io.harness.yaml.core.timeout.Timeout\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"integerParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"one\"},\"valueClass\":\"java.lang.Integer\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"booleanParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"right\"},\"valueClass\":\"java.lang.Boolean\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"doubleParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"double\"},\"valueClass\":\"java.lang.Double\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"stringParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"abc\"},\"valueClass\":\"java.lang.String\",\"typeString\":true,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"enumParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"Abc\"},\"valueClass\":\"io.harness.pms.serializer.recaster.RecastOrchestrationUtilsTest$EnumA\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}}}",
+        DummyD.class);
+    assertEquals(d.getBooleanParameterField().getValue(), "right");
+    assertEquals(d.getTimeoutParameterField().getValue(), "100");
+    assertEquals(d.getDoubleParameterField().getValue(), "double");
+    assertEquals(d.getIntegerParameterField().getValue(), "one");
+    assertEquals(d.getStringParameterField().getValue(), "abc");
+    assertEquals(d.getEnumParameterField().getValue(), EnumA.ABC);
+    // valueDoc is null in integerParameterField
+    d = RecastOrchestrationUtils.fromJson(
+        "{\"__recast\":\"io.harness.pms.serializer.recaster.RecastOrchestrationUtilsTest$DummyD\",\"timeoutParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"100\"},\"valueClass\":\"io.harness.yaml.core.timeout.Timeout\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"integerParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueClass\":\"java.lang.Integer\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"booleanParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"right\"},\"valueClass\":\"java.lang.Boolean\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"doubleParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"double\"},\"valueClass\":\"java.lang.Double\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"stringParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"abc\"},\"valueClass\":\"java.lang.String\",\"typeString\":true,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}}}",
+        DummyD.class);
+    assertEquals(d.getBooleanParameterField().getValue(), "right");
+    assertEquals(d.getTimeoutParameterField().getValue(), "100");
+    assertEquals(d.getDoubleParameterField().getValue(), "double");
+    assertEquals(d.getIntegerParameterField().getValue(), null);
+    assertEquals(d.getStringParameterField().getValue(), "abc");
+    // value in valueDoc is null in integerParameterField
+    d = RecastOrchestrationUtils.fromJson(
+        "{\"__recast\":\"io.harness.pms.serializer.recaster.RecastOrchestrationUtilsTest$DummyD\",\"timeoutParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"100\"},\"valueClass\":\"io.harness.yaml.core.timeout.Timeout\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"integerParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\"},\"valueClass\":\"java.lang.Integer\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"booleanParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"right\"},\"valueClass\":\"java.lang.Boolean\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"doubleParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"double\"},\"valueClass\":\"java.lang.Double\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"stringParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"abc\"},\"valueClass\":\"java.lang.String\",\"typeString\":true,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}},\"enumParameterField\":{\"__recast\":\"parameterField\",\"__encodedValue\":{\"__recast\":\"io.harness.pms.yaml.ParameterDocumentField\",\"expression\":false,\"valueDoc\":{\"__recast\":\"io.harness.pms.yaml.ParameterFieldValueWrapper\",\"value\":\"test\"},\"valueClass\":\"io.harness.pms.serializer.recaster.RecastOrchestrationUtilsTest$EnumA\",\"typeString\":false,\"skipAutoEvaluation\":false,\"jsonResponseField\":false}}}",
+        DummyD.class);
+    assertEquals(d.getBooleanParameterField().getValue(), "right");
+    assertEquals(d.getTimeoutParameterField().getValue(), "100");
+    assertEquals(d.getDoubleParameterField().getValue(), "double");
+    assertEquals(d.getIntegerParameterField().getValue(), null);
+    assertEquals(d.getStringParameterField().getValue(), "abc");
+    assertEquals(d.getEnumParameterField().getValue(), "test");
   }
 
   private void assertRecastedObject(

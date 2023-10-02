@@ -6,11 +6,13 @@
  */
 
 package io.harness.gitsync.interceptor;
-
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.GitSyncApiConstants;
@@ -18,6 +20,7 @@ import io.harness.gitsync.sdk.GitSyncApiConstants;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.QueryParam;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,6 +28,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @Getter
 @Builder
 @FieldNameConstants(innerTypeName = "GitEntityUpdateInfoKeys")
@@ -75,4 +79,8 @@ public class GitEntityUpdateInfoDTO {
   @Hidden
   @QueryParam(GitSyncApiConstants.LAST_COMMIT_ID)
   String lastCommitId; // used for bitbucket update use-case
+  @Parameter(description = "Checks the new branch")
+  @DefaultValue("false")
+  @QueryParam(GitSyncApiConstants.NEW_BRANCH)
+  Boolean isNewBranch;
 }

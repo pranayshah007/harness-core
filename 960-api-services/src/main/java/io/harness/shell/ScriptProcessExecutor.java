@@ -6,7 +6,6 @@
  */
 
 package io.harness.shell;
-
 import static io.harness.azure.model.AzureConstants.AZURE_LOGIN_CONFIG_DIR_PATH;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -24,10 +23,14 @@ import static io.harness.logging.LogLevel.INFO;
 import static com.google.common.collect.Sets.newHashSet;
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
+import io.harness.logging.LogSanitizerHelper;
 import io.harness.shell.ExecuteCommandResponse.ExecuteCommandResponseBuilder;
 import io.harness.shell.ShellExecutionData.ShellExecutionDataBuilder;
 
@@ -66,6 +69,9 @@ import org.zeroturnaround.exec.stream.LogOutputStream;
 /**
  * Created by anubhaw on 2019-03-11.
  */
+
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Slf4j
 public class ScriptProcessExecutor extends AbstractScriptExecutor {
   private ShellExecutorConfig config;
@@ -238,7 +244,7 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
     CommandExecutionStatus commandExecutionStatus = FAILURE;
     File workingDirectory;
 
-    log.info("Shell script task parameters: accountId - {}, appId - {}, workingDir - {}, activityId - {}",
+    log.debug("Shell script task parameters: accountId - {}, appId - {}, workingDir - {}, activityId - {}",
         config.getAccountId(), config.getAppId(), config.getWorkingDirectory(), config.getExecutionId());
     if (isEmpty(config.getWorkingDirectory())) {
       String directoryPath = defaultParentWorkingDirectory + config.getExecutionId();
@@ -294,8 +300,17 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
       log.info("Done setting file permissions for script {}", scriptFile);
 
       String[] commandList = new String[] {"/bin/bash", scriptFilename};
-      ProcessStopper processStopper = new ChildProcessStopper(
-          scriptFilename, workingDirectory, new ProcessExecutor().environment(environment).directory(workingDirectory));
+
+      ProcessStopper processStopper = new ChildProcessStopper(scriptFilename, workingDirectory,
+          new ProcessExecutor()
+              .environment(environment)
+              .directory(workingDirectory)
+              .redirectOutput(new LogOutputStream() {
+                @Override
+                protected void processLine(String line) {
+                  log.info(line);
+                }
+              }));
 
       StringBuilder errorLog = new StringBuilder();
       ProcessExecutor processExecutor = new ProcessExecutor()
@@ -326,7 +341,8 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
       ProcessResult processResult = processExecutor.execute();
 
       if (errorLog.length() > 0) {
-        log.error("[ScriptProcessExecutor-03] Error output stream:\n{}", errorLog);
+        log.error(
+            "[ScriptProcessExecutor-03] Error output stream:\n{}", LogSanitizerHelper.sanitizeJWT(errorLog.toString()));
       }
 
       commandExecutionStatus = processResult.getExitValue() == 0 ? SUCCESS : FAILURE;

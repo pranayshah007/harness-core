@@ -12,11 +12,13 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.LinkedList;
+import java.util.List;
 
 @OwnedBy(PIPELINE)
 public interface SpecParameters {
   @JsonIgnore
-  default SpecParameters getViewJsonObject() {
-    return this;
+  default List<String> stepInputsKeyExclude() {
+    return new LinkedList<>();
   }
 }

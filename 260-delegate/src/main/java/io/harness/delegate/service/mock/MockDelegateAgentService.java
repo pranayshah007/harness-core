@@ -9,7 +9,6 @@ package io.harness.delegate.service.mock;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-import io.harness.delegate.DelegateAgentCommonVariables;
 import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -31,11 +30,11 @@ public class MockDelegateAgentService extends SimpleDelegateAgent<DelegateTaskPa
 
   @Override
   protected DelegateTaskPackage acquireTask(final String taskId) throws IOException {
-    final var response = executeRestCall(getManagerClient().acquireTask(DelegateAgentCommonVariables.getDelegateId(),
-        taskId, getDelegateConfiguration().getAccountId(), DELEGATE_INSTANCE_ID));
+    final var response = executeRestCall(getManagerClient().acquireTask(
+        delegateId, taskId, getDelegateConfiguration().getAccountId(), context.getInstanceId()));
 
-    log.info("Delegate {} received task {} for delegateInstance {}", DelegateAgentCommonVariables.getDelegateId(),
-        response.getDelegateTaskId(), DELEGATE_INSTANCE_ID);
+    log.info("Delegate {} received task {} for delegateInstance {}", delegateId, response.getDelegateTaskId(),
+        context.getInstanceId());
     return response;
   }
 
@@ -46,9 +45,10 @@ public class MockDelegateAgentService extends SimpleDelegateAgent<DelegateTaskPa
 
   @Override
   protected void onTaskResponse(final String taskId, final DelegateTaskResponse response) throws IOException {
-    final var responseBody = executeRestCall(getManagerClient().sendTaskStatus(
-        DelegateAgentCommonVariables.getDelegateId(), taskId, getDelegateConfiguration().getAccountId(), response));
-    log.info("Delegate response sent for task {} with status {}", taskId, responseBody.string());
+    try (var responseBody = executeRestCall(getManagerClient().sendTaskStatus(
+             delegateId, taskId, getDelegateConfiguration().getAccountId(), response))) {
+      log.info("Delegate response sent for task {} with status {}", taskId, responseBody.string());
+    }
   }
 
   @Override

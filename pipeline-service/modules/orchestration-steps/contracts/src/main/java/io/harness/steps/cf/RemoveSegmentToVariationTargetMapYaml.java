@@ -24,12 +24,12 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonTypeName("RemoveSegmentToVariationTargetMap")
-@TypeAlias("RemoveSegmentToVariationTargetMapYaml")
+@JsonTypeName("RemoveSegmentsToVariationTargetMap")
+@TypeAlias("RemoveSegmentsToVariationTargetMapYaml")
 public class RemoveSegmentToVariationTargetMapYaml implements PatchInstruction {
   @Builder.Default
   @NotNull
-  @ApiModelProperty(allowableValues = "RemoveSegmentToVariationTargetMap")
+  @ApiModelProperty(allowableValues = "RemoveSegmentsToVariationTargetMap")
   private PatchInstruction.Type type = Type.REMOVE_SEGMENT_TO_VARIATION_TARGET_MAP;
   @NotNull private String identifier;
   @NotNull private RemoveSegmentToVariationTargetMapYamlSpec spec;

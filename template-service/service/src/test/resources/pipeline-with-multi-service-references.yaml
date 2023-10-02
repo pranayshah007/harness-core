@@ -1,0 +1,20 @@
+pipeline:
+  name: Test Pipline
+  identifier: Test_Pipline
+  template:
+    templateRef: t2
+    versionLabel: v1
+    templateInputs:
+      stages:
+        - stage:
+            identifier: s1
+            type: Deployment
+            spec:
+              services:
+                values:
+                  - serviceRef: service1
+              environments:
+                values: <+input>
+  tags: {}
+  projectIdentifier: projectId
+  orgIdentifier: orgId

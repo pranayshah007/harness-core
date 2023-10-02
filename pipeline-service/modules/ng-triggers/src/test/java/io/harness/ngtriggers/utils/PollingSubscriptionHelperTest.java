@@ -40,6 +40,7 @@ import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.junit.Before;
@@ -65,6 +66,7 @@ public class PollingSubscriptionHelperTest extends CategoryTest {
   private String ngTriggerYaml_artifact_dockerregistry;
   private String ngTriggerYaml_manifest;
   private String ngTriggerYaml_gitpolling;
+  private String ngTriggerYaml_multi_region_artifact;
 
   @Before
   public void setUp() throws IOException {
@@ -78,6 +80,9 @@ public class PollingSubscriptionHelperTest extends CategoryTest {
             StandardCharsets.UTF_8);
     ngTriggerYaml_gitpolling = Resources.toString(
         Objects.requireNonNull(classLoader.getResource("ng-trigger-gitpolling-v2.yaml")), StandardCharsets.UTF_8);
+    ngTriggerYaml_multi_region_artifact =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource("ng-trigger-multi-region-artifact.yaml")),
+            StandardCharsets.UTF_8);
     buildTriggerHelper = spy(new BuildTriggerHelper(pipelineServiceClient));
     pollingSubscriptionHelper =
         new PollingSubscriptionHelper(buildTriggerHelper, ngTriggerElementMapper, generatorFactory);
@@ -94,7 +99,7 @@ public class PollingSubscriptionHelperTest extends CategoryTest {
         "account", "org", "proj", "first_trigger", ngTriggerYaml_artifact_dockerregistry, true);
     doReturn(Optional.of("")).when(buildTriggerHelper).fetchResolvedTemplatesPipelineForTrigger(any());
     when(generatorFactory.retrievePollingItemGenerator(any())).thenReturn(dockerRegistryPollingItemGenerator);
-    PollingItem pollingItem = pollingSubscriptionHelper.generatePollingItem(ngTriggerEntity);
+    PollingItem pollingItem = pollingSubscriptionHelper.generatePollingItems(ngTriggerEntity).get(0);
     assertThat(pollingItem.getCategory()).isEqualTo(io.harness.polling.contracts.Category.ARTIFACT);
     assertThat(pollingItem.getQualifier().getAccountId()).isEqualTo(ngTriggerEntity.getAccountId());
     assertThat(pollingItem.getQualifier().getOrganizationId()).isEqualTo(ngTriggerEntity.getOrgIdentifier());
@@ -114,7 +119,7 @@ public class PollingSubscriptionHelperTest extends CategoryTest {
         ngTriggerElementMapper.toTriggerEntity("account", "org", "proj", "first_trigger", ngTriggerYaml_manifest, true);
     doReturn(Optional.of("")).when(buildTriggerHelper).fetchResolvedTemplatesPipelineForTrigger(any());
     when(generatorFactory.retrievePollingItemGenerator(any())).thenReturn(httpHelmPollingItemGenerator);
-    PollingItem pollingItem = pollingSubscriptionHelper.generatePollingItem(ngTriggerEntity);
+    PollingItem pollingItem = pollingSubscriptionHelper.generatePollingItems(ngTriggerEntity).get(0);
     assertThat(pollingItem.getCategory()).isEqualTo(io.harness.polling.contracts.Category.MANIFEST);
     assertThat(pollingItem.getQualifier().getAccountId()).isEqualTo(ngTriggerEntity.getAccountId());
     assertThat(pollingItem.getQualifier().getOrganizationId()).isEqualTo(ngTriggerEntity.getOrgIdentifier());
@@ -137,11 +142,9 @@ public class PollingSubscriptionHelperTest extends CategoryTest {
         "account", "org", "proj", "first_trigger", ngTriggerYaml_gitpolling, true);
     ngTriggerEntity.setTriggerStatus(
         TriggerStatus.builder().webhookInfo(WebhookInfo.builder().webhookId("123").build()).build());
-    System.out.println("hello");
-    System.out.println(ngTriggerEntity.getPollInterval());
     doReturn(Optional.of("")).when(buildTriggerHelper).fetchResolvedTemplatesPipelineForTrigger(any());
     when(generatorFactory.retrievePollingItemGenerator(any())).thenReturn(gitPollingItemGenerator);
-    PollingItem pollingItem = pollingSubscriptionHelper.generatePollingItem(ngTriggerEntity);
+    PollingItem pollingItem = pollingSubscriptionHelper.generatePollingItems(ngTriggerEntity).get(0);
     assertThat(pollingItem.getCategory()).isEqualTo(io.harness.polling.contracts.Category.GITPOLLING);
     assertThat(pollingItem.getQualifier().getAccountId()).isEqualTo(ngTriggerEntity.getAccountId());
     assertThat(pollingItem.getQualifier().getOrganizationId()).isEqualTo(ngTriggerEntity.getOrgIdentifier());
@@ -152,5 +155,68 @@ public class PollingSubscriptionHelperTest extends CategoryTest {
     assertThat(pollingItem.getPollingPayloadData().getType()).isEqualTo(Type.GIT_POLL);
     assertThat(pollingItem.getPollingPayloadData().getGitPollPayload().getPollInterval()).isEqualTo(2);
     assertThat(pollingItem.getPollingPayloadData().getGitPollPayload().getWebhookId()).isEqualTo("123");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGeneratePollingItemForMultiRegionArtifactTrigger() throws Exception {
+    when(pmsFeatureFlagService.isEnabled("account", FeatureName.CDS_NG_TRIGGER_MULTI_ARTIFACTS)).thenReturn(true);
+    NGTriggerEntity ngTriggerEntity = ngTriggerElementMapper.toTriggerEntity(
+        "account", "org", "proj", "multiRegionArtifactTrigger", ngTriggerYaml_multi_region_artifact, true);
+    doReturn(Optional.of("")).when(buildTriggerHelper).fetchResolvedTemplatesPipelineForTrigger(any());
+    when(generatorFactory.retrievePollingItemGenerator(any())).thenReturn(dockerRegistryPollingItemGenerator);
+
+    PollingItem pollingItem1 = pollingSubscriptionHelper.generatePollingItems(ngTriggerEntity).get(0);
+    assertThat(pollingItem1.getCategory()).isEqualTo(io.harness.polling.contracts.Category.ARTIFACT);
+    assertThat(pollingItem1.getQualifier().getAccountId()).isEqualTo(ngTriggerEntity.getAccountId());
+    assertThat(pollingItem1.getQualifier().getOrganizationId()).isEqualTo(ngTriggerEntity.getOrgIdentifier());
+    assertThat(pollingItem1.getQualifier().getProjectId()).isEqualTo(ngTriggerEntity.getProjectIdentifier());
+    assertThat(pollingItem1.getSignature())
+        .isEqualTo(ngTriggerEntity.getMetadata().getMultiBuildMetadata().get(0).getPollingConfig().getSignature());
+    assertThat(pollingItem1.getPollingPayloadData().getConnectorRef()).isEqualTo("DockerConnectorUs");
+    assertThat(pollingItem1.getPollingPayloadData().getType()).isEqualTo(Type.DOCKER_HUB);
+    assertThat(pollingItem1.getPollingPayloadData().getDockerHubPayload().getImagePath())
+        .isEqualTo("v2/hello-world-us");
+
+    PollingItem pollingItem2 = pollingSubscriptionHelper.generatePollingItems(ngTriggerEntity).get(1);
+    assertThat(pollingItem2.getCategory()).isEqualTo(io.harness.polling.contracts.Category.ARTIFACT);
+    assertThat(pollingItem2.getQualifier().getAccountId()).isEqualTo(ngTriggerEntity.getAccountId());
+    assertThat(pollingItem2.getQualifier().getOrganizationId()).isEqualTo(ngTriggerEntity.getOrgIdentifier());
+    assertThat(pollingItem2.getQualifier().getProjectId()).isEqualTo(ngTriggerEntity.getProjectIdentifier());
+    assertThat(pollingItem2.getSignature())
+        .isEqualTo(ngTriggerEntity.getMetadata().getMultiBuildMetadata().get(1).getPollingConfig().getSignature());
+    assertThat(pollingItem2.getPollingPayloadData().getConnectorRef()).isEqualTo("DockerConnectorApac");
+    assertThat(pollingItem2.getPollingPayloadData().getType()).isEqualTo(Type.DOCKER_HUB);
+    assertThat(pollingItem2.getPollingPayloadData().getDockerHubPayload().getImagePath())
+        .isEqualTo("v2/hello-world-apac");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGenerateMultiArtifactPollingItemsToUnsubscribe() throws Exception {
+    when(pmsFeatureFlagService.isEnabled("account", FeatureName.CDS_NG_TRIGGER_MULTI_ARTIFACTS)).thenReturn(true);
+    NGTriggerEntity ngTriggerEntity = ngTriggerElementMapper.toTriggerEntity(
+        "account", "org", "proj", "multiRegionArtifactTrigger", ngTriggerYaml_multi_region_artifact, true);
+    List<String> signatures = List.of("sig1", "sig2");
+    ngTriggerEntity.getMetadata().setSignatures(signatures);
+    List<PollingItem> pollingItemsToUnsubscribe =
+        pollingSubscriptionHelper.generateMultiArtifactPollingItemsToUnsubscribe(ngTriggerEntity);
+    assertThat(pollingItemsToUnsubscribe.size()).isEqualTo(2);
+
+    assertThat(pollingItemsToUnsubscribe.get(0).getQualifier().getAccountId()).isEqualTo("account");
+    assertThat(pollingItemsToUnsubscribe.get(0).getQualifier().getOrganizationId()).isEqualTo("org");
+    assertThat(pollingItemsToUnsubscribe.get(0).getQualifier().getProjectId()).isEqualTo("proj");
+    assertThat(pollingItemsToUnsubscribe.get(0).getCategory())
+        .isEqualTo(io.harness.polling.contracts.Category.ARTIFACT);
+    assertThat(pollingItemsToUnsubscribe.get(0).getSignature()).isEqualTo("sig1");
+
+    assertThat(pollingItemsToUnsubscribe.get(1).getQualifier().getAccountId()).isEqualTo("account");
+    assertThat(pollingItemsToUnsubscribe.get(1).getQualifier().getOrganizationId()).isEqualTo("org");
+    assertThat(pollingItemsToUnsubscribe.get(1).getQualifier().getProjectId()).isEqualTo("proj");
+    assertThat(pollingItemsToUnsubscribe.get(1).getCategory())
+        .isEqualTo(io.harness.polling.contracts.Category.ARTIFACT);
+    assertThat(pollingItemsToUnsubscribe.get(1).getSignature()).isEqualTo("sig2");
   }
 }

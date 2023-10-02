@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.k8s;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -38,10 +37,15 @@ import static software.wings.beans.LogWeight.Bold;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
+import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sRollingDeployRequest;
@@ -90,6 +94,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_K8S})
 @OwnedBy(CDP)
 @NoArgsConstructor
 @Slf4j
@@ -121,7 +127,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
     if (!(k8sDeployRequest instanceof K8sRollingDeployRequest)) {
       throw new InvalidArgumentsException(Pair.of("k8sDeployRequest", "Must be instance of K8sRollingDeployRequest"));
     }
-
+    HelmChartInfo helmChartInfo = null;
     K8sRollingDeployRequest k8sRollingDeployRequest = (K8sRollingDeployRequest) k8sDeployRequest;
 
     releaseName = k8sRollingDeployRequest.getReleaseName();
@@ -154,6 +160,10 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
         k8sRollingDeployRequest.isSkipResourceVersioning(),
         k8sRollingDeployRequest.isSkipAddingTrackSelectorToDeployment(), k8sRollingDeployRequest.isPruningEnabled());
 
+    if (k8sRollingDeployRequest.getManifestDelegateConfig() instanceof HelmChartManifestDelegateConfig) {
+      helmChartInfo = k8sTaskHelperBase.getHelmChartDetails(
+          k8sRollingDeployRequest.getManifestDelegateConfig(), manifestFilesDirectory);
+    }
     List<KubernetesResource> allWorkloads = ListUtils.union(managedWorkloads, customWorkloads);
     List<K8sPod> existingPodList = k8sRollingBaseHandler.getExistingPods(
         steadyStateTimeoutInMillis, allWorkloads, kubernetesConfig, releaseName, prepareLogCallback);
@@ -226,10 +236,12 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
     K8sRollingDeployResponse rollingSetupResponse =
         K8sRollingDeployResponse.builder()
             .releaseNumber(currentReleaseNumber)
+            .previousK8sPodList(existingPodList)
             .k8sPodList(k8sTaskHelperBase.tagNewPods(
                 k8sRollingBaseHandler.getPods(steadyStateTimeoutInMillis, allWorkloads, kubernetesConfig, releaseName),
                 existingPodList))
             .loadBalancer(loadBalancer)
+            .helmChartInfo(helmChartInfo)
             .build();
 
     saveRelease(Succeeded);
@@ -320,10 +332,10 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
     List<String> manifestOverrideFiles = getManifestOverrideFlies(request, releaseDetails.toContextMap());
     serviceHookHandler.execute(ServiceHookType.PRE_HOOK, ServiceHookAction.TEMPLATE_MANIFEST,
         k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
-    this.resources =
-        k8sRollingBaseHandler.prepareResourcesAndRenderTemplate(request, k8sDelegateTaskParams, manifestOverrideFiles,
-            this.kubernetesConfig, this.manifestFilesDirectory, this.releaseName, request.isLocalOverrideFeatureFlag(),
-            isErrorFrameworkSupported(), request.isInCanaryWorkflow(), executionLogCallback);
+    this.resources = k8sRollingBaseHandler.prepareResourcesAndRenderTemplate(request, k8sDelegateTaskParams,
+        manifestOverrideFiles, this.kubernetesConfig, this.manifestFilesDirectory, this.releaseName,
+        request.isLocalOverrideFeatureFlag(), isErrorFrameworkSupported(), request.isInCanaryWorkflow(),
+        request.isDisableFabric8(), executionLogCallback);
     k8sRequestHandlerContext.setResources(resources);
 
     serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.TEMPLATE_MANIFEST,

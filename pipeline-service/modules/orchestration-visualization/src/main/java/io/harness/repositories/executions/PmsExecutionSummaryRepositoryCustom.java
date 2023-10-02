@@ -9,7 +9,10 @@ package io.harness.repositories.executions;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 
 import com.mongodb.client.result.UpdateResult;
@@ -22,11 +25,18 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.CloseableIterator;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 public interface PmsExecutionSummaryRepositoryCustom {
   PipelineExecutionSummaryEntity update(Query query, Update update);
+
+  // updates multiple records and doesnt return any record
+  void multiUpdate(Query query, Update update);
   UpdateResult deleteAllExecutionsWhenPipelineDeleted(Query query, Update update);
   Page<PipelineExecutionSummaryEntity> findAll(Criteria criteria, Pageable pageable);
+
+  Page<PipelineExecutionSummaryEntity> findAllWithProjection(
+      Criteria criteria, Pageable pageable, List<String> projections);
 
   CloseableIterator<PipelineExecutionSummaryEntity> findAllWithRequiredProjectionUsingAnalyticsNode(
       Criteria criteria, Pageable pageable, List<String> projections);
@@ -34,9 +44,9 @@ public interface PmsExecutionSummaryRepositoryCustom {
   long getCountOfExecutionSummary(Criteria criteria);
   String fetchRootRetryExecutionId(String planExecutionId);
 
-  List<String> findListOfUniqueBranches(Criteria criteria);
+  CloseableIterator<PipelineExecutionSummaryEntity> findListOfBranches(Criteria criteria);
 
-  List<String> findListOfUniqueRepositories(Criteria criteria);
+  CloseableIterator<PipelineExecutionSummaryEntity> findListOfRepositories(Criteria criteria);
 
   /**
    * Returns iterator on PipelineExecutionSummaryEntity for given query having projection fields else throws exception

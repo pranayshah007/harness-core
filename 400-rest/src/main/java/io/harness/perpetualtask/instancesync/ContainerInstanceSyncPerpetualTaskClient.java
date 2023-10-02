@@ -6,8 +6,8 @@
  */
 
 package io.harness.perpetualtask.instancesync;
-
 import static io.harness.beans.DelegateTask.DELEGATE_QUEUE_TIMEOUT;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static software.wings.service.InstanceSyncConstants.CLUSTER_NAME;
 import static software.wings.service.InstanceSyncConstants.CONTAINER_SERVICE_NAME;
@@ -21,6 +21,9 @@ import static software.wings.utils.Utils.emptyIfNull;
 
 import static java.util.Objects.nonNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.TaskData;
@@ -62,6 +65,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ContainerInstanceSyncPerpetualTaskClient implements PerpetualTaskServiceClient {
@@ -143,7 +147,7 @@ public class ContainerInstanceSyncPerpetualTaskClient implements PerpetualTaskSe
 
     return DelegateTask.builder()
         .data(TaskData.builder()
-                  .async(false)
+                  .async(true)
                   .taskType(TaskType.CONTAINER_VALIDATION.name())
                   .parameters(new Object[] {null, null, delegateTaskParams})
                   .timeout(TimeUnit.MINUTES.toMillis(VALIDATION_TIMEOUT_MINUTES))
@@ -155,6 +159,7 @@ public class ContainerInstanceSyncPerpetualTaskClient implements PerpetualTaskSe
         .setupAbstraction(Cd1SetupFields.INFRASTRUCTURE_MAPPING_ID_FIELD, clientParams.get(INFRASTRUCTURE_MAPPING_ID))
         .setupAbstraction(Cd1SetupFields.SERVICE_ID_FIELD, taskData.getServiceId())
         .expiry(System.currentTimeMillis() + DELEGATE_QUEUE_TIMEOUT)
+        .waitId(generateUuid())
         .build();
   }
 
@@ -177,6 +182,7 @@ public class ContainerInstanceSyncPerpetualTaskClient implements PerpetualTaskSe
         .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, taskData.getAppId())
         .tags(awsCommandHelper.getAwsConfigTagsFromK8sConfig(delegateTaskParams))
         .executionCapabilities(executionCapabilities)
+        .waitId(generateUuid())
         .data(TaskData.builder()
                   .async(false)
                   .taskType(TaskType.CAPABILITY_VALIDATION.name())

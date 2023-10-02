@@ -13,6 +13,7 @@ import static io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAcce
 import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.MANKRIT;
+import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,6 +38,7 @@ import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.service.scm.ScmDelegateClient;
 import io.harness.connector.task.git.GitCommandTaskHandler;
+import io.harness.connector.task.git.GitDecryptionHelper;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
@@ -53,8 +55,12 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernameTokenA
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
+import io.harness.delegate.beans.connector.scm.github.GithubAppDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
@@ -74,6 +80,7 @@ import io.harness.rule.Owner;
 import io.harness.service.ScmServiceClient;
 import io.harness.shell.SshSessionConfig;
 
+import java.util.ArrayList;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -89,6 +96,7 @@ public class GitCommandTaskHandlerTest extends CategoryTest {
   @Mock private NGErrorHelper ngErrorHelper;
   @Mock private ScmDelegateClient scmDelegateClient;
   @Mock private ScmServiceClient scmServiceClient;
+  @Mock private GitDecryptionHelper gitDecryptionHelper;
 
   @Spy @InjectMocks GitCommandTaskHandler gitCommandTaskHandler;
   @Spy @InjectMocks ExceptionManager exceptionManager;
@@ -381,5 +389,78 @@ public class GitCommandTaskHandlerTest extends CategoryTest {
       assertThat(e instanceof SCMRuntimeException).isTrue();
       assertThat(e.getMessage().equals(SIMULATED_EXCEPTION_MESSAGE)).isTrue();
     }
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testGitCredentialsForGitHubApp() {
+    String url = "https://github.com/git-app";
+
+    GithubAuthenticationDTO githubAuthenticationDTO =
+        GithubAuthenticationDTO.builder()
+            .authType(HTTP)
+            .credentials(
+                GithubHttpCredentialsDTO.builder()
+                    .type(GithubHttpAuthenticationType.USERNAME_AND_TOKEN)
+                    .httpCredentialsSpec(
+                        GithubAppDTO.builder()
+                            .applicationId("app")
+                            .installationId("install")
+                            .privateKeyRef(
+                                SecretRefData.builder().identifier("id").decryptedValue("key".toCharArray()).build())
+                            .build())
+                    .build())
+            .build();
+    GithubConnectorDTO connector = GithubConnectorDTO.builder()
+                                       .url(url)
+                                       .connectionType(GitConnectionType.REPO)
+                                       .authentication(githubAuthenticationDTO)
+                                       .build();
+
+    doReturn(TEST_STRING_INPUT).when(gitHubService).getToken(any(GithubAppConfig.class));
+    doReturn(githubAuthenticationDTO.getCredentials())
+        .when(gitDecryptionHelper)
+        .decryptGitHubAppAuthenticationConfig(any(), any());
+
+    ConnectorValidationResult validationResult =
+        gitCommandTaskHandler.validateGitCredentialsForGithubAppAuth(connector, new ArrayList<>());
+    assertThat(validationResult.getStatus()).isEqualTo(ConnectivityStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testGitCredentialsForGitHubAppForFailure() {
+    String url = "https://github.com/git-app";
+
+    GithubAuthenticationDTO githubAuthenticationDTO =
+        GithubAuthenticationDTO.builder()
+            .authType(HTTP)
+            .credentials(
+                GithubHttpCredentialsDTO.builder()
+                    .type(GithubHttpAuthenticationType.USERNAME_AND_TOKEN)
+                    .httpCredentialsSpec(
+                        GithubAppDTO.builder()
+                            .applicationId("app")
+                            .installationId("install")
+                            .privateKeyRef(
+                                SecretRefData.builder().identifier("id").decryptedValue("key".toCharArray()).build())
+                            .build())
+                    .build())
+            .build();
+    GithubConnectorDTO connector = GithubConnectorDTO.builder()
+                                       .url(url)
+                                       .connectionType(GitConnectionType.REPO)
+                                       .authentication(githubAuthenticationDTO)
+                                       .build();
+
+    doThrow(new InvalidRequestException("")).when(gitHubService).getToken(any(GithubAppConfig.class));
+    doReturn(githubAuthenticationDTO.getCredentials())
+        .when(gitDecryptionHelper)
+        .decryptGitHubAppAuthenticationConfig(any(), any());
+
+    assertThatThrownBy(
+        () -> gitCommandTaskHandler.validateGitCredentialsForGithubAppAuth(connector, new ArrayList<>()));
   }
 }

@@ -6,10 +6,14 @@
  */
 
 package io.harness.changehandlers;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
 import io.harness.changestreamsframework.ChangeEvent;
+import io.harness.execution.stage.StageExecutionEntity;
+import io.harness.execution.stage.StageExecutionEntity.StageExecutionEntityKeys;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Organization.OrganizationKeys;
@@ -27,6 +31,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @UtilityClass
 public class TagsInfoCDChangeDataHandlerHelper {
   public String getParentIdentifier(ChangeEvent<?> changeEvent, DBObject dbObject) {
@@ -45,6 +50,9 @@ public class TagsInfoCDChangeDataHandlerHelper {
     } else if (changeEvent.getEntityType() == StageExecutionInfo.class
         && dbObject.get(StageExecutionInfoKeys.stageExecutionId) != null) {
       return dbObject.get(StageExecutionInfoKeys.stageExecutionId).toString();
+    } else if (changeEvent.getEntityType() == StageExecutionEntity.class
+        && dbObject.get(StageExecutionEntityKeys.stageExecutionId) != null) {
+      return dbObject.get(StageExecutionEntityKeys.stageExecutionId).toString();
     }
     return null;
   }
@@ -66,6 +74,9 @@ public class TagsInfoCDChangeDataHandlerHelper {
     } else if (changeEvent.getEntityType() == StageExecutionInfo.class
         && dbObject.get(StageExecutionInfoKeys.accountIdentifier) != null) {
       return dbObject.get(StageExecutionInfoKeys.accountIdentifier).toString();
+    } else if (changeEvent.getEntityType() == StageExecutionEntity.class
+        && dbObject.get(StageExecutionEntityKeys.accountIdentifier) != null) {
+      return dbObject.get(StageExecutionEntityKeys.accountIdentifier).toString();
     }
     return null;
   }
@@ -86,6 +97,9 @@ public class TagsInfoCDChangeDataHandlerHelper {
     } else if (changeEvent.getEntityType() == StageExecutionInfo.class
         && dbObject.get(StageExecutionInfoKeys.orgIdentifier) != null) {
       return dbObject.get(StageExecutionInfoKeys.orgIdentifier).toString();
+    } else if (changeEvent.getEntityType() == StageExecutionEntity.class
+        && dbObject.get(StageExecutionEntityKeys.orgIdentifier) != null) {
+      return dbObject.get(StageExecutionEntityKeys.orgIdentifier).toString();
     }
     return null;
   }
@@ -105,6 +119,9 @@ public class TagsInfoCDChangeDataHandlerHelper {
     } else if (changeEvent.getEntityType() == StageExecutionInfo.class
         && dbObject.get(StageExecutionInfoKeys.projectIdentifier) != null) {
       return dbObject.get(StageExecutionInfoKeys.projectIdentifier).toString();
+    } else if (changeEvent.getEntityType() == StageExecutionEntity.class
+        && dbObject.get(StageExecutionEntityKeys.projectIdentifier) != null) {
+      return dbObject.get(StageExecutionEntityKeys.projectIdentifier).toString();
     }
     return null;
   }
@@ -123,6 +140,8 @@ public class TagsInfoCDChangeDataHandlerHelper {
     } else if (changeEvent.getEntityType() == PipelineExecutionSummaryEntity.class) {
       return "EXECUTION";
     } else if (changeEvent.getEntityType() == StageExecutionInfo.class) {
+      return "STAGE_EXECUTION";
+    } else if (changeEvent.getEntityType() == StageExecutionEntity.class) {
       return "STAGE_EXECUTION";
     }
     return null;
@@ -163,6 +182,11 @@ public class TagsInfoCDChangeDataHandlerHelper {
       if (dbObject.get(StageExecutionInfoKeys.tags) != null) {
         return (BasicDBList) dbObject.get(StageExecutionInfoKeys.tags);
       }
+    } else if (changeEvent.getEntityType() == StageExecutionEntity.class
+        && dbObject.get(StageExecutionEntityKeys.stageExecutionId) != null) {
+      if (dbObject.get(StageExecutionEntityKeys.tags) != null) {
+        return (BasicDBList) dbObject.get(StageExecutionEntityKeys.tags);
+      }
     }
     return null;
   }
@@ -171,6 +195,7 @@ public class TagsInfoCDChangeDataHandlerHelper {
     String[] tagArray = tagsList.toArray(new String[tagsList.size()]);
     StringBuilder tagString = new StringBuilder("{");
     for (String tag : tagArray) {
+      tag = tag.replaceAll("(?<!\\\\)\\\"", "\\\\\"");
       tagString.append(tag);
       tagString.append(',');
     }
@@ -196,6 +221,8 @@ public class TagsInfoCDChangeDataHandlerHelper {
 
       String tagKey = tag.get(NGTagKeys.key).toString();
       String tagValue = tag.get(NGTagKeys.value) == null ? "" : tag.get(NGTagKeys.value).toString();
+      tagKey = tagKey.replaceAll("(?<!\\\\)\\\"", "\\\\\"");
+      tagValue = tagValue.replaceAll("(?<!\\\\)\\\"", "\\\\\"");
       tagString.append(tagKey);
       tagString.append(':');
       tagString.append(tagValue);

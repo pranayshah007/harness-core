@@ -28,6 +28,7 @@ go_test(
     srcs = [
         "engine_client_test.go",
         "logproxy_client_test.go",
+        "tiproxy_client_test.go",
     ],
     embed = [":client"],
     deps = [
@@ -35,4 +36,12 @@ go_test(
         "@com_github_stretchr_testify//assert",
         "@org_uber_go_zap//:zap",
     ],
+)
+
+load("//:tools/bazel/macros.bzl", "run_analysis")
+
+run_analysis(
+    language = "go",
+    targets = [":client"],
+    test_targets = [":client_test"],
 )

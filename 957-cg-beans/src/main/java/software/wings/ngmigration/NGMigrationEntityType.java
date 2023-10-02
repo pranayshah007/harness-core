@@ -28,6 +28,7 @@ public enum NGMigrationEntityType {
   SECRET("secrets"),
   INFRA,
   SECRET_MANAGER,
+  SERVICE_TEMPLATE,
   SERVICE_VARIABLE,
   USER_GROUP,
   CONFIG_FILE,

@@ -46,6 +46,7 @@ public class PMSStepPlanCreator extends GenericStepPMSPlanCreator {
                                        .applicableFailureTypes(failureTypes)
                                        .nextNodeId(nextNodeUuid)
                                        .repairActionCodeAfterRetry(toRepairAction(actionUnderRetry))
+                                       .retryActionConfig(actionUnderRetry)
                                        .retryCount(retryCount.getValue())
                                        .strategyToUuid(getRollbackStrategyMap(currentField))
                                        .waitIntervalList(retryAction.getSpecConfig()

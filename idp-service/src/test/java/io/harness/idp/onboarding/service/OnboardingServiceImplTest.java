@@ -7,7 +7,7 @@
 
 package io.harness.idp.onboarding.service;
 
-import static io.harness.idp.onboarding.utils.Constants.SERVICE;
+import static io.harness.idp.backstagebeans.Constants.SERVICE;
 import static io.harness.rule.OwnerRule.SATHISH;
 
 import static junit.framework.TestCase.assertEquals;
@@ -30,6 +30,10 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
+import io.harness.idp.backstagebeans.BackstageCatalogComponentEntity;
+import io.harness.idp.backstagebeans.BackstageCatalogDomainEntity;
+import io.harness.idp.backstagebeans.BackstageCatalogEntity;
+import io.harness.idp.backstagebeans.BackstageCatalogSystemEntity;
 import io.harness.idp.common.CommonUtils;
 import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
 import io.harness.idp.events.producers.IdpEntityCrudStreamProducer;
@@ -38,10 +42,6 @@ import io.harness.idp.gitintegration.processor.impl.GithubConnectorProcessor;
 import io.harness.idp.gitintegration.repositories.CatalogConnectorRepository;
 import io.harness.idp.gitintegration.service.GitIntegrationService;
 import io.harness.idp.onboarding.beans.AsyncCatalogImportDetails;
-import io.harness.idp.onboarding.beans.BackstageCatalogComponentEntity;
-import io.harness.idp.onboarding.beans.BackstageCatalogDomainEntity;
-import io.harness.idp.onboarding.beans.BackstageCatalogEntity;
-import io.harness.idp.onboarding.beans.BackstageCatalogSystemEntity;
 import io.harness.idp.onboarding.client.FakeOrganizationClient;
 import io.harness.idp.onboarding.client.FakeProjectClient;
 import io.harness.idp.onboarding.client.FakeServiceResourceClient;
@@ -107,7 +107,7 @@ public class OnboardingServiceImplTest extends CategoryTest {
   static final String GENERATE_YAML_DEF =
       "apiVersion: backstage.io/v1alpha1\nkind: Component\nmetadata:\n  name: my-example-service\n  description: |\n    My Example service which has something to do with APIs and database.\n  links:\n    - title: Website\n      url: http://my-internal-website.com\n  annotations:\n    github.com/project-slug: myorg/myrepo\n    backstage.io/techdocs-ref: dir:.\n    lighthouse.com/website-url: https://harness.io\n# labels:\n#   key1: value1\n# tags: \nspec:\n  type: service\n  owner: my-team\n  lifecycle: experimental\n  system: my-project\n#  dependsOn:\n#    - resource:default/my-db\n#  consumesApis:\n#    - user-api\n#  providesApis:\n#    - example-api";
   static final String GENERATE_YAML_DEF_WITH_ENTITIES =
-      "kind: Component\nspec:\n  type: Service\n  lifecycle: Unknown\n  owner: Unknown\n  system: projectId\napiVersion: backstage.io/v1alpha1\nmetadata:\n  name: serviceId\n  description: serviceDesc\n  tags: []\n  annotations:\n    harness.io/project-url: https://localhost:8181/ng/account/123/home/orgs/orgId/projects/projectId/details\n    harness.io/cd-serviceId: serviceId\n";
+      "kind: Component\napiVersion: backstage.io/v1alpha1\nmetadata:\n  name: serviceId\n  title: serviceName\n  description: serviceDesc\n  tags: []\n  annotations:\n    harness.io/project-url: https://localhost:8181/ng/account/123/home/orgs/orgId/projects/projectId/details\n    harness.io/cd-serviceId: serviceId\n    harness.io/services: |\n      serviceId: https://localhost:8181/ng/account/123/cd/orgs/orgId/projects/projectId/services/serviceId\nspec:\n  type: Service\n  lifecycle: Unknown\n  owner: Unknown\n  system: projectId\n";
   private static final String URL = "https://www.github.com";
   private static final String CONNECTOR_NAME = "test-connector-name";
   private static final String DELEGATE_SELECTOR1 = "ds1";
@@ -139,7 +139,9 @@ public class OnboardingServiceImplTest extends CategoryTest {
               "A YAML file will be created for each service inside your GitHub repository. An example of what the files will look like is shown below")
           .tmpPathForCatalogInfoYamlStore("/tmp")
           .harnessCiCdAnnotations(Map.of("projectUrl",
-              "https://localhost:8181/ng/account/accountIdentifier/home/orgs/orgIdentifier/projects/projectIdentifier/details"))
+              "https://localhost:8181/ng/account/accountIdentifier/home/orgs/orgIdentifier/projects/projectIdentifier/details",
+              "serviceUrl",
+              "https://localhost:8181/ng/account/accountIdentifier/cd/orgs/orgIdentifier/projects/projectIdentifier/services/serviceIdentifier"))
           .build();
 
   @Before
@@ -266,6 +268,27 @@ public class OnboardingServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SATHISH)
   @Category(UnitTests.class)
+  public void testGenerateYamlWithEntitiesMultiple() {
+    mockStatic(CommonUtils.class);
+    when(CommonUtils.readFileFromClassPath(any())).thenReturn(GENERATE_YAML_DEF);
+    GenerateYamlResponse generateYamlResponse = onboardingServiceImpl.generateYaml(ACCOUNT_IDENTIFIER,
+        new GenerateYamlRequest().entities(List.of(new EntitiesForImport()
+                                                       .identifier("orgId|"
+                                                           + "projectId|" + TEST_SERVICE_IDENTIFIER)
+                                                       .entityType("Service"),
+            new EntitiesForImport()
+                .identifier("orgId1|"
+                    + "projectId1|" + TEST_SERVICE_IDENTIFIER + "1")
+                .entityType("Service"))));
+    assertNotNull(generateYamlResponse);
+    assertEquals(onboardingModuleConfig.getDescriptionForEntitySelected(),
+        generateYamlResponse.getGeneratedYaml().getDescription());
+    assertEquals(GENERATE_YAML_DEF_WITH_ENTITIES, generateYamlResponse.getGeneratedYaml().getYamlDef());
+  }
+
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
   public void testGenerateYamlWithNonExistentEntities() {
     mockStatic(CommonUtils.class);
     when(CommonUtils.readFileFromClassPath(any())).thenReturn(GENERATE_YAML_DEF);
@@ -279,6 +302,24 @@ public class OnboardingServiceImplTest extends CategoryTest {
     assertEquals(onboardingModuleConfig.getDescriptionForSampleEntity(),
         generateYamlResponse.getGeneratedYaml().getDescription());
     assertEquals(GENERATE_YAML_DEF, generateYamlResponse.getGeneratedYaml().getYamlDef());
+  }
+
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
+  public void testGenerateYamlForAccountLevelServices() {
+    mockStatic(CommonUtils.class);
+    when(CommonUtils.readFileFromClassPath(any())).thenReturn(GENERATE_YAML_DEF);
+    GenerateYamlResponse generateYamlResponse = onboardingServiceImpl.generateYaml(ACCOUNT_IDENTIFIER,
+        new GenerateYamlRequest().entities(
+            Collections.singletonList(new EntitiesForImport()
+                                          .identifier("Unknown|"
+                                              + "Unknown|" + TEST_SERVICE_IDENTIFIER + "test")
+                                          .entityType("Service"))));
+    assertNotNull(generateYamlResponse);
+    assertEquals(onboardingModuleConfig.getDescriptionForEntitySelected(),
+        generateYamlResponse.getGeneratedYaml().getDescription());
+    assertEquals(GENERATE_YAML_DEF_WITH_ENTITIES, generateYamlResponse.getGeneratedYaml().getYamlDef());
   }
 
   @Test
@@ -306,7 +347,9 @@ public class OnboardingServiceImplTest extends CategoryTest {
         .thenReturn(githubConnectorProcessor);
     when(githubConnectorProcessor.getInfraConnectorType(any())).thenReturn("DIRECT");
     when(githubConnectorProcessor.getConnectorInfo(any(), any())).thenReturn(connectorInfoDTO);
-    doNothing().when(gitIntegrationService).createOrUpdateConnectorInBackstage(any(), any(), any(), any());
+    doNothing()
+        .when(gitIntegrationService)
+        .createOrUpdateConnectorInBackstage(any(), any(), any(), any(), eq(delegateSelectors));
     ImportEntitiesResponse importEntitiesResponse = onboardingServiceImpl.importHarnessEntities(ACCOUNT_IDENTIFIER,
         new SampleEntitiesImport()
             .type(ImportEntitiesBase.TypeEnum.SAMPLE)
@@ -347,7 +390,9 @@ public class OnboardingServiceImplTest extends CategoryTest {
         .thenReturn(githubConnectorProcessor);
     when(githubConnectorProcessor.getInfraConnectorType(any())).thenReturn("DIRECT");
     when(githubConnectorProcessor.getConnectorInfo(any(), any())).thenReturn(connectorInfoDTO);
-    doNothing().when(gitIntegrationService).createOrUpdateConnectorInBackstage(any(), any(), any(), any());
+    doNothing()
+        .when(gitIntegrationService)
+        .createOrUpdateConnectorInBackstage(any(), any(), any(), any(), eq(delegateSelectors));
     when(transactionHelper.performTransaction(any())).thenReturn(null);
     List<EntitiesForImport> entitiesForImports = new ArrayList<>();
     entitiesForImports.add(new EntitiesForImport()
@@ -388,7 +433,9 @@ public class OnboardingServiceImplTest extends CategoryTest {
         .thenReturn(githubConnectorProcessor);
     when(githubConnectorProcessor.getInfraConnectorType(any())).thenReturn("DIRECT");
     when(githubConnectorProcessor.getConnectorInfo(any(), any())).thenReturn(connectorInfoDTO);
-    doNothing().when(gitIntegrationService).createOrUpdateConnectorInBackstage(any(), any(), any(), any());
+    doNothing()
+        .when(gitIntegrationService)
+        .createOrUpdateConnectorInBackstage(any(), any(), any(), any(), eq(delegateSelectors));
     when(transactionHelper.performTransaction(any())).thenReturn(null);
     ImportEntitiesResponse importEntitiesResponse = onboardingServiceImpl.importHarnessEntities(ACCOUNT_IDENTIFIER,
         new AllEntitiesImport().type(ImportEntitiesBase.TypeEnum.ALL).catalogConnectorInfo(getCatalogConnectorInfo()));

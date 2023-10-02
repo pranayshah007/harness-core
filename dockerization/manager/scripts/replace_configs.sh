@@ -188,6 +188,10 @@ if [[ "" != "$DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT" ]]; then
   export $DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT; yq -i '.executorsConfig.dataReconciliationExecutorConfig.timeUnit=env($DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$DATA_RECONCILIATION_CRON_DURATION" ]]; then
+  export DATA_RECONCILIATION_CRON_DURATION; yq -i '.dataReconciliation.duration=env(DATA_RECONCILIATION_CRON_DURATION)' $CONFIG_FILE
+fi
+
 if [[ "" != "$EVENTS_MONGO_URI" ]]; then
   export EVENTS_MONGO_URI; yq -i '.events-mongo.uri=env(EVENTS_MONGO_URI)' $CONFIG_FILE
 else
@@ -849,6 +853,28 @@ if [[ "" != "$REDIS_SENTINELS" ]]; then
   done
 fi
 
+if [[ "" != "$REDIS_USERNAME" ]]; then
+  export REDIS_USERNAME; yq -i '.redisLockConfig.username=env(REDIS_USERNAME)' $CONFIG_FILE
+  export REDIS_USERNAME; yq -i '.redisDelegateConfig.username=env(REDIS_USERNAME)' $CONFIG_FILE
+  export REDIS_USERNAME; yq -i '.redisAtmosphereConfig.username=env(REDIS_USERNAME)' $CONFIG_FILE
+  if [[ "$REDIS_SENTINEL" == "true" ]]; then
+    export REDIS_USERNAME; yq -i '.sentinelServersConfig.username=env(REDIS_USERNAME)' $REDISSON_CACHE_FILE
+  else
+    export REDIS_USERNAME; yq -i '.singleServerConfig.username=env(REDIS_USERNAME)' $REDISSON_CACHE_FILE
+  fi
+fi
+
+if [[ "" != "$REDIS_PASSWORD" ]]; then
+  export REDIS_PASSWORD; yq -i '.redisLockConfig.password=env(REDIS_PASSWORD)' $CONFIG_FILE
+  export REDIS_PASSWORD; yq -i '.redisDelegateConfig.password=env(REDIS_PASSWORD)' $CONFIG_FILE
+  export REDIS_PASSWORD; yq -i '.redisAtmosphereConfig.password=env(REDIS_PASSWORD)' $CONFIG_FILE
+  if [[ "$REDIS_SENTINEL" == "true" ]]; then
+    export REDIS_PASSWORD; yq -i '.sentinelServersConfig.password=env(REDIS_PASSWORD)' $REDISSON_CACHE_FILE
+  else
+    export REDIS_PASSWORD; yq -i '.singleServerConfig.password=env(REDIS_PASSWORD)' $REDISSON_CACHE_FILE
+  fi
+fi
+
 if [[ "" != "$REDIS_ENV_NAMESPACE" ]]; then
     export REDIS_ENV_NAMESPACE; yq -i '.redisLockConfig.envNamespace=env(REDIS_ENV_NAMESPACE)' $CONFIG_FILE
     export REDIS_ENV_NAMESPACE; yq -i 'redisDelegateConfig.envNamespace=env(REDIS_ENV_NAMESPACE)' $CONFIG_FILE
@@ -1134,6 +1160,7 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   done
 fi
 
+
 replace_key_value eventsFramework.redis.sentinel $EVENTS_FRAMEWORK_USE_SENTINEL
 replace_key_value eventsFramework.redis.envNamespace $EVENTS_FRAMEWORK_ENV_NAMESPACE
 replace_key_value eventsFramework.redis.redisUrl $EVENTS_FRAMEWORK_REDIS_URL
@@ -1221,3 +1248,19 @@ fi
 
 replace_key_value cdTsDbRetentionPeriodMonths "$CD_TSDB_RETENTION_PERIOD_MONTHS"
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
+replace_key_value notificationClient.httpClient.baseUrl "$NOTIFICATION_BASE_URL"
+replace_key_value notificationClient.secrets.notificationClientSecret "$NEXT_GEN_MANAGER_SECRET"
+replace_key_value notificationClient.messageBroker.uri "${NOTIFICATION_MONGO_URI//\\&/&}"
+
+replace_key_value proxy.enabled "$PROXY_ENABLED"
+replace_key_value proxy.host "$PROXY_HOST"
+replace_key_value proxy.port "$PROXY_PORT"
+replace_key_value proxy.username "$PROXY_USERNAME"
+replace_key_value proxy.password "$PROXY_PASSWORD"
+replace_key_value proxy.protocol "$PROXY_PROTOCOL"
+
+replace_key_value awsServiceEndpointUrls.enabled "$AWS_SERVICE_ENDPOINT_URLS_ENABLED"
+replace_key_value awsServiceEndpointUrls.endPointRegion "$AWS_SERVICE_ENDPOINT_URLS_ENDPOINT_REGION"
+replace_key_value awsServiceEndpointUrls.stsEndPointUrl "$AWS_SERVICE_ENDPOINT_URLS_STS_ENDPOINT_URL"
+replace_key_value awsServiceEndpointUrls.ecsEndPointUrl "$AWS_SERVICE_ENDPOINT_URLS_ECS_ENDPOINT_URL"
+replace_key_value awsServiceEndpointUrls.cloudwatchEndPointUrl "$AWS_SERVICE_ENDPOINT_URLS_CLOUDWATCH_ENDPOINT_URL"

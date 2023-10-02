@@ -72,7 +72,12 @@ Create the name of the delegate image to use
 Create the name of the immutable delegate image to use
 */}}
 {{- define "harness-manager.immutable_delegate_docker_image" -}}
-{{ include "common.images.image" (dict "imageRoot" .Values.immutable_delegate_docker_image.image "global" .Values.global) }}
+{{- $tag := printf "%s" .Values.immutable_delegate_docker_image.image.tag }}
+{{- if .Values.global.useMinimalDelegateImage }}
+{{- $tag = printf "%s.minimal" $tag }}
+{{- end }}
+{{- $image := dict "registry" .Values.immutable_delegate_docker_image.image.registry "repository" .Values.immutable_delegate_docker_image.image.repository "tag" $tag "digest" .Values.immutable_delegate_docker_image.image.digest -}}
+{{ include "common.images.image" (dict "imageRoot" $image "global" .Values.global) }}
 {{- end }}
 
 {{/*
@@ -91,9 +96,6 @@ Create the name of the delegate upgrader image to use
 {{- end }}
 {{- if .Values.global.opa.enabled }}
 {{- $flags = printf "%s,%s" $flags $.Values.featureFlags.OPA }}
-{{- end }}
-{{- if not .Values.global.ngGitSync.enabled }}
-{{- $flags = printf "%s,%s" $flags $.Values.featureFlags.OLDGITSYNC }}
 {{- end }}
 {{- if .Values.global.cd.enabled }}
 {{- $flags = printf "%s,%s" $flags .Values.featureFlags.CD }}
@@ -128,6 +130,9 @@ Create the name of the delegate upgrader image to use
 {{- end }}
 {{- if .Values.global.chaos.enabled }}
 {{- $flags = printf "%s,%s" $flags .Values.featureFlags.CHAOS }}
+{{- end }}
+{{- if .Values.global.cet.enabled }}
+{{- $flags = printf "%s,%s" $flags .Values.featureFlags.CET }}
 {{- end }}
 {{- $length2 := len .Values.featureFlags.ADDITIONAL }}
 {{- if gt $length2 0}}

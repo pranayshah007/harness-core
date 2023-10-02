@@ -16,6 +16,8 @@ import io.harness.event.handler.segment.SegmentConfig;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.mongo.MongoConfig;
 import io.harness.notification.NotificationClientConfiguration;
+import io.harness.remote.CEAwsServiceEndpointConfig;
+import io.harness.remote.CEProxyConfig;
 import io.harness.remote.GovernanceConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.timescaledb.TimeScaleDBConfig;
@@ -36,6 +38,7 @@ import lombok.Data;
 @Builder
 public class BatchMainConfig {
   @JsonProperty("timescaledb") private TimeScaleDBConfig timeScaleDBConfig;
+  @JsonProperty("batch-job-postgresdb") private TimeScaleDBConfig batchPostgresDBConfig;
   @JsonProperty("harness-mongo") private MongoConfig harnessMongo;
   @JsonProperty("events-mongo") private MongoConfig eventsMongo;
   @JsonProperty("batchQueryConfig") private BatchQueryConfig batchQueryConfig;
@@ -73,6 +76,9 @@ public class BatchMainConfig {
   @JsonProperty("recommendationConfig") private RecommendationConfig recommendationConfig;
   @JsonProperty("governanceConfig") private GovernanceConfig governanceConfig;
   @JsonProperty("azureVmPricingConfig") private ServiceHttpClientConfig azureVmPricingConfig;
+  @JsonProperty("proxy") private CEProxyConfig ceProxyConfig;
+  @JsonProperty("cliProxy") private CEProxyConfig ceCliProxyConfig;
+  @JsonProperty("awsServiceEndpointUrls") private CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig;
 
   public List<String> getDbAliases() {
     List<String> dbAliases = new ArrayList<>();

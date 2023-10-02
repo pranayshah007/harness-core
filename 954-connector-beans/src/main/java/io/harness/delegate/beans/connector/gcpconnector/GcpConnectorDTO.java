@@ -10,6 +10,7 @@ package io.harness.delegate.beans.connector.gcpconnector;
 import static io.harness.ConnectorConstants.INHERIT_FROM_DELEGATE_TYPE_ERROR_MSG;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
@@ -44,6 +45,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("GcpConnector")
 @Schema(name = "GcpConnector", description = "This contains GCP connector details")
+@RecasterAlias("io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO")
 public class GcpConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable, ManagerExecutable {
   @Valid @NotNull GcpConnectorCredentialDTO credential;
   Set<String> delegateSelectors;

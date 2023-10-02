@@ -21,6 +21,7 @@ public interface BusinessMappingHistoryService {
   List<BusinessMappingHistory> getInRange(
       String accountId, String businessMappingId, Instant startTime, Instant endTime);
   BusinessMappingHistory update(BusinessMappingHistory businessMappingHistory);
+  boolean delete(BusinessMappingHistory businessMappingHistory);
   void handleCreateEvent(BusinessMapping businessMapping, Instant eventTime);
   void handleUpdateEvent(BusinessMapping businessMapping, Instant eventTime);
   void handleDeleteEvent(BusinessMapping businessMapping, Instant eventTime);

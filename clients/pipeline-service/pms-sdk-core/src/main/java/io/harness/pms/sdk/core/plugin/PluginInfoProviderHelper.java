@@ -6,11 +6,13 @@
  */
 
 package io.harness.pms.sdk.core.plugin;
-
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponseList;
@@ -22,6 +24,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_COMMON_STEPS, HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PluginInfoProviderHelper {

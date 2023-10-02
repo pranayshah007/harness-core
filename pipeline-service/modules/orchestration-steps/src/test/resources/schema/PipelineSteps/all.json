@@ -307,6 +307,28 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ChangeTaskUpdateMultipleSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/UpdateMultipleSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "changeRequestNumber"
+          ],
+          "properties": {
+            "changeRequestNumber": {
+              "type": "string"
+            },
+            "changeTaskType": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "Clause": {
       "type": "object",
       "required": [
@@ -448,6 +470,23 @@
             {
               "type": "string",
               "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "imagePullPolicy": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "Always",
+                "Never",
+                "IfNotPresent"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -1448,6 +1487,10 @@
             },
             "rejectionCriteria": {
               "$ref": "#/definitions/CriteriaSpecWrapper"
+            },
+            "retryInterval": {
+              "type": "string",
+              "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*)|(^$))$"
             }
           }
         }
@@ -1555,6 +1598,12 @@
               }
             },
             "issueKey": {
+              "type": "string"
+            },
+            "issueType": {
+              "type": "string"
+            },
+            "projectKey": {
               "type": "string"
             },
             "transitionTo": {
@@ -1705,7 +1754,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$-]{0,127}$"
             },
             "type": {
               "type": "string",
@@ -1728,6 +1777,28 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "OutputAlias": {
+      "type": "object",
+      "required": [
+        "key",
+        "scope"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "Pipeline",
+            "Stage",
+            "StepGroup"
+          ]
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "OutputNGVariable": {
@@ -2001,7 +2072,7 @@
             "type": {
               "type": "string",
               "enum": [
-                "RemoveSegmentToVariationTargetMap"
+                "RemoveSegmentsToVariationTargetMap"
               ]
             }
           }
@@ -2105,7 +2176,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$-]{0,127}$"
             },
             "type": {
               "type": "string",
@@ -2258,6 +2329,10 @@
             "rejectionCriteria": {
               "$ref": "#/definitions/CriteriaSpecWrapper"
             },
+            "retryInterval": {
+              "type": "string",
+              "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*)|(^$))$"
+            },
             "ticketNumber": {
               "type": "string"
             },
@@ -2403,7 +2478,6 @@
           "type": "object",
           "required": [
             "connectorRef",
-            "ticketNumber",
             "ticketType",
             "useServiceNowTemplate"
           ],
@@ -2441,10 +2515,27 @@
             "ticketType": {
               "type": "string"
             },
+            "updateMultiple": {
+              "$ref": "#/definitions/UpdateMultipleTaskNode"
+            },
             "useServiceNowTemplate": {
               "type": "boolean"
             }
           }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "ticketNumber"
+              ]
+            },
+            {
+              "required": [
+                "updateMultiple"
+              ]
+            }
+          ]
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -2741,6 +2832,16 @@
             "executionTarget": {
               "$ref": "#/definitions/ExecutionTarget"
             },
+            "includeInfraSelectors": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "metadata": {
               "type": "string"
             },
@@ -2753,6 +2854,9 @@
                   "type": "string"
                 }
               ]
+            },
+            "outputAlias": {
+              "$ref": "#/definitions/OutputAlias"
             },
             "outputVariables": {
               "type": "array",
@@ -2801,7 +2905,7 @@
             },
             "name": {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,127}$"
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_\\.$-]{0,127}$"
             },
             "type": {
               "type": "string",
@@ -2853,6 +2957,45 @@
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "UpdateMultipleSpec": {
+      "type": "object",
+      "discriminator": "type",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "UpdateMultipleTaskNode": {
+      "type": "object",
+      "required": [
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "CHANGE_TASK"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "CHANGE_TASK"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ChangeTaskUpdateMultipleSpec"
+              }
+            }
+          }
+        }
+      ]
     },
     "UpdateRuleYaml": {
       "allOf": [

@@ -25,14 +25,14 @@ image:
   # https://github.com/timescale/timescaledb-docker-ha
   registry: docker.io
   repository: timescale/timescaledb-ha
-  tag: pg13-ts2.6-oss-latest
+  tag: pg13-ts2.9-oss-latest
   pullPolicy: Always
   digest: ""
   imagePullSecrets: []
 curlImage:
   registry: docker.io
   repository: curlimages/curl
-  tag: "latest"
+  tag: "8.1.2"
   pullPolicy: Always
   digest: ""
   imagePullSecrets: []

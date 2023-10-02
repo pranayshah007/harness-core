@@ -11,6 +11,7 @@ import static io.harness.persistence.HQuery.excludeValidate;
 
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.CEView.CEViewKeys;
+import io.harness.ccm.views.entities.ViewPreferences;
 import io.harness.ccm.views.entities.ViewState;
 import io.harness.ccm.views.entities.ViewType;
 import io.harness.ccm.views.graphql.QLCESortOrder;
@@ -112,6 +113,17 @@ public class CEViewDao {
         hPersistence.createUpdateOperations(CEView.class).set(CEViewKeys.totalCost, totalCost);
     hPersistence.update(query, updateOperations);
     return (CEView) query.asList().get(0);
+  }
+
+  public void updateViewPreferences(String viewId, String accountId, ViewPreferences viewPreferences) {
+    Query<CEView> query = hPersistence.createQuery(CEView.class)
+                              .field(CEViewKeys.accountId)
+                              .equal(accountId)
+                              .field(CEViewKeys.uuid)
+                              .equal(viewId);
+    UpdateOperations<CEView> updateOperations =
+        hPersistence.createUpdateOperations(CEView.class).set(CEViewKeys.viewPreferences, viewPreferences);
+    hPersistence.update(query, updateOperations);
   }
 
   public boolean delete(String uuid, String accountId) {

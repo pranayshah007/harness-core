@@ -10,6 +10,8 @@ package io.harness.delegate.exceptionhandler.handler;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.task.terraform.TerraformExceptionConstants.CliErrorMessages.ERROR_ASKING_FOR_STATE_MIGRATION;
+import static io.harness.delegate.task.terraform.TerraformExceptionConstants.CliErrorMessages.ERROR_ASKING_FOR_STATE_MIGRATION_2;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.CliErrorMessages.ERROR_CONFIGURING_S3_BACKEND;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.CliErrorMessages.ERROR_INSPECTING_STATE_IN_BACKEND;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.CliErrorMessages.ERROR_VALIDATING_PROVIDER_CRED;
@@ -19,12 +21,14 @@ import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Cli
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.CliErrorMessages.INVALID_CREDENTIALS_AWS;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.CliErrorMessages.NO_VALID_CRED_FOUND_FOR_AWS;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.CliErrorMessages.NO_VALID_CRED_FOUND_FOR_S3_BACKEND;
+import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Explanation.EXPLANATION_ERROR_ASKING_FOR_STATE_MIGRATION;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Explanation.EXPLANATION_FAIL_TO_INSTALL_PROVIDER;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Explanation.EXPLANATION_INVALID_CREDENTIALS_AWS;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_CHECK_TERRAFORM_CONFIG;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_CHECK_TERRAFORM_CONFIG_FIE;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_CHECK_TERRAFORM_CONFIG_LOCATION;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_CHECK_TERRAFORM_CONFIG_LOCATION_ARGUMENT;
+import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_ERROR_ASKING_FOR_STATE_MIGRATION;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_ERROR_INSPECTING_STATE_IN_BACKEND;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_FAILED_TO_GET_EXISTING_WORKSPACES;
 import static io.harness.delegate.task.terraform.TerraformExceptionConstants.Hints.HINT_FAIL_TO_INSTALL_PROVIDER;
@@ -72,16 +76,18 @@ public class TerraformExceptionHelper {
       if (error.contains(FAILED_TO_READ_MODULE_DIRECTORY)) {
         continue;
       }
-      if (error.toLowerCase().contains(ERROR_CONFIGURING_S3_BACKEND.toLowerCase())) {
+      String errorMessage = error.toLowerCase();
+
+      if (errorMessage.contains(ERROR_CONFIGURING_S3_BACKEND.toLowerCase())) {
         explanations.add(cleanError(error));
         hints.add(HINT_ERROR_INSPECTING_STATE_IN_BACKEND);
-        if (error.toLowerCase().contains(NO_VALID_CRED_FOUND_FOR_S3_BACKEND.toLowerCase())
-            || error.toLowerCase().contains(ERROR_VALIDATING_PROVIDER_CRED.toLowerCase())) {
+        if (errorMessage.contains(NO_VALID_CRED_FOUND_FOR_S3_BACKEND.toLowerCase())
+            || errorMessage.contains(ERROR_VALIDATING_PROVIDER_CRED.toLowerCase())) {
           hints.add(HINT_INVALID_CRED_FOR_S3_BACKEND);
         }
       }
 
-      if (StringUtils.indexOfAny(error.toLowerCase(),
+      if (StringUtils.indexOfAny(errorMessage,
               new String[] {INVALID_CREDENTIALS_AWS.toLowerCase(), ERROR_VALIDATING_PROVIDER_CRED.toLowerCase(),
                   NO_VALID_CRED_FOUND_FOR_AWS.toLowerCase()})
           != -1) {
@@ -97,22 +103,28 @@ public class TerraformExceptionHelper {
         continue;
       }
 
-      if (error.toLowerCase().contains(ERROR_INSPECTING_STATE_IN_BACKEND.toLowerCase())) {
+      if (errorMessage.contains(ERROR_INSPECTING_STATE_IN_BACKEND.toLowerCase())) {
         structuredErrors.add(MESSAGE_ERROR_INSPECTING_STATE_IN_BACKEND);
         explanations.add(cleanError(error));
         hints.add(HINT_ERROR_INSPECTING_STATE_IN_BACKEND);
       }
 
-      if (error.toLowerCase().contains(FAILED_TO_GET_EXISTING_WORKSPACES.toLowerCase())) {
+      if (errorMessage.contains(FAILED_TO_GET_EXISTING_WORKSPACES.toLowerCase())) {
         structuredErrors.add(MESSAGE_FAILED_TO_GET_EXISTING_WORKSPACES);
         explanations.add(cleanError(error));
         hints.add(HINT_FAILED_TO_GET_EXISTING_WORKSPACES);
         continue;
       }
 
-      if (error.toLowerCase().contains(FAIL_TO_INSTALL_PROVIDER.toLowerCase())) {
+      if (errorMessage.contains(FAIL_TO_INSTALL_PROVIDER.toLowerCase())) {
         explanations.add(EXPLANATION_FAIL_TO_INSTALL_PROVIDER);
         hints.add(HINT_FAIL_TO_INSTALL_PROVIDER);
+      }
+
+      if (errorMessage.contains(ERROR_ASKING_FOR_STATE_MIGRATION.toLowerCase())
+          || errorMessage.contains(ERROR_ASKING_FOR_STATE_MIGRATION_2.toLowerCase())) {
+        explanations.add(EXPLANATION_ERROR_ASKING_FOR_STATE_MIGRATION);
+        hints.add(HINT_ERROR_ASKING_FOR_STATE_MIGRATION);
       }
 
       handleUnknownError(error, hints, explanations, structuredErrors);

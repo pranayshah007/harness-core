@@ -10,7 +10,9 @@ package io.harness.gitsync.common.helper;
 import static io.harness.rule.OwnerRule.ADITHYA;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNull;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
@@ -164,5 +166,40 @@ public class GitDefaultBranchCacheHelperTest extends GitSyncTestBase {
     gitDefaultBranchCacheHelper.cacheDefaultBranchResponse(
         accountIdentifier, scmConnector, repoName, branchName, responseBranch);
     verify(gitDefaultBranchCacheService, times(0)).upsertCache(any(), any());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testIsGitDefaultBranchWhenRequestBranchIsEmpty() {
+    String requestBranch = "";
+    String responseBranch = "main";
+    assertTrue(gitDefaultBranchCacheHelper.isGitDefaultBranch(
+        accountIdentifier, scmConnector, repoName, requestBranch, responseBranch));
+  }
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testIsGitDefaultBranchWhenRequestBranchIsNotEmptyAndIsDefaultBranch() {
+    String requestBranch = "main";
+    String responseBranch = "main";
+    GitDefaultBranchCacheResponse gitDefaultBranchCacheResponse =
+        GitDefaultBranchCacheResponse.builder().defaultBranch(requestBranch).build();
+    when(gitDefaultBranchCacheService.fetchFromCache(any())).thenReturn(gitDefaultBranchCacheResponse);
+    assertTrue(gitDefaultBranchCacheHelper.isGitDefaultBranch(
+        accountIdentifier, scmConnector, repoName, requestBranch, responseBranch));
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testIsGitDefaultBranchWhenRequestBranchIsNotEmptyAndIsNotDefaultBranch() {
+    String requestBranch = "main-patch";
+    String responseBranch = "main-patch";
+    GitDefaultBranchCacheResponse gitDefaultBranchCacheResponse =
+        GitDefaultBranchCacheResponse.builder().defaultBranch(defaultBranch).build();
+    when(gitDefaultBranchCacheService.fetchFromCache(any())).thenReturn(gitDefaultBranchCacheResponse);
+    assertFalse(gitDefaultBranchCacheHelper.isGitDefaultBranch(
+        accountIdentifier, scmConnector, repoName, requestBranch, responseBranch));
   }
 }

@@ -83,7 +83,7 @@ Initialize service client config for queue Service in config.yaml
 ```
 queueServiceClientConfig:
     httpClientConfig:
-      baseUrl: http://localhost:9091/
+      baseUrl: http://localhost:9544/
       connectTimeOutSeconds: 15
       readTimeOutSeconds: 15
     queueServiceSecret: abc

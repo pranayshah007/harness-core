@@ -3,9 +3,19 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ include "template-service.name" . }}
+  {{- if .Values.global.commonLabels }}
+  labels:
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+  {{- end }}
   annotations:
+    {{- if .Values.ingress.annotations }}
+    {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.ingress.annotations "context" $) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.global.commonAnnotations }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
     {{- if .Values.global.ingress.objects.annotations }}
-    {{- include "common.tplvalues.render" ( dict "value" .Values.global.ingress.objects.annotations "context" $ ) | nindent 4 }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.ingress.objects.annotations "context" $ ) | nindent 4 }}
     {{- end }}
     nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
@@ -37,9 +47,19 @@ kind: Ingress
 metadata:
   name: template-service-smp-v1-apis
   namespace: {{ .Release.Namespace }}
+  {{- if .Values.global.commonLabels }}
+  labels:
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+  {{- end }}
   annotations:
+    {{- if .Values.ingress.annotations }}
+    {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.ingress.annotations "context" $) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.global.commonAnnotations }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
     {{- if .Values.global.ingress.objects.annotations }}
-    {{- include "common.tplvalues.render" ( dict "value" .Values.global.ingress.objects.annotations "context" $ ) | nindent 4 }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.ingress.objects.annotations "context" $ ) | nindent 4 }}
     {{- end }}
     nginx.ingress.kubernetes.io/rewrite-target: /api/$1
 spec:

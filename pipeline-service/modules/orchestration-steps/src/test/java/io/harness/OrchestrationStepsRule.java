@@ -14,8 +14,11 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static org.mockito.Mockito.mock;
 
 import io.harness.account.AccountClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
@@ -89,14 +92,18 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
+import org.mockito.Mockito;
 import org.springframework.core.convert.converter.Converter;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_DASHBOARD})
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class OrchestrationStepsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin {
@@ -155,6 +162,13 @@ public class OrchestrationStepsRule implements MethodRule, InjectorRuleMixin, Mo
 
       @Provides
       @Singleton
+      @Named("logStreamingClientThreadPool")
+      public ThreadPoolExecutor logStreamingClientThreadPool() {
+        return Mockito.mock(ThreadPoolExecutor.class);
+      }
+
+      @Provides
+      @Singleton
       List<YamlSchemaRootClass> yamlSchemaRootClass() {
         return ImmutableList.<YamlSchemaRootClass>builder()
             .addAll(OrchestrationStepsModuleRegistrars.yamlSchemaRegistrars)
@@ -182,6 +196,20 @@ public class OrchestrationStepsRule implements MethodRule, InjectorRuleMixin, Mo
       @Singleton
       public LogStreamingServiceConfiguration getLogStreamingServiceConfiguration() {
         return LogStreamingServiceConfiguration.builder().baseUrl(logStreamingBaseURL).build();
+      }
+
+      @Provides
+      @Singleton
+      @Named("useNewNodeEntityConfiguration")
+      public Boolean getUseNewNodeEntityConfiguration() {
+        return true;
+      }
+
+      @Provides
+      @Singleton
+      @Named("publishAdviserEventForCustomAdvisers")
+      public Boolean getPublishAdviserEventForCustomAdvisers() {
+        return true;
       }
     });
     modules.add(new ProviderModule() {

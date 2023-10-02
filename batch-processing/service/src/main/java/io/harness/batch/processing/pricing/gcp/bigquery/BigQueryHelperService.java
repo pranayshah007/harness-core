@@ -42,8 +42,8 @@ public interface BigQueryHelperService {
       List<String> cloudProviderAccountIds);
 
   void insertCostCategories(String tableName, String costCategoriesStatement, String startTime, String endTime,
-      CloudProvider cloudProvider, List<String> cloudProviderAccountIds);
+      CloudProvider cloudProvider, List<String> cloudProviderAccountIds) throws InterruptedException;
 
   void addCostCategory(String tableName, String costCategoriesStatement, String startTime, String endTime,
-      CloudProvider cloudProvider, List<String> cloudProviderAccountIds);
+      CloudProvider cloudProvider, List<String> cloudProviderAccountIds) throws InterruptedException;
 }

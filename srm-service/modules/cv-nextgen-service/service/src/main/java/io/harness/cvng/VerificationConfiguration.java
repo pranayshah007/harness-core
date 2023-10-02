@@ -85,7 +85,9 @@ public class VerificationConfiguration extends Configuration {
   private ServiceHttpClientConfig managerClientConfig;
   private ServiceHttpClientConfig ticketServiceRestClientConfig;
   @JsonProperty("ngManagerClientConfig") private ServiceHttpClientConfig ngManagerClientConfig;
+  @JsonProperty("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceClientConfig;
   @JsonProperty("ngManagerServiceSecret") @ConfigSecret private String ngManagerServiceSecret;
+  @JsonProperty("pipelineServiceSecret") @ConfigSecret private String pipelineServiceSecret;
   @JsonProperty("enforcementClientConfiguration") EnforcementClientConfiguration enforcementClientConfiguration;
   private ManagerAuthConfig managerAuthConfig;
   @JsonProperty("nextGen") private NGManagerServiceConfig ngManagerServiceConfig;
@@ -119,6 +121,7 @@ public class VerificationConfiguration extends Configuration {
   @JsonProperty("enableDashboardTimescale") private Boolean enableDashboardTimescale;
   @JsonProperty("timescaledb") private TimeScaleDBConfig timeScaleDBConfig;
   @JsonProperty("segmentConfiguration") private SegmentConfiguration segmentConfiguration;
+  @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;
 
   private String portalUrl;
 

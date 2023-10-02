@@ -23,6 +23,8 @@ import javax.validation.constraints.NotNull;
 public interface DelegateCache {
   Delegate get(String accountId, String delegateId, boolean forceRefresh);
 
+  Delegate get(String accountId, String delegateId);
+
   DelegateGroup getDelegateGroup(String accountId, String delegateGroupId);
 
   DelegateProfile getDelegateProfile(String accountId, String delegateProfileId);
@@ -42,4 +44,6 @@ public interface DelegateCache {
   void addToAbortedTaskList(String accountId, Set<String> abortedTaskList);
 
   void removeFromAbortedTaskList(String accountId, String delegateTaskId);
+
+  List<Delegate> getAllDelegatesFromRedisCache();
 }

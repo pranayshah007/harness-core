@@ -6,16 +6,18 @@
  */
 
 package software.wings.service.impl;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static software.wings.sm.StateType.PHASE;
 import static software.wings.sm.StateType.PHASE_STEP;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
@@ -29,6 +31,7 @@ import software.wings.api.PhaseExecutionData;
 import software.wings.api.SelectNodeStepExecutionSummary;
 import software.wings.beans.ServiceInstance;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.execution.WorkflowExecutionInfo;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.StateExecutionService;
@@ -60,6 +63,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.executable.ValidateOnExecution;
 import org.jetbrains.annotations.Nullable;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
 @ValidateOnExecution
@@ -110,7 +114,8 @@ public class StateExecutionServiceImpl implements StateExecutionService {
 
   @Override
   public int getRollingPhaseCount(String appId, String executionUuid) {
-    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(appId, executionUuid);
+    WorkflowExecution workflowExecution =
+        workflowExecutionService.getWorkflowExecution(appId, executionUuid, WorkflowExecutionKeys.originalExecution);
     WorkflowExecutionInfo originalExecutionInfo = workflowExecution.getOriginalExecution();
     if (originalExecutionInfo == null) {
       throw new InvalidRequestException("No Original Execution found. Can't Rollback Execution : " + executionUuid);

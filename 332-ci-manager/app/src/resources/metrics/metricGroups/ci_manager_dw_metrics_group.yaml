@@ -1,0 +1,6 @@
+name: CI Manager DW Metrics Group
+identifier: CiManagerDwMetricsGroup
+labels:
+  - namespace
+  - containerName
+  - serviceName

@@ -6,10 +6,12 @@
  */
 
 package io.harness.repositories.custom;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.source.TriggerUpdateCount;
 
@@ -18,13 +20,19 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.util.CloseableIterator;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(PIPELINE)
 public interface NGTriggerRepositoryCustom {
+  CloseableIterator<NGTriggerEntity> findAll(Criteria criteria);
   Page<NGTriggerEntity> findAll(Criteria criteria, Pageable pageable);
   NGTriggerEntity update(Criteria criteria, NGTriggerEntity ngTriggerEntity);
+  TriggerUpdateCount updateTriggerEnabled(List<NGTriggerEntity> ngTriggerEntityList);
   NGTriggerEntity updateValidationStatus(Criteria criteria, NGTriggerEntity ngTriggerEntity);
   NGTriggerEntity updateValidationStatusAndMetadata(Criteria criteria, NGTriggerEntity ngTriggerEntity);
   DeleteResult hardDelete(Criteria criteria);
   TriggerUpdateCount updateTriggerYaml(List<NGTriggerEntity> ngTriggerEntityList);
+  boolean updateManyTriggerPollingSubscriptionStatusBySignatures(String accountId, List<String> signatures,
+      boolean status, String errorMessage, List<String> versions, Long timestamp);
 }

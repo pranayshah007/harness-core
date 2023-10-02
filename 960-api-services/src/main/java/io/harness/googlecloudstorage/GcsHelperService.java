@@ -6,7 +6,6 @@
  */
 
 package io.harness.googlecloudstorage;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.INVALID_CLOUD_PROVIDER;
 import static io.harness.exception.WingsException.USER;
@@ -15,8 +14,11 @@ import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDeta
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -45,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
 @Slf4j
@@ -53,7 +56,7 @@ public class GcsHelperService {
 
   @Inject private GcpHttpTransportHelperService gcpHttpTransportHelperService;
   @Inject private GcpCredentialsHelper gcpCredentialsHelper;
-  private static final String INVALID_BUCKET_PROJECT__ERROR =
+  private static final String INVALID_BUCKET_PROJECT_ERROR =
       "Unable to checkout bucket: %s in Google Cloud Storage. Please "
       + "ensure that provided project and bucket exists in GCP";
 
@@ -94,7 +97,7 @@ public class GcsHelperService {
         gcsInternalConfig.isUseDelegate(), gcsInternalConfig.getProject());
     Bucket bucket = storage.get(gcsInternalConfig.getBucket());
     if (bucket == null) {
-      throw new InvalidRequestException(format(INVALID_BUCKET_PROJECT__ERROR, gcsInternalConfig.getBucket()));
+      throw new InvalidRequestException(format(INVALID_BUCKET_PROJECT_ERROR, gcsInternalConfig.getBucket()));
     }
     if (bucket.versioningEnabled() != null) {
       isVersioningEnabled = bucket.versioningEnabled();
@@ -162,11 +165,22 @@ public class GcsHelperService {
         gcsInternalConfig.isUseDelegate(), gcsInternalConfig.getProject());
     Bucket bucket = storage.get(gcsInternalConfig.getBucket());
     if (bucket == null) {
-      throw new InvalidRequestException(format(INVALID_BUCKET_PROJECT__ERROR, gcsInternalConfig.getBucket()));
+      throw new InvalidRequestException(format(INVALID_BUCKET_PROJECT_ERROR, gcsInternalConfig.getBucket()));
     }
 
     Blob blob = storage.get(BlobId.of(gcsInternalConfig.getBucket(), fileName));
-    InputStream inputStream = new ByteArrayInputStream(blob.getContent());
-    return inputStream;
+    return new ByteArrayInputStream(blob.getContent());
+  }
+
+  public Long getObjectSize(GcsInternalConfig gcsInternalConfig, String fileName) throws Exception {
+    Storage storage = getGcsStorageService(gcsInternalConfig.getServiceAccountKeyFileContent(),
+        gcsInternalConfig.isUseDelegate(), gcsInternalConfig.getProject());
+    Bucket bucket = storage.get(gcsInternalConfig.getBucket());
+    if (bucket == null) {
+      throw new InvalidRequestException(format(INVALID_BUCKET_PROJECT_ERROR, gcsInternalConfig.getBucket()));
+    }
+
+    Blob blob = storage.get(BlobId.of(gcsInternalConfig.getBucket(), fileName));
+    return blob.getSize();
   }
 }

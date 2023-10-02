@@ -1,0 +1,18 @@
+{
+  "filterable": false,
+  "canmatch": true,
+  "label": "Comments and Work notes",
+  "type": "journal_list",
+  "max_unit": "days",
+  "mandatory": false,
+  "default": "",
+  "base_type": "string",
+  "read_only": false,
+  "hint": "Combined output of Additional comments and Work notes",
+  "name": "comments_and_work_notes",
+  "multitext": true,
+  "column_type": "element",
+  "internal_type": "journal_list",
+  "cansort": true,
+  "max_length": 4000
+}

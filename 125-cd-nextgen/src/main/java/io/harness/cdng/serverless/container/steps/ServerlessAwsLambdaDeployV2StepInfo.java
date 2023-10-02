@@ -10,8 +10,11 @@ package io.harness.cdng.serverless.container.steps;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
@@ -28,9 +31,9 @@ import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +44,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_SERVERLESS})
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @NoArgsConstructor
@@ -62,15 +67,19 @@ public class ServerlessAwsLambdaDeployV2StepInfo
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<String>> deployCommandOptions;
 
+  @JsonIgnore String downloadManifestsFqn;
+
   @Builder(builderMethodName = "infoBuilder")
   public ServerlessAwsLambdaDeployV2StepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
-      ContainerResource resources, ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
+      ParameterField<String> image, ParameterField<String> connectorRef, ContainerResource resources,
+      ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
       ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
-      ParameterField<String> serverlessVersion, ParameterField<List<String>> deployCommandOptions) {
-    super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
-        imagePullPolicy, serverlessVersion);
+      ParameterField<String> serverlessVersion, ParameterField<List<String>> deployCommandOptions,
+      String downloadManifestsFqn) {
+    super(delegateSelectors, image, connectorRef, resources, envVariables, privileged, runAsUser, imagePullPolicy,
+        serverlessVersion);
     this.deployCommandOptions = deployCommandOptions;
+    this.downloadManifestsFqn = downloadManifestsFqn;
   }
   @Override
   public StepType getStepType() {
@@ -85,6 +94,7 @@ public class ServerlessAwsLambdaDeployV2StepInfo
   @Override
   public SpecParameters getSpecParameters() {
     return ServerlessAwsLambdaDeployV2StepParameters.infoBuilder()
+        .downloadManifestsFqn(downloadManifestsFqn)
         .image(getImage())
         .envVariables(getEnvVariables())
         .delegateSelectors(this.getDelegateSelectors())

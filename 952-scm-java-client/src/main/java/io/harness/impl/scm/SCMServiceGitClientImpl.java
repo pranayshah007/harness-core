@@ -10,8 +10,10 @@ package io.harness.impl.scm;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.BranchFilterParamsDTO;
 import io.harness.beans.FileContentBatchResponse;
 import io.harness.beans.PageRequestDTO;
+import io.harness.beans.RepoFilterParamsDTO;
 import io.harness.beans.gitsync.GitFileDetails;
 import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.gitsync.GitPRCreateRequest;
@@ -132,8 +134,8 @@ public class SCMServiceGitClientImpl implements ScmClient {
 
   @Override
   public ListBranchesWithDefaultResponse listBranchesWithDefault(
-      ScmConnector scmConnector, PageRequestDTO pageRequest) {
-    return scmServiceClient.listBranchesWithDefault(scmConnector, pageRequest, scmBlockingStub);
+      ScmConnector scmConnector, PageRequestDTO pageRequest, BranchFilterParamsDTO branchFilterParamsDTO) {
+    return scmServiceClient.listBranchesWithDefault(scmConnector, pageRequest, scmBlockingStub, branchFilterParamsDTO);
   }
 
   @Override
@@ -207,6 +209,12 @@ public class SCMServiceGitClientImpl implements ScmClient {
   @Override
   public GetUserReposResponse getUserRepos(ScmConnector scmConnector, PageRequestDTO pageRequest) {
     return scmServiceClient.getUserRepos(scmConnector, pageRequest, scmBlockingStub);
+  }
+
+  @Override
+  public GetUserReposResponse getUserRepos(
+      ScmConnector scmConnector, PageRequestDTO pageRequest, RepoFilterParamsDTO repoFilterParamsDTO) {
+    return scmServiceClient.getUserRepos(scmConnector, pageRequest, scmBlockingStub, repoFilterParamsDTO);
   }
 
   @Override

@@ -8,6 +8,7 @@
 package io.harness.polling.service.intfc;
 
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -35,6 +36,7 @@ import io.harness.repositories.polling.PollingRepository;
 import io.harness.rule.Owner;
 
 import java.util.Collections;
+import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -134,13 +136,13 @@ public class PollingServiceTest extends CategoryTest {
   public void testUnsubscribeIfOnlySubscriber() {
     PollingItem pollingItem = PollingItem.newBuilder().build();
     PollingDocument newPollingDocument = getArtifactPollingDocument("id1");
-    when(pollingDocumentMapper.toPollingDocument(pollingItem)).thenReturn(newPollingDocument);
+    when(pollingDocumentMapper.toPollingDocumentWithoutPollingInfo(pollingItem)).thenReturn(newPollingDocument);
     when(pollingRepository.removeDocumentIfOnlySubscriber(
              newPollingDocument.getAccountId(), newPollingDocument.getUuid(), newPollingDocument.getSignatures()))
         .thenReturn(newPollingDocument);
 
     assertThat(pollingService.unsubscribe(pollingItem)).isTrue();
-    verify(pollingDocumentMapper).toPollingDocument(pollingItem);
+    verify(pollingDocumentMapper).toPollingDocumentWithoutPollingInfo(pollingItem);
     verify(pollingRepository).removeDocumentIfOnlySubscriber(anyString(), anyString(), any());
     verify(pollingRepository, never())
         .removeSubscribersFromExistingPollingDoc(
@@ -153,14 +155,36 @@ public class PollingServiceTest extends CategoryTest {
   public void testUnsubscribeWithMultipleSubscribers() {
     PollingItem pollingItem = PollingItem.newBuilder().build();
     PollingDocument newPollingDocument = getArtifactPollingDocument("id1");
-    when(pollingDocumentMapper.toPollingDocument(pollingItem)).thenReturn(newPollingDocument);
+    when(pollingDocumentMapper.toPollingDocumentWithoutPollingInfo(pollingItem)).thenReturn(newPollingDocument);
 
     assertThat(pollingService.unsubscribe(pollingItem)).isTrue();
-    verify(pollingDocumentMapper).toPollingDocument(pollingItem);
+    verify(pollingDocumentMapper).toPollingDocumentWithoutPollingInfo(pollingItem);
     verify(pollingRepository).removeDocumentIfOnlySubscriber(anyString(), anyString(), any());
     verify(pollingRepository)
         .removeSubscribersFromExistingPollingDoc(
             newPollingDocument.getAccountId(), newPollingDocument.getUuid(), newPollingDocument.getSignatures());
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetUuidsBySignature() {
+    when(pollingRepository.findUuidsBySignaturesAndAccountId(any(), any()))
+        .thenReturn(List.of(getArtifactPollingDocument("id1")));
+    List<String> pollingDocIds = pollingService.getUuidsBySignatures(ACCOUNT_ID, List.of("sig1"));
+    assertThat(pollingDocIds.size()).isEqualTo(1);
+    assertThat(pollingDocIds.contains("id1")).isTrue();
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetMany() {
+    when(pollingRepository.findManyByUuidsAndAccountId(any(), any()))
+        .thenReturn(List.of(getArtifactPollingDocument("id1")));
+    List<PollingDocument> pollingDocs = pollingService.getMany(ACCOUNT_ID, List.of("id1"));
+    assertThat(pollingDocs.size()).isEqualTo(1);
+    assertThat(pollingDocs.get(0).getUuid()).isEqualTo("id1");
   }
 
   private PollingDocument getArtifactPollingDocument(String uuid) {

@@ -1,0 +1,239 @@
+{
+  "another_result": {
+    "columns": {
+      "parent": {
+        "filterable": true,
+        "reference_display_field": "number",
+        "reference_attributes": {
+          "display_field": "number",
+          "ref_ac_columns": [],
+          "ref_ac_columns_search": "",
+          "ref_ac_display_value": true,
+          "ref_auto_completer": ""
+        },
+        "canmatch": true,
+        "cangroup": true,
+        "label": "Parent",
+        "type": "reference",
+        "max_unit": "days",
+        "mandatory": false,
+        "reference": "task",
+        "default": "",
+        "base_type": "GUID",
+        "read_only": false,
+        "hint": "",
+        "name": "parent",
+        "attributes": "encode_utf8=false",
+        "column_type": "element",
+        "internal_type": "reference",
+        "cansort": true,
+        "max_length": 32
+      },
+      "priority": {
+        "filterable": true,
+        "canmatch": true,
+        "cangroup": true,
+        "label": "Priority",
+        "type": "choice",
+        "max_unit": "days",
+        "mandatory": false,
+        "default": "",
+        "base_type": "string",
+        "read_only": false,
+        "hint": "Sequence in which an Incident or Problem needs to be resolved, based on impact and urgency",
+        "name": "priority",
+        "choice_type": 1,
+        "column_type": "element",
+        "choices": [
+          {
+            "label": "-- None --",
+            "used": false,
+            "reference": false,
+            "image": "",
+            "rawLabel": "-- None --",
+            "missing": false,
+            "selected": false,
+            "value": ""
+          },
+          {
+            "used": false,
+            "label": "1 - Critical",
+            "reference": false,
+            "image": "",
+            "rawLabel": "1 - Critical",
+            "missing": false,
+            "selected": false,
+            "value": "1",
+            "parameters": {
+              "name": "task"
+            }
+          },
+          {
+            "used": false,
+            "label": "2 - High",
+            "reference": false,
+            "image": "",
+            "rawLabel": "2 - High",
+            "missing": false,
+            "selected": false,
+            "value": "2",
+            "parameters": {
+              "name": "task"
+            }
+          },
+          {
+            "used": false,
+            "label": "3 - Moderate",
+            "reference": false,
+            "image": "",
+            "rawLabel": "3 - Moderate",
+            "missing": false,
+            "selected": false,
+            "value": "3",
+            "parameters": {
+              "name": "task"
+            }
+          },
+          {
+            "used": false,
+            "label": "4 - Low",
+            "reference": false,
+            "image": "",
+            "rawLabel": "4 - Low",
+            "missing": false,
+            "selected": false,
+            "value": "4",
+            "parameters": {
+              "name": "task"
+            }
+          },
+          {
+            "used": false,
+            "label": "5 - Planning",
+            "reference": false,
+            "image": "",
+            "rawLabel": "5 - Planning",
+            "missing": false,
+            "selected": false,
+            "value": "5",
+            "parameters": {
+              "name": "task"
+            }
+          }
+        ],
+        "internal_type": "integer",
+        "cansort": true,
+        "max_length": 40
+      },
+      "sys_id": {
+        "filterable": true,
+        "canmatch": true,
+        "cangroup": true,
+        "label": "Sys ID",
+        "type": "GUID",
+        "max_unit": "days",
+        "mandatory": true,
+        "default": "",
+        "base_type": "string",
+        "read_only": false,
+        "hint": "",
+        "name": "sys_id",
+        "column_type": "element",
+        "internal_type": "GUID",
+        "cansort": true,
+        "max_length": 32
+      },
+      "comments_and_work_notes": {
+        "filterable": false,
+        "canmatch": true,
+        "label": "Comments and Work notes",
+        "type": "journal_list",
+        "max_unit": "days",
+        "mandatory": false,
+        "default": "",
+        "base_type": "string",
+        "read_only": false,
+        "hint": "Combined output of Additional comments and Work notes",
+        "name": "comments_and_work_notes",
+        "multitext": true,
+        "column_type": "element",
+        "internal_type": "journal_list",
+        "cansort": true,
+        "max_length": 4000
+      },
+      "u_string_1": {
+        "filterable": true,
+        "canmatch": true,
+        "cangroup": true,
+        "label": "testNametestName",
+        "type": "string",
+        "max_unit": "days",
+        "mandatory": false,
+        "default": "",
+        "base_type": "string",
+        "read_only": false,
+        "hint": "",
+        "name": "u_string_1",
+        "attributes": "edge_encryption_enabled=true",
+        "column_type": "element",
+        "internal_type": "string",
+        "cansort": true,
+        "max_length": 40
+      },
+      "child_incidents": {
+        "filterable": true,
+        "canmatch": true,
+        "cangroup": true,
+        "label": "Child Incidents",
+        "type": "integer",
+        "max_unit": "days",
+        "mandatory": false,
+        "default": "",
+        "base_type": "integer",
+        "read_only": false,
+        "hint": "Number of child Incidents related to this Problem",
+        "name": "child_incidents",
+        "column_type": "element",
+        "internal_type": "integer",
+        "cansort": true,
+        "max_length": 40
+      },
+      "knowledge": {
+        "filterable": true,
+        "canmatch": true,
+        "cangroup": true,
+        "label": "Knowledge",
+        "type": "boolean",
+        "max_unit": "days",
+        "mandatory": false,
+        "default": "false",
+        "base_type": "boolean",
+        "read_only": false,
+        "hint": "If checked, will automatically create a Draft knowledge article upon closure",
+        "name": "knowledge",
+        "column_type": "element",
+        "internal_type": "boolean",
+        "cansort": true,
+        "max_length": 40
+      },
+      "closed_at": {
+        "filterable": true,
+        "canmatch": true,
+        "label": "Closed",
+        "type": "glide_date_time",
+        "max_unit": "days",
+        "mandatory": false,
+        "default": "",
+        "base_type": "datetime",
+        "read_only": false,
+        "hint": "",
+        "name": "closed_at",
+        "attributes": "edge_encryption_enabled=true,sla_closure=incident,timeDimension=true",
+        "column_type": "element",
+        "internal_type": "glide_date_time",
+        "cansort": true,
+        "max_length": 40
+      }
+    }
+  }
+}

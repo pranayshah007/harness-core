@@ -90,7 +90,6 @@ public class RedisFacilitateEventPublisherTest extends OrchestrationTestBase {
             .ambiance(ambiance)
             .status(Status.RUNNING)
             .mode(ExecutionMode.ASYNC)
-            .planNode(planNode)
             .executableResponse(ExecutableResponse.newBuilder()
                                     .setTask(TaskExecutableResponse.newBuilder()
                                                  .setTaskId(generateUuid())

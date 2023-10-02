@@ -21,6 +21,8 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode
 public abstract class SLOTarget {
   public abstract TimePeriod getCurrentTimeRange(LocalDateTime currentDateTime);
+
+  public abstract TimePeriod getTimeRangeForHistory(LocalDateTime currentDateTime);
   public abstract SLOTargetType getType();
   public abstract List<SLODashboardDetail.TimeRangeFilter> getTimeRangeFilters();
 }

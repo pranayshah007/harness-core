@@ -222,25 +222,7 @@ public class RoleAssignmentApiUtils {
   }
 
   private String getServiceAccountScopeLevel(@NotNull String serviceAccountIdentifier, @NotNull Scope scope) {
-    HarnessScopeParams scopeParams = toParams(scope);
-    Scope serviceAccountScope = scope;
-    while (serviceAccountScope != null) {
-      harnessServiceAccountService.sync(serviceAccountIdentifier, scope);
-      serviceAccountScope = serviceAccountScope.getParentScope();
-    }
-
-    Scope accountScope =
-        fromParams(HarnessScopeParams.builder().accountIdentifier(scopeParams.getAccountIdentifier()).build());
-    if (serviceAccountService.get(serviceAccountIdentifier, accountScope.toString()).isPresent()) {
-      return accountScope.getLevel().toString();
-    }
-    Scope orgScope = fromParams(HarnessScopeParams.builder()
-                                    .accountIdentifier(scopeParams.getAccountIdentifier())
-                                    .orgIdentifier(scopeParams.getOrgIdentifier())
-                                    .build());
-    if (serviceAccountService.get(serviceAccountIdentifier, orgScope.toString()).isPresent()) {
-      return orgScope.getLevel().toString();
-    }
+    harnessServiceAccountService.sync(serviceAccountIdentifier, scope);
     return scope.getLevel().toString();
   }
 

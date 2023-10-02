@@ -10,14 +10,18 @@ package io.harness.pms.yaml.validation;
 import static io.harness.beans.InputSetValidatorType.ALLOWED_VALUES;
 import static io.harness.beans.InputSetValidatorType.REGEX;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -26,10 +30,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.CDC)
 @UtilityClass
 @Slf4j
@@ -77,12 +83,18 @@ public class RuntimeInputValuesValidator {
         }
         InputSetValidator inputSetValidator = templateField.getInputSetValidator();
         if (inputSetValidator.getValidatorType() == REGEX) {
-          boolean matchesPattern =
-              NGExpressionUtils.matchesPattern(Pattern.compile(inputSetValidator.getParameters()), inputSetFieldValue);
-          error = matchesPattern
-              ? ""
-              : String.format("The value provided for [%s: %s] does not match the required regex pattern",
-                  expressionFqn, inputSetFieldValue);
+          try {
+            boolean matchesPattern = NGExpressionUtils.matchesPattern(
+                Pattern.compile(inputSetValidator.getParameters()), inputSetFieldValue);
+            error = matchesPattern
+                ? ""
+                : String.format("The value provided for [%s: %s] does not match the required regex pattern",
+                    expressionFqn, inputSetFieldValue);
+          } catch (PatternSyntaxException e) {
+            throw new InvalidRequestException(
+                String.format("Invalid pattern %s provided in %s", inputSetValidator.getParameters(), expressionFqn),
+                e);
+          }
         } else if (inputSetValidator.getValidatorType() == ALLOWED_VALUES) {
           List<String> allowedValues = AllowedValuesHelper.split(inputSetValidator.getParameters());
           List<String> inputFields = AllowedValuesHelper.split(inputSetFieldValue);
@@ -148,49 +160,50 @@ public class RuntimeInputValuesValidator {
     }
 
     if (NGExpressionUtils.matchesInputSetPattern(sourceValue)) {
-      try {
-        ParameterField<?> sourceField = YamlUtils.read(sourceValue, ParameterField.class);
-        if (NGExpressionUtils.matchesInputSetPattern(objectToValidateFieldValue)) {
-          // RECONCILIATION LOGIC
-          if (sourceField.getInputSetValidator() != null) {
-            if (sourceField.getDefaultValue() != null) {
-              return sourceField.getInputSetValidator().equals(inputSetField.getInputSetValidator())
-                  && sourceField.getDefaultValue().equals(inputSetField.getDefaultValue());
-            } else {
-              return sourceField.getInputSetValidator().equals(inputSetField.getInputSetValidator());
-            }
+      ParameterField<?> sourceField = getInputSetParameterField(sourceValue);
+      if (NGExpressionUtils.matchesInputSetPattern(objectToValidateFieldValue)) {
+        // RECONCILIATION LOGIC
+        if (sourceField.getInputSetValidator() != null) {
+          if (sourceField.getDefaultValue() != null) {
+            return sourceField.getInputSetValidator().equals(inputSetField.getInputSetValidator())
+                && sourceField.getDefaultValue().equals(inputSetField.getDefaultValue());
           } else {
-            if (sourceField.getDefaultValue() != null) {
-              return sourceField.getDefaultValue().equals(inputSetField.getDefaultValue());
-            }
-            return true;
+            return sourceField.getInputSetValidator().equals(inputSetField.getInputSetValidator());
           }
-        } else if (EngineExpressionEvaluator.hasExpressions(objectToValidateFieldValue)) {
-          // if linked input is expression, return true.
-          return true;
         } else {
-          if (sourceField.getInputSetValidator() == null) {
-            return true;
+          if (sourceField.getDefaultValue() != null) {
+            return sourceField.getDefaultValue().equals(inputSetField.getDefaultValue());
           }
+          return true;
+        }
+      } else if (EngineExpressionEvaluator.hasExpressions(objectToValidateFieldValue)) {
+        // if linked input is expression, return true.
+        return true;
+      } else {
+        if (sourceField.getInputSetValidator() == null) {
+          return true;
+        }
 
-          InputSetValidator inputSetValidator = sourceField.getInputSetValidator();
-          if (inputSetValidator.getValidatorType() == REGEX) {
+        InputSetValidator inputSetValidator = sourceField.getInputSetValidator();
+        if (inputSetValidator.getValidatorType() == REGEX) {
+          try {
             return NGExpressionUtils.matchesPattern(
                 Pattern.compile(inputSetValidator.getParameters()), objectToValidateFieldValue);
-          } else if (inputSetValidator.getValidatorType() == ALLOWED_VALUES) {
-            String[] allowedValues = inputSetValidator.getParameters().split(", *");
-            for (String allowedValue : allowedValues) {
-              if (NGExpressionUtils.isRuntimeOrExpressionField(allowedValue)
-                  || allowedValue.equals(objectToValidateFieldValue)) {
-                return true;
-              }
-            }
-            return false;
+          } catch (PatternSyntaxException e) {
+            throw new InvalidRequestException(String.format("Invalid pattern %s provided for validation of value %s",
+                                                  inputSetValidator.getParameters(), objectToValidateFieldValue),
+                e);
           }
+        } else if (inputSetValidator.getValidatorType() == ALLOWED_VALUES) {
+          String[] allowedValues = inputSetValidator.getParameters().split(", *");
+          for (String allowedValue : allowedValues) {
+            if (NGExpressionUtils.isRuntimeOrExpressionField(allowedValue)
+                || allowedValue.equals(objectToValidateFieldValue)) {
+              return true;
+            }
+          }
+          return false;
         }
-      } catch (IOException e) {
-        throw new InvalidRequestException(
-            "Input set expression " + sourceValue + " or " + objectToValidateFieldValue + " is not valid");
       }
     }
 
@@ -203,7 +216,8 @@ public class RuntimeInputValuesValidator {
     }
     ParameterField<String> inputSetField;
     try {
-      inputSetField = YamlUtils.read(inputSetValue, new TypeReference<ParameterField<String>>() {});
+      inputSetField = YamlUtils.read(
+          JsonPipelineUtils.writeJsonString(inputSetValue), new TypeReference<ParameterField<String>>() {});
     } catch (IOException e) {
       log.error(String.format("Error mapping input set value %s to ParameterField class", inputSetValue), e);
       return null;

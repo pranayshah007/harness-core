@@ -3,6 +3,7 @@
     "name" : "example_connector",
     "identifier" : "example_connector",
     "description" : "example_connector",
+    "accountIdentifier" : null,
     "orgIdentifier" : "default",
     "projectIdentifier" : "example_project",
     "tags" : {

@@ -32,8 +32,8 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class CreditExpiryIteratorHandler<T extends Credit & PersistentIterable> implements Handler<T> {
   protected static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofMinutes(60);
   protected static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(15);
-  protected static final Duration TARGET_INTERVAL = ofSeconds(31);
-  protected static final Duration INTERVAL = ofHours(6);
+  protected static final Duration TARGET_INTERVAL = ofHours(6);
+  protected static final Duration INTERVAL = ofHours(3);
 
   protected final PersistenceIteratorFactory persistenceIteratorFactory;
   protected final MorphiaPersistenceProvider<T> persistenceProvider;
@@ -50,15 +50,17 @@ public abstract class CreditExpiryIteratorHandler<T extends Credit & PersistentI
   public abstract void registerIterator(int threadPoolSize);
 
   @Override
-  public void handle(T entity) {
-    if (entity == null) {
+  public void handle(T credit) {
+    if (credit == null) {
       log.warn("Credit entity is null for credit expiry check");
       return;
     }
     try {
-      creditService.setCreditStatusExpired(entity);
+      creditService.setCreditStatusExpired(credit);
+      log.info("Credit status has been marked expired for account: {} and creditID: {}", credit.getAccountIdentifier(),
+          credit.getId());
     } catch (Exception ex) {
-      log.error("Error while handling credit expiry check", ex);
+      log.error("Error occurred while marking credit status as EXPIRED: ", ex);
     }
   }
 

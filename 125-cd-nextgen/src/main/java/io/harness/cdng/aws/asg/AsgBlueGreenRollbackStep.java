@@ -8,10 +8,14 @@
 package io.harness.cdng.aws.asg;
 
 import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG;
+import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG_V2;
 
 import io.harness.account.services.AccountService;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.asg.AsgCommandUnitConstants;
 import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.cdng.CDStepHelper;
@@ -29,7 +33,6 @@ import io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResult;
 import io.harness.delegate.task.aws.asg.AsgCommandResponse;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -45,13 +48,17 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
+
+import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandResponse> {
@@ -74,13 +81,13 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
   @Inject private InstanceInfoService instanceInfoService;
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // Nothing to validate
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
-      StepElementParameters stepElementParameters, ThrowingSupplier<AsgCommandResponse> responseDataSupplier)
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepBaseParameters stepElementParameters, ThrowingSupplier<AsgCommandResponse> responseDataSupplier)
       throws Exception {
     StepResponse stepResponse = null;
     try {
@@ -135,7 +142,7 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepElementParameters, StepInputPackage inputPackage) {
     AsgBlueGreenRollbackStepParameters asgBlueGreenDeployStepParameters =
         (AsgBlueGreenRollbackStepParameters) stepElementParameters.getSpec();
 
@@ -182,15 +189,9 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
         AsgCommandUnitConstants.rollback.toString(), CommandExecutionStatus.RUNNING);
 
     AsgLoadBalancerConfig asgLoadBalancerConfig =
-        AsgLoadBalancerConfig.builder()
-            .loadBalancer(asgBlueGreenPrepareRollbackDataOutcome.getLoadBalancer())
-            .stageListenerArn(asgBlueGreenPrepareRollbackDataOutcome.getStageListenerArn())
-            .stageListenerRuleArn(asgBlueGreenPrepareRollbackDataOutcome.getStageListenerRuleArn())
-            .stageTargetGroupArnsList(asgBlueGreenPrepareRollbackDataOutcome.getStageTargetGroupArnsList())
-            .prodListenerArn(asgBlueGreenPrepareRollbackDataOutcome.getProdListenerArn())
-            .prodListenerRuleArn(asgBlueGreenPrepareRollbackDataOutcome.getProdListenerRuleArn())
-            .prodTargetGroupArnsList(asgBlueGreenPrepareRollbackDataOutcome.getProdTargetGroupArnsList())
-            .build();
+        AsgBlueGreenSwapServiceStep.getLoadBalancer(asgBlueGreenPrepareRollbackDataOutcome);
+    List<AsgLoadBalancerConfig> loadBalancers =
+        AsgBlueGreenSwapServiceStep.getLoadBalancers(asgBlueGreenPrepareRollbackDataOutcome);
 
     AsgBlueGreenRollbackRequest asgBlueGreenRollbackRequest =
         AsgBlueGreenRollbackRequest.builder()
@@ -200,6 +201,7 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .asgLoadBalancerConfig(asgLoadBalancerConfig)
+            .loadBalancers(loadBalancers)
             .prodAsgName(asgBlueGreenPrepareRollbackDataOutcome.getProdAsgName())
             .prodAsgManifestsDataForRollback(asgBlueGreenPrepareRollbackDataOutcome.getProdAsgManifestDataForRollback())
             .stageAsgName(asgBlueGreenDeployOutcome.getStageAsg().getAutoScalingGroupName())
@@ -208,16 +210,18 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
             .servicesSwapped(trafficShifted)
             .build();
 
+    TaskType taskType =
+        loadBalancers == null ? AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG : AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG_V2;
+
     return asgStepCommonHelper
         .queueAsgTask(stepElementParameters, asgBlueGreenRollbackRequest, ambiance,
-            AsgExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true,
-            AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG)
+            AsgExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true, taskType)
         .getTaskRequest();
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   private TaskRequest skipTaskRequest(String message) {

@@ -11,6 +11,7 @@ import static io.harness.NGConstants.ACCOUNT_ADMIN_ROLE;
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.user.remote.dto.LastAdminCheckFilter.LastAdminCheckFilterType.USER_DELETION;
@@ -23,8 +24,8 @@ import io.harness.accesscontrol.roleassignments.api.RoleAssignmentFilterDTO;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentResponseDTO;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
+import io.harness.configuration.DeployVariant;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.licensing.Edition;
 import io.harness.licensing.services.LicenseService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.api.UserGroupService;
@@ -63,7 +64,7 @@ public class LastAdminCheckServiceImpl implements LastAdminCheckService {
 
   @Override
   public boolean doesAdminExistAfterRemoval(String accountIdentifier, LastAdminCheckFilter lastAdminCheckFilter) {
-    if (Edition.COMMUNITY.equals(licenseService.calculateAccountEdition(accountIdentifier))) {
+    if (DeployVariant.isCommunity(System.getenv().get(DEPLOY_VERSION))) {
       if (USER_DELETION.equals(lastAdminCheckFilter.getType())) {
         List<String> userIds = ngUserService.listUserIds(Scope.of(accountIdentifier, null, null));
         return userIds.stream().anyMatch(userId -> !userId.equals(lastAdminCheckFilter.getUserIdentifier()));

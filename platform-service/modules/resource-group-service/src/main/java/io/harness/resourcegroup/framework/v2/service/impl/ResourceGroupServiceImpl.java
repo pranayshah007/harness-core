@@ -110,6 +110,7 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
   }
 
   private ResourceGroup create(ResourceGroup resourceGroup, boolean pushEvent) {
+    validateHarnessManagedRGDoesNotExistsWithGivenId(resourceGroup.getIdentifier());
     try {
       return createInternal(resourceGroup, pushEvent);
     } catch (DuplicateKeyException ex) {
@@ -117,6 +118,17 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
           String.format("A resource group with identifier %s already exists at the specified scope",
               resourceGroup.getIdentifier()),
           USER_SRE, ex);
+    }
+  }
+
+  private void validateHarnessManagedRGDoesNotExistsWithGivenId(String identifier) {
+    Criteria criteria = new Criteria();
+    criteria.and(ResourceGroupKeys.identifier).is(identifier);
+    criteria.and(ResourceGroupKeys.harnessManaged).is(true);
+    Optional<ResourceGroup> resourceGroupOptional = resourceGroupV2Repository.find(criteria);
+    if (resourceGroupOptional.isPresent()) {
+      throw new InvalidRequestException(
+          String.format("Another Harness managed resource group already exists with identifier %s", identifier));
     }
   }
 
@@ -206,20 +218,7 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
 
   @Override
   public Page<ResourceGroupResponse> list(ResourceGroupFilterDTO resourceGroupFilterDTO, PageRequest pageRequest) {
-    Page<ResourceGroup> resourceGroupPageResponse;
-    Criteria criteria = getResourceGroupFilterCriteria(resourceGroupFilterDTO);
-    if (!accessControlClient.hasAccess(
-            ResourceScope.of(resourceGroupFilterDTO.getAccountIdentifier(), resourceGroupFilterDTO.getOrgIdentifier(),
-                resourceGroupFilterDTO.getProjectIdentifier()),
-            Resource.of(RESOURCE_GROUP, null), VIEW_RESOURCEGROUP_PERMISSION)) {
-      List<ResourceGroup> resourceGroups = resourceGroupV2Repository.findAll(criteria, Pageable.unpaged()).getContent();
-
-      resourceGroups = getPermittedResourceGroups(resourceGroups);
-      resourceGroupPageResponse =
-          getPaginatedResult(resourceGroups, pageRequest.getPageIndex(), pageRequest.getPageSize());
-    } else {
-      resourceGroupPageResponse = resourceGroupV2Repository.findAll(criteria, getPageRequest(pageRequest));
-    }
+    Page<ResourceGroup> resourceGroupPageResponse = listAll(resourceGroupFilterDTO, pageRequest);
     return resourceGroupPageResponse.map(ResourceGroupMapper::toResponseWrapper);
   }
 
@@ -264,7 +263,7 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
     return resourceGroupPageResponse.map(ResourceGroupMapper::toResponseWrapper);
   }
 
-  private List<ResourceGroup> getPermittedResourceGroups(List<ResourceGroup> resourceGroups) {
+  public List<ResourceGroup> getPermittedResourceGroups(List<ResourceGroup> resourceGroups) {
     if (isEmpty(resourceGroups)) {
       return Collections.emptyList();
     }
@@ -293,6 +292,12 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
       }
     }
     return permittedResourceGroup;
+  }
+
+  @Override
+  public Page<ResourceGroup> listAll(ResourceGroupFilterDTO resourceGroupFilterDTO, PageRequest pageRequest) {
+    Criteria criteria = getResourceGroupFilterCriteria(resourceGroupFilterDTO);
+    return resourceGroupV2Repository.findAll(criteria, getPageRequest(pageRequest));
   }
 
   private static EntityScopeInfo getEntityScopeInfoFromAccessControlDTO(AccessControlDTO accessControlDTO) {

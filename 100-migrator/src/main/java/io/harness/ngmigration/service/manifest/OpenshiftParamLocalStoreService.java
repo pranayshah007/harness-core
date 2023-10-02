@@ -30,7 +30,6 @@ import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
 public class OpenshiftParamLocalStoreService implements NgManifestService {
@@ -40,9 +39,7 @@ public class OpenshiftParamLocalStoreService implements NgManifestService {
   public List<ManifestConfigWrapper> getManifestConfigWrapper(ApplicationManifest applicationManifest,
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
       ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList, CaseFormat identifierCaseFormat) {
-    String name = StringUtils.isBlank(applicationManifest.getName()) ? applicationManifest.getUuid()
-                                                                     : applicationManifest.getName();
-    String identifier = MigratorUtility.generateIdentifier(name, identifierCaseFormat);
+    String identifier = MigratorUtility.generateIdentifier(applicationManifest.getUuid(), identifierCaseFormat);
     OpenshiftParamManifest openshiftParamManifest =
         OpenshiftParamManifest.builder()
             .identifier(identifier)

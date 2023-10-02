@@ -25,6 +25,7 @@ import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.entities.ApprovalInstance.ApprovalInstanceKeys;
 import io.harness.steps.approval.step.jira.JiraApprovalHelperService;
 import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
+import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance.JiraApprovalInstanceKeys;
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalHelperService;
 import io.harness.steps.approval.step.servicenow.entities.ServiceNowApprovalInstance;
 
@@ -82,7 +83,9 @@ public class ApprovalInstanceHandler implements MongoPersistenceIterator.Handler
                 -> query.addCriteria(Criteria.where(ApprovalInstanceKeys.status)
                                          .is(ApprovalStatus.WAITING)
                                          .and(ApprovalInstanceKeys.type)
-                                         .in(ApprovalType.JIRA_APPROVAL, ApprovalType.SERVICENOW_APPROVAL)))
+                                         .in(ApprovalType.JIRA_APPROVAL, ApprovalType.SERVICENOW_APPROVAL)
+                                         .and(JiraApprovalInstanceKeys.retryInterval)
+                                         .isNull()))
             .schedulingType(REGULAR)
             .persistenceProvider(new SpringPersistenceRequiredProvider<>(mongoTemplate))
             .redistribute(true));
@@ -93,12 +96,13 @@ public class ApprovalInstanceHandler implements MongoPersistenceIterator.Handler
     switch (entity.getType()) {
       case JIRA_APPROVAL:
         JiraApprovalInstance jiraApprovalInstance = (JiraApprovalInstance) entity;
-        jiraApprovalHelperService.handlePollingEvent(jiraApprovalInstance);
+        log.info("Executing Jira approval instance with id: {}", jiraApprovalInstance.getId());
+        jiraApprovalHelperService.handlePollingEvent(null, jiraApprovalInstance);
         break;
       case SERVICENOW_APPROVAL:
         ServiceNowApprovalInstance serviceNowApprovalInstance = (ServiceNowApprovalInstance) entity;
         log.info("Executing ServiceNow approval instance with id: {}", serviceNowApprovalInstance.getId());
-        serviceNowApprovalHelperService.handlePollingEvent(serviceNowApprovalInstance);
+        serviceNowApprovalHelperService.handlePollingEvent(null, serviceNowApprovalInstance);
         break;
       default:
         log.warn("ApprovalInstance without registered handler encountered. Id: {}", entity.getId());

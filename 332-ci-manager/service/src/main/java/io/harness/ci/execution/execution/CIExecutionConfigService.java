@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.execution;
+package io.harness.ci.execution.execution;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -16,7 +16,6 @@ import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.ci.beans.entities.CIExecutionConfig;
 import io.harness.ci.beans.entities.CIExecutionImages;
 import io.harness.ci.beans.entities.CIExecutionImages.CIExecutionImagesBuilder;
-import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.config.CIStepConfig;
 import io.harness.ci.config.Operation;
@@ -24,6 +23,8 @@ import io.harness.ci.config.PluginField;
 import io.harness.ci.config.StepImageConfig;
 import io.harness.ci.config.VmContainerlessStepConfig;
 import io.harness.ci.config.VmImageConfig;
+import io.harness.ci.execution.DeprecatedImageInfo;
+import io.harness.ci.execution.buildstate.PluginSettingUtils;
 import io.harness.repositories.CIExecutionConfigRepository;
 
 import com.google.inject.Inject;
@@ -136,6 +137,12 @@ public class CIExecutionConfigService {
         break;
       case SSCA_ENFORCEMENT:
         executionConfig.setSscaEnforcementTag(value);
+        break;
+      case PROVENANCE:
+        executionConfig.setProvenanceTag(value);
+        break;
+      case SLSA_VERIFICATION:
+        executionConfig.setSlsaVerificationTag(value);
         break;
       default:
         throw new BadRequestException(format("Field %s does not exist for infra type: K8", field));
@@ -289,6 +296,7 @@ public class CIExecutionConfigService {
         .securityTag(vmImageConfig.getSecurity())
         .sscaOrchestrationTag(vmImageConfig.getSscaOrchestration())
         .sscaEnforcementTag(vmImageConfig.getSscaEnforcement())
+        .slsaVerificationTag(vmImageConfig.getSlsaVerification())
         .build();
   }
 
@@ -339,6 +347,7 @@ public class CIExecutionConfigService {
         .securityTag(vmImageConfig.getSecurity())
         .sscaOrchestrationTag(vmImageConfig.getSscaOrchestration())
         .sscaEnforcementTag(vmImageConfig.getSscaEnforcement())
+        .slsaVerificationTag(vmImageConfig.getSlsaVerification())
         .build();
   }
 
@@ -362,6 +371,9 @@ public class CIExecutionConfigService {
         .securityTag(config.getSecurityConfig().getImage())
         .sscaOrchestrationTag(config.getSscaOrchestrationConfig().getImage())
         .sscaEnforcementTag(config.getSscaEnforcementConfig().getImage())
+        .provenanceTag(config.getProvenanceConfig().getImage())
+        .provenanceGcrTag(config.getProvenanceGcrConfig().getImage())
+        .slsaVerificationTag(config.getSlsaVerificationConfig().getImage())
         .build();
   }
 
@@ -382,6 +394,9 @@ public class CIExecutionConfigService {
         .securityTag(config.getSecurityImage())
         .sscaOrchestrationTag(config.getSscaOrchestrationTag())
         .sscaEnforcementTag(config.getSscaEnforcementTag())
+        .provenanceTag(config.getProvenanceTag())
+        .provenanceGcrTag(config.getProvenanceGcrTag())
+        .slsaVerificationTag(config.getSlsaVerificationTag())
         .build();
   }
 
@@ -525,6 +540,21 @@ public class CIExecutionConfigService {
           image = ciExecutionConfig.getSscaEnforcementTag();
         }
         break;
+      case PROVENANCE:
+        if (Strings.isNotBlank(ciExecutionConfig.getProvenanceTag())) {
+          image = ciExecutionConfig.getProvenanceTag();
+        }
+        break;
+      case PROVENANCE_GCR:
+        if (Strings.isNotBlank(ciExecutionConfig.getProvenanceGcrTag())) {
+          image = ciExecutionConfig.getProvenanceGcrTag();
+        }
+        break;
+      case SLSA_VERIFICATION:
+        if (Strings.isNotBlank(ciExecutionConfig.getSlsaVerificationTag())) {
+          image = ciExecutionConfig.getSlsaVerificationTag();
+        }
+        break;
       default:
         throw new BadRequestException(format(UNEXPECTED_ERR_FORMAT, stepInfoType));
     }
@@ -566,6 +596,15 @@ public class CIExecutionConfigService {
         return ciExecutionServiceConfig.getStepConfig().getSscaOrchestrationConfig();
       case SSCA_ENFORCEMENT:
         return ciExecutionServiceConfig.getStepConfig().getSscaEnforcementConfig();
+      case PROVENANCE:
+        return ciExecutionServiceConfig.getStepConfig().getProvenanceConfig();
+      case PROVENANCE_GCR:
+        return ciExecutionServiceConfig.getStepConfig().getProvenanceGcrConfig();
+      case SLSA_VERIFICATION:
+        return ciExecutionServiceConfig.getStepConfig().getSlsaVerificationConfig();
+      case IACM_TERRAFORM_PLUGIN:
+      case IACM_APPROVAL:
+        return ciExecutionServiceConfig.getStepConfig().getIacmTerraform();
       default:
         throw new BadRequestException(format(UNEXPECTED_ERR_FORMAT, stepInfoType));
     }
@@ -702,6 +741,10 @@ public class CIExecutionConfigService {
         }
         break;
       case ACR:
+        if (pluginSettingUtils.buildxRequired(pluginCompatibleStep)) {
+          name = vmContainerlessStepConfig.getDockerBuildxAcrConfig().getName();
+        }
+        break;
       case SECURITY:
       case UPLOAD_ARTIFACTORY:
       case IACM:

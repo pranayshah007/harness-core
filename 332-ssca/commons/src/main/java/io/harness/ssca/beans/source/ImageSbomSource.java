@@ -12,6 +12,7 @@ import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import io.harness.pms.yaml.ParameterField;
 
 import io.swagger.annotations.ApiModelProperty;
+import javax.validation.constraints.NotEmpty;
 import lombok.Builder;
 import lombok.Data;
 
@@ -20,5 +21,5 @@ import lombok.Data;
 public class ImageSbomSource implements SbomSourceSpec {
   @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> connector;
 
-  @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> image;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) @NotEmpty ParameterField<String> image;
 }

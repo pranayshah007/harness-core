@@ -15,6 +15,7 @@ const (
 	keyParam       = "key"
 	snapshotParam  = "snapshot"
 	usePrefixParam = "prefix"
+	keyListParam   = "keyList"
 )
 
 // writeBadRequest writes the json-encoded error message
@@ -49,6 +50,18 @@ func WriteJSON(w http.ResponseWriter, v interface{}, status int) {
 	w.WriteHeader(status)
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
+	enc.Encode(v)
+}
+
+func WriteUnescapeJSON(w http.ResponseWriter, v interface{}, status int) {
+	for k, v := range noCacheHeaders {
+		w.Header().Set(k, v)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	enc.SetEscapeHTML(false)
 	enc.Encode(v)
 }
 

@@ -107,6 +107,61 @@ pipeline:
                 - AllErrors
               action:
                 type: StageRollback
+    - stage:
+        name: serverless_env_propagation
+        identifier: serverless_env_propagation
+        description: ""
+        type: Deployment
+        spec:
+          deploymentType: ServerlessAwsLambda
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: shell
+                  identifier: shell
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: echo "<+artifact>"
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10m
+            rollbackSteps:
+              - step:
+                  name: Serverless Lambda Rollback
+                  identifier: ServerlessLambdaRollback
+                  type: ServerlessAwsLambdaRollback
+                  timeout: 10m
+                  spec: {}
+          service:
+            serviceRef: serverless
+            serviceInputs:
+              serviceDefinition:
+                type: ServerlessAwsLambda
+                spec:
+                  artifacts:
+                    primary:
+                      sources:
+                        - identifier: artifactory
+                          type: ArtifactoryRegistry
+                          spec:
+                            artifactDirectory: <+input>
+                            artifactPath: <+input>
+                      primaryArtifactRef: artifactory
+          environment:
+            useFromStage:
+              stage: serverless
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback
   variables:
     - name: region
       type: String

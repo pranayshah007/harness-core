@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.LUCAS_SALES;
+import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.RAFAEL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,11 +22,15 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -45,6 +50,8 @@ import io.harness.logstreaming.NGLogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
+import io.harness.servicenow.ServiceNowFieldValueNG;
+import io.harness.steps.approval.ApprovalUtils;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.ApprovalType;
@@ -59,6 +66,7 @@ import io.harness.tasks.ResponseData;
 import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
 
+import com.mongodb.MongoException;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.After;
@@ -84,16 +92,20 @@ public class JiraApprovalCallbackTest extends CategoryTest {
   private static String issueKey = "issueKey";
   @Mock ILogStreamingStepClient iLogStreamingStepClient;
   @Mock NGErrorHelper ngErrorHelper;
+  @Mock NGLogCallback ngLogCallback;
   @InjectMocks private JiraApprovalCallback jiraApprovalCallback;
   private MockedStatic<CriteriaEvaluator> aStatic;
+  private MockedStatic<ApprovalUtils> approvalUtilsMockedStatic;
   private static String accountId = "accountId";
   private static String orgIdentifier = "orgIdentifier";
   private static String projectIdentifier = "projectIdentifier";
   private static String pipelineIdentifier = "pipelineIdentifier";
+  private static final String keyListInKeyValueCriteria = "status,project,issuetype";
 
   @Before
   public void setUp() {
     aStatic = Mockito.mockStatic(CriteriaEvaluator.class);
+    approvalUtilsMockedStatic = Mockito.mockStatic(ApprovalUtils.class);
     jiraApprovalCallback = spy(JiraApprovalCallback.builder().build());
     on(jiraApprovalCallback).set("approvalInstanceService", approvalInstanceService);
     on(jiraApprovalCallback).set("logStreamingStepClientFactory", logStreamingStepClientFactory);
@@ -105,6 +117,7 @@ public class JiraApprovalCallbackTest extends CategoryTest {
   @After
   public void cleanup() {
     aStatic.close();
+    approvalUtilsMockedStatic.close();
   }
 
   @Test
@@ -153,6 +166,37 @@ public class JiraApprovalCallbackTest extends CategoryTest {
     // To throw exception while casting the response to ResponseData and catch the exception
     doReturn(null).when(kryoSerializer).asInflatedObject(any());
     jiraApprovalCallback.push(response);
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testPushWhenReceiveInflatedObject() {
+    // Test fallback when already inflated response is received from delegate
+    aStatic.when(() -> CriteriaEvaluator.evaluateCriteria(any(), any())).thenReturn(true);
+    on(jiraApprovalCallback).set("approvalInstanceId", approvalInstanceId);
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .putSetupAbstractions("accountId", accountId)
+                            .putSetupAbstractions("orgIdentifier", orgIdentifier)
+                            .putSetupAbstractions("projectIdentifier", projectIdentifier)
+                            .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
+                            .build();
+    JiraApprovalInstance instance = getJiraApprovalInstance(ambiance);
+    instance.setDeadline(Long.MAX_VALUE);
+    Map<String, ServiceNowFieldValueNG> fields = new HashMap<>();
+    fields.put("dummyField", ServiceNowFieldValueNG.builder().build());
+    Map<String, ResponseData> inflatedResponse = new HashMap<>();
+    inflatedResponse.put("data", JiraTaskNGResponse.builder().issue(new JiraIssueNG()).build());
+
+    doReturn(iLogStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(ambiance);
+    doReturn(instance).when(approvalInstanceService).get(approvalInstanceId);
+    jiraApprovalCallback.push(inflatedResponse);
+    verifyNoInteractions(kryoSerializer);
+
+    inflatedResponse.clear();
+    inflatedResponse.put("data", ErrorNotifyResponseData.builder().build());
+    jiraApprovalCallback.push(inflatedResponse);
+    verifyNoInteractions(kryoSerializer);
   }
 
   @Test
@@ -373,5 +417,40 @@ public class JiraApprovalCallbackTest extends CategoryTest {
     assertThat(success).isTrue();
     verify(approvalInstanceService, never())
         .finalizeStatus(eq(instance.getId()), eq(ApprovalStatus.FAILED), anyString());
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testUpdateKeyListToFetchFilteredFields() {
+    JiraApprovalInstance instance = JiraApprovalInstance.builder().build();
+    instance.setId("instanceId");
+
+    JiraIssueNG jiraIssueNG = new JiraIssueNG();
+
+    // normal empty update
+    approvalUtilsMockedStatic.when(() -> ApprovalUtils.fetchKeysForApprovalInstance(instance, jiraIssueNG))
+        .thenReturn("");
+    jiraApprovalCallback.updateKeyListToFetchFilteredFields(ngLogCallback, jiraIssueNG, instance);
+    verify(approvalInstanceService, times(1)).updateKeyListInKeyValueCriteria("instanceId", "");
+
+    // normal non blank update
+    approvalUtilsMockedStatic.when(() -> ApprovalUtils.fetchKeysForApprovalInstance(instance, jiraIssueNG))
+        .thenReturn(keyListInKeyValueCriteria);
+    jiraApprovalCallback.updateKeyListToFetchFilteredFields(ngLogCallback, jiraIssueNG, instance);
+    verify(approvalInstanceService, times(1)).updateKeyListInKeyValueCriteria("instanceId", keyListInKeyValueCriteria);
+
+    // exception occur
+    doThrow(new MongoException("")).when(approvalInstanceService).updateKeyListInKeyValueCriteria(any(), any());
+    jiraApprovalCallback.updateKeyListToFetchFilteredFields(ngLogCallback, jiraIssueNG, instance);
+    verify(approvalInstanceService, times(2)).updateKeyListInKeyValueCriteria("instanceId", keyListInKeyValueCriteria);
+
+    // skipped since field is already populated
+    instance.setKeyListInKeyValueCriteria(keyListInKeyValueCriteria);
+    jiraApprovalCallback.updateKeyListToFetchFilteredFields(ngLogCallback, jiraIssueNG, instance);
+
+    verify(ngLogCallback, times(2))
+        .saveExecutionLog(String.format("Fields to be fetched for jira issue: %s", keyListInKeyValueCriteria));
+    verifyNoMoreInteractions(approvalInstanceService);
   }
 }

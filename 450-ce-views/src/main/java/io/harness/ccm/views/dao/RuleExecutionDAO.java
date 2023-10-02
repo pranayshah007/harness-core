@@ -6,11 +6,14 @@
  */
 
 package io.harness.ccm.views.dao;
+
+import static io.harness.beans.FeatureName.CCM_ENABLE_AZURE_CLOUD_ASSET_GOVERNANCE_UI;
 import static io.harness.persistence.HQuery.excludeValidate;
 import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
 
 import io.harness.annotations.retry.RetryOnException;
 import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
+import io.harness.ccm.commons.beans.recommendation.CCMServiceNowDetails;
 import io.harness.ccm.commons.beans.recommendation.RecommendationState;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.entities.CCMSortOrder;
@@ -23,9 +26,11 @@ import io.harness.ccm.views.entities.RuleRecommendation;
 import io.harness.ccm.views.entities.RuleRecommendation.RuleRecommendationId;
 import io.harness.ccm.views.helper.GovernanceRuleFilter;
 import io.harness.ccm.views.helper.OverviewExecutionDetails;
+import io.harness.ccm.views.helper.RuleCloudProviderType;
 import io.harness.ccm.views.helper.RuleExecutionFilter;
 import io.harness.ccm.views.helper.RuleExecutionList;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
@@ -35,6 +40,7 @@ import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -48,6 +54,7 @@ public class RuleExecutionDAO {
   @Inject private RuleDAO ruleDAO;
   @Inject private RuleEnforcementDAO ruleEnforcementDAO;
   @Inject private DSLContext dslContext;
+  @Inject private FeatureFlagService featureFlagService;
 
   private static final int RETRY_COUNT = 3;
   private static final int SLEEP_DURATION = 100;
@@ -133,6 +140,10 @@ public class RuleExecutionDAO {
         }
       }
     }
+    if (featureFlagService.isNotEnabled(
+            CCM_ENABLE_AZURE_CLOUD_ASSET_GOVERNANCE_UI, ruleExecutionFilter.getAccountId())) {
+      query.field(RuleExecutionKeys.cloudProvider).notEqual(RuleCloudProviderType.AZURE);
+    }
     ruleExecutionList.setTotalItems(query.asList().size());
     final RuleExecutionSortType modifiedSortType = Objects.isNull(ruleExecutionFilter.getRuleExecutionSortType())
         ? RuleExecutionSortType.COST
@@ -154,6 +165,7 @@ public class RuleExecutionDAO {
     overviewExecutionDetails.setTotalRuleEnforcements(ruleEnforcementDAO.list(accountId).size());
     return overviewExecutionDetails;
   }
+
   public void updateJiraInGovernanceRecommendation(
       @NonNull String accountId, @NonNull String id, CCMJiraDetails jiraDetails) {
     hPersistence.upsert(hPersistence.createQuery(RuleRecommendation.class)
@@ -161,6 +173,15 @@ public class RuleExecutionDAO {
                             .filter(RuleRecommendationId.uuid, new ObjectId(id)),
         hPersistence.createUpdateOperations(RuleRecommendation.class)
             .set(RuleRecommendationId.jiraDetails, jiraDetails));
+  }
+
+  public void updateServicenowDetailsInGovernanceRecommendation(
+      @NonNull String accountId, @NonNull String id, CCMServiceNowDetails serviceNowDetails) {
+    hPersistence.upsert(hPersistence.createQuery(RuleRecommendation.class)
+                            .filter(RuleRecommendationId.accountId, accountId)
+                            .filter(RuleRecommendationId.uuid, new ObjectId(id)),
+        hPersistence.createUpdateOperations(RuleRecommendation.class)
+            .set(RuleRecommendationId.serviceNowDetails, serviceNowDetails));
   }
 
   @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
@@ -201,5 +222,18 @@ public class RuleExecutionDAO {
       condition.or(CE_RECOMMENDATIONS.GOVERNANCERULEID.eq(governanceRuleId.getRuleId()));
     }
     return condition;
+  }
+
+  @NonNull
+  public List<RuleRecommendation> getGovernanceRecommendations(
+      @NonNull String accountId, @NonNull List<String> recommendationIds) {
+    List<ObjectId> recommendationObjectIds = recommendationIds.stream().map(ObjectId::new).collect(Collectors.toList());
+    return hPersistence.createQuery(RuleRecommendation.class)
+        .project(RuleRecommendationId.executions, true)
+        .field(RuleRecommendationId.accountId)
+        .equal(accountId)
+        .field(RuleRecommendationId.uuid)
+        .in(recommendationObjectIds)
+        .asList();
   }
 }

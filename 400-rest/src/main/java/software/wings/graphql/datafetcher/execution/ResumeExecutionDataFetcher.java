@@ -6,16 +6,19 @@
  */
 
 package software.wings.graphql.datafetcher.execution;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.validation.Validator.notBlankCheck;
 import static io.harness.validation.Validator.notNullCheck;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.graphql.datafetcher.BaseMutatorDataFetcher;
 import software.wings.graphql.datafetcher.MutationContext;
 import software.wings.graphql.schema.mutation.execution.input.QLResumeExecutionInput;
@@ -34,6 +37,8 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Data Fetcher for Resume Execution GraphQL Api.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @Slf4j
 @TargetModule(HarnessModule._380_CG_GRAPHQL)
@@ -88,7 +93,13 @@ public class ResumeExecutionDataFetcher
 
   @VisibleForTesting
   private WorkflowExecution validateAndGetWorkflowExecution(String appId, String workflowExecutionId) {
-    WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId);
+    String[] fields = {WorkflowExecutionKeys.appId, WorkflowExecutionKeys.createdAt, WorkflowExecutionKeys.envId,
+        WorkflowExecutionKeys.executionArgs, WorkflowExecutionKeys.latestPipelineResume,
+        WorkflowExecutionKeys.pipelineExecution, WorkflowExecutionKeys.pipelineResumeId,
+        WorkflowExecutionKeys.pipelineSummary, WorkflowExecutionKeys.status, WorkflowExecutionKeys.workflowId,
+        WorkflowExecutionKeys.workflowType};
+    WorkflowExecution workflowExecution =
+        workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId, fields);
     notNullCheck(String.format(ERROR_MESSAGE_EXECUTION_S_DOESN_T_EXIST, workflowExecutionId), workflowExecution);
     return workflowExecution;
   }

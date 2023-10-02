@@ -675,7 +675,7 @@ public class InfrastructureProvisionerServiceImplTest extends WingsBaseTest {
     infraProvisionerPageResponse.setResponse(singletonList(provisioner));
     doReturn(infraProvisionerPageResponse)
         .when(resourceLookupService)
-        .listWithTagFilters(infraProvisionerPageRequest, null, EntityType.PROVISIONER, true, false);
+        .listWithTagFilters(infraProvisionerPageRequest, null, EntityType.PROVISIONER, true, false, false);
     doReturn(ACCOUNT_ID).when(appService).getAccountIdByAppId(APP_ID);
     HashSet<String> settingAttributeIds = new HashSet<>(singletonList("settingId"));
     Map<String, SettingAttribute> idToSettingAttributeMapping = new HashMap<>();
@@ -764,7 +764,7 @@ public class InfrastructureProvisionerServiceImplTest extends WingsBaseTest {
     infraProvisionerPageResponse.setResponse(singletonList(provisioner));
     doReturn(infraProvisionerPageResponse)
         .when(resourceLookupService)
-        .listWithTagFilters(infraProvisionerPageRequest, null, EntityType.PROVISIONER, true, false);
+        .listWithTagFilters(infraProvisionerPageRequest, null, EntityType.PROVISIONER, true, false, false);
     doReturn(ACCOUNT_ID).when(appService).getAccountIdByAppId(APP_ID);
     HashSet<String> settingAttributeIds = new HashSet<>(singletonList("settingId"));
     Map<String, SettingAttribute> idToSettingAttributeMapping = new HashMap<>();

@@ -6,20 +6,28 @@
  */
 
 package io.harness.cdng.artifact;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
 import lombok.experimental.UtilityClass;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @UtilityClass
 public class NGArtifactConstants {
+  public static final String ARTIFACT_DIRECTORY = "artifactDirectory";
   public static final String REPOSITORY_NAME = "repositoryName";
   public static final String REPOSITORY = "repository";
   public static final String REPOSITORY_PORT = "repositoryPort";
   public static final String REPOSITORY_FORMAT = "repositoryFormat";
+  public static final String ARTIFACT_FILTER = "artifactFilter";
   public static final String REPOSITORY_URL = "repositoryUrl";
   public static final String REGISTRY_HOST_NAME = "registryHostname";
   public static final String REGISTRY = "registry";
   public static final String REGION = "region";
   public static final String TAG = "tag";
+  public static final String TAG_INPUT = "tagInput";
   public static final String TAG_REGEX = "tagRegex";
   public static final String VERSION = "version";
   public static final String VERSION_REGEX = "versionRegex";
@@ -31,4 +39,5 @@ public class NGArtifactConstants {
   public static final String PROJECT = "project";
   public static final String IMAGE_PATH = "imagePath";
   public static final String REGISTRY_ID = "registryId";
+  public static final String ARTIFACT_PATH = "artifactPath";
 }

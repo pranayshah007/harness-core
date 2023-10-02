@@ -39,6 +39,7 @@ import io.harness.security.EncryptionInterface;
 import io.harness.security.SimpleEncryption;
 import io.harness.validation.Create;
 
+import software.wings.beans.account.AccountPreferences;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.yaml.BaseEntityYaml;
@@ -85,7 +86,18 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
                  .name("next_iteration_license_info2")
                  .field(AccountKeys.licenseExpiryCheckIteration)
                  .field(AccountKeys.encryptedLicenseInfo)
-                 .build())
+                 .build(),
+            CompoundMongoIndex.builder()
+                .name("account_status_deletion_iteration")
+                .field(AccountKeys.accountStatusKey)
+                .field(AccountKeys.accountDeletionIteration)
+                .build(),
+            CompoundMongoIndex.builder()
+                .name("accountStatus_accountType_workflowDataCollectionIteration")
+                .field(AccountKeys.accountStatusKey)
+                .field(AccountKeys.accountType)
+                .field(AccountKeys.workflowDataCollectionIteration)
+                .build())
         .build();
   }
 
@@ -146,6 +158,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
   @Getter @Setter private boolean smpAccount;
   @Getter @Setter private Integer sessionTimeOutInMinutes = DEFAULT_SESSION_TIMEOUT_IN_MINUTES;
+  @Getter @Setter private boolean publicAccessEnabled;
 
   /**
    * If this flag is set, all encryption/decryption activities will go through LOCAL security manager.
@@ -614,6 +627,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     private ServiceAccountConfig serviceAccountConfig;
     private boolean globalDelegateAccount;
     private int trustLevel = AccountTrustLevel.UNINITIALIZED;
+    private boolean publicAccessEnabled;
 
     private Builder() {}
 
@@ -801,6 +815,11 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
       return this;
     }
 
+    public Builder withPublicAccessEnabled(boolean publicAccessEnabled) {
+      this.publicAccessEnabled = publicAccessEnabled;
+      return this;
+    }
+
     public Builder but() {
       return anAccount()
           .withCompanyName(companyName)
@@ -913,5 +932,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     public static final String delegateTaskRebroadcastIteration = "delegateTaskRebroadcastIteration";
     public static final String DELEGATE_CONFIGURATION_DELEGATE_VERSIONS =
         delegateConfiguration + "." + DelegateConfigurationKeys.delegateVersions;
+    public static final String accountStatusKey = "licenseInfo.accountStatus";
+    public static final String accountType = "licenseInfo.accountType";
   }
 }

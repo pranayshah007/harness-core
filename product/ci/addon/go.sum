@@ -554,6 +554,7 @@ github.com/grpc-ecosystem/grpc-gateway v1.9.5/go.mod h1:vNeuVxBJEsws4ogUvrchl83t
 github.com/grpc-ecosystem/grpc-gateway v1.16.0/go.mod h1:BDjrQk3hbvj6Nolgz8mAMFbcEtjT1g+wF4CSlocrBnw=
 github.com/harness/harness-core v0.0.0-20220210161509-69d6cb167b7a h1:CBN3/OdZ89UuiHJDQ/j5Rv4I2u7s9msRAmIjmw+fbcA=
 github.com/harness/harness-core v0.0.0-20220210161509-69d6cb167b7a/go.mod h1:qZzSzF0sIdsj9DJxtRquoBzOCdgWLOG6KRV8mIakjzY=
+github.com/harness/harness-core v0.0.0-20230630234258-c5cacffec07e/go.mod h1:qZzSzF0sIdsj9DJxtRquoBzOCdgWLOG6KRV8mIakjzY=
 github.com/harness/harness-core/product/ci/engine v0.0.0-20201207122533-21c5c13848c6 h1:jysJmLzynPMe/UKTq5SJlpfS84SGlCszNIidZuy2SIo=
 github.com/harness/harness-core/product/ci/engine v0.0.0-20210601143423-52a763a1cb90 h1:eOtsdQuKARhv/ZJFLqZno3RpHSIz82XWSU3ulfc8cg8=
 github.com/harness/harness-core/product/ci/engine v0.0.0-20210601143423-52a763a1cb90/go.mod h1:AaYx1KGNE3d32GE7T0WHyIymIqrkPxfnthjyP2pAgM4=
@@ -561,6 +562,10 @@ github.com/harness/harness-core/product/ci/engine v0.0.0-20220222141117-7659b7ec
 github.com/harness/harness-core/product/ci/engine v0.0.0-20220526003445-374c61227e45/go.mod h1:r2CTprnVVdaD5hjeuYkrBXkG1VgR6mQbrO0hW6ZQGBM=
 github.com/harness/ti-client v0.0.0-20230625210213-de916cd21d22 h1:8KiTmGXHIydZEf5/YqE09Tc8Jan1qcaQnFo+ynSLy8M=
 github.com/harness/ti-client v0.0.0-20230625210213-de916cd21d22/go.mod h1:HsmeqG87yzAigxtybh05f2FPvT2pqsMoDLLRTkDWsW4=
+github.com/harness/ti-client v0.0.0-20230827043740-d394b7ccaa1a h1:tKAZ/8G4ErcAMEPmVsA3A0w+aYpagXwT3fXxtFcJKiM=
+github.com/harness/ti-client v0.0.0-20230827043740-d394b7ccaa1a/go.mod h1:/ow4f34mPgr5KPkzKxmBUB4cC09OjzStcLX6R8+43TI=
+github.com/harness/ti-client v0.0.0-20230919114308-05b6697b67f9 h1:MVFzBU0ScnbCHFxzyMZo5oLzeDwQLwaqibXQtjUzcvw=
+github.com/harness/ti-client v0.0.0-20230919114308-05b6697b67f9/go.mod h1:/ow4f34mPgr5KPkzKxmBUB4cC09OjzStcLX6R8+43TI=
 github.com/hashicorp/consul/api v1.1.0/go.mod h1:VmuI/Lkw1nC05EYQWNKwWGbkg+FbDBtguAZLlVdkD9Q=
 github.com/hashicorp/consul/api v1.3.0/go.mod h1:MmDNSzIMUjNpY/mQ398R4bk2FnqQLoPndWW5VkKPlCE=
 github.com/hashicorp/consul/sdk v0.1.1/go.mod h1:VKf9jXwCTEY1QZP2MOLRhb5i/I/ssyNV1vwHyQBF0x8=
@@ -1197,6 +1202,7 @@ golang.org/x/net v0.0.0-20210316092652-d523dce5a7f4/go.mod h1:RBQZq4jEuRlivfhVLd
 golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4/go.mod h1:p54w0d4576C0XHj96bSt6lcn1PtDYWL6XObtHCRCNQM=
 golang.org/x/net v0.0.0-20210503060351-7fd8e65b6420/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
 golang.org/x/net v0.0.0-20220114011407-0dd24b26b47d/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
+golang.org/x/net v0.5.0/go.mod h1:DivGGAXEgPSlEBzxGzZI+ZLohi+xUj054jfeKui00ws=
 golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be/go.mod h1:N/0e6XlmueqKjAGxoOufVs8QHGRruUQn6yWY3a++T0U=
 golang.org/x/oauth2 v0.0.0-20181106182150-f42d05182288/go.mod h1:N/0e6XlmueqKjAGxoOufVs8QHGRruUQn6yWY3a++T0U=
 golang.org/x/oauth2 v0.0.0-20190226205417-e64efc72b421/go.mod h1:gOpvHmFTYa4IltrdGE7lF6nIHvwfUNPOp7c8zoXwtLw=

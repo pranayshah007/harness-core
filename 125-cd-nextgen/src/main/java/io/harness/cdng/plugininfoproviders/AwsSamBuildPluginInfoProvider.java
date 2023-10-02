@@ -10,10 +10,14 @@ package io.harness.cdng.plugininfoproviders;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.aws.sam.AwsSamBuildStepInfo;
+import io.harness.cdng.aws.sam.AwsSamStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.AwsSamDirectoryManifestOutcome;
@@ -27,6 +31,7 @@ import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.docker.DockerAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
+import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -56,13 +61,14 @@ import java.util.Optional;
 import java.util.Set;
 import org.jooq.tools.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @OwnedBy(HarnessTeam.CDP)
 public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
   @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject PluginExecutionConfig pluginExecutionConfig;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
 
-  @Inject private AwsSamPluginInfoProviderHelper awsSamPluginInfoProviderHelper;
+  @Inject private AwsSamStepHelper awsSamStepHelper;
 
   @Inject private OutcomeService outcomeService;
 
@@ -82,14 +88,14 @@ public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
     AwsSamBuildStepInfo awsSamBuildStepInfo = (AwsSamBuildStepInfo) cdAbstractStepNode.getStepSpecType();
 
     PluginDetails.Builder pluginDetailsBuilder = PluginInfoProviderHelper.buildPluginDetails(
-        awsSamBuildStepInfo.getResources(), awsSamBuildStepInfo.getRunAsUser(), usedPorts);
+        awsSamBuildStepInfo.getResources(), awsSamBuildStepInfo.getRunAsUser(), usedPorts, true);
 
     ImageDetails imageDetails = null;
 
     if (ParameterField.isNotNull(awsSamBuildStepInfo.getConnectorRef())
         || isNotEmpty(awsSamBuildStepInfo.getConnectorRef().getValue())) {
       imageDetails = PluginInfoProviderHelper.getImageDetails(awsSamBuildStepInfo.getConnectorRef(),
-          awsSamBuildStepInfo.getImage(), awsSamBuildStepInfo.getImagePullPolicy());
+          awsSamStepHelper.getImage(awsSamBuildStepInfo), awsSamBuildStepInfo.getImagePullPolicy());
 
     } else {
       // todo: If image is not provided by user, default to an harness provided image
@@ -158,6 +164,10 @@ public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
               dockerUserNamePasswordDTO.getPasswordRef().toSecretRefStringValue(),
               ambiance.getExpressionFunctorToken());
         }
+      } else {
+        String errorMessage =
+            String.format("Only Docker Registry type connector is supported in SAM Build Docker Registry");
+        throw new InvalidRequestException(errorMessage);
       }
 
       if (!StringUtils.isEmpty(registryUrl) && !StringUtils.isEmpty(userName) && !StringUtils.isEmpty(password)) {
@@ -171,17 +181,21 @@ public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
         (ManifestsOutcome) outcomeService
             .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS))
             .getOutcome();
-
+    // @todo(hinger) render manifests here
     AwsSamDirectoryManifestOutcome awsSamDirectoryManifestOutcome =
-        (AwsSamDirectoryManifestOutcome) awsSamPluginInfoProviderHelper.getAwsSamDirectoryManifestOutcome(
-            manifestsOutcome.values());
+        (AwsSamDirectoryManifestOutcome) awsSamStepHelper.getAwsSamDirectoryManifestOutcome(manifestsOutcome.values());
 
-    String samDir = awsSamPluginInfoProviderHelper.getSamDirectoryPathFromAwsSamDirectoryManifestOutcome(
-        awsSamDirectoryManifestOutcome);
+    String samDir =
+        awsSamStepHelper.getSamDirectoryPathFromAwsSamDirectoryManifestOutcome(awsSamDirectoryManifestOutcome);
 
     samBuildEnvironmentVariablesMap.put("PLUGIN_SAM_DIR", samDir);
-    samBuildEnvironmentVariablesMap.put(
-        "PLUGIN_BUILD_COMMAND_OPTIONS", String.join(" ", buildCommandOptions.getValue()));
+
+    if (ParameterField.isNotNull(buildCommandOptions)) {
+      samBuildEnvironmentVariablesMap.put(
+          "PLUGIN_BUILD_COMMAND_OPTIONS", String.join(" ", buildCommandOptions.getValue()));
+    }
+
+    samBuildEnvironmentVariablesMap.put("PLUGIN_SAM_TEMPLATE_FILE_PATH", "template.yaml");
 
     if (envVariables != null && envVariables.getValue() != null) {
       samBuildEnvironmentVariablesMap.putAll(envVariables.getValue());

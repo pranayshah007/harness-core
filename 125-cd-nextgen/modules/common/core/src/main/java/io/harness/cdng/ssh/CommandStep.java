@@ -15,7 +15,10 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.util.Collections.emptyList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
@@ -42,7 +45,6 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
@@ -54,6 +56,7 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.serializer.KryoSerializer;
 import io.harness.shell.ShellExecutionData;
 import io.harness.steps.StepHelper;
@@ -72,6 +75,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @Slf4j
 @OwnedBy(CDP)
 public class CommandStep extends CdTaskExecutable<CommandTaskResponse> {
@@ -87,24 +92,25 @@ public class CommandStep extends CdTaskExecutable<CommandTaskResponse> {
   @Inject private CommandTaskDataFactory commandTaskDataFactory;
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // Noop
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     try {
       CommandStepParameters executeCommandStepParameters = (CommandStepParameters) stepParameters.getSpec();
       validateStepParameters(executeCommandStepParameters);
 
       CommandTaskParameters taskParameters =
-          sshCommandStepHelper.buildCommandTaskParameters(ambiance, executeCommandStepParameters);
+          sshCommandStepHelper.buildCommandTaskParameters(ambiance, executeCommandStepParameters,
+              stepParameters.getTimeout() != null ? stepParameters.getTimeout().getValue() : null);
 
       TaskData taskData = commandTaskDataFactory.create(taskParameters, stepParameters.getTimeout());
 
@@ -125,8 +131,8 @@ public class CommandStep extends CdTaskExecutable<CommandTaskResponse> {
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<CommandTaskResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepBaseParameters stepParameters, ThrowingSupplier<CommandTaskResponse> responseDataSupplier) throws Exception {
     StepResponseBuilder stepResponseBuilder = StepResponse.builder();
     CommandTaskResponse taskResponse;
     try {

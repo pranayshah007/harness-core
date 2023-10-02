@@ -24,12 +24,14 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.SearchFilter;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateSelectionLogParams;
+import io.harness.delegate.beans.DelegateSelectionLogParams.DelegateSelectionLogParamsBuilder;
 import io.harness.delegate.beans.DelegateSelectionLogResponse;
 import io.harness.delegate.beans.DelegateType;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
+import io.harness.selection.log.DelegateMetaData;
 import io.harness.selection.log.DelegateSelectionLog;
 import io.harness.selection.log.DelegateSelectionLog.DelegateSelectionLogKeys;
 import io.harness.service.intfc.DelegateCache;
@@ -95,15 +97,13 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
   public static final String ELIGIBLE_DELEGATES = "Delegate(s) eligible to execute task";
   public static final String PRE_ASSIGNED_ELIGIBLE_DELEGATES = "Pre assigned delegate(s) eligible to execute task";
   public static final String BROADCASTING_DELEGATES = "Broadcasting to delegate(s)";
-  public static final String CAN_NOT_ASSIGN_TASK_GROUP = "Delegate(s) not supported for task type";
+  public static final String CAN_NOT_ASSIGN_TASK_GROUP = "Task type not supported by delegate(s)";
   public static final String CAN_NOT_ASSIGN_CG_NG_TASK_GROUP =
       "Cannot assign - CG task to CG Delegate only and NG task to NG delegate(s)";
   public static final String CAN_NOT_ASSIGN_DELEGATE_SCOPE_GROUP = "Delegate scope(s) mismatched";
   public static final String CAN_NOT_ASSIGN_PROFILE_SCOPE_GROUP = "Delegate profile scope(s) mismatched ";
   public static final String CAN_NOT_ASSIGN_SELECTOR_TASK_GROUP = "Delegate(s) don't have selectors";
   public static final String CAN_NOT_ASSIGN_OWNER = "There are no delegates with the right ownership to execute task\"";
-  public static final String TASK_VALIDATION_FAILED =
-      "No eligible delegate was able to confirm that it has the capability to execute ";
 
   public DelegateSelectionLogsServiceImpl() {
     // caffeine cache doesn't evict solely on time, it does it lazily only when new entries are added.
@@ -219,14 +219,21 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
     if (!delegateTask.isSelectionLogsTrackingEnabled()) {
       return;
     }
-    Delegate delegate = delegateCache.get(delegateTask.getAccountId(), delegateId, false);
+    DelegateMetaData delegateMetaData = null;
+    Delegate delegate = delegateCache.get(delegateTask.getAccountId(), delegateId);
     if (delegate != null) {
       delegateId = delegate.getHostName();
+      delegateMetaData = DelegateMetaData.builder()
+                             .delegateName(delegate.getDelegateName())
+                             .hostName(delegate.getHostName())
+                             .delegateId(delegate.getUuid())
+                             .build();
     }
     String message = String.format("%s : [%s]", TASK_ASSIGNED, delegateId);
     save(DelegateSelectionLog.builder()
              .accountId(getAccountId(delegateTask))
              .taskId(delegateTask.getUuid())
+             .delegateMetaData(delegateMetaData)
              .conclusion(ASSIGNED)
              .message(message)
              .eventTimestamp(System.currentTimeMillis())
@@ -348,11 +355,19 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
   }
 
   private DelegateSelectionLogParams buildSelectionLogParams(DelegateSelectionLog selectionLog) {
-    return DelegateSelectionLogParams.builder()
-        .conclusion(selectionLog.getConclusion())
-        .message(selectionLog.getMessage())
-        .eventTimestamp(selectionLog.getEventTimestamp())
-        .build();
+    DelegateSelectionLogParamsBuilder delegateSelectionLogParamsBuilder =
+        DelegateSelectionLogParams.builder()
+            .conclusion(selectionLog.getConclusion())
+            .message(selectionLog.getMessage())
+            .eventTimestamp(selectionLog.getEventTimestamp());
+
+    if (selectionLog.getDelegateMetaData() != null) {
+      delegateSelectionLogParamsBuilder.delegateName(selectionLog.getDelegateMetaData().getDelegateName())
+          .delegateHostName(selectionLog.getDelegateMetaData().getHostName())
+          .delegateId(selectionLog.getDelegateMetaData().getDelegateId());
+    }
+
+    return delegateSelectionLogParamsBuilder.build();
   }
 
   // for ng docker delegate the key is DELEGATE_NAME + HOSTNAME and for others the key is HOSTNAME
@@ -363,7 +378,7 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
   }
 
   private String getDelegateSelectionLogKey(String accountId, String delegateId) {
-    Delegate delegate = delegateCache.get(accountId, delegateId, false);
+    Delegate delegate = delegateCache.get(accountId, delegateId);
     if (delegate == null) {
       return delegateId;
     }

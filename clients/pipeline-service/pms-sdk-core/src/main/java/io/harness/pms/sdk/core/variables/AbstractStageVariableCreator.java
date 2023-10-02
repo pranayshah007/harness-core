@@ -6,7 +6,9 @@
  */
 
 package io.harness.pms.sdk.core.variables;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.pms.contracts.plan.YamlExtraProperties;
@@ -26,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public abstract class AbstractStageVariableCreator<T extends AbstractStageNode> extends ChildrenVariableCreator<T> {
   @Override
   public VariableCreationResponse createVariablesForParentNode(VariableCreationContext ctx, YamlField config) {
@@ -84,33 +87,6 @@ public abstract class AbstractStageVariableCreator<T extends AbstractStageNode> 
     });
   }
 
-  protected void addVariablesForOutputVariables(
-      YamlField variablesField, Map<String, YamlProperties> yamlPropertiesMap, String original, String replacement) {
-    List<YamlNode> variableNodes = variablesField.getNode().asArray();
-    variableNodes.forEach(variableNode -> {
-      YamlField uuidNode = variableNode.getField(YAMLFieldNameConstants.UUID);
-      if (uuidNode != null) {
-        String fqn = YamlUtils.getFullyQualifiedName(uuidNode.getNode()).replace(original, replacement);
-        String localName = YamlUtils.getQualifiedNameTillGivenField(uuidNode.getNode(), YAMLFieldNameConstants.STAGES)
-                               .replace(original, replacement);
-        YamlField valueNode = variableNode.getField(YAMLFieldNameConstants.VALUE);
-        String variableName =
-            Objects.requireNonNull(variableNode.getField(YAMLFieldNameConstants.NAME)).getNode().asText();
-        if (valueNode == null) {
-          throw new InvalidRequestException(
-              "Variable with name \"" + variableName + "\" added without any value. Fqn: " + fqn);
-        }
-        yamlPropertiesMap.put(valueNode.getNode().getCurrJsonNode().textValue(),
-            YamlProperties.newBuilder()
-                .setLocalName(localName)
-                .setFqn(fqn)
-                .setVariableName(variableName)
-                .setVisible(true)
-                .build());
-      }
-    });
-  }
-
   private String getStageLocalName(String fqn) {
     String[] split = fqn.split("\\.");
     return fqn.replaceFirst(split[0], YAMLFieldNameConstants.STAGE);
@@ -146,6 +122,14 @@ public abstract class AbstractStageVariableCreator<T extends AbstractStageNode> 
                                        .setFqn(fqnPrefix + ".endTs")
                                        .setLocalName(YAMLFieldNameConstants.STAGE + ".endTs")
                                        .build();
-    return YamlExtraProperties.newBuilder().addProperties(startTsProperty).addProperties(endTsProperty).build();
+    YamlProperties statusProperty = YamlProperties.newBuilder()
+                                        .setFqn(fqnPrefix + ".status")
+                                        .setLocalName(YAMLFieldNameConstants.STAGE + ".status")
+                                        .build();
+    return YamlExtraProperties.newBuilder()
+        .addProperties(startTsProperty)
+        .addProperties(endTsProperty)
+        .addProperties(statusProperty)
+        .build();
   }
 }

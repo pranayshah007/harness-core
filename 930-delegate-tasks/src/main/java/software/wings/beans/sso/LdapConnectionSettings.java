@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.github.reinert.jjschema.Attributes;
 import com.github.reinert.jjschema.SchemaIgnore;
+import java.util.Set;
 import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
@@ -58,6 +59,7 @@ public class LdapConnectionSettings implements LdapConnectionConfig, Encryptable
   int connectTimeout = LdapConstants.DEFAULT_CONNECT_TIMEOUT;
   int responseTimeout = LdapConstants.DEFAULT_RESPONSE_TIMEOUT;
   Boolean useRecursiveGroupMembershipSearch;
+  private Set<String> delegateSelectors;
 
   @AssertTrue(message = "Bind password/Secret can't be empty if Bind DN is provided.")
   private boolean isNonEmptyCredentials() {

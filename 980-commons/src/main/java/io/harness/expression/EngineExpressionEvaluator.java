@@ -9,8 +9,11 @@ package io.harness.expression;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.algorithm.IdentifierName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.EngineExpressionEvaluationException;
@@ -53,6 +56,11 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.logging.impl.NoOpLog;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ARTIFACTS, HarnessModuleComponent.CDS_FIRST_GEN,
+        HarnessModuleComponent.CDS_TEMPLATE_LIBRARY, HarnessModuleComponent.CDS_DASHBOARD,
+        HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_AMI_ASG,
+        HarnessModuleComponent.CDS_EXPRESSION_ENGINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public class EngineExpressionEvaluator {
@@ -68,7 +76,7 @@ public class EngineExpressionEvaluator {
 
   private static final int MAX_DEPTH = 15;
 
-  private final JexlEngine engine;
+  @Getter private final JexlEngine engine;
   @Getter private final VariableResolverTracker variableResolverTracker;
   @Getter private final Map<String, Object> contextMap;
   @Getter private final Map<String, String> staticAliases;
@@ -219,12 +227,30 @@ public class EngineExpressionEvaluator {
       @NotNull String expression, @NotNull EngineJexlContext ctx, int depth, ExpressionMode expressionMode) {
     checkDepth(depth, expression);
     RenderExpressionResolver resolver = new RenderExpressionResolver(this, ctx, depth, expressionMode);
-    String finalExpression = runStringReplacer(expression, resolver);
-    if (expressionMode == ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED
-        && EmptyPredicate.isNotEmpty(resolver.getUnresolvedExpressions())) {
-      throw new UnresolvedExpressionsException(new ArrayList<>(resolver.getUnresolvedExpressions()));
+    try {
+      String finalExpression = runStringReplacer(expression, resolver);
+      if (expressionMode == ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED
+          && EmptyPredicate.isNotEmpty(resolver.getUnresolvedExpressions())) {
+        throw new UnresolvedExpressionsException(new ArrayList<>(resolver.getUnresolvedExpressions()));
+      }
+      return finalExpression;
+    } catch (Exception e) {
+      // Adding fallback mechanism for any failures due to concat flow
+      if (ctx.isFeatureFlagEnabled(PIE_EXPRESSION_CONCATENATION)) {
+        ctx.removeFeatureFlag(PIE_EXPRESSION_CONCATENATION);
+        resolver = new RenderExpressionResolver(this, ctx, depth, expressionMode);
+        String finalExpression = runStringReplacer(expression, resolver);
+        if (expressionMode == ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED
+            && EmptyPredicate.isNotEmpty(resolver.getUnresolvedExpressions())) {
+          throw new UnresolvedExpressionsException(new ArrayList<>(resolver.getUnresolvedExpressions()));
+        }
+        log.warn("[EXPRESSION_CONCATENATE]: Failed to render expression in new flow for - " + expression
+            + " whose value is - " + finalExpression);
+        log.warn("[EXPRESSION_CONCATENATE_ERRORS] - " + e.getMessage(), e);
+        return finalExpression;
+      }
+      throw e;
     }
-    return finalExpression;
   }
 
   @Deprecated
@@ -246,9 +272,22 @@ public class EngineExpressionEvaluator {
     if (expression == null || EmptyPredicate.isEmpty(expression.trim())) {
       return null;
     }
-    return evaluateExpressionInternal(expression, prepareContext(ctx), MAX_DEPTH, expressionMode);
+    EngineJexlContext engineJexlContext = prepareContext(ctx);
+    try {
+      return evaluateExpressionInternal(expression, engineJexlContext, MAX_DEPTH, expressionMode);
+    } catch (Exception e) {
+      // Adding fallback mechanism for any failures due to concat flow
+      if (engineJexlContext.isFeatureFlagEnabled(PIE_EXPRESSION_CONCATENATION)) {
+        engineJexlContext.removeFeatureFlag(PIE_EXPRESSION_CONCATENATION);
+        Object expressionValue = evaluateExpressionInternal(expression, engineJexlContext, MAX_DEPTH, expressionMode);
+        log.warn("[EXPRESSION_EVALUATE_CONCATENATE]: Failed to evaluate expression in new flow for - " + expression
+            + " whose value is - " + expressionValue);
+        log.warn("[EXPRESSION_CONCATENATE_ERRORS] - " + e.getMessage(), e);
+        return expressionValue;
+      }
+      throw e;
+    }
   }
-
   protected Object evaluateExpressionInternal(
       @NotNull String expression, @NotNull EngineJexlContext ctx, int depth, ExpressionMode expressionMode) {
     checkDepth(depth, expression);
@@ -264,7 +303,9 @@ public class EngineExpressionEvaluator {
         if (evaluatedExpression == null && replacerResponse.isOriginalExpressionAltered()) {
           Object evaluateExpressionBlock =
               evaluateExpressionBlock(replacerResponse.getFinalExpressionValue(), ctx, depth - 1, expressionMode);
-          if (evaluateExpressionBlock == null && replacerResponse.isOnlyRenderedExpressions()) {
+          if (isExpressionResolvedValueSameAsGivenExpression(
+                  evaluateExpressionBlock, replacerResponse.getFinalExpressionValue(), expressionMode)
+              && replacerResponse.isOnlyRenderedExpressions()) {
             return replacerResponse.getFinalExpressionValue();
           } else {
             return evaluateExpressionBlock;
@@ -305,6 +346,23 @@ public class EngineExpressionEvaluator {
           JexlRuntimeExceptionHandler.getExplanationMessage(ex),
           new EngineExpressionEvaluationException("Expression evaluation failed", expression));
     }
+  }
+
+  private boolean isExpressionResolvedValueSameAsGivenExpression(
+      Object evaluatedExpression, String originalExpression, ExpressionMode expressionMode) {
+    if (evaluatedExpression == null) {
+      return true;
+    }
+
+    // for RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED, same expression will be returned
+    if (evaluatedExpression instanceof String
+        && expressionMode.equals(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED)) {
+      if ((ExpressionConstants.EXPR_START + originalExpression + ExpressionConstants.EXPR_END)
+              .equals(evaluatedExpression)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   public PartialEvaluateResult partialRenderExpression(String expression) {
@@ -721,7 +779,7 @@ public class EngineExpressionEvaluator {
 
     public boolean isAnyCollection(Object value) {
       return value instanceof Map || value instanceof Collection || value instanceof String[] || value instanceof List
-          || value instanceof Iterable;
+          || value instanceof Iterable || (value != null && value.getClass().isArray());
     }
 
     @Override

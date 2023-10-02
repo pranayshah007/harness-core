@@ -9,8 +9,12 @@ package io.harness.ngtriggers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(PIPELINE)
 public interface Constants {
   int COMMIT_SHA_STRING_LENGTH = 7;
@@ -79,6 +83,10 @@ public interface Constants {
   String GIT_USER = "gitUser";
   String TAG = "tag";
   String PR_TITLE = "prTitle";
+  String SOURCE = "source";
+  String CONNECTOR_REF = "connectorRef";
+  String TRIGGER_PAYLOAD = "triggerPayload";
+  String IMAGE_PATH = "imagePath";
   String SOURCE_TYPE = "sourceType";
   String ARTIFACT_EXPR = "artifact";
   String MANIFEST_EXPR = "manifest";
@@ -87,6 +95,7 @@ public interface Constants {
   String ARTIFACT_METADATA_EXPR = "metadata";
   String SOURCE_EVENT_ID = "sourceEventId";
   String SOURCE_EVENT_LINK = "sourceEventLink";
+  String EMAIL = "email";
 
   String WEBHOOK_TYPE = "Webhook";
   String SCHEDULED_TYPE = "Scheduled";
@@ -105,6 +114,7 @@ public interface Constants {
   String TRIGGER_INFO_LOG = "TRIGGER_INFO_LOG: ";
   String TRIGGER_PAYLOAD_COMMITS = "<+trigger.payload.commits>";
   String TRIGGER_PAYLOAD_BRANCH = "<+trigger.payload.branch>";
+  String TRIGGER_BRANCH = "<+trigger.branch>";
   String COMMIT_FILE_ADDED = "added";
   String COMMIT_FILE_MODIFIED = "modified";
   String COMMIT_FILE_REMOVED = "removed";
@@ -132,6 +142,9 @@ public interface Constants {
   String PIPELINE_INPUTS_VALIDATION_ERROR = "PipelineInputsErrorMetadataV2";
   String MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION = "mandate_custom_webhook_authorization";
   String MANDATE_CUSTOM_WEBHOOK_TRUE_VALUE = "true";
+  String ENABLE_NODE_EXECUTION_AUDIT_EVENTS = "enable_node_execution_audit_events";
+  String ENABLE_NODE_EXECUTION_AUDIT_EVENTS_TRUE_VALUE = "true";
+  Integer MAX_MULTI_ARTIFACT_TRIGGER_SOURCES = 10;
   String API_SAMPLE_TRIGGER_YAML = "trigger:\n"
       + "  name: Trigger\n"
       + "  identifier: Trigger\n"

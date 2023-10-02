@@ -6,7 +6,6 @@
  */
 
 package io.harness.pcf;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.pcf.PcfUtils.encodeColor;
 import static io.harness.pcf.PcfUtils.getIntegerSafe;
@@ -31,7 +30,10 @@ import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ExceptionUtils;
 import io.harness.logging.LogCallback;
@@ -70,6 +72,7 @@ import org.cloudfoundry.operations.organizations.OrganizationSummary;
 import org.cloudfoundry.operations.routes.Route;
 import org.zeroturnaround.exec.StartedProcess;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @Slf4j
 @OwnedBy(CDP)

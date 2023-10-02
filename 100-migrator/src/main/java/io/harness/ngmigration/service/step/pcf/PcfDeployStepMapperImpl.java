@@ -23,6 +23,7 @@ import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.yaml.core.timeout.Timeout;
 
 import software.wings.beans.GraphNode;
 import software.wings.beans.InstanceUnitType;
@@ -48,6 +49,17 @@ public class PcfDeployStepMapperImpl extends PcfAbstractStepMapper {
     PcfDeployState state = new PcfDeployState(stepYaml.getName());
     state.parseProperties(properties);
     return state;
+  }
+  @Override
+  public ParameterField<Timeout> getTimeout(State state) {
+    PcfDeployState deployState = (PcfDeployState) state;
+    Integer timeoutIntervalInMinutes = deployState.getTimeoutIntervalInMinutes();
+    if (null != timeoutIntervalInMinutes) {
+      return MigratorUtility.getTimeout(timeoutIntervalInMinutes * 60 * 1000L);
+    } else {
+      Integer timeoutMillis = state.getTimeoutMillis();
+      return MigratorUtility.getTimeout(timeoutMillis != null ? timeoutMillis.longValue() : null);
+    }
   }
 
   @Override

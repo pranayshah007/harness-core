@@ -9,7 +9,6 @@ package io.harness.service;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.DelegateType.KUBERNETES;
-import static io.harness.delegate.utils.DelegateServiceConstants.HEARTBEAT_EXPIRY_TIME_FIVE_MINS;
 import static io.harness.rule.OwnerRule.ANUPAM;
 import static io.harness.rule.OwnerRule.ARPIT;
 import static io.harness.rule.OwnerRule.BOJAN;
@@ -42,6 +41,7 @@ import io.harness.delegate.beans.DelegateGroupTags;
 import io.harness.delegate.beans.DelegateInsightsBarDetails;
 import io.harness.delegate.beans.DelegateInsightsDetails;
 import io.harness.delegate.beans.DelegateInstanceStatus;
+import io.harness.delegate.beans.DelegateListResponse;
 import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateSize;
 import io.harness.delegate.beans.DelegateSizeDetails;
@@ -56,6 +56,8 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.service.impl.DelegateSetupServiceImpl;
 import io.harness.service.intfc.DelegateCache;
+import io.harness.version.VersionInfo;
+import io.harness.version.VersionInfoManager;
 
 import software.wings.beans.SelectorType;
 
@@ -66,10 +68,12 @@ import com.google.inject.Inject;
 import io.fabric8.utils.Lists;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.apache.groovy.util.Maps;
 import org.junit.Before;
 import org.junit.Test;
@@ -80,6 +84,9 @@ import org.mockito.Mock;
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateSetupServiceTest extends DelegateServiceTestBase {
   private static final String VERSION = "1.0.0";
+  private static final String IMMUTABLE_DELEGATE_VERSION = "22.08.77000";
+  private static final String MANAGER_VERSION = "1.0.77000";
+  private static final String MANAGER_BUILD_NUMBER = "77000";
   private static final String GROUPED_HOSTNAME_SUFFIX = "-{n}";
 
   private static final String TEST_ACCOUNT_ID = "accountId";
@@ -89,6 +96,7 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
   private static final String TEST_DELEGATE_GROUP_ID_4 = "delegateGroupId4";
 
   @Mock private DelegateCache delegateCache;
+  @Mock private VersionInfoManager versionInfoManager;
 
   @InjectMocks @Inject private DelegateSetupServiceImpl delegateSetupService;
   @Inject private HPersistence persistence;
@@ -134,13 +142,6 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
     when(delegateCache.getDelegateGroup(accountId, delegateGroup1.getUuid())).thenReturn(delegateGroup1);
     when(delegateCache.getDelegateGroup(accountId, delegateGroup2.getUuid())).thenReturn(delegateGroup2);
 
-    // Insights
-    DelegateInsightsDetails delegateInsightsDetails =
-        DelegateInsightsDetails.builder()
-            .insights(ImmutableList.of(
-                DelegateInsightsBarDetails.builder().build(), DelegateInsightsBarDetails.builder().build()))
-            .build();
-    // these three delegates should be returned for group 1
     Delegate delegate1 = createDelegateBuilder()
                              .accountId(accountId)
                              .ng(true)
@@ -173,7 +174,6 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
                              .ng(true)
                              .delegateName("grp2")
                              .hostName("kube-2")
-                             .lastHeartBeat(System.currentTimeMillis() - 600000)
                              .sizeDetails(DelegateSizeDetails.builder().replicas(1).build())
                              .delegateGroupId(delegateGroup2.getUuid())
                              .lastHeartBeat(System.currentTimeMillis() - 600000)
@@ -220,15 +220,10 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
       } else if (group.getGroupName().equals("grp2")) {
         assertThat(group.getConnectivityStatus()).isEqualTo("disconnected");
         assertThat(group.getDelegateInstanceDetails())
-            .contains(DelegateGroupListing.DelegateInner.builder()
-                          .uuid(delegate3.getUuid())
-                          .lastHeartbeat(delegate3.getLastHeartBeat())
-                          .activelyConnected(delegate3.getLastHeartBeat()
-                              > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis())
-                          .hostName(delegate3.getHostName())
-                          .version("1.0.0")
-                          .tokenActive(true)
-                          .build());
+            .extracting(DelegateGroupListing.DelegateInner::getUuid)
+            .containsOnly(delegate3.getUuid());
+        assertThat(group.getDelegateGroupExpirationTime()).isEqualTo(0);
+        assertThat(group.getDelegateInstanceDetails().get(0).isActivelyConnected()).isEqualTo(false);
       }
     }
   }
@@ -263,6 +258,32 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
     delegateSetupService.deleteByAccountId(accountId);
     delegateGroupListing = delegateSetupService.listDelegateGroupDetails(accountId, null, null);
     assertThat(delegateGroupListing.getDelegateGroupDetails().size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = ANUPAM)
+  @Category(UnitTests.class)
+  public void listDelegateShouldReturnDelegateGroups() {
+    prepareInitialData();
+
+    List<DelegateListResponse> delegateListResponses =
+        delegateSetupService.listDelegates(TEST_ACCOUNT_ID, null, null, DelegateFilterPropertiesDTO.builder().build());
+
+    assertThat(delegateListResponses).hasSize(3);
+    assertThat(delegateListResponses).extracting(DelegateListResponse::getName).containsOnly("grp1", "grp2", "grp4");
+  }
+
+  @Test
+  @Owner(developers = ANUPAM)
+  @Category(UnitTests.class)
+  public void listDelegateShouldReturnDelegateGroupsFilteredByTags() {
+    prepareInitialData();
+
+    List<DelegateListResponse> delegateListResponses = delegateSetupService.listDelegates(TEST_ACCOUNT_ID, null, null,
+        DelegateFilterPropertiesDTO.builder().delegateTags(new HashSet<>(List.of("taggroup1"))).build());
+
+    assertThat(delegateListResponses).hasSize(1);
+    assertThat(delegateListResponses.get(0).getName()).isEqualTo("grp1");
   }
 
   @Test
@@ -1300,6 +1321,19 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
     assertThat(updatedDelegateGroup).isPresent();
     assertThat(updatedDelegateGroup.get().getIdentifier()).isEqualTo("identifier1");
     assertThat(updatedDelegateGroup.get().getTags()).containsExactlyInAnyOrder("tag123", "tag456");
+  }
+
+  @Test
+  @Owner(developers = ANUPAM)
+  @Category(UnitTests.class)
+  public void shouldFetchDelegateExpirationTime() {
+    when(versionInfoManager.getVersionInfo())
+        .thenReturn(VersionInfo.builder().version(MANAGER_VERSION).buildNo(MANAGER_BUILD_NUMBER).build());
+    long actualExpirationTime =
+        delegateSetupService.getDelegateExpirationTime(IMMUTABLE_DELEGATE_VERSION, generateUuid());
+    double diffInDays = (double) TimeUnit.MILLISECONDS.toDays(actualExpirationTime - System.currentTimeMillis());
+    double diffInWeeks = Math.ceil(diffInDays / 7);
+    assertThat(diffInWeeks).isEqualTo(24.0);
   }
 
   private void prepareInitialData() {

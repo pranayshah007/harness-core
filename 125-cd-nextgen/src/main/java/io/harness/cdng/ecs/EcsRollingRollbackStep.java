@@ -8,8 +8,11 @@
 package io.harness.cdng.ecs;
 
 import io.harness.account.services.AccountService;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsRollingRollbackDataOutcome;
@@ -30,7 +33,6 @@ import io.harness.delegate.task.ecs.response.EcsRollingRollbackResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -47,6 +49,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 
@@ -56,6 +59,7 @@ import com.google.inject.Inject;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class EcsRollingRollbackStep extends CdTaskExecutable<EcsCommandResponse> {
@@ -73,13 +77,13 @@ public class EcsRollingRollbackStep extends CdTaskExecutable<EcsCommandResponse>
   @Inject private InstanceInfoService instanceInfoService;
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // Nothing to validate
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
-      StepElementParameters stepElementParameters, ThrowingSupplier<EcsCommandResponse> responseDataSupplier)
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepBaseParameters StepBaseParameters, ThrowingSupplier<EcsCommandResponse> responseDataSupplier)
       throws Exception {
     StepResponse stepResponse = null;
     try {
@@ -138,9 +142,9 @@ public class EcsRollingRollbackStep extends CdTaskExecutable<EcsCommandResponse>
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters StepBaseParameters, StepInputPackage inputPackage) {
     EcsRollingRollbackStepParameters ecsRollingRollbackStepParameters =
-        (EcsRollingRollbackStepParameters) stepElementParameters.getSpec();
+        (EcsRollingRollbackStepParameters) StepBaseParameters.getSpec();
 
     if (EmptyPredicate.isEmpty(ecsRollingRollbackStepParameters.getEcsRollingRollbackFnq())) {
       return TaskRequest.newBuilder()
@@ -189,19 +193,19 @@ public class EcsRollingRollbackStep extends CdTaskExecutable<EcsCommandResponse>
             .ecsRollingRollbackConfig(ecsRollingRollbackConfig)
             .commandName(ECS_ROLLING_ROLLBACK_COMMAND_NAME)
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
-            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
+            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(StepBaseParameters))
             .ecsInfraConfig(ecsStepCommonHelper.getEcsInfraConfig(infrastructureOutcome, ambiance))
             .build();
 
     return ecsStepCommonHelper
-        .queueEcsTask(stepElementParameters, ecsRollingRollbackRequest, ambiance,
+        .queueEcsTask(StepBaseParameters, ecsRollingRollbackRequest, ambiance,
             EcsExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true,
             TaskType.ECS_COMMAND_TASK_NG)
         .getTaskRequest();
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 }

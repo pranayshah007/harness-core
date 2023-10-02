@@ -136,7 +136,7 @@ public class ArtifactCleanupDataFetcherTest extends AbstractDataFetcherTestBase 
 
     assertThatThrownBy(() -> artifactCleanupDataFetcher.get(dataFetchingEnvironment))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("User not authorized.")
+        .hasMessageContaining("User not authorized: Not authorized")
         .hasCauseInstanceOf(AccessDeniedException.class)
         .hasRootCauseMessage("Not authorized");
   }

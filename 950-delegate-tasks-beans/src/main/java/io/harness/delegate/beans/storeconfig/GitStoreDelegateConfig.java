@@ -9,6 +9,7 @@ package io.harness.delegate.beans.storeconfig;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
@@ -20,8 +21,9 @@ import lombok.Singular;
 import lombok.Value;
 
 @Value
-@Builder
+@Builder(toBuilder = true)
 @OwnedBy(CDP)
+@RecasterAlias("io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig")
 public class GitStoreDelegateConfig implements StoreDelegateConfig {
   String branch;
   String commitId;
@@ -41,5 +43,9 @@ public class GitStoreDelegateConfig implements StoreDelegateConfig {
   @Override
   public StoreDelegateConfigType getType() {
     return StoreDelegateConfigType.GIT;
+  }
+  @Override
+  public String getRepoUrl() {
+    return this.getGitConfigDTO().getUrl();
   }
 }

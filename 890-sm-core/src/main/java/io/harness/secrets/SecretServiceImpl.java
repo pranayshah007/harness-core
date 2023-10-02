@@ -50,6 +50,8 @@ import io.harness.encryptors.KmsEncryptor;
 import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.encryptors.VaultEncryptor;
 import io.harness.encryptors.VaultEncryptorsRegistry;
+import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
 import io.harness.persistence.HIterator;
 import io.harness.queue.QueuePublisher;
@@ -782,6 +784,52 @@ public class SecretServiceImpl implements SecretService {
     return secretsRBACService.hasAccessToEditSecrets(accountId, secretScopeMetadataSet);
   }
 
+  @Override
+  public PageResponse<EncryptedData> listSecrets(
+      String accountId, PageRequest<EncryptedData> pageRequest, String appId, String envId) {
+    List<EncryptedData> filteredEncryptedDataList = Lists.newArrayList();
+
+    try {
+      PageRequest<EncryptedData> copiedPageRequest = pageRequest.copy();
+      int offset = 0;
+      int limit = copiedPageRequest.getPageSize();
+      int total;
+      int numberOfRecordsRequiredToFetch = pageRequest.getStart() + pageRequest.getPageSize();
+      List<EncryptedData> response;
+
+      copiedPageRequest.setLimit(String.valueOf(PageRequest.DEFAULT_UNLIMITED));
+      if (limit > PageRequest.DEFAULT_UNLIMITED) {
+        copiedPageRequest.setLimit(String.valueOf(limit));
+      }
+      while (true) {
+        copiedPageRequest.setOffset(String.valueOf(offset));
+        PageResponse<EncryptedData> batchPageResponse = secretsDao.listSecrets(copiedPageRequest);
+        List<EncryptedData> encryptedDataList = batchPageResponse.getResponse();
+        filterSecreteDataBasedOnUsageRestrictions(
+            accountId, appId, envId, encryptedDataList, filteredEncryptedDataList);
+        if (filteredEncryptedDataList.size() >= numberOfRecordsRequiredToFetch
+            || encryptedDataList.size() < copiedPageRequest.getPageSize()) {
+          int endIdx = Math.min(pageRequest.getStart() + pageRequest.getPageSize(), filteredEncryptedDataList.size());
+          response = pageRequest.getStart() < endIdx ? filteredEncryptedDataList.subList(pageRequest.getStart(), endIdx)
+                                                     : Collections.emptyList();
+          total = encryptedDataList.size() < copiedPageRequest.getPageSize() ? filteredEncryptedDataList.size()
+                                                                             : filteredEncryptedDataList.size() + 1;
+          break;
+        }
+        offset = offset + copiedPageRequest.getPageSize();
+      }
+
+      return aPageResponse()
+          .withResponse(response)
+          .withTotal(total)
+          .withOffset(pageRequest.getOffset())
+          .withLimit(pageRequest.getLimit())
+          .build();
+    } catch (Exception e) {
+      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+    }
+  }
+
   private void buildSecretScopeMetadataSet(
       String accountId, Set<String> secretIds, Set<SecretScopeMetadata> secretScopeMetadataSet) {
     if (isEmpty(secretIds)) {
@@ -815,35 +863,6 @@ public class SecretServiceImpl implements SecretService {
                                        .build());
       }
     }
-  }
-
-  @Override
-  public PageResponse<EncryptedData> listSecrets(
-      String accountId, PageRequest<EncryptedData> pageRequest, String appId, String envId) {
-    List<EncryptedData> filteredEncryptedDataList = Lists.newArrayList();
-
-    int inputPageSize = pageRequest.getPageSize();
-    int batchOffset = pageRequest.getStart();
-    int batchPageSize = Math.min(PageRequest.DEFAULT_UNLIMITED, 2 * inputPageSize);
-    int numRecordsReturnedCurrentBatch;
-    do {
-      PageRequest<EncryptedData> batchPageRequest = pageRequest.copy();
-      batchPageRequest.setOffset(String.valueOf(batchOffset));
-      batchPageRequest.setLimit(String.valueOf(batchPageSize));
-      PageResponse<EncryptedData> batchPageResponse = secretsDao.listSecrets(batchPageRequest);
-      List<EncryptedData> encryptedDataList = batchPageResponse.getResponse();
-      numRecordsReturnedCurrentBatch = encryptedDataList.size();
-      filterSecreteDataBasedOnUsageRestrictions(accountId, appId, envId, encryptedDataList, filteredEncryptedDataList);
-      // Set the new offset if another batch retrieval is needed if the requested page size is not fulfilled yet.
-      batchOffset = numRecordsReturnedCurrentBatch + batchOffset;
-    } while (numRecordsReturnedCurrentBatch == batchPageSize && filteredEncryptedDataList.size() < inputPageSize);
-
-    return aPageResponse()
-        .withOffset(String.valueOf(batchOffset))
-        .withLimit(String.valueOf(inputPageSize))
-        .withResponse(filteredEncryptedDataList)
-        .withTotal(Long.valueOf(filteredEncryptedDataList.size()))
-        .build();
   }
 
   @Override

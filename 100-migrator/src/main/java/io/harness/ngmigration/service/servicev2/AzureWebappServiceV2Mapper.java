@@ -39,6 +39,7 @@ import io.harness.pms.yaml.ParameterField;
 import software.wings.beans.Service;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
+import software.wings.service.intfc.WorkflowService;
 
 import java.util.Collections;
 import java.util.List;
@@ -49,8 +50,8 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(HarnessTeam.CDC)
 public class AzureWebappServiceV2Mapper implements ServiceV2Mapper {
   @Override
-  public ServiceDefinition getServiceDefinition(MigrationContext migrationContext, Service service,
-      List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles,
+  public ServiceDefinition getServiceDefinition(WorkflowService workflowService, MigrationContext migrationContext,
+      Service service, List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles,
       List<StartupScriptConfiguration> startupScriptConfigurations) {
     Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();

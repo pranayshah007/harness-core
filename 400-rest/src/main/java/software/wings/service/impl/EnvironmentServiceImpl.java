@@ -6,11 +6,10 @@
  */
 
 package software.wings.service.impl;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.EnvironmentType.NON_PROD;
 import static io.harness.beans.EnvironmentType.PROD;
-import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION;
+import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION_GLOBAL;
 import static io.harness.beans.FeatureName.HARNESS_TAGS;
 import static io.harness.beans.FeatureName.PURGE_DANGLING_APP_ENV_REFS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
@@ -47,14 +46,15 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.atteo.evo.inflector.English.plural;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EnvironmentType;
-import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
-import io.harness.beans.SearchFilter.Operator;
 import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
@@ -69,7 +69,6 @@ import io.harness.validation.Create;
 import io.harness.validation.PersistenceValidator;
 
 import software.wings.beans.AccountEvent;
-import software.wings.beans.AccountEventType;
 import software.wings.beans.Application;
 import software.wings.beans.Base;
 import software.wings.beans.ConfigFile;
@@ -84,6 +83,7 @@ import software.wings.beans.InformationNotification;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.ServiceVariable;
+import software.wings.beans.account.AccountEventType;
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.ManifestFile;
@@ -146,6 +146,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @ValidateOnExecution
 @Singleton
@@ -190,7 +191,8 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   @Override
   public PageResponse<Environment> list(
       PageRequest<Environment> request, boolean withTags, String tagFilter, boolean hitSecondary) {
-    return resourceLookupService.listWithTagFilters(request, tagFilter, EntityType.ENVIRONMENT, withTags, hitSecondary);
+    return resourceLookupService.listWithTagFilters(
+        request, tagFilter, EntityType.ENVIRONMENT, withTags, hitSecondary, false);
   }
 
   @Override
@@ -253,7 +255,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   public Environment getWithTags(String appId, String envId) {
     Environment environment = get(appId, envId);
     if (environment != null) {
-      environment.setTagLinks(harnessTagService.getTagLinksWithEntityId(environment.getAccountId(), envId));
+      environment.setTagLinks(harnessTagService.getTagLinksWithEntityId(environment.getAccountId(), envId, false));
     }
     return environment;
   }
@@ -624,8 +626,9 @@ public class EnvironmentServiceImpl implements EnvironmentService {
 
   @Override
   public void pruneByApplication(String appId) {
-    List<Environment> environments =
-        wingsPersistence.createQuery(Environment.class).filter(EnvironmentKeys.appId, appId).asList();
+    List<Environment> environments = wingsPersistence.createQuery(Environment.class)
+                                         .filter(EnvironmentKeys.appId, appId)
+                                         .asList(createFindOptionsToHitSecondaryNode());
     environments.forEach(environment -> {
       wingsPersistence.delete(environment);
       auditServiceHelper.reportDeleteForAuditing(appId, environment);
@@ -644,6 +647,9 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   @Override
   public List<Environment> getEnvByApp(String appId) {
     PageRequest<Environment> pageRequest = aPageRequest().addFilter(EnvironmentKeys.appId, EQ, appId).build();
+    if (featureFlagService.isGlobalEnabled(CDS_QUERY_OPTIMIZATION_GLOBAL)) {
+      return wingsPersistence.querySecondary(Environment.class, pageRequest).getResponse();
+    }
     return wingsPersistence.query(Environment.class, pageRequest).getResponse();
   }
 
@@ -651,7 +657,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   public List<Environment> getEnvByAccountId(String accountId, boolean hitSecondary) {
     PageRequest<Environment> pageRequest =
         aPageRequest().addFilter(EnvironmentKeys.accountId, EQ, accountId).withLimit(UNLIMITED).build();
-    if (featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, accountId) && hitSecondary) {
+    if (hitSecondary) {
       return wingsPersistence.querySecondary(Environment.class, pageRequest).getResponse();
     } else {
       return wingsPersistence.query(Environment.class, pageRequest).getResponse();
@@ -660,8 +666,9 @@ public class EnvironmentServiceImpl implements EnvironmentService {
 
   @Override
   public List<String> getEnvIdsByApp(String appId) {
-    List<Key<Environment>> environmentKeyList =
-        wingsPersistence.createQuery(Environment.class).filter(EnvironmentKeys.appId, appId).asKeyList();
+    List<Key<Environment>> environmentKeyList = wingsPersistence.createQuery(Environment.class)
+                                                    .filter(EnvironmentKeys.appId, appId)
+                                                    .asKeyList(createFindOptionsToHitSecondaryNode());
     return environmentKeyList.stream().map(key -> (String) key.getId()).collect(Collectors.toList());
   }
 
@@ -670,27 +677,15 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     if (isEmpty(appIds)) {
       return new HashMap<>();
     }
-    List<Environment> list;
-
-    if (featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
-      FindOptions findOptions = new FindOptions();
-      findOptions.readPreference(ReadPreference.secondaryPreferred());
-      list = wingsPersistence.createQuery(Environment.class)
-                 .filter(EnvironmentKeys.accountId, accountId)
-                 .field(EnvironmentKeys.appId)
-                 .in(appIds)
-                 .project(EnvironmentKeys.appId, true)
-                 .project(EnvironmentKeys.environmentType, true)
-                 .asList(findOptions);
-    } else {
-      PageRequest<Environment> pageRequest = aPageRequest()
-                                                 .addFilter(EnvironmentKeys.accountId, EQ, accountId)
-                                                 .addFilter(EnvironmentKeys.appId, Operator.IN, appIds.toArray())
-                                                 .addFieldsIncluded("_id", "appId", "environmentType")
-                                                 .build();
-
-      list = wingsPersistence.getAllEntities(pageRequest, () -> list(pageRequest, false, null, true));
-    }
+    FindOptions findOptions = new FindOptions();
+    findOptions.readPreference(ReadPreference.secondaryPreferred());
+    List<Environment> list = wingsPersistence.createQuery(Environment.class)
+                                 .filter(EnvironmentKeys.accountId, accountId)
+                                 .field(EnvironmentKeys.appId)
+                                 .in(appIds)
+                                 .project(EnvironmentKeys.appId, true)
+                                 .project(EnvironmentKeys.environmentType, true)
+                                 .asList(findOptions);
 
     List<Base> emptyList = new ArrayList<>();
 
@@ -1273,5 +1268,12 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                                          .filter(EnvironmentKeys.environmentType, environmentType)
                                          .asList();
     return environments.stream().map(Environment::getUuid).collect(Collectors.toList());
+  }
+
+  private FindOptions createFindOptionsToHitSecondaryNode() {
+    if (featureFlagService.isGlobalEnabled(CDS_QUERY_OPTIMIZATION_GLOBAL)) {
+      return new FindOptions().readPreference(ReadPreference.secondaryPreferred());
+    }
+    return new FindOptions();
   }
 }

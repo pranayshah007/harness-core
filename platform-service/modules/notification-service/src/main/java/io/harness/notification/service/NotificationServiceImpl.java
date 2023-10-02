@@ -112,4 +112,9 @@ public class NotificationServiceImpl implements NotificationService {
     Criteria criteria = Criteria.where(NotificationKeys.team).is(team);
     return notificationRepository.findAll(criteria, PageUtils.getPageRequest(pageRequest));
   }
+
+  @Override
+  public void deleteByAccountIdentifier(String accountIdentifier) {
+    notificationRepository.deleteByAccountIdentifier(accountIdentifier);
+  }
 }

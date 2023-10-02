@@ -66,11 +66,6 @@ public class PerpetualTaskRecord
                  .field(PerpetualTaskRecordKeys.assignIteration)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("rebalanceIterator")
-                 .field(PerpetualTaskRecordKeys.state)
-                 .field(PerpetualTaskRecordKeys.rebalanceIteration)
-                 .build())
-        .add(CompoundMongoIndex.builder()
                  .name("state_assignIteration_assignAfterMs")
                  .field(PerpetualTaskRecordKeys.state)
                  .field(PerpetualTaskRecordKeys.assignIteration)
@@ -121,9 +116,6 @@ public class PerpetualTaskRecord
     if (PerpetualTaskRecordKeys.assignIteration.equals(fieldName)) {
       return assignIteration;
     }
-    if (PerpetualTaskRecordKeys.rebalanceIteration.equals(fieldName)) {
-      return rebalanceIteration;
-    }
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 
@@ -134,10 +126,6 @@ public class PerpetualTaskRecord
       return;
     }
 
-    if (PerpetualTaskRecordKeys.rebalanceIteration.equals(fieldName)) {
-      this.rebalanceIteration = nextIteration;
-      return;
-    }
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 

@@ -21,4 +21,11 @@ public interface NGMigrationConstants {
   String SERVICE_COMMAND_TEMPLATE_SEPARATOR = "::";
   String UNKNOWN_SERVICE = "UNKNOWN_S";
   String SECRET_FORMAT = "<+secrets.getValue(\"%s\")>";
+  String TRIGGER_TAG_VALUE_DEFAULT = "<+trigger.artifact.build>";
+
+  String SERVICE_ID = "serviceId";
+
+  String INFRA_DEFINITION_ID = "infraDefinitionId";
+  String SERVICE_INPUTS = "serviceInputs";
+  String INFRASTRUCTURE_DEFINITIONS = "infrastructureDefinitions";
 }

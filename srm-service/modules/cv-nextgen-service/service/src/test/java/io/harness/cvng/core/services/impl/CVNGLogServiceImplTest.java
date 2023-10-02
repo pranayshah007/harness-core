@@ -22,6 +22,7 @@ import io.harness.CvNextGenTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.beans.cvnglog.ApiCallLogDTO;
 import io.harness.cvng.beans.cvnglog.ApiCallLogDTO.ApiCallLogDTOField;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
@@ -36,6 +37,7 @@ import io.harness.cvng.core.entities.CVNGLog;
 import io.harness.cvng.core.entities.CVNGLog.CVNGLogKeys;
 import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.persistence.HPersistence;
 import io.harness.reflection.ReflectionUtils;
@@ -43,12 +45,16 @@ import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
 import java.lang.reflect.Field;
+import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.reflect.FieldUtils;
@@ -61,8 +67,14 @@ public class CVNGLogServiceImplTest extends CvNextGenTestBase {
   @Inject private HPersistence hPersistence;
   @Inject private CVNGLogService cvngLogService;
 
+  @Inject private VerificationJobInstanceService verificationJobInstanceService;
+
+  private BuilderFactory builderFactory = BuilderFactory.getDefault();
+
   private String accountId;
   private String traceableId;
+
+  private String verificationJobInstanceId;
   private long createdAt;
   private Instant requestTime;
   private Instant responseTime;
@@ -71,13 +83,15 @@ public class CVNGLogServiceImplTest extends CvNextGenTestBase {
 
   @Before
   public void setup() throws IllegalAccessException {
-    accountId = generateUuid();
+    accountId = builderFactory.getProjectParams().getAccountIdentifier();
     traceableId = generateUuid();
     requestTime = Instant.now();
     responseTime = Instant.now();
     startTime = TIME_FOR_TESTS.minusSeconds(5);
     endTime = TIME_FOR_TESTS;
     createdAt = Instant.now().toEpochMilli();
+    verificationJobInstanceId =
+        verificationJobInstanceService.create(builderFactory.verificationJobInstanceBuilder().build());
   }
 
   @Test
@@ -317,6 +331,7 @@ public class CVNGLogServiceImplTest extends CvNextGenTestBase {
     List<CVNGLogDTO> cvngLogDTOs = IntStream.range(0, 3)
                                        .mapToObj(index -> createExecutionLogDTOVerification(LogLevel.INFO))
                                        .collect(Collectors.toList());
+    cvngLogDTOs.add(createExecutionLogDTOVerificationJobInstance(LogLevel.INFO));
     cvngLogService.save(cvngLogDTOs);
     Set<String> traceableIds =
         cvngLogDTOs.stream().map(cvngLogDTO -> cvngLogDTO.getTraceableId()).collect(Collectors.toSet());
@@ -326,11 +341,10 @@ public class CVNGLogServiceImplTest extends CvNextGenTestBase {
 
     DeploymentLogsFilter deploymentLogsFilter =
         DeploymentLogsFilter.builder().logType(CVNGLogType.EXECUTION_LOG).errorLogsOnly(false).build();
-    PageResponse<CVNGLogDTO> cvngLogDTOResponse = cvngLogService.getCVNGLogs(accountId,
-        verificationTaskService.getVerificationJobInstanceId(traceableIds.iterator().next()), deploymentLogsFilter,
-        PageParams.builder().page(0).size(10).build());
+    PageResponse<CVNGLogDTO> cvngLogDTOResponse = cvngLogService.getCVNGLogs(
+        accountId, verificationJobInstanceId, deploymentLogsFilter, PageParams.builder().page(0).size(10).build());
 
-    assertThat(cvngLogDTOResponse.getContent().size()).isEqualTo(3);
+    assertThat(cvngLogDTOResponse.getContent().size()).isEqualTo(4);
     assertThat(cvngLogDTOResponse.getPageIndex()).isEqualTo(0);
     assertThat(cvngLogDTOResponse.getPageSize()).isEqualTo(10);
 
@@ -338,11 +352,12 @@ public class CVNGLogServiceImplTest extends CvNextGenTestBase {
     List<ExecutionLogDTO> executionLogDTOS = new ArrayList<>();
     cvngLogDTOsResult.forEach(cvngLogDTO -> executionLogDTOS.add((ExecutionLogDTO) cvngLogDTO));
 
-    assertThat(executionLogDTOS.size()).isEqualTo(3);
+    assertThat(executionLogDTOS.size()).isEqualTo(4);
     executionLogDTOS.forEach(executionLogDTO -> {
       assertThat(executionLogDTO.getLogLevel()).isEqualTo(LogLevel.INFO);
       assertThat(executionLogDTO.getType()).isEqualTo(CVNGLogType.EXECUTION_LOG);
-      assertThat(executionLogDTO.getTraceableType()).isEqualTo(TraceableType.VERIFICATION_TASK);
+      assertThat(executionLogDTO.getTraceableType())
+          .isIn(TraceableType.VERIFICATION_TASK, TraceableType.VERIFICATION_JOB_INSTANCE);
     });
   }
 
@@ -381,6 +396,51 @@ public class CVNGLogServiceImplTest extends CvNextGenTestBase {
       assertThat(executionLogDTO.getType()).isEqualTo(CVNGLogType.EXECUTION_LOG);
       assertThat(executionLogDTO.getTraceableType()).isEqualTo(TraceableType.VERIFICATION_TASK);
     });
+  }
+
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
+  public void testGetCVNGLogsSorting_forExecutionLog() throws IllegalAccessException {
+    List<CVNGLogDTO> cvngLogDTOs = IntStream.range(0, 50)
+                                       .mapToObj(index -> createExecutionLogDTOVerification(LogLevel.INFO))
+                                       .collect(Collectors.toList());
+    for (CVNGLogDTO cvngLogDTO : cvngLogDTOs) {
+      Clock clock = Clock.fixed(
+          Instant.now().plus(Duration.ofMinutes(ThreadLocalRandom.current().nextInt(-60, 60))), ZoneOffset.UTC);
+      FieldUtils.writeField(cvngLogService, "clock", clock, true);
+      cvngLogService.save(List.of(cvngLogDTO));
+    }
+    Set<String> traceableIds = cvngLogDTOs.stream().map(CVNGLogDTO::getTraceableId).collect(Collectors.toSet());
+    VerificationTaskService verificationTaskService = mock(VerificationTaskServiceImpl.class);
+    FieldUtils.writeField(cvngLogService, "verificationTaskService", verificationTaskService, true);
+    when(verificationTaskService.maybeGetVerificationTaskIds(any(), any())).thenReturn(traceableIds);
+
+    DeploymentLogsFilter deploymentLogsFilter =
+        DeploymentLogsFilter.builder().logType(CVNGLogType.EXECUTION_LOG).errorLogsOnly(false).build();
+    PageResponse<CVNGLogDTO> cvngLogDTOResponse = cvngLogService.getCVNGLogs(accountId,
+        verificationTaskService.getVerificationJobInstanceId(traceableIds.iterator().next()), deploymentLogsFilter,
+        PageParams.builder().page(0).size(30).build());
+
+    assertThat(cvngLogDTOResponse.getContent().size()).isEqualTo(30);
+    assertThat(cvngLogDTOResponse.getPageIndex()).isEqualTo(0);
+    assertThat(cvngLogDTOResponse.getPageSize()).isEqualTo(30);
+
+    List<CVNGLogDTO> cvngLogDTOsResult = cvngLogDTOResponse.getContent();
+    List<ExecutionLogDTO> executionLogDTOS = new ArrayList<>();
+    cvngLogDTOsResult.forEach(cvngLogDTO -> executionLogDTOS.add((ExecutionLogDTO) cvngLogDTO));
+
+    assertThat(executionLogDTOS.size()).isEqualTo(30);
+    executionLogDTOS.forEach(executionLogDTO -> {
+      assertThat(executionLogDTO.getLogLevel()).isEqualTo(LogLevel.INFO);
+      assertThat(executionLogDTO.getType()).isEqualTo(CVNGLogType.EXECUTION_LOG);
+      assertThat(executionLogDTO.getTraceableType()).isEqualTo(TraceableType.VERIFICATION_TASK);
+    });
+    List<ExecutionLogDTO> executionLogDTOSSorted =
+        executionLogDTOS.stream()
+            .sorted(Comparator.comparing(CVNGLogDTO::getCreatedAt).reversed())
+            .collect(Collectors.toList());
+    assertThat(executionLogDTOSSorted).isEqualTo(executionLogDTOS);
   }
 
   @Test
@@ -597,6 +657,21 @@ public class CVNGLogServiceImplTest extends CvNextGenTestBase {
         .endTime(endTime.toEpochMilli())
         .createdAt(createdAt)
         .traceableType(TraceableType.VERIFICATION_TASK)
+        .build();
+  }
+
+  private CVNGLogDTO createExecutionLogDTOVerificationJobInstance(LogLevel logLevel) {
+    startTime = startTime.plusSeconds(10);
+    endTime = endTime.plusSeconds(10);
+    return ExecutionLogDTO.builder()
+        .accountId(accountId)
+        .traceableId(verificationJobInstanceId)
+        .log("Data collection successful")
+        .logLevel(logLevel)
+        .startTime(startTime.toEpochMilli())
+        .endTime(endTime.toEpochMilli())
+        .createdAt(createdAt)
+        .traceableType(TraceableType.VERIFICATION_JOB_INSTANCE)
         .build();
   }
 

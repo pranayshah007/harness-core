@@ -6,11 +6,13 @@
  */
 
 package io.harness.ngmigration.template;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.executions.steps.StepSpecTypeConstants.DEPLOYMENT_TYPE_CUSTOM_DEPLOYMENT;
 import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.creator.plan.customDeployment.CustomDeploymentInstanceAttributes;
 import io.harness.cdng.manifest.yaml.InlineStoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
@@ -37,6 +39,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class CustomDeploymentTemplateService implements NgTemplateService {
   @Override
   public Set<String> getExpressions(Template template) {

@@ -106,6 +106,12 @@ git add ${VERSION_FILE}
 git commit --allow-empty -m "Set the proper version branch release/${PURPOSE}/${VERSION}xx"
 git push origin release/${PURPOSE}/${VERSION}xx
 
+export PREVIOUS_VERSION=$(( ${VERSION}-1 ))
+export PREVIOUS_RELEASE_BRANCH="release/${PURPOSE}/${PREVIOUS_VERSION}xx"
+export CURRENT_RELEASE_BRANCH="release/${PURPOSE}/${VERSION}xx"
+
+git checkout ${PREVIOUS_RELEASE_BRANCH}
+git checkout ${CURRENT_RELEASE_BRANCH}
 
 #creating the fix version
 chmod +x 332-ci-manager/release/release-branch-create-cie-version.sh

@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -44,6 +45,8 @@ import io.harness.encryption.SecretRefData;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
@@ -98,6 +101,8 @@ public class WinRmCopyCommandHandlerTest {
     WinrmTaskParameters winrmTaskParameters = getWinrmTaskParameters(copyConfigCommandUnit, outputVariables);
     when(fileBasedWinRmExecutorNG.copyConfigFiles(any(ConfigFileParameters.class)))
         .thenReturn(CommandExecutionStatus.SUCCESS);
+    LogCallback logCallback = mock(LogCallback.class);
+    when(fileBasedWinRmExecutorNG.getLogCallback()).thenReturn(logCallback);
     CommandExecutionStatus result = winRmCopyCommandHandler
                                         .handle(winrmTaskParameters, copyConfigCommandUnit, iLogStreamingTaskClient,
                                             CommandUnitsProgress.builder().build(), taskContext)
@@ -114,11 +119,22 @@ public class WinRmCopyCommandHandlerTest {
     when(fileBasedWinRmExecutorNG.copyConfigFiles(any(ConfigFileParameters.class)))
         .thenReturn(CommandExecutionStatus.FAILURE);
 
+    LogCallback logCallback = mock(LogCallback.class);
+    when(fileBasedWinRmExecutorNG.getLogCallback()).thenReturn(logCallback);
+
     assertThatThrownBy(()
                            -> winRmCopyCommandHandler.handle(winrmTaskParameters, copyConfigCommandUnit,
                                iLogStreamingTaskClient, CommandUnitsProgress.builder().build(), taskContext))
         .isInstanceOf(HintException.class)
         .hasMessage(FAILED_TO_COPY_WINRM_CONFIG_FILE_HINT);
+
+    ArgumentCaptor<LogLevel> logLevelArgCaptor = ArgumentCaptor.forClass(LogLevel.class);
+    ArgumentCaptor<CommandExecutionStatus> commandExecutionStatusArgCaptor =
+        ArgumentCaptor.forClass(CommandExecutionStatus.class);
+    verify(logCallback, times(1))
+        .saveExecutionLog(anyString(), logLevelArgCaptor.capture(), commandExecutionStatusArgCaptor.capture());
+    assertThat(logLevelArgCaptor.getValue()).isEqualTo(LogLevel.ERROR);
+    assertThat(commandExecutionStatusArgCaptor.getValue()).isEqualTo(CommandExecutionStatus.FAILURE);
   }
 
   @Test
@@ -130,6 +146,8 @@ public class WinRmCopyCommandHandlerTest {
         getWinRmTaskParameters(copyConfigCommandUnit, outputVariables, getFileDelegateConfigFromGit(true));
     when(fileBasedWinRmExecutorNG.copyConfigFiles(any(ConfigFileParameters.class)))
         .thenReturn(CommandExecutionStatus.SUCCESS);
+    LogCallback logCallback = mock(LogCallback.class);
+    when(fileBasedWinRmExecutorNG.getLogCallback()).thenReturn(logCallback);
     CommandExecutionStatus result = winRmCopyCommandHandler
                                         .handle(winrmTaskParameters, copyConfigCommandUnit, iLogStreamingTaskClient,
                                             CommandUnitsProgress.builder().build(), taskContext)
@@ -146,6 +164,8 @@ public class WinRmCopyCommandHandlerTest {
         getWinRmTaskParameters(copyConfigCommandUnit, outputVariables, getFileDelegateConfig(false));
     when(fileBasedWinRmExecutorNG.copyConfigFiles(any(ConfigFileParameters.class)))
         .thenReturn(CommandExecutionStatus.SUCCESS);
+    LogCallback logCallback = mock(LogCallback.class);
+    when(fileBasedWinRmExecutorNG.getLogCallback()).thenReturn(logCallback);
     CommandExecutionStatus result = winRmCopyCommandHandler
                                         .handle(winrmTaskParameters, copyConfigCommandUnit, iLogStreamingTaskClient,
                                             CommandUnitsProgress.builder().build(), taskContext)

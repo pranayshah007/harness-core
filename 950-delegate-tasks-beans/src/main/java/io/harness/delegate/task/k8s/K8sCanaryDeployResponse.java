@@ -6,23 +6,37 @@
  */
 
 package io.harness.delegate.task.k8s;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.k8s.model.K8sPod;
 
 import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Value
 @Builder
 @OwnedBy(CDP)
 public class K8sCanaryDeployResponse implements K8sNGTaskResponse {
   Integer releaseNumber;
   List<K8sPod> k8sPodList;
+  List<K8sPod> previousK8sPodList;
   Integer currentInstances;
   String canaryWorkload;
   boolean canaryWorkloadDeployed;
+  HelmChartInfo helmChartInfo;
+
+  public List<K8sPod> getPreviousK8sPodList() {
+    return previousK8sPodList;
+  }
+
+  public List<K8sPod> getTotalK8sPodList() {
+    return k8sPodList;
+  }
 }

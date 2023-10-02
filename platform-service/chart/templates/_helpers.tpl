@@ -64,11 +64,3 @@ Create the name of the service account to use
 {{- define "platform-service.pullSecrets" -}}
 {{ include "common.images.pullSecrets" (dict "images" (list .Values.image .Values.waitForInitContainer.image) "global" .Values.global ) }}
 {{- end -}}
-
-{{- define "platform-service.generateSmtpSecrets" }}
-    SMTP_HOST: {{ include "harnesscommon.secrets.passwords.manage" (dict "secret" "smtp-secret" "key" "SMTP_HOST" "providedValues" (list "global.smtpCreateSecret.SMTP_HOST") "length" 10 "context" $) }}
-    SMTP_PORT: {{ include "harnesscommon.secrets.passwords.manage" (dict "secret" "smtp-secret" "key" "SMTP_PORT" "providedValues" (list "global.smtpCreateSecret.SMTP_PORT") "length" 10 "context" $) }}
-    SMTP_USERNAME: {{ include "harnesscommon.secrets.passwords.manage" (dict "secret" "smtp-secret" "key" "SMTP_USERNAME" "providedValues" (list "global.smtpCreateSecret.SMTP_USERNAME") "length" 10 "context" $) }}
-    SMTP_PASSWORD: {{ include "harnesscommon.secrets.passwords.manage" (dict "secret" "smtp-secret" "key" "SMTP_PASSWORD" "providedValues" (list "global.smtpCreateSecret.SMTP_PASSWORD") "length" 10 "context" $) }}
-    SMTP_USE_SSL: {{ include "harnesscommon.secrets.passwords.manage" (dict "secret" "smtp-secret" "key" "SMTP_USE_SSL" "providedValues" (list "global.smtpCreateSecret.SMTP_USE_SSL") "length" 10 "context" $) }}
-{{- end }}

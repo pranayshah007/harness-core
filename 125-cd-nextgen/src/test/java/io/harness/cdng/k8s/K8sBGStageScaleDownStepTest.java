@@ -44,6 +44,7 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
@@ -166,6 +167,6 @@ public class K8sBGStageScaleDownStepTest extends CategoryTest {
   @Owner(developers = PRATYUSH)
   @Category(UnitTests.class)
   public void testGetK8sBGStageScaleDownStepParameters() {
-    assertThat(k8sBGStageScaleDownStep.getStepParametersClass()).isEqualTo(StepElementParameters.class);
+    assertThat(k8sBGStageScaleDownStep.getStepParametersClass()).isEqualTo(StepBaseParameters.class);
   }
 }

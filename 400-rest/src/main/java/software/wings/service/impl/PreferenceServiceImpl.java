@@ -19,7 +19,6 @@ import io.harness.beans.SearchFilter;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 
-import software.wings.beans.AccountAuditFilter;
 import software.wings.beans.ApplicationAuditFilter;
 import software.wings.beans.AuditPreference;
 import software.wings.beans.AuditPreference.AuditPreferenceKeys;
@@ -34,6 +33,7 @@ import software.wings.beans.PreferenceType;
 import software.wings.beans.ResourceLookup;
 import software.wings.beans.ResourceLookup.ResourceLookupKeys;
 import software.wings.beans.User;
+import software.wings.beans.account.AccountAuditFilter;
 import software.wings.beans.security.UserGroup;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.PreferenceService;

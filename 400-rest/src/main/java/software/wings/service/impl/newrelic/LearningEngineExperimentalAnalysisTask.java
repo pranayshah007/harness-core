@@ -11,10 +11,12 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotation.IgnoreUnusedIndex;
 import io.harness.annotations.StoreIn;
 import io.harness.beans.ExecutionStatus;
+import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
+import io.harness.persistence.AccountAccess;
 import io.harness.version.ServiceApiVersion;
 
 import software.wings.beans.Base;
@@ -50,7 +52,7 @@ import lombok.experimental.FieldNameConstants;
 @StoreIn(DbAliases.HARNESS)
 @Entity(value = "learningEngineExperimentalAnalysisTask", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-public class LearningEngineExperimentalAnalysisTask extends Base {
+public class LearningEngineExperimentalAnalysisTask extends Base implements AccountAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(SortCompoundMongoIndex.builder()
@@ -88,7 +90,7 @@ public class LearningEngineExperimentalAnalysisTask extends Base {
   }
   public static long TIME_SERIES_ANALYSIS_TASK_TIME_OUT = TimeUnit.MINUTES.toMillis(2);
   public static final int RETRIES = 3;
-
+  @FdIndex private String accountId;
   private String workflow_id;
   private String workflow_execution_id;
   private String state_execution_id;

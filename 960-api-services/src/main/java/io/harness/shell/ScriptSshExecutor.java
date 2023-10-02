@@ -6,7 +6,6 @@
  */
 
 package io.harness.shell;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.INVALID_EXECUTION_ID;
@@ -20,6 +19,9 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.SshRetryableException;
@@ -69,6 +71,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Created by anubhaw on 2/10/16.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @ValidateOnExecution
 @Slf4j
 public class ScriptSshExecutor extends AbstractScriptExecutor {
@@ -109,7 +113,7 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
 
   @Override
   public CommandExecutionStatus executeCommandString(String command, StringBuffer output, boolean displayCommand) {
-    if (config.isUseSshClient()) {
+    if (config.isVaultSSH() || config.isUseSshClient()) {
       try {
         ExecResponse response = SshClientManager.exec(
             ExecRequest.builder().command(command).displayCommand(displayCommand).build(), config, logCallback);
@@ -235,7 +239,7 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
       List<String> secretEnvVariablesToCollect, Long timeoutInMillis) {
     secretEnvVariablesToCollect =
         secretEnvVariablesToCollect == null ? Collections.emptyList() : secretEnvVariablesToCollect;
-    if (config.isUseSshClient()) {
+    if (config.isUseSshClient() || config.isVaultSSH()) {
       try {
         return executeCommandStringWithSshClient(command, envVariablesToCollect, secretEnvVariablesToCollect);
       } catch (Exception ex) {
@@ -338,11 +342,9 @@ public class ScriptSshExecutor extends AbstractScriptExecutor {
     if (null == secretEnvVariablesToCollect) {
       secretEnvVariablesToCollect = new ArrayList<>();
     }
-    List<String> allVariablesToCollect =
-        Stream.concat(envVariablesToCollect.stream(), secretEnvVariablesToCollect.stream())
-            .filter(EmptyPredicate::isNotEmpty)
-            .collect(Collectors.toList());
-    return allVariablesToCollect;
+    return Stream.concat(envVariablesToCollect.stream(), secretEnvVariablesToCollect.stream())
+        .filter(EmptyPredicate::isNotEmpty)
+        .collect(Collectors.toList());
   }
 
   public ExecuteCommandResponse getExecuteCommandResponse(

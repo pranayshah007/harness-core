@@ -30,7 +30,9 @@ COPY immutable-scripts /opt/harness-delegate/
 
 WORKDIR /opt/harness-delegate
 
-COPY --from=adoptopenjdk/openjdk11:jre-11.0.19_7-ubi-minimal /opt/java/openjdk/ /opt/java/openjdk/
+RUN mkdir -p /opt/harness-delegate/additional_certs_pem_split
+
+COPY --from=eclipse-temurin:17.0.7_7-jre-ubi9-minimal /opt/java/openjdk/ /opt/java/openjdk/
 
 ENV LANG=en_US.UTF-8
 ENV HOME=/opt/harness-delegate
@@ -45,35 +47,30 @@ ARG DELEGATEVERSION
 
 RUN mkdir -m 777 -p client-tools/kubectl/v1.24.3 \
   && curl -s -L -o client-tools/kubectl/v1.24.3/kubectl https://app.harness.io/public/shared/tools/kubectl/release/v1.24.3/bin/linux/$TARGETARCH/kubectl \
-  && mkdir -m 777 -p client-tools/helm/v2.13.1 \
-  && curl -s -L -o client-tools/helm/v2.13.1/helm https://app.harness.io/public/shared/tools/helm/release/v2.13.1/bin/linux/$TARGETARCH/helm \
-  && mkdir -m 777 -p client-tools/helm/v3.1.2 \
-  && curl -s -L -o client-tools/helm/v3.1.2/helm https://app.harness.io/public/shared/tools/helm/release/v3.1.2/bin/linux/$TARGETARCH/helm \
-  && mkdir -m 777 -p client-tools/helm/v3.8.0 \
-  && curl -s -L -o client-tools/helm/v3.8.0/helm https://app.harness.io/public/shared/tools/helm/release/v3.8.0/bin/linux/$TARGETARCH/helm \
-  && mkdir -m 777 -p client-tools/go-template/v0.4.2 \
-  && curl -s -L -o client-tools/go-template/v0.4.2/go-template https://app.harness.io/public/shared/tools/go-template/release/v0.4.2/bin/linux/$TARGETARCH/go-template \
+  && mkdir -m 777 -p client-tools/helm/v3.12.0 \
+  && curl -s -L -o client-tools/helm/v3.12.0/helm https://app.harness.io/public/shared/tools/helm/release/v3.12.0/bin/linux/$TARGETARCH/helm \
+  && mkdir -m 777 -p client-tools/go-template/v0.4.4 \
+  && curl -s -L -o client-tools/go-template/v0.4.4/go-template https://app.harness.io/public/shared/tools/go-template/release/v0.4.4/bin/linux/$TARGETARCH/go-template \
   && mkdir -m 777 -p client-tools/harness-pywinrm/v0.4-dev \
   && curl -s -L -o client-tools/harness-pywinrm/v0.4-dev/harness-pywinrm https://app.harness.io/public/shared/tools/harness-pywinrm/release/v0.4-dev/bin/linux/$TARGETARCH/harness-pywinrm \
   && mkdir -m 777 -p client-tools/chartmuseum/v0.15.0 \
   && curl -s -L -o client-tools/chartmuseum/v0.15.0/chartmuseum https://app.harness.io/public/shared/tools/chartmuseum/release/v0.15.0/bin/linux/$TARGETARCH/chartmuseum \
   && mkdir -m 777 -p client-tools/tf-config-inspect/v1.2 \
   && curl -s -L -o client-tools/tf-config-inspect/v1.2/terraform-config-inspect https://app.harness.io/public/shared/tools/terraform-config-inspect/v1.2/linux/$TARGETARCH/terraform-config-inspect \
-  && mkdir -m 777 -p client-tools/oc/v4.2.16 \
-  && curl -s -L -o client-tools/oc/v4.2.16/oc https://app.harness.io/public/shared/tools/oc/release/v4.2.16/bin/linux/$TARGETARCH/oc \
-  && mkdir -m 777 -p client-tools/kustomize/v4.5.4 \
-  && curl -s -L -o client-tools/kustomize/v4.5.4/kustomize https://app.harness.io/public/shared/tools/kustomize/release/v4.5.4/bin/linux/$TARGETARCH/kustomize \
-  && mkdir -m 777 -p client-tools/scm/f1024c6b \
-  && curl -s -L -o client-tools/scm/f1024c6b/scm https://app.harness.io/public/shared/tools/scm/release/f1024c6b/bin/linux/$TARGETARCH/scm \
+  && mkdir -m 777 -p client-tools/oc/v4.13.4 \
+  && curl -s -L -o client-tools/oc/v4.13.4/oc https://app.harness.io/public/shared/tools/oc/release/v4.13.4/bin/linux/$TARGETARCH/oc \
+  && mkdir -m 777 -p client-tools/scm/93b3c9f1 \
+  && curl -s -L -o client-tools/scm/93b3c9f1/scm https://app.harness.io/public/shared/tools/scm/release/93b3c9f1/bin/linux/$TARGETARCH/scm \
   && chmod -R 775 /opt/harness-delegate \
   && chgrp -R 0 /opt/harness-delegate  \
   && chown -R 1001 /opt/harness-delegate
 
 ENV PATH=/opt/harness-delegate/client-tools/kubectl/v1.24.3/:$PATH
-ENV PATH=/opt/harness-delegate/client-tools/go-template/v0.4.2/:$PATH
+ENV PATH=/opt/harness-delegate/client-tools/go-template/v0.4.4/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/chartmuseum/v0.15.0/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/tf-config-inspect/v1.2/:$PATH
-ENV PATH=/opt/harness-delegate/client-tools/kustomize/v4.5.4/:$PATH
+ENV PATH=/opt/harness-delegate/client-tools/oc/v4.13.4/:$PATH
+ENV SHARED_CA_CERTS_PATH=/opt/harness-delegate/additional_certs_pem_split
 
 RUN curl -s -L -o delegate.jar $BASEURL/$DELEGATEVERSION/delegate.jar
 

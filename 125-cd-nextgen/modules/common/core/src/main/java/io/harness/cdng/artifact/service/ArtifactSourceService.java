@@ -6,7 +6,9 @@
  */
 
 package io.harness.cdng.artifact.service;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.bean.artifactsource.ArtifactSource;
 import io.harness.validation.Create;
 
@@ -16,6 +18,8 @@ import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 /**
  * Entries are immutable, thus no update function should be there.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 public interface ArtifactSourceService {
   /**
    * Create/Save ArtifactSource in collection.

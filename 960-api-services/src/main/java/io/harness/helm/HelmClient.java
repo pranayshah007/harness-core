@@ -6,11 +6,13 @@
  */
 
 package io.harness.helm;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.helm.HelmClientImpl.HelmCliResponse;
 import io.harness.k8s.model.HelmVersion;
@@ -23,6 +25,8 @@ import java.util.concurrent.TimeoutException;
 /**
  * Created by anubhaw on 3/22/18.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @TargetModule(HarnessModule._960_API_SERVICES)
 @OwnedBy(CDP)
 public interface HelmClient {

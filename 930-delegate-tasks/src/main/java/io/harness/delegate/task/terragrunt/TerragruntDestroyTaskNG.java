@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.terragrunt;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.terragrunt.TerragruntTaskService.createCliRequest;
@@ -19,7 +18,10 @@ import static software.wings.beans.LogHelper.color;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -54,6 +56,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jose4j.lang.JoseException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Slf4j
 @OwnedBy(CDP)
 public class TerragruntDestroyTaskNG extends AbstractDelegateRunnableTask {
@@ -86,8 +90,15 @@ public class TerragruntDestroyTaskNG extends AbstractDelegateRunnableTask {
     LogCallback destroyLogCallback =
         taskService.getLogCallback(getLogStreamingTaskClient(), DESTROY, commandUnitsProgress);
 
-    String baseDir =
-        TerragruntTaskService.getBaseDir(destroyTaskParameters.getAccountId(), destroyTaskParameters.getEntityId());
+    String baseDir;
+    if (destroyTaskParameters.isUseUniqueDirectoryForBaseDir()) {
+      baseDir = TerragruntTaskService.getBaseDirWithUniqueDirectory(
+          destroyTaskParameters.getAccountId(), destroyTaskParameters.getEntityId());
+    } else {
+      baseDir =
+          TerragruntTaskService.getBaseDir(destroyTaskParameters.getAccountId(), destroyTaskParameters.getEntityId());
+    }
+
     TerragruntDestroyTaskResponse destroyTaskResponse;
     try {
       destroyTaskResponse = runDestroyTask(destroyTaskParameters, commandUnitsProgress, destroyLogCallback, baseDir);
@@ -110,6 +121,7 @@ public class TerragruntDestroyTaskNG extends AbstractDelegateRunnableTask {
       CommandUnitsProgress commandUnitsProgress, LogCallback destroyLogCallback, String baseDir)
       throws IOException, InterruptedException {
     try {
+      taskService.mapGitConfig(destroyTaskParameters);
       taskService.decryptTaskParameters(destroyTaskParameters);
       LogCallback fetchFilesLogCallback =
           taskService.getLogCallback(getLogStreamingTaskClient(), FETCH_CONFIG_FILES, commandUnitsProgress);

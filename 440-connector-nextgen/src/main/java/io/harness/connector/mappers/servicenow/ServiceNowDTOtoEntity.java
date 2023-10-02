@@ -6,9 +6,11 @@
  */
 
 package io.harness.connector.mappers.servicenow;
-
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowADFSAuthentication;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowConnector;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowConnector.ServiceNowConnectorBuilder;
@@ -23,6 +25,7 @@ import io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePassword
 import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidRequestException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 public class ServiceNowDTOtoEntity implements ConnectorDTOToEntityMapper<ServiceNowConnectorDTO, ServiceNowConnector> {
   @Override
   public ServiceNowConnector toConnectorEntity(ServiceNowConnectorDTO configDTO) {

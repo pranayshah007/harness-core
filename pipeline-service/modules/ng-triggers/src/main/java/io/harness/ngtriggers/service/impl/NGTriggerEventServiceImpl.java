@@ -6,16 +6,22 @@
  */
 
 package io.harness.ngtriggers.service.impl;
-
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.NGResourceFilterConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.dto.PollingInfoForTriggers;
 import io.harness.exception.InvalidRequestException;
+import io.harness.network.SafeHttpCall;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory.TriggerEventHistoryKeys;
 import io.harness.ngtriggers.service.NGTriggerEventsService;
 import io.harness.pms.execution.ExecutionStatus;
+import io.harness.polling.client.PollingResourceClient;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
 
 import com.google.inject.Inject;
@@ -29,11 +35,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class NGTriggerEventServiceImpl implements NGTriggerEventsService {
   private TriggerEventHistoryRepository triggerEventHistoryRepository;
+  private PollingResourceClient pollingResourceClient;
 
   @Override
   public Criteria formEventCriteria(String accountId, String eventCorrelationId, List<ExecutionStatus> statusList) {
@@ -52,6 +60,41 @@ public class NGTriggerEventServiceImpl implements NGTriggerEventsService {
 
     Criteria searchCriteria = new Criteria();
     criteria.andOperator(searchCriteria);
+    return criteria;
+  }
+
+  @Override
+  public ResponseDTO<PollingInfoForTriggers> getPollingInfo(String accountId, String pollingDocId) {
+    try {
+      return SafeHttpCall.executeWithExceptions(
+          pollingResourceClient.getPollingInfoForTriggers(accountId, pollingDocId));
+    } catch (Exception exception) {
+      String msg = "Failed to get Polling Response" + exception;
+      log.error(msg);
+      throw new InvalidRequestException(msg);
+    }
+  }
+
+  @Override
+  public Criteria formTriggerEventCriteria(
+      String accountId, String orgId, String projectId, String targetIdentifier, String artifactType) {
+    Criteria criteria = new Criteria();
+    if (EmptyPredicate.isNotEmpty(accountId)) {
+      criteria.and(TriggerEventHistoryKeys.accountId).is(accountId);
+    }
+    if (EmptyPredicate.isNotEmpty(orgId)) {
+      criteria.and(TriggerEventHistoryKeys.orgIdentifier).is(orgId);
+    }
+    if (EmptyPredicate.isNotEmpty(projectId)) {
+      criteria.and(TriggerEventHistoryKeys.projectIdentifier).is(projectId);
+    }
+    if (EmptyPredicate.isNotEmpty(targetIdentifier)) {
+      criteria.and(TriggerEventHistoryKeys.targetIdentifier).is(targetIdentifier);
+    }
+    if (EmptyPredicate.isNotEmpty(artifactType)) {
+      criteria.and(TriggerEventHistoryKeys.buildSourceType).is(artifactType);
+    }
+
     return criteria;
   }
 

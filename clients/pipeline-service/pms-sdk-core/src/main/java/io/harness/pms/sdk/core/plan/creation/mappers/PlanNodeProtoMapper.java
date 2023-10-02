@@ -9,11 +9,11 @@ package io.harness.pms.sdk.core.plan.creation.mappers;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
-import static io.harness.pms.sdk.core.steps.io.PipelineViewObject.DEFAULT;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdvisorObtainmentList;
 import io.harness.pms.contracts.plan.ExecutionMode;
@@ -73,10 +73,12 @@ public class PlanNodeProtoMapper {
     if (node.getGroup() != null) {
       builder.setGroup(node.getGroup());
     }
-    if (node.getStepParameters() != null && node.getStepParameters().toViewJson() != null
-        && node.getStepParameters().toViewJson() != DEFAULT) {
-      builder.setStepInputs(node.getStepParameters().toViewJson());
+
+    if (node.getStepParameters() != null
+        && EmptyPredicate.isNotEmpty(node.getStepParameters().excludeKeysFromStepInputs())) {
+      builder.addAllStepInputsKeyExclude(node.getStepParameters().excludeKeysFromStepInputs());
     }
+
     if (node.getExecutionInputTemplate() != null) {
       builder.setExecutionInputTemplate(node.getExecutionInputTemplate());
     }

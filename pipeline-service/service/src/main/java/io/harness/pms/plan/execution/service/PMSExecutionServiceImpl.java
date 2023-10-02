@@ -8,22 +8,30 @@
 package io.harness.pms.plan.execution.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
 import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSetIntoPipelineForGivenStages;
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateFromPipeline;
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateFromPipelineForGivenStages;
+import static io.harness.springdata.SpringDataMongoUtils.populateInFilter;
 
 import static java.lang.String.format;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.ModuleType;
 import io.harness.NGResourceFilterConstants;
+import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.dto.OrchestrationGraphDTO;
 import io.harness.engine.OrchestrationService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.interrupts.InterruptPackage;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.AccessDeniedException;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecutionMetadata;
@@ -38,7 +46,6 @@ import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.interrupts.Interrupt;
-import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.contracts.interrupts.IssuedBy;
@@ -58,6 +65,8 @@ import io.harness.pms.pipeline.PMSPipelineListBranchesResponse;
 import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.ResolveInputYamlType;
+import io.harness.pms.pipeline.service.PMSPipelineService;
+import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.plan.execution.ModuleInfoOperators;
 import io.harness.pms.plan.execution.PlanExecutionInterruptType;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -66,6 +75,7 @@ import io.harness.pms.plan.execution.beans.dto.ExecutionDataResponseDTO;
 import io.harness.pms.plan.execution.beans.dto.ExecutionMetaDataResponseDetailsDTO;
 import io.harness.pms.plan.execution.beans.dto.InterruptDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionFilterPropertiesDTO;
+import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.security.PrincipalHelper;
 import io.harness.security.SecurityContextBuilder;
@@ -82,13 +92,14 @@ import com.google.inject.Singleton;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.PatternSyntaxException;
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.InternalServerErrorException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.PredicateUtils;
@@ -97,7 +108,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @Slf4j
 @OwnedBy(PIPELINE)
@@ -112,8 +125,9 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   @Inject private PmsGitSyncHelper pmsGitSyncHelper;
   @Inject PlanExecutionMetadataService planExecutionMetadataService;
   @Inject private GitSyncSdkService gitSyncSdkService;
-
-  private static final int MAX_LIST_SIZE = 1000;
+  @Inject private PMSPipelineService pmsPipelineService;
+  @Inject private PMSPipelineServiceHelper pmsPipelineServiceHelper;
+  @Inject private AccessControlClient accessControlClient;
 
   private static final String REPO_LIST_SIZE_EXCEPTION = "The size of unique repository list is greater than [%d]";
 
@@ -125,7 +139,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   public Criteria formCriteria(String accountId, String orgId, String projectId, String pipelineIdentifier,
       String filterIdentifier, PipelineExecutionFilterPropertiesDTO filterProperties, String moduleName,
       String searchTerm, List<ExecutionStatus> statusList, boolean myDeployments, boolean pipelineDeleted,
-      boolean isLatest) {
+      boolean showAllExecutions) {
     Criteria criteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(accountId)) {
       criteria.and(PlanExecutionSummaryKeys.accountId).is(accountId);
@@ -137,7 +151,12 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       criteria.and(PlanExecutionSummaryKeys.projectIdentifier).is(projectId);
     }
     if (EmptyPredicate.isNotEmpty(pipelineIdentifier)) {
-      criteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).is(pipelineIdentifier);
+      addCriteriaForPermittedPipeline(
+          accountId, orgId, projectId, Collections.singletonList(pipelineIdentifier), criteria);
+    } else {
+      // If the user does not have permission for all pipelines then add the criteria for only view permission pipeline
+      pmsPipelineServiceHelper.setPermittedPipelines(
+          accountId, orgId, projectId, criteria, PlanExecutionSummaryKeys.pipelineIdentifier);
     }
     // To show non-child execution. First or condition is added for older execution which do not have parentStageInfo
     if (EmptyPredicate.isEmpty(pipelineIdentifier)) {
@@ -147,7 +166,9 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       criteria.and(PlanExecutionSummaryKeys.status).in(statusList);
     }
 
-    criteria.and(PlanExecutionSummaryKeys.isLatestExecution).ne(!isLatest);
+    if (!showAllExecutions) {
+      criteria.and(PlanExecutionSummaryKeys.isLatestExecution).ne(false);
+    }
     criteria.and(PlanExecutionSummaryKeys.executionMode).ne(ExecutionMode.PIPELINE_ROLLBACK);
 
     Criteria filterCriteria = new Criteria();
@@ -258,26 +279,39 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
 
   @Override
   public PMSPipelineListRepoResponse getListOfRepo(Criteria criteria) {
-    List<String> uniqueRepos = pmsExecutionSummaryRespository.findListOfUniqueRepositories(criteria);
-    CollectionUtils.filter(uniqueRepos, PredicateUtils.notNullPredicate());
-    if (uniqueRepos.size() > MAX_LIST_SIZE) {
-      log.error(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
-      throw new InternalServerErrorException(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
+    Set<String> repoList = new HashSet<>();
+    try (CloseableIterator<PipelineExecutionSummaryEntity> iterator =
+             pmsExecutionSummaryRespository.findListOfRepositories(criteria)) {
+      while (iterator.hasNext()) {
+        EntityGitDetails entityGitDetails = iterator.next().getEntityGitDetails();
+        if (entityGitDetails != null && EmptyPredicate.isNotEmpty(entityGitDetails.getRepoName())) {
+          repoList.add(entityGitDetails.getRepoName());
+        }
+      }
     }
+
+    List<String> uniqueRepos = new ArrayList<>(repoList);
+    CollectionUtils.filter(uniqueRepos, PredicateUtils.notNullPredicate());
     return PMSPipelineListRepoResponse.builder().repositories(uniqueRepos).build();
   }
 
   @Override
   public PMSPipelineListBranchesResponse getListOfBranches(Criteria criteria) {
-    List<String> uniqueBranches = pmsExecutionSummaryRespository.findListOfUniqueBranches(criteria);
-    CollectionUtils.filter(uniqueBranches, PredicateUtils.notNullPredicate());
-    if (uniqueBranches.size() > MAX_LIST_SIZE) {
-      log.error(String.format(BRANCH_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
-      throw new InternalServerErrorException(String.format(BRANCH_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
+    Set<String> branchList = new HashSet<>();
+    try (CloseableIterator<PipelineExecutionSummaryEntity> iterator =
+             pmsExecutionSummaryRespository.findListOfBranches(criteria)) {
+      while (iterator.hasNext()) {
+        EntityGitDetails entityGitDetails = iterator.next().getEntityGitDetails();
+        if (entityGitDetails != null && EmptyPredicate.isNotEmpty(entityGitDetails.getBranch())) {
+          branchList.add(entityGitDetails.getBranch());
+        }
+      }
     }
+
+    List<String> uniqueBranches = new ArrayList<>(branchList);
+    CollectionUtils.filter(uniqueBranches, PredicateUtils.notNullPredicate());
     return PMSPipelineListBranchesResponse.builder().branches(uniqueBranches).build();
   }
-
   @Override
   public Criteria formCriteriaOROperatorOnModules(String accountId, String orgId, String projectId,
       List<String> pipelineIdentifier, PipelineExecutionFilterPropertiesDTO filterProperties, String filterIdentifier) {
@@ -293,7 +327,10 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     }
     Criteria pipelineCriteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(pipelineIdentifier)) {
-      pipelineCriteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).in(pipelineIdentifier);
+      addCriteriaForPermittedPipeline(accountId, orgId, projectId, pipelineIdentifier, pipelineCriteria);
+    } else {
+      pmsPipelineServiceHelper.setPermittedPipelines(
+          accountId, orgId, projectId, criteria, PlanExecutionSummaryKeys.pipelineIdentifier);
     }
 
     Criteria filterCriteria = new Criteria();
@@ -325,6 +362,19 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     }
 
     return criteria.orOperator(criteriaList.toArray(new Criteria[criteriaList.size()]));
+  }
+
+  private void addCriteriaForPermittedPipeline(
+      String accountId, String orgId, String projectId, List<String> pipelineIdentifier, Criteria pipelineCriteria) {
+    List<String> permittedPipelineIdentifier =
+        pmsPipelineService.getPermittedPipelineIdentifier(accountId, orgId, projectId, pipelineIdentifier);
+    if (permittedPipelineIdentifier.size() != 0) {
+      pipelineCriteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).in(pipelineIdentifier);
+    } else {
+      throw new AccessDeniedException(
+          String.format("Missing permission %s on %s", PipelineRbacPermissions.PIPELINE_VIEW, "pipeline"),
+          ErrorCode.NG_ACCESS_DENIED, USER);
+    }
   }
 
   private void populatePipelineFilterUsingIdentifierANDOperator(Criteria criteria, String accountIdentifier,
@@ -387,14 +437,27 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
           where(PlanExecutionSummaryKeys.name)
               .regex(pipelineFilter.getPipelineName(), NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
     }
-
+    List<Criteria> combinedAndCriteriaList = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(pipelineFilter.getPipelineTags())) {
-      addPipelineTagsCriteria(criteria, pipelineFilter.getPipelineTags());
+      PMSPipelineServiceHelper.addPipelineTagsCriteria(combinedAndCriteriaList, pipelineFilter.getPipelineTags());
     }
     if (EmptyPredicate.isNotEmpty(pipelineFilter.getPipelineLabels())) {
-      addPipelineLabelsCriteria(criteria, pipelineFilter.getPipelineLabels());
+      addPipelineLabelsCriteria(combinedAndCriteriaList, pipelineFilter.getPipelineLabels());
     }
-
+    if (EmptyPredicate.isNotEmpty(pipelineFilter.getTriggerIdentifiers())) {
+      Criteria triggerIdentifierCriteria = new Criteria();
+      populateInFilter(triggerIdentifierCriteria, PlanExecutionSummaryKeys.triggerIdentifier,
+          pipelineFilter.getTriggerIdentifiers());
+      combinedAndCriteriaList.add(triggerIdentifierCriteria);
+    }
+    if (EmptyPredicate.isNotEmpty(pipelineFilter.getTriggerTypes())) {
+      Criteria triggerTypeCriteria = new Criteria();
+      populateInFilter(triggerTypeCriteria, PlanExecutionSummaryKeys.triggerType, pipelineFilter.getTriggerTypes());
+      combinedAndCriteriaList.add(triggerTypeCriteria);
+    }
+    if (combinedAndCriteriaList.size() > 0) {
+      criteria.andOperator(combinedAndCriteriaList.toArray(new Criteria[combinedAndCriteriaList.size()]));
+    }
     if (pipelineFilter.getModuleProperties() != null) {
       if (operatorOnModules.name().equals(ModuleInfoOperators.Operators.OR)) {
         ModuleInfoFilterUtils.processNodeOROperator(
@@ -416,19 +479,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     populatePipelineFilterParametrisedOperatorOnModules(criteria, pipelineFilter, ModuleInfoOperators.OR, criteriaList);
   }
 
-  private void addPipelineTagsCriteria(Criteria criteria, List<NGTag> pipelineTags) {
-    List<String> tags = new ArrayList<>();
-    pipelineTags.forEach(o -> {
-      tags.add(o.getKey());
-      tags.add(o.getValue());
-    });
-    Criteria tagsCriteria = new Criteria();
-    tagsCriteria.orOperator(
-        where(PlanExecutionSummaryKeys.tagsKey).in(tags), where(PlanExecutionSummaryKeys.tagsValue).in(tags));
-    criteria.andOperator(tagsCriteria);
-  }
-
-  private void addPipelineLabelsCriteria(Criteria criteria, List<NGLabel> pipelineLabels) {
+  private void addPipelineLabelsCriteria(List<Criteria> criteriaList, List<NGLabel> pipelineLabels) {
     List<String> labelKeys = new ArrayList<>();
     List<String> labelValues = new ArrayList<>();
     pipelineLabels.forEach(o -> {
@@ -438,7 +489,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     Criteria labelsCriteria = new Criteria();
     labelsCriteria.orOperator(where(PlanExecutionSummaryKeys.labelsKey).in(labelKeys),
         where(PlanExecutionSummaryKeys.labelsValue).in(labelValues));
-    criteria.andOperator(labelsCriteria);
+    criteriaList.add(labelsCriteria);
   }
 
   @Override
@@ -455,20 +506,8 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
 
       // InputSet yaml used during execution
       String yaml = executionSummaryEntity.getInputSetYaml();
-      if (resolveExpressions && EmptyPredicate.isNotEmpty(yaml)) {
-        yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(
-            yaml, planExecutionId, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS);
-      }
+      yaml = resolveExpressionsInYaml(yaml, resolveExpressions, planExecutionId, resolveExpressionsType);
 
-      if (!resolveExpressions && EmptyPredicate.isNotEmpty(yaml)) {
-        if (resolveExpressionsType.equals(ResolveInputYamlType.RESOLVE_TRIGGER_EXPRESSIONS)) {
-          yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(
-              yaml, planExecutionId, ResolveInputYamlType.RESOLVE_TRIGGER_EXPRESSIONS);
-        } else if (resolveExpressionsType.equals(ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS)) {
-          yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(
-              yaml, planExecutionId, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS);
-        }
-      }
       StagesExecutionMetadata stagesExecutionMetadata = executionSummaryEntity.getStagesExecutionMetadata();
       return InputSetYamlWithTemplateDTO
           .builder()
@@ -556,6 +595,12 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   @Override
   public Page<PipelineExecutionSummaryEntity> getPipelineExecutionSummaryEntity(Criteria criteria, Pageable pageable) {
     return pmsExecutionSummaryRespository.findAll(criteria, pageable);
+  }
+
+  @Override
+  public Page<PipelineExecutionSummaryEntity> getPipelineExecutionSummaryEntityWithProjection(
+      Criteria criteria, Pageable pageable, List<String> projections) {
+    return pmsExecutionSummaryRespository.findAllWithProjection(criteria, pageable, projections);
   }
 
   @Override
@@ -698,5 +743,39 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       return InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineTemplate, mergedRuntimeInputYaml, false);
     }
     return mergeInputSetIntoPipelineForGivenStages(pipelineTemplate, mergedRuntimeInputYaml, false, stageIdentifiers);
+  }
+
+  @Override
+  public String mergeRuntimeInputIntoPipeline(String accountId, String orgIdentifier, String projectIdentifier,
+      String planExecutionId, boolean resolveExpressions, ResolveInputYamlType resolveExpressionsType) {
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
+        getPipelineExecutionSummaryEntity(accountId, orgIdentifier, projectIdentifier, planExecutionId);
+    String pipelineTemplate = pipelineExecutionSummaryEntity.getPipelineTemplate();
+    String inputSetYaml = pipelineExecutionSummaryEntity.getInputSetYaml();
+    inputSetYaml = resolveExpressionsInYaml(inputSetYaml, resolveExpressions, planExecutionId, resolveExpressionsType);
+    if (EmptyPredicate.isEmpty(pipelineTemplate)) {
+      return "";
+    }
+
+    return InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineTemplate, inputSetYaml, false);
+  }
+
+  private String resolveExpressionsInYaml(
+      String yaml, boolean resolveExpressions, String planExecutionId, ResolveInputYamlType resolveExpressionsType) {
+    if (resolveExpressions && EmptyPredicate.isNotEmpty(yaml)) {
+      yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(
+          yaml, planExecutionId, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS);
+    }
+
+    if (!resolveExpressions && EmptyPredicate.isNotEmpty(yaml)) {
+      if (resolveExpressionsType.equals(ResolveInputYamlType.RESOLVE_TRIGGER_EXPRESSIONS)) {
+        yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(
+            yaml, planExecutionId, ResolveInputYamlType.RESOLVE_TRIGGER_EXPRESSIONS);
+      } else if (resolveExpressionsType.equals(ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS)) {
+        yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(
+            yaml, planExecutionId, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS);
+      }
+    }
+    return yaml;
   }
 }

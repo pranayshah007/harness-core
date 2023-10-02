@@ -6,13 +6,15 @@
  */
 
 package io.harness.delegate.task.artifacts.artifactory;
-
 import static io.harness.artifactory.service.ArtifactoryRegistryService.DEFAULT_ARTIFACT_DIRECTORY;
 import static io.harness.artifactory.service.ArtifactoryRegistryService.DEFAULT_ARTIFACT_FILTER;
 import static io.harness.artifactory.service.ArtifactoryRegistryService.MAX_NO_OF_TAGS_PER_ARTIFACT;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryNgService;
 import io.harness.artifactory.service.ArtifactoryRegistryService;
@@ -38,6 +40,7 @@ import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.CDP)
@@ -158,29 +161,45 @@ public class ArtifactoryArtifactTaskHandler extends DelegateArtifactTaskHandler<
     ArtifactoryConfigRequest artifactoryConfigRequest = artifactoryRequestMapper.toArtifactoryRequest(
         artifactoryGenericArtifactDelegateRequest.getArtifactoryConnectorDTO());
     String artifactDirectory = artifactoryGenericArtifactDelegateRequest.getArtifactDirectory();
+    String artifactFilter = artifactoryGenericArtifactDelegateRequest.getArtifactFilter();
     if (EmptyPredicate.isEmpty(artifactDirectory)) {
       saveLogs(executionLogCallback,
           "Artifact Directory is Empty, assuming Artifacts are present in root of the repository");
       artifactDirectory = DEFAULT_ARTIFACT_DIRECTORY;
     }
-    String filePath = Paths.get(artifactDirectory, DEFAULT_ARTIFACT_FILTER).toString();
+    String filePath = EmptyPredicate.isEmpty(artifactFilter)
+        ? Paths.get(artifactDirectory, DEFAULT_ARTIFACT_FILTER).toString()
+        : artifactFilter;
 
     List<BuildDetails> buildDetails = artifactoryNgService.getArtifactList(artifactoryConfigRequest,
-        artifactoryGenericArtifactDelegateRequest.getRepositoryName(), filePath, MAX_NO_OF_TAGS_PER_ARTIFACT);
-    String finalArtifactDirectory = artifactDirectory;
-    buildDetails = buildDetails.stream()
-                       .map(buildDetail -> {
-                         String artifactoryPath = buildDetail.getArtifactPath();
-                         if (!finalArtifactDirectory.equals(".")) {
-                           artifactoryPath = buildDetail.getArtifactPath().replaceFirst(finalArtifactDirectory, "");
-                         }
-                         if (!artifactoryPath.isEmpty() && artifactoryPath.charAt(0) == '/') {
-                           artifactoryPath = artifactoryPath.substring(1);
-                         }
-                         buildDetail.setArtifactPath(artifactoryPath);
-                         return buildDetail;
-                       })
-                       .collect(Collectors.toList());
+        artifactoryGenericArtifactDelegateRequest.getRepositoryName(), filePath, MAX_NO_OF_TAGS_PER_ARTIFACT,
+        artifactoryGenericArtifactDelegateRequest.getArtifactPathFilter(), artifactDirectory);
+
+    if (EmptyPredicate.isEmpty(artifactFilter)) {
+      int index = 0;
+      for (; index < artifactDirectory.length(); index++) {
+        if (artifactDirectory.charAt(index) != '/') {
+          break;
+        }
+      }
+
+      String finalArtifactDirectory = artifactDirectory.substring(index);
+
+      buildDetails = buildDetails.stream()
+                         .map(buildDetail -> {
+                           String artifactoryPath = buildDetail.getArtifactPath();
+                           if (!finalArtifactDirectory.equals(".")) {
+                             artifactoryPath = buildDetail.getArtifactPath().replaceFirst(finalArtifactDirectory, "");
+                           }
+                           if (!artifactoryPath.isEmpty() && artifactoryPath.charAt(0) == '/') {
+                             artifactoryPath = artifactoryPath.substring(1);
+                           }
+                           buildDetail.setArtifactPath(artifactoryPath);
+                           return buildDetail;
+                         })
+                         .collect(Collectors.toList());
+    }
+
     List<ArtifactoryGenericArtifactDelegateResponse> artifactDelegateResponses =
         buildDetails.stream()
             .map(build

@@ -23,11 +23,14 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
 import io.harness.account.AccountClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.K8sHelmCommonStepHelper;
-import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
@@ -76,14 +79,12 @@ import io.harness.eraro.Level;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.logging.LogCallback;
 import io.harness.manifest.CustomSourceFile;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
@@ -92,7 +93,6 @@ import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -100,6 +100,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
@@ -127,6 +128,8 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_K8S})
 @OwnedBy(CDP)
 @Singleton
 @Slf4j
@@ -141,12 +144,12 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
   public static final String RELEASE_NAME_VALIDATION_REGEX =
       "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
   public static final Pattern releaseNamePattern = Pattern.compile(RELEASE_NAME_VALIDATION_REGEX);
-  @Inject private EngineExpressionService engineExpressionService;
+  @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private EncryptionHelper encryptionHelper;
   @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @Inject private AccountClient accountClient;
 
-  public TaskChainResponse queueK8sTask(StepElementParameters stepElementParameters, K8sDeployRequest k8sDeployRequest,
+  public TaskChainResponse queueK8sTask(StepBaseParameters stepElementParameters, K8sDeployRequest k8sDeployRequest,
       Ambiance ambiance, K8sExecutionPassThroughData executionPassThroughData, TaskType taskType) {
     TaskData taskData = TaskData.builder()
                             .parameters(new Object[] {k8sDeployRequest})
@@ -168,7 +171,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
         .build();
   }
 
-  public TaskChainResponse queueK8sTask(StepElementParameters stepElementParameters, K8sDeployRequest k8sDeployRequest,
+  public TaskChainResponse queueK8sTask(StepBaseParameters stepElementParameters, K8sDeployRequest k8sDeployRequest,
       Ambiance ambiance, K8sExecutionPassThroughData executionPassThroughData) {
     TaskType taskType = getK8sTaskType(k8sDeployRequest, ambiance);
     return queueK8sTask(stepElementParameters, k8sDeployRequest, ambiance, executionPassThroughData, taskType);
@@ -191,18 +194,59 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
       return emptyList();
     }
 
-    List<String> valuesFilesContentsWithoutComments = new ArrayList<>();
+    List<String> renderedValuesFileContents;
     if (cdFeatureFlagHelper.isEnabled(
             AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_REMOVE_COMMENTS_FROM_VALUES_YAML)) {
-      valuesFilesContentsWithoutComments =
-          K8sValuesFilesCommentsHandler.removeComments(valuesFileContents, manifestOutcome.getType());
+      renderedValuesFileContents = removeCommentsAndRender(manifestOutcome, ambiance, valuesFileContents);
+    } else {
+      renderedValuesFileContents = getValuesFileContents(ambiance, valuesFileContents);
     }
-
-    List<String> renderedValuesFileContents = getValuesFileContents(ambiance,
-        isEmpty(valuesFilesContentsWithoutComments) ? valuesFileContents : valuesFilesContentsWithoutComments);
 
     if (ManifestType.OpenshiftTemplate.equals(manifestOutcome.getType())) {
       Collections.reverse(renderedValuesFileContents);
+    }
+
+    return renderedValuesFileContents;
+  }
+
+  public List<String> removeCommentsAndRender(
+      ManifestOutcome manifest, Ambiance ambiance, List<String> valuesFileContents) {
+    // This check is to prevent fallback logic to apply to non values.yaml, should be removed once the fallback
+    // logic is removed as K8sFilesCommentsHandler#removeComments is already handling the same
+    if (!ManifestType.K8Manifest.equals(manifest.getType()) && !ManifestType.HelmChart.equals(manifest.getType())) {
+      return getValuesFileContents(ambiance, valuesFileContents);
+    }
+
+    List<String> valuesFilesContentsWithoutComments =
+        K8sFilesCommentsHandler.removeComments(valuesFileContents, manifest.getType());
+
+    // fallback logic in case if output of the values without comments is different than the value with comments
+    // if the size is different then there is no point to continue
+    if (valuesFileContents.size() != valuesFilesContentsWithoutComments.size()) {
+      log.warn("Size of values files without comments [{}] doesn't match the original size [{}]",
+          valuesFilesContentsWithoutComments.size(), valuesFileContents.size());
+
+      return valuesFileContents;
+    }
+
+    List<String> renderedValuesFileContents = new ArrayList<>();
+    for (int index = 0; index < valuesFileContents.size(); index++) {
+      // render only once if the output is the same
+      if (valuesFilesContentsWithoutComments.get(index).equals(valuesFileContents.get(index))) {
+        renderedValuesFileContents.add(renderValue(ambiance, valuesFileContents.get(index), false));
+        continue;
+      }
+
+      String renderedValueWithoutComments = renderValue(ambiance, valuesFilesContentsWithoutComments.get(index), false);
+      String renderedValue = renderValue(ambiance, valuesFileContents.get(index), true);
+
+      // prevent parsing yaml to check if matches if the rendered output is already the same
+      if (renderedValueWithoutComments.equals(renderedValue)) {
+        renderedValuesFileContents.add(renderedValue);
+      } else {
+        renderedValuesFileContents.add(
+            K8sFilesCommentsHandler.matchOrFallback(renderedValueWithoutComments, renderedValue));
+      }
     }
 
     return renderedValuesFileContents;
@@ -218,11 +262,11 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
       return emptyList();
     }
     return patchesFileContents.stream()
-        .map(patchesFileContent -> engineExpressionService.renderExpression(ambiance, patchesFileContent, false))
+        .map(patchesFileContent -> cdExpressionResolver.renderExpression(ambiance, patchesFileContent, false))
         .collect(Collectors.toList());
   }
 
-  public TaskChainResponse executeOpenShiftParamsTask(Ambiance ambiance, StepElementParameters stepElementParameters,
+  public TaskChainResponse executeOpenShiftParamsTask(Ambiance ambiance, StepBaseParameters stepElementParameters,
       List<OpenshiftParamManifestOutcome> paramManifestOutcomes, K8sStepPassThroughData k8sStepPassThroughData) {
     List<GitFetchFilesConfig> gitFetchFilesConfigs = new ArrayList<>();
     List<OpenshiftParamManifestOutcome> orderedOpenshiftParamManifests =
@@ -236,9 +280,8 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
         ambiance, gitFetchFilesConfigs, stepElementParameters, updatedK8sStepPassThroughData);
   }
 
-  public TaskChainResponse prepareOpenshiftParamFetchTask(Ambiance ambiance,
-      StepElementParameters stepElementParameters, List<OpenshiftParamManifestOutcome> openshiftParamManifests,
-      K8sStepPassThroughData k8sStepPassThroughData) {
+  public TaskChainResponse prepareOpenshiftParamFetchTask(Ambiance ambiance, StepBaseParameters stepElementParameters,
+      List<OpenshiftParamManifestOutcome> openshiftParamManifests, K8sStepPassThroughData k8sStepPassThroughData) {
     List<GitFetchFilesConfig> gitFetchFilesConfigs = new ArrayList<>();
     List<OpenshiftParamManifestOutcome> orderedOpenshiftParamManifests =
         (List<OpenshiftParamManifestOutcome>) fetchGitFetchFileConfigAndRearrangeTheParamOrPatchesManifestOutcome(
@@ -303,7 +346,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
   }
 
   public TaskChainResponse prepareKustomizePatchesFetchTask(Ambiance ambiance, K8sStepExecutor k8sStepExecutor,
-      StepElementParameters stepElementParameters, List<KustomizePatchesManifestOutcome> kustomizePatchesManifests,
+      StepBaseParameters stepElementParameters, List<KustomizePatchesManifestOutcome> kustomizePatchesManifests,
       K8sStepPassThroughData k8sStepPassThroughData) {
     KustomizeManifestOutcome kustomizeManifestOutcome =
         (KustomizeManifestOutcome) k8sStepPassThroughData.getManifestOutcome();
@@ -327,7 +370,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
   }
 
   public TaskChainResponse prepareValuesFetchTask(Ambiance ambiance, K8sStepExecutor k8sStepExecutor,
-      StepElementParameters stepElementParameters, List<ValuesManifestOutcome> aggregatedValuesManifests,
+      StepBaseParameters stepElementParameters, List<ValuesManifestOutcome> aggregatedValuesManifests,
       List<ManifestOutcome> manifestOutcomes, K8sStepPassThroughData k8sStepPassThroughData) {
     ManifestOutcome k8sManifestOutcome = k8sStepPassThroughData.getManifestOutcome();
     StoreConfig storeConfig = extractStoreConfigFromManifestOutcome(k8sManifestOutcome);
@@ -360,7 +403,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
   }
 
   private TaskChainResponse prepareGitFetchPatchesTaskChainResponse(Ambiance ambiance,
-      StepElementParameters stepElementParameters, List<KustomizePatchesManifestOutcome> kustomizePatchesManifests,
+      StepBaseParameters stepElementParameters, List<KustomizePatchesManifestOutcome> kustomizePatchesManifests,
       K8sStepPassThroughData k8sStepPassThroughData) {
     List<GitFetchFilesConfig> gitFetchFilesConfigs = new ArrayList<>();
     ManifestOutcome k8sManifestOutcome = k8sStepPassThroughData.getManifestOutcome();
@@ -404,17 +447,15 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
   public void resolveManifestsConfigExpressions(Ambiance ambiance, List<ManifestConfigWrapper> manifestConfigWrappers) {
     List<ManifestConfig> configs =
         manifestConfigWrappers.stream().map(ManifestConfigWrapper::getManifest).collect(Collectors.toList());
-    ExpressionEvaluatorUtils.updateExpressions(
-        configs, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+    cdExpressionResolver.updateExpressions(ambiance, configs);
   }
 
   public TaskChainResponse startChainLink(
-      K8sStepExecutor k8sStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters) {
+      K8sStepExecutor k8sStepExecutor, Ambiance ambiance, StepBaseParameters stepElementParameters) {
     ManifestsOutcome manifestsOutcome = resolveManifestsOutcome(ambiance);
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
-    ExpressionEvaluatorUtils.updateExpressions(
-        manifestsOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+    cdExpressionResolver.updateExpressions(ambiance, manifestsOutcome);
     cdStepHelper.validateManifestsOutcome(ambiance, manifestsOutcome);
 
     ManifestOutcome k8sManifestOutcome = getK8sSupportedManifestOutcome(manifestsOutcome.values());
@@ -462,7 +503,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
   }
 
   private TaskChainResponse prepareOcTemplateWithOcParamManifests(K8sStepExecutor k8sStepExecutor,
-      List<ManifestOutcome> manifestOutcomes, Ambiance ambiance, StepElementParameters stepElementParameters,
+      List<ManifestOutcome> manifestOutcomes, Ambiance ambiance, StepBaseParameters stepElementParameters,
       K8sStepPassThroughData k8sStepPassThroughData) {
     List<OpenshiftParamManifestOutcome> openshiftParamManifests = getOpenshiftParamManifests(manifestOutcomes);
     OpenshiftManifestOutcome openshiftManifestOutcome =
@@ -510,7 +551,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
 
   private TaskChainResponse prepareKustomizeTemplateWithPatchesManifest(Ambiance ambiance,
       K8sStepExecutor k8sStepExecutor, List<KustomizePatchesManifestOutcome> kustomizePatchesManifests,
-      StepElementParameters stepElementParameters, K8sStepPassThroughData k8sStepPassThroughData) {
+      StepBaseParameters stepElementParameters, K8sStepPassThroughData k8sStepPassThroughData) {
     List<ManifestFiles> manifestFiles = new ArrayList<>();
     Map<String, LocalStoreFetchFilesResult> localStoreFileMapContents = new HashMap<>();
 
@@ -532,7 +573,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
   }
 
   private TaskChainResponse prepareK8sOrHelmWithValuesManifests(Ambiance ambiance, K8sStepExecutor k8sStepExecutor,
-      List<ManifestOutcome> manifestOutcomes, StepElementParameters stepElementParameters,
+      List<ManifestOutcome> manifestOutcomes, StepBaseParameters stepElementParameters,
       K8sStepPassThroughData k8sStepPassThroughData) {
     List<ValuesManifestOutcome> aggregatedValuesManifests = getAggregatedValuesManifests(manifestOutcomes);
     List<ManifestFiles> manifestFiles = new ArrayList<>();
@@ -625,7 +666,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
   }
 
   public TaskChainResponse executeNextLink(K8sStepExecutor k8sStepExecutor, Ambiance ambiance,
-      StepElementParameters stepElementParameters, PassThroughData passThroughData,
+      StepBaseParameters stepElementParameters, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     K8sStepPassThroughData k8sStepPassThroughData = (K8sStepPassThroughData) passThroughData;
     ManifestOutcome k8sManifest = k8sStepPassThroughData.getManifestOutcome();
@@ -671,7 +712,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
   }
 
   private TaskChainResponse handleGitFetchFilesResponse(ResponseData responseData, K8sStepExecutor k8sStepExecutor,
-      Ambiance ambiance, StepElementParameters stepElementParameters, K8sStepPassThroughData k8sStepPassThroughData,
+      Ambiance ambiance, StepBaseParameters stepElementParameters, K8sStepPassThroughData k8sStepPassThroughData,
       ManifestOutcome k8sManifest) {
     GitFetchResponse gitFetchResponse = (GitFetchResponse) responseData;
     if (gitFetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
@@ -724,7 +765,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
   }
 
   private TaskChainResponse handleCustomFetchResponse(ResponseData responseData, K8sStepExecutor k8sStepExecutor,
-      Ambiance ambiance, StepElementParameters stepElementParameters, K8sStepPassThroughData k8sStepPassThroughData,
+      Ambiance ambiance, StepBaseParameters stepElementParameters, K8sStepPassThroughData k8sStepPassThroughData,
       ManifestOutcome k8sManifest) {
     CustomManifestValuesFetchResponse customManifestValuesFetchResponse =
         (CustomManifestValuesFetchResponse) responseData;
@@ -798,7 +839,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
   }
 
   private TaskChainResponse handleHelmValuesFetchResponse(ResponseData responseData, K8sStepExecutor k8sStepExecutor,
-      Ambiance ambiance, StepElementParameters stepElementParameters, K8sStepPassThroughData k8sStepPassThroughData,
+      Ambiance ambiance, StepBaseParameters stepElementParameters, K8sStepPassThroughData k8sStepPassThroughData,
       ManifestOutcome k8sManifest) {
     HelmValuesFetchResponse helmValuesFetchResponse = (HelmValuesFetchResponse) responseData;
     if (helmValuesFetchResponse.getCommandExecutionStatus() != SUCCESS) {
@@ -848,7 +889,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
     }
   }
 
-  public TaskChainResponse executeK8sTask(Ambiance ambiance, StepElementParameters stepElementParameters,
+  public TaskChainResponse executeK8sTask(Ambiance ambiance, StepBaseParameters stepElementParameters,
       K8sStepExecutor k8sStepExecutor, K8sStepPassThroughData k8sStepPassThroughData,
       List<ManifestOutcome> manifestOutcomeList, ManifestOutcome k8sManifestOutcome) {
     List<ManifestFiles> manifestFiles = k8sStepPassThroughData.getManifestFiles();
@@ -994,14 +1035,19 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
     return Collections.emptyList();
   }
 
-  public Map<String, String> getDelegateK8sCommandFlag(List<K8sStepCommandFlag> commandFlags) {
+  public Map<String, String> getDelegateK8sCommandFlag(List<K8sStepCommandFlag> commandFlags, Ambiance ambiance) {
     if (commandFlags == null) {
       return new HashMap<>();
     }
 
     Map<String, String> commandsValueMap = new HashMap<>();
     for (K8sStepCommandFlag commandFlag : commandFlags) {
-      commandsValueMap.put(commandFlag.getCommandType().getSubCommandType(), commandFlag.getFlag().getValue());
+      if (ParameterField.isNotNull(commandFlag.getFlag())) {
+        String flagValue = commandFlag.getFlag().isExpression()
+            ? cdExpressionResolver.renderExpression(ambiance, commandFlag.getFlag().getExpressionValue())
+            : commandFlag.getFlag().getValue();
+        commandsValueMap.put(commandFlag.getCommandType().getSubCommandType(), flagValue);
+      }
     }
 
     return commandsValueMap;

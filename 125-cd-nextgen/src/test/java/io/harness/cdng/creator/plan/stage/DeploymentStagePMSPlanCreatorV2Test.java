@@ -12,11 +12,13 @@ import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -37,8 +39,12 @@ import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
+import io.harness.cdng.service.beans.ServiceUseFromStageV2;
 import io.harness.cdng.service.beans.ServiceYamlV2;
+import io.harness.cdng.service.beans.ServicesMetadata;
 import io.harness.cdng.service.beans.ServicesYaml;
+import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.NGFreezeException;
 import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeType;
@@ -48,6 +54,10 @@ import io.harness.freeze.beans.yaml.FreezeInfoConfig;
 import io.harness.freeze.entity.FreezeConfigEntity;
 import io.harness.freeze.mappers.NGFreezeDtoMapper;
 import io.harness.freeze.service.FreezeEvaluateService;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngsettings.SettingValueType;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
@@ -57,9 +67,11 @@ import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
@@ -95,9 +107,10 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.powermock.core.classloader.annotations.PrepareForTest;
+import retrofit2.Call;
 
 @OwnedBy(HarnessTeam.CDC)
 @RunWith(JUnitParamsRunner.class)
@@ -106,9 +119,13 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   @Inject private KryoSerializer kryoSerializer;
   @Mock private FreezeEvaluateService freezeEvaluateService;
   @Mock private AccessControlClient accessControlClient;
+  @Spy private StagePlanCreatorHelper stagePlanCreatorHelper;
   @InjectMocks private DeploymentStagePMSPlanCreatorV2 deploymentStagePMSPlanCreator;
 
   @Mock private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
+
+  @Mock private NGSettingsClient ngSettingsClient;
+  @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
 
   private AutoCloseable mocks;
   ObjectMapper mapper = new ObjectMapper();
@@ -116,6 +133,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   public void setUp() throws Exception {
     mocks = MockitoAnnotations.openMocks(this);
 
+    Reflect.on(stagePlanCreatorHelper).set("kryoSerializer", kryoSerializer);
     Reflect.on(deploymentStagePMSPlanCreator).set("kryoSerializer", kryoSerializer);
   }
 
@@ -147,13 +165,30 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
-  public void testAddCDExecutionDependencies() throws IOException {
+  @Parameters(method = "getDeploymentStageConfig")
+  @PrepareForTest(YamlUtils.class)
+  public void testAddCDExecutionDependencies(DeploymentStageNode node) throws IOException {
     YamlField executionField = getYamlFieldFromPath("cdng/plan/service.yml");
 
     String executionNodeId = executionField.getNode().getUuid();
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
-    deploymentStagePMSPlanCreator.addCDExecutionDependencies(planCreationResponseMap, executionField);
+    JsonNode jsonNode = mapper.valueToTree(node);
+    PlanCreationContext ctx = PlanCreationContext.builder()
+                                  .globalContext(Map.of("metadata",
+                                      PlanCreationContextValue.newBuilder().setAccountIdentifier("accountId").build()))
+                                  .currentField(new YamlField(new YamlNode("spec", jsonNode)))
+                                  .build();
+    deploymentStagePMSPlanCreator.addCDExecutionDependencies(planCreationResponseMap, executionField, ctx, node);
     assertThat(planCreationResponseMap.containsKey(executionNodeId)).isEqualTo(true);
+    assertThat(planCreationResponseMap.get(executionNodeId)
+                   .getDependencies()
+                   .getDependencyMetadataMap()
+                   .get(executionNodeId)
+                   .getParentInfo()
+                   .getDataMap()
+                   .get("stageId")
+                   .getStringValue())
+        .isEqualTo("nodeuuid");
   }
 
   @Test
@@ -161,7 +196,8 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   @Category(UnitTests.class)
   @Parameters(method = "getDeploymentStageConfig")
   @PrepareForTest(YamlUtils.class)
-  public void testCreatePlanForChildrenNodes(DeploymentStageNode node) {
+  public void testCreatePlanForChildrenNodes(DeploymentStageNode node) throws IOException {
+    doReturn(false).when(stagePlanCreatorHelper).isProjectScopedResourceConstraintQueueByFFOrSetting(any());
     node.setFailureStrategies(
         ParameterField.createValueField(List.of(FailureStrategyConfig.builder()
                                                     .onFailure(OnFailureConfig.builder()
@@ -176,21 +212,26 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
                                       PlanCreationContextValue.newBuilder().setAccountIdentifier("accountId").build()))
                                   .currentField(new YamlField(new YamlNode("spec", jsonNode)))
                                   .build();
-    MockedStatic<YamlUtils> mockSettings = Mockito.mockStatic(YamlUtils.class, CALLS_REAL_METHODS);
-    when(YamlUtils.getGivenYamlNodeFromParentPath(any(), any())).thenReturn(new YamlNode("spec", jsonNode));
-    LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap =
-        deploymentStagePMSPlanCreator.createPlanForChildrenNodes(ctx, node);
-    mockSettings.close();
 
-    assertThat(planCreationResponseMap).hasSize(11);
-    assertThat(planCreationResponseMap.values()
-                   .stream()
-                   .map(PlanCreationResponse::getPlanNode)
-                   .filter(Objects::nonNull)
-                   .map(PlanNode::getIdentifier)
-                   .collect(Collectors.toSet()))
-        .containsExactlyInAnyOrder(
-            "provisioner", "service", "infrastructure", "artifacts", "manifests", "configFiles", "hooks");
+    try (MockedStatic<YamlUtils> mockSettings = mockStatic(YamlUtils.class, CALLS_REAL_METHODS);
+         MockedStatic<NGRestUtils> ngRestUtilsMockedStatic = mockStatic(NGRestUtils.class)) {
+      SettingValueResponseDTO settingValueResponseDTO =
+          SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
+      when(YamlUtils.getGivenYamlNodeFromParentPath(any(), any())).thenReturn(new YamlNode("spec", jsonNode));
+      when(NGRestUtils.getResponse(any())).thenReturn(settingValueResponseDTO);
+      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap =
+          deploymentStagePMSPlanCreator.createPlanForChildrenNodes(ctx, node);
+
+      assertThat(planCreationResponseMap).hasSize(11);
+      assertThat(planCreationResponseMap.values()
+                     .stream()
+                     .map(PlanCreationResponse::getPlanNode)
+                     .filter(Objects::nonNull)
+                     .map(PlanNode::getIdentifier)
+                     .collect(Collectors.toSet()))
+          .containsExactlyInAnyOrder(
+              "provisioner", "service", "infrastructure", "artifacts", "manifests", "configFiles", "hooks");
+    }
   }
 
   @Test
@@ -541,5 +582,125 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
                .build();
     assertThat(deploymentStagePMSPlanCreator.getIdentifierWithExpression(context, node, "id1"))
         .isEqualTo("id1<+strategy.identifierPostFix>");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void addServiceNodeUseFromStageFromServicesError_0() throws IOException {
+    String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/pipeline.yaml");
+    YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
+    YamlField specField = new YamlField("spec", getStageNodeAtIndex(pipeline, 6));
+    assertThatExceptionOfType(InvalidArgumentsException.class)
+        .isThrownBy(
+            ()
+                -> deploymentStagePMSPlanCreator.useServicesYamlFromStage(
+                    DeploymentStageConfig.builder()
+                        .services(ServicesYaml.builder().useFromStage(ServiceUseFromStageV2.builder().build()).build())
+                        .build(),
+                    specField))
+        .withMessageContaining("Stage identifier is empty in useFromStage");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void addServiceNodeUseFromStageFromServicesError_1() throws IOException {
+    String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/pipeline.yaml");
+    YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
+    YamlField specField = new YamlField("spec", getStageNodeAtIndex(pipeline, 6));
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(()
+                        -> deploymentStagePMSPlanCreator.useServicesYamlFromStage(
+                            DeploymentStageConfig.builder()
+                                .services(ServicesYaml.builder()
+                                              .useFromStage(ServiceUseFromStageV2.builder().stage("stage2").build())
+                                              .build())
+                                .build(),
+                            specField))
+        .withMessageContaining(
+            "Could not find multi service configuration in stage [stage2], hence not possible to propagate service from that stage");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void addServiceNodeUseFromStageFromServicesError_2() throws IOException {
+    String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/pipeline.yaml");
+    YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
+    YamlField specField = new YamlField("spec", getStageNodeAtIndex(pipeline, 7));
+    assertThatExceptionOfType(InvalidArgumentsException.class)
+        .isThrownBy(()
+                        -> deploymentStagePMSPlanCreator.useServicesYamlFromStage(
+                            DeploymentStageConfig.builder()
+                                .services(ServicesYaml.builder()
+                                              .useFromStage(ServiceUseFromStageV2.builder().stage("random").build())
+                                              .build())
+                                .build(),
+                            specField))
+        .withMessageContaining("Stage with identifier [random] given for service propagation does not exist");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void addServiceNodeUseFromStageFromServicesError_3() throws IOException {
+    String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/pipeline.yaml");
+    YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
+    YamlField specField = new YamlField("spec", getStageNodeAtIndex(pipeline, 8));
+    assertThatExceptionOfType(InvalidArgumentsException.class)
+        .isThrownBy(()
+                        -> deploymentStagePMSPlanCreator.useServicesYamlFromStage(
+                            DeploymentStageConfig.builder()
+                                .services(ServicesYaml.builder()
+                                              .useFromStage(ServiceUseFromStageV2.builder().stage("stage5").build())
+                                              .build())
+                                .build(),
+                            specField))
+        .withMessageContaining(
+            "Invalid identifier [stage5] given in useFromStage. Cannot reference a stage which also has useFromStage parameter");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void addServiceNodeUseFromStageFromServicesWithMetadata() throws IOException {
+    String pipelineYaml = readFileIntoUTF8String("cdng/creator/servicePlanCreator/pipeline.yaml");
+    YamlField pipeline = new YamlField("pipeline", YamlNode.fromYamlPath(pipelineYaml, ""));
+    YamlField specField = new YamlField("spec", getStageNodeAtIndex(pipeline, 10));
+    ServicesYaml services = deploymentStagePMSPlanCreator.useServicesYamlFromStage(
+        DeploymentStageConfig.builder()
+            .services(
+                ServicesYaml.builder()
+                    .servicesMetadata(
+                        ServicesMetadata.builder().parallel(ParameterField.createValueField(Boolean.TRUE)).build())
+                    .useFromStage(ServiceUseFromStageV2.builder().stage("stage7").build())
+                    .build())
+            .build(),
+        specField);
+    assertThat(services.getUseFromStage()).isNull();
+    assertThat(services.getValues()).isNotNull();
+    assertThat(services.getValues()
+                   .getValue()
+                   .stream()
+                   .map(ServiceYamlV2::getServiceRef)
+                   .map(ParameterField::getValue)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder("service1", "service2");
+    assertThat(services.getServicesMetadata().getParallel().getValue()).isEqualTo(Boolean.TRUE);
+  }
+
+  private static YamlNode getStageNodeAtIndex(YamlField pipeline, int idx) {
+    return pipeline.getNode()
+        .getField("pipeline")
+        .getNode()
+        .getField("stages")
+        .getNode()
+        .asArray()
+        .get(idx)
+        .getField("stage")
+        .getNode()
+        .getField(YAMLFieldNameConstants.SPEC)
+        .getNode();
   }
 }

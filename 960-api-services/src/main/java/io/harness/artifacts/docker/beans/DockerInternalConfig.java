@@ -6,11 +6,13 @@
  */
 
 package io.harness.artifacts.docker.beans;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.docker.DockerRegistryProviderType;
 
 import java.net.URI;
@@ -19,6 +21,7 @@ import lombok.Builder;
 import lombok.ToString;
 import lombok.Value;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Value
 @Builder
 @ToString(exclude = "password")

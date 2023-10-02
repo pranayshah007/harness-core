@@ -39,6 +39,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -102,6 +103,7 @@ public abstract class DataCollectionTask
   @FdIndex @NonNull private DataCollectionExecutionStatus status;
 
   private Instant lastPickedAt;
+  private Instant firstPickedAt;
   private int retryCount;
 
   private String exception;
@@ -110,7 +112,7 @@ public abstract class DataCollectionTask
   private DataCollectionInfo dataCollectionInfo;
   private Instant startTime;
   private Instant endTime;
-
+  private Map<String, String> dataCollectionMetadata;
   @FdIndex private Long workerStatusIteration;
 
   @Override
@@ -157,7 +159,8 @@ public abstract class DataCollectionTask
 
   public enum Type { SERVICE_GUARD, DEPLOYMENT, SLI }
   public Duration totalTime(Instant currentTime) {
-    return Duration.between(validAfter, currentTime);
+    Instant maxOfCreatedAndValidAfter = getMaximumInstant(validAfter, Instant.ofEpochMilli(getCreatedAt()));
+    return Duration.between(maxOfCreatedAndValidAfter, currentTime);
   }
   public Duration runningTime(Instant currentTime) {
     Preconditions.checkNotNull(lastPickedAt,
@@ -166,9 +169,10 @@ public abstract class DataCollectionTask
   }
 
   public Duration waitTime() {
-    Preconditions.checkNotNull(lastPickedAt,
+    Preconditions.checkNotNull(firstPickedAt,
         "Last picked up needs to be not null for wait time calculation for dataCollectionTaskId: " + uuid);
-    return Duration.between(validAfter, lastPickedAt);
+    Instant maxOfCreatedAndValidAfter = getMaximumInstant(validAfter, Instant.ofEpochMilli(getCreatedAt()));
+    return Duration.between(maxOfCreatedAndValidAfter, firstPickedAt);
   }
   public LogLevel getLogLevel() {
     if (DataCollectionExecutionStatus.getFailedStatuses().contains(status)) {
@@ -178,5 +182,8 @@ public abstract class DataCollectionTask
     } else {
       return LogLevel.INFO;
     }
+  }
+  private Instant getMaximumInstant(Instant i1, Instant i2) {
+    return i1.isAfter(i2) ? i1 : i2;
   }
 }

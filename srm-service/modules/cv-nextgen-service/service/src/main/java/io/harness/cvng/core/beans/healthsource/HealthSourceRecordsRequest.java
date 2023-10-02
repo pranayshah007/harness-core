@@ -7,18 +7,23 @@
 
 package io.harness.cvng.core.beans.healthsource;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
+import io.harness.exception.InvalidRequestException;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.List;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BadRequestException;
 import lombok.Data;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class HealthSourceRecordsRequest {
   @NotNull String connectorIdentifier;
-  @NotNull String query;
+  String query;
   @NotNull Long startTime;
   @NotNull Long endTime;
   MonitoredServiceDataSourceType healthSourceType; // we need to add validation here once UI is merged.
@@ -26,9 +31,14 @@ public class HealthSourceRecordsRequest {
   QueryParamsDTO healthSourceQueryParams = QueryParamsDTO.builder().build();
   HealthSourceParamsDTO healthSourceParams = HealthSourceParamsDTO.builder().build();
 
+  List<MonitoredServiceDataSourceType> skipQueryValidationDataSourceTypes =
+      List.of(MonitoredServiceDataSourceType.AZURE_METRICS);
   public void validate() {
     if (providerType == null && healthSourceType == null) {
-      throw new RuntimeException("datasourceType cannot be inferred from request.");
+      throw new BadRequestException("datasourceType cannot be inferred from request:" + healthSourceType);
+    }
+    if (isEmpty(query) && healthSourceType != null && !skipQueryValidationDataSourceTypes.contains(healthSourceType)) {
+      throw new InvalidRequestException("Query is required");
     }
   }
 }

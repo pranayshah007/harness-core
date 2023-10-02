@@ -11,7 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 
 import io.harness.advisers.rollback.RollbackStrategy;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.plancreator.steps.AbstractStepPlanCreator;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
 import io.harness.plancreator.strategy.StrategyUtils;
@@ -43,6 +46,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @OwnedBy(PIPELINE)
 @Slf4j
 public abstract class PMSStepPlanCreatorV2<T extends PmsAbstractStepNode> extends AbstractStepPlanCreator<T> {
@@ -51,8 +57,8 @@ public abstract class PMSStepPlanCreatorV2<T extends PmsAbstractStepNode> extend
     final boolean isStepInsideRollback =
         YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null;
 
-    List<AdviserObtainment> adviserObtainmentFromMetaData =
-        PmsStepPlanCreatorUtils.getAdviserObtainmentFromMetaData(kryoSerializer, ctx.getCurrentField(), false);
+    List<AdviserObtainment> adviserObtainmentFromMetaData = PmsStepPlanCreatorUtils.getAdviserObtainmentFromMetaData(
+        ctx.getDependency(), kryoSerializer, ctx.getCurrentField(), false);
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
     stepElement.setIdentifier(StrategyUtils.getIdentifierWithExpression(ctx, stepElement.getIdentifier()));

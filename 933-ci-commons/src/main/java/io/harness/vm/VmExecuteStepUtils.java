@@ -54,6 +54,7 @@ public class VmExecuteStepUtils {
   @Inject private ImageSecretBuilder imageSecretBuilder;
   public static final String IMAGE_PATH_SPLIT_REGEX = ":";
   private static final String DOCKER_REGISTRY_ENV = "PLUGIN_REGISTRY";
+  private static final String BAREMETAL_DRIVER = "nomad";
 
   public ExecuteStepRequestBuilder convertStep(CIVmExecuteStepTaskParams params) {
     ConfigBuilder configBuilder = Config.builder()
@@ -355,5 +356,12 @@ public class VmExecuteStepUtils {
       volumeMounts.add(ExecuteStepRequest.VolumeMount.builder().name(entry.getKey()).path(entry.getValue()).build());
     }
     return volumeMounts;
+  }
+
+  public boolean isBareMetalUsed(String poolDriverName) {
+    if (BAREMETAL_DRIVER.equals(poolDriverName)) {
+      return true;
+    }
+    return false;
   }
 }

@@ -18,6 +18,8 @@ import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.ORGANIZA
 import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.PROJECT;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import static org.mockito.Mockito.mock;
+
 import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.principals.PrincipalValidator;
 import io.harness.accesscontrol.principals.serviceaccounts.ServiceAccountValidator;
@@ -31,7 +33,12 @@ import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
+import io.harness.outbox.api.OutboxDao;
+import io.harness.outbox.api.OutboxService;
+import io.harness.outbox.api.impl.OutboxDaoImpl;
+import io.harness.outbox.api.impl.OutboxServiceImpl;
 import io.harness.persistence.HPersistence;
+import io.harness.repositories.outbox.OutboxEventRepository;
 import io.harness.rule.InjectorRuleMixin;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
@@ -54,8 +61,8 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
-import com.google.inject.name.Names;
 import dev.morphia.converters.TypeConverter;
+import io.serializer.HObjectMapper;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
@@ -97,7 +104,7 @@ public class AccessControlApplicationRule implements MethodRule, InjectorRuleMix
     modules.add(TimeModule.getInstance());
     modules.add(TestMongoModule.getInstance());
     modules.add(new AccessControlPersistenceTestModule());
-    modules.add(AccessControlCoreModule.getInstance());
+    modules.add(AccessControlCoreModule.getInstance(null, false));
 
     modules.add(new AbstractModule() {
       @Override
@@ -128,8 +135,6 @@ public class AccessControlApplicationRule implements MethodRule, InjectorRuleMix
             .toInstance(Collections.singleton(VIEW_PROJECT_PERMISSION));
         implicitPermissionsByScope.addBinding(Pair.of(PROJECT, false))
             .toInstance(Collections.singleton(VIEW_PROJECT_PERMISSION));
-
-        bind(boolean.class).annotatedWith(Names.named("disableRedundantACLs")).toInstance(false);
       }
     });
 
@@ -166,6 +171,15 @@ public class AccessControlApplicationRule implements MethodRule, InjectorRuleMix
             .build();
       }
     });
+
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(OutboxDao.class).to(OutboxDaoImpl.class);
+        bind(OutboxService.class).to(OutboxServiceImpl.class);
+        bind(OutboxEventRepository.class).toInstance(mock(OutboxEventRepository.class));
+      }
+    });
     return modules;
   }
 
@@ -183,5 +197,11 @@ public class AccessControlApplicationRule implements MethodRule, InjectorRuleMix
   @Override
   public Statement apply(Statement statement, FrameworkMethod frameworkMethod, Object target) {
     return applyInjector(log, statement, frameworkMethod, target);
+  }
+
+  @Provides
+  @Singleton
+  OutboxService getOutboxService(OutboxEventRepository outboxEventRepository) {
+    return new OutboxServiceImpl(new OutboxDaoImpl(outboxEventRepository), HObjectMapper.NG_DEFAULT_OBJECT_MAPPER);
   }
 }

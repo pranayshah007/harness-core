@@ -17,7 +17,10 @@ import static software.wings.beans.LogWeight.Bold;
 import static java.lang.System.currentTimeMillis;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.taskprogress.ITaskProgressClient;
@@ -32,9 +35,11 @@ import software.wings.delegatetasks.DelegateLogService;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -54,6 +59,8 @@ import org.jetbrains.annotations.NotNull;
  *    -> close stream
  * concurrent usage of open and close stream will result in loss of logs
  */
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Builder
 @Slf4j
 @TargetModule(HarnessModule._420_DELEGATE_AGENT)
@@ -74,6 +81,8 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
 
   @Default private final Map<String, List<LogLine>> logCache = new HashMap<>();
 
+  private Set<String> markers;
+
   @Override
   public void openStream(String baseLogKeySuffix) {
     String logKey = getLogKey(baseLogKeySuffix);
@@ -81,7 +90,7 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
     try {
       SafeHttpCall.executeWithExceptions(logStreamingClient.openLogStream(token, accountId, logKey));
     } catch (Exception ex) {
-      log.error("Unable to open log stream for account {} and key {}", accountId, logKey, ex);
+      log.warn("Unable to open log stream for account {} and key {}", accountId, logKey, ex);
     }
     scheduledFuture = scheduledExecutorService.scheduleAtFixedRate(this::dispatchLogs, 0, 100, TimeUnit.MILLISECONDS);
   }
@@ -110,18 +119,18 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
       }
     }
     if (logCache.containsKey(logKey)) {
-      log.error("log cache was not drained for {}. num of keys in map {}. This will result in missing logs", logKey,
+      log.warn("log cache was not drained for {}. num of keys in map {}. This will result in missing logs", logKey,
           logCache.size());
     }
     try {
       SafeHttpCall.executeWithExceptions(logStreamingClient.closeLogStream(token, accountId, logKey, true));
     } catch (Exception ex) {
-      log.error("Unable to close log stream for account {} and key {}", accountId, logKey, ex);
+      log.warn("Unable to close log stream for account {} and key {}", accountId, logKey, ex);
     } finally {
       if (scheduledFuture != null) {
         scheduledFuture.cancel(false);
       } else {
-        log.error("Scheduled future is missing for logkey {}", logKey);
+        log.warn("Scheduled future is missing for logkey {}", logKey);
       }
     }
   }
@@ -134,7 +143,7 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
 
     String logKey = getLogKey(baseLogKeySuffix);
 
-    logStreamingSanitizer.sanitizeLogMessage(logLine);
+    logStreamingSanitizer.sanitizeLogMessage(logLine, getMarkers());
     colorLog(logLine);
 
     synchronized (logCache) {
@@ -154,7 +163,7 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
           SafeHttpCall.executeWithExceptions(
               logStreamingClient.pushMessage(token, accountId, next.getKey(), next.getValue()));
         } catch (Exception ex) {
-          log.error("Unable to push message to log stream for account {} and key {}", accountId, next.getKey(), ex);
+          log.warn("Unable to push message to log stream for account {} and key {}", accountId, next.getKey(), ex);
         }
         iterator.remove();
       }
@@ -169,10 +178,12 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
 
   private void colorLog(LogLine logLine) {
     String message = logLine.getMessage();
-    if (logLine.getLevel() == LogLevel.ERROR) {
-      message = color(message, Red, Bold);
-    } else if (logLine.getLevel() == LogLevel.WARN) {
-      message = color(message, Yellow, Bold);
+    if (!logLine.isSkipColoring()) {
+      if (logLine.getLevel() == LogLevel.ERROR) {
+        message = color(message, Red, Bold);
+      } else if (logLine.getLevel() == LogLevel.WARN) {
+        message = color(message, Yellow, Bold);
+      }
     }
     message = doneColoring(message);
     logLine.setMessage(message);
@@ -196,5 +207,13 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
   @Override
   public ExecutorService obtainTaskProgressExecutor() {
     return taskProgressExecutor;
+  }
+
+  @Override
+  public Set<String> getMarkers() {
+    if (markers == null) {
+      markers = new HashSet<>();
+    }
+    return markers;
   }
 }

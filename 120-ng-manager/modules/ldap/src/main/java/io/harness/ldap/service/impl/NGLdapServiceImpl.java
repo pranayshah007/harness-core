@@ -26,7 +26,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
-import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ldap.LDAPTestAuthenticationRequest;
 import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataAndPasswordDetail;
 import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
@@ -66,15 +65,18 @@ import software.wings.beans.sso.LdapTestResponse;
 import software.wings.helpers.ext.ldap.LdapConstants;
 import software.wings.helpers.ext.ldap.LdapResponse;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ldaptive.ResultCode;
@@ -89,6 +91,8 @@ public class NGLdapServiceImpl implements NGLdapService {
   public static final String ISSUE_WITH_USER_QUERY_SETTINGS_PROVIDED = "Issue with User Query Settings provided";
   public static final String ISSUE_WITH_GROUP_QUERY_SETTINGS_PROVIDED = "Issue with Group Query Settings provided";
   public static final String ISSUE_WITH_LDAP_TEST_AUTHENTICATION = "Issue with Ldap Test Authentication";
+  public static final int LDAP_TASK_DEFAULT_MINIMUM_TIMEOUT_MILLIS = 60000; // 60 seconds
+  public static final int LDAP_TASK_DEFAULT_MAXIMUM_TIMEOUT_MILLIS = 180000; // 180 seconds
   private final AuthSettingsManagerClient managerClient;
   private final DelegateGrpcClientWrapper delegateService;
   private final TaskSetupAbstractionHelper taskSetupAbstractionHelper;
@@ -103,8 +107,8 @@ public class NGLdapServiceImpl implements NGLdapService {
         accountIdentifier, orgIdentifier, projectIdentifier, settings.getUuid());
     NGLdapDelegateTaskParameters parameters = getNgLdapDelegateTaskParameters(accountIdentifier, settings);
 
-    DelegateResponseData delegateResponseData = getDelegateResponseData(
-        accountIdentifier, orgIdentifier, projectIdentifier, parameters, NG_LDAP_TEST_CONN_SETTINGS);
+    DelegateResponseData delegateResponseData = getDelegateResponseData(accountIdentifier, orgIdentifier,
+        projectIdentifier, parameters, NG_LDAP_TEST_CONN_SETTINGS, parameters.getLdapSettings());
 
     LdapTestResponse ldapTestResponse =
         getLdapTestResponse((NGLdapDelegateTaskResponse) delegateResponseData, ISSUE_WITH_LDAP_CONNECTION);
@@ -120,8 +124,8 @@ public class NGLdapServiceImpl implements NGLdapService {
         accountIdentifier, orgIdentifier, projectIdentifier, settings.getUuid());
     NGLdapDelegateTaskParameters parameters = getNgLdapDelegateTaskParameters(accountIdentifier, settings);
 
-    DelegateResponseData delegateResponseData = getDelegateResponseData(
-        accountIdentifier, orgIdentifier, projectIdentifier, parameters, NG_LDAP_TEST_USER_SETTINGS);
+    DelegateResponseData delegateResponseData = getDelegateResponseData(accountIdentifier, orgIdentifier,
+        projectIdentifier, parameters, NG_LDAP_TEST_USER_SETTINGS, parameters.getLdapSettings());
 
     LdapTestResponse ldapTestResponse =
         getLdapTestResponse((NGLdapDelegateTaskResponse) delegateResponseData, ISSUE_WITH_USER_QUERY_SETTINGS_PROVIDED);
@@ -137,8 +141,8 @@ public class NGLdapServiceImpl implements NGLdapService {
         accountIdentifier, orgIdentifier, projectIdentifier, settings.getUuid());
     NGLdapDelegateTaskParameters parameters = getNgLdapDelegateTaskParameters(accountIdentifier, settings);
 
-    DelegateResponseData delegateResponseData = getDelegateResponseData(
-        accountIdentifier, orgIdentifier, projectIdentifier, parameters, NG_LDAP_TEST_GROUP_SETTINGS);
+    DelegateResponseData delegateResponseData = getDelegateResponseData(accountIdentifier, orgIdentifier,
+        projectIdentifier, parameters, NG_LDAP_TEST_GROUP_SETTINGS, parameters.getLdapSettings());
 
     LdapTestResponse ldapTestResponse = getLdapTestResponse(
         (NGLdapDelegateTaskResponse) delegateResponseData, ISSUE_WITH_GROUP_QUERY_SETTINGS_PROVIDED);
@@ -172,8 +176,8 @@ public class NGLdapServiceImpl implements NGLdapService {
             .name(name)
             .build();
 
-    DelegateResponseData delegateResponseData =
-        getDelegateResponseData(accountIdentifier, orgIdentifier, projectIdentifier, parameters, NG_LDAP_SEARCH_GROUPS);
+    DelegateResponseData delegateResponseData = getDelegateResponseData(
+        accountIdentifier, orgIdentifier, projectIdentifier, parameters, NG_LDAP_SEARCH_GROUPS, ldapSettings);
     // TODO: Need to send back exception form Delegate but thius will impact CG too.
     NGLdapGroupSearchTaskResponse groupSearchResponse = (NGLdapGroupSearchTaskResponse) delegateResponseData;
     log.info(
@@ -215,8 +219,8 @@ public class NGLdapServiceImpl implements NGLdapService {
             .username(email)
             .build();
 
-    DelegateResponseData delegateResponseData = getDelegateResponseData(
-        accountIdentifier, orgIdentifier, projectIdentifier, taskParameters, NG_LDAP_TEST_AUTHENTICATION);
+    DelegateResponseData delegateResponseData = getDelegateResponseData(accountIdentifier, orgIdentifier,
+        projectIdentifier, taskParameters, NG_LDAP_TEST_AUTHENTICATION, taskParameters.getLdapSettings());
     NGLdapTestAuthenticationTaskResponse authResponse = (NGLdapTestAuthenticationTaskResponse) delegateResponseData;
     LdapResponse ldapAuthTestResponse = authResponse.getLdapAuthenticationResponse();
     if (null != ldapAuthTestResponse) {
@@ -270,37 +274,72 @@ public class NGLdapServiceImpl implements NGLdapService {
   private void syncUserGroupsJobInternal(String accountIdentifier,
       LdapSettingsWithEncryptedDataDetail settingsWithEncryptedDataDetail, List<UserGroup> userGroupsToSync) {
     if (isEmpty(userGroupsToSync)) {
+      log.info("NGLDAP: No User groups to sync for acccountIdentifer:{}", accountIdentifier);
       return;
     }
 
     Map<UserGroup, LdapGroupResponse> userGroupsToLdapGroupMap = new HashMap<>();
 
     for (UserGroup userGroup : userGroupsToSync) {
-      NGLdapGroupSearchTaskParameters parameters =
-          NGLdapGroupSearchTaskParameters.builder()
-              .ldapSettings(settingsWithEncryptedDataDetail.getLdapSettings())
-              .encryptedDataDetail(settingsWithEncryptedDataDetail.getEncryptedDataDetail())
-              .name(userGroup.getSsoGroupId())
-              .build();
+      try {
+        NGLdapGroupSearchTaskParameters parameters =
+            NGLdapGroupSearchTaskParameters.builder()
+                .ldapSettings(settingsWithEncryptedDataDetail.getLdapSettings())
+                .encryptedDataDetail(settingsWithEncryptedDataDetail.getEncryptedDataDetail())
+                .name(userGroup.getSsoGroupId())
+                .build();
 
-      DelegateResponseData delegateResponseData = getDelegateResponseData(userGroup.getAccountIdentifier(),
-          userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier(), parameters, NG_LDAP_GROUPS_SYNC);
+        DelegateResponseData delegateResponseData =
+            getDelegateResponseData(userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(),
+                userGroup.getProjectIdentifier(), parameters, NG_LDAP_GROUPS_SYNC, parameters.getLdapSettings());
 
-      NGLdapGroupSyncTaskResponse groupSearchResponse = (NGLdapGroupSyncTaskResponse) delegateResponseData;
-      log.info("NGLDAP: Received delegate response for syncLdapGroupByDn in NG LDAP for group {} in account: {}",
-          userGroup.getIdentifier(), accountIdentifier);
+        NGLdapGroupSyncTaskResponse groupSearchResponse = (NGLdapGroupSyncTaskResponse) delegateResponseData;
+        log.info("NGLDAP: Received delegate response for syncLdapGroupByDn in NG LDAP for group {} in account: {}",
+            userGroup.getIdentifier(), accountIdentifier);
 
-      if (null != groupSearchResponse.getLdapGroupsResponse()) {
-        userGroupsToLdapGroupMap.put(userGroup, groupSearchResponse.getLdapGroupsResponse());
-      } else {
-        log.error(
-            "NGLDAP: No LDAP group response received in delegate response. Points to some error in delegate task execution for group: {} in account: {}",
-            userGroup, accountIdentifier);
+        if (null != groupSearchResponse.getLdapGroupsResponse()) {
+          if (isUserGroupSsoStateValid(userGroup)) {
+            userGroupsToLdapGroupMap.put(userGroup, groupSearchResponse.getLdapGroupsResponse());
+          } else {
+            log.error("NGLDAP: userGroup {} sync is not happening for account {} due to invalid SSO state",
+                userGroup.getIdentifier(), userGroup.getAccountIdentifier());
+          }
+        } else {
+          log.error(
+              "NGLDAP: No LDAP group response received in delegate response. Points to some error in delegate task execution for group: {} in account: {}",
+              userGroup, accountIdentifier);
+        }
+      } catch (Exception e) {
+        log.error("NGLDAP: Sync error for user group {} and accountId {}", userGroup.getName(), accountIdentifier, e);
       }
     }
 
     ngLdapGroupSyncHelper.reconcileAllUserGroups(
         userGroupsToLdapGroupMap, settingsWithEncryptedDataDetail.getLdapSettings().getUuid(), accountIdentifier);
+  }
+
+  public boolean isUserGroupSsoStateValid(UserGroup userGroup) {
+    // Check if the User Group State has not changed
+    Optional<UserGroup> savedUserGroup = userGroupService.get(userGroup.getAccountIdentifier(),
+        userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier(), userGroup.getIdentifier());
+    if (!savedUserGroup.isPresent()) {
+      log.error("NGLDAP: User group {} for account {} no longer exists.", userGroup.getIdentifier(),
+          userGroup.getAccountIdentifier());
+      return false;
+    }
+    if (!savedUserGroup.get().getIsSsoLinked()) {
+      log.error("NGLDAP: User group {} for account {} is no longer SSO linked ", userGroup.getIdentifier(),
+          userGroup.getAccountIdentifier());
+      return false;
+    }
+    if (!savedUserGroup.get().getSsoGroupId().equals(userGroup.getSsoGroupId())) {
+      log.error("NGLDAP: User group {} for account {} is linked to SSO Group {} but sync happening for SSO Group {}.",
+          userGroup.getIdentifier(), userGroup.getAccountIdentifier(), savedUserGroup.get().getSsoGroupId(),
+          userGroup.getSsoGroupId());
+      return false;
+    }
+
+    return true;
   }
 
   private void handleErrorResponseMessageFromDelegate(String errorMessage, String ldapTestResponseMessage) {
@@ -354,17 +393,26 @@ public class NGLdapServiceImpl implements NGLdapService {
   }
 
   private DelegateResponseData getDelegateResponseData(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, TaskParameters parameters, TaskType taskType) {
+      String projectIdentifier, TaskParameters parameters, TaskType taskType, LdapSettings ldapSettings) {
     DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
             .taskType(taskType.name())
             .taskParameters(parameters)
-            .executionTimeout(Duration.ofMillis(TaskData.DEFAULT_SYNC_CALL_TIMEOUT))
+            .executionTimeout(getLdapDelegateTaskResponseTimeout(
+                ldapSettings.getConnectionSettings().getResponseTimeout(), taskType.name(), accountIdentifier))
             .accountId(accountIdentifier)
             .taskSetupAbstractions(buildAbstractions(accountIdentifier, orgIdentifier, projectIdentifier))
+            .taskSelectors(getDelegateSelectors(ldapSettings))
             .build();
 
     return executeDelegateSyncTask(delegateTaskRequest);
+  }
+
+  private Set<String> getDelegateSelectors(LdapSettings ldapSettings) {
+    return null != ldapSettings && null != ldapSettings.getConnectionSettings()
+            && isNotEmpty(ldapSettings.getConnectionSettings().getDelegateSelectors())
+        ? ldapSettings.getConnectionSettings().getDelegateSelectors()
+        : new HashSet<>();
   }
 
   private DelegateResponseData executeDelegateSyncTask(DelegateTaskRequest delegateTaskRequest) {
@@ -378,7 +426,7 @@ public class NGLdapServiceImpl implements NGLdapService {
     }
 
     if (delegateResponseData instanceof ErrorNotifyResponseData) {
-      throw buildDelegateNotAvailableHintException(delegateDownErrorMessage);
+      throw buildDelegateNotAvailableHintException(((ErrorNotifyResponseData) delegateResponseData).getErrorMessage());
     }
     return delegateResponseData;
   }
@@ -398,5 +446,22 @@ public class NGLdapServiceImpl implements NGLdapService {
     }
     abstractions.put(NG, "true");
     return abstractions;
+  }
+
+  @VisibleForTesting
+  Duration getLdapDelegateTaskResponseTimeout(
+      int responseTimeout, final String taskType, final String accountIdentifier) {
+    Duration duration;
+    if (responseTimeout < LDAP_TASK_DEFAULT_MINIMUM_TIMEOUT_MILLIS) {
+      duration = Duration.ofMillis(LDAP_TASK_DEFAULT_MINIMUM_TIMEOUT_MILLIS);
+    } else if (responseTimeout > LDAP_TASK_DEFAULT_MAXIMUM_TIMEOUT_MILLIS) {
+      duration = Duration.ofMillis(LDAP_TASK_DEFAULT_MAXIMUM_TIMEOUT_MILLIS);
+    } else {
+      duration = Duration.ofMillis(responseTimeout);
+    }
+    log.info(
+        "NG_LDAP_DELEGATE_TASK_RESPONSE_TIMEOUT: Setting delegate tasks response timeout of {} seconds for task type: {} in account: {}",
+        duration.getSeconds(), taskType, accountIdentifier);
+    return duration;
   }
 }

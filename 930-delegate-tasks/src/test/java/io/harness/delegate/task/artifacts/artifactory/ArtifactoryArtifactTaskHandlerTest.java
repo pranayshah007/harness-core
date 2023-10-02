@@ -9,6 +9,7 @@ package io.harness.delegate.task.artifacts.artifactory;
 
 import static io.harness.artifactory.service.ArtifactoryRegistryService.DEFAULT_ARTIFACT_FILTER;
 import static io.harness.artifactory.service.ArtifactoryRegistryService.MAX_NO_OF_TAGS_PER_ARTIFACT;
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.vivekveman;
@@ -67,6 +68,8 @@ public class ArtifactoryArtifactTaskHandlerTest extends CategoryTest {
   private static String ARTIFACTORY_PASSWORD = "password";
   private static String REPO_NAME = "repoName";
   private static String ARTIFACT_DIRECTORY = "dir";
+  private static final String ARTIFACT_DIRECTORY_2 = "////dir";
+  private static final String ARTIFACT_DIRECTORY_3 = "/dir";
   private static String IMAGE_NAME = "imageName";
   private static String IMAGE_TAG = "imageTag";
   private static String IMAGE_TAG_REGEX = "\\*";
@@ -84,6 +87,31 @@ public class ArtifactoryArtifactTaskHandlerTest extends CategoryTest {
   @Mock ArtifactoryNgService artifactoryNgService;
   @Mock SecretDecryptionService secretDecryptionService;
   @Spy ArtifactoryRequestMapper artifactoryRequestMapper;
+
+  private static final ArtifactoryUsernamePasswordAuthDTO ARTIFACTORY_USERNAME_PASSWORD_AUTH_DTO =
+      ArtifactoryUsernamePasswordAuthDTO.builder()
+          .username(ARTIFACTORY_USERNAME)
+          .passwordRef(SecretRefData.builder().decryptedValue(ARTIFACTORY_PASSWORD.toCharArray()).build())
+          .build();
+
+  private static final ArtifactoryConnectorDTO ARTIFACTORY_CONNECTOR_DTO =
+      ArtifactoryConnectorDTO.builder()
+          .artifactoryServerUrl(ARTIFACTORY_URL)
+          .auth(ArtifactoryAuthenticationDTO.builder()
+                    .authType(ArtifactoryAuthType.USER_PASSWORD)
+                    .credentials(ARTIFACTORY_USERNAME_PASSWORD_AUTH_DTO)
+                    .build())
+          .build();
+  private static final ArtifactoryConfigRequest ARTIFACTORY_CONFIG_REQUEST =
+      ArtifactoryConfigRequest.builder()
+          .artifactoryUrl(ARTIFACTORY_CONNECTOR_DTO.getArtifactoryServerUrl())
+          .username(ARTIFACTORY_USERNAME_PASSWORD_AUTH_DTO.getUsername())
+          .password(ARTIFACTORY_USERNAME_PASSWORD_AUTH_DTO.getPasswordRef().getDecryptedValue())
+          .hasCredentials(true)
+          .build();
+
+  private static final BuildDetails BUILD_DETAILS =
+      BuildDetails.Builder.aBuildDetails().withArtifactPath(COMBINED_ARTIFACT_PATH).build();
 
   @Test
   @Owner(developers = MLUKIC)
@@ -267,6 +295,7 @@ public class ArtifactoryArtifactTaskHandlerTest extends CategoryTest {
                                                                      .repositoryFormat(RepositoryFormat.generic.name())
                                                                      .artifactDirectory(ARTIFACT_DIRECTORY)
                                                                      .artifactoryConnectorDTO(artifactoryConnectorDTO)
+                                                                     .artifactPathFilter(".*")
                                                                      .build();
 
     String artifactDirectory = sourceAttributes.getArtifactDirectory();
@@ -274,8 +303,101 @@ public class ArtifactoryArtifactTaskHandlerTest extends CategoryTest {
 
     doReturn(Lists.newArrayList(buildDetailsInternal))
         .when(artifactoryNgService)
-        .getArtifactList(
-            artifactoryInternalConfig, sourceAttributes.getRepositoryName(), filePath, MAX_NO_OF_TAGS_PER_ARTIFACT);
+        .getArtifactList(artifactoryInternalConfig, sourceAttributes.getRepositoryName(), filePath,
+            MAX_NO_OF_TAGS_PER_ARTIFACT, sourceAttributes.getArtifactPathFilter(), artifactDirectory);
+
+    ArtifactTaskExecutionResponse lastSuccessfulBuild = artifactoryArtifactService.getBuilds(sourceAttributes);
+    assertThat(lastSuccessfulBuild).isNotNull();
+    assertThat(lastSuccessfulBuild.getArtifactDelegateResponses().size()).isEqualTo(1);
+    assertThat(lastSuccessfulBuild.getArtifactDelegateResponses().get(0))
+        .isInstanceOf(ArtifactoryGenericArtifactDelegateResponse.class);
+    ArtifactoryGenericArtifactDelegateResponse attributes =
+        (ArtifactoryGenericArtifactDelegateResponse) lastSuccessfulBuild.getArtifactDelegateResponses().get(0);
+    assertThat(attributes.getArtifactPath()).isEqualTo(ARTIFACT_PATH);
+    assertThat(lastSuccessfulBuild.getBuildDetails().size()).isEqualTo(1);
+    assertThat(lastSuccessfulBuild.getBuildDetails().get(0).getArtifactPath()).isEqualTo(ARTIFACT_PATH);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetBuildsForGenericArtifactFilter() {
+    ArtifactoryGenericArtifactDelegateRequest sourceAttributes = ArtifactoryGenericArtifactDelegateRequest.builder()
+                                                                     .repositoryName(REPO_NAME)
+                                                                     .repositoryFormat(RepositoryFormat.generic.name())
+                                                                     .artifactFilter("filter")
+                                                                     .artifactoryConnectorDTO(ARTIFACTORY_CONNECTOR_DTO)
+                                                                     .artifactPathFilter(".*?")
+                                                                     .build();
+
+    doReturn(Lists.newArrayList(BUILD_DETAILS))
+        .when(artifactoryNgService)
+        .getArtifactList(ARTIFACTORY_CONFIG_REQUEST, sourceAttributes.getRepositoryName(), "filter",
+            MAX_NO_OF_TAGS_PER_ARTIFACT, sourceAttributes.getArtifactPathFilter(), "/");
+
+    ArtifactTaskExecutionResponse lastSuccessfulBuild = artifactoryArtifactService.getBuilds(sourceAttributes);
+    assertThat(lastSuccessfulBuild).isNotNull();
+    assertThat(lastSuccessfulBuild.getArtifactDelegateResponses().size()).isEqualTo(1);
+    assertThat(lastSuccessfulBuild.getArtifactDelegateResponses().get(0))
+        .isInstanceOf(ArtifactoryGenericArtifactDelegateResponse.class);
+    ArtifactoryGenericArtifactDelegateResponse attributes =
+        (ArtifactoryGenericArtifactDelegateResponse) lastSuccessfulBuild.getArtifactDelegateResponses().get(0);
+    assertThat(attributes.getArtifactPath()).isEqualTo(COMBINED_ARTIFACT_PATH);
+    assertThat(lastSuccessfulBuild.getBuildDetails().size()).isEqualTo(1);
+    assertThat(lastSuccessfulBuild.getBuildDetails().get(0).getArtifactPath()).isEqualTo(COMBINED_ARTIFACT_PATH);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetBuildsForGeneric_DirectoryWithSlash() {
+    ArtifactoryGenericArtifactDelegateRequest sourceAttributes = ArtifactoryGenericArtifactDelegateRequest.builder()
+                                                                     .repositoryName(REPO_NAME)
+                                                                     .repositoryFormat(RepositoryFormat.generic.name())
+                                                                     .artifactDirectory(ARTIFACT_DIRECTORY_2)
+                                                                     .artifactoryConnectorDTO(ARTIFACTORY_CONNECTOR_DTO)
+                                                                     .artifactPathFilter(".*")
+                                                                     .build();
+
+    String artifactDirectory = sourceAttributes.getArtifactDirectory();
+    String filePath = Paths.get(artifactDirectory, DEFAULT_ARTIFACT_FILTER).toString();
+
+    doReturn(Lists.newArrayList(BUILD_DETAILS))
+        .when(artifactoryNgService)
+        .getArtifactList(ARTIFACTORY_CONFIG_REQUEST, sourceAttributes.getRepositoryName(), filePath,
+            MAX_NO_OF_TAGS_PER_ARTIFACT, sourceAttributes.getArtifactPathFilter(), artifactDirectory);
+
+    ArtifactTaskExecutionResponse lastSuccessfulBuild = artifactoryArtifactService.getBuilds(sourceAttributes);
+    assertThat(lastSuccessfulBuild).isNotNull();
+    assertThat(lastSuccessfulBuild.getArtifactDelegateResponses().size()).isEqualTo(1);
+    assertThat(lastSuccessfulBuild.getArtifactDelegateResponses().get(0))
+        .isInstanceOf(ArtifactoryGenericArtifactDelegateResponse.class);
+    ArtifactoryGenericArtifactDelegateResponse attributes =
+        (ArtifactoryGenericArtifactDelegateResponse) lastSuccessfulBuild.getArtifactDelegateResponses().get(0);
+    assertThat(attributes.getArtifactPath()).isEqualTo(ARTIFACT_PATH);
+    assertThat(lastSuccessfulBuild.getBuildDetails().size()).isEqualTo(1);
+    assertThat(lastSuccessfulBuild.getBuildDetails().get(0).getArtifactPath()).isEqualTo(ARTIFACT_PATH);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetBuildsForGeneric_DirectoryWithSingleSlash() {
+    ArtifactoryGenericArtifactDelegateRequest sourceAttributes = ArtifactoryGenericArtifactDelegateRequest.builder()
+                                                                     .repositoryName(REPO_NAME)
+                                                                     .repositoryFormat(RepositoryFormat.generic.name())
+                                                                     .artifactDirectory(ARTIFACT_DIRECTORY_3)
+                                                                     .artifactoryConnectorDTO(ARTIFACTORY_CONNECTOR_DTO)
+                                                                     .artifactPathFilter(".*")
+                                                                     .build();
+
+    String artifactDirectory = sourceAttributes.getArtifactDirectory();
+    String filePath = Paths.get(artifactDirectory, DEFAULT_ARTIFACT_FILTER).toString();
+
+    doReturn(Lists.newArrayList(BUILD_DETAILS))
+        .when(artifactoryNgService)
+        .getArtifactList(ARTIFACTORY_CONFIG_REQUEST, sourceAttributes.getRepositoryName(), filePath,
+            MAX_NO_OF_TAGS_PER_ARTIFACT, sourceAttributes.getArtifactPathFilter(), artifactDirectory);
 
     ArtifactTaskExecutionResponse lastSuccessfulBuild = artifactoryArtifactService.getBuilds(sourceAttributes);
     assertThat(lastSuccessfulBuild).isNotNull();

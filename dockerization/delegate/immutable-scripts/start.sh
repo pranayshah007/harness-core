@@ -44,10 +44,10 @@ fi
 
 # 2. Build config.yml
 echo "accountId: $ACCOUNT_ID" >> config.yml
-if [ ! -e $ACCOUNT_SECRET ]; then
-  echo "delegateToken: $ACCOUNT_SECRET" >> config.yml
-else
+if [ ! -e $DELEGATE_TOKEN ]; then
   echo "delegateToken: $DELEGATE_TOKEN" >> config.yml
+else
+  echo "delegateToken: $ACCOUNT_SECRET" >> config.yml
 fi
 echo "delegateName: $DELEGATE_NAME" >> config.yml
 echo "managerUrl: $MANAGER_HOST_AND_PORT/api/" >> config.yml
@@ -74,6 +74,16 @@ append_config "grpcAuthorityModificationDisabled" ${GRPC_AUTHORITY_MODIFICATION_
 # Intended for debugging, has to be set explicitly as its never set in generated yaml.
 append_config "trustAllCertificates" ${TRUST_ALL_CERTIFICATES:-false}
 
-# 3. Start the delegate
+# 3. load custom certificates
+TRUST_STORE_FILE=""
+source ./load_certificates.sh
+if [ ! -z $TRUST_STORE_FILE ] && [ -f $TRUST_STORE_FILE ]; then
+  JAVA_OPTS="$JAVA_OPTS -Djavax.net.ssl.trustStore=$TRUST_STORE_FILE"
+fi
+
+# 4. check connectivity
+source ./connectivity_check.sh
+
+# 5. Start the delegate
 JAVA_OPTS=${JAVA_OPTS//UseCGroupMemoryLimitForHeap/UseContainerSupport}
-exec java $JAVA_OPTS $PROXY_SYS_PROPS -XX:MaxRAMPercentage=70.0 -XX:MinRAMPercentage=40.0 -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true -DLANG=en_US.UTF-8 -jar delegate.jar server config.yml
+exec java $PROXY_SYS_PROPS -XX:MaxRAMPercentage=70.0 -XX:MinRAMPercentage=40.0 -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true -DLANG=en_US.UTF-8 --illegal-access=debug --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens java.base/java.time=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.base/java.lang.invoke=ALL-UNNAMED --add-opens java.base/java.math=ALL-UNNAMED --add-opens java.base/java.nio.file=ALL-UNNAMED --add-opens java.base/java.util.concurrent=ALL-UNNAMED --add-opens java.xml/com.sun.org.apache.xpath.internal=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-exports java.xml/com.sun.org.apache.xerces.internal.parsers=ALL-UNNAMED --add-exports java.base/sun.nio.ch=ALL-UNNAMED $JAVA_OPTS -jar delegate.jar server config.yml

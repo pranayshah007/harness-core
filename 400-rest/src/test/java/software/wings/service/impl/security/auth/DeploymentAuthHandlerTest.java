@@ -597,7 +597,8 @@ public class DeploymentAuthHandlerTest extends WingsBaseTest {
       when(pipelineService.getPipeline(appId, entityId)).thenReturn(pipeline);
 
       doNothing().when(authService).authorize(anyString(), anyList(), eq(entityId), any(), anyList());
-      when(workflowExecutionService.getWorkflowExecution(appId, workflowExecution.getUuid()))
+      when(workflowExecutionService.getWorkflowExecution(
+               eq(appId), eq(workflowExecution.getUuid()), any(String[].class)))
           .thenReturn(workflowExecution);
       doNothing().when(authService).checkIfUserAllowedToDeployWorkflowToEnv(appId, workflowExecution.getEnvId());
       deploymentAuthHandler.authorizeWithWorkflowExecutionId(appId, workflowExecution.getUuid());

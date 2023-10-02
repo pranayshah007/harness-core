@@ -21,9 +21,11 @@ import static software.wings.beans.LogHelper.color;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
-import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.StepDelegateInfo;
 import io.harness.cdng.common.beans.StepDetailsDelegateInfo;
@@ -71,6 +73,9 @@ import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.NGAccess;
+import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
+import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
@@ -122,6 +127,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @OwnedBy(CDP)
 public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTaskExecutableStep
@@ -146,6 +152,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @Inject private InfrastructureYamlSchemaHelper infrastructureYamlSchemaHelper;
+  @Inject private InfrastructureProvisionerHelper infrastructureProvisionerHelper;
 
   @Override
   public Class<InfrastructureTaskExecutableStepV2Params> getStepParametersClass() {
@@ -210,10 +217,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     } catch (Exception ex) {
       stepResponse = prepareFailureResponse(ex);
     }
-    if (ngFeatureFlagHelperService.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)) {
-      infrastructureStepHelper.saveInfraExecutionDataToStageInfo(ambiance, stepResponse);
-    }
+    infrastructureStepHelper.saveInfraExecutionDataToStageInfo(ambiance, stepResponse);
     return stepResponse;
   }
 
@@ -324,6 +328,9 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     final Infrastructure spec = infrastructure.getInfrastructureDefinitionConfig().getSpec();
     validateConnector(spec, ambiance, logCallback);
     saveExecutionLog(logCallback, "Fetching environment information...");
+    if (spec.isDynamicallyProvisioned()) {
+      infrastructureProvisionerHelper.resolveProvisionerExpressions(ambiance, spec);
+    }
     validateInfrastructure(spec, ambiance, logCallback);
 
     final OutcomeSet outcomeSet = fetchRequiredOutcomes(ambiance);
@@ -413,23 +420,41 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
   private Optional<InstancesOutcome> publishInfraOutput(NGLogCallback logCallback, ServiceStepOutcome serviceOutcome,
       InfrastructureOutcome infrastructureOutcome, Ambiance ambiance, EnvironmentOutcome environmentOutcome,
       boolean skipInstances) {
-    if (serviceOutcome.getType() == null) {
-      throw new InvalidRequestException("service type cannot be null");
-    }
-    if (ServiceSpecType.SSH.toLowerCase(Locale.ROOT).equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))
-        || ServiceSpecType.CUSTOM_DEPLOYMENT.toLowerCase(Locale.ROOT)
-               .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
-      ExecutionInfoKey executionInfoKey = ExecutionInfoKeyMapper.getExecutionInfoKey(
-          ambiance, environmentOutcome, serviceOutcome, infrastructureOutcome);
-      return Optional.ofNullable(publishSshInfraDelegateConfigOutput(
-          ambiance, logCallback, infrastructureOutcome, executionInfoKey, skipInstances));
-    }
+    if (serviceOutcome == null) {
+      Optional<SecretDTOV2> optionalCredentialSpecDto =
+          cdStepHelper.getCredentialSpecDto(infrastructureOutcome, ambiance);
+      if (optionalCredentialSpecDto.isPresent()) {
+        SecretDTOV2 credentialSpecDto = optionalCredentialSpecDto.get();
+        if ((credentialSpecDto.getSpec() instanceof SSHKeySpecDTO)
+            || InfrastructureKind.CUSTOM_DEPLOYMENT.equals(infrastructureOutcome.getKind())) {
+          ExecutionInfoKey executionInfoKey = ExecutionInfoKeyMapper.getExecutionInfoKey(
+              ambiance, environmentOutcome, serviceOutcome, infrastructureOutcome);
+          return Optional.ofNullable(publishSshInfraDelegateConfigOutput(
+              ambiance, logCallback, infrastructureOutcome, executionInfoKey, skipInstances));
+        }
+        if (credentialSpecDto.getSpec() instanceof WinRmCredentialsSpecDTO) {
+          ExecutionInfoKey executionInfoKey = ExecutionInfoKeyMapper.getExecutionInfoKey(
+              ambiance, environmentOutcome, serviceOutcome, infrastructureOutcome);
+          return Optional.ofNullable(publishWinRmInfraDelegateConfigOutput(
+              ambiance, logCallback, infrastructureOutcome, executionInfoKey, skipInstances));
+        }
+      }
+    } else {
+      if (ServiceSpecType.SSH.toLowerCase(Locale.ROOT).equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))
+          || ServiceSpecType.CUSTOM_DEPLOYMENT.toLowerCase(Locale.ROOT)
+                 .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
+        ExecutionInfoKey executionInfoKey = ExecutionInfoKeyMapper.getExecutionInfoKey(
+            ambiance, environmentOutcome, serviceOutcome, infrastructureOutcome);
+        return Optional.ofNullable(publishSshInfraDelegateConfigOutput(
+            ambiance, logCallback, infrastructureOutcome, executionInfoKey, skipInstances));
+      }
 
-    if (ServiceSpecType.WINRM.toLowerCase(Locale.ROOT).equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
-      ExecutionInfoKey executionInfoKey = ExecutionInfoKeyMapper.getExecutionInfoKey(
-          ambiance, environmentOutcome, serviceOutcome, infrastructureOutcome);
-      return Optional.ofNullable(publishWinRmInfraDelegateConfigOutput(
-          ambiance, logCallback, infrastructureOutcome, executionInfoKey, skipInstances));
+      if (ServiceSpecType.WINRM.toLowerCase(Locale.ROOT).equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
+        ExecutionInfoKey executionInfoKey = ExecutionInfoKeyMapper.getExecutionInfoKey(
+            ambiance, environmentOutcome, serviceOutcome, infrastructureOutcome);
+        return Optional.ofNullable(publishWinRmInfraDelegateConfigOutput(
+            ambiance, logCallback, infrastructureOutcome, executionInfoKey, skipInstances));
+      }
     }
 
     if (infrastructureOutcome instanceof K8sGcpInfrastructureOutcome

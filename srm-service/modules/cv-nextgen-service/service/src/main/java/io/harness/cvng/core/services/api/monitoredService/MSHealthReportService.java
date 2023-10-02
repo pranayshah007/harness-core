@@ -7,12 +7,19 @@
 
 package io.harness.cvng.core.services.api.monitoredService;
 
-import io.harness.cvng.beans.MSHealthReport;
+import io.harness.cvng.core.beans.change.MSHealthReport;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.notification.beans.NotificationRuleType;
+import io.harness.cvng.notification.entities.NotificationRule;
+import io.harness.cvng.notification.entities.NotificationRuleConditionEntity;
+
+import java.time.Instant;
+import java.util.Map;
 
 public interface MSHealthReportService {
-  MSHealthReport getMSHealthReport(ProjectParams projectParams, String monitoredServiceIdentifier);
+  MSHealthReport getMSHealthReport(ProjectParams projectParams, String monitoredServiceIdentifier, Instant startTime);
 
-  void handleNotification(
-      ProjectParams projectParams, MSHealthReport msHealthReport, String webhookUrl, String monitoredServiceIdentifier);
+  void sendReportNotification(ProjectParams projectParams, Map<String, Object> entityDetails, NotificationRuleType type,
+      NotificationRuleConditionEntity condition, NotificationRule.CVNGNotificationChannel notificationChannel,
+      String monitoredServiceIdentifier);
 }

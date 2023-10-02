@@ -6,11 +6,13 @@
  */
 
 package io.harness.serializer;
-
 import io.harness.EntityType;
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.nodes.ActionStepNode;
@@ -32,7 +34,7 @@ import io.harness.beans.steps.nodes.S3UploadNode;
 import io.harness.beans.steps.nodes.SaveCacheGCSNode;
 import io.harness.beans.steps.nodes.SaveCacheS3Node;
 import io.harness.beans.steps.nodes.SecurityNode;
-import io.harness.ci.serializer.morphia.CIExecutionMorphiaRegistrar;
+import io.harness.ci.execution.serializer.morphia.CIExecutionMorphiaRegistrar;
 import io.harness.cimanager.serializer.CIContractsKryoRegistrar;
 import io.harness.cimanager.serializer.CIContractsMorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
@@ -57,6 +59,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import java.util.Collections;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @OwnedBy(HarnessTeam.CI)
 public class CiBeansRegistrars {
   public static final ImmutableSet<Class<? extends KryoRegistrar>> kryoRegistrars =

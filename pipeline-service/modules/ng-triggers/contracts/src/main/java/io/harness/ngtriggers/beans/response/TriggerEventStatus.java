@@ -6,19 +6,22 @@
  */
 
 package io.harness.ngtriggers.beans.response;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import lombok.Builder;
 import lombok.Data;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Data
 @Builder
 @OwnedBy(PIPELINE)
 public class TriggerEventStatus {
-  public enum FinalResponse { SUCCESS, FAILURE }
+  public enum FinalResponse { SUCCESS, FAILED, SKIPPED }
   private FinalResponse status;
   private String message;
 }

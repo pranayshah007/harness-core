@@ -9,6 +9,9 @@ package io.harness.ngmigration.service;
 
 import static io.serializer.HObjectMapper.configureObjectMapperForNG;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
@@ -58,6 +61,7 @@ import okhttp3.RequestBody;
 import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 public abstract class NgMigrationService {
   public static final MediaType TEXT_PLAIN = MediaType.parse("text/plain");
@@ -92,6 +96,24 @@ public abstract class NgMigrationService {
                                          .enable(SerializationFeature.INDENT_OUTPUT);
     YAML_MAPPER.registerModule(new PipelineJacksonModule());
     return NGYamlUtils.getYamlString(yamlFile.getYaml(), MIGRATION_DEFAULT_OBJECT_MAPPER, YAML_MAPPER);
+  }
+
+  public static String getYamlStringV2(NGYamlFile yamlFile) {
+    return getYamlStringV2(yamlFile.getYaml());
+  }
+
+  public static String getYamlStringV2(YamlDTO yamlFile) {
+    final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory().enable(Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS))
+                                         .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+                                         .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
+                                         .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+                                         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                                         .configure(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS, false)
+                                         .configure(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT, true)
+                                         .configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true)
+                                         .enable(SerializationFeature.INDENT_OUTPUT);
+    YAML_MAPPER.registerModule(new PipelineJacksonModule());
+    return NGYamlUtils.getYamlString(yamlFile, MIGRATION_DEFAULT_OBJECT_MAPPER, YAML_MAPPER);
   }
 
   public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
@@ -138,7 +160,7 @@ public abstract class NgMigrationService {
   }
 
   public YamlGenerationDetails getYamls(MigrationContext migrationContext, CgEntityId root, CgEntityId entityId) {
-    if (!isNGEntityExists()
+    if (!isNGEntityExists(migrationContext)
         || !canMigrate(entityId, root, migrationContext.getInputDTO().isMigrateReferencedEntities())) {
       return null;
     }
@@ -172,7 +194,7 @@ public abstract class NgMigrationService {
       Map<CgEntityId, NGYamlFile> migratedEntities, CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail,
       String accountIdentifier);
 
-  protected abstract boolean isNGEntityExists();
+  protected abstract boolean isNGEntityExists(MigrationContext migrationContext);
 
   protected <T> MigrationImportSummaryDTO handleResp(NGYamlFile yamlFile, Response<ResponseDTO<T>> resp)
       throws IOException {
@@ -188,10 +210,8 @@ public abstract class NgMigrationService {
     RequestBody type = RequestBody.create(TEXT_PLAIN, "FILE");
     RequestBody parentIdentifier = RequestBody.create(TEXT_PLAIN, fileYamlDTO.getRootIdentifier());
     RequestBody mimeType = RequestBody.create(TEXT_PLAIN, "txt");
-    RequestBody content = null;
-    if (StringUtils.isNotBlank(fileYamlDTO.getContent())) {
-      content = RequestBody.create(MediaType.parse("application/octet-stream"), fileYamlDTO.getContent());
-    }
+    RequestBody content = RequestBody.create(
+        MediaType.parse("application/octet-stream"), StringUtils.defaultIfBlank(fileYamlDTO.getContent(), ""));
 
     Response<ResponseDTO<FileDTO>> resp;
     try {

@@ -66,6 +66,7 @@ public class WorkloadRecommendationService {
         .items(containerHistogramList)
         .lastDayCost(workloadRecommendation.get().getLastDayCost())
         .jiraDetails(workloadRecommendation.get().getJiraDetails())
+        .serviceNowDetails(workloadRecommendation.get().getServiceNowDetails())
         .build();
   }
 

@@ -13,6 +13,9 @@ import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.spec.server.ssca.v1.model.EnforcementSummaryResponse;
+import io.harness.spec.server.ssca.v1.model.OrchestrationSummaryResponse;
+import io.harness.spec.server.ssca.v1.model.TokenIssueResponseBody;
 import io.harness.ssca.beans.SscaExecutionConstants;
 import io.harness.ssca.beans.entities.SSCAServiceConfig;
 import io.harness.ssca.client.beans.SBOMArtifactResponse;
@@ -45,6 +48,10 @@ public class SSCAServiceUtils {
     this.sscaServiceClient = sscaServiceClient;
   }
 
+  public boolean isSSCAManagerEnabled() {
+    return sscaServiceConfig.isSscaManagerEnabled();
+  }
+
   public String getSscaServiceToken(String accountId, String orgId, String projectId) {
     Call<SscaAuthToken> call = sscaServiceClient.generateAuthToken(accountId, orgId, projectId);
     Response<SscaAuthToken> response;
@@ -73,23 +80,62 @@ public class SSCAServiceUtils {
     return response.body().getToken();
   }
 
+  public String getSscaManagerToken(String accountId) {
+    Call<TokenIssueResponseBody> call = sscaServiceClient.generateSSCAAuthToken(accountId);
+    TokenIssueResponseBody response;
+    try {
+      response = NGRestUtils.getGeneralResponse(sscaServiceClient.generateSSCAAuthToken(accountId));
+    } catch (InvalidRequestException e) {
+      throw new GeneralException("Could not fetch token from SSCA manager.");
+    }
+
+    return response.getToken();
+  }
+
   public Map<String, String> getSSCAServiceEnvVariables(String accountId, String orgId, String projectId) {
     Map<String, String> envVars = new HashMap<>();
     final String sscaServiceBaseUrl = sscaServiceConfig.getHttpClientConfig().getBaseUrl();
 
     String sscaServiceToken = "token";
 
-    // Make a call to the SSCA service and get back the token.
-    try {
-      sscaServiceToken = getSscaServiceToken(accountId, orgId, projectId);
-    } catch (Exception e) {
-      log.error("Could not call token endpoint for SSCA service", e);
+    if (sscaServiceConfig.isSscaManagerEnabled()) {
+      // Make a call to the SSCA manager and get back the token.
+      try {
+        sscaServiceToken = getSscaManagerToken(accountId);
+      } catch (Exception e) {
+        log.error("Could not call token endpoint for SSCA service", e);
+      }
+    } else {
+      // Make a call to the SSCA service and get back the token.
+      try {
+        sscaServiceToken = getSscaServiceToken(accountId, orgId, projectId);
+      } catch (Exception e) {
+        log.error("Could not call token endpoint for SSCA service", e);
+      }
     }
 
     envVars.put(SscaExecutionConstants.SSCA_SERVICE_TOKEN_VARIABLE, sscaServiceToken);
     envVars.put(SscaExecutionConstants.SSCA_SERVICE_ENDPOINT_VARIABLE, sscaServiceBaseUrl);
 
     return envVars;
+  }
+
+  public EnforcementSummaryResponse getEnforcementSummary(
+      String stepExecutionId, String accountId, String orgId, String projectId) {
+    Call<EnforcementSummaryResponse> call =
+        sscaServiceClient.getEnforcementSummary(orgId, projectId, stepExecutionId, accountId);
+    EnforcementSummaryResponse response;
+    try {
+      response = NGRestUtils.getGeneralResponse(call);
+    } catch (InvalidRequestException e) {
+      throw new CIStageExecutionException(
+          String.format("Could not fetch sbom artifact from SSCA manager. Error message: %s", e.getMessage()));
+    }
+    if (response == null) {
+      throw new CIStageExecutionException("Could not fetch sbom artifact from SSCA manager. Response body is null");
+    }
+
+    return response;
   }
 
   public SscaEnforcementSummary getEnforcementSummary(String stepExecutionId) {
@@ -120,6 +166,24 @@ public class SSCAServiceUtils {
     }
 
     return response.body();
+  }
+
+  public OrchestrationSummaryResponse getOrchestrationSummaryResponse(
+      String stepExecutionId, String accountId, String orgId, String projectId) {
+    Call<OrchestrationSummaryResponse> call =
+        sscaServiceClient.getOrchestrationSummary(orgId, projectId, stepExecutionId, accountId);
+    OrchestrationSummaryResponse stepExecutionResponse = null;
+    try {
+      stepExecutionResponse = NGRestUtils.getGeneralResponse(call);
+    } catch (InvalidRequestException e) {
+      throw new CIStageExecutionException(
+          String.format("Could not fetch sbom artifact from SSCA manager. Error message: %s", e.getMessage()));
+    }
+    if (stepExecutionResponse == null) {
+      throw new CIStageExecutionException("Could not fetch sbom artifact from SSCA manager. Response body is null");
+    }
+
+    return stepExecutionResponse;
   }
 
   public SBOMArtifactResponse getSbomArtifact(

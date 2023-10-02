@@ -6,26 +6,36 @@
  */
 
 package io.harness.ngtriggers.helpers;
-
+import static io.harness.ngtriggers.beans.response.TriggerEventResponse.isSkippedResponse;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.isSuccessResponse;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ngtriggers.beans.response.TriggerEventResponse;
 import io.harness.ngtriggers.beans.response.TriggerEventStatus;
 
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @UtilityClass
 public class TriggerEventStatusHelper {
   public TriggerEventStatus toStatus(TriggerEventResponse.FinalStatus finalStatus) {
     if (!isSuccessResponse(finalStatus)) {
       if (finalStatus != null) {
+        if (isSkippedResponse(finalStatus)) {
+          return TriggerEventStatus.builder()
+              .status(TriggerEventStatus.FinalResponse.SKIPPED)
+              .message(finalStatus.getMessage())
+              .build();
+        }
         return TriggerEventStatus.builder()
-            .status(TriggerEventStatus.FinalResponse.FAILURE)
+            .status(TriggerEventStatus.FinalResponse.FAILED)
             .message(finalStatus.getMessage())
             .build();
       } else {
         return TriggerEventStatus.builder()
-            .status(TriggerEventStatus.FinalResponse.FAILURE)
+            .status(TriggerEventStatus.FinalResponse.FAILED)
             .message("Unknown status")
             .build();
       }

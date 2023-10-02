@@ -6,13 +6,15 @@
  */
 
 package io.harness.pms.expressions.functors;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.instance.outcome.InstanceOutcome;
 import io.harness.cdng.instance.outcome.InstancesOutcome;
 import io.harness.exception.InvalidArgumentsException;
@@ -36,6 +38,8 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS, HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class InstanceFunctor implements SdkFunctor {
@@ -44,6 +48,7 @@ public class InstanceFunctor implements SdkFunctor {
   private static final String INSTANCE_NAME_PROPERTY = "name";
   private static final String INSTANCE_HOST_NAME_PROPERTY = "hostName";
   private static final String INSTANCE_HOST_PROPERTY = "host";
+  public static final String INSTANCE_PROPERTIES_PROPERTY = "properties";
 
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
 
@@ -59,15 +64,18 @@ public class InstanceFunctor implements SdkFunctor {
     }
     String instanceProperty = args[0];
 
-    if (INSTANCE_NAME_PROPERTY.equals(instanceProperty)) {
-      return instance.getName();
-    } else if (INSTANCE_HOST_NAME_PROPERTY.equals(instanceProperty)) {
-      return instance.getHostName();
-    } else if (INSTANCE_HOST_PROPERTY.equals(instanceProperty)) {
-      return instance.getHost();
+    switch (instanceProperty) {
+      case INSTANCE_NAME_PROPERTY:
+        return instance.getName();
+      case INSTANCE_HOST_NAME_PROPERTY:
+        return instance.getHostName();
+      case INSTANCE_HOST_PROPERTY:
+        return instance.getHost();
+      case INSTANCE_PROPERTIES_PROPERTY:
+        return instance.getHost() != null ? instance.getHost().getProperties() : null;
+      default:
+        throw new InvalidArgumentsException(format("Unsupported instance property, property: %s", instanceProperty));
     }
-
-    throw new InvalidArgumentsException(format("Unsupported instance property, property: %s", instanceProperty));
   }
 
   private List<InstanceOutcome> getInstancesFromSweepingOutput(Ambiance ambiance) {
@@ -84,7 +92,7 @@ public class InstanceFunctor implements SdkFunctor {
     List<Level> stepLevelsWithStrategyMetadata =
         ambiance.getLevelsList()
             .stream()
-            .filter(level -> level.hasStrategyMetadata() && level.hasStepType())
+            .filter(level -> AmbianceUtils.hasStrategyMetadata(level) && level.hasStepType())
             .collect(Collectors.toList());
 
     Map<String, Object> strategyObjectMap = StrategyUtils.fetchStrategyObjectMap(

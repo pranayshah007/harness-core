@@ -15,6 +15,7 @@ import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.services.api.MetricPackService;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotBlank;
@@ -30,6 +31,8 @@ import lombok.experimental.SuperBuilder;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(name = "AwsPrometheusHealthSource",
+    description = "This is the AwsPrometheusHealthSource Metric Health Source spec entity defined in Harness")
 public class AwsPrometheusHealthSourceSpec extends PrometheusHealthSourceSpec {
   @NotNull @NotBlank String region;
   @NotNull @NotBlank String workspaceId;

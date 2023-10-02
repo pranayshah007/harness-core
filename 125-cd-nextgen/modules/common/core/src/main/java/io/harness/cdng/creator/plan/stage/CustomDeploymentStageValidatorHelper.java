@@ -15,8 +15,11 @@ import static io.harness.ng.core.template.TemplateListType.STABLE_TEMPLATE_TYPE;
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
@@ -47,6 +50,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_TEMPLATES})
 @OwnedBy(HarnessTeam.CDP)
 public class CustomDeploymentStageValidatorHelper implements StageValidatorHelper {
   @Inject TemplateResourceClient templateResourceClient;

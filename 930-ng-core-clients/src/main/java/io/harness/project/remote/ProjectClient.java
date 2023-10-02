@@ -67,6 +67,14 @@ public interface ProjectClient {
       @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(value = NGResourceFilterConstants.IDENTIFIERS) List<String> identifiers);
 
+  @GET(PROJECTS_API)
+  Call<ResponseDTO<PageResponse<ProjectResponse>>> listProjects(
+      @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(value = NGResourceFilterConstants.IDENTIFIERS) List<String> identifiers,
+      @Query(value = NGResourceFilterConstants.PAGE_KEY) int page,
+      @Query(value = NGResourceFilterConstants.SIZE_KEY) int size);
+
   @GET(PROJECTS_API + "/list")
   Call<ResponseDTO<PageResponse<ProjectResponse>>> listWithMultiOrg(
       @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,

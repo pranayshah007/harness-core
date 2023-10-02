@@ -27,6 +27,7 @@ import io.harness.cdng.ecs.beans.EcsGitFetchFailurePassThroughData;
 import io.harness.cdng.ecs.beans.EcsPrepareRollbackDataPassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExceptionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -58,6 +59,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.supplier.ThrowingSupplier;
@@ -100,6 +102,7 @@ public class EcsBlueGreenCreateServiceStepTest extends CategoryTest {
   @Spy private EcsStepCommonHelper ecsStepCommonHelper;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private InstanceInfoService instanceInfoService;
+  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Spy @InjectMocks private EcsBlueGreenCreateServiceStep ecsBlueGreenCreateServiceStep;
 
@@ -129,11 +132,13 @@ public class EcsBlueGreenCreateServiceStepTest extends CategoryTest {
     doReturn(taskChainResponse)
         .when(ecsStepCommonHelper)
         .queueEcsTask(any(), any(), any(), any(), anyBoolean(), eq(TaskType.ECS_COMMAND_TASK_NG));
+    EcsBlueGreenCreateServiceStepParameters ecsBlueGreenCreateServiceStepParameters =
+        (EcsBlueGreenCreateServiceStepParameters) stepElementParameters.getSpec();
+    ecsBlueGreenCreateServiceStepParameters.setSameAsAlreadyRunningInstances(ParameterField.createValueField(false));
 
     ecsBlueGreenCreateServiceStep.executeEcsTask(
         ambiance, stepElementParameters, ecsExecutionPassThroughData, unitProgressData, ecsStepExecutorParams);
-    EcsBlueGreenCreateServiceStepParameters ecsBlueGreenCreateServiceStepParameters =
-        (EcsBlueGreenCreateServiceStepParameters) stepElementParameters.getSpec();
+
     EcsLoadBalancerConfig ecsLoadBalancerConfig =
         EcsLoadBalancerConfig.builder()
             .loadBalancer(ecsBlueGreenCreateServiceStepParameters.getLoadBalancer().getValue())
@@ -159,6 +164,8 @@ public class EcsBlueGreenCreateServiceStepTest extends CategoryTest {
             .ecsScalingPolicyManifestContentList(ecsStepExecutorParams.getEcsScalingPolicyManifestContentList())
             .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
             .targetGroupArnKey(ecsStepExecutorParams.getTargetGroupArnKey())
+            .sameAsAlreadyRunningInstances(false)
+            .removeAutoScalingFromBlueService(false)
             .build();
     verify(ecsStepCommonHelper)
         .queueEcsTask(stepElementParameters, ecsBlueGreenCreateServiceRequest, ambiance, ecsExecutionPassThroughData,
@@ -187,6 +194,7 @@ public class EcsBlueGreenCreateServiceStepTest extends CategoryTest {
     doReturn(taskChainResponseMock)
         .when(ecsStepCommonHelper)
         .queueEcsTask(any(), any(), any(), any(), anyBoolean(), eq(TaskType.ECS_COMMAND_TASK_NG));
+    doReturn(false).when(cdFeatureFlagHelper).isEnabled(any(), any());
     ecsBlueGreenCreateServiceStep.executeEcsPrepareRollbackTask(
         ambiance, stepElementParameters, ecsStepPassThroughData, unitProgressData);
     final String accountId = AmbianceUtils.getAccountId(ambiance);
@@ -220,8 +228,8 @@ public class EcsBlueGreenCreateServiceStepTest extends CategoryTest {
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
   public void getStepParametersClassTest() {
-    Class<StepElementParameters> stepElementParametersClass = ecsBlueGreenCreateServiceStep.getStepParametersClass();
-    assertThat(stepElementParametersClass).isEqualTo(StepElementParameters.class);
+    Class<StepBaseParameters> stepElementParametersClass = ecsBlueGreenCreateServiceStep.getStepParametersClass();
+    assertThat(stepElementParametersClass).isEqualTo(StepBaseParameters.class);
   }
 
   @Test

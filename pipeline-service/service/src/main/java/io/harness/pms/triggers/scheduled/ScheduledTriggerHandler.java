@@ -6,7 +6,6 @@
  */
 
 package io.harness.pms.triggers.scheduled;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.IRREGULAR_SKIP_MISSED;
@@ -14,7 +13,10 @@ import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.execution.PlanExecution;
@@ -49,6 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @Slf4j
 @Singleton
 @OwnedBy(PIPELINE)
@@ -61,7 +64,7 @@ public class ScheduledTriggerHandler implements Handler<NGTriggerEntity> {
   @Inject private TriggerExecutionHelper triggerExecutionHelper;
 
   public void registerIterators(IteratorConfig iteratorConfig) {
-    persistenceIteratorFactory.createLoopIteratorWithDedicatedThreadPool(
+    persistenceIteratorFactory.createLoopIteratorWithDedicatedThreadPoolNoRecoverAfterPause(
         PersistenceIteratorFactory.PumpExecutorOptions.builder()
             .name("ScheduledTriggerProcessor")
             .poolSize(iteratorConfig.getThreadPoolCount())
@@ -69,6 +72,7 @@ public class ScheduledTriggerHandler implements Handler<NGTriggerEntity> {
             .build(),
         ScheduledTriggerHandler.class,
         MongoPersistenceIterator.<NGTriggerEntity, SpringFilterExpander>builder()
+            .unsorted(true)
             .clazz(NGTriggerEntity.class)
             .fieldName(NGTriggerEntityKeys.nextIterations)
             .targetInterval(ofMinutes(5))
@@ -127,7 +131,8 @@ public class ScheduledTriggerHandler implements Handler<NGTriggerEntity> {
         }
 
         PlanExecution response = ngTriggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionRequest(triggerDetails,
-            TriggerPayload.newBuilder().setType(Type.SCHEDULED).build(), triggerWebhookEvent, null, runtimeInputYaml);
+            TriggerPayload.newBuilder().setType(Type.SCHEDULED).build(), triggerWebhookEvent, null, null,
+            runtimeInputYaml);
         triggerEventHistoryRepository.save(toHistoryRecord(entity, "TARGET_EXECUTION_REQUESTED",
             "Pipeline execution was requested successfully", false, response, runtimeInputYaml));
         log.info("Execution started for cron trigger: " + entity.getIdentifier()

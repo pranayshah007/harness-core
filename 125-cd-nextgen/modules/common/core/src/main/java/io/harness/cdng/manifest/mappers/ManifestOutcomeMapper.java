@@ -37,7 +37,10 @@ import static io.harness.cdng.manifest.ManifestType.VALUES;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.manifest.yaml.AsgConfigurationManifestOutcome;
 import io.harness.cdng.manifest.yaml.AsgLaunchTemplateManifestOutcome;
 import io.harness.cdng.manifest.yaml.AsgScalingPolicyManifestOutcome;
@@ -98,6 +101,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @UtilityClass
 @OwnedBy(CDP)
 public class ManifestOutcomeMapper {
@@ -255,6 +260,7 @@ public class ManifestOutcomeMapper {
         .enableDeclarativeRollback(helmChartManifest.getEnableDeclarativeRollback())
         .commandFlags(helmChartManifest.getCommandFlags())
         .subChartPath(helmChartManifest.getSubChartPath())
+        .fetchHelmChartMetadata(helmChartManifest.getFetchHelmChartMetadata())
         .build();
   }
 

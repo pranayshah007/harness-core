@@ -759,6 +759,22 @@ public class ProjectServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testGetProjectFavorites_filterDTONotNull_withOrgIdsNull() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String userid = randomAlphabetic(10);
+    ProjectFilterDTO projectFilterDTO = ProjectFilterDTO.builder().orgIdentifiers(null).build();
+    when(organizationService.getPermittedOrganizations(accountIdentifier, null))
+        .thenReturn(Collections.singleton(orgIdentifier));
+    projectService.getProjectFavorites(accountIdentifier, projectFilterDTO, userid);
+    verify(organizationService, times(1)).getPermittedOrganizations(accountIdentifier, null);
+    verify(favoritesService, times(1))
+        .getFavorites(accountIdentifier, orgIdentifier, null, userid, ResourceType.PROJECT.toString());
+  }
+
+  @Test
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
   public void shouldReturnTrueIfProjectIsFavorite() {

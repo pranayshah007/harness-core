@@ -16,8 +16,10 @@ import io.harness.audit.repositories.AuditRetentionRepository;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @OwnedBy(PL)
@@ -57,5 +59,15 @@ public class AuditSettingsServiceImpl implements AuditSettingsService {
     List<AuditSettings> auditSettingsList = new ArrayList<>();
     auditRetentionRepository.findAll().iterator().forEachRemaining(auditSettingsList::add);
     return auditSettingsList;
+  }
+
+  @Override
+  public Set<String> getUniqueAccountsWithAuditRetentionPeriod() {
+    return new HashSet<>(auditRetentionRepository.fetchDistinctAccountIdentifiers());
+  }
+
+  @Override
+  public void deleteByAccountIdentifier(String accountIdentifier) {
+    auditRetentionRepository.deleteByAccountIdentifier(accountIdentifier);
   }
 }

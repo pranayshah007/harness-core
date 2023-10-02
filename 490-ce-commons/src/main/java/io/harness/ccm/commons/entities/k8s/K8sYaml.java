@@ -14,6 +14,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
@@ -26,11 +27,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.hash.Hashing;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
@@ -49,6 +52,11 @@ public final class K8sYaml implements PersistentEntity, UuidAware, CreatedAtAwar
                  .field(K8sYamlKeys.accountId)
                  .field(K8sYamlKeys.hash)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_createdAt")
+                 .field(K8sYamlKeys.accountId)
+                 .field(K8sYamlKeys.createdAt)
+                 .build())
         .build();
   }
 
@@ -62,15 +70,18 @@ public final class K8sYaml implements PersistentEntity, UuidAware, CreatedAtAwar
   private String resourceVersion;
   private String yaml;
 
+  @EqualsAndHashCode.Exclude @FdTtlIndex Instant ttl;
+
   @FdUniqueIndex @Setter(AccessLevel.NONE) private String hash;
 
   @Builder(toBuilder = true)
-  private K8sYaml(String accountId, String clusterId, String uid, String resourceVersion, String yaml) {
+  private K8sYaml(String accountId, String clusterId, String uid, String resourceVersion, String yaml, Instant ttl) {
     this.accountId = accountId;
     this.clusterId = clusterId;
     this.uid = uid;
     this.resourceVersion = resourceVersion;
     this.yaml = yaml;
+    this.ttl = ttl;
     this.hash = hash(accountId, clusterId, uid, yaml);
   }
 

@@ -24,7 +24,7 @@ type Config struct {
 	EnableProfiler bool `envconfig:"HSQS_ENABLE_PROFILER"`
 
 	Server struct {
-		PORT string `envconfig:"HSQS_PORT" default:"9091"`
+		PORT string `envconfig:"HSQS_PORT" default:"9544"`
 		Host string `envconfig:"HSQS_HOST"`
 	}
 

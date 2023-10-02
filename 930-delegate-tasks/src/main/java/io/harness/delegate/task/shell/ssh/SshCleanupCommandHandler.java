@@ -6,10 +6,12 @@
  */
 
 package io.harness.delegate.task.shell.ssh;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.shell.CommandTaskParameters;
@@ -18,7 +20,6 @@ import io.harness.delegate.task.ssh.NgCleanupCommandUnit;
 import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logging.LogLevel;
 import io.harness.shell.AbstractScriptExecutor;
 import io.harness.shell.ExecuteCommandResponse;
 
@@ -26,6 +27,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Map;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @OwnedBy(CDP)
 @Singleton
 public class SshCleanupCommandHandler implements CommandHandler {
@@ -62,13 +65,14 @@ public class SshCleanupCommandHandler implements CommandHandler {
 
     AbstractScriptExecutor executor = sshScriptExecutorFactory.getExecutor(context);
 
-    CommandExecutionStatus commandExecutionStatus = cleanup(sshCommandTaskParameters, executor);
-    if (parameters.isExecuteOnDelegate()) {
-      executor.getLogCallback().saveExecutionLog(
-          "Command finished with status " + commandExecutionStatus, LogLevel.INFO, commandExecutionStatus);
+    try {
+      CommandExecutionStatus commandExecutionStatus = cleanup(sshCommandTaskParameters, executor);
+      closeLogStreamWithSuccessEmptyMsg(executor.getLogCallback());
+      return ExecuteCommandResponse.builder().status(commandExecutionStatus).build();
+    } catch (Exception e) {
+      closeLogStreamWithError(executor.getLogCallback());
+      throw e;
     }
-
-    return ExecuteCommandResponse.builder().status(commandExecutionStatus).build();
   }
 
   private CommandExecutionStatus cleanup(SshCommandTaskParameters taskParameters, AbstractScriptExecutor executor) {

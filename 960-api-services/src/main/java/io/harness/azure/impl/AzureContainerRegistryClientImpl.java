@@ -6,7 +6,6 @@
  */
 
 package io.harness.azure.impl;
-
 import static io.harness.azure.model.AzureConstants.ACR_REGISTRY_NAME_BLANK_VALIDATION_MSG;
 import static io.harness.azure.model.AzureConstants.REGISTRY_HOST_BLANK_VALIDATION_MSG;
 import static io.harness.azure.model.AzureConstants.REPOSITORY_NAME_BLANK_VALIDATION_MSG;
@@ -16,6 +15,9 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
 import io.harness.azure.AzureClient;
 import io.harness.azure.client.AzureContainerRegistryClient;
@@ -50,6 +52,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @Slf4j
 public class AzureContainerRegistryClientImpl extends AzureClient implements AzureContainerRegistryClient {
@@ -236,9 +239,7 @@ public class AzureContainerRegistryClientImpl extends AzureClient implements Azu
       Response<AcrGetTokenResponse> response =
           acrRestClient.getRefreshToken(AzureConstants.ACCESS_TOKEN, azureAccessToken, registryUrl).execute();
       if (response.isSuccessful()) {
-        String refreshToken = response.body().getRefreshToken();
-
-        return refreshToken;
+        return response.body().getRefreshToken();
       } else {
         we = new AzureAuthenticationException(
             format("Get ACR refresh token in exchange for Azure access token has failed: %s with status code %s",
@@ -267,9 +268,7 @@ public class AzureContainerRegistryClientImpl extends AzureClient implements Azu
           acrRestClient.getAccessToken(AzureConstants.REFRESH_TOKEN, refreshToken, registryUrl, scope).execute();
 
       if (response.isSuccessful()) {
-        String acrAccessToken = response.body().getAccessToken();
-
-        return acrAccessToken;
+        return response.body().getAccessToken();
       } else {
         errMsg =
             format("Get ACR access token request failed: %s with status code %s", response.message(), response.code());

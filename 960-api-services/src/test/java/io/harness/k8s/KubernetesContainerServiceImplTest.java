@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.encoding.EncodingUtils.compressString;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64ToByteArray;
+import static io.harness.k8s.K8sConstants.KUBECONFIG_FILENAME;
 import static io.harness.k8s.KubernetesConvention.CompressedReleaseHistoryFlag;
 import static io.harness.k8s.KubernetesConvention.ReleaseHistoryKeyName;
 import static io.harness.k8s.model.KubernetesClusterAuthType.EXEC_OAUTH;
@@ -24,6 +25,7 @@ import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.BOGDAN;
 import static io.harness.rule.OwnerRule.BRETT;
+import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.YOGESH;
@@ -53,6 +55,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.concurent.HTimeLimiterMocker;
 import io.harness.container.ContainerInfo;
 import io.harness.exception.InvalidRequestException;
+import io.harness.filesystem.FileIo;
 import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.model.GcpAccessTokenSupplier;
 import io.harness.k8s.model.KubernetesAzureConfig;
@@ -65,6 +68,7 @@ import io.harness.k8s.oidc.OidcTokenRetriever;
 import io.harness.rule.Owner;
 
 import com.github.scribejava.apis.openid.OpenIdOAuth2AccessToken;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.gson.reflect.TypeToken;
@@ -137,16 +141,22 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermission;
 import java.time.Clock;
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import okhttp3.Call;
 import okhttp3.internal.http2.ConnectionShutdownException;
+import org.assertj.core.api.Assertions;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -168,6 +178,8 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
   public static final String DUMMY_RELEASE_HISTORY = "dummyReleaseHistory";
   public static final char[] USERNAME = "username".toCharArray();
   public static final char[] PASSWORD = "PASSWORD".toCharArray();
+  final Path workingDir = Path.of("dir");
+  final Path configFilePath = Path.of(workingDir.toString(), KUBECONFIG_FILENAME);
   private static final KubernetesConfig KUBERNETES_CONFIG = KubernetesConfig.builder()
                                                                 .masterUrl(MASTER_URL)
                                                                 .username(USERNAME)
@@ -386,6 +398,11 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
     service = new Service();
     configMap = new ConfigMap();
     horizontalPodAutoscaler = new HorizontalPodAutoscaler();
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    FileIo.deleteDirectoryAndItsContentIfExists(workingDir.toString());
   }
 
   @Test
@@ -1694,6 +1711,132 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
                                       .build();
     String configFileContent = kubernetesContainerService.getConfigFileContent(kubeConfig);
     assertThat(expected).isEqualTo(configFileContent);
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testKubeConfigFilePermissions() throws Exception {
+    FileIo.createDirectoryIfDoesNotExist(workingDir);
+    Files.createFile(configFilePath);
+    Set<PosixFilePermission> initialPermissions = new HashSet<>();
+    initialPermissions.add(PosixFilePermission.OWNER_READ);
+    initialPermissions.add(PosixFilePermission.OWNER_WRITE);
+    initialPermissions.add(PosixFilePermission.GROUP_READ);
+    initialPermissions.add(PosixFilePermission.OTHERS_READ);
+    Files.setPosixFilePermissions(configFilePath, initialPermissions);
+
+    kubernetesContainerService.modifyKubeConfigReadableProperties(workingDir.toString());
+
+    try {
+      // Check if group and others read permissions are removed
+      Set<PosixFilePermission> updatedPermissions = Files.getPosixFilePermissions(configFilePath);
+      assertThat(updatedPermissions.contains(PosixFilePermission.GROUP_READ)).isFalse();
+      assertThat(updatedPermissions.contains(PosixFilePermission.OTHERS_READ)).isFalse();
+    } catch (Exception e) {
+      Assertions.fail("Exception thrown while checking permissions: " + e.getMessage());
+    }
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testKubeConfigFilePermissionsWithFile() throws Exception {
+    FileIo.createDirectoryIfDoesNotExist(workingDir);
+    Files.createFile(configFilePath);
+    Set<PosixFilePermission> initialPermissions = new HashSet<>();
+    initialPermissions.add(PosixFilePermission.OWNER_READ);
+    initialPermissions.add(PosixFilePermission.OWNER_WRITE);
+    initialPermissions.add(PosixFilePermission.GROUP_READ);
+    initialPermissions.add(PosixFilePermission.OTHERS_READ);
+    Files.setPosixFilePermissions(configFilePath, initialPermissions);
+
+    kubernetesContainerService.modifyFileReadableProperties(configFilePath.toString());
+
+    try {
+      // Check if group and others read permissions are removed
+      Set<PosixFilePermission> updatedPermissions = Files.getPosixFilePermissions(configFilePath);
+      assertThat(updatedPermissions.contains(PosixFilePermission.GROUP_READ)).isFalse();
+      assertThat(updatedPermissions.contains(PosixFilePermission.OTHERS_READ)).isFalse();
+    } catch (Exception e) {
+      Assertions.fail("Exception thrown while checking permissions: " + e.getMessage());
+    }
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testGetRunningPodsWithLabelsAsList() throws Exception {
+    V1PodStatus runningStatus = new V1PodStatusBuilder().withPhase("Running").build();
+    V1PodStatus terminatedStatus = new V1PodStatusBuilder().withPhase("Terminated").build();
+    List<String> labels =
+        ImmutableList.of("label1=value1", "label2=value2", "label3 in (value4, value5)", "label4 notin (label6)");
+    V1PodList v1PodList = new V1PodListBuilder()
+                              .addNewItem() // With running status
+                              .withNewMetadata()
+                              .withName("pod-1")
+                              .endMetadata()
+                              .withStatus(runningStatus)
+                              .endItem()
+                              .addNewItem() // With deletion timestamp
+                              .withNewMetadata()
+                              .withName("pod-2")
+                              .withDeletionTimestamp(OffsetDateTime.now())
+                              .endMetadata()
+                              .withStatus(terminatedStatus)
+                              .endItem()
+                              .addNewItem() // Without status
+                              .withNewMetadata()
+                              .withName("pod-3")
+                              .endMetadata()
+                              .endItem()
+                              .addNewItem() // With terminated status
+                              .withNewMetadata()
+                              .withName("pod-4")
+                              .endMetadata()
+                              .withStatus(terminatedStatus)
+                              .endItem()
+                              .build();
+
+    when(k8sApiClient.execute(k8sApiCall, TypeToken.get(V1PodList.class).getType()))
+        .thenReturn(new ApiResponse<>(200, emptyMap(), v1PodList));
+
+    List<V1Pod> result = kubernetesContainerService.getRunningPodsWithLabels(KUBERNETES_CONFIG, "default", labels);
+    ArgumentCaptor<List<Pair>> queryParamsCaptor = ArgumentCaptor.forClass((Class) List.class);
+    verify(k8sApiClient, times(1))
+        .buildCall(anyString(), eq("GET"), queryParamsCaptor.capture(), anyList(), any(), anyMap(), anyMap(), anyMap(),
+            any(String[].class), any());
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getMetadata().getName()).isEqualTo("pod-1");
+    Optional<Pair> labelSelector =
+        queryParamsCaptor.getValue().stream().filter(pair -> "labelSelector".equals(pair.getName())).findAny();
+    assertThat(labelSelector).isPresent();
+    assertThat(labelSelector.get().getValue())
+        .isEqualTo("label1=value1,label2=value2,label3 in (value4, value5),label4 notin (label6)");
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testGetRunningPodsWithLabelsAsListException() throws Exception {
+    List<String> labels = ImmutableList.of("label1=value1");
+    when(k8sApiClient.execute(k8sApiCall, TypeToken.get(V1PodList.class).getType()))
+        .thenThrow(new ApiException(401, emptyMap(), "{\"error\": \"unauthorized\"}"));
+
+    assertThatThrownBy(() -> kubernetesContainerService.getRunningPodsWithLabels(KUBERNETES_CONFIG, "default", labels))
+        .hasMessageContaining(
+            "Unable to get running pods. Code: 401, message:  Response body: {\"error\": \"unauthorized\"}");
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testGetRunningPodsWithLabelsAsListIsEmpty() {
+    List<String> labels = Collections.emptyList();
+
+    List<V1Pod> result = kubernetesContainerService.getRunningPodsWithLabels(KUBERNETES_CONFIG, "default", labels);
+
+    assertThat(result).isEmpty();
   }
 
   private static final String EXPECTED_KUBECONFIG = "apiVersion: v1\n"

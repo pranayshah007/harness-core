@@ -9,6 +9,7 @@ package io.harness.cdng.provision.azure;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.NGONZALEZ;
+import static io.harness.rule.OwnerRule.SOURABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -42,6 +43,7 @@ import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubAppDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
@@ -100,6 +102,7 @@ public class AzureCommonHelperTest extends CategoryTest {
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
     List<EncryptedDataDetail> apiEncryptedDataDetails = new ArrayList<>();
     doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
+    doReturn(GitConfigDTO.builder().build()).when(cdStepHelper).getScmConnector(any(), any(), any());
   }
 
   @Test
@@ -388,5 +391,52 @@ public class AzureCommonHelperTest extends CategoryTest {
         azureCommonHelper.getParametersGitFetchFileConfigs(azureHelperTest.getAmbiance(), parameters);
     assertThat(fetchFilesConfigs.size()).isEqualTo(1);
     assertThat(fetchFilesConfigs.get(0).getManifestType()).isEqualTo("Azure Parameter");
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testGetGitStoreDelegateConfigForGithubApp() {
+    GithubConnectorDTO githubConnectorDTO =
+        GithubConnectorDTO.builder()
+            .connectionType(GitConnectionType.ACCOUNT)
+            .url("http://localhost")
+            .authentication(
+                GithubAuthenticationDTO.builder()
+                    .authType(GitAuthType.HTTP)
+                    .credentials(GithubHttpCredentialsDTO.builder()
+                                     .type(GithubHttpAuthenticationType.GITHUB_APP)
+                                     .httpCredentialsSpec(GithubAppDTO.builder()
+                                                              .installationId("id")
+                                                              .applicationId("app")
+                                                              .privateKeyRef(SecretRefData.builder().build())
+                                                              .build())
+                                     .build())
+                    .build())
+            .build();
+    GithubStore store = GithubStore.builder()
+                            .connectorRef(ParameterField.createValueField("template-connector-ref"))
+                            .folderPath(ParameterField.createValueField("folderPath"))
+                            .build();
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
+                                            .name("connectorName")
+                                            .connectorType(ConnectorType.GIT)
+                                            .connectorConfig(githubConnectorDTO)
+                                            .build();
+    doReturn(githubConnectorDTO).when(cdStepHelper).getScmConnector(any(), any(), any());
+    doNothing().when(cdStepHelper).validateGitStoreConfig(store);
+    doReturn(connectorInfoDTO).when(cdStepHelper).getConnector(any(), any());
+    ArrayList<String> paths = new ArrayList<>(Arrays.asList("Foo"));
+    doReturn(SSHKeySpecDTO.builder().build())
+        .when(gitConfigAuthenticationInfoHelper)
+        .getSSHKey(any(), any(), any(), any());
+    List<EncryptedDataDetail> encryptedDataDetails = mock(List.class);
+    doReturn(encryptedDataDetails).when(gitConfigAuthenticationInfoHelper).getEncryptedDataDetails(any(), any(), any());
+    GitStoreDelegateConfig response =
+        azureCommonHelper.getGitStoreDelegateConfig(store, azureHelperTest.getAmbiance(), paths);
+    assertThat(response.getGitConfigDTO().getConnectorType()).isEqualTo(ConnectorType.GITHUB);
+    assertThat(response.getPaths()).isEqualTo(paths);
+    assertThat(response.getConnectorName()).isEqualTo("connectorName");
+    assertThat(response.getGitConfigDTO()).isInstanceOf(GithubConnectorDTO.class);
   }
 }

@@ -8,6 +8,7 @@
 package io.harness.pms.event.pollingevent;
 
 import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
+import static io.harness.pms.sdk.PmsSdkModuleUtils.CORE_EXECUTOR_NAME;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -21,6 +22,7 @@ import io.harness.security.dto.ServicePrincipal;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.concurrent.ExecutorService;
 import javax.cache.Cache;
 import lombok.extern.slf4j.Slf4j;
 
@@ -31,8 +33,9 @@ public class PollingEventStreamConsumer extends PmsAbstractRedisConsumer<Polling
   @Inject
   public PollingEventStreamConsumer(@Named(EventsFrameworkConstants.POLLING_EVENTS_STREAM) Consumer redisConsumer,
       PollingEventStreamListener pollingEventListener, QueueController queueController,
-      @Named("pmsEventsCache") Cache<String, Integer> eventsCache) {
-    super(redisConsumer, pollingEventListener, eventsCache, queueController);
+      @Named("pmsEventsCache") Cache<String, Integer> eventsCache,
+      @Named(CORE_EXECUTOR_NAME) ExecutorService executorService) {
+    super(redisConsumer, pollingEventListener, eventsCache, queueController, executorService);
   }
 
   @Override

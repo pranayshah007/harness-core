@@ -32,4 +32,9 @@ public class PMSInterruptServiceGrpcImpl implements PMSInterruptService {
   public void handleFailure(String notifyId) {
     interruptProtoServiceBlockingStub.handleFailure(InterruptRequest.newBuilder().setNotifyId(notifyId).build());
   }
+
+  @Override
+  public void handleExpire(String notifyId) {
+    interruptProtoServiceBlockingStub.handleExpire(InterruptRequest.newBuilder().setNotifyId(notifyId).build());
+  }
 }

@@ -9,6 +9,7 @@ package io.harness.perpetualtask.instancesync.k8s;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.perpetualtask.instancesync.DeploymentDetails;
 
 import java.util.Set;
@@ -27,4 +28,5 @@ public class K8sDeploymentReleaseDetails extends DeploymentDetails {
   String releaseName;
   Set<String> namespaces;
   KubernetesCloudClusterConfig k8sCloudClusterConfig;
+  HelmChartInfo helmChartInfo;
 }

@@ -6,7 +6,9 @@
  */
 
 package io.harness.artifacts.jenkins.client;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.jenkins.beans.JenkinsInternalConfig;
 import io.harness.network.Http;
 
@@ -20,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.HttpClientBuilder;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @UtilityClass
 @Slf4j
 public class JenkinsClient {

@@ -21,6 +21,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -69,6 +70,7 @@ public class GitTaskNG extends AbstractDelegateRunnableTask {
   @Inject private GitDecryptionHelper gitDecryptionHelper;
   @Inject private GitFetchTaskHelper gitFetchTaskHelper;
   @Inject private GitFetchFilesTaskHelper gitFetchFilesTaskHelper;
+  @Inject private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   public GitTaskNG(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -94,8 +96,9 @@ public class GitTaskNG extends AbstractDelegateRunnableTask {
       if (CollectionUtils.isNotEmpty(gitTaskNGRequest.getGitRequestFileConfigs())) {
         for (GitRequestFileConfig gitRequestFileConfig : gitTaskNGRequest.getGitRequestFileConfigs()) {
           try {
-            FetchFilesResult fetchFilesResult = fetchManifestFile(gitRequestFileConfig, executionLogCallback,
-                gitTaskNGRequest.getAccountId(), gitTaskNGRequest.isCloseLogStream());
+            FetchFilesResult fetchFilesResult =
+                fetchManifestFile(gitRequestFileConfig, executionLogCallback, gitTaskNGRequest.getAccountId(),
+                    gitTaskNGRequest.isCloseLogStream(), gitRequestFileConfig.isSupportFolders());
             GitFetchFilesResult gitFetchFilesResult =
                 GitFetchFilesResult.builder()
                     .files(fetchFilesResult.getFiles() != null ? fetchFilesResult.getFiles() : Lists.newArrayList())
@@ -140,7 +143,8 @@ public class GitTaskNG extends AbstractDelegateRunnableTask {
   }
 
   private FetchFilesResult fetchManifestFile(GitRequestFileConfig gitRequestFileConfig,
-      LogCallback executionLogCallback, String accountId, boolean closeLogStream) throws Exception {
+      LogCallback executionLogCallback, String accountId, boolean closeLogStream, boolean supportFolders)
+      throws Exception {
     executionLogCallback.saveExecutionLog(
         color(format("Fetching %s config file with identifier : %s", gitRequestFileConfig.getManifestType(),
                   gitRequestFileConfig.getIdentifier()),
@@ -159,7 +163,8 @@ public class GitTaskNG extends AbstractDelegateRunnableTask {
       executionLogCallback.saveExecutionLog("Using optimized file fetch ");
       gitFetchTaskHelper.decryptGitStoreConfig(gitStoreDelegateConfig);
     } else {
-      gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
+      gitConfigDTO = scmConnectorMapperDelegate.toGitConfigDTO(
+          gitStoreDelegateConfig.getGitConfigDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
       gitDecryptionHelper.decryptGitConfig(gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
       ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
           gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
@@ -170,7 +175,8 @@ public class GitTaskNG extends AbstractDelegateRunnableTask {
       filePaths = gitRequestFileConfig.getGitStoreDelegateConfig().getPaths();
       gitFetchTaskHelper.printFileNames(executionLogCallback, filePaths, closeLogStream);
     }
-    filesResult = gitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
+    filesResult = gitFetchTaskHelper.fetchFileFromRepo(
+        gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO, supportFolders);
     if (!gitRequestFileConfig.isSucceedIfFileNotFound()) {
       checkIfFilesContentAreNotEmpty(
           filesResult, gitRequestFileConfig.getGitStoreDelegateConfig().getGitConfigDTO().getUrl());

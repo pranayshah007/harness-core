@@ -39,6 +39,7 @@ public class InputSetYamlDiffDTO {
   @Schema(description = "Tells whether the Input Set provides any values after removing invalid fields")
   boolean isInputSetEmpty;
   @Schema(description = "Tells whether any Input Set can provide any new values") boolean noUpdatePossible;
+  @Setter @NonFinal boolean yamlDiffPresent;
   @Schema(description = "List of references in an OverlayInputSet that exist but are invalid")
   List<String> invalidReferences;
   @Setter @NonFinal @Schema(description = PipelineResourceConstants.GIT_DETAILS_MESSAGE) EntityGitDetails gitDetails;

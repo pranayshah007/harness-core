@@ -11,8 +11,8 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import io.harness.exception.InvalidArgumentsException;
 
-import software.wings.beans.ExecutionStatusResponse;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.execution.ExecutionStatusResponse;
 import software.wings.security.annotations.ExternalFacingApiAuth;
 import software.wings.service.intfc.WorkflowExecutionService;
 

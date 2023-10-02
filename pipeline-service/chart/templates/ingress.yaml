@@ -4,7 +4,20 @@ kind: Ingress
 metadata:
   name: {{ include "pipeline-service.name" . }}
   namespace: {{ .Release.Namespace }}
+  {{- if .Values.global.commonLabels }}
+  labels:
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+  {{- end }}
   annotations:
+    {{- if .Values.ingress.annotations }}
+    {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.ingress.annotations "context" $) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.global.commonAnnotations }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.global.ingress.objects.annotations }}
+    {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.global.ingress.objects.annotations "context" $) | nindent 4 }}
+    {{- end }}
     nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: {{ .Values.global.ingress.className | quote }}
@@ -35,7 +48,20 @@ kind: Ingress
 metadata:
   name: pipeline-service-smp-v1-apis
   namespace: {{ .Release.Namespace }}
+  {{- if .Values.global.commonLabels }}
+  labels:
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+  {{- end }}
   annotations:
+    {{- if .Values.ingress.annotations }}
+    {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.ingress.annotations "context" $) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.global.commonAnnotations }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.global.ingress.objects.annotations }}
+    {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.global.ingress.objects.annotations "context" $) | nindent 4 }}
+    {{- end }}
     nginx.ingress.kubernetes.io/rewrite-target: /api/$1
 spec:
   ingressClassName: {{ .Values.global.ingress.className | quote }}
@@ -57,6 +83,27 @@ spec:
                 port:
                   number: 12001
             path: /(v1/orgs/.+/projects/.+/input-sets.*)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: pipeline-service
+                port:
+                  number: 12001
+            path: /(v1/pipeline-schema.*)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: pipeline-service
+                port:
+                  number: 12001
+            path: /(v1/orgs/.+/projects/.+/pipelines/.+/execute)
+            pathType: ImplementationSpecific
+          - backend:
+              service:
+                name: pipeline-service
+                port:
+                  number: 12001
+            path: /(v1/orgs/.+/projects/.+/approvals/.+)
             pathType: ImplementationSpecific
     {{- end }}
   {{- if .Values.global.ingress.tls.enabled }}

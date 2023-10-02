@@ -33,13 +33,13 @@ import io.harness.persistence.HIterator;
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Account;
 import software.wings.beans.Account.AccountKeys;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
 import software.wings.beans.DefaultSalesContacts;
 import software.wings.beans.DefaultSalesContacts.AccountTypeDefault;
 import software.wings.beans.License;
 import software.wings.beans.LicenseInfo;
 import software.wings.beans.User;
+import software.wings.beans.account.AccountStatus;
 import software.wings.beans.security.UserGroup;
 import software.wings.dl.GenericDbCache;
 import software.wings.dl.WingsPersistence;
@@ -293,7 +293,7 @@ public class LicenseServiceImpl implements LicenseService {
         templateName = TRIAL_EXPIRATION_DAY_60_TEMPLATE;
       } else if (expiredSinceDays == 89) {
         templateName = TRIAL_EXPIRATION_DAY_89_TEMPLATE;
-      } else if (expiredSinceDays >= 90) {
+      } else if (expiredSinceDays >= 90 && expiredSinceDays <= 92) {
         templateName = TRIAL_EXPIRATION_BEFORE_DELETION_TEMPLATE;
       }
     }

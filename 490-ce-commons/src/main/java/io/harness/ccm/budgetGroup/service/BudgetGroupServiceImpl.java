@@ -49,6 +49,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.Stack;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -394,11 +395,12 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
   @Override
   public List<BudgetSummary> listAllEntities(
       String accountId, BudgetGroupSortType budgetGroupSortType, CCMSortOrder ccmSortOrder) {
-    HashMap<String, List<BudgetSummary>> flattenedChildList = getFlattenedList(accountId);
+    HashMap<String, List<BudgetSummary>> flattenedChildList =
+        getFlattenedList(accountId, budgetGroupSortType, ccmSortOrder);
     List<BudgetSummary> summaryList = new ArrayList<>();
     List<BudgetGroup> budgetGroups = list(accountId, budgetGroupSortType, ccmSortOrder);
-    List<Budget> budgets =
-        budgetDao.list(accountId, Integer.MAX_VALUE - 1, 0, budgetGroupSortType.getBudgetSortType(), ccmSortOrder);
+    List<Budget> budgets = budgetDao.list(accountId, Integer.MAX_VALUE - 1, 0,
+        budgetGroupSortType == null ? null : budgetGroupSortType.getBudgetSortType(), ccmSortOrder);
 
     budgets.forEach(budget -> summaryList.add(BudgetUtils.buildBudgetSummary(budget)));
     budgetGroups.forEach(budgetGroup
@@ -418,8 +420,8 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
     final Map<String, BudgetGroup> budgetGroupIdMapping =
         budgetGroups.stream().collect(Collectors.toMap(BudgetGroup::getUuid, budgetGroup -> budgetGroup));
 
-    List<Budget> budgets =
-        budgetDao.list(accountId, Integer.MAX_VALUE - 1, 0, budgetGroupSortType.getBudgetSortType(), ccmSortOrder);
+    List<Budget> budgets = budgetDao.list(accountId, Integer.MAX_VALUE - 1, 0,
+        budgetGroupSortType == null ? null : budgetGroupSortType.getBudgetSortType(), ccmSortOrder);
     budgets = budgets.stream().filter(BudgetUtils::isPerspectiveBudget).collect(Collectors.toList());
     unsetInvalidParents(budgetGroups, budgets);
     List<Budget> budgetsPartOfBudgetGroups =
@@ -802,8 +804,12 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
         startTime = endTime + BudgetUtils.ONE_DAY_MILLIS;
       }
     } else {
-      for (BudgetCostData historyBudgetGroupCostData : budgetGroup.getBudgetGroupHistory().values()) {
-        budgetGroupCostDataList.add(historyBudgetGroupCostData);
+      if (budgetGroup.getBudgetGroupHistory() != null) {
+        TreeMap<Long, BudgetCostData> sortedBudgetGroupHistory = new TreeMap<>();
+        sortedBudgetGroupHistory.putAll(budgetGroup.getBudgetGroupHistory());
+        for (BudgetCostData historyBudgetGroupCostData : sortedBudgetGroupHistory.values()) {
+          budgetGroupCostDataList.add(historyBudgetGroupCostData);
+        }
       }
       double budgetGroupAmount = budgetGroup.getBudgetGroupAmount();
       double budgetGroupVariance = BudgetUtils.getBudgetVariance(budgetGroupAmount, budgetGroup.getActualCost());
@@ -850,6 +856,14 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
         Budget childBudget = budgetDao.get(budgetGroupChildEntityDTO.getId(), accountId);
         childHistory = childBudget != null ? childBudget.getBudgetHistory() : null;
       }
+      // This will happen when cost data was actually not present, we skip that child.
+      // The history will be adjusted/ updated when group expires and renewed.
+      if (childHistory == null) {
+        log.info("There is no history associated with {} id {} accountId {}",
+            budgetGroupChildEntityDTO.isBudgetGroup() ? "budget group" : "budget", budgetGroupChildEntityDTO.getId(),
+            accountId);
+        continue;
+      }
       for (Long startTime : childHistory.keySet()) {
         double actualCost;
         if (budgetGroupHistory.containsKey(startTime)) {
@@ -893,12 +907,14 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
     return rootBudgetGroup;
   }
 
-  private HashMap<String, List<BudgetSummary>> getFlattenedList(String accountId) {
-    List<BudgetSummary> nestedSummaryList = listBudgetsAndBudgetGroupsSummary(accountId, null, null, null);
+  private HashMap<String, List<BudgetSummary>> getFlattenedList(
+      String accountId, BudgetGroupSortType budgetGroupSortType, CCMSortOrder ccmSortOrder) {
+    List<BudgetSummary> nestedSummaryList =
+        listBudgetsAndBudgetGroupsSummary(accountId, null, budgetGroupSortType, ccmSortOrder);
     nestedSummaryList =
         nestedSummaryList.stream().filter(budgetSummary -> budgetSummary.isBudgetGroup()).collect(Collectors.toList());
 
-    HashMap<String, List<BudgetSummary>> flattenedChildList = new HashMap<>();
+    LinkedHashMap<String, List<BudgetSummary>> flattenedChildList = new LinkedHashMap<>();
     Queue<BudgetSummary> budgetSummaryStore = new LinkedList<>();
     nestedSummaryList.forEach(summary -> budgetSummaryStore.add(summary));
 
@@ -946,6 +962,10 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
     Comparator comparator;
     if (budgetGroupSortType == BudgetGroupSortType.BUDGET_GROUP_AMOUNT) {
       comparator = Comparator.comparingDouble(BudgetSummary::getBudgetAmount);
+    } else if (budgetGroupSortType == BudgetGroupSortType.BUDGET_GROUP_ACTUAL_COST) {
+      comparator = Comparator.comparingDouble(BudgetSummary::getActualCost);
+    } else if (budgetGroupSortType == BudgetGroupSortType.BUDGET_GROUP_FORECASTED_COST) {
+      comparator = Comparator.comparingDouble(BudgetSummary::getForecastCost);
     } else {
       comparator = Comparator.comparing(BudgetSummary::getName, String.CASE_INSENSITIVE_ORDER);
     }

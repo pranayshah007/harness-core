@@ -1,0 +1,156 @@
+pipeline:
+  name: CD-CLS-AllServices
+  identifier: CD_deploy_pipeline
+  projectIdentifier: CLS
+  orgIdentifier: EcommerceMerchandising
+  tags: {}
+  stages:
+    - parallel:
+        - stage:
+            name: MyUnited-Deploy-to-DEV
+            identifier: DeploytoDEV
+            template:
+              templateRef: CDCLSDEV
+              versionLabel: v0.0.6
+              templateInputs:
+                type: Deployment
+                spec:
+                  service:
+                    serviceRef: myunited
+                    serviceInputs:
+                      serviceDefinition:
+                        type: ECS
+                        spec:
+                          artifacts:
+                            primary:
+                              primaryArtifactRef: myunited
+                              sources:
+                                - identifier: myunited
+                                  type: ArtifactoryRegistry
+                                  spec:
+                                    tag: <+input>
+                          variables:
+                            - name: cpu
+                              type: String
+                              value: "1024"
+                            - name: memory
+                              type: String
+                              value: "2048"
+                            - name: serviceName
+                              type: String
+                              value: ecommerce-myunited
+                            - name: minCapacity
+                              type: String
+                              value: "1"
+                            - name: maxCapacity
+                              type: String
+                              value: "10"
+                            - name: ASPNETCORE_ENVIRONMENT
+                              type: String
+                              value: Development
+                            - name: desiredCount
+                              type: String
+                              value: "2"
+                  execution:
+                    steps:
+                      - step:
+                          identifier: CreateStack_1
+                          type: CreateStack
+                          spec:
+                            configuration:
+                              stackName: harness-cls-tg
+                              parameterOverrides:
+                                - name: Listenerrule
+                                  type: String
+                                  value: xapi/myunited
+                                - name: ServiceName
+                                  type: String
+                                  value: myunited
+                                - name: LoadBalancerPriority
+                                  type: String
+                                  value: "15022"
+                                - name: HostHeader
+                                  type: String
+                                  value: clsapidev.united.com
+                                - name: HostHeader2
+                                  type: String
+                                  value: dev15.united.com
+                                - name: HostHeader3
+                                  type: String
+                                  value: xapi.myunited.dev.cls.aws.ual.com
+                              capabilities: []
+                              skipOnStackStatuses: []
+        - stage:
+            name: Baggage-Deploy-to-DEV
+            identifier: BaggageDeploytoDEV
+            template:
+              templateRef: CDCLSDEV
+              versionLabel: v0.0.6
+              templateInputs:
+                type: Deployment
+                spec:
+                  service:
+                    serviceRef: baggage
+                    serviceInputs:
+                      serviceDefinition:
+                        type: ECS
+                        spec:
+                          artifacts:
+                            primary:
+                              primaryArtifactRef: baggage
+                              sources:
+                                - identifier: baggage
+                                  type: ArtifactoryRegistry
+                                  spec:
+                                    tag: <+trigger.artifact.build>
+                          variables:
+                            - name: cpu
+                              type: String
+                              value: "1024"
+                            - name: memory
+                              type: String
+                              value: "2048"
+                            - name: serviceName
+                              type: String
+                              value: ecommerce-baggage
+                            - name: minCapacity
+                              type: String
+                              value: "2"
+                            - name: maxCapacity
+                              type: String
+                              value: "10"
+                            - name: ASPNETCORE_ENVIRONMENT
+                              type: String
+                              value: Development
+                            - name: desiredCount
+                              type: String
+                              value: "1"
+                  execution:
+                    steps:
+                      - step:
+                          identifier: CreateStack_1
+                          type: CreateStack
+                          spec:
+                            configuration:
+                              stackName: harness-cls-baggage-tg
+                              parameterOverrides:
+                                - name: Listenerrule
+                                  type: String
+                                  value: xapi/baggage
+                                - name: ServiceName
+                                  type: String
+                                  value: baggage
+                                - name: LoadBalancerPriority
+                                  type: String
+                                  value: "15023"
+                                - name: HostHeader
+                                  type: String
+                                  value: clsapidev.united.com
+                                - name: HostHeader2
+                                  type: String
+                                  value: dev*.united.com
+                                - name: HostHeader3
+                                  type: String
+                                  value: xapi.baggage.dev.cls.aws.ual.com
+                              capabilities: []
+                              skipOnStackStatuses: []

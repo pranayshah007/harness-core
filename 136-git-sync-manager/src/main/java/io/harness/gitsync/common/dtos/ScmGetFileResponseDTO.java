@@ -6,9 +6,11 @@
  */
 
 package io.harness.gitsync.common.dtos;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.gitsync.common.beans.ScmCacheDetails;
 
 import lombok.AccessLevel;
@@ -16,6 +18,7 @@ import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @OwnedBy(HarnessTeam.PL)
 @Getter
 @FieldDefaults(level = AccessLevel.PROTECTED)
@@ -26,6 +29,7 @@ public class ScmGetFileResponseDTO {
   String blobId;
   String branchName;
   ScmCacheDetails cacheDetails;
+  boolean isGitDefaultBranch;
 
   public ScmGetFileResponseV2DTO toScmGetFileResponseV2DTO() {
     return ScmGetFileResponseV2DTO.builder()
@@ -34,6 +38,7 @@ public class ScmGetFileResponseDTO {
         .cacheDetails(cacheDetails)
         .branchName(branchName)
         .blobId(blobId)
+        .isGitDefaultBranch(isGitDefaultBranch)
         .build();
   }
 }

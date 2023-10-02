@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -22,6 +23,7 @@ import lombok.Value;
 public class OrchestrationStartInfo {
   @NotNull Ambiance ambiance;
   @NotNull PlanExecutionMetadata planExecutionMetadata;
+  Status startStatus;
 
   public String getPlanExecutionId() {
     return ambiance.getPlanExecutionId();

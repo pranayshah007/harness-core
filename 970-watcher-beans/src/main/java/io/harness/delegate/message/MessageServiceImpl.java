@@ -25,6 +25,7 @@ import io.harness.serializer.JsonUtils;
 import io.harness.threading.Schedulable;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Splitter;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import java.io.File;
@@ -68,6 +69,8 @@ public class MessageServiceImpl implements MessageService {
   @VisibleForTesting static final String OUT = "OUT";
   @VisibleForTesting static final String PRIMARY_DELIMITER = "|-|";
   @VisibleForTesting static final String SECONDARY_DELIMITER = "::";
+  private static final String IN_PRIMARY_DELIMITER = "IN|-|";
+  private static final String OUT_PRIMARY_DELIMITER = "OUT|-|";
 
   private final String root;
   private final Clock clock;
@@ -144,50 +147,51 @@ public class MessageServiceImpl implements MessageService {
       }
       return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofMillis(timeout), () -> {
         while (true) {
-          LineIterator reader = FileUtils.lineIterator(channel);
-          while (reader.hasNext()) {
-            String line = reader.nextLine();
-            if (StringUtils.startsWith(line, (isInput ? IN : OUT) + PRIMARY_DELIMITER)) {
-              List<String> components = Arrays.asList(line.split(Pattern.quote(PRIMARY_DELIMITER)));
-              long timestamp = Long.parseLong(components.get(1));
-              if (timestamp > lastReadTimestamp) {
-                try {
-                  MessengerType fromType = MessengerType.valueOf(components.get(2));
-                  String fromProcess = components.get(3);
-                  String messageName = components.get(4);
-                  List<String> msgParams = new ArrayList<>();
-                  if (components.size() == 6) {
-                    String params = components.get(5);
-                    if (!params.contains(SECONDARY_DELIMITER)) {
-                      msgParams.add(params);
-                    } else {
-                      msgParams.addAll(Arrays.asList(params.split(Pattern.quote(SECONDARY_DELIMITER))));
+          try (LineIterator reader = FileUtils.lineIterator(channel)) {
+            while (reader.hasNext() && !Thread.currentThread().isInterrupted()) {
+              String line = reader.nextLine();
+              if (StringUtils.startsWith(line, isInput ? IN_PRIMARY_DELIMITER : OUT_PRIMARY_DELIMITER)) {
+                final List<String> components =
+                    Splitter.on(PRIMARY_DELIMITER).trimResults().omitEmptyStrings().splitToList(line);
+                long timestamp = Long.parseLong(components.get(1));
+                if (timestamp > lastReadTimestamp) {
+                  try {
+                    MessengerType fromType = MessengerType.valueOf(components.get(2));
+                    String fromProcess = components.get(3);
+                    String messageName = components.get(4);
+                    List<String> msgParams = new ArrayList<>();
+                    if (components.size() == 6) {
+                      String params = components.get(5);
+                      if (!params.contains(SECONDARY_DELIMITER)) {
+                        msgParams.add(params);
+                      } else {
+                        msgParams.addAll(Arrays.asList(params.split(Pattern.quote(SECONDARY_DELIMITER))));
+                      }
                     }
+                    Message message = Message.builder()
+                                          .message(messageName)
+                                          .params(msgParams)
+                                          .timestamp(timestamp)
+                                          .fromType(fromType)
+                                          .fromProcess(fromProcess)
+                                          .build();
+                    if (log.isDebugEnabled()) {
+                      String input =
+                          isInput ? "Read message" : "Retrieved message from " + sourceType + " " + sourceProcessId;
+                      log.debug("{}: {}", input, message);
+                    }
+                    messageTimestamps.put(channel, timestamp);
+                    reader.close();
+                    return message;
+                  } catch (IllegalArgumentException e) {
+                    log.error("Error parsing message from channel {} {}. Original line {}", sourceType, sourceProcessId,
+                        line);
+                    return null; // So we keep the old behavior and don't skip the message even if invalid.
                   }
-                  Message message = Message.builder()
-                                        .message(messageName)
-                                        .params(msgParams)
-                                        .timestamp(timestamp)
-                                        .fromType(fromType)
-                                        .fromProcess(fromProcess)
-                                        .build();
-                  if (log.isDebugEnabled()) {
-                    String input =
-                        isInput ? "Read message" : "Retrieved message from " + sourceType + " " + sourceProcessId;
-                    log.debug("{}: {}", input, message);
-                  }
-                  messageTimestamps.put(channel, timestamp);
-                  reader.close();
-                  return message;
-                } catch (IllegalArgumentException e) {
-                  log.error(
-                      "Error parsing message from channel {} {}. Original line {}", sourceType, sourceProcessId, line);
-                  return null; // So we keep the old behavior and don't skip the message even if invalid.
                 }
               }
             }
           }
-          reader.close();
           Thread.sleep(200L);
         }
       });
@@ -269,7 +273,7 @@ public class MessageServiceImpl implements MessageService {
         while (message == null || !messageName.equals(message.getMessage())) {
           try {
             message = queue.take();
-            if (printIntermediateMessages && message != null) {
+            if (printIntermediateMessages) {
               log.info("Message received: {}", message.getMessage());
             }
           } catch (InterruptedException e) {

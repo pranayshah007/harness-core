@@ -43,6 +43,7 @@ import io.harness.notification.bean.NotificationRules;
 import io.harness.notification.bean.PipelineEvent;
 import io.harness.observer.AsyncInformObserver;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
@@ -85,7 +86,7 @@ public class InstrumentationPipelineEndEventHandler implements OrchestrationEndO
   @Inject SdkStepHelper sdkStepHelper;
 
   @Override
-  public void onEnd(Ambiance ambiance) {
+  public void onEnd(Ambiance ambiance, Status endStatus) {
     String planExecutionId = ambiance.getPlanExecutionId();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     AccountDTO accountDTO = accountService.getAccount(accountId);
@@ -103,13 +104,13 @@ public class InstrumentationPipelineEndEventHandler implements OrchestrationEndO
       while (iterator.hasNext()) {
         NodeExecution currentNodeExecution = iterator.next();
 
-        String currentStepType = AmbianceUtils.getCurrentStepType(currentNodeExecution.getAmbiance()).getType();
+        String currentStepType = currentNodeExecution.getStepType().getType();
         if (allSdkSteps.contains(currentStepType)) {
           stepTypes.add(currentStepType);
           // If step is in broken status then only add to results
           if (StatusUtils.brokeStatuses().contains(currentNodeExecution.getStatus())) {
             // Add step identifier
-            failedSteps.add(AmbianceUtils.obtainCurrentLevel(currentNodeExecution.getAmbiance()).getIdentifier());
+            failedSteps.add(currentNodeExecution.getIdentifier());
             failedStepTypes.add(currentStepType);
           }
         }

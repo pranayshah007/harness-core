@@ -7,6 +7,9 @@
 
 package io.harness.repositories;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.entity.FreezeConfigEntity;
 
@@ -16,6 +19,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_FREEZE})
 public interface FreezeRepositoryCustom {
   Page<FreezeConfigEntity> findAll(Criteria criteria, Pageable pageable);
   boolean delete(Criteria criteria);

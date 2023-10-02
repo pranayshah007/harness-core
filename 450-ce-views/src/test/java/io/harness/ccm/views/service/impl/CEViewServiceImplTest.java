@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.SHUBHANSHU;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -26,13 +27,17 @@ import io.harness.ccm.views.dao.CEViewDao;
 import io.harness.ccm.views.dao.CEViewFolderDao;
 import io.harness.ccm.views.dto.LinkedPerspectives;
 import io.harness.ccm.views.dto.ViewTimeRangeDto;
+import io.harness.ccm.views.entities.AWSViewPreferenceCost;
+import io.harness.ccm.views.entities.AWSViewPreferences;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.CEViewFolder;
+import io.harness.ccm.views.entities.GCPViewPreferences;
 import io.harness.ccm.views.entities.ViewChartType;
 import io.harness.ccm.views.entities.ViewField;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewIdOperator;
+import io.harness.ccm.views.entities.ViewPreferences;
 import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.entities.ViewTimeGranularity;
 import io.harness.ccm.views.entities.ViewTimeRange;
@@ -51,10 +56,10 @@ import io.harness.ccm.views.graphql.ViewCostData;
 import io.harness.ccm.views.graphql.ViewsQueryHelper;
 import io.harness.ccm.views.helper.ViewFilterBuilderHelper;
 import io.harness.ccm.views.helper.ViewTimeRangeHelper;
+import io.harness.ccm.views.service.CEViewPreferenceService;
 import io.harness.ccm.views.service.ViewsBillingService;
 import io.harness.ccm.views.utils.ViewFieldUtils;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableList;
@@ -83,7 +88,7 @@ public class CEViewServiceImplTest extends CategoryTest {
   @Mock private ViewsQueryHelper viewsQueryHelper;
   @Mock private ViewFilterBuilderHelper viewFilterBuilderHelper;
   @Mock private ViewTimeRangeHelper viewTimeRangeHelper;
-  @Mock private FeatureFlagService featureFlagService;
+  @Mock private CEViewPreferenceService ceViewPreferenceService;
 
   private static final String ACCOUNT_ID = "account_id";
   private static final String VIEW_NAME = "view_name";
@@ -118,7 +123,9 @@ public class CEViewServiceImplTest extends CategoryTest {
     when(viewTimeRangeHelper.getStartEndTime(any())).thenReturn(ViewTimeRangeDto.builder().startTime(0L).build());
 
     when(viewsBillingService.getCostData(any(), any(), any())).thenReturn(getMockViewCostData());
-    when(viewsBillingService.getTrendStatsDataNg(any(), any(), any(), any())).thenReturn(getMockViewTrendData());
+    when(viewsBillingService.getTrendStatsDataNg(any(), any(), any(), any(), any())).thenReturn(getMockViewTrendData());
+    when(ceViewPreferenceService.getCEViewPreferences(any(CEView.class), anySet()))
+        .thenReturn(getMockViewPreferencesData());
   }
 
   @Test
@@ -439,6 +446,22 @@ public class CEViewServiceImplTest extends CategoryTest {
 
   private QLCEViewTrendData getMockViewTrendData() {
     return QLCEViewTrendData.builder().totalCost(QLCEViewTrendInfo.builder().value(TOTAL_COST).build()).build();
+  }
+
+  private ViewPreferences getMockViewPreferencesData() {
+    return ViewPreferences.builder()
+        .showAnomalies(true)
+        .includeOthers(false)
+        .includeUnallocatedCost(false)
+        .awsPreferences(AWSViewPreferences.builder()
+                            .awsCost(AWSViewPreferenceCost.UNBLENDED)
+                            .includeTaxes(true)
+                            .includeRefunds(true)
+                            .includeCredits(true)
+                            .includeDiscounts(true)
+                            .build())
+        .gcpPreferences(GCPViewPreferences.builder().includeTaxes(true).includeDiscounts(false).build())
+        .build();
   }
 
   private QLCEViewFilterWrapper getMockTimeFilter() {

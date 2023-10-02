@@ -10,6 +10,9 @@ package io.harness.ngmigration.service.entity;
 import static software.wings.ngmigration.NGMigrationEntityType.SECRET_MANAGER_TEMPLATE;
 import static software.wings.ngmigration.NGMigrationEntityType.TEMPLATE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
@@ -65,6 +68,8 @@ import okhttp3.RequestBody;
 import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY, HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 public class SecretManagerTemplateMigrationService extends NgMigrationService {
   @Inject TemplateService templateService;
@@ -133,6 +138,15 @@ public class SecretManagerTemplateMigrationService extends NgMigrationService {
                 RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.writeYamlString(yamlFile.getYaml())),
                 StoreType.INLINE)
             .execute();
+
+    if (!(resp.code() >= 200 && resp.code() < 300)) {
+      resp =
+          templateClient
+              .createTemplate(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                  inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
+                  RequestBody.create(MediaType.parse("application/yaml"), getYamlStringV2(yamlFile)), StoreType.INLINE)
+              .execute();
+    }
     log.info("Secret manager template creation Response details {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);
   }
@@ -217,7 +231,7 @@ public class SecretManagerTemplateMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected boolean isNGEntityExists() {
+  protected boolean isNGEntityExists(MigrationContext migrationContext) {
     return true;
   }
 }

@@ -11,6 +11,7 @@ import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.NAMANG;
+import static io.harness.rule.OwnerRule.SATHISH;
 import static io.harness.utils.PageUtils.getPageRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -176,6 +177,68 @@ public class AggregateUserGroupServiceImplTest extends CategoryTest {
         response.getContent().get(2).getUsers().stream().map(UserMetadataDTO::getUuid).collect(Collectors.toList()))
         .containsExactly("u2");
     assertThat(response.getContent().get(3).getUsers().size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
+  public void testListAggregateUserGroupsGetAllUsers() throws IOException {
+    PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(2).build();
+    List<NotificationSettingConfig> notificationConfigs = new ArrayList<>();
+    List<String> users1 = Lists.newArrayList("u1", "u2", "u3", "u4", "u5", "u6", "u7");
+    List<UserMetadataDTO> users =
+        Lists.newArrayList(getUserMetadata("u1"), getUserMetadata("u2"), getUserMetadata("u3"), getUserMetadata("u4"),
+            getUserMetadata("u5"), getUserMetadata("u6"), getUserMetadata("u7"));
+    UserGroup ug1 = UserGroup.builder()
+                        .identifier("UG1")
+                        .accountIdentifier(ACCOUNT_IDENTIFIER)
+                        .orgIdentifier(ORG_IDENTIFIER)
+                        .projectIdentifier(PROJECT_IDENTIFIER)
+                        .users(users1)
+                        .notificationConfigs(notificationConfigs)
+                        .build();
+    List<UserGroup> userGroups = Lists.newArrayList(ug1);
+
+    doReturn(new PageImpl<>(userGroups))
+        .when(userGroupService)
+        .list(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null,
+            UserGroupFilterType.INCLUDE_INHERITED_GROUPS, getPageRequest(pageRequest));
+    Set<PrincipalDTO> principalDTOSet =
+        userGroups.stream()
+            .map(userGroup
+                -> PrincipalDTO.builder()
+                       .identifier(userGroup.getIdentifier())
+                       .type(USER_GROUP)
+                       .scopeLevel(ScopeLevel
+                                       .of(userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(),
+                                           userGroup.getProjectIdentifier())
+                                       .toString()
+                                       .toLowerCase())
+                       .build())
+            .collect(Collectors.toSet());
+    doReturn(users).when(ngUserService).getUserMetadata(anyList());
+
+    Call<ResponseDTO<RoleAssignmentAggregateResponseDTO>> request = mock(Call.class);
+    doReturn(request)
+        .when(accessControlAdminClient)
+        .getAggregatedFilteredRoleAssignments(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER,
+            RoleAssignmentFilterDTO.builder().principalFilter(principalDTOSet).build());
+    doReturn(Response.success(ResponseDTO.newResponse(RoleAssignmentAggregateResponseDTO.builder()
+                                                          .roles(new ArrayList<>())
+                                                          .resourceGroups(new ArrayList<>())
+                                                          .roleAssignments(new ArrayList<>())
+                                                          .build())))
+        .when(request)
+        .execute();
+
+    PageResponse<UserGroupAggregateDTO> response = aggregateUserGroupService.listAggregateUserGroups(pageRequest,
+        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null, -1, UserGroupFilterType.INCLUDE_INHERITED_GROUPS);
+    assertThat(response.getContent()).hasSize(1);
+
+    assertThat(response.getContent().get(0).getUsers().size()).isEqualTo(7);
+    assertThat(
+        response.getContent().get(0).getUsers().stream().map(UserMetadataDTO::getUuid).collect(Collectors.toList()))
+        .contains("u1", "u2", "u3", "u4", "u5", "u6", "u7");
   }
 
   @Test

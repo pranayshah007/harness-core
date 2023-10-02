@@ -8,10 +8,12 @@
 package io.harness.ccm.views.service;
 
 import io.harness.ccm.views.entities.RuleSet;
+import io.harness.ccm.views.helper.RuleCloudProviderType;
 import io.harness.ccm.views.helper.RuleSetFilter;
 import io.harness.ccm.views.helper.RuleSetList;
 
 import java.util.List;
+import java.util.Set;
 
 public interface RuleSetService {
   boolean save(RuleSet ruleSet);
@@ -23,4 +25,6 @@ public interface RuleSetService {
   void check(String accountId, List<String> ruleSetIdentifier);
   boolean deleteOOTB(String accountId, String uuid);
   List<RuleSet> listPacks(String accountId, List<String> ruleSetIDs);
+  void validateCloudProvider(
+      String accountId, Set<String> rulesIdentifier, RuleCloudProviderType ruleCloudProviderType);
 }

@@ -24,6 +24,7 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import java.util.List;
@@ -62,7 +63,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("resourcegroups")
 @TypeAlias("resourcegroups")
 public class ResourceGroupDBO implements PersistentRegularIterable, AccessControlEntity {
-  @Setter @Id @dev.morphia.annotations.Id String id;
+  @JsonProperty("_id") @Setter @Id @dev.morphia.annotations.Id String id;
   @EqualsAndHashCode.Include final String scopeIdentifier;
   @EqualsAndHashCode.Include @NotEmpty final String identifier;
   @EqualsAndHashCode.Include @NotEmpty final String name;

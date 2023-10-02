@@ -42,7 +42,7 @@ public interface GitAwarePersistence {
       Criteria criteria, String repo, String branch, Class<B> entityClass);
 
   <B extends GitSyncableEntity, Y extends YamlDTO> List<B> find(@NotNull Criteria criteria, Pageable pageable,
-      String projectIdentifier, String orgIdentifier, String accountId, Class<B> entityClass);
+      String projectIdentifier, String orgIdentifier, String accountId, Class<B> entityClass, boolean useCollation);
 
   <B extends GitSyncableEntity, Y extends YamlDTO> boolean exists(@NotNull Criteria criteria, String projectIdentifier,
       String orgIdentifier, String accountId, Class<B> entityClass);

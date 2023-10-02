@@ -9,6 +9,7 @@ package io.harness.engine.timeouts;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.observers.NodeStatusUpdateObserver;
 import io.harness.engine.observers.NodeUpdateInfo;
@@ -44,10 +45,12 @@ public class TimeoutInstanceRemover implements AsyncInformObserver, NodeStatusUp
       return;
     }
 
-    List<String> timeoutInstanceIds = nodeUpdateInfo.getNodeExecution().getTimeoutInstanceIds();
+    // timeoutInstanceIds in updatedNodeExecution is empty as we make it empty with endTs
+    List<String> timeoutInstanceIds = nodeUpdateInfo.getTimeoutInstanceIds();
 
     try (AutoLogContext autoLogContext = obtainAutoLogContext(nodeUpdateInfo)) {
-      boolean isSuccess = deleteTimeoutInstancesWithRetry(timeoutInstanceIds);
+      boolean isSuccess =
+          EmptyPredicate.isEmpty(timeoutInstanceIds) || deleteTimeoutInstancesWithRetry(timeoutInstanceIds);
       if (isSuccess) {
         log.info("Timeout instances {} are removed successfully", timeoutInstanceIds);
       } else {

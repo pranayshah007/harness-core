@@ -19,8 +19,6 @@ import static io.harness.rule.OwnerRule.ROHITKARELIA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -30,6 +28,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.ngtriggers.beans.config.NGTriggerConfig;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
+import io.harness.ngtriggers.beans.entity.TriggerEventHistory.TriggerEventHistoryKeys;
 import io.harness.ngtriggers.beans.source.scheduled.CronTriggerSpec;
 import io.harness.ngtriggers.beans.source.scheduled.ScheduledTriggerConfig;
 import io.harness.ngtriggers.beans.source.webhook.CustomWebhookTriggerSpec;
@@ -55,6 +54,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NGTriggerElementMapperTest extends CategoryTest {
@@ -63,6 +63,7 @@ public class NGTriggerElementMapperTest extends CategoryTest {
   private String ngTriggerCronYaml;
   @Mock private TriggerEventHistoryRepository triggerEventHistoryRepository;
   @InjectMocks private NGTriggerElementMapper ngTriggerElementMapper;
+  Sort sort = Sort.by(TriggerEventHistoryKeys.createdAt).descending();
 
   @Before
   public void setUp() throws IOException {
@@ -214,23 +215,53 @@ public class NGTriggerElementMapperTest extends CategoryTest {
     pipeLine2Triggers.add(pipeline2Trigger);
     allTriggersInProject.add(pipeline1Trigger);
     allTriggersInProject.add(pipeline2Trigger);
+    Criteria criteria1 = Criteria.where(TriggerEventHistoryKeys.accountId)
+                             .is(ngTriggerEntity1.getAccountId())
+                             .and(TriggerEventHistoryKeys.orgIdentifier)
+                             .is(ngTriggerEntity1.getOrgIdentifier())
+                             .and(TriggerEventHistoryKeys.projectIdentifier)
+                             .is(ngTriggerEntity1.getProjectIdentifier())
+                             .and(TriggerEventHistoryKeys.targetIdentifier)
+                             .is(ngTriggerEntity1.getTargetIdentifier())
+                             .and(TriggerEventHistoryKeys.triggerIdentifier)
+                             .is(ngTriggerEntity1.getIdentifier())
+                             .and(TriggerEventHistoryKeys.executionNotAttempted)
+                             .ne(true);
+    when(triggerEventHistoryRepository.findAllWithSort(criteria1, sort)).thenReturn(pipeLine1Triggers);
 
-    when(triggerEventHistoryRepository
-             .findFirst1ByAccountIdAndOrgIdentifierAndProjectIdentifierAndTargetIdentifierAndTriggerIdentifier(
-                 eq("account"), eq("org"), eq("project"), eq("pipeline1"), eq("id1"), any(Sort.class)))
-        .thenReturn(pipeLine1Triggers);
-    when(triggerEventHistoryRepository
-             .findFirst1ByAccountIdAndOrgIdentifierAndProjectIdentifierAndTargetIdentifierAndTriggerIdentifier(
-                 eq("account"), eq("org"), eq("project"), eq("pipeline2"), eq("id1"), any(Sort.class)))
-        .thenReturn(pipeLine2Triggers);
-    when(triggerEventHistoryRepository.findFirst1ByAccountIdAndOrgIdentifierAndProjectIdentifierAndTriggerIdentifier(
-             eq("account"), eq("org"), eq("project"), eq("id1"), any(Sort.class)))
-        .thenReturn(allTriggersInProject);
+    Criteria criteria2 = Criteria.where(TriggerEventHistoryKeys.accountId)
+                             .is(ngTriggerEntity2.getAccountId())
+                             .and(TriggerEventHistoryKeys.orgIdentifier)
+                             .is(ngTriggerEntity2.getOrgIdentifier())
+                             .and(TriggerEventHistoryKeys.projectIdentifier)
+                             .is(ngTriggerEntity2.getProjectIdentifier())
+                             .and(TriggerEventHistoryKeys.targetIdentifier)
+                             .is(ngTriggerEntity2.getTargetIdentifier())
+                             .and(TriggerEventHistoryKeys.triggerIdentifier)
+                             .is(ngTriggerEntity2.getIdentifier())
+                             .and(TriggerEventHistoryKeys.executionNotAttempted)
+                             .ne(true);
+    when(triggerEventHistoryRepository.findAllWithSort(criteria2, sort)).thenReturn(pipeLine2Triggers);
+
+    Criteria criteria3 = Criteria.where(TriggerEventHistoryKeys.accountId)
+                             .is(ngTriggerEntity3.getAccountId())
+                             .and(TriggerEventHistoryKeys.orgIdentifier)
+                             .is(ngTriggerEntity3.getOrgIdentifier())
+                             .and(TriggerEventHistoryKeys.projectIdentifier)
+                             .is(ngTriggerEntity3.getProjectIdentifier())
+                             .and(TriggerEventHistoryKeys.targetIdentifier)
+                             .is(ngTriggerEntity3.getTargetIdentifier())
+                             .and(TriggerEventHistoryKeys.triggerIdentifier)
+                             .is(ngTriggerEntity3.getIdentifier())
+                             .and(TriggerEventHistoryKeys.executionNotAttempted)
+                             .ne(true);
+    when(triggerEventHistoryRepository.findAllWithSort(criteria3, sort)).thenReturn(allTriggersInProject);
     assertThat(ngTriggerElementMapper.fetchLatestExecutionForTrigger(ngTriggerEntity1).get().getTargetIdentifier())
         .isEqualTo(ngTriggerEntity1.getTargetIdentifier());
     assertThat(ngTriggerElementMapper.fetchLatestExecutionForTrigger(ngTriggerEntity2).get().getTargetIdentifier())
         .isEqualTo(ngTriggerEntity2.getTargetIdentifier());
-    assertThat(ngTriggerElementMapper.fetchLatestExecutionForTrigger(ngTriggerEntity3).isPresent()).isFalse();
+    assertThat(ngTriggerElementMapper.fetchLatestExecutionForTrigger(ngTriggerEntity3).get().getTargetIdentifier())
+        .isEqualTo(ngTriggerEntity1.getTargetIdentifier());
   }
 
   @Test
@@ -278,15 +309,15 @@ public class NGTriggerElementMapperTest extends CategoryTest {
                                                   .triggerIdentifier("identifier")
                                                   .planExecutionId("planExecutionId")
                                                   .build();
-    when(triggerEventHistoryRepository
-             .findFirst1ByAccountIdAndOrgIdentifierAndProjectIdentifierAndTargetIdentifierAndTriggerIdentifier(
-                 anyString(), anyString(), anyString(), anyString(), anyString(), any()))
+    when(triggerEventHistoryRepository.findAllWithSort(any(), any()))
         .thenReturn(Collections.singletonList(triggerEventHistory));
     assertThat(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, true, false, false)
                    .getLastTriggerExecutionDetails()
                    .getPlanExecutionId())
         .isEqualTo("planExecutionId");
     triggerEventHistory.setPlanExecutionId(null);
+    when(triggerEventHistoryRepository.findAllWithSort(any(), any()))
+        .thenReturn(Collections.singletonList(triggerEventHistory));
 
     // planExecutionId is null
     assertThat(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, true, false, false)

@@ -263,17 +263,16 @@ public class NGVaultTaskHelper {
       VaultK8sLoginResult vaultK8sLoginResult = getVaultK8sAuthLoginResult(vaultConfig);
       vaultConfig.setAuthToken(vaultK8sLoginResult.getClientToken());
     } else if (AccessType.APP_ROLE.equals(vaultConfig.getAccessType()) && !vaultConfig.getRenewAppRoleToken()) {
-      VaultAppRoleLoginResult vaultAppRoleLoginResult = getVaultAppRoleLoginResult(vaultConfig);
-      vaultConfig.setAuthToken(vaultAppRoleLoginResult.getClientToken());
+      vaultConfig.setAuthToken(getVaultAppRoleToken(vaultConfig));
     }
     return vaultConfig.getAuthToken();
   }
 
-  private String getBase64EncodedRequestBody() {
+  private static String getBase64EncodedRequestBody() {
     return Base64.getEncoder().encodeToString(AWS_IAM_REQUEST_BODY.getBytes(StandardCharsets.UTF_8));
   }
 
-  private String getBase64EncodedRequestUrl(String region) {
+  private static String getBase64EncodedRequestUrl(String region) {
     return Base64.getEncoder().encodeToString(getEndPoint(region).getBytes(StandardCharsets.UTF_8));
   }
 
@@ -281,7 +280,7 @@ public class NGVaultTaskHelper {
     return String.format(AWS_IAM_ENDPOINT_FORMAT, region);
   }
 
-  private String getBase64EncodedRequestHeaders(BaseVaultConfig vaultConfig) throws URISyntaxException {
+  private static String getBase64EncodedRequestHeaders(BaseVaultConfig vaultConfig) throws URISyntaxException {
     final LinkedHashMap<String, String> headers = new LinkedHashMap<>();
     if (isNotBlank(vaultConfig.getXVaultAwsIamServerId())) {
       headers.put(X_VAULT_AWS_IAM_SERVER_ID, vaultConfig.getXVaultAwsIamServerId());
@@ -313,5 +312,21 @@ public class NGVaultTaskHelper {
 
     final String signedHeaderString = jsonObject.toString();
     return Base64.getEncoder().encodeToString(signedHeaderString.getBytes(StandardCharsets.UTF_8));
+  }
+
+  public static String getVaultAppRoleToken(BaseVaultConfig vaultConfig) {
+    String token;
+    if (vaultConfig.getEnableCache()) {
+      token = HashicorpVaultTokenCacheHelper.getAppRoleToken(vaultConfig);
+      if (isEmpty(token)) {
+        VaultAppRoleLoginResult vaultAppRoleLoginResult = getVaultAppRoleLoginResult(vaultConfig);
+        HashicorpVaultTokenCacheHelper.putInAppRoleTokenCache(vaultConfig, vaultAppRoleLoginResult);
+        token = vaultAppRoleLoginResult.getClientToken();
+      }
+    } else {
+      VaultAppRoleLoginResult vaultAppRoleLoginResult = getVaultAppRoleLoginResult(vaultConfig);
+      token = vaultAppRoleLoginResult.getClientToken();
+    }
+    return token;
   }
 }

@@ -47,7 +47,6 @@ import org.jooq.tools.StringUtils;
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateSyncServiceImpl implements DelegateSyncService {
   @Inject private HPersistence persistence;
-  @Inject private KryoSerializer kryoSerializer;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject @Named("disableDeserialization") private boolean disableDeserialization;
 
@@ -131,19 +130,16 @@ public class DelegateSyncServiceImpl implements DelegateSyncService {
           .build();
     }
     // throw exception here
-    Object response = taskResponse.isUsingKryoWithoutReference()
-        ? referenceFalseKryoSerializer.asInflatedObject(taskResponse.getResponseData())
-        : kryoSerializer.asInflatedObject(taskResponse.getResponseData());
+    Object response = referenceFalseKryoSerializer.asInflatedObject(taskResponse.getResponseData());
     if (response instanceof ErrorNotifyResponseData) {
       WingsException exception = ((ErrorNotifyResponseData) response).getException();
       // if task registered to error handling framework on delegate, then exception won't be null
       if (exception != null) {
+        exception.addParam("taskId", taskId);
         throw exception;
       }
     }
 
-    return taskResponse.isUsingKryoWithoutReference()
-        ? (T) referenceFalseKryoSerializer.asInflatedObject(taskResponse.getResponseData())
-        : (T) kryoSerializer.asInflatedObject(taskResponse.getResponseData());
+    return (T) referenceFalseKryoSerializer.asInflatedObject(taskResponse.getResponseData());
   }
 }

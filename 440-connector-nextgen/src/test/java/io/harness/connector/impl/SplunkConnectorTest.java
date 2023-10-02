@@ -105,11 +105,33 @@ public class SplunkConnectorTest extends CategoryTest {
     return connector;
   }
 
+  private SplunkConnector createNoAuthSplunkConnector() {
+    SplunkConnector connector = SplunkConnector.builder()
+                                    .accountId(accountIdentifier)
+                                    .splunkUrl(splunkUrl)
+                                    .authType(SplunkAuthType.ANONYMOUS)
+                                    .build();
+    connector.setType(SPLUNK);
+    connector.setIdentifier(identifier);
+    connector.setName(name);
+    return connector;
+  }
+
+  private ConnectorResponseDTO createNoAuthConnectorDTO(SplunkConnector connector) {
+    SplunkConnectorDTO splunkConnectorDTO = SplunkConnectorDTO.builder()
+                                                .accountId(accountIdentifier)
+                                                .authType(SplunkAuthType.ANONYMOUS)
+                                                .splunkUrl(splunkUrl)
+                                                .build();
+    mockConnectorResponse(connector, splunkConnectorDTO);
+    return connectorService.create(connectorRequest, accountIdentifier);
+  }
   private ConnectorResponseDTO createBearerTokenConnectorDTO() {
     SplunkConnector connector = SplunkConnector.builder()
                                     .accountId(accountIdentifier)
                                     .splunkUrl(splunkUrl)
                                     .tokenRef(secretIdentifierToken)
+                                    .authType(SplunkAuthType.BEARER_TOKEN)
                                     .build();
     connector.setType(SPLUNK);
     connector.setIdentifier(identifier);
@@ -157,6 +179,15 @@ public class SplunkConnectorTest extends CategoryTest {
     ensureSplunkConnectorFieldsAreCorrect(connectorDTOOutput, SplunkAuthType.BEARER_TOKEN);
   }
 
+  @Test
+  @Owner(developers = OwnerRule.ANSUMAN)
+  @Category(UnitTests.class)
+  public void testCreateSplunkConnectorWithNoAuth() {
+    SplunkConnector connector = createNoAuthSplunkConnector();
+    ConnectorResponseDTO connectorDTOOutput = createNoAuthConnectorDTO(connector);
+    ensureSplunkConnectorFieldsAreCorrect(connectorDTOOutput, SplunkAuthType.ANONYMOUS);
+  }
+
   private void ensureSplunkConnectorFieldsAreCorrect(
       ConnectorResponseDTO connectorResponse, SplunkAuthType splunkAuthType) {
     ConnectorInfoDTO connector = connectorResponse.getConnector();
@@ -170,9 +201,16 @@ public class SplunkConnectorTest extends CategoryTest {
       assertThat(splunkConnectorDTO.getUsername()).isEqualTo(userName);
       assertThat(splunkConnectorDTO.getPasswordRef()).isNotNull();
       assertThat(splunkConnectorDTO.getPasswordRef().getIdentifier()).isEqualTo(secretIdentifierPassword);
+      assertThat(splunkConnectorDTO.getAuthType()).isEqualTo(SplunkAuthType.USER_PASSWORD);
     } else if (splunkAuthType == SplunkAuthType.BEARER_TOKEN) {
       assertThat(splunkConnectorDTO.getTokenRef()).isNotNull();
       assertThat(splunkConnectorDTO.getTokenRef().getIdentifier()).isEqualTo(secretIdentifierToken);
+      assertThat(splunkConnectorDTO.getAuthType()).isEqualTo(SplunkAuthType.BEARER_TOKEN);
+    } else if (splunkAuthType == SplunkAuthType.ANONYMOUS) {
+      assertThat(splunkConnectorDTO.getTokenRef()).isNull();
+      assertThat(splunkConnectorDTO.getPasswordRef()).isNull();
+      assertThat(splunkConnectorDTO.getUsername()).isNull();
+      assertThat(splunkConnectorDTO.getAuthType()).isEqualTo(SplunkAuthType.ANONYMOUS);
     }
     assertThat(splunkConnectorDTO.getSplunkUrl()).isEqualTo(splunkUrl + "/");
     assertThat(splunkConnectorDTO.getAccountId()).isEqualTo(accountIdentifier);

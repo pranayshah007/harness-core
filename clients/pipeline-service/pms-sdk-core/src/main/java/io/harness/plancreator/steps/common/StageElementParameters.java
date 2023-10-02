@@ -13,12 +13,12 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.SkipAutoEvaluation;
 import io.harness.when.beans.StageWhenCondition;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import lombok.AccessLevel;
@@ -49,10 +49,11 @@ public class StageElementParameters implements StepParameters {
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @Override
-  public String toViewJson() {
-    StageElementParameters stageElementParameters = cloneParameters();
-    stageElementParameters.setSpecConfig(specConfig.getViewJsonObject());
-    return RecastOrchestrationUtils.toJson(stageElementParameters);
+  public List<String> excludeKeysFromStepInputs() {
+    if (specConfig != null) {
+      return specConfig.stepInputsKeyExclude();
+    }
+    return new LinkedList<>();
   }
 
   public StageElementParameters cloneParameters() {

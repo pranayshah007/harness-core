@@ -66,6 +66,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.api.impl.OutboxDaoImpl;
 import io.harness.outbox.api.impl.OutboxServiceImpl;
 import io.harness.persistence.HPersistence;
+import io.harness.pms.sdk.core.resolver.expressions.EngineGrpcExpressionService;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.repositories.outbox.OutboxEventRepository;
 import io.harness.serializer.CvNextGenRegistrars;
@@ -199,6 +200,7 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
       binder.bind(AccountClient.class).to(FakeAccountClient.class);
       binder.bind(EnforcementClientService.class).toInstance(Mockito.mock(EnforcementClientService.class));
       binder.bind(OpaServiceClient.class).toInstance(Mockito.mock(OpaServiceClient.class));
+      binder.bind(EngineGrpcExpressionService.class).toInstance(getMockedEngineGrpcExpressionService());
     }));
     MongoBackendConfiguration mongoBackendConfiguration =
         MongoBackendConfiguration.builder().uri("mongodb://localhost:27017/notificationChannel").build();
@@ -312,6 +314,13 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
           return call;
         });
     return templateResourceClient;
+  }
+
+  private EngineGrpcExpressionService getMockedEngineGrpcExpressionService() {
+    EngineGrpcExpressionService engineGrpcExpressionService = Mockito.mock(EngineGrpcExpressionService.class);
+    Mockito.when(engineGrpcExpressionService.renderExpression(Mockito.any(), Mockito.any(), Mockito.any()))
+        .thenAnswer((Answer<String>) invocation -> (String) invocation.getArguments()[2]);
+    return engineGrpcExpressionService;
   }
 
   private String getFromYamlMap(Map<String, Object> data, String... paths) {

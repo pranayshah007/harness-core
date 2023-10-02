@@ -101,15 +101,15 @@ public class IdentityStrategyStep implements ChildrenExecutable<IdentityStepPara
               || !(node instanceof IdentityPlanNode))
           && StatusUtils.brokeAndAbortedStatuses().contains(nodeExecution.getStatus())) {
         children.add(ChildrenExecutableResponse.Child.newBuilder()
-                         .setChildNodeId(nodeExecution.getNode().getUuid())
+                         .setChildNodeId(nodeExecution.getNodeId())
                          .setStrategyMetadata(
                              AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()).getStrategyMetadata())
                          .build());
       } else {
         // Copy identifier from nodeExecution.
-        Node identityNode = IdentityPlanNode.mapPlanNodeToIdentityNode(UUIDGenerator.generateUuid(),
-            nodeExecution.getNode(), nodeExecution.getIdentifier(), nodeExecution.getName(),
-            nodeExecution.getNode().getStepType(), nodeExecution.getUuid());
+        Node identityNode = IdentityPlanNode.mapPlanNodeToIdentityNode(UUIDGenerator.generateUuid(), node,
+            nodeExecution.getIdentifier(), nodeExecution.getName(), nodeExecution.getStepType(),
+            nodeExecution.getUuid());
         children.add(ChildrenExecutableResponse.Child.newBuilder()
                          .setChildNodeId(identityNode.getUuid())
                          .setStrategyMetadata(

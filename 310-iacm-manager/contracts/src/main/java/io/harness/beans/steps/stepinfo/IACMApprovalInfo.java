@@ -6,9 +6,9 @@
  */
 
 package io.harness.beans.steps.stepinfo;
+
 import static io.harness.annotations.dev.HarnessTeam.IACM;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -16,8 +16,6 @@ import io.harness.beans.stepinfo.IACMStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.TypeInfo;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.yaml.YamlSchemaTypes;
-import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -41,9 +39,10 @@ import org.springframework.data.annotation.TypeAlias;
 public class IACMApprovalInfo extends IACMStepInfo {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) private String workspace;
 
-  @VariableExpression(skipVariableExpression = true)
-  @YamlSchemaTypes(value = {string})
-  private ParameterField<Map<String, String>> env;
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  private ParameterField<Map<String, String>> envVariables;
+
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> image;
 
   @Override
@@ -54,12 +53,12 @@ public class IACMApprovalInfo extends IACMStepInfo {
   @Builder
   @ConstructorProperties({"identifier", "name", "retry", "settings", "resources", "outputVariables", "runAsUser",
       "privileged", "imagePullPolicy", "env", "image"})
-  public IACMApprovalInfo(String identifier, String name, Integer retry, ParameterField<Map<String, String>> env,
-      ParameterField<String> image) {
+  public IACMApprovalInfo(String identifier, String name, Integer retry,
+      ParameterField<Map<String, String>> envVariables, ParameterField<String> image) {
     super.identifier = identifier;
     super.name = name;
     super.retry = Optional.ofNullable(retry).orElse(DEFAULT_RETRY);
-    this.env = env;
+    this.envVariables = envVariables;
     this.image = image;
   }
 }

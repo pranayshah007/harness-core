@@ -8,16 +8,19 @@
 package io.harness.ccm.remote.resources.governance;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.TelemetryConstants.CLOUD_PROVIDER;
+import static io.harness.ccm.TelemetryConstants.EXECUTION_SCHEDULE;
+import static io.harness.ccm.TelemetryConstants.EXECUTION_TIMEZONE;
+import static io.harness.ccm.TelemetryConstants.GOVERNANCE_RULE_ENFORCEMENT_CREATED;
+import static io.harness.ccm.TelemetryConstants.GOVERNANCE_RULE_ENFORCEMENT_DELETE;
+import static io.harness.ccm.TelemetryConstants.GOVERNANCE_RULE_ENFORCEMENT_UPDATED;
+import static io.harness.ccm.TelemetryConstants.MODULE;
+import static io.harness.ccm.TelemetryConstants.MODULE_NAME;
+import static io.harness.ccm.TelemetryConstants.RULE_ENFORCEMENT_NAME;
 import static io.harness.ccm.rbac.CCMRbacHelperImpl.PERMISSION_MISSING_MESSAGE;
 import static io.harness.ccm.rbac.CCMRbacHelperImpl.RESOURCE_CCM_CLOUD_ASSET_GOVERNANCE_RULE;
 import static io.harness.ccm.rbac.CCMRbacPermissions.RULE_EXECUTE;
 import static io.harness.ccm.rbac.CCMResources.GOVERNANCE_CONNECTOR;
-import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_ENFORCEMENT_CREATED;
-import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_ENFORCEMENT_DELETE;
-import static io.harness.ccm.remote.resources.TelemetryConstants.GOVERNANCE_RULE_ENFORCEMENT_UPDATED;
-import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE;
-import static io.harness.ccm.remote.resources.TelemetryConstants.MODULE_NAME;
-import static io.harness.ccm.remote.resources.TelemetryConstants.RULE_ENFORCEMENT_NAME;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.telemetry.Destination.AMPLITUDE;
@@ -43,10 +46,13 @@ import io.harness.ccm.views.helper.EnforcementCount;
 import io.harness.ccm.views.helper.EnforcementCountRequest;
 import io.harness.ccm.views.helper.ExecutionDetailRequest;
 import io.harness.ccm.views.helper.ExecutionDetails;
+import io.harness.ccm.views.helper.RuleCloudProviderType;
 import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.ccm.views.service.RuleEnforcementService;
 import io.harness.ccm.views.service.RuleSetService;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
+import io.harness.delegate.beans.connector.ceazure.CEAzureConnectorDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -97,7 +103,7 @@ import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
-import net.minidev.json.JSONArray;
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.springframework.scheduling.support.CronSequenceGenerator;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -131,7 +137,7 @@ import retrofit2.Response;
 @NextGenManagerAuth
 public class GovernanceRuleEnforcementResource {
   public static final String ACCOUNT_ID = "accountId";
-  public static final String EXECUTION_SCHEDULE = "executionSchedule";
+  public static final String EXECUTION_SCHEDULE_LOCAL = "executionSchedule";
   public static final String RULE_ENFORCEMENT_ID = "ruleEnforcementId";
   public static final String SCHEDULER_EXECUTOR = "http";
   public static final String SCHEDULER_HTTP_METHOD = "POST";
@@ -198,6 +204,14 @@ public class GovernanceRuleEnforcementResource {
         rules.addAll(ruleSet.getRulesIdentifier());
       }
     }
+    if (rules.size() < 1) {
+      throw new InvalidRequestException("At least one rule should be added in ruleIds/ruleSetIDs");
+    }
+    if (ruleEnforcement.getCloudProvider() == null) {
+      ruleEnforcement.setCloudProvider(
+          governanceRuleService.fetchById(accountId, rules.iterator().next(), false).getCloudProvider());
+    }
+    ruleSetService.validateCloudProvider(accountId, rules, ruleEnforcement.getCloudProvider());
     Set<String> rulesPermitted = rbacHelper.checkRuleIdsGivenPermission(accountId, null, null, rules, RULE_EXECUTE);
     if (rulesPermitted.size() != rules.size()) {
       throw new NGAccessDeniedException(
@@ -205,18 +219,33 @@ public class GovernanceRuleEnforcementResource {
           WingsException.USER, null);
     }
     Set<ConnectorInfoDTO> nextGenConnectorResponses = governanceRuleService.getConnectorResponse(
-        accountId, ruleEnforcement.getTargetAccounts().stream().collect(Collectors.toSet()));
+        accountId, new HashSet<>(ruleEnforcement.getTargetAccounts()), ruleEnforcement.getCloudProvider());
+    if (nextGenConnectorResponses == null || nextGenConnectorResponses.size() == 0) {
+      throw new InvalidRequestException("At least one valid target account is required");
+    }
     Set<String> allowedAccountIds = null;
     if (nextGenConnectorResponses != null) {
       allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(accountId, null, null,
-          nextGenConnectorResponses.stream().map(e -> e.getIdentifier()).collect(Collectors.toSet()), RULE_EXECUTE);
+          nextGenConnectorResponses.stream().map(ConnectorInfoDTO::getIdentifier).collect(Collectors.toSet()),
+          RULE_EXECUTE);
     }
     if (allowedAccountIds == null || allowedAccountIds.size() != nextGenConnectorResponses.size()) {
       throw new NGAccessDeniedException(
           String.format(PERMISSION_MISSING_MESSAGE, RULE_EXECUTE, GOVERNANCE_CONNECTOR), WingsException.USER, null);
     }
+    if (ruleEnforcement.getCloudProvider() == RuleCloudProviderType.AWS) {
+      ruleEnforcement.setTargetAccounts(nextGenConnectorResponses.stream()
+                                            .map(c -> ((CEAwsConnectorDTO) c.getConnectorConfig()).getAwsAccountId())
+                                            .collect(Collectors.toList()));
+    } else if (ruleEnforcement.getCloudProvider() == RuleCloudProviderType.AZURE) {
+      ruleEnforcement.setTargetAccounts(
+          nextGenConnectorResponses.stream()
+              .map(c -> ((CEAzureConnectorDTO) c.getConnectorConfig()).getSubscriptionId())
+              .collect(Collectors.toList()));
+    }
     ruleEnforcement.setAccountId(accountId);
     ruleEnforcement.setRunCount(0);
+    ruleEnforcement.setUuid(null);
     if (ruleEnforcement.getExecutionTimezone() == null) {
       ruleEnforcement.setExecutionTimezone("UTC");
     }
@@ -232,6 +261,11 @@ public class GovernanceRuleEnforcementResource {
     if (ruleEnforcementService.listName(accountId, ruleEnforcement.getName(), true) != null) {
       throw new InvalidRequestException("Rule Enforcement with given name already exits");
     }
+    List<String> targetRegions = ruleEnforcement.getTargetRegions();
+    if (targetRegions != null) {
+      targetRegions.removeAll(Collections.singleton(null));
+    }
+    ruleEnforcement.setTargetRegions(targetRegions);
     GovernanceConfig governanceConfig = configuration.getGovernanceConfig();
     ruleEnforcementService.checkLimitsAndValidate(ruleEnforcement, governanceConfig);
     ruleEnforcementService.save(ruleEnforcement);
@@ -249,7 +283,7 @@ public class GovernanceRuleEnforcementResource {
 
         Map<String, String> metadata = new HashMap<>();
         metadata.put(ACCOUNT_ID, ruleEnforcement.getAccountId());
-        metadata.put(EXECUTION_SCHEDULE, ruleEnforcement.getExecutionSchedule());
+        metadata.put(EXECUTION_SCHEDULE_LOCAL, ruleEnforcement.getExecutionSchedule());
         metadata.put(ENFORCEMENT_ID, ruleEnforcement.getUuid());
         JSONArray headers = new JSONArray();
         headers.add(CONTENT_TYPE_APPLICATION_JSON);
@@ -287,6 +321,9 @@ public class GovernanceRuleEnforcementResource {
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(RULE_ENFORCEMENT_NAME, ruleEnforcement.getName());
+    properties.put(CLOUD_PROVIDER, ruleEnforcement.getCloudProvider());
+    properties.put(EXECUTION_SCHEDULE, ruleEnforcement.getExecutionSchedule());
+    properties.put(EXECUTION_TIMEZONE, ruleEnforcement.getExecutionTimezone());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_ENFORCEMENT_CREATED, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
 
@@ -332,6 +369,9 @@ public class GovernanceRuleEnforcementResource {
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
     properties.put(RULE_ENFORCEMENT_NAME, ruleEnforcement.getName());
+    properties.put(CLOUD_PROVIDER, ruleEnforcement.getCloudProvider());
+    properties.put(EXECUTION_SCHEDULE, ruleEnforcement.getExecutionSchedule());
+    properties.put(EXECUTION_TIMEZONE, ruleEnforcement.getExecutionTimezone());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_ENFORCEMENT_DELETE, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
@@ -366,6 +406,11 @@ public class GovernanceRuleEnforcementResource {
     ruleEnforcement.setAccountId(accountId);
     RuleEnforcement ruleEnforcementFromMongo =
         ruleEnforcementService.listId(accountId, ruleEnforcement.getUuid(), false);
+    if (ruleEnforcement.getCloudProvider() == null) {
+      ruleEnforcement.setCloudProvider(ruleEnforcementFromMongo.getCloudProvider());
+    } else if (ruleEnforcement.getCloudProvider() != ruleEnforcementFromMongo.getCloudProvider()) {
+      throw new InvalidRequestException("Update to Cloud Provider is not allowed");
+    }
     GovernanceConfig governanceConfig = configuration.getGovernanceConfig();
     ruleEnforcementService.checkLimitsAndValidate(ruleEnforcement, governanceConfig);
     Set<String> rules = new HashSet<>();
@@ -380,6 +425,10 @@ public class GovernanceRuleEnforcementResource {
         rules.addAll(ruleSet.getRulesIdentifier());
       }
     }
+    if (rules.size() < 1) {
+      throw new InvalidRequestException("At least one rule should be added in ruleIds/ruleSetIDs");
+    }
+    ruleSetService.validateCloudProvider(accountId, rules, ruleEnforcement.getCloudProvider());
     if (ruleEnforcement.getRuleIds() != null) {
       Set<String> rulesPermitted = rbacHelper.checkRuleIdsGivenPermission(accountId, null, null, rules, RULE_EXECUTE);
       if (rulesPermitted.size() != rules.size()) {
@@ -388,24 +437,32 @@ public class GovernanceRuleEnforcementResource {
             WingsException.USER, null);
       }
     }
-    if (ruleEnforcement.getTargetAccounts() != null) {
-      Set<ConnectorInfoDTO> nextGenConnectorResponses = governanceRuleService.getConnectorResponse(
-          accountId, ruleEnforcement.getTargetAccounts().stream().collect(Collectors.toSet()));
-      Set<String> allowedAccountIds = null;
-      if (nextGenConnectorResponses != null) {
-        allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(accountId, null, null,
-            nextGenConnectorResponses.stream().map(e -> e.getIdentifier()).collect(Collectors.toSet()), RULE_EXECUTE);
-      }
-      if (allowedAccountIds == null || allowedAccountIds.size() != nextGenConnectorResponses.size()) {
-        throw new NGAccessDeniedException(
-            String.format(PERMISSION_MISSING_MESSAGE, RULE_EXECUTE, GOVERNANCE_CONNECTOR), WingsException.USER, null);
-      }
+
+    Set<ConnectorInfoDTO> nextGenConnectorResponses = governanceRuleService.getConnectorResponse(
+        accountId, new HashSet<>(ruleEnforcement.getTargetAccounts()), ruleEnforcement.getCloudProvider());
+    if (nextGenConnectorResponses == null || nextGenConnectorResponses.size() == 0) {
+      throw new InvalidRequestException("At least one valid target account is required");
     }
-    HashMap<String, Object> properties = new HashMap<>();
-    properties.put(MODULE, MODULE_NAME);
-    properties.put(RULE_ENFORCEMENT_NAME, ruleEnforcement.getName());
-    telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_ENFORCEMENT_UPDATED, null, accountId, properties,
-        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+    Set<String> allowedAccountIds = null;
+    if (nextGenConnectorResponses != null) {
+      allowedAccountIds = rbacHelper.checkAccountIdsGivenPermission(accountId, null, null,
+          nextGenConnectorResponses.stream().map(ConnectorInfoDTO::getIdentifier).collect(Collectors.toSet()),
+          RULE_EXECUTE);
+    }
+    if (allowedAccountIds == null || allowedAccountIds.size() != nextGenConnectorResponses.size()) {
+      throw new NGAccessDeniedException(
+          String.format(PERMISSION_MISSING_MESSAGE, RULE_EXECUTE, GOVERNANCE_CONNECTOR), WingsException.USER, null);
+    }
+    if (ruleEnforcement.getCloudProvider() == RuleCloudProviderType.AWS) {
+      ruleEnforcement.setTargetAccounts(nextGenConnectorResponses.stream()
+                                            .map(c -> ((CEAwsConnectorDTO) c.getConnectorConfig()).getAwsAccountId())
+                                            .collect(Collectors.toList()));
+    } else if (ruleEnforcement.getCloudProvider() == RuleCloudProviderType.AZURE) {
+      ruleEnforcement.setTargetAccounts(
+          nextGenConnectorResponses.stream()
+              .map(c -> ((CEAzureConnectorDTO) c.getConnectorConfig()).getSubscriptionId())
+              .collect(Collectors.toList()));
+    }
 
     // Update dkron if enforcement is toggled or schedule is changed or timezone is changed
     if (configuration.getGovernanceConfig().isUseDkron()) {
@@ -417,7 +474,7 @@ public class GovernanceRuleEnforcementResource {
         tags.put(configuration.getGovernanceConfig().getTagsKey(), configuration.getGovernanceConfig().getTagsValue());
         Map<String, String> metadata = new HashMap<>();
         metadata.put(ACCOUNT_ID, ruleEnforcement.getAccountId());
-        metadata.put(EXECUTION_SCHEDULE, ruleEnforcement.getExecutionSchedule());
+        metadata.put(EXECUTION_SCHEDULE_LOCAL, ruleEnforcement.getExecutionSchedule());
         metadata.put(ENFORCEMENT_ID, ruleEnforcement.getUuid());
         JSONArray headers = new JSONArray();
         headers.add(CONTENT_TYPE_APPLICATION_JSON);
@@ -454,6 +511,16 @@ public class GovernanceRuleEnforcementResource {
 
     ruleEnforcementService.update(ruleEnforcement);
     RuleEnforcement updatedRuleEnforcement = ruleEnforcementService.listId(accountId, ruleEnforcement.getUuid(), false);
+
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put(MODULE, MODULE_NAME);
+    properties.put(RULE_ENFORCEMENT_NAME, updatedRuleEnforcement.getName());
+    properties.put(CLOUD_PROVIDER, updatedRuleEnforcement.getCloudProvider());
+    properties.put(EXECUTION_SCHEDULE, updatedRuleEnforcement.getExecutionSchedule());
+    properties.put(EXECUTION_TIMEZONE, updatedRuleEnforcement.getExecutionTimezone());
+    telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_ENFORCEMENT_UPDATED, null, accountId, properties,
+        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
       outboxService.save(
           new RuleEnforcementUpdateEvent(accountId, updatedRuleEnforcement.toDTO(), ruleEnforcementFromMongo.toDTO()));
@@ -466,7 +533,7 @@ public class GovernanceRuleEnforcementResource {
   @ApiOperation(value = "Get enforcement list", nickname = "getRuleEnforcement")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(operationId = "getRuleEnforcement", description = "Fetch Rule Enforcement ",
-      summary = "Fetch Rule Enforcement for account",
+      summary = "Fetch Rule Enforcements for account",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns List of rules  Enforcement",
@@ -513,7 +580,7 @@ public class GovernanceRuleEnforcementResource {
   @ApiOperation(value = "execution Detail", nickname = "getExecutionDetail")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(operationId = "getExecutionDetail", description = "execution Detail",
-      summary = "Fetch Rule Enforcement count for account",
+      summary = "Fetch Rule Enforcement execution details for account",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -522,7 +589,7 @@ public class GovernanceRuleEnforcementResource {
   public ResponseDTO<ExecutionDetails>
   executionDetail(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
                       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @RequestBody(required = true, description = "Request body containing  Rule Enforcement count object")
+      @RequestBody(required = true, description = "Request body containing  Execution detail object")
       @Valid ExecutionDetailDTO executionDetailDTO) {
     if (executionDetailDTO == null) {
       throw new InvalidRequestException(MALFORMED_ERROR);

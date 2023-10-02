@@ -8,7 +8,10 @@
 package io.harness.engine.facilitation;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
+import static io.harness.eraro.Level.ERROR;
 
+import io.harness.OrchestrationRestrictionConfiguration;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.ExecutionCheck;
@@ -22,6 +25,9 @@ import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.plan.Node;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureData;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
+import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.execution.run.ExpressionBlock;
 import io.harness.pms.contracts.execution.run.NodeRunInfo;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
@@ -42,9 +48,29 @@ public class RunPreFacilitationChecker extends ExpressionEvalPreFacilitationChec
   @Inject private NodeExecutionService nodeExecutionService;
   @Inject private PlanService planService;
   @Inject PmsEngineExpressionService pmsEngineExpressionService;
-
+  @Inject OrchestrationRestrictionConfiguration orchestrationRestrictionConfiguration;
+  private static final String MAX_LEVELS_LIMIT_REACHED_ERROR =
+      "The pipeline has reached the maximum nesting allowed for an execution. Please simplify the pipeline configuration so that it does not breach the allowed limit of nesting";
   @Override
   protected ExecutionCheck performCheck(Ambiance ambiance, Node node) {
+    if (ambiance.getLevelsCount() > orchestrationRestrictionConfiguration.getMaxNestedLevelsCount()) {
+      log.error(MAX_LEVELS_LIMIT_REACHED_ERROR);
+      StepResponseProto response =
+          StepResponseProto.newBuilder()
+              .setStatus(Status.FAILED)
+              .setFailureInfo(FailureInfo.newBuilder()
+                                  .setErrorMessage(MAX_LEVELS_LIMIT_REACHED_ERROR)
+                                  .addFailureData(FailureData.newBuilder()
+                                                      .setLevel(ERROR.name())
+                                                      .setCode(INVALID_REQUEST.name())
+                                                      .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                                      .setMessage(MAX_LEVELS_LIMIT_REACHED_ERROR)
+                                                      .build())
+                                  .build())
+              .build();
+      orchestrationEngine.processStepResponse(ambiance, response);
+      return ExecutionCheck.builder().proceed(false).reason(MAX_LEVELS_LIMIT_REACHED_ERROR).build();
+    }
     log.info("Checking If Node should be Run with When Condition.");
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     String whenCondition = node.getWhenCondition();

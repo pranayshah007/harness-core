@@ -17,12 +17,12 @@ public class QueryConstructor {
       + "labels.app=\"delegate\"\n"
       + "timestamp >= \"%s\" AND timestamp <= \"%s\"\n"
       + "jsonPayload.harness.taskId=(%s)\n"
-      + "jsonPayload.harness.accountId=\"%s\"";
+      + "jsonPayload.harness.accountId=\"%s\" OR labels.accountId=\"%s\"";
 
   public static String getTasksLogQuery(String accountId, List<String> taskIds, long start, long end) {
     final List<String> taskIdsWithQuotes =
         taskIds.stream().map(id -> String.format("\"%s\"", id)).collect(Collectors.toList());
     return String.format(TASKS_LOG_QUERY, EpochToUTCConverter.fromEpoch(start), EpochToUTCConverter.fromEpoch(end),
-        StringUtils.join(taskIdsWithQuotes, " OR "), accountId);
+        StringUtils.join(taskIdsWithQuotes, " OR "), accountId, accountId);
   }
 }

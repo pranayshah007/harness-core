@@ -23,6 +23,9 @@ import static software.wings.beans.LogHelper.color;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.cdng.execution.ExecutionInfoKey;
@@ -31,6 +34,8 @@ import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.InfrastructureOutcomeProvider;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
+import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AsgInfrastructure;
 import io.harness.cdng.infra.yaml.AwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.AwsSamInfrastructure;
@@ -93,6 +98,9 @@ import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.NGAccess;
+import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
+import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -104,6 +112,7 @@ import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
@@ -133,7 +142,8 @@ import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @Slf4j
 abstract class AbstractInfrastructureTaskExecutableStep {
   public static final String LOG_SUFFIX = "Execute";
@@ -150,6 +160,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   @Inject private InfrastructureValidator infrastructureValidator;
   @Inject protected InstanceOutcomeHelper instanceOutcomeHelper;
   @Inject protected InfrastructureOutcomeProvider infrastructureOutcomeProvider;
+  @Inject private InfrastructureProvisionerHelper infrastructureProvisionerHelper;
 
   @Data
   @AllArgsConstructor
@@ -168,8 +179,10 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   protected OutcomeSet fetchRequiredOutcomes(Ambiance ambiance) {
     EnvironmentOutcome environmentOutcome = (EnvironmentOutcome) executionSweepingOutputService.resolve(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT));
-    ServiceStepOutcome serviceOutcome = (ServiceStepOutcome) outcomeService.resolve(
+
+    OptionalOutcome optionalServiceOutcome = outcomeService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
+    ServiceStepOutcome serviceOutcome = (ServiceStepOutcome) optionalServiceOutcome.getOutcome();
     return new OutcomeSet(serviceOutcome, environmentOutcome);
   }
 
@@ -178,6 +191,9 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     saveExecutionLog(logCallback, "Starting infrastructure step...");
 
     validateConnector(infrastructure, ambiance, logCallback);
+    if (infrastructure.isDynamicallyProvisioned()) {
+      infrastructureProvisionerHelper.resolveProvisionerExpressions(ambiance, infrastructure);
+    }
     validateInfrastructure(infrastructure);
 
     saveExecutionLog(logCallback, "Fetching environment information...");
@@ -419,17 +435,74 @@ abstract class AbstractInfrastructureTaskExecutableStep {
 
   private TaskRequestData getTaskRequest(
       Ambiance ambiance, ServiceStepOutcome serviceOutcome, InfrastructureOutcome infrastructureOutcome) {
-    if (ServiceDefinitionType.SSH.name()
-            .toLowerCase(Locale.ROOT)
-            .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
-      return buildSshTaskRequest(ambiance, infrastructureOutcome);
-    } else if (ServiceDefinitionType.WINRM.name()
-                   .toLowerCase(Locale.ROOT)
-                   .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
-      return buildWinRmTaskRequest(ambiance, infrastructureOutcome);
+    if (serviceOutcome != null) {
+      if (ServiceDefinitionType.SSH.name()
+              .toLowerCase(Locale.ROOT)
+              .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
+        return buildSshTaskRequest(ambiance, infrastructureOutcome);
+      } else if (ServiceDefinitionType.WINRM.name()
+                     .toLowerCase(Locale.ROOT)
+                     .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
+        return buildWinRmTaskRequest(ambiance, infrastructureOutcome);
+      }
+      throw new UnsupportedOperationException(
+          format("Service type %s not supported for following infrastructure step", serviceOutcome.getType()));
+    } else {
+      if (InfrastructureKind.SSH_WINRM_AZURE.equals(infrastructureOutcome.getKind())) {
+        SshWinRmAzureInfrastructureOutcome sshWinRmAzureInfrastructureOutcome =
+            (SshWinRmAzureInfrastructureOutcome) infrastructureOutcome;
+        SecretDTOV2 credentialSpecDto = cdStepHelper.getCredentialSpecDto(
+            sshWinRmAzureInfrastructureOutcome.getCredentialsRef(), AmbianceUtils.getAccountId(ambiance),
+            AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
+        return getAzureTaskRequestData(ambiance, infrastructureOutcome, credentialSpecDto);
+      } else if (InfrastructureKind.SSH_WINRM_AWS.equals(infrastructureOutcome.getKind())) {
+        SshWinRmAwsInfrastructureOutcome sshWinRmAwsInfrastructureOutcome =
+            (SshWinRmAwsInfrastructureOutcome) infrastructureOutcome;
+        SecretDTOV2 credentialSpecDto = cdStepHelper.getCredentialSpecDto(
+            sshWinRmAwsInfrastructureOutcome.getCredentialsRef(), AmbianceUtils.getAccountId(ambiance),
+            AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
+        return getAwsTaskRequestData(ambiance, infrastructureOutcome, credentialSpecDto);
+      } else {
+        throw new UnsupportedOperationException(format(
+            "Infrastructure kind %s not supported for following infrastructure step", infrastructureOutcome.getKind()));
+      }
     }
-    throw new UnsupportedOperationException(
-        format("Service type %s not supported for following infrastructure step", serviceOutcome.getType()));
+  }
+
+  private TaskRequestData getAwsTaskRequestData(
+      Ambiance ambiance, InfrastructureOutcome infrastructureOutcome, SecretDTOV2 credentialSpecDto) {
+    AwsInfraDelegateConfig awsInfraDelegateConfig;
+    if (credentialSpecDto.getSpec() instanceof WinRmCredentialsSpecDTO) {
+      awsInfraDelegateConfig =
+          (AwsInfraDelegateConfig) publishWinRmInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
+      return buildAwsTaskRequest(ambiance, awsInfraDelegateConfig);
+    } else if (credentialSpecDto.getSpec() instanceof SSHKeySpecDTO) {
+      awsInfraDelegateConfig =
+          (AwsInfraDelegateConfig) publishSshInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
+      return buildAwsTaskRequest(ambiance, awsInfraDelegateConfig);
+    } else {
+      throw new UnsupportedOperationException(
+          format("Credential type %s not supported in AWS SSH/WinRM infrastructure for following infrastructure step",
+              credentialSpecDto.getSpec() == null ? null : credentialSpecDto.getSpec().getClass().getSimpleName()));
+    }
+  }
+
+  private TaskRequestData getAzureTaskRequestData(
+      Ambiance ambiance, InfrastructureOutcome infrastructureOutcome, SecretDTOV2 credentialSpecDto) {
+    AzureInfraDelegateConfig azureInfraDelegateConfig;
+    if (credentialSpecDto.getSpec() instanceof WinRmCredentialsSpecDTO) {
+      azureInfraDelegateConfig =
+          (AzureInfraDelegateConfig) publishWinRmInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
+      return buildAzureTaskRequest(ambiance, azureInfraDelegateConfig);
+    } else if (credentialSpecDto.getSpec() instanceof SSHKeySpecDTO) {
+      azureInfraDelegateConfig =
+          (AzureInfraDelegateConfig) publishSshInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
+      return buildAzureTaskRequest(ambiance, azureInfraDelegateConfig);
+    } else {
+      throw new UnsupportedOperationException(
+          format("Credential type %s not supported in Azure SSH/WinRM infrastructure for following infrastructure step",
+              credentialSpecDto.getSpec() == null ? null : credentialSpecDto.getSpec().getClass().getSimpleName()));
+    }
   }
 
   TaskRequestData buildSshTaskRequest(Ambiance ambiance, InfrastructureOutcome infrastructureOutcome) {

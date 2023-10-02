@@ -1,0 +1,10 @@
+# This is outbox metrics template. To use this metric, copy this file to the corresponding module's folder
+name: Outbox Event Metrics
+identifier: outbox_event_metrics
+metricGroup: outbox_event_metrics_group
+metrics:
+  - metricName: outbox_event_processing_time
+    metricDefinition: Outbox event processing time
+    type: Duration
+    distribution: [ 0m, 15s, 30s, 1m, 2m, 4m, 8m, 16m, 32m ]
+    unit: "ms"

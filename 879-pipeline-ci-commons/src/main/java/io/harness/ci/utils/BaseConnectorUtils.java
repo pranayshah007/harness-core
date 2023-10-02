@@ -128,7 +128,6 @@ public class BaseConnectorUtils {
 
   private final String SAAS = "SaaS";
   private final String SELF_MANAGED = "Self-Managed";
-  private final String GIT_DOT = "git.";
 
   public Map<String, ConnectorDetails> getConnectorDetailsMap(NGAccess ngAccess, Set<String> connectorNameSet) {
     Map<String, ConnectorDetails> connectorDetailsMap = new HashMap<>();
@@ -159,14 +158,15 @@ public class BaseConnectorUtils {
     return getConnectorDetailsInternalWithRetries(ngAccess, identifierRef);
   }
 
-  public ConnectorDetails getHarnessConnectorDetails(NGAccess ngAccess, String baseUrl) {
-    String authToken = fetchAuthToken(ngAccess);
-    log.info("Generated harness scm baseurl : {}", baseUrl);
+  public ConnectorDetails getHarnessConnectorDetails(
+      NGAccess ngAccess, String gitBaseUrl, String authToken, String apiBaseUrl) {
+    log.info("Generated harness scm baseurl : {}", gitBaseUrl);
     String accountId = ngAccess.getAccountIdentifier();
     HarnessConnectorDTO connectorConfigDTO =
         HarnessConnectorDTO.builder()
             .connectionType(GitConnectionType.ACCOUNT)
-            .url(baseUrl + "/" + accountId)
+            .url(gitBaseUrl + "/" + accountId)
+            .apiUrl(apiBaseUrl)
             .authentication(
                 HarnessAuthenticationDTO.builder()
                     .authType(GitAuthType.HTTP)
@@ -188,8 +188,7 @@ public class BaseConnectorUtils {
                            .build())
             .build();
 
-    HarnessHttpCredentialsDTO harnessHttpCredentialsDTO =
-        (HarnessHttpCredentialsDTO) connectorConfigDTO.getAuthentication().getCredentials();
+    HarnessHttpCredentialsDTO harnessHttpCredentialsDTO = connectorConfigDTO.getAuthentication().getCredentials();
     List<EncryptedDataDetail> encryptedDataDetails =
         secretManagerClientService.getEncryptionDetails(ngAccess, harnessHttpCredentialsDTO.getHttpCredentialsSpec());
     encryptedDataDetails.addAll(
@@ -207,7 +206,7 @@ public class BaseConnectorUtils {
     return connectorDetailsBuilder.build();
   }
 
-  public String getSCMBaseUrl(String baseUrl) {
+  public static String getSCMBaseUrl(String baseUrl) {
     try {
       URL url = new URL(baseUrl);
       String host = url.getHost();
@@ -215,15 +214,10 @@ public class BaseConnectorUtils {
       if (host.equals("localhost")) {
         return "";
       }
-      return protocol + "://" + GIT_DOT + host;
+      return protocol + "://" + host + "/code/git";
     } catch (Exception e) {
       log.error("There was error while generating scm base URL", e);
     }
-    return "";
-  }
-
-  // TODO yet to implement
-  private String fetchAuthToken(NGAccess ngAccess) {
     return "";
   }
 
@@ -254,8 +248,8 @@ public class BaseConnectorUtils {
         .abortOn(ConnectorNotFoundException.class)
         .withDelay(RETRY_SLEEP_DURATION)
         .withMaxAttempts(MAX_ATTEMPTS)
-        .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
-        .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
+        .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount()))
+        .onFailure(event -> log.error(failureMessage, event.getAttemptCount()));
   }
 
   private ConnectorDetails getConnectorDetailsInternal(NGAccess ngAccess, IdentifierRef connectorRef)

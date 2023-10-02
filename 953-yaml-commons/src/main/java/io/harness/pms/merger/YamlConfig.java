@@ -10,20 +10,27 @@ package io.harness.pms.merger;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.merger.helpers.YamlMapGenerator;
+import io.harness.pms.yaml.YamlSchemaFieldConstants;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.yaml.utils.JsonFieldUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @Data
 @Slf4j
@@ -91,5 +98,34 @@ public class YamlConfig {
       yaml = null;
     }
     return yaml;
+  }
+
+  public String getParentNodeTypeForGivenFQNField(FQN fqn) {
+    return getParentNodeTypeForGivenFQNField(fqn, 0, yamlMap);
+  }
+
+  // It fetches innermost parent-type for complete FQN path
+  private String getParentNodeTypeForGivenFQNField(FQN fqn, int currentFqnIndex, JsonNode jsonNode) {
+    if (currentFqnIndex > fqn.getFqnList().size()) {
+      return null;
+    }
+    String currentFieldName = fqn.getFqnList().get(currentFqnIndex).getKey();
+    if (JsonFieldUtils.isObjectTypeField(jsonNode, currentFieldName)) {
+      String resultantType =
+          getParentNodeTypeForGivenFQNField(fqn, currentFqnIndex + 1, jsonNode.get(currentFieldName));
+      if (isNotEmpty(resultantType)) {
+        return resultantType;
+      }
+    }
+    if (JsonFieldUtils.isArrayNodeField(jsonNode, currentFieldName)) {
+      ArrayNode elements = (ArrayNode) jsonNode.get(currentFieldName);
+      for (int i = 0; i < elements.size(); i++) {
+        String resultantType = getParentNodeTypeForGivenFQNField(fqn, currentFqnIndex + 1, elements.get(i));
+        if (isNotEmpty(resultantType)) {
+          return resultantType;
+        }
+      }
+    }
+    return JsonFieldUtils.getTextOrEmpty(jsonNode, YamlSchemaFieldConstants.TYPE);
   }
 }

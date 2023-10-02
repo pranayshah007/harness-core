@@ -84,8 +84,9 @@ public class BambooResourceServiceImpl implements BambooResourceService {
     BaseNGAccess baseNGAccess =
         getBaseNGAccess(bambooConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
-    BambooArtifactDelegateRequest bambooRequest = ArtifactDelegateRequestUtils.getBambooDelegateArtifactRequest(
-        bambooConnectorRef.getIdentifier(), connector, encryptionDetails, ArtifactSourceType.BAMBOO, null, null, null);
+    BambooArtifactDelegateRequest bambooRequest =
+        ArtifactDelegateRequestUtils.getBambooDelegateArtifactRequest(bambooConnectorRef.getIdentifier(), connector,
+            encryptionDetails, ArtifactSourceType.BAMBOO, null, null, null, null);
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse = executeSyncTask(
           bambooRequest, ArtifactTaskType.GET_PLANS, baseNGAccess, "Bamboo Get Plans task failure due to error");
@@ -111,7 +112,7 @@ public class BambooResourceServiceImpl implements BambooResourceService {
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
     BambooArtifactDelegateRequest bambooRequest =
         ArtifactDelegateRequestUtils.getBambooDelegateArtifactRequest(bambooConnectorRef.getIdentifier(), connector,
-            encryptionDetails, ArtifactSourceType.BAMBOO, planName, null, null);
+            encryptionDetails, ArtifactSourceType.BAMBOO, planName, null, null, null);
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse = executeSyncTask(bambooRequest,
           ArtifactTaskType.GET_ARTIFACT_PATH, baseNGAccess, "Bamboo Get Artifact Paths task failure due to error");
@@ -137,7 +138,7 @@ public class BambooResourceServiceImpl implements BambooResourceService {
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
     BambooArtifactDelegateRequest bambooRequest =
         ArtifactDelegateRequestUtils.getBambooDelegateArtifactRequest(bambooConnectorRef.getIdentifier(), connector,
-            encryptionDetails, ArtifactSourceType.BAMBOO, planName, artifactPath, null);
+            encryptionDetails, ArtifactSourceType.BAMBOO, planName, artifactPath, null, null);
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse = executeSyncTask(bambooRequest,
           ArtifactTaskType.GET_BUILDS, baseNGAccess, "Bamboo Get Artifact Paths task failure due to error");

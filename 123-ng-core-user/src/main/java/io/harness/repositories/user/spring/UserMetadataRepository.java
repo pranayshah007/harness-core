@@ -26,4 +26,6 @@ public interface UserMetadataRepository
   Optional<UserMetadata> findDistinctByEmailIgnoreCase(String email);
 
   void deleteByEmail(String email);
+
+  @Override void deleteById(String userId);
 }

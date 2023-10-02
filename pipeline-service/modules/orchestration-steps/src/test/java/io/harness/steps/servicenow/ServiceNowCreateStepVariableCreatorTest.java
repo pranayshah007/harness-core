@@ -105,15 +105,18 @@ public class ServiceNowCreateStepVariableCreatorTest extends CategoryTest {
         .containsOnly("pipeline.stages.stage1.spec.execution.steps.snow_create.identifier",
             "pipeline.stages.stage1.spec.execution.steps.snow_create.type",
             "pipeline.stages.stage1.spec.execution.steps.snow_create.startTs",
-            "pipeline.stages.stage1.spec.execution.steps.snow_create.endTs");
+            "pipeline.stages.stage1.spec.execution.steps.snow_create.endTs",
+            "pipeline.stages.stage1.spec.execution.steps.snow_create.status");
     List<YamlProperties> outputProperties = variablesForParentNodeV2.getYamlExtraProperties()
                                                 .get("-sAzEwZxQ6akzAzTfrdQyw") // uuid for step node
                                                 .getOutputPropertiesList();
     List<YamlProperties> properties = variablesForParentNodeV2.getYamlExtraProperties()
                                           .get("-sAzEwZxQ6akzAzTfrdQyw") // uuid for step node
                                           .getPropertiesList();
-    assertThat(outputProperties).hasSize(3);
-    assertThat(properties).hasSize(4);
+    assertThat(outputProperties).hasSize(4);
+    assertThat(properties).hasSize(5);
+    assertThat(outputProperties).hasSize(4);
+    assertThat(properties).hasSize(5);
     assertYamlProperties(outputProperties.get(0),
         "pipeline.stages.stage1.spec.execution.steps.snow_create.ticket.ticketUrl",
         "execution.steps.snow_create.ticket.ticketUrl", "", true);
@@ -123,6 +126,9 @@ public class ServiceNowCreateStepVariableCreatorTest extends CategoryTest {
     assertYamlProperties(outputProperties.get(2),
         "pipeline.stages.stage1.spec.execution.steps.snow_create.ticket.fields",
         "execution.steps.snow_create.ticket.fields", "", true);
+    assertYamlProperties(outputProperties.get(3),
+        "pipeline.stages.stage1.spec.execution.steps.snow_create.ticket.multipleOutcomeList",
+        "execution.steps.snow_create.ticket.multipleOutcomeList", "", true);
     assertYamlProperties(properties.get(0), "pipeline.stages.stage1.spec.execution.steps.snow_create.type",
         "execution.steps.snow_create.type", "type", true);
     assertYamlProperties(properties.get(1), "pipeline.stages.stage1.spec.execution.steps.snow_create.identifier",
@@ -131,6 +137,8 @@ public class ServiceNowCreateStepVariableCreatorTest extends CategoryTest {
         "execution.steps.snow_create.startTs", "", false);
     assertYamlProperties(properties.get(3), "pipeline.stages.stage1.spec.execution.steps.snow_create.endTs",
         "execution.steps.snow_create.endTs", "", false);
+    assertYamlProperties(properties.get(4), "pipeline.stages.stage1.spec.execution.steps.snow_create.status",
+        "execution.steps.snow_create.status", "", false);
   }
 
   private void assertYamlProperties(

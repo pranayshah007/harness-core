@@ -6,11 +6,13 @@
  */
 
 package io.harness.gitsync.common.helper;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.gitsync.caching.beans.GitDefaultBranchCacheKey;
@@ -22,6 +24,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_GITX, HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @Slf4j
 @OwnedBy(PIPELINE)
@@ -86,5 +90,24 @@ public class GitDefaultBranchCacheHelper {
       String accountIdentifier, String repoName, ScmConnector scmConnector) {
     String repoUrl = gitRepoHelper.getRepoUrl(scmConnector, repoName);
     return new GitDefaultBranchCacheKey(accountIdentifier, repoUrl, repoName);
+  }
+
+  public boolean isGitDefaultBranch(String accountIdentifier, ScmConnector scmConnector, String repoName,
+      String requestBranch, String responseBranch) {
+    if (isEmpty(requestBranch)) {
+      return true;
+    }
+    if (isEmpty(responseBranch)) {
+      return false;
+    }
+    return responseBranch.equals(getDefaultBranchFromCache(accountIdentifier, repoName, scmConnector));
+  }
+
+  public boolean isGitDefaultBranch(
+      String accountIdentifier, ScmConnector scmConnector, String repoName, String requestBranch) {
+    if (isEmpty(requestBranch)) {
+      return true;
+    }
+    return requestBranch.equals(getDefaultBranchFromCache(accountIdentifier, repoName, scmConnector));
   }
 }

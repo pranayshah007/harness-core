@@ -6,20 +6,25 @@
  */
 
 package io.harness.steps.approval.step.harness.beans;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EmbeddedUser;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
+import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Data
 @Builder
@@ -41,9 +46,22 @@ public class HarnessApprovalActivity {
     return HarnessApprovalActivity.builder()
         .user(user)
         .action(request.getAction())
-        .approverInputs(request.getApproverInputs())
+        .approverInputs(checkForNullApprovalInputs(request.getApproverInputs()))
         .comments(request.getComments())
         .approvedAt(System.currentTimeMillis())
         .build();
+  }
+  private static List<ApproverInput> checkForNullApprovalInputs(List<ApproverInput> approverInputs) {
+    if (approverInputs == null) {
+      return null;
+    }
+
+    return approverInputs.stream()
+        .filter(approverInput -> StringUtils.isNotEmpty(approverInput.getName()))
+        .map(approverInput
+            -> approverInput.getValue() == null
+                ? ApproverInput.builder().name(approverInput.getName()).value("").build()
+                : approverInput)
+        .collect(Collectors.toList());
   }
 }

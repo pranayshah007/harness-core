@@ -6,9 +6,11 @@
  */
 
 package io.harness.repositories.gitDefaultBranchCache;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.gitsync.caching.entity.GitDefaultBranchCache;
 
 import com.google.inject.Inject;
@@ -21,6 +23,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.PIPELINE)
 public class GitDefaultBranchCacheRepositoryCustomImpl implements GitDefaultBranchCacheRepositoryCustom {

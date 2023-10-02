@@ -142,6 +142,21 @@ public class EntityUnavailabilityServicesImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
+  public void testGetFilterMaintenanceWindowInstancesSuccess() {
+    entityUnavailabilityStatusesDTO.setStartTime(clock.millis() / 1000 - 30);
+    entityUnavailabilityStatusesDTO.setEndTime(clock.millis() / 1000 - 1);
+    entityUnavailabilityStatusesService.create(
+        projectParams, Collections.singletonList(entityUnavailabilityStatusesDTO));
+    List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS =
+        entityUnavailabilityStatusesService.getAllMaintenanceWindowInstances(
+            projectParams, clock.instant().getEpochSecond() - 60, clock.instant().getEpochSecond());
+    assertThat(entityUnavailabilityStatusesDTOS.size()).isEqualTo(1);
+    assertThat(entityUnavailabilityStatusesDTOS.get(0)).isEqualTo(entityUnavailabilityStatusesDTO);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
   public void testGetActiveInstancesSuccess() {
     entityUnavailabilityStatusesDTO.setStartTime(clock.millis() / 1000 - 1);
     entityUnavailabilityStatusesDTO.setEndTime(clock.millis() / 1000 + 1);

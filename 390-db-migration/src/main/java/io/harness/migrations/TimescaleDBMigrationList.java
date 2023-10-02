@@ -59,6 +59,8 @@ import io.harness.migrations.timescaledb.CreateDeploymentStageTable;
 import io.harness.migrations.timescaledb.CreateDeploymentStepTable;
 import io.harness.migrations.timescaledb.CreateEnvironmentTable;
 import io.harness.migrations.timescaledb.CreateExecutionInterruptTable;
+import io.harness.migrations.timescaledb.CreateHarnessDateBinGraphqlFunction;
+import io.harness.migrations.timescaledb.CreateHarnessTimeBucketListFunction;
 import io.harness.migrations.timescaledb.CreateIndexOnKubernetesUtilizationData;
 import io.harness.migrations.timescaledb.CreateInfraDefinitionTable;
 import io.harness.migrations.timescaledb.CreateInstanceStatsDayTable;
@@ -175,6 +177,8 @@ public class TimescaleDBMigrationList {
         .add(Pair.of(76, BaseTimeScaleDBMigration.class))
         .add(Pair.of(77, AddInfraIdsToDeploymentsEnvIdsToInfraTable.class))
         .add(Pair.of(78, AddIsDeletedColumnToAllTimescaleEntities.class))
+        .add(Pair.of(79, CreateHarnessDateBinGraphqlFunction.class))
+        .add(Pair.of(80, CreateHarnessTimeBucketListFunction.class))
         .build();
   }
 }

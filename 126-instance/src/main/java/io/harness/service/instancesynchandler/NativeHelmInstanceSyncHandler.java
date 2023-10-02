@@ -6,11 +6,15 @@
  */
 
 package io.harness.service.instancesynchandler;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static software.wings.beans.TaskType.INSTANCE_SYNC_V2_NG_SUPPORT;
 
+import static java.util.Objects.isNull;
+
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -21,6 +25,8 @@ import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sRancherInfrastructureOutcome;
 import io.harness.delegate.AccountId;
 import io.harness.delegate.TaskType;
+import io.harness.delegate.beans.instancesync.DeploymentOutcomeMetadata;
+import io.harness.delegate.beans.instancesync.NativeHelmDeploymentOutcomeMetadata;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.NativeHelmServerInstanceInfo;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
@@ -52,6 +58,7 @@ import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 public class NativeHelmInstanceSyncHandler extends AbstractInstanceSyncHandler {
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
@@ -195,5 +202,29 @@ public class NativeHelmInstanceSyncHandler extends AbstractInstanceSyncHandler {
         .map(NativeHelmServerInstanceInfo.class ::cast)
         .map(NativeHelmServerInstanceInfo::getNamespace)
         .collect(Collectors.toCollection(LinkedHashSet::new));
+  }
+
+  @Override
+  public DeploymentInfoDTO updateDeploymentInfoDTO(
+      DeploymentInfoDTO deploymentInfoDTO, DeploymentOutcomeMetadata deploymentOutcomeMetadata) {
+    if (isNull(deploymentOutcomeMetadata)) {
+      return deploymentInfoDTO;
+    }
+    if (!(deploymentInfoDTO instanceof NativeHelmDeploymentInfoDTO)) {
+      throw new InvalidArgumentsException(
+          Pair.of("deploymentInfoDTO", "Must be instance of NativeHelmDeploymentInfoDTO"));
+    }
+
+    if (!(deploymentOutcomeMetadata instanceof NativeHelmDeploymentOutcomeMetadata)) {
+      throw new InvalidArgumentsException(
+          Pair.of("deploymentOutcomeMetadata", "Must be instance of NativeHelmDeploymentOutcomeMetadata"));
+    }
+    NativeHelmDeploymentInfoDTO nativeHelmDeploymentInfoDTO = (NativeHelmDeploymentInfoDTO) deploymentInfoDTO;
+    NativeHelmDeploymentOutcomeMetadata nativeHelmDeploymentOutcomeMetadata =
+        (NativeHelmDeploymentOutcomeMetadata) deploymentOutcomeMetadata;
+
+    nativeHelmDeploymentInfoDTO.setWorkloadLabelSelectors(
+        nativeHelmDeploymentOutcomeMetadata.getWorkloadLabelSelectors());
+    return nativeHelmDeploymentInfoDTO;
   }
 }

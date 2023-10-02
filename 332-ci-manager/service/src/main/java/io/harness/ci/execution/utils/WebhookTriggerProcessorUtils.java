@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.utils;
+package io.harness.ci.execution.utils;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -164,7 +164,7 @@ public class WebhookTriggerProcessorUtils {
         .authorLogin(author.getLogin())
         .authorName(author.getName())
         .authorEmail(author.getEmail())
-        .authorAvatar(author.getAvatar())
+        .authorAvatar(isEmpty(author.getAvatar()) ? pushHook.getSender().getAvatar() : author.getAvatar())
         .sender(pushHook.getSender().getLogin())
         .build();
   }

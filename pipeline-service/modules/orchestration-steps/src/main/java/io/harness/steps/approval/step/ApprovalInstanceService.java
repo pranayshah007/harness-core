@@ -6,10 +6,12 @@
  */
 
 package io.harness.steps.approval.step;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.execution.NodeExecution;
 import io.harness.jira.JiraIssueNG;
@@ -25,11 +27,14 @@ import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
 import io.harness.steps.approval.step.servicenow.entities.ServiceNowApprovalInstance;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 public interface ApprovalInstanceService {
   ApprovalInstance save(@NotNull ApprovalInstance instance);
@@ -40,6 +45,9 @@ public interface ApprovalInstanceService {
       @Valid ApprovalStatus approvalStatus, @Valid ApprovalType approvalType, String nodeExecutionId);
 
   HarnessApprovalInstance getHarnessApprovalInstance(@NotNull String approvalInstanceId);
+
+  Optional<ApprovalInstance> findLatestApprovalInstanceByPlanExecutionIdAndType(
+      @NotEmpty String planExecutionId, @NotNull ApprovalType approvalType);
 
   void delete(@NotNull String approvalInstanceId);
 
@@ -64,7 +72,7 @@ public interface ApprovalInstanceService {
       @NotNull @Valid HarnessApprovalActivityRequestDTO request);
 
   List<String> findAllPreviousWaitingApprovals(String accountId, String orgId, String projectId,
-      @NotEmpty String pipelineId, String approvalKey, Ambiance ambiance);
+      @NotEmpty String pipelineId, String approvalKey, Ambiance ambiance, Long createdAt);
 
   boolean isNodeExecutionOfApprovalStepType(NodeExecution nodeExecution);
   void deleteByNodeExecutionIds(@NotNull Set<String> nodeExecutionIds);
@@ -83,4 +91,7 @@ public interface ApprovalInstanceService {
 
   HarnessApprovalInstance addHarnessApprovalActivityV2(@NotNull String approvalInstanceId, @NotNull EmbeddedUser user,
       @NotNull @Valid HarnessApprovalActivityRequestDTO request, boolean shouldCloseStep);
+
+  void updateLatestDelegateTaskId(@NotNull String approvalInstanceId, String latestDelegateTaskId);
+  void updateKeyListInKeyValueCriteria(@NotNull String approvalInstanceId, String keyListInKeyValueCriteria);
 }

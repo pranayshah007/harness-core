@@ -10,19 +10,20 @@ package io.harness.idp.onboarding.service.impl;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CREATE_ACTION;
+import static io.harness.idp.backstagebeans.Constants.ORGANIZATION;
+import static io.harness.idp.backstagebeans.Constants.PROJECT;
+import static io.harness.idp.backstagebeans.Constants.SERVICE;
 import static io.harness.idp.common.CommonUtils.readFileFromClassPath;
 import static io.harness.idp.common.Constants.SLASH_DELIMITER;
 import static io.harness.idp.common.Constants.SOURCE_FORMAT;
 import static io.harness.idp.common.YamlUtils.writeObjectAsYaml;
 import static io.harness.idp.onboarding.utils.Constants.BACKSTAGE_LOCATION_URL_TYPE;
 import static io.harness.idp.onboarding.utils.Constants.ENTITY_REQUIRED_ERROR_MESSAGE;
-import static io.harness.idp.onboarding.utils.Constants.ORGANIZATION;
+import static io.harness.idp.onboarding.utils.Constants.ENTITY_UNKNOWN_REF;
 import static io.harness.idp.onboarding.utils.Constants.PAGE_LIMIT_FOR_ENTITY_FETCH;
-import static io.harness.idp.onboarding.utils.Constants.PROJECT;
 import static io.harness.idp.onboarding.utils.Constants.SAMPLE_ENTITY_CLASSPATH_LOCATION;
 import static io.harness.idp.onboarding.utils.Constants.SAMPLE_ENTITY_FILE_NAME;
 import static io.harness.idp.onboarding.utils.Constants.SAMPLE_ENTITY_FOLDER_NAME;
-import static io.harness.idp.onboarding.utils.Constants.SERVICE;
 import static io.harness.idp.onboarding.utils.Constants.STATUS_UPDATE_REASON_FOR_ONBOARDING_COMPLETED;
 import static io.harness.idp.onboarding.utils.Constants.SUCCESS_RESPONSE_STRING;
 import static io.harness.idp.onboarding.utils.Constants.YAML_FILE_EXTENSION;
@@ -42,6 +43,10 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
+import io.harness.idp.backstagebeans.BackstageCatalogComponentEntity;
+import io.harness.idp.backstagebeans.BackstageCatalogDomainEntity;
+import io.harness.idp.backstagebeans.BackstageCatalogEntity;
+import io.harness.idp.backstagebeans.BackstageCatalogSystemEntity;
 import io.harness.idp.common.Constants;
 import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
 import io.harness.idp.common.delegateselectors.utils.DelegateSelectorsUtils;
@@ -56,10 +61,6 @@ import io.harness.idp.gitintegration.repositories.CatalogConnectorRepository;
 import io.harness.idp.gitintegration.service.GitIntegrationService;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
 import io.harness.idp.onboarding.beans.AsyncCatalogImportDetails;
-import io.harness.idp.onboarding.beans.BackstageCatalogComponentEntity;
-import io.harness.idp.onboarding.beans.BackstageCatalogDomainEntity;
-import io.harness.idp.onboarding.beans.BackstageCatalogEntity;
-import io.harness.idp.onboarding.beans.BackstageCatalogSystemEntity;
 import io.harness.idp.onboarding.config.OnboardingModuleConfig;
 import io.harness.idp.onboarding.entities.AsyncCatalogImportEntity;
 import io.harness.idp.onboarding.mappers.HarnessEntityToBackstageEntity;
@@ -99,7 +100,6 @@ import io.harness.utils.PageUtils;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -253,7 +253,7 @@ public class OnboardingServiceImpl implements OnboardingService {
         Collections.singletonList(backstageCatalogEntityInitial.getSecond().getSecond()
             + backstageCatalogEntityInitial.getFirst().getMetadata().getName() + YAML_FILE_EXTENSION));
 
-    createCatalogInfraConnectorInBackstageK8S(accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType,
+    createCatalogInfraConnectorInBackstageK8S(accountIdentifier, catalogInfraConnectorType,
         connectorProcessor.getConnectorInfo(accountIdentifier, catalogConnectorInfo.getConnector().getIdentifier()));
 
     transactionHelper.performTransaction(() -> {
@@ -500,8 +500,7 @@ public class OnboardingServiceImpl implements OnboardingService {
             + YAML_FILE_EXTENSION));
     registerLocationInBackstage(accountIdentifier, BACKSTAGE_LOCATION_URL_TYPE, locationTargets);
 
-    createCatalogInfraConnectorInBackstageK8S(
-        accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType, connectorInfoDTO);
+    createCatalogInfraConnectorInBackstageK8S(accountIdentifier, catalogInfraConnectorType, connectorInfoDTO);
 
     saveCatalogConnector(accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType, connectorInfoDTO);
     saveStatusInfo(accountIdentifier, StatusType.ONBOARDING.name(), StatusInfo.CurrentStatusEnum.COMPLETED,
@@ -542,14 +541,20 @@ public class OnboardingServiceImpl implements OnboardingService {
       projectDTOS = getProjects(accountIdentifier, null);
       serviceDTOS = getServices(accountIdentifier, (String) null);
     } else {
+      Map<String, Map<String, List<String>>> orgProjectsServicesMappingClone =
+          new HashMap<>(orgProjectsServicesMapping);
+      orgProjectsServicesMapping.remove(null);
       orgToImport = new ArrayList<>(orgProjectsServicesMapping.keySet());
       organizationDTOS = getOrganizationDTOS(accountIdentifier, orgToImport);
       orgProjectsServicesMapping.forEach((key, value) -> {
-        projectToImport.addAll(value.keySet());
-        orgProjectsMapping.put(key, new ArrayList<>(value.keySet()));
+        List<String> projectIdentifiers = value.keySet().stream().filter(Objects::nonNull).collect(Collectors.toList());
+        if (key != null && !projectIdentifiers.isEmpty()) {
+          projectToImport.addAll(projectIdentifiers);
+          orgProjectsMapping.put(key, new ArrayList<>(projectIdentifiers));
+        }
       });
       projectDTOS = getProjectDTOS(accountIdentifier, orgProjectsMapping);
-      serviceDTOS = getServiceDTOS(accountIdentifier, orgProjectsServicesMapping);
+      serviceDTOS = getServiceDTOS(accountIdentifier, orgProjectsServicesMappingClone);
     }
     log.info("Fetched {} organizations, {} projects, {} services for IDP onboarding import", organizationDTOS.size(),
         projectDTOS.size(), serviceDTOS.size());
@@ -592,6 +597,8 @@ public class OnboardingServiceImpl implements OnboardingService {
     Map<String, Map<String, List<String>>> serviceIdentifiers = new HashMap<>();
     harnessEntitiesServices.forEach(service -> {
       String[] orgProjectService = service.split("\\|");
+      orgProjectService[0] = orgProjectService[0].equals(ENTITY_UNKNOWN_REF) ? null : orgProjectService[0];
+      orgProjectService[1] = orgProjectService[1].equals(ENTITY_UNKNOWN_REF) ? null : orgProjectService[1];
       if (serviceIdentifiers.containsKey(orgProjectService[0])) {
         Map<String, List<String>> existingProjectsServices =
             new HashMap<>(serviceIdentifiers.get(orgProjectService[0]));
@@ -605,8 +612,9 @@ public class OnboardingServiceImpl implements OnboardingService {
           serviceIdentifiers.put(orgProjectService[0], existingProjectsServices);
         }
       } else {
-        serviceIdentifiers.put(
-            orgProjectService[0], Map.of(orgProjectService[1], Collections.singletonList(orgProjectService[2])));
+        Map<String, List<String>> map = new HashMap<>();
+        map.put(orgProjectService[1], Collections.singletonList(orgProjectService[2]));
+        serviceIdentifiers.put(orgProjectService[0], map);
       }
     });
     return serviceIdentifiers;
@@ -617,8 +625,7 @@ public class OnboardingServiceImpl implements OnboardingService {
   }
 
   private List<ProjectDTO> getProjectDTOS(String accountIdentifier, Map<String, List<String>> orgProjectsMapping) {
-    return orgProjectsMapping.size() > 0 ? getProjects(accountIdentifier, orgProjectsMapping.keySet(),
-               orgProjectsMapping.values().stream().flatMap(Collection::stream).collect(Collectors.toList()))
+    return orgProjectsMapping.size() > 0 ? getProjectsByOrganization(accountIdentifier, orgProjectsMapping)
                                          : new ArrayList<>();
   }
 
@@ -656,20 +663,23 @@ public class OnboardingServiceImpl implements OnboardingService {
     return organizationDTOS;
   }
 
-  private List<ProjectDTO> getProjects(
-      String accountIdentifier, Set<String> organizationIdentifiers, List<String> identifiers) {
+  private List<ProjectDTO> getProjectsByOrganization(
+      String accountIdentifier, Map<String, List<String>> orgProjectsMapping) {
     List<ProjectDTO> projectDTOS = new ArrayList<>();
-    PageResponse<ProjectResponse> projects;
-    int page = 0;
-    do {
-      projects = getResponse(projectClient.listWithMultiOrg(accountIdentifier, organizationIdentifiers, false,
-          identifiers, null, null, page, PAGE_LIMIT_FOR_ENTITY_FETCH, null));
-      if (projects != null && isNotEmpty(projects.getContent())) {
-        projectDTOS.addAll(
-            projects.getContent().stream().map(ProjectResponse::getProject).collect(Collectors.toList()));
-      }
-      page++;
-    } while (projects != null && isNotEmpty(projects.getContent()));
+    for (var projectIdentifier : orgProjectsMapping.entrySet()) {
+      String org = projectIdentifier.getKey();
+      PageResponse<ProjectResponse> projects;
+      int page = 0;
+      do {
+        projects = getResponse(projectClient.listProjects(
+            accountIdentifier, org, projectIdentifier.getValue(), page, PAGE_LIMIT_FOR_ENTITY_FETCH));
+        if (projects != null && isNotEmpty(projects.getContent())) {
+          projectDTOS.addAll(
+              projects.getContent().stream().map(ProjectResponse::getProject).collect(Collectors.toList()));
+        }
+        page++;
+      } while (projects != null && isNotEmpty(projects.getContent()));
+    }
     return projectDTOS;
   }
 
@@ -786,12 +796,13 @@ public class OnboardingServiceImpl implements OnboardingService {
     }
   }
 
-  private void createCatalogInfraConnectorInBackstageK8S(String accountIdentifier,
-      CatalogConnectorInfo catalogConnectorInfo, String catalogInfraConnectorType, ConnectorInfoDTO connectorInfoDTO) {
+  private void createCatalogInfraConnectorInBackstageK8S(
+      String accountIdentifier, String catalogInfraConnectorType, ConnectorInfoDTO connectorInfoDTO) {
     try {
+      Set<String> delegateSelectors = DelegateSelectorsUtils.extractDelegateSelectors(connectorInfoDTO);
+      String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
       gitIntegrationService.createOrUpdateConnectorInBackstage(accountIdentifier, connectorInfoDTO,
-          CatalogInfraConnectorType.valueOf(catalogInfraConnectorType),
-          catalogConnectorInfo.getConnector().getIdentifier());
+          CatalogInfraConnectorType.valueOf(catalogInfraConnectorType), host, delegateSelectors);
     } catch (Exception e) {
       log.error("Error in creating catalog connector in backstage. Error = {}", e.getMessage(), e);
       throw new InvalidRequestException("Unable to create catalog connector in backstage - " + e.getMessage());

@@ -9,7 +9,10 @@ package io.harness.pms.pipeline.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.execution.StagesExecutionMetadata;
 import io.harness.gitsync.sdk.EntityGitDetails;
@@ -17,9 +20,11 @@ import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
+import io.harness.pms.plan.execution.beans.dto.PipelineExecutionIdentifierSummaryDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionSummaryDTO;
 import io.harness.pms.stages.BasicStageInfo;
 import io.harness.pms.stages.StageExecutionSelectorHelper;
+import io.harness.utils.ExecutionModeUtils;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -28,6 +33,7 @@ import java.util.Map;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @UtilityClass
 @Slf4j
@@ -71,7 +77,8 @@ public class PipelineExecutionSummaryDtoMapper {
                 ? new ArrayList<>()
                 : pipelineExecutionSummaryEntity.getModules())
         .gitDetails(entityGitDetails)
-        .canRetry(pipelineExecutionSummaryEntity.isLatestExecution())
+        .canRetry(!ExecutionModeUtils.isRollbackMode(pipelineExecutionSummaryEntity.getExecutionMode())
+            && pipelineExecutionSummaryEntity.isLatestExecution())
         .showRetryHistory(!pipelineExecutionSummaryEntity.isLatestExecution()
             || !pipelineExecutionSummaryEntity.getPlanExecutionId().equals(
                 pipelineExecutionSummaryEntity.getRetryExecutionMetadata().getRootExecutionId()))
@@ -87,6 +94,27 @@ public class PipelineExecutionSummaryDtoMapper {
                 : pipelineExecutionSummaryEntity.getConnectorRef())
         .abortedBy(pipelineExecutionSummaryEntity.getAbortedBy())
         .executionMode(pipelineExecutionSummaryEntity.getExecutionMode())
+        .notesExistForPlanExecutionId(checkNotesExistForPlanExecutionId(pipelineExecutionSummaryEntity))
+        .yamlVersion(pipelineExecutionSummaryEntity.getPipelineVersion())
+        .build();
+  }
+
+  public boolean checkNotesExistForPlanExecutionId(PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity) {
+    if (null != pipelineExecutionSummaryEntity.getNotesExistForPlanExecutionId()) {
+      return pipelineExecutionSummaryEntity.getNotesExistForPlanExecutionId();
+    }
+    return false;
+  }
+
+  public PipelineExecutionIdentifierSummaryDTO toExecutionIdentifierDto(
+      PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity) {
+    return PipelineExecutionIdentifierSummaryDTO.builder()
+        .orgIdentifier(pipelineExecutionSummaryEntity.getOrgIdentifier())
+        .projectIdentifier(pipelineExecutionSummaryEntity.getProjectIdentifier())
+        .planExecutionId(pipelineExecutionSummaryEntity.getPlanExecutionId())
+        .pipelineIdentifier(pipelineExecutionSummaryEntity.getPipelineIdentifier())
+        .runSequence(pipelineExecutionSummaryEntity.getRunSequence())
+        .status(pipelineExecutionSummaryEntity.getStatus())
         .build();
   }
 

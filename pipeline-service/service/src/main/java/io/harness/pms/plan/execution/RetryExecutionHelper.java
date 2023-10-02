@@ -9,10 +9,12 @@ package io.harness.pms.plan.execution;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
@@ -39,6 +41,7 @@ import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.mappers.GitXCacheMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -71,6 +74,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.util.CloseableIterator;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_GITX, HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
@@ -117,7 +122,7 @@ public class RetryExecutionHelper {
   }
 
   public RetryInfo validateRetry(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String planExecutionId) {
+      String pipelineIdentifier, String planExecutionId, String loadFromCache) {
     // Checking if this is the latest execution
     PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
         pmsExecutionService.getPipelineExecutionSummaryEntity(
@@ -140,7 +145,8 @@ public class RetryExecutionHelper {
     PipelineGitXHelper.setupEntityDetails(pipelineExecutionSummaryEntity.getEntityGitDetails());
 
     Optional<PipelineEntity> optionalPipelineEntity =
-        pmsPipelineService.getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
+        pmsPipelineService.getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false,
+            false, GitXCacheMapper.parseLoadFromCacheHeaderParam(loadFromCache));
     if (optionalPipelineEntity.isEmpty()) {
       return RetryInfo.builder()
           .isResumable(false)
@@ -174,7 +180,7 @@ public class RetryExecutionHelper {
     // if pipeline is having templates we need to use resolved yaml
     if (TemplateRefHelper.hasTemplateRef(updatedPipeline)) {
       templateMergeResponseDTO = pmsPipelineTemplateHelper.resolveTemplateRefsInPipeline(
-          accountId, orgIdentifier, projectIdentifier, updatedPipeline, BOOLEAN_FALSE_VALUE);
+          accountId, orgIdentifier, projectIdentifier, updatedPipeline, loadFromCache);
       if (templateMergeResponseDTO != null) {
         updatedPipeline = isNotEmpty(templateMergeResponseDTO.getMergedPipelineYaml())
             ? templateMergeResponseDTO.getMergedPipelineYaml()
@@ -382,53 +388,62 @@ public class RetryExecutionHelper {
     return false;
   }
 
+  /**
+   *
+   * @param plan Initial plan created without considering retry
+   * @param identifierOfSkipStages identifier of stages that are to be skipped during the retry.
+   * @param previousExecutionId planExecutionId of the execution that is being retried.
+   * @param stageIdentifiersToRetryWith stage identifiers of the stages from which the execution is being retried.
+   * @return Returns the transformed Plan for the retry
+   * This method operates on 3 kind of nodes:
+   * 1. Nodes that belong to stages that are to be skipped: Convert all planNodes into IdentityNodes.
+   * 2. Nodes that belong to the stages that are being retried: Only the strategy node that is parent of stage will be
+   * converted into IdentityNode. Rest all will remain as planNodes.
+   * 3. Nodes belong to subsequent stages: Will remain as planNodes and will be executed as normal execution.
+   */
   public Plan transformPlan(Plan plan, List<String> identifierOfSkipStages, String previousExecutionId,
       List<String> stageIdentifiersToRetryWith) {
-    List<Node> planNodes = plan.getPlanNodes();
-
-    List<String> stagesFqnToRetryWith =
-        nodeExecutionService.fetchStageFqnFromStageIdentifiers(previousExecutionId, stageIdentifiersToRetryWith);
-    List<NodeExecution> strategyNodeExecutions =
-        nodeExecutionService.fetchStrategyNodeExecutions(previousExecutionId, stagesFqnToRetryWith);
-    List<Node> strategyNodes = new ArrayList<>();
-    /*
-    Fetching stageFqn from previousExecutionId and stage
-     */
-    // TODO: add a condition: stagesFqn size should be equal to the size of identifierOfSkipStages
+    List<Node> finalUpdatedPlanNodes = new ArrayList<>();
     // identifierOfSkipStages: previousStageIdentifiers we want to skip
-    List<String> stagesFqn =
+    List<String> stageFqnForStagesToBeSkipped =
         nodeExecutionService.fetchStageFqnFromStageIdentifiers(previousExecutionId, identifierOfSkipStages);
+    // Adding nodes to be skipped in the finalUpdatedPlanNodes list.
+    finalUpdatedPlanNodes.addAll(handleNodesForStagesBeingSkipped(previousExecutionId, stageFqnForStagesToBeSkipped));
 
-    /*
-    NodeExecutionUuid -> Node
-     */
-    List<Node> updatedPlanNodes = new ArrayList<>();
-    Map<String, Node> nodeUuidToNodeExecutionUuid =
-        nodeExecutionService.mapNodeExecutionIdWithPlanNodeForGivenStageFQN(previousExecutionId, stagesFqn);
+    // Get all nodes that will be re-executed.(Does not belong to the stages to be skipped)
+    List<Node> planNodesToBeExecuted = plan.getPlanNodes()
+                                           .stream()
+                                           .filter(node -> !stageFqnForStagesToBeSkipped.contains(node.getStageFqn()))
+                                           .collect(Collectors.toList());
 
-    // filtering nodes which need to be resumed/retried
-    updatedPlanNodes = planNodes.stream()
-                           .filter(node -> {
-                             if (node.getStepCategory() == StepCategory.STRATEGY
-                                 && stagesFqnToRetryWith.contains(node.getStageFqn())) {
-                               strategyNodes.add(node);
-                               return false;
-                             }
-                             return !stagesFqn.contains(node.getStageFqn());
-                           })
-                           .collect(Collectors.toList());
+    List<String> stageFqnForStagesBeingRetried =
+        nodeExecutionService.fetchStageFqnFromStageIdentifiers(previousExecutionId, stageIdentifiersToRetryWith);
+    List<Node> strategyNodes = new ArrayList<>();
+    // Filtering the strategy nodes of stages that are being retried and populating the strategyNodes list with such
+    // nodes. The nodes after filtering will remain as is and will not be converted into IdentityNodes.
+    planNodesToBeExecuted =
+        filterStrategyNodesForStagesBeingRetried(planNodesToBeExecuted, stageFqnForStagesBeingRetried, strategyNodes);
 
-    // converting planNode to IdentityNode
-    List<Node> finalUpdatedPlanNodes = updatedPlanNodes;
-    nodeUuidToNodeExecutionUuid.forEach((nodeExecutionUuid, planNode)
-                                            -> finalUpdatedPlanNodes.add(IdentityPlanNode.mapPlanNodeToIdentityNode(
-                                                planNode, planNode.getStepType(), nodeExecutionUuid)));
+    // Adding nodes to be re-executed in the finalUpdatedPlanNodes list.
+    finalUpdatedPlanNodes.addAll(planNodesToBeExecuted);
 
-    finalUpdatedPlanNodes.addAll(getIdentityNodeForStrategyNodes(strategyNodes, strategyNodeExecutions));
+    // Adding nodes for the stages that are being retried.
+    finalUpdatedPlanNodes.addAll(
+        handleStrategyNodeForStagesBeingRetried(strategyNodes, stageFqnForStagesBeingRetried, previousExecutionId));
+
+    Map<String, Node> nodeIdToPlanNodes = new HashMap<>();
+    for (Node node : finalUpdatedPlanNodes) {
+      nodeIdToPlanNodes.put(node.getUuid(), node);
+    }
+    for (Node node : plan.getPlanNodes()) {
+      if (!nodeIdToPlanNodes.containsKey(node.getUuid())) {
+        nodeIdToPlanNodes.put(node.getUuid(), node);
+      }
+    }
 
     return Plan.builder()
         .uuid(plan.getUuid())
-        .planNodes(finalUpdatedPlanNodes)
+        .planNodes(nodeIdToPlanNodes.values())
         .startingNodeId(plan.getStartingNodeId())
         .setupAbstractions(plan.getSetupAbstractions())
         .graphLayoutInfo(plan.getGraphLayoutInfo())
@@ -438,6 +453,29 @@ public class RetryExecutionHelper {
         .build();
   }
 
+  private List<Node> handleNodesForStagesBeingSkipped(
+      String previousExecutionId, List<String> stagesFqnForStageToBeSkipped) {
+    List<Node> identityNodesList = new ArrayList<>();
+    // NodeExecutionUuid -> Node for the nodes those belong to stages that will be skipped.
+    Map<String, Node> nodeUuidToNodeExecutionUuid = nodeExecutionService.mapNodeExecutionIdWithPlanNodeForGivenStageFQN(
+        previousExecutionId, stagesFqnForStageToBeSkipped);
+    nodeUuidToNodeExecutionUuid.forEach((nodeExecutionUuid, planNode)
+                                            -> identityNodesList.add(IdentityPlanNode.mapPlanNodeToIdentityNode(
+                                                planNode, planNode.getStepType(), nodeExecutionUuid)));
+    return identityNodesList;
+  }
+  private List<Node> filterStrategyNodesForStagesBeingRetried(
+      List<Node> planNodes, List<String> stagesFqnToRetryWith, List<Node> strategyNodes) {
+    List<Node> filteredPlanNodesList = new ArrayList<>();
+    for (Node node : planNodes) {
+      if (stagesFqnToRetryWith.contains(node.getStageFqn()) && node.getStepCategory() == StepCategory.STRATEGY) {
+        strategyNodes.add(node);
+      } else {
+        filteredPlanNodesList.add(node);
+      }
+    }
+    return filteredPlanNodesList;
+  }
   public RetryHistoryResponseDto getRetryHistory(String rootParentId, String currentPlanExecutionId) {
     try (CloseableIterator<PipelineExecutionSummaryEntity> iterator =
              pmsExecutionSummaryRespository.fetchPipelineSummaryEntityFromRootParentIdUsingSecondaryMongo(
@@ -474,16 +512,19 @@ public class RetryExecutionHelper {
         .build();
   }
 
-  private List<Node> getIdentityNodeForStrategyNodes(List<Node> planNodes, List<NodeExecution> nodeExecutions) {
+  private List<Node> handleStrategyNodeForStagesBeingRetried(
+      List<Node> planNodes, List<String> stagesFqnToRetryWith, String previousExecutionId) {
+    List<NodeExecution> strategyNodeExecutions =
+        nodeExecutionService.fetchStrategyNodeExecutions(previousExecutionId, stagesFqnToRetryWith);
     List<Node> processedNodes = new ArrayList<>();
     for (Node node : planNodes) {
-      List<NodeExecution> strategyNodeExecution =
-          nodeExecutions.stream()
-              .filter(o
-                  -> o.getStageFqn().equals(node.getStageFqn())
-                      && node.getIdentifier().equals(o.getNode().getIdentifier()))
+      // Find the strategyNodeExecution that belong to the node. And its on the stage.(Basically to check if node is of
+      // type stage or not). We need to convert only the stage's strategy node into IdentityNode.
+      Optional<NodeExecution> strategyNodeExecution =
+          strategyNodeExecutions.stream()
+              .filter(o -> node.getUuid().equals(o.getNodeId()))
               .filter(o -> AmbianceUtils.isCurrentStrategyLevelAtStage(o.getAmbiance()))
-              .collect(Collectors.toList());
+              .findFirst();
       if (strategyNodeExecution.isEmpty()) {
         processedNodes.add(node);
       } else {
@@ -491,7 +532,7 @@ public class RetryExecutionHelper {
         // stage. And setting useAdviserObtainments true because we want that IdentityNodeExecutionStrategy to use the
         // original advisorsObtainments from the node.
         processedNodes.add(
-            IdentityPlanNode.mapPlanNodeToIdentityNode(node, node.getStepType(), strategyNodeExecution.get(0).getUuid())
+            IdentityPlanNode.mapPlanNodeToIdentityNode(node, node.getStepType(), strategyNodeExecution.get().getUuid())
                 .withUseAdviserObtainments(true));
       }
     }
@@ -536,6 +577,7 @@ public class RetryExecutionHelper {
         .startTs(entity.getStartTs())
         .status(entity.getStatus())
         .endTs(entity.getEndTs())
+        .runSequence(entity.getRunSequence())
         .build();
   }
 }

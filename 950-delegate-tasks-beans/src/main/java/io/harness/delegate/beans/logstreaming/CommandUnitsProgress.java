@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.logstreaming;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.delegate.beans.DelegateProgressData;
 
 import java.util.LinkedHashMap;
@@ -15,6 +16,7 @@ import lombok.Value;
 
 @Value
 @Builder
+@RecasterAlias("io.harness.delegate.beans.logstreaming.CommandUnitsProgress")
 public class CommandUnitsProgress implements DelegateProgressData {
   @Builder.Default LinkedHashMap<String, CommandUnitProgress> commandUnitProgressMap = new LinkedHashMap<>();
 }

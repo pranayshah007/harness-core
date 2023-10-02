@@ -10,6 +10,7 @@ package io.harness.steps;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.logstreaming.LogStreamingHelper.IS_SIMPLIFY;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.DELEGATE_SELECTORS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
@@ -94,6 +95,10 @@ public class StepUtils {
 
   public static final String DEFAULT_STEP_TIMEOUT = "10m";
 
+  public static String PIE_SIMPLIFY_LOG_BASE_KEY = "PIE_SIMPLIFY_LOG_BASE_KEY";
+
+  public static List<String> keysToSkipInLogBaseKey = List.of("spec", "execution");
+
   public static Task prepareDelegateTaskInput(
       String accountId, TaskData taskData, Map<String, String> setupAbstractions) {
     return createHDelegateTask(accountId, taskData, setupAbstractions, new LinkedHashMap<>());
@@ -115,20 +120,53 @@ public class StepUtils {
 
   @Nonnull
   public static LinkedHashMap<String, String> generateLogAbstractions(Ambiance ambiance, String lastGroup) {
-    LinkedHashMap<String, String> logAbstractions = new LinkedHashMap<>();
-    logAbstractions.put("accountId", ambiance.getSetupAbstractionsMap().getOrDefault("accountId", ""));
-    logAbstractions.put("orgId", ambiance.getSetupAbstractionsMap().getOrDefault("orgIdentifier", ""));
-    logAbstractions.put("projectId", ambiance.getSetupAbstractionsMap().getOrDefault("projectIdentifier", ""));
-    logAbstractions.put("pipelineId", ambiance.getMetadata().getPipelineIdentifier());
-    logAbstractions.put("runSequence", String.valueOf(ambiance.getMetadata().getRunSequence()));
+    LinkedHashMap<String, String> logAbstractions = populateLogAbstractionsMap(ambiance);
+
     for (int i = 0; i < ambiance.getLevelsList().size(); i++) {
       Level currentLevel = ambiance.getLevelsList().get(i);
       String retrySuffix = currentLevel.getRetryIndex() > 0 ? String.format("_%s", currentLevel.getRetryIndex()) : "";
-      logAbstractions.put("level" + i, currentLevel.getIdentifier() + retrySuffix);
+
+      String levelValue = currentLevel.getIdentifier() + retrySuffix;
+
+      if (AmbianceUtils.shouldSimplifyLogBaseKey(ambiance)) {
+        if (keysToSkipInLogBaseKey.contains(levelValue)) {
+          continue;
+        }
+      }
+
+      logAbstractions.put("level" + i, levelValue);
+
       if (lastGroup != null && lastGroup.equals(currentLevel.getGroup())) {
         break;
       }
     }
+
+    if (AmbianceUtils.shouldSimplifyLogBaseKey(ambiance)) {
+      logAbstractions.put("planExecutionId", "-" + ambiance.getPlanExecutionId());
+    }
+
+    return logAbstractions;
+  }
+
+  public static LinkedHashMap<String, String> populateLogAbstractionsMap(Ambiance ambiance) {
+    LinkedHashMap<String, String> logAbstractions = new LinkedHashMap<>();
+
+    logAbstractions.put("accountId", ambiance.getSetupAbstractionsMap().getOrDefault("accountId", ""));
+
+    if (AmbianceUtils.shouldSimplifyLogBaseKey(ambiance)) {
+      logAbstractions.put("entityType", "pipeline");
+    } else {
+      logAbstractions.put("orgId", ambiance.getSetupAbstractionsMap().getOrDefault("orgIdentifier", ""));
+      logAbstractions.put("projectId", ambiance.getSetupAbstractionsMap().getOrDefault("projectIdentifier", ""));
+    }
+
+    logAbstractions.put("pipelineId", ambiance.getMetadata().getPipelineIdentifier());
+    logAbstractions.put("runSequence", String.valueOf(ambiance.getMetadata().getRunSequence()));
+
+    if (AmbianceUtils.shouldSimplifyLogBaseKey(ambiance)) {
+      logAbstractions.put(IS_SIMPLIFY, "true");
+    }
+
     return logAbstractions;
   }
 

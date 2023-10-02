@@ -14,13 +14,16 @@ import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -45,6 +48,7 @@ import io.harness.service.DelegateGrpcClientWrapper;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -62,10 +66,14 @@ public class EcrImagePullSecretHelperTest extends CategoryTest {
   public static String projectId = "projectId";
   @Mock ExceptionManager exceptionManager;
   @InjectMocks private EcrImagePullSecretHelper ecrImagePullSecretHelper;
+
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
   }
+
+  private static final AwsConnectorDTO awsConnectorDTO =
+      AwsConnectorDTO.builder().delegateSelectors(Collections.emptySet()).build();
 
   @Test
   @Owner(developers = BRIJESH)
@@ -83,7 +91,7 @@ public class EcrImagePullSecretHelperTest extends CategoryTest {
     BaseNGAccess baseNGAccess =
         BaseNGAccess.builder().accountIdentifier(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build();
     EcrArtifactDelegateRequest ecrArtifactDelegateRequest =
-        EcrArtifactDelegateRequest.builder().imagePath("imagePath").tag("1.0").build();
+        EcrArtifactDelegateRequest.builder().awsConnectorDTO(awsConnectorDTO).imagePath("imagePath").tag("1.0").build();
     when(kryoSerializer.asDeflatedBytes(any())).thenReturn("".getBytes());
     when(kryoSerializer.asInflatedObject(any())).thenReturn(response);
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
@@ -132,16 +140,11 @@ public class EcrImagePullSecretHelperTest extends CategoryTest {
                                         .artifactTaskExecutionResponse(artifactTaskExecutionResponse)
                                         .build();
 
-    ArtifactTaskResponse artifactTaskResponse = ArtifactTaskResponse.builder()
-                                                    .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-                                                    .artifactTaskExecutionResponse(artifactTaskExecutionResponse)
-                                                    .build();
-
     BaseNGAccess baseNGAccess =
         BaseNGAccess.builder().accountIdentifier(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build();
 
     EcrArtifactDelegateRequest ecrArtifactDelegateRequest =
-        EcrArtifactDelegateRequest.builder().imagePath("imagePath").tag("1.0").build();
+        EcrArtifactDelegateRequest.builder().awsConnectorDTO(awsConnectorDTO).imagePath("imagePath").tag("1.0").build();
 
     when(kryoSerializer.asDeflatedBytes(any())).thenReturn("".getBytes());
 
@@ -179,7 +182,7 @@ public class EcrImagePullSecretHelperTest extends CategoryTest {
         BaseNGAccess.builder().accountIdentifier(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build();
 
     EcrArtifactDelegateRequest ecrArtifactDelegateRequest =
-        EcrArtifactDelegateRequest.builder().imagePath("imagePath").tag("1.0").build();
+        EcrArtifactDelegateRequest.builder().imagePath("imagePath").tag("1.0").awsConnectorDTO(awsConnectorDTO).build();
 
     when(kryoSerializer.asDeflatedBytes(any())).thenReturn("".getBytes());
 
@@ -192,6 +195,13 @@ public class EcrImagePullSecretHelperTest extends CategoryTest {
                                ArtifactTaskType.GET_IMAGE_URL, baseNGAccess, "execute sync task failed"))
         .isInstanceOf(WingsException.class)
         .hasMessage("execute sync task failed - Test failed with error code: DEFAULT_ERROR_CODE");
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(argThat(m -> {
+      Map<String, String> taskAbstractions = m.getTaskSetupAbstractions();
+      return taskAbstractions.get(SetupAbstractionKeys.ng).equals("true")
+          && taskAbstractions.get(SetupAbstractionKeys.orgIdentifier).equals(orgId)
+          && taskAbstractions.get(SetupAbstractionKeys.projectIdentifier).equals(projectId)
+          && taskAbstractions.get("owner").equals(orgId + "/" + projectId);
+    }));
   }
 
   @Test
@@ -205,18 +215,11 @@ public class EcrImagePullSecretHelperTest extends CategoryTest {
                                         .artifactTaskExecutionResponse(artifactTaskExecutionResponse)
                                         .build();
 
-    ArtifactTaskResponse artifactTaskResponse = ArtifactTaskResponse.builder()
-                                                    .commandExecutionStatus(CommandExecutionStatus.FAILURE)
-                                                    .errorCode(ErrorCode.DEFAULT_ERROR_CODE)
-                                                    .errorMessage("Test failed")
-                                                    .artifactTaskExecutionResponse(artifactTaskExecutionResponse)
-                                                    .build();
-
     BaseNGAccess baseNGAccess =
         BaseNGAccess.builder().accountIdentifier(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build();
 
     EcrArtifactDelegateRequest ecrArtifactDelegateRequest =
-        EcrArtifactDelegateRequest.builder().imagePath("imagePath").tag("1.0").build();
+        EcrArtifactDelegateRequest.builder().awsConnectorDTO(awsConnectorDTO).imagePath("imagePath").tag("1.0").build();
 
     when(kryoSerializer.asDeflatedBytes(any())).thenReturn("".getBytes());
 

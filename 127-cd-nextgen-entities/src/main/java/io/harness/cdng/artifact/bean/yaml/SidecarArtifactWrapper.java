@@ -7,6 +7,7 @@
 
 package io.harness.cdng.artifact.bean.yaml;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.visitor.helpers.artifact.SidecarWrapperArtifactVisitorHelper;
@@ -25,6 +26,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @SimpleVisitorHelper(helperClass = SidecarWrapperArtifactVisitorHelper.class)
 @TypeAlias("sidecarArtifactWrapper")
+@RecasterAlias("io.harness.cdng.artifact.bean.yaml.SidecarArtifactWrapper")
 public class SidecarArtifactWrapper implements Visitable {
   SidecarArtifact sidecar;
 

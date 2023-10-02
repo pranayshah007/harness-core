@@ -6,34 +6,54 @@
  */
 
 package io.harness.cd;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.beans.FeatureName.CDS_REMOVE_TIME_BUCKET_GAPFILL_QUERY;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.timescaledb.Tables.ENVIRONMENTS;
 import static io.harness.timescaledb.Tables.NG_INSTANCE_STATS;
 import static io.harness.timescaledb.Tables.PIPELINE_EXECUTION_SUMMARY_CD;
 import static io.harness.timescaledb.Tables.SERVICES;
+import static io.harness.timescaledb.Tables.SERVICES_LICENSE_DAILY_REPORT;
 import static io.harness.timescaledb.Tables.SERVICE_INFRA_INFO;
+import static io.harness.timescaledb.Tables.SERVICE_INSTANCES_LICENSE_DAILY_REPORT;
+
+import static org.jooq.impl.DSL.val;
 
 import io.harness.aggregates.AggregateProjectInfo;
 import io.harness.aggregates.AggregateServiceInfo;
 import io.harness.aggregates.TimeWiseExecutionSummary;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.cdng.usage.pojos.LicenseDailyUsage;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.pms.dashboards.GroupBy;
+import io.harness.timescaledb.Routines;
 import io.harness.timescaledb.tables.pojos.PipelineExecutionSummaryCd;
 import io.harness.timescaledb.tables.pojos.ServiceInfraInfo;
+import io.harness.timescaledb.tables.pojos.ServiceInstancesLicenseDailyReport;
 import io.harness.timescaledb.tables.pojos.Services;
+import io.harness.timescaledb.tables.pojos.ServicesLicenseDailyReport;
+import io.harness.timescaledb.tables.records.ServiceInstancesLicenseDailyReportRecord;
+import io.harness.timescaledb.tables.records.ServicesLicenseDailyReportRecord;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
+import java.time.LocalDate;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.DSLContext;
 import org.jooq.Field;
+import org.jooq.InsertValuesStep3;
 import org.jooq.Record2;
 import org.jooq.Record3;
 import org.jooq.Table;
 import org.jooq.impl.DSL;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PLG_LICENSING})
 @Slf4j
 @OwnedBy(PIPELINE)
 public class TimeScaleDAL {
@@ -41,8 +61,10 @@ public class TimeScaleDAL {
   public static final String ORG_ID = "orgId";
   public static final String PROJECT_ID = "projectId";
   public static final String SERVICE_ID = "serviceId";
+  public static final int BULK_INSERT_LIMIT = 100;
 
   @Inject private DSLContext dsl;
+  @Inject NGFeatureFlagHelperService featureFlagHelperService;
 
   public List<ServiceInfraInfo> getDistinctServiceWithExecutionInTimeRange(
       @NotNull final String accountId, Long startIntervalInMillis, Long endIntervalInMillis) {
@@ -284,10 +306,39 @@ public class TimeScaleDAL {
   public List<TimeWiseExecutionSummary> getTimeExecutionStatusWiseDeploymentCount(String accountIdentifier,
       long startInterval, long endInterval, GroupBy groupBy, Table<Record2<String, String>> orgProjectTable,
       List<String> statusList) {
-    Field<Long> epoch = DSL.field("time_bucket_gapfill(" + groupBy.getNoOfMilliseconds() + ", {0})", Long.class,
-        PIPELINE_EXECUTION_SUMMARY_CD.STARTTS);
-
     try {
+      if (featureFlagHelperService.isEnabled(accountIdentifier, CDS_REMOVE_TIME_BUCKET_GAPFILL_QUERY)) {
+        Field<Long> tb_status_startts = DSL.field("tb_status.startts", Long.class);
+        Field<String> tb_status_status = DSL.field("tb_status.status", String.class);
+        Field<Long> t3_startts = DSL.field("t3.startts", Long.class);
+        Field<String> t3_status = DSL.field("t3.status", String.class);
+        Field<Integer> caseConditionStep = DSL.case_().when(t3_status.isNotNull(), DSL.count()).otherwise(0);
+        return dsl.select(tb_status_startts.as("time_bucket_gapfill"), tb_status_status, caseConditionStep.as("count"))
+            .from(dsl.select(DSL.asterisk())
+                      .from(Routines.timeBucketListCdStatus(val(groupBy.getNoOfMilliseconds()), val(startInterval),
+                          val(endInterval), val(statusList.toArray(new String[0])), val(Boolean.FALSE)))
+                      .asTable("tb_status"))
+            .leftJoin(dsl.select(DSL.asterisk())
+                          .from(PIPELINE_EXECUTION_SUMMARY_CD)
+                          .where(PIPELINE_EXECUTION_SUMMARY_CD.ACCOUNTID.eq(accountIdentifier)
+                                     .and(PIPELINE_EXECUTION_SUMMARY_CD.STARTTS.greaterOrEqual(startInterval))
+                                     .and(PIPELINE_EXECUTION_SUMMARY_CD.STARTTS.lessThan(endInterval))
+                                     .and(PIPELINE_EXECUTION_SUMMARY_CD.STATUS.in(statusList)))
+                          .andExists(dsl.selectOne()
+                                         .from(orgProjectTable)
+                                         .where(PIPELINE_EXECUTION_SUMMARY_CD.ORGIDENTIFIER
+                                                    .eq((Field<String>) orgProjectTable.field(ORG_ID))
+                                                    .and(PIPELINE_EXECUTION_SUMMARY_CD.PROJECTIDENTIFIER.eq(
+                                                        (Field<String>) orgProjectTable.field(PROJECT_ID)))))
+                          .asTable("t3"))
+            .on(tb_status_status.eq(t3_status))
+            .and(tb_status_startts.eq(t3_startts.subtract(t3_startts.mod(groupBy.getNoOfMilliseconds()))))
+            .groupBy(tb_status_startts, t3_status, tb_status_status)
+            .orderBy(tb_status_startts)
+            .fetchInto(TimeWiseExecutionSummary.class);
+      }
+      Field<Long> epoch = DSL.field("time_bucket_gapfill(" + groupBy.getNoOfMilliseconds() + ", {0})", Long.class,
+          PIPELINE_EXECUTION_SUMMARY_CD.STARTTS);
       return dsl.select(epoch, PIPELINE_EXECUTION_SUMMARY_CD.STATUS, DSL.count().as("count"))
           .from(PIPELINE_EXECUTION_SUMMARY_CD)
           .where(PIPELINE_EXECUTION_SUMMARY_CD.ACCOUNTID.eq(accountIdentifier)
@@ -515,6 +566,126 @@ public class TimeScaleDAL {
           .fetchInto(AggregateProjectInfo.class);
     } catch (Exception e) {
       log.error("Exception while getting project wise deployment count for account {}", accountIdentifier, e);
+      throw e;
+    }
+  }
+
+  public List<ServiceInstancesLicenseDailyReport> getLatestServiceInstancesLicenseDailyReportByAccountId(
+      @NotNull String accountId) {
+    try {
+      return dsl.select()
+          .from(SERVICE_INSTANCES_LICENSE_DAILY_REPORT)
+          .where(SERVICE_INSTANCES_LICENSE_DAILY_REPORT.ACCOUNT_ID.eq(accountId))
+          .orderBy(DSL.field(SERVICE_INSTANCES_LICENSE_DAILY_REPORT.REPORTED_DAY).desc())
+          .limit(1)
+          .fetchInto(ServiceInstancesLicenseDailyReport.class);
+    } catch (Exception e) {
+      log.warn("Exception while latest service instances license daily report for account {}", accountId, e);
+      throw e;
+    }
+  }
+
+  public List<ServicesLicenseDailyReport> getLatestServicesLicenseDailyReportByAccountId(@NotNull String accountId) {
+    try {
+      return dsl.select()
+          .from(SERVICES_LICENSE_DAILY_REPORT)
+          .where(SERVICES_LICENSE_DAILY_REPORT.ACCOUNT_ID.eq(accountId))
+          .orderBy(DSL.field(SERVICES_LICENSE_DAILY_REPORT.REPORTED_DAY).desc())
+          .limit(1)
+          .fetchInto(ServicesLicenseDailyReport.class);
+    } catch (Exception e) {
+      log.warn("Exception while latest services license daily report for account {}", accountId, e);
+      throw e;
+    }
+  }
+
+  public List<ServiceInstancesLicenseDailyReport> listServiceInstancesLicenseDailyReportByAccountId(
+      @NotNull String accountId, LocalDate fromDate, LocalDate toDate) {
+    try {
+      return dsl.select()
+          .from(SERVICE_INSTANCES_LICENSE_DAILY_REPORT)
+          .where(SERVICE_INSTANCES_LICENSE_DAILY_REPORT.ACCOUNT_ID.eq(accountId)
+                     .and(SERVICE_INSTANCES_LICENSE_DAILY_REPORT.REPORTED_DAY.greaterOrEqual(fromDate))
+                     .and(SERVICE_INSTANCES_LICENSE_DAILY_REPORT.REPORTED_DAY.lessOrEqual(toDate)))
+          .orderBy(DSL.field(SERVICE_INSTANCES_LICENSE_DAILY_REPORT.REPORTED_DAY).asc())
+          .fetchInto(ServiceInstancesLicenseDailyReport.class);
+    } catch (Exception e) {
+      log.warn("Exception while listing service instances license daily report for account {}", accountId, e);
+      throw e;
+    }
+  }
+
+  public List<ServicesLicenseDailyReport> listServicesLicenseDailyReportByAccountId(
+      @NotNull String accountId, LocalDate fromDate, LocalDate toDate) {
+    try {
+      return dsl.select()
+          .from(SERVICES_LICENSE_DAILY_REPORT)
+          .where(SERVICES_LICENSE_DAILY_REPORT.ACCOUNT_ID.eq(accountId)
+                     .and(SERVICES_LICENSE_DAILY_REPORT.REPORTED_DAY.greaterOrEqual(fromDate))
+                     .and(SERVICES_LICENSE_DAILY_REPORT.REPORTED_DAY.lessOrEqual(toDate)))
+          .orderBy(DSL.field(SERVICES_LICENSE_DAILY_REPORT.REPORTED_DAY).asc())
+          .fetchInto(ServicesLicenseDailyReport.class);
+    } catch (Exception e) {
+      log.warn("Exception while listing services license daily report for account {}", accountId, e);
+      throw e;
+    }
+  }
+
+  public int insertBulkServiceInstancesLicenseDailyReport(
+      String accountId, List<LicenseDailyUsage> licenseDailyReport) {
+    if (isEmpty(licenseDailyReport)) {
+      return 0;
+    }
+    if (licenseDailyReport.size() > BULK_INSERT_LIMIT) {
+      throw new InvalidArgumentsException(String.format("Bulk insert records limit exceeded, %s", BULK_INSERT_LIMIT));
+    }
+
+    try {
+      InsertValuesStep3<ServiceInstancesLicenseDailyReportRecord, String, LocalDate, Integer> bulkInsert =
+          dsl.insertInto(SERVICE_INSTANCES_LICENSE_DAILY_REPORT, SERVICE_INSTANCES_LICENSE_DAILY_REPORT.ACCOUNT_ID,
+              SERVICE_INSTANCES_LICENSE_DAILY_REPORT.REPORTED_DAY,
+              SERVICE_INSTANCES_LICENSE_DAILY_REPORT.LICENSE_COUNT);
+
+      licenseDailyReport.forEach(licenseDailyUsage -> {
+        bulkInsert.values(
+            licenseDailyUsage.getAccountId(), licenseDailyUsage.getReportedDay(), licenseDailyUsage.getLicenseCount());
+      });
+
+      return bulkInsert.onConflictOnConstraint(SERVICE_INSTANCES_LICENSE_DAILY_REPORT.getPrimaryKey())
+          .doUpdate()
+          .set(SERVICE_INSTANCES_LICENSE_DAILY_REPORT.LICENSE_COUNT,
+              SERVICE_INSTANCES_LICENSE_DAILY_REPORT.as("excluded").LICENSE_COUNT)
+          .execute();
+    } catch (Exception e) {
+      log.warn("Exception while bulk insert service instances license daily report for account {}", accountId, e);
+      throw e;
+    }
+  }
+
+  public int insertBulkServicesLicenseDailyReport(String accountId, List<LicenseDailyUsage> licenseDailyReport) {
+    if (isEmpty(licenseDailyReport)) {
+      return 0;
+    }
+    if (licenseDailyReport.size() > BULK_INSERT_LIMIT) {
+      throw new InvalidArgumentsException(String.format("Balk insert records limit exceeded, %s", BULK_INSERT_LIMIT));
+    }
+
+    try {
+      InsertValuesStep3<ServicesLicenseDailyReportRecord, String, LocalDate, Integer> bulkInsert =
+          dsl.insertInto(SERVICES_LICENSE_DAILY_REPORT, SERVICES_LICENSE_DAILY_REPORT.ACCOUNT_ID,
+              SERVICES_LICENSE_DAILY_REPORT.REPORTED_DAY, SERVICES_LICENSE_DAILY_REPORT.LICENSE_COUNT);
+
+      licenseDailyReport.forEach(licenseDailyUsage -> {
+        bulkInsert.values(
+            licenseDailyUsage.getAccountId(), licenseDailyUsage.getReportedDay(), licenseDailyUsage.getLicenseCount());
+      });
+
+      return bulkInsert.onConflictOnConstraint(SERVICES_LICENSE_DAILY_REPORT.getPrimaryKey())
+          .doUpdate()
+          .set(SERVICES_LICENSE_DAILY_REPORT.LICENSE_COUNT, SERVICES_LICENSE_DAILY_REPORT.as("excluded").LICENSE_COUNT)
+          .execute();
+    } catch (Exception e) {
+      log.warn("Exception while bulk insert services license daily report for account {}", accountId, e);
       throw e;
     }
   }

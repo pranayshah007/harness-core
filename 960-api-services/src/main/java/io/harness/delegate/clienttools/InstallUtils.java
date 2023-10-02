@@ -115,7 +115,7 @@ public class InstallUtils {
       if (versionedPath != null) {
         mapBuilder.put(version, versionedPath);
       } else {
-        log.error("Failed to install {} for version {}", tool.getBinaryName(), version);
+        log.info("Failed to install {} for version {}", tool.getBinaryName(), version);
       }
     }
     return mapBuilder.build();
@@ -178,11 +178,11 @@ public class InstallUtils {
             log.info("{} successfully installed to {}", tool.getBinaryName(), versionedToolPath);
             return versionedToolPath;
           } else {
-            log.error("{} not validated after download {}", tool.getBinaryName(), versionedToolPath);
+            log.info("{} not validated after download {}", tool.getBinaryName(), versionedToolPath);
             return null;
           }
         } else {
-          log.error("Failed installing {} to {}", tool.getBinaryName(), versionedToolPath);
+          log.info("Failed installing {} to {}", tool.getBinaryName(), versionedToolPath);
           return null;
         }
       } catch (final Exception e) {

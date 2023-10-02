@@ -6,18 +6,15 @@
 package utils
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
 
-	"github.com/harness/harness-core/commons/go/lib/filesystem"
+	"github.com/harness/harness-core/product/ci/common/external"
 	"github.com/harness/ti-client/types"
 	zglob "github.com/mattn/go-zglob"
-	"go.uber.org/zap"
 )
 
 type NodeType int32
@@ -37,6 +34,7 @@ const (
 	LangType_CSHARP  LangType = 1
 	LangType_PYTHON  LangType = 2
 	LangType_UNKNOWN LangType = 3
+	LangType_RUBY    LangType = 4
 )
 
 const (
@@ -48,10 +46,23 @@ const (
 )
 
 var (
-	javaSourceRegex = fmt.Sprintf("^.*%s", JAVA_SRC_PATH)
-	javaTestRegex   = fmt.Sprintf("^.*%s", JAVA_TEST_PATH)
-	scalaTestRegex  = fmt.Sprintf("^.*%s", SCALA_TEST_PATH)
-	kotlinTestRegex = fmt.Sprintf("^.*%s", KOTLIN_TEST_PATH)
+	getWorkspace        = external.GetWrkspcPath
+	javaSourceRegex     = fmt.Sprintf("^.*%s", JAVA_SRC_PATH)
+	javaTestRegex       = fmt.Sprintf("^.*%s", JAVA_TEST_PATH)
+	scalaTestRegex      = fmt.Sprintf("^.*%s", SCALA_TEST_PATH)
+	kotlinTestRegex     = fmt.Sprintf("^.*%s", KOTLIN_TEST_PATH)
+	PYTHON_TEST_PATTERN = []string{"test_*.py", "*_test.py"}
+	RUBY_TEST_PATTERN   = []string{"*_spec.rb"}
+	extensionMapping    = map[string]LangTypeAndTestPattern{
+		".py": LangTypeAndTestPattern{
+			LangType:    LangType_PYTHON,
+			TestPattern: PYTHON_TEST_PATTERN,
+		},
+		".rb": LangTypeAndTestPattern{
+			LangType:    LangType_RUBY,
+			TestPattern: RUBY_TEST_PATTERN,
+		},
+	}
 )
 
 //Node holds data about a source code
@@ -62,6 +73,11 @@ type Node struct {
 	File   string
 	Lang   LangType
 	Type   NodeType
+}
+
+type LangTypeAndTestPattern struct {
+	LangType    LangType
+	TestPattern []string
 }
 
 //TimeSince returns the number of milliseconds that have passed since the given time
@@ -128,22 +144,30 @@ func ParseCsharpNode(file types.File, testGlobs []string) (*Node, error) {
 	return &node, nil
 }
 
-// ParsePythonNode extracts the file name from a Python file path
+// ParsePythonNode extracts the file name from a file path
 // e.g., src/abc/def/A.py
-// will return class = A
-func ParsePythonNode(file types.File, testGlobs []string) (*Node, error) {
+// will return class = src/abc/def/A.py file = src/abc/def/A.py
+func ParsePythonNode(file types.File, testGlobs []string) *Node {
+	return ParsePathBasedNode(file, testGlobs, LangType_PYTHON)
+}
+
+// ParseRubyNode extracts the file name from a file path
+// e.g., src/abc/def/A.rb
+// will return class = src/abc/def/A.rb file = src/abc/def/A.rb
+func ParseRubyNode(file types.File, testGlobs []string) *Node {
+	return ParsePathBasedNode(file, testGlobs, LangType_RUBY)
+}
+
+// ParsePathBasedNode extracts the file name from a file path
+// e.g., src/abc/def/A.py
+// will return class = src/abc/def/A.py file = src/abc/def/A.py
+func ParsePathBasedNode(file types.File, testGlobs []string, langType LangType) *Node {
 	var node Node
 	node.Pkg = ""
-	node.Class = ""
-	node.Lang = LangType_UNKNOWN
-	node.Type = NodeType_OTHER
+	node.Lang = langType
+	node.Type = NodeType_SOURCE
 
 	filename := strings.TrimSpace(file.Name)
-	if !strings.HasSuffix(filename, ".py") {
-		return &node, nil
-	}
-	node.Lang = LangType_PYTHON
-	node.Type = NodeType_SOURCE
 
 	for _, glob := range testGlobs {
 		if matched, _ := zglob.Match(glob, filename); !matched {
@@ -153,7 +177,53 @@ func ParsePythonNode(file types.File, testGlobs []string) (*Node, error) {
 	}
 	node.File = filename
 	node.Class = filename
-	return &node, nil
+	return &node
+}
+
+// ParsePathBasedNodeAndType extracts the file name from a file path of unknown language
+// e.g., src/abc/def/A.py
+// will return class = src/abc/def/A.py file = src/abc/def/A.py
+func ParsePathBasedNodeAndType(file types.File, testGlobs []string) (*Node, error) {
+	filename := strings.TrimSpace(file.Name)
+	for extension, langAndPattern := range extensionMapping {
+		if strings.HasSuffix(filename, extension) {
+			LangType := langAndPattern.LangType
+			if len(testGlobs) == 0 {
+				testGlobs = langAndPattern.TestPattern
+			}
+			return ParsePathBasedNode(file, testGlobs, LangType), nil
+		}
+	}
+	// If not any of the extension, it might be a java resource
+	return ParseJavaNode(file)
+}
+
+// GetTestsFromLocal creates list of RunnableTest within file system on given langauge and extension
+// e.g., extension: py
+// will return all files with .py, formatted to python node
+func GetTestsFromLocal(testGlobs []string, extension string, langType LangType) ([]types.RunnableTest, error) {
+	tests := make([]types.RunnableTest, 0)
+	wp, err := getWorkspace()
+	if err != nil {
+		return tests, err
+	}
+
+	files, _ := GetFiles(fmt.Sprintf("%s/**/*.%s", wp, extension))
+	for _, path := range files {
+		if path == "" {
+			continue
+		}
+		f := types.File{Name: path}
+		node := ParsePathBasedNode(f, testGlobs, langType)
+		if node.Type != NodeType_TEST {
+			continue
+		}
+		test := types.RunnableTest{
+			Class: node.File,
+		}
+		tests = append(tests, test)
+	}
+	return tests, nil
 }
 
 //ParseJavaNodeFromPath extracts the pkg and class names from a Java file path
@@ -276,7 +346,7 @@ func ParseJavaNode(file types.File) (*Node, error) {
 }
 
 //ParseFileNames accepts a list of file names, parses and returns the list of Node
-func ParseFileNames(files []types.File) ([]Node, error) {
+func ParseFileNames(files []types.File, testGlobs []string) ([]Node, error) {
 
 	nodes := make([]Node, 0)
 	for _, file := range files {
@@ -284,18 +354,53 @@ func ParseFileNames(files []types.File) ([]Node, error) {
 		if len(path) == 0 {
 			continue
 		}
-		if strings.HasSuffix(path, ".cs") {
-			node, _ := ParseCsharpNode(file, []string{})
-			nodes = append(nodes, *node)
-		} else if strings.HasSuffix(path, ".py") {
-			node, _ := ParsePythonNode(file, []string{})
-			nodes = append(nodes, *node)
-		} else {
-			node, _ := ParseJavaNode(file)
-			nodes = append(nodes, *node)
+		var node *Node
+		extension := filepath.Ext(path)
+		switch extension {
+		case ".cs":
+			node, _ = ParseCsharpNode(file, testGlobs)
+		case ".java", ".kt", ".sc":
+			node, _ = ParseJavaNode(file)
+		case ".py":
+			node = ParsePythonNode(file, testGlobs)
+		case ".rb":
+			node = ParseRubyNode(file, testGlobs)
+		default:
+			node, _ = ParsePathBasedNodeAndType(file, testGlobs)
 		}
+		nodes = append(nodes, *node)
 	}
 	return nodes, nil
+}
+
+// ParseFileNamesWithLanguage extract Node from given file path and language strings
+func ParseFileNamesWithLanguage(files []types.File, testGlobs []string, language string) []Node {
+	nodes := make([]Node, 0)
+	for _, file := range files {
+		path := file.Name
+		if len(path) == 0 {
+			continue
+		}
+		var node *Node
+		var err error
+		switch language {
+		case "csharp":
+			node, err = ParseCsharpNode(file, testGlobs)
+		case "java", "scala", "kotlin":
+			node, err = ParseJavaNode(file)
+		case "python":
+			node = ParsePythonNode(file, testGlobs)
+		case "ruby":
+			node = ParseRubyNode(file, testGlobs)
+		default:
+			node, err = ParsePathBasedNodeAndType(file, testGlobs)
+		}
+		if err != nil {
+			continue
+		}
+		nodes = append(nodes, *node)
+	}
+	return nodes
 }
 
 // GetSliceDiff returns the unique element in sIDs which are not present in dIDs
@@ -322,83 +427,19 @@ func GetRepoUrl(repo string) string {
 	return repo
 }
 
-// ReadJavaPkg read java file and return it's package name
-func ReadJavaPkg(log *zap.SugaredLogger, fs filesystem.FileSystem, f string, excludeList []string, packageLen int) (string, error) {
-	absPath, err := filepath.Abs(f)
-	result := ""
-	if !strings.HasSuffix(absPath, ".java") && !strings.HasSuffix(absPath, ".scala") && !strings.HasSuffix(absPath, ".kt") {
-		return result, nil
-	}
-	if err != nil {
-		log.Errorw("could not get absolute path", "file_name", f, err)
-		return "", err
-	}
-	// TODO: (Vistaar)
-	// This doesn't handle some special cases right now such as when there is a package
-	// present in a multiline comment with multiple opening and closing comments.
-	// We will require to read all the lines together to handle this.
-	err = fs.ReadFile(absPath, func(fr io.Reader) error {
-		scanner := bufio.NewScanner(fr)
-		commentOpen := false
-		for scanner.Scan() {
-			l := strings.TrimSpace(scanner.Text())
-			if strings.Contains(l, "/*") {
-				commentOpen = true
-			}
-			if strings.Contains(l, "*/") {
-				commentOpen = false
-				continue
-			}
-			if commentOpen || strings.HasPrefix(l, "//") {
-				continue
-			}
-			prev := ""
-			pkg := ""
-			for _, token := range strings.Fields(l) {
-				if prev == "package" {
-					pkg = token
-					break
-				}
-				prev = token
-			}
-			if pkg != "" {
-				pkg = strings.TrimSuffix(pkg, ";")
-				tokens := strings.Split(pkg, ".")
-				for _, exclude := range excludeList {
-					if strings.HasPrefix(pkg, exclude) {
-						log.Infow(fmt.Sprintf("Found package: %s having same package prefix as: %s. Excluding this package from the list...", pkg, exclude))
-						return nil
-					}
-				}
-				pkg = tokens[0]
-				if packageLen == -1 {
-					for i, token := range tokens {
-						if i == 0 {
-							continue
-						}
-						pkg = pkg + "." + strings.TrimSpace(token)
-					}
-					result = pkg
-					return nil
-				}
-				for i := 1; i < packageLen && i < len(tokens); i++ {
-					pkg = pkg + "." + strings.TrimSpace(tokens[i])
-				}
-				if pkg == "" {
-					continue
-				}
-				result = pkg
-				return nil
-			}
+// GetUniqueTestStrings extract list of test strings from Class
+// It should only work if Class is the only primary identifier of the test selection
+func GetUniqueTestStrings(tests []types.RunnableTest) []string {
+	set := make(map[types.RunnableTest]interface{})
+	ut := []string{}
+	for _, t := range tests {
+		w := types.RunnableTest{Class: t.Class}
+		if _, ok := set[w]; ok {
+			// The test has already been added
+			continue
 		}
-		if err := scanner.Err(); err != nil {
-			log.Errorw(fmt.Sprintf("could not scan all the files. Error: %s", err))
-			return err
-		}
-		return nil
-	})
-	if err != nil {
-		log.Errorw("had issues while trying to auto detect java packages", err)
+		set[w] = struct{}{}
+		ut = append(ut, t.Class)
 	}
-	return result, nil
+	return ut
 }

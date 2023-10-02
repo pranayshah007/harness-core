@@ -6,7 +6,6 @@
  */
 
 package io.harness.artifacts.azureartifacts.service;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.azure.utility.AzureUtils.executeRestCall;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
@@ -17,7 +16,10 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifacts.azureartifacts.beans.AzureArtifactsInternalConfig;
 import io.harness.artifacts.azureartifacts.beans.AzureArtifactsProtocolType;
 import io.harness.azure.utility.AzureUtils;
@@ -60,6 +62,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @OwnedBy(CDC)
 @Singleton
 @Slf4j

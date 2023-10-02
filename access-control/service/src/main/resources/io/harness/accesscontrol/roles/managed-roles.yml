@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 54
+version: 60
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -150,7 +150,7 @@ roles:
         - code_repo_edit
         - code_repo_delete
         - code_repo_push
-        - code_commitCheck_report
+        - code_repo_reportCommitCheck
         - servicediscovery_networkmap_create
         - servicediscovery_networkmap_edit
         - servicediscovery_networkmap_delete
@@ -158,6 +158,13 @@ roles:
         - chaos_chaossecuritygovernance_edit
         - chaos_chaossecuritygovernance_delete
         - chaos_chaossecuritygovernance_view
+        - cet_agents_view
+        - cet_token_view
+        - cet_token_create
+        - cet_token_revoke
+        - cet_criticalevent_view
+        - cet_criticalevent_create
+        - cet_criticalevent_delete
       allowedScopeLevels:
         - project
       managed: true
@@ -213,6 +220,9 @@ roles:
         - code_repo_view
         - servicediscovery_networkmap_view
         - chaos_chaossecuritygovernance_view
+        - cet_agents_view
+        - cet_token_view
+        - cet_criticalevent_view
       allowedScopeLevels:
         - project
       managed: true
@@ -370,7 +380,7 @@ roles:
         - code_repo_edit
         - code_repo_delete
         - code_repo_push
-        - code_commitCheck_report
+        - code_repo_reportCommitCheck
         - servicediscovery_networkmap_create
         - servicediscovery_networkmap_edit
         - servicediscovery_networkmap_delete
@@ -378,6 +388,13 @@ roles:
         - chaos_chaossecuritygovernance_edit
         - chaos_chaossecuritygovernance_delete
         - chaos_chaossecuritygovernance_view
+        - cet_agents_view
+        - cet_token_view
+        - cet_token_create
+        - cet_token_revoke
+        - cet_criticalevent_view
+        - cet_criticalevent_create
+        - cet_criticalevent_delete
       allowedScopeLevels:
         - organization
       managed: true
@@ -435,6 +452,9 @@ roles:
         - code_repo_view
         - servicediscovery_networkmap_view
         - chaos_chaossecuritygovernance_view
+        - cet_agents_view
+        - cet_token_view
+        - cet_criticalevent_view
       allowedScopeLevels:
         - organization
       managed: true
@@ -638,7 +658,7 @@ roles:
         - code_repo_edit
         - code_repo_delete
         - code_repo_push
-        - code_commitCheck_report
+        - code_repo_reportCommitCheck
         - servicediscovery_networkmap_create
         - servicediscovery_networkmap_edit
         - servicediscovery_networkmap_delete
@@ -646,6 +666,15 @@ roles:
         - chaos_chaossecuritygovernance_edit
         - chaos_chaossecuritygovernance_delete
         - chaos_chaossecuritygovernance_view
+        - cet_agents_view
+        - cet_token_view
+        - cet_token_create
+        - cet_token_revoke
+        - cet_criticalevent_view
+        - cet_criticalevent_create
+        - cet_criticalevent_delete
+        - ccm_anomalies_view
+        - ccm_recommendations_view
       allowedScopeLevels:
         - account
       managed: true
@@ -719,6 +748,11 @@ roles:
         - code_repo_view
         - servicediscovery_networkmap_view
         - chaos_chaossecuritygovernance_view
+        - cet_agents_view
+        - cet_token_view
+        - cet_criticalevent_view
+        - ccm_anomalies_view
+        - ccm_recommendations_view
       allowedScopeLevels:
         - account
       managed: true
@@ -937,6 +971,8 @@ roles:
         - ccm_cloudAssetGovernanceEnforcement_edit
         - ccm_cloudAssetGovernanceEnforcement_view
         - ccm_cloudAssetGovernanceEnforcement_delete
+        - ccm_anomalies_view
+        - ccm_recommendations_view
       managed: true
       allowedScopeLevels:
         - account
@@ -955,6 +991,8 @@ roles:
         - ccm_cloudAssetGovernanceEnforcement_view
         - ccm_cloudAssetGovernanceRuleSet_view
         - ccm_cloudAssetGovernanceRule_view
+        - ccm_anomalies_view
+        - ccm_recommendations_view
       managed: true
       allowedScopeLevels:
         - account
@@ -983,8 +1021,101 @@ roles:
         - code_repo_edit
         - code_repo_delete
         - code_repo_push
-        - code_commitCheck_report
+        - code_repo_reportCommitCheck
       managed: true
+      allowedScopeLevels:
+        - account
+        - organization
+        - project
+    - identifier: _cet_admin
+      name: CET Admin
+      description: Can create, edit, and view CET Resources
+      permissions:
+        - cet_agents_view
+        - cet_token_view
+        - cet_token_create
+        - cet_token_revoke
+        - cet_criticalevent_view
+        - cet_criticalevent_create
+        - cet_criticalevent_delete
+      managed: true
+      allowedScopeLevels:
+        - account
+        - organization
+        - project
+    - identifier: _pipeline_allUsers_access_role
+      name: Pipeline Public Access Role
+      internal: true
+      allowedScopeLevels:
+        - project
+      managed: true
+      isPublic: true
+      permissions:
+        - core_pipeline_view
+    - identifier: _pipeline_allAuthenticatedUsers_access_role
+      name: Pipeline Authenticated Access Role
+      internal: true
+      allowedScopeLevels:
+        - project
+      managed: true
+      isPublic: true
+      permissions:
+        - core_pipeline_view
+    - identifier: _sei_admin
+      name: SEI Admin
+      description: Can create, edit, and view SEI resources
+      permissions:
+        - sei_seiconfigurationsettings_view
+        - sei_seiconfigurationsettings_edit
+        - sei_seiconfigurationsettings_delete
+        - sei_seicollections_create
+        - sei_seicollections_view
+        - sei_seicollections_edit
+        - sei_seicollections_delete
+        - sei_seiinsights_create
+        - sei_seiinsights_view
+        - sei_seiinsights_edit
+        - sei_seiinsights_delete
+        - core_resourcegroup_view
+        - core_resourcegroup_edit
+        - core_resourcegroup_delete
+        - core_project_create
+        - core_project_view
+        - core_project_edit
+        - core_project_delete
+        - core_usergroup_view
+        - core_usergroup_manage
+        - core_role_view
+        - core_user_invite
+        - core_user_view
+        - core_user_manage
+      managed: true
+      isPublic: false
+      internal: true
+      allowedScopeLevels:
+        - account
+    - identifier: _sei_viewer
+      name: SEI Viewer
+      description: Can view SEI resources
+      permissions:
+        - sei_seiinsights_view
+      managed: true
+      isPublic: false
+      internal: true
+      allowedScopeLevels:
+        - account
+        - organization
+        - project
+    - identifier: _sei_collections_admin
+      name: SEI Collections Admin
+      description: Can create, edit, and view SEI Teams
+      permissions:
+        - sei_seicollections_view
+        - sei_seicollections_edit
+        - sei_seiinsights_view
+      managed: true
+      isPublic: false
+      internal: true
       allowedScopeLevels:
         - account
         - organization

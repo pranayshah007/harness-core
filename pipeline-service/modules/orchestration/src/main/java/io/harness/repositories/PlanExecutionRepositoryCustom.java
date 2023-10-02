@@ -8,6 +8,7 @@
 package io.harness.repositories;
 
 import io.harness.execution.PlanExecution;
+import io.harness.monitoring.ExecutionCountWithAccountResult;
 
 import java.util.List;
 import org.springframework.data.mongodb.core.query.Query;
@@ -26,6 +27,14 @@ public interface PlanExecutionRepositoryCustom {
    */
   PlanExecution updatePlanExecution(Query query, Update updateOps, boolean upsert);
 
+  /**
+   * Update multiple records of Plan execution with given find query and updateOperations
+   * @param query
+   * @param updateOps
+   * @return
+   */
+  void multiUpdatePlanExecution(Query query, Update updateOps);
+
   PlanExecution getPlanExecutionWithProjections(String planExecutionId, List<String> excludedFieldNames);
 
   PlanExecution getPlanExecutionWithIncludedProjections(String planExecutionId, List<String> includedFieldNames);
@@ -37,4 +46,10 @@ public interface PlanExecutionRepositoryCustom {
    * @return
    */
   CloseableIterator<PlanExecution> fetchPlanExecutionsFromAnalytics(Query query);
+
+  /**
+   * Fetches aggregated running execution count per account from analytics node
+   * @return
+   */
+  List<ExecutionCountWithAccountResult> aggregateRunningExecutionCountPerAccount();
 }

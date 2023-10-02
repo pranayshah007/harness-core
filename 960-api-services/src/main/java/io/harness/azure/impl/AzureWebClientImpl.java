@@ -23,6 +23,9 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.azure.AzureClient;
 import io.harness.azure.client.AzureWebClient;
 import io.harness.azure.context.AzureClientContext;
@@ -49,6 +52,8 @@ import com.azure.resourcemanager.appservice.models.AppSetting;
 import com.azure.resourcemanager.appservice.models.ConnectionString;
 import com.azure.resourcemanager.appservice.models.ConnectionStringType;
 import com.azure.resourcemanager.appservice.models.CsmSlotEntity;
+import com.azure.resourcemanager.appservice.models.DeployOptions;
+import com.azure.resourcemanager.appservice.models.DeployType;
 import com.azure.resourcemanager.appservice.models.DeploymentSlot;
 import com.azure.resourcemanager.appservice.models.Experiments;
 import com.azure.resourcemanager.appservice.models.RampUpRule;
@@ -74,6 +79,8 @@ import reactor.core.publisher.Mono;
 
 @Singleton
 @Slf4j
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AZURE_WEBAPP})
 public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
   @Override
   public List<WebAppBasic> listWebAppsByResourceGroupName(AzureClientContext context) {
@@ -872,6 +879,37 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
         file.getAbsolutePath(), slotName, context);
     DeploymentSlot deploymentSlot = getDeploymentSlot(context, slotName);
     return deploymentSlot.zipDeployAsync(file);
+  }
+
+  @Override
+  public Mono<Void> deployAsync(
+      AzureWebClientContext context, DeployType type, String slotName, File file, DeployOptions options) {
+    if (isBlank(slotName)) {
+      throw new IllegalArgumentException(SLOT_NAME_BLANK_VALIDATION_MSG);
+    }
+    if (file == null) {
+      throw new IllegalArgumentException(FILE_BLANK_ERROR_MSG);
+    }
+
+    if (DEPLOYMENT_SLOT_PRODUCTION_NAME.equals(slotName)) {
+      return deployToWebAppAsync(context, type, file, options);
+    }
+
+    DeploymentSlot deploymentSlot = getDeploymentSlot(context, slotName);
+    return deploymentSlot.deployAsync(type, file, options);
+  }
+
+  @Override
+  public Mono<Void> deployToWebAppAsync(
+      AzureWebClientContext context, DeployType type, File file, DeployOptions options) {
+    if (file == null) {
+      throw new IllegalArgumentException(FILE_BLANK_ERROR_MSG);
+    }
+
+    log.debug(
+        "Start deploying {} file async, fileAbsoluteFile: {}, context: {}", type, file.getAbsolutePath(), context);
+    WebApp azureApp = getWebApp(context);
+    return azureApp.deployAsync(type, file, options);
   }
 
   @Override

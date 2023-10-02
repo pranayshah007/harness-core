@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.activityhistory.impl;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.activityhistory.NGActivityStatus.FAILED;
 import static io.harness.ng.core.activityhistory.NGActivityStatus.SUCCESS;
 import static io.harness.ng.core.activityhistory.NGActivityType.CONNECTIVITY_CHECK;
@@ -14,12 +15,15 @@ import static io.harness.ng.core.activityhistory.NGActivityType.CONNECTIVITY_CHE
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
 
 import io.harness.EntityType;
+import io.harness.encryption.Scope;
 import io.harness.exception.UnexpectedException;
 import io.harness.ng.core.activityhistory.NGActivityQueryCriteriaHelper;
 import io.harness.ng.core.activityhistory.NGActivityStatus;
+import io.harness.ng.core.activityhistory.NGActivityType;
 import io.harness.ng.core.activityhistory.dto.ConnectivityCheckSummaryDTO;
 import io.harness.ng.core.activityhistory.dto.ConnectivityCheckSummaryDTO.ConnectivityCheckSummaryKeys;
 import io.harness.ng.core.activityhistory.dto.NGActivityDTO;
+import io.harness.ng.core.activityhistory.dto.NGEntityListDTO;
 import io.harness.ng.core.activityhistory.entity.NGActivity;
 import io.harness.ng.core.activityhistory.entity.NGActivity.ActivityHistoryEntityKeys;
 import io.harness.ng.core.activityhistory.mapper.NGActivityDTOToEntityMapper;
@@ -29,7 +33,7 @@ import io.harness.repositories.activityhistory.NGActivityRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -61,11 +65,17 @@ public class NGActivityServiceImpl implements NGActivityService {
   @Override
   public Page<NGActivityDTO> list(int page, int size, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String referredEntityIdentifier, long start, long end, NGActivityStatus status,
-      EntityType referredEntityType, EntityType referredByEntityType) {
-    List<NGActivityDTO> allActivitiesOtherThanConnectivityCheck =
-        getAllActivitiesOtherThanConnectivityCheck(page, size, accountIdentifier, orgIdentifier, projectIdentifier,
-            referredEntityIdentifier, start, end, status, referredEntityType, referredByEntityType);
-    return new PageImpl<>(allActivitiesOtherThanConnectivityCheck);
+      EntityType referredEntityType, Set<EntityType> referredByEntityTypes, Set<NGActivityType> ngActivityTypes,
+      String searchTerm, Set<Scope> scopeFilter) {
+    Criteria criteria = createCriteriaForEntityUsageActivity(accountIdentifier, orgIdentifier, projectIdentifier,
+        referredEntityIdentifier, status, start, end, referredEntityType, referredByEntityTypes, ngActivityTypes,
+        searchTerm, scopeFilter);
+    Pageable pageable =
+        PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, ActivityHistoryEntityKeys.activityTime));
+    Page<NGActivity> activities = activityRepository.findAll(criteria, pageable);
+    return new PageImpl<>(
+        activities.getContent().stream().map(activityEntityToDTOMapper::writeDTO).collect(Collectors.toList()),
+        pageable, activities.getTotalElements());
   }
 
   @Override
@@ -85,6 +95,20 @@ public class NGActivityServiceImpl implements NGActivityService {
       connectivityCheckSummaryDTO.setEndTime(end);
     }
     return connectivityCheckSummaryDTO;
+  }
+
+  @Override
+  public NGEntityListDTO listReferredByEntityTypes(EntityType entityType, Set<NGActivityType> ngActivityTypes) {
+    Criteria criteria = Criteria.where(ActivityHistoryEntityKeys.referredEntityType).is(entityType.toString());
+    if (isNotEmpty(ngActivityTypes)) {
+      criteria.and(ActivityHistoryEntityKeys.type).in(ngActivityTypes);
+    }
+    return NGEntityListDTO.builder()
+        .entityTypeList(activityRepository.findDistinctEntityTypes(criteria)
+                            .stream()
+                            .map(entity -> EntityType.fromString(entity))
+                            .collect(Collectors.toList()))
+        .build();
   }
 
   private ProjectionOperation getProjectionOperationForProjectingSuccessfulAndFailedChecks() {
@@ -110,17 +134,6 @@ public class NGActivityServiceImpl implements NGActivityService {
     return criteria;
   }
 
-  private List<NGActivityDTO> getAllActivitiesOtherThanConnectivityCheck(int page, int size, String accountIdentifier,
-      String orgIdentifier, String projectIdentifier, String referredEntityIdentifier, long start, long end,
-      NGActivityStatus status, EntityType referredEntityType, EntityType referredByEntityType) {
-    Criteria criteria = createCriteriaForEntityUsageActivity(accountIdentifier, orgIdentifier, projectIdentifier,
-        referredEntityIdentifier, status, start, end, referredEntityType, referredByEntityType);
-    Pageable pageable =
-        PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, ActivityHistoryEntityKeys.activityTime));
-    List<NGActivity> activities = activityRepository.findAll(criteria, pageable).getContent();
-    return activities.stream().map(activityEntityToDTOMapper::writeDTO).collect(Collectors.toList());
-  }
-
   private void populateActivityStatusCriteria(Criteria criteria, NGActivityStatus status) {
     if (status != null) {
       criteria.and(ActivityHistoryEntityKeys.activityStatus).is(status);
@@ -129,15 +142,19 @@ public class NGActivityServiceImpl implements NGActivityService {
 
   private Criteria createCriteriaForEntityUsageActivity(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String referredEntityIdentifier, NGActivityStatus status, long startTime, long endTime,
-      EntityType referredEntityType, EntityType referredByEntityType) {
+
+      EntityType referredEntityType, Set<EntityType> referredByEntityTypes, Set<NGActivityType> ngActivityTypes,
+      String searchTerm, Set<Scope> scopeFilter) {
     Criteria criteria = new Criteria();
-    criteria.and(ActivityHistoryEntityKeys.type).ne(String.valueOf(CONNECTIVITY_CHECK));
     ngActivityQueryCriteriaHelper.populateEntityFQNFilterInCriteria(
         criteria, accountIdentifier, orgIdentifier, projectIdentifier, referredEntityIdentifier);
     ngActivityQueryCriteriaHelper.addReferredEntityTypeCriteria(criteria, referredEntityType);
-    ngActivityQueryCriteriaHelper.addReferredByEntityTypeCriteria(criteria, referredByEntityType);
+    ngActivityQueryCriteriaHelper.addReferredByEntityTypeCriteria(criteria, referredByEntityTypes);
+    ngActivityQueryCriteriaHelper.addScopeFilter(criteria, scopeFilter);
     populateActivityStatusCriteria(criteria, status);
     ngActivityQueryCriteriaHelper.addTimeFilterInTheCriteria(criteria, startTime, endTime);
+    ngActivityQueryCriteriaHelper.addActivityTypeCriteria(criteria, ngActivityTypes);
+    ngActivityQueryCriteriaHelper.addSearchTermCriteria(criteria, searchTerm);
     return criteria;
   }
 

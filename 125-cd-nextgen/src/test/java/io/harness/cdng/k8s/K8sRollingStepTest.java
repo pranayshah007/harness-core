@@ -28,7 +28,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.execution.service.StageExecutionInstanceInfoService;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.helm.ReleaseHelmChartOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.instance.outcome.DeploymentInfoOutcome;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
@@ -40,12 +42,14 @@ import io.harness.cdng.manifest.yaml.K8sCommandFlagType;
 import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sRollingDeployRequest;
 import io.harness.delegate.task.k8s.K8sRollingDeployResponse;
 import io.harness.delegate.task.k8s.K8sTaskType;
 import io.harness.exception.GeneralException;
+import io.harness.k8s.model.K8sPod;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
@@ -75,6 +79,7 @@ public class K8sRollingStepTest extends AbstractK8sStepExecutorTestBase {
   @Mock ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private InstanceInfoService instanceInfoService;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Mock StageExecutionInstanceInfoService stageExecutionInstanceInfoService;
 
   @InjectMocks private K8sRollingStep k8sRollingStep;
   final String canaryStepFqn = "canaryStep";
@@ -185,11 +190,16 @@ public class K8sRollingStepTest extends AbstractK8sStepExecutorTestBase {
   public void testOutcomesInResponse() {
     K8sRollingStepParameters stepParameters = new K8sRollingStepParameters();
     final StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
-
+    HelmChartInfo helmChartInfo = HelmChartInfo.builder().name("todolist").version("0.2.0").build();
     K8sDeployResponse k8sDeployResponse =
         K8sDeployResponse.builder()
-            .k8sNGTaskResponse(
-                K8sRollingDeployResponse.builder().k8sPodList(Collections.emptyList()).releaseNumber(1).build())
+            .k8sNGTaskResponse(K8sRollingDeployResponse.builder()
+                                   .k8sPodList(List.of(K8sPod.builder().podIP("ip1").build(),
+                                       K8sPod.builder().podIP("ip2").build(), K8sPod.builder().podIP("ip3").build()))
+                                   .previousK8sPodList(Collections.emptyList())
+                                   .releaseNumber(1)
+                                   .helmChartInfo(helmChartInfo)
+                                   .build())
             .commandUnitsProgress(UnitProgressData.builder().build())
             .commandExecutionStatus(SUCCESS)
             .build();
@@ -198,21 +208,33 @@ public class K8sRollingStepTest extends AbstractK8sStepExecutorTestBase {
                                                .name(OutcomeExpressionConstants.DEPLOYMENT_INFO_OUTCOME)
                                                .outcome(DeploymentInfoOutcome.builder().build())
                                                .build();
+    ReleaseHelmChartOutcome releaseHelmChartOutcome =
+        ReleaseHelmChartOutcome.builder().name(helmChartInfo.getName()).version(helmChartInfo.getVersion()).build();
     doReturn(stepOutcome).when(instanceInfoService).saveServerInstancesIntoSweepingOutput(any(), any());
-
-    StepResponse response = k8sRollingStep.finalizeExecutionWithSecurityContext(
+    doReturn(releaseHelmChartOutcome).when(k8sStepHelper).getHelmChartOutcome(eq(helmChartInfo));
+    StepResponse response = k8sRollingStep.finalizeExecutionWithSecurityContextAndNodeInfo(
         ambiance, stepElementParameters, K8sExecutionPassThroughData.builder().build(), () -> k8sDeployResponse);
     assertThat(response.getStatus()).isEqualTo(Status.SUCCEEDED);
-    assertThat(response.getStepOutcomes()).hasSize(2);
+    assertThat(response.getStepOutcomes()).hasSize(3);
 
     StepOutcome outcome = response.getStepOutcomes().stream().collect(Collectors.toList()).get(0);
     assertThat(outcome.getOutcome()).isInstanceOf(K8sRollingOutcome.class);
     assertThat(outcome.getName()).isEqualTo(OutcomeExpressionConstants.OUTPUT);
     assertThat(outcome.getGroup()).isNull();
+    ((K8sRollingOutcome) outcome.getOutcome())
+        .getPodIps()
+        .forEach(podIp -> assertThat(List.of("ip1", "ip2", "ip3").contains(podIp)).isTrue());
 
     StepOutcome deploymentInfoOutcome = new ArrayList<>(response.getStepOutcomes()).get(1);
     assertThat(deploymentInfoOutcome.getOutcome()).isInstanceOf(DeploymentInfoOutcome.class);
     assertThat(deploymentInfoOutcome.getName()).isEqualTo(OutcomeExpressionConstants.DEPLOYMENT_INFO_OUTCOME);
+
+    StepOutcome helmChartOutcome = new ArrayList<>(response.getStepOutcomes()).get(2);
+    assertThat(helmChartOutcome.getOutcome()).isInstanceOf(ReleaseHelmChartOutcome.class);
+    assertThat(helmChartOutcome.getName()).isEqualTo(OutcomeExpressionConstants.RELEASE_HELM_CHART_OUTCOME);
+    assertThat(((ReleaseHelmChartOutcome) helmChartOutcome.getOutcome()).getName()).isEqualTo(helmChartInfo.getName());
+    assertThat(((ReleaseHelmChartOutcome) helmChartOutcome.getOutcome()).getVersion())
+        .isEqualTo(helmChartInfo.getVersion());
 
     ArgumentCaptor<K8sRollingOutcome> argumentCaptor = ArgumentCaptor.forClass(K8sRollingOutcome.class);
     verify(executionSweepingOutputService, times(1))
@@ -232,7 +254,7 @@ public class K8sRollingStepTest extends AbstractK8sStepExecutorTestBase {
 
     doReturn(stepResponse).when(k8sStepHelper).handleTaskException(ambiance, executionPassThroughData, thrownException);
 
-    StepResponse response = k8sRollingStep.finalizeExecutionWithSecurityContext(
+    StepResponse response = k8sRollingStep.finalizeExecutionWithSecurityContextAndNodeInfo(
         ambiance, stepElementParameters, executionPassThroughData, () -> { throw thrownException; });
 
     assertThat(response).isEqualTo(stepResponse);
@@ -290,14 +312,14 @@ public class K8sRollingStepTest extends AbstractK8sStepExecutorTestBase {
                                                .build();
     doReturn(stepOutcome).when(instanceInfoService).saveServerInstancesIntoSweepingOutput(any(), any());
     when(cdStepHelper.handleGitTaskFailure(any())).thenReturn(StepResponse.builder().status(Status.SUCCEEDED).build());
-    StepResponse response = k8sRollingStep.finalizeExecutionWithSecurityContext(
+    StepResponse response = k8sRollingStep.finalizeExecutionWithSecurityContextAndNodeInfo(
         ambiance, stepElementParameters, GitFetchResponsePassThroughData.builder().build(), () -> k8sDeployResponse);
     assertThat(response.getStatus()).isEqualTo(Status.SUCCEEDED);
 
     when(k8sStepHelper.handleHelmValuesFetchFailure(any()))
         .thenReturn(StepResponse.builder().status(Status.SUCCEEDED).build());
     assertThat(k8sRollingStep
-                   .finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
+                   .finalizeExecutionWithSecurityContextAndNodeInfo(ambiance, stepElementParameters,
                        HelmValuesFetchResponsePassThroughData.builder().build(), () -> k8sDeployResponse)
                    .getStatus())
         .isEqualTo(Status.SUCCEEDED);
@@ -305,7 +327,7 @@ public class K8sRollingStepTest extends AbstractK8sStepExecutorTestBase {
     when(cdStepHelper.handleStepExceptionFailure(any()))
         .thenReturn(StepResponse.builder().status(Status.SUCCEEDED).build());
     assertThat(k8sRollingStep
-                   .finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
+                   .finalizeExecutionWithSecurityContextAndNodeInfo(ambiance, stepElementParameters,
                        StepExceptionPassThroughData.builder().build(), () -> k8sDeployResponse)
                    .getStatus())
         .isEqualTo(Status.SUCCEEDED);
@@ -318,7 +340,7 @@ public class K8sRollingStepTest extends AbstractK8sStepExecutorTestBase {
             .commandExecutionStatus(FAILURE)
             .build();
     assertThat(k8sRollingStep
-                   .finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
+                   .finalizeExecutionWithSecurityContextAndNodeInfo(ambiance, stepElementParameters,
                        K8sExecutionPassThroughData.builder().build(), () -> k8sDeployResponseFail)
                    .getStatus())
         .isEqualTo(Status.FAILED);

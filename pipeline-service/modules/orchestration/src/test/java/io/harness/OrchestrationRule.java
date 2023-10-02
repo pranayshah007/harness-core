@@ -16,8 +16,11 @@ import static io.harness.maintenance.MaintenanceController.forceMaintenance;
 import static org.mockito.Mockito.mock;
 
 import io.harness.account.AccountClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
@@ -96,6 +99,7 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class OrchestrationRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin {
@@ -167,6 +171,20 @@ public class OrchestrationRule implements MethodRule, InjectorRuleMixin, MongoRu
       @Singleton
       public boolean getSerializationForDelegate() {
         return false;
+      }
+
+      @Provides
+      @Singleton
+      @Named("useNewNodeEntityConfiguration")
+      public Boolean getUseNewNodeEntityConfiguration() {
+        return true;
+      }
+
+      @Provides
+      @Singleton
+      @Named("publishAdviserEventForCustomAdvisers")
+      public Boolean getPublishAdviserEventForCustomAdvisers() {
+        return true;
       }
     });
 
@@ -242,12 +260,14 @@ public class OrchestrationRule implements MethodRule, InjectorRuleMixin, MongoRu
     modules.add(TimeModule.getInstance());
     modules.add(TestMongoModule.getInstance());
     modules.add(new OrchestrationPersistenceTestModule());
-    modules.add(
-        OrchestrationModule.getInstance(OrchestrationModuleConfig.builder()
-                                            .serviceName("ORCHESTRATION_TEST")
-                                            .expressionEvaluatorProvider(new AmbianceExpressionEvaluatorProvider())
-                                            .isPipelineService(true)
-                                            .build()));
+    modules.add(OrchestrationModule.getInstance(
+        OrchestrationModuleConfig.builder()
+            .orchestrationRestrictionConfiguration(
+                OrchestrationRestrictionConfiguration.builder().maxNestedLevelsCount(25).build())
+            .serviceName("ORCHESTRATION_TEST")
+            .expressionEvaluatorProvider(new AmbianceExpressionEvaluatorProvider())
+            .isPipelineService(true)
+            .build()));
     CacheConfigBuilder cacheConfigBuilder =
         CacheConfig.builder().disabledCaches(new HashSet<>()).cacheNamespace("harness-cache");
     if (annotations.stream().anyMatch(annotation -> annotation instanceof Cache)) {

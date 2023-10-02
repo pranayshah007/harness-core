@@ -1,0 +1,134 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/object1690465306.json",
+  "title": "Root",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "catalog"
+  ],
+  "properties": {
+    "catalog": {
+      "$id": "#root/catalog",
+      "title": "Catalog",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "providers"
+      ],
+      "properties": {
+        "providers": {
+          "$id": "#root/catalog/providers",
+          "title": "Providers",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "github"
+          ],
+          "properties": {
+            "github": {
+              "$id": "#root/catalog/providers/github",
+              "title": "Github",
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["organization"],
+                "properties": {
+                  "host": {
+                    "$id": "#root/catalog/providers/github/providerId/host",
+                    "title": "Host",
+                    "type": "string",
+                    "default": "",
+                    "pattern": "^.*$"
+                  },
+                  "organization": {
+                    "$id": "#root/catalog/providers/github/providerId/organization",
+                    "title": "Organization",
+                    "type": "string",
+                    "default": "",
+                    "pattern": "^.*$"
+                  },
+                  "catalogPath": {
+                    "$id": "#root/catalog/providers/github/providerId/catalogPath",
+                    "title": "Catalogpath",
+                    "type": "string",
+                    "default": "",
+                    "pattern": "^.*$"
+                  },
+                  "filters": {
+                    "$id": "#root/catalog/providers/github/providerId/filters",
+                    "title": "Filters",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "branch": {
+                        "$id": "#root/catalog/providers/github/providerId/filters/branch",
+                        "title": "Branch",
+                        "type": "string",
+                        "default": "",
+                        "pattern": "^.*$"
+                      },
+                      "repository": {
+                        "$id": "#root/catalog/providers/github/providerId/filters/repository",
+                        "title": "Repository",
+                        "type": "string",
+                        "default": "",
+                        "pattern": "^.*$"
+                      },
+                      "visibility": {
+                        "$id": "#root/catalog/providers/github/providerId/filters/visibility",
+                        "title": "Visibility",
+                        "type": "array",
+                        "default": [],
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "topic": {
+                        "$id": "#root/catalog/providers/github/providerId/filters/topic",
+                        "title": "Topic",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "include": {
+                            "$id": "#root/catalog/providers/github/providerId/filters/topic/include",
+                            "title": "Include",
+                            "type": "array",
+                            "default": [],
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "exclude": {
+                            "$id": "#root/catalog/providers/github/providerId/filters/topic/exclude",
+                            "title": "Exclude",
+                            "type": "array",
+                            "default": [],
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "allowForks": {
+                        "$id": "#root/catalog/providers/github/providerId/filters/allowForks",
+                        "title": "AllowForks",
+                        "type": "boolean",
+                        "default": false
+                      }
+                    }
+                  }
+                }
+              }
+            }
+
+          }
+        }
+
+      }
+    }
+
+  }
+}

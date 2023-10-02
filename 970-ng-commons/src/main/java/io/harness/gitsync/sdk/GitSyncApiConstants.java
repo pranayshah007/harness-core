@@ -6,13 +6,16 @@
  */
 
 package io.harness.gitsync.sdk;
-
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @OwnedBy(DX)
 @UtilityClass
 public class GitSyncApiConstants {
@@ -56,6 +59,9 @@ public class GitSyncApiConstants {
   public static final String SYNC_STATUS_PARAM_MESSAGE =
       "Sync Status of the Entity that may be QUEUED, SUCCESS or FAILED.";
   public static final String SEARCH_TERM_PARAM_MESSAGE = "Search Term.";
+  public static final String REPO_NAME_SEARCH_TERM_PARAM_MESSAGE = "Repo Name Search Term.";
+  public static final String USER_NAME_SEARCH_TERM_PARAM_MESSAGE = "User Name Search Term.";
+  public static final String BRANCH_NAME_SEARCH_TERM_PARAM_MESSAGE = "Branch Name Search Term.";
   public static final String TRIM_LEADING_TRAILING_SPACES = "Any leading/trailing spaces will be removed.";
   public static final String ENTITY_GIT_URL_DESCRIPTION = "The url of the file in git";
 

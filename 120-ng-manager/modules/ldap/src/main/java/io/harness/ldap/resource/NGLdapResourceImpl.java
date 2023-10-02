@@ -10,9 +10,13 @@ package io.harness.ldap.resource;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.accesscontrol.PlatformPermissions.MANAGE_USERGROUP_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformResourceTypes.USERGROUP;
 
 import static java.util.Objects.isNull;
 
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
@@ -89,6 +93,12 @@ public class NGLdapResourceImpl implements NGLdapResource {
   }
 
   @Override
+  public RestResponse<Boolean> syncLdapGroupsV2(String accountId, String orgIdentifier, String projectIdentifier) {
+    ngLdapService.syncUserGroupsJob(accountId, orgIdentifier, projectIdentifier);
+    return new RestResponse<>(true);
+  }
+
+  @Override
   public RestResponse<LdapResponse> postLdapAuthenticationTest(
       String accountId, String orgIdentifier, String projectIdentifier, String email, String password) {
     return new RestResponse<>(
@@ -98,6 +108,8 @@ public class NGLdapResourceImpl implements NGLdapResource {
   @Override
   public RestResponse<Void> syncUserGroupLinkedToLDAP(
       String userGroupId, String accountId, String orgIdentifier, String projectIdentifier) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+        Resource.of(USERGROUP, userGroupId), MANAGE_USERGROUP_PERMISSION);
     ngLdapService.syncAUserGroupJob(userGroupId, accountId, orgIdentifier, projectIdentifier);
     return new RestResponse<>(null);
   }

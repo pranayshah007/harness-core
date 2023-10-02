@@ -105,6 +105,60 @@ public class FakeProjectClient implements ProjectClient {
   }
 
   @Override
+  public Call<ResponseDTO<PageResponse<ProjectResponse>>> listProjects(
+      String accountIdentifier, String orgIdentifier, List<String> identifiers, int page, int size) {
+    return new Call<>() {
+      @Override
+      public Response<ResponseDTO<PageResponse<ProjectResponse>>> execute() {
+        if (Objects.equals(accountIdentifier, ACCOUNT_IDENTIFIER) && page < 1) {
+          return Response.success(ResponseDTO.newResponse(
+              PageResponse.<ProjectResponse>builder()
+                  .content(Collections.singletonList(ProjectResponse.builder()
+                                                         .project(ProjectDTO.builder()
+                                                                      .identifier(TEST_PROJECT_IDENTIFIER)
+                                                                      .orgIdentifier(TEST_ORG_IDENTIFIER)
+                                                                      .name(TEST_PROJECT_NAME)
+                                                                      .description(TEST_PROJECT_DESC)
+                                                                      .tags(null)
+                                                                      .build())
+                                                         .build()))
+                  .totalItems(1)
+                  .build()));
+        } else {
+          return Response.success(ResponseDTO.newResponse(
+              PageResponse.<ProjectResponse>builder().content(Collections.emptyList()).totalItems(0).build()));
+        }
+      }
+
+      @Override
+      public void enqueue(Callback<ResponseDTO<PageResponse<ProjectResponse>>> callback) {}
+
+      @Override
+      public boolean isExecuted() {
+        return false;
+      }
+
+      @Override
+      public void cancel() {}
+
+      @Override
+      public boolean isCanceled() {
+        return false;
+      }
+
+      @Override
+      public Call<ResponseDTO<PageResponse<ProjectResponse>>> clone() {
+        return null;
+      }
+
+      @Override
+      public Request request() {
+        return null;
+      }
+    };
+  }
+
+  @Override
   public Call<ResponseDTO<PageResponse<ProjectResponse>>> listWithMultiOrg(String accountIdentifier,
       Set<String> orgIdentifiers, boolean hasModule, List<String> identifiers, ModuleType moduleType, String searchTerm,
       int page, int size, List<String> sort) {

@@ -7,16 +7,25 @@
 
 package io.harness.ngmigration.service.entity;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import static software.wings.ngmigration.NGMigrationEntityType.USER_GROUP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.UserGroupDTO;
+import io.harness.ng.core.notification.MicrosoftTeamsConfigDTO;
+import io.harness.ng.core.notification.NotificationSettingConfigDTO;
+import io.harness.ng.core.notification.PagerDutyConfigDTO;
+import io.harness.ng.core.notification.SlackConfigDTO;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -29,11 +38,17 @@ import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.dto.UserGroupYamlDTO;
+import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.JsonUtils;
+import io.harness.usergroups.UserGroupClient;
 
+import software.wings.beans.notification.NotificationSettings;
+import software.wings.beans.notification.SlackNotificationSetting;
 import software.wings.beans.security.UserGroup;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
@@ -43,6 +58,7 @@ import software.wings.service.intfc.UserGroupService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -51,14 +67,30 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class UserGroupMigrationService extends NgMigrationService {
   @Inject private UserGroupService userGroupService;
+  @Inject private UserGroupClient userGroupClient;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
-    return null;
+    CgBasicInfo basicInfo = yamlFile.getCgBasicInfo();
+    UserGroupDTO userGroupDTO = ((UserGroupYamlDTO) yamlFile.getYaml()).getUserGroupDTO();
+    return MigratedEntityMapping.builder()
+        .appId(basicInfo.getAppId())
+        .accountId(basicInfo.getAccountId())
+        .cgEntityId(basicInfo.getId())
+        .entityType(USER_GROUP.name())
+        .accountIdentifier(basicInfo.getAccountId())
+        .orgIdentifier(userGroupDTO.getOrgIdentifier())
+        .projectIdentifier(userGroupDTO.getProjectIdentifier())
+        .identifier(userGroupDTO.getIdentifier())
+        .scope(MigratorMappingService.getScope(userGroupDTO.getOrgIdentifier(), userGroupDTO.getProjectIdentifier()))
+        .fullyQualifiedIdentifier(MigratorMappingService.getFullyQualifiedIdentifier(basicInfo.getAccountId(),
+            userGroupDTO.getOrgIdentifier(), userGroupDTO.getProjectIdentifier(), userGroupDTO.getIdentifier()))
+        .build();
   }
 
   @Override
@@ -133,15 +165,36 @@ public class UserGroupMigrationService extends NgMigrationService {
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
 
+    List<NotificationSettingConfigDTO> notificationSettingConfigDTOList = new ArrayList<>();
+    NotificationSettings notificationSettings = userGroup.getNotificationSettings();
+    if (notificationSettings != null) {
+      SlackNotificationSetting slackCGConfig = notificationSettings.getSlackConfig();
+      if (slackCGConfig != null && slackCGConfig.getOutgoingWebhookUrl() != null) {
+        notificationSettingConfigDTOList.add(
+            SlackConfigDTO.builder().slackWebhookUrl(slackCGConfig.getOutgoingWebhookUrl()).build());
+      }
+      if (isNotEmpty(notificationSettings.getMicrosoftTeamsWebhookUrl())) {
+        notificationSettingConfigDTOList.add(
+            MicrosoftTeamsConfigDTO.builder()
+                .microsoftTeamsWebhookUrl(notificationSettings.getMicrosoftTeamsWebhookUrl())
+                .build());
+      }
+      if (isNotEmpty(notificationSettings.getPagerDutyIntegrationKey())) {
+        notificationSettingConfigDTOList.add(
+            PagerDutyConfigDTO.builder().pagerDutyKey(notificationSettings.getPagerDutyIntegrationKey()).build());
+      }
+    }
+
     UserGroupYamlDTO yamlDTO = UserGroupYamlDTO.builder()
                                    .userGroupDTO(UserGroupDTO.builder()
                                                      .identifier(identifier)
-                                                     .name(userGroup.getName())
+                                                     .name(name)
                                                      .description(userGroup.getDescription())
                                                      .users(userGroup.getMemberIds())
                                                      .accountIdentifier(userGroup.getAccountId())
                                                      .orgIdentifier(orgIdentifier)
                                                      .projectIdentifier(projectIdentifier)
+                                                     .notificationConfigs(notificationSettingConfigDTOList)
                                                      .build())
                                    .build();
 
@@ -160,11 +213,18 @@ public class UserGroupMigrationService extends NgMigrationService {
   @Override
   protected YamlDTO getNGEntity(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
       CgEntityNode cgEntityNode, NgEntityDetail ngEntityDetail, String accountIdentifier) {
+    try {
+      UserGroupDTO response = NGRestUtils.getResponse(userGroupClient.getUserGroup(ngEntityDetail.getIdentifier(),
+          accountIdentifier, ngEntityDetail.getOrgIdentifier(), ngEntityDetail.getProjectIdentifier()));
+      return UserGroupYamlDTO.builder().userGroupDTO(response).build();
+    } catch (Exception ex) {
+      log.warn("Error when getting user group - ", ex);
+    }
     return null;
   }
 
   @Override
-  protected boolean isNGEntityExists() {
+  protected boolean isNGEntityExists(MigrationContext migrationContext) {
     return true;
   }
 }

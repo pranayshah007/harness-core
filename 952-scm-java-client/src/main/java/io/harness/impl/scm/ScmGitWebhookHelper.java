@@ -16,6 +16,7 @@ import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessConnectorDTO;
 import io.harness.git.GitClientHelper;
 import io.harness.product.ci.scm.proto.AzureWebhookEvent;
 import io.harness.product.ci.scm.proto.AzureWebhookEvents;
@@ -28,6 +29,8 @@ import io.harness.product.ci.scm.proto.GithubWebhookEvent;
 import io.harness.product.ci.scm.proto.GithubWebhookEvents;
 import io.harness.product.ci.scm.proto.GitlabWebhookEvent;
 import io.harness.product.ci.scm.proto.GitlabWebhookEvents;
+import io.harness.product.ci.scm.proto.HarnessWebhookEvent;
+import io.harness.product.ci.scm.proto.HarnessWebhookEvents;
 import io.harness.product.ci.scm.proto.NativeEvents;
 import io.harness.product.ci.scm.proto.WebhookResponse;
 
@@ -64,6 +67,9 @@ public class ScmGitWebhookHelper {
       List<AzureWebhookEvent> azureWebhookEvents = new ArrayList<>();
       allNativeEventsList.forEach(nativeEvents -> azureWebhookEvents.addAll(nativeEvents.getAzure().getEventsList()));
       return compareEvents(azureWebhookEvents, hookEventType.azureWebhookEvents);
+    } else if (scmConnector instanceof HarnessConnectorDTO) {
+      return compareEvents(
+          webhookResponse.getNativeEvents().getHarness().getEventsList(), hookEventType.harnessScmWebhookEvents);
     } else {
       throw new NotImplementedException(
           String.format("The scm apis for the provider type %s is not supported", scmConnector.getClass()));
@@ -144,6 +150,19 @@ public class ScmGitWebhookHelper {
                   .setBitbucketServer(
                       BitbucketServerWebhookEvents.newBuilder().addAllEvents(bitbucketServerWebhookEvents).build())
                   .build())
+          .build();
+    } else if (scmConnector instanceof HarnessConnectorDTO) {
+      final List<HarnessWebhookEvent> harnessWebhookEvents = (existingWebhook != null)
+          ? existingWebhook.getNativeEvents().getHarness().getEventsList()
+          : Collections.emptyList();
+      return createWebhookRequestBuilder.setName("HarnessWebhook")
+          .setNativeEvents(NativeEvents.newBuilder()
+                               .setHarness(HarnessWebhookEvents.newBuilder()
+                                               .addAllEvents(ListUtils.union(
+                                                   gitWebhookDetails.getHookEventType().harnessScmWebhookEvents,
+                                                   harnessWebhookEvents))
+                                               .build())
+                               .build())
           .build();
     } else {
       throw new NotImplementedException(

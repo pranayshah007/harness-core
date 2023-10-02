@@ -38,9 +38,9 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Account;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
 import software.wings.beans.LicenseInfo;
+import software.wings.beans.account.AccountStatus;
 import software.wings.service.impl.LicenseUtils;
 import software.wings.service.intfc.AccountService;
 
@@ -471,7 +471,7 @@ public class LicenseServiceTest extends WingsBaseTest {
     long sixtyDaysAfterExpiry = expiryTime + (60 * oneDayTimeDiff);
     long eightyNineDaysAfterExpiry = expiryTime + (89 * oneDayTimeDiff);
     long ninetyDaysAfterExpiry = expiryTime + (90 * oneDayTimeDiff);
-    long ninetyFifeDaysAfterExpiry = expiryTime + (95 * oneDayTimeDiff);
+    long ninetyTwoDaysAfterExpiry = expiryTime + (92 * oneDayTimeDiff);
 
     LicenseInfo licenseInfo = new LicenseInfo();
     licenseInfo.setAccountType(AccountType.TRIAL);
@@ -515,11 +515,11 @@ public class LicenseServiceTest extends WingsBaseTest {
     account = accountService.get(account.getUuid());
     assertThat(licenseService.getEmailTemplateName(account, ninetyDaysAfterExpiry + 10000, expiryTime)).isNull();
 
-    assertThat(licenseService.getEmailTemplateName(account, ninetyFifeDaysAfterExpiry, expiryTime))
+    assertThat(licenseService.getEmailTemplateName(account, ninetyTwoDaysAfterExpiry, expiryTime))
         .isEqualTo(TRIAL_EXPIRATION_BEFORE_DELETION_TEMPLATE);
-    licenseService.updateLastLicenseExpiryReminderSentAt(account.getUuid(), ninetyFifeDaysAfterExpiry);
+    licenseService.updateLastLicenseExpiryReminderSentAt(account.getUuid(), ninetyTwoDaysAfterExpiry);
     account = accountService.get(account.getUuid());
-    assertThat(licenseService.getEmailTemplateName(account, ninetyFifeDaysAfterExpiry + 10000, expiryTime)).isNull();
+    assertThat(licenseService.getEmailTemplateName(account, ninetyTwoDaysAfterExpiry + 10000, expiryTime)).isNull();
   }
 
   @Test

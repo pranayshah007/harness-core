@@ -935,7 +935,8 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
     workflowExecution.setWorkflowType(WorkflowType.PIPELINE);
     workflowExecution.setPipelineExecution(createPipelineExecution(approvalStateExecutionData));
 
-    when(workflowExecutionServiceSpy.getWorkflowExecution(APP_ID, workflowExecution.getUuid()))
+    when(workflowExecutionServiceSpy.getWorkflowExecution(
+             eq(APP_ID), eq(workflowExecution.getUuid()), any(String[].class)))
         .thenReturn(workflowExecution);
     doNothing().when(workflowExecutionServiceSpy).refreshPipelineExecution(any());
 
@@ -1104,7 +1105,8 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
     workflowExecution.setWorkflowType(WorkflowType.PIPELINE);
     workflowExecution.setPipelineExecution(createPipelineExecution(approvalStateExecutionData));
 
-    when(workflowExecutionServiceSpy.getWorkflowExecution(APP_ID, workflowExecution.getUuid()))
+    when(workflowExecutionServiceSpy.getWorkflowExecution(
+             eq(APP_ID), eq(workflowExecution.getUuid()), any(String[].class)))
         .thenReturn(workflowExecution);
     doNothing().when(workflowExecutionServiceSpy).refreshPipelineExecution(any());
     doReturn(null).when(workflowExecutionServiceSpy).getStageNameForApprovalStateExecutionData(any(), any());
@@ -1531,8 +1533,11 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
     Pipeline pipeline = JsonUtils.readResourceFile("pipeline/k8s_two_stage_pipeline_without_vars.json", Pipeline.class);
     List<String> emptyList = null;
 
-    when(wingsPersistence.getWithAppId(eq(WorkflowExecution.class), eq(appID), eq(pipelineExecutionId)))
-        .thenReturn(workflowExecution);
+    Query<WorkflowExecution> query = mock(Query.class);
+    when(wingsPersistence.createQuery(WorkflowExecution.class)).thenReturn(query);
+    when(query.filter(WorkflowExecutionKeys.appId, appID)).thenReturn(query);
+    when(query.filter(WorkflowExecutionKeys.uuid, pipelineExecutionId)).thenReturn(query);
+    when(query.get()).thenReturn(workflowExecution);
     when(pipelineService.readPipelineResolvedVariablesLoopedInfo(eq(appID), anyString(), any(Map.class)))
         .thenReturn(pipelineWithResolvedVars);
     when(pipelineService.getPipeline(eq(appID), anyString())).thenReturn(pipeline);
@@ -1568,8 +1573,11 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
     // Set pipeline as buildPipeline
     List<String> emptyList = null;
 
-    when(wingsPersistence.getWithAppId(eq(WorkflowExecution.class), eq(appID), eq(pipelineExecutionId)))
-        .thenReturn(workflowExecution);
+    Query<WorkflowExecution> query = mock(Query.class);
+    when(wingsPersistence.createQuery(WorkflowExecution.class)).thenReturn(query);
+    when(query.filter(WorkflowExecutionKeys.appId, appID)).thenReturn(query);
+    when(query.filter(WorkflowExecutionKeys.uuid, pipelineExecutionId)).thenReturn(query);
+    when(query.get()).thenReturn(workflowExecution);
     when(pipelineService.readPipelineResolvedVariablesLoopedInfo(eq(appID), anyString(), any(Map.class)))
         .thenReturn(pipelineWithResolvedVars);
     when(pipelineService.getPipeline(eq(appID), anyString())).thenReturn(pipeline);
@@ -2292,8 +2300,11 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
                         PipelineStageExecution.builder().status(PAUSED).stateExecutionData(stateExecutionData).build()))
                     .build())
             .build();
-    when(wingsPersistence.getWithAppId(WorkflowExecution.class, APP_ID, WORKFLOW_EXECUTION_ID))
-        .thenReturn(workflowExecution);
+    Query<WorkflowExecution> query = mock(Query.class);
+    when(wingsPersistence.createQuery(WorkflowExecution.class)).thenReturn(query);
+    when(query.filter(WorkflowExecutionKeys.appId, APP_ID)).thenReturn(query);
+    when(query.filter(WorkflowExecutionKeys.uuid, WORKFLOW_EXECUTION_ID)).thenReturn(query);
+    when(query.get()).thenReturn(workflowExecution);
     when(featureFlagService.isEnabled(AUTO_REJECT_PREVIOUS_APPROVALS, ACCOUNT_ID)).thenReturn(true);
     when(subdomainUrlHelper.getPortalBaseUrl(anyString())).thenReturn("https://dummyurl");
 

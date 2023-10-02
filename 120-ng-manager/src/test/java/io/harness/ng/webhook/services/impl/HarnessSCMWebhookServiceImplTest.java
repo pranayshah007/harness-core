@@ -46,16 +46,16 @@ public class HarnessSCMWebhookServiceImplTest extends CategoryTest {
   @Owner(developers = ABHINAV)
   @Category(UnitTests.class)
   public void upsertWebhook_ShouldReturnResponseDTO() {
-    UpsertWebhookRequestDTO requestDTO = UpsertWebhookRequestDTO.builder().build();
+    UpsertWebhookRequestDTO requestDTO = UpsertWebhookRequestDTO.builder().repoURL("hjhj").build();
 
     when(scmClient.upsertWebhook(any(), any())).thenReturn(CreateWebhookResponse.newBuilder().build());
-    when(baseUrls.getNgManagerScmBaseUrl()).thenReturn("http://example.com/");
+    when(baseUrls.getNgManagerInternalBaseUrl()).thenReturn("http://example.com/");
     when(tokenGenerator.getServiceTokenWithDuration(any(), any(), any())).thenReturn("random");
 
     webhookService.upsertWebhook(requestDTO);
 
     verify(scmClient, times(1)).upsertWebhook(any(), any());
-    verify(baseUrls, times(1)).getNgManagerScmBaseUrl();
+    verify(baseUrls, times(1)).getNgManagerInternalBaseUrl();
   }
 
   @Test

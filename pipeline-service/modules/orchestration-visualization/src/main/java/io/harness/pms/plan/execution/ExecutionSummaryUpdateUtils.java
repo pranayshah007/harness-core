@@ -6,21 +6,28 @@
  */
 
 package io.harness.pms.plan.execution;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ExecutionErrorInfo;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.dto.converter.FailureInfoDTOConverter;
 import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.PlanExecutionMetadata;
 import io.harness.plan.NodeType;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.plan.PostExecutionRollbackInfo;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO.GraphLayoutNodeDTOKeys;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.utils.ExecutionModeUtils;
 
 import java.util.Collections;
 import java.util.Objects;
@@ -31,6 +38,8 @@ import org.springframework.data.mongodb.core.query.Update;
 /**
  * A utility to generate updates for the layout graph used in the list api for stage layout
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
 public class ExecutionSummaryUpdateUtils {
@@ -55,15 +64,31 @@ public class ExecutionSummaryUpdateUtils {
    * 1. Updates barrier related information on a stage node
    * 2. Updates strategy node with status and step parameters
    * 3. Updates stage node with generic updates and strategy information.
+   *
    * @param update
    * @param nodeExecution
+   * @param planExecutionMetadata
    * @return
    */
-  public static boolean addStageUpdateCriteria(Update update, NodeExecution nodeExecution) {
+  public static boolean addStageUpdateCriteria(
+      Update update, NodeExecution nodeExecution, PlanExecutionMetadata planExecutionMetadata) {
     Level level = Objects.requireNonNull(AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()));
     boolean updated = false;
     if (isBarrierNode(level)) {
       updated = performUpdatesOnBarrierNode(update, nodeExecution);
+    }
+    if (ExecutionModeUtils.isPostExecutionRollbackMode(nodeExecution.getAmbiance().getMetadata().getExecutionMode())) {
+      String startingNodeId = getPostExecutionRollbackInfo(planExecutionMetadata, nodeExecution.getAmbiance())
+                                  .getPostExecutionRollbackStageId();
+      if (OrchestrationUtils.isStageNode(nodeExecution)) {
+        for (Level nodeLevel : nodeExecution.getAmbiance().getLevelsList()) {
+          if (Objects.equals(nodeLevel.getSetupId(), startingNodeId)) {
+            ExecutionStatus status = ExecutionStatus.getExecutionStatus(nodeExecution.getStatus());
+            updated = updateStageNode(update, nodeExecution, status, level) || updated;
+          }
+        }
+      }
+      return updated;
     }
     if (OrchestrationUtils.isStageNode(nodeExecution)) {
       ExecutionStatus status = ExecutionStatus.getExecutionStatus(nodeExecution.getStatus());
@@ -71,6 +96,15 @@ public class ExecutionSummaryUpdateUtils {
     }
 
     return updated;
+  }
+
+  private PostExecutionRollbackInfo getPostExecutionRollbackInfo(
+      PlanExecutionMetadata planExecutionMetadata, Ambiance ambiance) {
+    // TODO(archit): Remove get from execution_metadata from next release
+    if (EmptyPredicate.isEmpty(planExecutionMetadata.getPostExecutionRollbackInfos())) {
+      return ambiance.getMetadata().getPostExecutionRollbackInfo(0);
+    }
+    return planExecutionMetadata.getPostExecutionRollbackInfos().get(0);
   }
 
   private boolean updateStageNode(Update update, NodeExecution nodeExecution, ExecutionStatus status, Level level) {

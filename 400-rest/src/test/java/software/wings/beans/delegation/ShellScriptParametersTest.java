@@ -10,6 +10,7 @@ package software.wings.beans.delegation;
 import static io.harness.annotations.dev.HarnessModule._950_DELEGATE_TASKS_BEANS;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.PARDHA;
+import static io.harness.rule.OwnerRule.RAFAEL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -26,6 +27,8 @@ import software.wings.beans.SettingAttribute;
 import software.wings.service.impl.ContainerServiceParams;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -84,5 +87,20 @@ public class ShellScriptParametersTest extends CategoryTest {
     shellScriptParameters.setScript("HARNESS_KUBE_CONFIG_PATH");
     assertThat(shellScriptParameters.fetchRequiredExecutionCapabilities(null))
         .containsExactly(SelectorCapability.builder().build());
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void testEscapedServiceEnv() {
+    Map<String, String> hash = new HashMap<>();
+    hash.put("key1", "test$(uname -r)test");
+    hash.put("key2", "test$(uname -r)test$(ls)test");
+
+    ShellScriptParameters shellScriptParameters = ShellScriptParameters.builder().serviceVariables(hash).build();
+    Map<String, String> escaped = shellScriptParameters.getEscapedServiceVariables();
+
+    assertThat(escaped.get("key1").equalsIgnoreCase("test\\$(uname -r)test")).isTrue();
+    assertThat(escaped.get("key2").equalsIgnoreCase("test\\$(uname -r)test\\$(ls)test")).isTrue();
   }
 }

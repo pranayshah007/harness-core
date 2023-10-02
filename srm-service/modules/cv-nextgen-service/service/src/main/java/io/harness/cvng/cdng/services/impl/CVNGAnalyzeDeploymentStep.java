@@ -7,16 +7,61 @@
 
 package io.harness.cvng.cdng.services.impl;
 
+import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
+import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.cvng.activity.services.api.ActivityService;
+import io.harness.cvng.cdng.beans.CVNGDeploymentImpactStepParameter;
 import io.harness.cvng.cdng.beans.CVNGStepType;
-import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.cvng.cdng.beans.DefaultAndConfiguredMonitoredServiceNode;
+import io.harness.cvng.cdng.beans.MonitoredServiceNode;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpecType;
+import io.harness.cvng.cdng.beans.ResolvedCVConfigInfo;
+import io.harness.cvng.cdng.services.api.PipelineStepMonitoredServiceResolutionService;
+import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
+import io.harness.cvng.core.beans.params.MonitoredServiceParams;
+import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
+import io.harness.cvng.core.entities.CVConfig;
+import io.harness.cvng.core.entities.MonitoredService;
+import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.eraro.ErrorCode;
+import io.harness.eraro.Level;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureData;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
+import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.data.OptionalOutcome;
+import io.harness.pms.sdk.core.data.Outcome;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.steps.executable.SyncExecutableWithCapabilities;
+
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.inject.Inject;
+import java.time.Clock;
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import lombok.Builder;
+import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import org.springframework.data.annotation.TypeAlias;
+
+@Slf4j
+@OwnedBy(HarnessTeam.CV)
 
 public class CVNGAnalyzeDeploymentStep extends SyncExecutableWithCapabilities {
   public static final StepType STEP_TYPE = StepType.newBuilder()
@@ -24,17 +69,142 @@ public class CVNGAnalyzeDeploymentStep extends SyncExecutableWithCapabilities {
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
+  @Inject
+  private Map<MonitoredServiceSpecType, PipelineStepMonitoredServiceResolutionService> verifyStepCvConfigServiceMap;
+
+  @Inject ActivityService activityService;
+
+  @Inject SRMAnalysisStepService srmAnalysisStepService;
+
+  @Inject MonitoredServiceService monitoredServiceService;
+
+  @Inject OutcomeService outcomeService;
+
+  @Inject Clock clock;
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {}
 
   @Override
-  public StepResponse executeSyncAfterRbac(Ambiance ambiance, StepElementParameters stepElementParameters,
+  public StepResponse executeSyncAfterRbac(Ambiance ambiance, StepBaseParameters stepElementParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
-    return StepResponse.builder().status(Status.SUCCEEDED).build();
+    log.info("ExecuteSync called for CVNGAnalyzeDeploymentStep, Step Parameters: {} Ambiance: {}",
+        stepElementParameters, ambiance);
+    CVNGDeploymentImpactStepParameter deploymentImpactStepParameter =
+        (CVNGDeploymentImpactStepParameter) stepElementParameters.getSpec();
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
+    String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
+    String serviceIdentifier = deploymentImpactStepParameter.getServiceIdentifier();
+    String envIdentifier = deploymentImpactStepParameter.getEnvIdentifier();
+    ServiceEnvironmentParams serviceEnvironmentParams = ServiceEnvironmentParams.builder()
+                                                            .accountIdentifier(accountId)
+                                                            .orgIdentifier(orgIdentifier)
+                                                            .projectIdentifier(projectIdentifier)
+                                                            .serviceIdentifier(serviceIdentifier)
+                                                            .environmentIdentifier(envIdentifier)
+                                                            .build();
+
+    DefaultAndConfiguredMonitoredServiceNode defaultAndConfiguredMonitoredServiceNode =
+        deploymentImpactStepParameter.getMonitoredService();
+    MonitoredServiceNode monitoredServiceNode = MonitoredServiceNode.builder()
+                                                    .type(defaultAndConfiguredMonitoredServiceNode.getType())
+                                                    .spec(defaultAndConfiguredMonitoredServiceNode.getSpec())
+                                                    .build();
+    MonitoredServiceSpecType monitoredServiceType = CVNGStepUtils.getMonitoredServiceSpecType(monitoredServiceNode);
+    ResolvedCVConfigInfo resolvedCVConfigInfo =
+        verifyStepCvConfigServiceMap.get(monitoredServiceType)
+            .fetchAndPersistResolvedCVConfigInfo(ambiance, serviceEnvironmentParams, monitoredServiceNode);
+    String monitoredServiceIdentifier = resolvedCVConfigInfo.getMonitoredServiceIdentifier();
+    MonitoredServiceParams monitoredServiceParams =
+        MonitoredServiceParams.builder()
+            .accountIdentifier(accountId)
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .monitoredServiceIdentifier(resolvedCVConfigInfo.getMonitoredServiceIdentifier())
+            .build();
+    MonitoredService monitoredService = monitoredServiceService.getMonitoredService(monitoredServiceParams);
+
+    if (monitoredService == null) {
+      return buildStepResponseForSkippedScenarioWithMessage(String.format(
+          "No monitoredService is defined for ref %s", resolvedCVConfigInfo.getMonitoredServiceIdentifier()));
+    }
+    List<CVConfig> cvConfigs = resolvedCVConfigInfo.getCvConfigs();
+    log.info("Resolved cvConfigIds {}", resolvedCVConfigInfo.getCvConfigIds());
+    if (CollectionUtils.isEmpty(cvConfigs)) {
+      return buildStepResponseForSkippedScenarioWithMessage(
+          String.format("No healthSource is defined for monitoredServiceRef %s", monitoredServiceIdentifier));
+    } else if (!monitoredService.isEnabled()) {
+      return buildStepResponseForSkippedScenarioWithMessage(String.format(
+          "Monitored service %s is disabled. Please enable it to run the analysis step.", monitoredServiceIdentifier));
+    } else {
+      String duration = deploymentImpactStepParameter.getDuration();
+      Optional<ArtifactsOutcome> optionalArtifactsOutcome = getArtifactOutcomeFromAmbiance(ambiance);
+      String executionDetailsId = srmAnalysisStepService.createSRMAnalysisStepExecution(ambiance,
+          monitoredServiceIdentifier, stepElementParameters.getName(), serviceEnvironmentParams,
+          getDurationFromString(duration), optionalArtifactsOutcome);
+
+      return StepResponse.builder()
+          .status(Status.SUCCEEDED)
+          .stepOutcome(
+              StepResponse.StepOutcome.builder()
+                  .name("output")
+                  .outcome(AnalyzeDeploymentStepOutcome.builder().executionDetailsId(executionDetailsId).build())
+                  .build())
+          .build();
+    }
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return null;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
+  }
+
+  @Value
+  @Builder
+  @JsonTypeName("analyzeDeploymentStepOutcome")
+  @TypeAlias("analyzeDeploymentStepOutcome")
+  @RecasterAlias("io.harness.cvng.cdng.services.impl.AnalyzeDeploymentStepOutcome")
+  public static class AnalyzeDeploymentStepOutcome implements Outcome {
+    String activityId;
+    String executionDetailsId;
+  }
+
+  private String getActivityName(String monitoredServiceIdentifier) {
+    return "SRM Step Analysis of " + monitoredServiceIdentifier;
+  }
+
+  @VisibleForTesting
+  static Duration getDurationFromString(String duration) {
+    String number = duration.substring(0, duration.length() - 1);
+    if (duration.charAt(duration.length() - 1) == 'H') {
+      return Duration.ofHours(Integer.parseInt(number));
+    }
+    if (duration.charAt(duration.length() - 1) == 'D') {
+      return Duration.ofDays(Integer.parseInt(number));
+    }
+    throw new IllegalArgumentException(String.format("Invalid duration %s", duration));
+  }
+
+  private StepResponse buildStepResponseForSkippedScenarioWithMessage(String message) {
+    return StepResponse.builder()
+        .status(Status.SKIPPED)
+        .failureInfo(FailureInfo.newBuilder()
+                         .addFailureData(FailureData.newBuilder()
+                                             .setCode(ErrorCode.UNKNOWN_ERROR.name())
+                                             .setLevel(Level.INFO.name())
+                                             .addFailureTypes(FailureType.SKIPPING_FAILURE)
+                                             .setMessage(message)
+                                             .build())
+                         .build())
+        .build();
+  }
+
+  private Optional<ArtifactsOutcome> getArtifactOutcomeFromAmbiance(Ambiance ambiance) {
+    OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
+    if (optionalOutcome.isFound()) {
+      return Optional.of((ArtifactsOutcome) optionalOutcome.getOutcome());
+    }
+    return Optional.empty();
   }
 }

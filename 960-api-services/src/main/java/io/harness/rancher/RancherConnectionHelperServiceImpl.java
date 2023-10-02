@@ -6,13 +6,15 @@
  */
 
 package io.harness.rancher;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.util.Collections.emptyMap;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.exception.ExceptionUtils;
@@ -26,6 +28,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
@@ -58,13 +61,13 @@ public class RancherConnectionHelperServiceImpl implements RancherConnectionHelp
     if (isEmpty(clustersData)) {
       return Collections.emptyList();
     }
-    return clustersData.stream().map(RancherClusterItem::getName).collect(Collectors.toList());
+    return clustersData.stream().map(RancherClusterItem::getId).collect(Collectors.toList());
   }
 
   @Override
-  public String generateKubeconfig(String rancherUrl, String bearerToken, String clusterName) {
+  public String generateKubeconfig(String rancherUrl, String bearerToken, String clusterId) {
     RancherGenerateKubeconfigResponse generateKubeConfigResponse =
-        rancherClusterClient.generateKubeconfig(bearerToken, rancherUrl, clusterName);
+        rancherClusterClient.generateKubeconfig(bearerToken, rancherUrl, clusterId);
     return generateKubeConfigResponse.getConfig();
   }
 }

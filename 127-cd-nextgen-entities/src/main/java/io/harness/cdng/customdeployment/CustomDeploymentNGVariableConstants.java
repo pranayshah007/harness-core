@@ -7,6 +7,12 @@
 
 package io.harness.cdng.customdeployment;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_TEMPLATES})
 public interface CustomDeploymentNGVariableConstants {
   String STRING_TYPE = "String";
   String NUMBER_TYPE = "Number";

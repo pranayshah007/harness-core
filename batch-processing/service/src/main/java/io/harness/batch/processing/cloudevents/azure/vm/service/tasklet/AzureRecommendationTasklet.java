@@ -8,7 +8,7 @@
 package io.harness.batch.processing.cloudevents.azure.vm.service.tasklet;
 
 import io.harness.batch.processing.ccm.CCMJobConstants;
-import io.harness.batch.processing.cloudevents.azure.vm.service.AzureRecommendationService;
+import io.harness.batch.processing.cloudevents.azure.vm.service.AzureHelperService;
 import io.harness.batch.processing.cloudevents.azure.vm.service.helper.AzureConfigHelper;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.dao.recommendation.AzureRecommendationDAO;
@@ -33,7 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Singleton
 public class AzureRecommendationTasklet implements Tasklet {
   @Autowired private AzureConfigHelper azureConfigHelper;
-  @Autowired private AzureRecommendationService azureRecommendationService;
+  @Autowired private AzureHelperService azureHelperService;
   @Autowired private AzureRecommendationDAO azureRecommendationDAO;
   @Autowired private RecommendationsIgnoreListService ignoreListService;
 
@@ -48,7 +48,7 @@ public class AzureRecommendationTasklet implements Tasklet {
     if (!azureAccountAttributes.isEmpty()) {
       for (Map.Entry<String, AzureAccountAttributes> azureAccountAttributesEntry : azureAccountAttributes.entrySet()) {
         List<AzureRecommendation> azureRecommendationList =
-            azureRecommendationService.getRecommendations(accountId, azureAccountAttributesEntry.getValue());
+            azureHelperService.getRecommendations(accountId, azureAccountAttributesEntry.getValue());
         if (!Lists.isNullOrEmpty(azureRecommendationList)) {
           for (AzureRecommendation azureRecommendation : azureRecommendationList) {
             try {

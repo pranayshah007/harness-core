@@ -7,6 +7,9 @@
 
 package io.harness.cvng.core.entities;
 
+import io.harness.cvng.utils.AggregationType;
+
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 
@@ -14,12 +17,12 @@ import lombok.Value;
 @Builder
 public class QueryParams {
   String serviceInstanceField;
-
   String index;
-
   String timeStampIdentifier;
-
   String timeStampFormat;
-
   String messageIdentifier;
+  String healthSourceMetricName;
+  String healthSourceMetricNamespace;
+  AggregationType aggregationType;
+  List<String> indexes;
 }

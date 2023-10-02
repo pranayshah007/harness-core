@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.repository.support.PageableExecutionUtils;
 
 @Slf4j
@@ -34,5 +35,12 @@ public class IPAllowlistRepositoryCustomImpl implements IPAllowlistRepositoryCus
     List<IPAllowlistEntity> ipAllowlistEntities = mongoTemplate.find(query, IPAllowlistEntity.class);
     return PageableExecutionUtils.getPage(ipAllowlistEntities, pageable,
         () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), IPAllowlistEntity.class));
+  }
+  @Override
+  public void disableIPAllowListWithAccountId(String accountIdentifier) {
+    Query query =
+        new Query(Criteria.where(IPAllowlistEntity.IPAllowlistConfigKeys.accountIdentifier).is(accountIdentifier));
+    Update update = new Update().set(IPAllowlistEntity.IPAllowlistConfigKeys.enabled, false);
+    mongoTemplate.updateMulti(query, update, IPAllowlistEntity.class);
   }
 }

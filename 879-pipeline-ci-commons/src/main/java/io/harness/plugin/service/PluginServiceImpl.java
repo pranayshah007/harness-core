@@ -47,6 +47,7 @@ import io.harness.yaml.core.variables.SecretNGVariable;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
+import io.harness.yaml.extended.ci.codebase.impl.CommitShaBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.PRBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
 
@@ -143,6 +144,9 @@ public class PluginServiceImpl implements PluginService {
         case PR:
           map.putAll(ciCodebaseUtils.getRuntimeCodebaseVars(ambiance, gitConnector));
           break;
+        case COMMIT_SHA:
+          setMandatoryEnvironmentVariable(map, DRONE_COMMIT_SHA, buildTypeAndValue.getValue());
+          break;
         default:
           throw new CIStageExecutionException(format("%s is not a valid build type in step type %s with identifier %s",
               buildTypeAndValue.getKey(), type, identifier));
@@ -183,6 +187,11 @@ public class PluginServiceImpl implements PluginService {
           ParameterField<String> tag = ((TagBuildSpec) build.getSpec()).getTag();
           String tagString = resolveStringParameter("tag", "Git Clone", "identifier", tag, false);
           buildTypeAndValue = new ImmutablePair<>(BuildType.TAG, tagString);
+          break;
+        case COMMIT_SHA:
+          ParameterField<String> commitSha = ((CommitShaBuildSpec) build.getSpec()).getCommitSha();
+          String commitShaString = resolveStringParameter("commitSha", "Git Clone", "identifier", commitSha, false);
+          buildTypeAndValue = new ImmutablePair<>(BuildType.COMMIT_SHA, commitShaString);
           break;
         default:
           throw new CIStageExecutionException(format("%s is not a valid build type.", build.getType()));

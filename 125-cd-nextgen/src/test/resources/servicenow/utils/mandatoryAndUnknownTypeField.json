@@ -1,0 +1,18 @@
+{
+  "filterable": true,
+  "canmatch": true,
+  "cangroup": true,
+  "label": "Sys ID",
+  "type": "GUID",
+  "max_unit": "days",
+  "mandatory": true,
+  "default": "",
+  "base_type": "string",
+  "read_only": false,
+  "hint": "",
+  "name": "sys_id",
+  "column_type": "element",
+  "internal_type": "GUID",
+  "cansort": true,
+  "max_length": 32
+}

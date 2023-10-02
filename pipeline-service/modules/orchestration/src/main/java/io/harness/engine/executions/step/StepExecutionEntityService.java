@@ -6,10 +6,12 @@
  */
 
 package io.harness.engine.executions.step;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.execution.step.StepExecutionDetails;
 import io.harness.execution.step.StepExecutionEntity;
@@ -21,6 +23,7 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @OwnedBy(CDP)
 public interface StepExecutionEntityService {
   /**

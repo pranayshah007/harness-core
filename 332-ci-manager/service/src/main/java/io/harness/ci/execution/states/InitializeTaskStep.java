@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.states;
+package io.harness.ci.execution.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.FeatureName.CIE_HOSTED_VMS;
@@ -38,17 +38,17 @@ import io.harness.beans.sweepingoutputs.InitializeExecutionSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
-import io.harness.ci.buildstate.BuildSetupUtils;
-import io.harness.ci.buildstate.ConnectorUtils;
-import io.harness.ci.execution.BackgroundTaskUtility;
+import io.harness.ci.execution.buildstate.BuildSetupUtils;
+import io.harness.ci.execution.buildstate.ConnectorUtils;
+import io.harness.ci.execution.execution.BackgroundTaskUtility;
+import io.harness.ci.execution.integrationstage.BuildJobEnvInfoBuilder;
+import io.harness.ci.execution.integrationstage.DockerInitializeTaskParamsBuilder;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
+import io.harness.ci.execution.integrationstage.K8InitializeServiceUtils;
+import io.harness.ci.execution.integrationstage.VmInitializeTaskParamsBuilder;
+import io.harness.ci.execution.utils.CIStagePlanCreationUtils;
+import io.harness.ci.execution.validation.CIYAMLSanitizationService;
 import io.harness.ci.ff.CIFeatureFlagService;
-import io.harness.ci.integrationstage.BuildJobEnvInfoBuilder;
-import io.harness.ci.integrationstage.DockerInitializeTaskParamsBuilder;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
-import io.harness.ci.integrationstage.K8InitializeServiceUtils;
-import io.harness.ci.integrationstage.VmInitializeTaskParamsBuilder;
-import io.harness.ci.utils.CIStagePlanCreationUtils;
-import io.harness.ci.validation.CIYAMLSanitizationService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
@@ -68,7 +68,7 @@ import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logstreaming.LogStreamingHelper;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.dto.AccountDTO;
@@ -81,6 +81,7 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.PipelineRbacHelper;
@@ -111,7 +112,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -198,8 +198,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
 
   private void sanitizeExecution(InitializeStepInfo initializeStepInfo) {
     List<ExecutionWrapperConfig> steps = initializeStepInfo.getExecutionElementConfig().getSteps();
-    if (initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_HOSTED
-        || initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.HOSTED_VM) {
+    if (initializeStepInfo.getInfrastructure().getType() == Infrastructure.Type.HOSTED_VM) {
       sanitizationService.validate(steps);
     }
   }
@@ -393,8 +392,8 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
 
     for (ExecutionWrapperConfig config : executionElement.getSteps()) {
       ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo;
-      expandedExecutionWrapperInfo =
-          strategyHelper.expandExecutionWrapperConfigFromClass(config, maxExpansionLimit, CIAbstractStepNode.class);
+      expandedExecutionWrapperInfo = strategyHelper.expandExecutionWrapperConfigFromClass(
+          config, maxExpansionLimit, CIAbstractStepNode.class, ambiance);
 
       expandedExecutionElement.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());
       strategyExpansionMap.putAll(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData());
@@ -530,8 +529,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   }
 
   private String getLogPrefix(Ambiance ambiance) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance, "STAGE");
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    return LogStreamingStepClientFactory.getLogBaseKey(ambiance, StepCategory.STAGE.name());
   }
 
   private List<EntityDetail> getConnectorIdentifiers(
@@ -567,14 +565,11 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
       }
       return entityDetails;
     }
-
-    if (infrastructure.getType() != Infrastructure.Type.KUBERNETES_HOSTED) {
-      if (((K8sDirectInfraYaml) infrastructure).getSpec() == null) {
-        throw new CIStageExecutionException("Input infrastructure can not be empty");
-      }
-      String infraConnectorRef = ((K8sDirectInfraYaml) infrastructure).getSpec().getConnectorRef().getValue();
-      entityDetails.add(createEntityDetails(infraConnectorRef, accountIdentifier, projectIdentifier, orgIdentifier));
+    if (((K8sDirectInfraYaml) infrastructure).getSpec() == null) {
+      throw new CIStageExecutionException("Input infrastructure can not be empty");
     }
+    String infraConnectorRef = ((K8sDirectInfraYaml) infrastructure).getSpec().getConnectorRef().getValue();
+    entityDetails.add(createEntityDetails(infraConnectorRef, accountIdentifier, projectIdentifier, orgIdentifier));
 
     entityDetails.addAll(connectorRefs.stream()
                              .map(connectorIdentifier -> {

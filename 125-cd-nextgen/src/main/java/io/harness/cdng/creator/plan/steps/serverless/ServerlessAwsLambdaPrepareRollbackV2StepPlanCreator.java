@@ -7,11 +7,13 @@
  */
 
 package io.harness.cdng.creator.plan.steps.serverless;
+import static io.harness.cdng.visitor.YamlTypes.DOWNLOAD_MANIFESTS;
 
-import static io.harness.cdng.visitor.YamlTypes.DOWNLOAD_SERVERLESS_MANIFESTS;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepNode;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaPrepareRollbackV2StepParameters;
@@ -24,6 +26,7 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import com.google.common.collect.Sets;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @OwnedBy(HarnessTeam.CDP)
 public class ServerlessAwsLambdaPrepareRollbackV2StepPlanCreator
     extends CDPMSStepPlanCreatorV2<ServerlessAwsLambdaPrepareRollbackV2StepNode> {
@@ -47,7 +50,7 @@ public class ServerlessAwsLambdaPrepareRollbackV2StepPlanCreator
   protected StepParameters getStepParameters(
       PlanCreationContext ctx, ServerlessAwsLambdaPrepareRollbackV2StepNode stepNode) {
     final StepParameters stepParameters = super.getStepParameters(ctx, stepNode);
-    String downloadManifestsFqn = getExecutionStepFqn(ctx.getCurrentField(), DOWNLOAD_SERVERLESS_MANIFESTS);
+    String downloadManifestsFqn = getExecutionStepFqn(ctx.getCurrentField(), DOWNLOAD_MANIFESTS);
     ServerlessAwsLambdaPrepareRollbackV2StepParameters serverlessAwsLambdaPrepareRollbackV2StepParameters =
         (ServerlessAwsLambdaPrepareRollbackV2StepParameters) ((StepElementParameters) stepParameters).getSpec();
     serverlessAwsLambdaPrepareRollbackV2StepParameters.setDownloadManifestsFqn(downloadManifestsFqn);

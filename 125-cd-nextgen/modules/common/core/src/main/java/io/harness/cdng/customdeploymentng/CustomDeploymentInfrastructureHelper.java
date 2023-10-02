@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.customdeploymentng;
-
 import static io.harness.authorization.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 import static io.harness.cdng.customDeployment.constants.CustomDeploymentConstants.INFRASTRUCTURE_DEFINITION;
 import static io.harness.cdng.customDeployment.constants.CustomDeploymentConstants.STABLE_VERSION;
@@ -15,6 +14,9 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FileReference;
 import io.harness.cdng.customdeployment.CustomDeploymentConnectorNGVariable;
 import io.harness.cdng.customdeployment.CustomDeploymentNGVariable;
@@ -62,6 +64,8 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_DEPLOYMENT_TEMPLATES})
 @Slf4j
 public class CustomDeploymentInfrastructureHelper {
   @Inject TemplateResourceClient templateResourceClient;

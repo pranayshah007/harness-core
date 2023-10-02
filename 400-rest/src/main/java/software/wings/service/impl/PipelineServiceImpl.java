@@ -81,7 +81,6 @@ import io.harness.validation.Create;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.AccountEvent;
-import software.wings.beans.AccountEventType;
 import software.wings.beans.ArtifactVariable;
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.EntityType;
@@ -99,6 +98,7 @@ import software.wings.beans.VariableType;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
+import software.wings.beans.account.AccountEventType;
 import software.wings.beans.deployment.DeploymentMetadata;
 import software.wings.beans.deployment.DeploymentMetadata.Include;
 import software.wings.beans.trigger.Trigger;
@@ -195,7 +195,12 @@ public class PipelineServiceImpl implements PipelineService {
    * {@inheritDoc}
    */
   @Override
-  public PageResponse<Pipeline> listPipelines(PageRequest<Pipeline> pageRequest) {
+  public PageResponse<Pipeline> listPipelines(
+      PageRequest<Pipeline> pageRequest, boolean hitSecondary, String accountId) {
+    if (hitSecondary && accountId != null
+        && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, accountId)) {
+      return wingsPersistence.querySecondary(Pipeline.class, pageRequest);
+    }
     return wingsPersistence.query(Pipeline.class, pageRequest);
   }
 
@@ -206,7 +211,7 @@ public class PipelineServiceImpl implements PipelineService {
   public PageResponse<Pipeline> listPipelines(PageRequest<Pipeline> pageRequest, boolean withDetails,
       Integer previousExecutionsCount, boolean withTags, String tagFilter) {
     PageResponse<Pipeline> res =
-        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.PIPELINE, withTags, false);
+        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.PIPELINE, withTags, false, false);
 
     List<Pipeline> pipelines = res.getResponse();
     if (withDetails) {
@@ -431,7 +436,7 @@ public class PipelineServiceImpl implements PipelineService {
   public Pipeline getPipeline(String appId, String pipelineId) {
     Pipeline pipeline = wingsPersistence.getWithAppId(Pipeline.class, appId, pipelineId);
     if (pipeline != null) {
-      pipeline.setTagLinks(harnessTagService.getTagLinksWithEntityId(pipeline.getAccountId(), pipelineId));
+      pipeline.setTagLinks(harnessTagService.getTagLinksWithEntityId(pipeline.getAccountId(), pipelineId, false));
     }
     return pipeline;
   }

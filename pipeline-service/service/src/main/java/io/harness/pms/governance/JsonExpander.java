@@ -6,11 +6,13 @@
  */
 
 package io.harness.pms.governance;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.UnexpectedException;
 import io.harness.pms.contracts.governance.ExpansionRequestBatch;
@@ -39,6 +41,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @OwnedBy(PIPELINE)
 @Slf4j
 public class JsonExpander {

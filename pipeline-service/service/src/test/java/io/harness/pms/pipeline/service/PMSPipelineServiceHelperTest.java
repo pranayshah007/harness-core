@@ -10,6 +10,7 @@ package io.harness.pms.pipeline.service;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SAMARTH;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
@@ -20,8 +21,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 import io.harness.PipelineServiceTestBase;
 import io.harness.annotations.dev.OwnedBy;
@@ -33,7 +32,6 @@ import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
-import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.governance.GovernanceMetadata;
@@ -50,7 +48,8 @@ import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.references.PipelineSetupUsageCreationHelper;
 import io.harness.pms.pipeline.validation.PipelineValidationResponse;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
 import io.harness.utils.PmsFeatureFlagService;
@@ -58,6 +57,7 @@ import io.harness.yaml.validator.InvalidYamlException;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -83,6 +83,7 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
   @Mock PipelineGovernanceService pipelineGovernanceService;
   @Mock PmsFeatureFlagService pmsFeatureFlagService;
   @Mock PipelineSetupUsageCreationHelper pipelineSetupUsageCreationHelper;
+  @Mock PMSPipelineService pmsPipelineService;
   @Spy @InjectMocks PMSPipelineServiceHelper pmsPipelineServiceHelper;
 
   String accountIdentifier = "account";
@@ -135,7 +136,7 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
             .build();
     doReturn(response).when(filterCreatorMergeService).getPipelineInfo(any());
     PipelineEntity entity = PipelineEntity.builder().build();
-    PipelineEntity updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(entity, PipelineVersion.V0);
+    PipelineEntity updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(entity, HarnessYamlVersion.V0);
     assertThat(updatedEntity.getStageCount()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().size()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().contains("stage-1")).isTrue();
@@ -148,7 +149,7 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
                    .stageNames(Collections.singletonList("stage-1"))
                    .build();
     doReturn(response).when(filterCreatorMergeService).getPipelineInfo(any());
-    updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(updatedEntity, PipelineVersion.V0);
+    updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(updatedEntity, HarnessYamlVersion.V0);
     assertThat(updatedEntity.getStageCount()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().size()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().contains("stage-1")).isTrue();
@@ -166,7 +167,7 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
                                                      .build();
     doReturn(response).when(filterCreatorMergeService).getPipelineInfo(any());
     PipelineEntity entity = PipelineEntity.builder().build();
-    PipelineEntity updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(entity, PipelineVersion.V0);
+    PipelineEntity updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(entity, HarnessYamlVersion.V0);
     assertThat(updatedEntity.getStageCount()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().size()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().contains("stage-1")).isTrue();
@@ -186,7 +187,7 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
                                                      .build();
     doReturn(response).when(filterCreatorMergeService).getPipelineInfo(any());
     PipelineEntity entity = PipelineEntity.builder().build();
-    PipelineEntity updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(entity, PipelineVersion.V0);
+    PipelineEntity updatedEntity = pmsPipelineServiceHelper.updatePipelineInfo(entity, HarnessYamlVersion.V0);
     assertThat(updatedEntity.getStageCount()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().size()).isEqualTo(1);
     assertThat(updatedEntity.getStageNames().contains("stage-1")).isTrue();
@@ -198,28 +199,29 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
   @Category(UnitTests.class)
   public void testPopulateFilterUsingIdentifier() {
     String filterIdentifier = "filterIdentifier";
-    FilterDTO filterDTO =
-        FilterDTO.builder()
-            .filterProperties(PipelineFilterPropertiesDto.builder()
-                                  .name(pipelineIdentifier)
-                                  .description("some description")
-                                  .pipelineTags(Collections.singletonList(NGTag.builder().key("c").value("h").build()))
-                                  .pipelineIdentifiers(Collections.singletonList(pipelineIdentifier))
-                                  .build())
-            .build();
+    FilterDTO filterDTO = FilterDTO.builder()
+                              .filterProperties(PipelineFilterPropertiesDto.builder()
+                                                    .name(pipelineIdentifier)
+                                                    .description("some description")
+                                                    .pipelineTags(List.of(NGTag.builder().key("c").value("h").build(),
+                                                        NGTag.builder().key("c").value(null).build()))
+                                                    .pipelineIdentifiers(Collections.singletonList(pipelineIdentifier))
+                                                    .build())
+                              .build();
     doReturn(null)
         .when(filterService)
         .get(accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, FilterType.PIPELINESETUP);
     assertThatThrownBy(()
-                           -> pmsPipelineServiceHelper.populateFilterUsingIdentifier(
-                               new Criteria(), accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier))
+                           -> pmsPipelineServiceHelper.populateFilterUsingIdentifier(new ArrayList<>(), new Criteria(),
+                               accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier))
         .isInstanceOf(InvalidRequestException.class);
     doReturn(filterDTO)
         .when(filterService)
         .get(accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, FilterType.PIPELINESETUP);
     Criteria criteria = new Criteria();
+    List<Criteria> criteriaList = new ArrayList<>();
     pmsPipelineServiceHelper.populateFilterUsingIdentifier(
-        criteria, accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier);
+        criteriaList, criteria, accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier);
     Document criteriaObject = criteria.getCriteriaObject();
     assertThat(criteriaObject.get(PipelineEntityKeys.name)).isEqualTo(pipelineIdentifier);
     assertThat(((List<?>) ((Map<?, ?>) criteriaObject.get(PipelineEntityKeys.identifier)).get("$in")).size())
@@ -227,16 +229,32 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
     assertThat(((List<?>) ((Map<?, ?>) criteriaObject.get(PipelineEntityKeys.identifier)).get("$in"))
                    .contains(pipelineIdentifier))
         .isTrue();
-    assertThat(((List<?>) ((Map<?, ?>) criteriaObject.get(PipelineEntityKeys.tags)).get("$in")).size()).isEqualTo(1);
-    assertThat(((List<?>) ((Map<?, ?>) criteriaObject.get(PipelineEntityKeys.tags)).get("$in"))
-                   .contains(NGTag.builder().key("c").value("h").build()))
-        .isTrue();
+    assertEquals(criteriaList.size(), 1);
+    assertEquals(criteriaList.get(0).getCriteriaObject().toString(),
+        "Document{{$or=[Document{{tags.key=Document{{$in=[c]}}}}, Document{{tags.value=Document{{$in=[c]}}}}, Document{{tags=Document{{$in=[NGTag(key=c, value=h)]}}}}]}}");
+    filterDTO = FilterDTO.builder()
+                    .filterProperties(PipelineFilterPropertiesDto.builder()
+                                          .name(pipelineIdentifier)
+                                          .description("some description")
+                                          .pipelineTags(List.of(NGTag.builder().key(null).value("c").build()))
+                                          .pipelineIdentifiers(Collections.singletonList(pipelineIdentifier))
+                                          .build())
+                    .build();
+    doReturn(filterDTO)
+        .when(filterService)
+        .get(accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, FilterType.PIPELINESETUP);
+    assertThatThrownBy(()
+                           -> pmsPipelineServiceHelper.populateFilterUsingIdentifier(new ArrayList<>(), criteria,
+                               accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Key in Pipeline Tags filter cannot be null");
   }
 
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testPopulateFilter() {
+    List<Criteria> criteriaList = new ArrayList<>();
     Criteria criteria = new Criteria();
     PipelineFilterPropertiesDto pipelineFilter =
         PipelineFilterPropertiesDto.builder()
@@ -245,7 +263,7 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
             .pipelineTags(Collections.singletonList(NGTag.builder().key("c").value("h").build()))
             .pipelineIdentifiers(Collections.singletonList(pipelineIdentifier))
             .build();
-    PMSPipelineServiceHelper.populateFilter(criteria, pipelineFilter);
+    PMSPipelineServiceHelper.populateFilter(criteriaList, criteria, pipelineFilter);
     Document criteriaObject = criteria.getCriteriaObject();
     assertThat(criteriaObject.get(PipelineEntityKeys.name)).isEqualTo(pipelineIdentifier);
     assertThat(((List<?>) ((Map<?, ?>) criteriaObject.get(PipelineEntityKeys.identifier)).get("$in")).size())
@@ -253,10 +271,9 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
     assertThat(((List<?>) ((Map<?, ?>) criteriaObject.get(PipelineEntityKeys.identifier)).get("$in"))
                    .contains(pipelineIdentifier))
         .isTrue();
-    assertThat(((List<?>) ((Map<?, ?>) criteriaObject.get(PipelineEntityKeys.tags)).get("$in")).size()).isEqualTo(1);
-    assertThat(((List<?>) ((Map<?, ?>) criteriaObject.get(PipelineEntityKeys.tags)).get("$in"))
-                   .contains(NGTag.builder().key("c").value("h").build()))
-        .isTrue();
+    assertEquals(criteriaList.size(), 1);
+    assertEquals(
+        criteriaList.get(0).getCriteriaObject().toString(), "Document{{tags=Document{{$in=[NGTag(key=c, value=h)]}}}}");
   }
 
   @Test
@@ -298,7 +315,7 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
                                         .orgIdentifier(orgIdentifier)
                                         .projectIdentifier(projectIdentifier)
                                         .yaml(yaml)
-                                        .harnessVersion(PipelineVersion.V1)
+                                        .harnessVersion(HarnessYamlVersion.V1)
                                         .build();
     GovernanceMetadata governanceMetadata =
         pmsPipelineServiceHelper.resolveTemplatesAndValidatePipelineYaml(pipelineEntity, true, false);
@@ -453,46 +470,27 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
   }
 
   @Test
-  @Owner(developers = ADITHYA)
+  @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
-  public void testComputePipelineReferencesForInlinePipeline() {
-    PipelineEntity pipelineEntity = PipelineEntity.builder().storeType(StoreType.INLINE).build();
-    boolean loadFromCache = false;
-    pmsPipelineServiceHelper.computePipelineReferences(pipelineEntity, loadFromCache);
-    verify(pipelineSetupUsageCreationHelper, times(0)).submitTask(any());
-  }
-  @Test
-  @Owner(developers = ADITHYA)
-  @Category(UnitTests.class)
-  public void testComputePipelineReferencesForRemotePipelineLoadedFromCache() {
-    PipelineEntity pipelineEntity = PipelineEntity.builder().storeType(StoreType.REMOTE).build();
-    boolean loadFromCache = true;
-    pmsPipelineServiceHelper.computePipelineReferences(pipelineEntity, loadFromCache);
-    verify(pipelineSetupUsageCreationHelper, times(0)).submitTask(any());
-  }
+  public void testSetPermittedPipeline() {
+    Criteria criteria = new Criteria();
+    List<String> pipelinelist = Arrays.asList(pipelineIdentifier);
+    doReturn(false)
+        .when(pmsPipelineService)
+        .validateViewPermission(accountIdentifier, orgIdentifier, projectIdentifier);
+    doReturn(pipelinelist).when(pmsPipelineService).listAllIdentifiers(any());
+    doReturn(pipelinelist)
+        .when(pmsPipelineService)
+        .getPermittedPipelineIdentifier(accountIdentifier, orgIdentifier, projectIdentifier, pipelinelist);
+    pmsPipelineServiceHelper.setPermittedPipelines(
+        accountIdentifier, orgIdentifier, projectIdentifier, criteria, PlanExecutionSummaryKeys.pipelineIdentifier);
 
-  @Test
-  @Owner(developers = ADITHYA)
-  @Category(UnitTests.class)
-  public void testComputePipelineReferencesForRemotePipelineLoadedFromGitForDefaultBranch() {
-    PipelineEntity pipelineEntity = PipelineEntity.builder().storeType(StoreType.REMOTE).build();
-    boolean loadFromCache = false;
-    GitEntityInfo gitEntityInfo = GitEntityInfo.builder().repoName("repoName").branch("").isDefaultBranch(true).build();
-    GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
-    pmsPipelineServiceHelper.computePipelineReferences(pipelineEntity, loadFromCache);
-    verify(pipelineSetupUsageCreationHelper, times(1)).submitTask(any());
-  }
+    assertThat(criteria.getCriteriaObject().get(PlanExecutionSummaryKeys.pipelineIdentifier).toString())
+        .isEqualTo("Document{{$in=[pipeline]}}");
 
-  @Test
-  @Owner(developers = ADITHYA)
-  @Category(UnitTests.class)
-  public void testComputePipelineReferencesForRemotePipelineLoadedFromGitForNonDefaultBranch() {
-    PipelineEntity pipelineEntity = PipelineEntity.builder().storeType(StoreType.REMOTE).build();
-    boolean loadFromCache = false;
-    GitEntityInfo gitEntityInfo =
-        GitEntityInfo.builder().repoName("repoName").branch("main-patch").isDefaultBranch(false).build();
-    GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
-    pmsPipelineServiceHelper.computePipelineReferences(pipelineEntity, loadFromCache);
-    verify(pipelineSetupUsageCreationHelper, times(0)).submitTask(any());
+    pmsPipelineServiceHelper.setPermittedPipelines(
+        accountIdentifier, orgIdentifier, projectIdentifier, criteria, PipelineEntityKeys.identifier);
+    assertThat(criteria.getCriteriaObject().get(PipelineEntityKeys.identifier).toString())
+        .isEqualTo("Document{{$in=[pipeline]}}");
   }
 }

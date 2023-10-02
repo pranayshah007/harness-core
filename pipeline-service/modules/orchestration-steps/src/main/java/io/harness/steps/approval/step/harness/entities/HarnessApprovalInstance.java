@@ -10,16 +10,20 @@ package io.harness.steps.approval.step.harness.entities;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.StoreIn;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EmbeddedUser;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.dto.UserGroupDTO;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.steps.approval.step.beans.ApprovalUserGroupDTO;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.harness.HarnessApprovalOutcome;
@@ -49,6 +53,7 @@ import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Data
 @Builder
@@ -78,7 +83,7 @@ public class HarnessApprovalInstance extends ApprovalInstance {
   }
 
   public void addApprovalActivity(EmbeddedUser user, HarnessApprovalActivityRequestDTO request) {
-    if (request.getAction() == HarnessApprovalAction.APPROVE
+    if (!request.isAutoApprove() && request.getAction() == HarnessApprovalAction.APPROVE
         && !validateApprovalInputsRequest(request.getApproverInputs())) {
       throw new InvalidRequestException("Invalid approver inputs");
     }
@@ -130,11 +135,12 @@ public class HarnessApprovalInstance extends ApprovalInstance {
                       .collect(Collectors.toList()))
         .approverInputs(approverInputs == null
                 ? Collections.emptyMap()
-                : approverInputs.stream().collect(Collectors.toMap(ApproverInput::getName, ApproverInput::getValue)))
+                : approverInputs.stream().collect(Collectors.toMap(
+                    ApproverInput::getName, approverInput -> Optional.ofNullable(approverInput.getValue()).orElse(""))))
         .build();
   }
 
-  public static HarnessApprovalInstance fromStepParameters(Ambiance ambiance, StepElementParameters stepParameters) {
+  public static HarnessApprovalInstance fromStepParameters(Ambiance ambiance, StepBaseParameters stepParameters) {
     if (stepParameters == null) {
       return null;
     }
@@ -148,8 +154,8 @@ public class HarnessApprovalInstance extends ApprovalInstance {
     HarnessApprovalInstance instance =
         HarnessApprovalInstance.builder()
             .approvalMessage((String) specParameters.getApprovalMessage().fetchFinalValue())
-            .includePipelineExecutionHistory(
-                (boolean) specParameters.getIncludePipelineExecutionHistory().fetchFinalValue())
+            .includePipelineExecutionHistory((boolean) ParameterFieldHelper.getBooleanParameterFieldValue(
+                specParameters.getIncludePipelineExecutionHistory()))
             .approvalActivities(new ArrayList<>())
             .approvers(ApproversDTO.fromApprovers(specParameters.getApprovers()))
             .approverInputs(specParameters.getApproverInputs() == null

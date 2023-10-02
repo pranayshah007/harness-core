@@ -6,12 +6,14 @@
  */
 
 package io.harness.ng.core.refresh.service;
-
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
 import io.harness.NgAutoLogContextForMethod;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.refresh.helper.CDInputsValidationHelper;
 import io.harness.ng.core.refresh.helper.RefreshInputsHelper;
@@ -20,6 +22,8 @@ import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class EntityRefreshServiceImpl implements EntityRefreshService {

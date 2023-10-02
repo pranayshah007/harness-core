@@ -28,6 +28,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EnvironmentType;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.manifest.yaml.ArtifactoryStorageConfigDTO;
 import io.harness.cdng.manifest.yaml.GitStoreDTO;
@@ -38,7 +39,6 @@ import io.harness.cdng.provision.terraform.TerraformConfigDAL;
 import io.harness.cdng.provision.terraform.TerraformConfigHelper;
 import io.harness.cdng.provision.terraform.TerraformPassThroughData;
 import io.harness.cdng.provision.terraform.TerraformStepHelper;
-import io.harness.cdng.provision.terraform.outcome.TerraformGitRevisionOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
@@ -67,6 +67,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.StepHelper;
@@ -100,6 +101,8 @@ public class TerraformRollbackStepV2Test extends CategoryTest {
   @Mock private TerraformConfigHelper terraformConfigHelper;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private StepHelper stepHelper;
+
+  @Mock private CDExpressionResolver cdExpressionResolver;
   @Mock private AccountService accountService;
   @Mock private TelemetryReporter telemetryReporter;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
@@ -427,15 +430,13 @@ public class TerraformRollbackStepV2Test extends CategoryTest {
     StepResponse stepResponse = terraformRollbackStepV2.finalizeExecutionWithSecurityContext(
         ambiance, stepElementParameters, terraformPassThroughData, () -> terraformTaskNGResponse);
 
-    StepResponse.StepOutcome stepOutcome = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
-
-    assertThat(stepOutcome.getName()).isEqualTo(TerraformGitRevisionOutcome.OUTCOME_NAME);
     assertThat(stepResponse).isNotNull();
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getUnitProgressList()).isEqualTo(unitProgresses);
     verify(terraformStepHelper, times(1)).saveTerraformConfig(terraformConfig, ambiance);
     verify(stepHelper, times(1)).sendRollbackTelemetryEvent(any(), any(), any());
     verify(terraformStepHelper, times(1)).getRevisionsMap(any(TerraformPassThroughData.class), any());
+    verify(terraformStepHelper).addTerraformRevisionOutcomeIfRequired(any(), any());
   }
 
   @Test
@@ -483,15 +484,13 @@ public class TerraformRollbackStepV2Test extends CategoryTest {
     StepResponse stepResponse = terraformRollbackStepV2.finalizeExecutionWithSecurityContext(
         ambiance, stepElementParameters, terraformPassThroughData, () -> terraformTaskNGResponse);
 
-    StepResponse.StepOutcome stepOutcome = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
-
-    assertThat(stepOutcome.getName()).isEqualTo(TerraformGitRevisionOutcome.OUTCOME_NAME);
     assertThat(stepResponse.getUnitProgressList().size()).isEqualTo(2);
     assertThat(stepResponse).isNotNull();
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     verify(terraformStepHelper, times(1)).saveTerraformConfig(terraformConfig, ambiance);
     verify(stepHelper, times(1)).sendRollbackTelemetryEvent(any(), any(), any());
     verify(terraformStepHelper, times(1)).getRevisionsMap(any(TerraformPassThroughData.class), any());
+    verify(terraformStepHelper).addTerraformRevisionOutcomeIfRequired(any(), any());
   }
 
   @Test
@@ -552,20 +551,18 @@ public class TerraformRollbackStepV2Test extends CategoryTest {
     StepResponse stepResponse = terraformRollbackStepV2.finalizeExecutionWithSecurityContext(
         ambiance, stepElementParameters, terraformPassThroughData, () -> terraformTaskNGResponse);
 
-    StepResponse.StepOutcome stepOutcome = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
-
-    assertThat(stepOutcome.getName()).isEqualTo(TerraformGitRevisionOutcome.OUTCOME_NAME);
     assertThat(stepResponse).isNotNull();
     assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
     verify(stepHelper, times(1)).sendRollbackTelemetryEvent(any(), any(), any());
     verify(terraformStepHelper, times(1)).getRevisionsMap(any(TerraformPassThroughData.class), any());
+    verify(terraformStepHelper).addTerraformRevisionOutcomeIfRequired(any(), any());
   }
 
   @Test
   @Owner(developers = VLICA)
   @Category(UnitTests.class)
   public void testGetStepParametersClass() {
-    assertThat(terraformRollbackStepV2.getStepParametersClass()).isEqualTo(StepElementParameters.class);
+    assertThat(terraformRollbackStepV2.getStepParametersClass()).isEqualTo(StepBaseParameters.class);
   }
 
   @Test

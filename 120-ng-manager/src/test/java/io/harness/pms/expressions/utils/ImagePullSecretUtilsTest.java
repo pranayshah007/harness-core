@@ -10,6 +10,7 @@ package io.harness.pms.expressions.utils;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.MLUKIC;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static java.lang.String.format;
 import static junit.framework.TestCase.assertEquals;
@@ -30,6 +31,7 @@ import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GithubPackagesArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.connector.ConnectorDTO;
@@ -67,10 +69,20 @@ import io.harness.delegate.beans.connector.nexusconnector.NexusAuthType;
 import io.harness.delegate.beans.connector.nexusconnector.NexusAuthenticationDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusUsernamePasswordAuthDTO;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
+import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
+import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.task.artifacts.ArtifactSourceConstants;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
+import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.BaseNGAccess;
@@ -446,6 +458,58 @@ public class ImagePullSecretUtilsTest extends CategoryTest {
     assertEquals(imagePullSecretUtils.getDockerConfigJson(artifactOutcome, ambiance),
         format("${dockerConfigJsonSecretFunc.create(\"%s\", \"%s\", \"%s\")}", ACR_REGISTRY, ACR_DUMMY_USERNAME,
             jwtAcrToken));
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGithubImagePullSecret() throws IOException {
+    GithubPackagesArtifactOutcome githubPackagesArtifactOutcome = GithubPackagesArtifactOutcome.builder()
+                                                                      .type("GithubPackageRegistry")
+                                                                      .packageType("container")
+                                                                      .connectorRef("account.accountref")
+                                                                      .image("image")
+                                                                      .packageName("package")
+                                                                      .build();
+    Ambiance ambiance = getAmbiance();
+
+    Optional<ConnectorResponseDTO> connectorResponseDTO = Optional.of(
+        ConnectorResponseDTO.builder()
+            .connector(ConnectorInfoDTO.builder()
+                           .connectorConfig(
+                               GithubConnectorDTO.builder()
+                                   .authentication(
+                                       GithubAuthenticationDTO.builder()
+                                           .authType(GitAuthType.HTTP)
+                                           .credentials(GithubHttpCredentialsDTO.builder()
+                                                            .type(GithubHttpAuthenticationType.USERNAME_AND_TOKEN)
+                                                            .httpCredentialsSpec(
+                                                                GithubUsernameTokenDTO.builder()
+                                                                    .username("username")
+                                                                    .tokenRef(SecretRefData.builder()
+                                                                                  .identifier("accountLevelConnector")
+                                                                                  .scope(Scope.ACCOUNT)
+                                                                                  .build())
+                                                                    .build())
+                                                            .build())
+                                           .build())
+                                   .apiAccess(GithubApiAccessDTO.builder()
+                                                  .type(GithubApiAccessType.TOKEN)
+                                                  .spec(GithubTokenSpecDTO.builder()
+                                                            .tokenRef(SecretRefData.builder()
+                                                                          .identifier("accountLevelConnector")
+                                                                          .scope(Scope.ACCOUNT)
+                                                                          .build())
+                                                            .build())
+                                                  .build())
+                                   .build())
+                           .build())
+            .build());
+
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(connectorResponseDTO);
+    assertEquals(imagePullSecretUtils.getImagePullSecret(githubPackagesArtifactOutcome, ambiance),
+        format("${imageSecret.create(\"%s\", \"%s\", ${ngSecretManager.obtain(\"%s\", 0)})}", "https://ghcr.io",
+            "username", "account.accountLevelConnector"));
   }
 
   private ArtifactOutcome getAcrArtifactOutcome() {

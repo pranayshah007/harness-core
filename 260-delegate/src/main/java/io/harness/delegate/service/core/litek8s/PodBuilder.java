@@ -7,11 +7,14 @@
 
 package io.harness.delegate.service.core.litek8s;
 
-import static io.harness.delegate.service.core.util.K8SResourceHelper.HARNESS_NAME_LABEL;
+import static io.harness.delegate.service.core.util.LabelHelper.HARNESS_NAME_LABEL;
+import static io.harness.delegate.service.core.util.LabelHelper.HARNESS_TASK_GROUP_LABEL;
+import static io.harness.delegate.service.core.util.LabelHelper.normalizeLabel;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
+import io.harness.delegate.core.beans.ContainerSpec;
 import io.harness.delegate.core.beans.K8SInfra;
 import io.harness.delegate.core.beans.ResourceRequirements;
 import io.harness.delegate.service.core.k8s.K8SEnvVar;
@@ -59,7 +62,7 @@ public class PodBuilder extends V1PodBuilder {
         //        .withLabels(Map.of()) // TODO: Add labels to infra section in the API
         //        .withAnnotations(Map.of()) // TODO: Add annotations to infra section in the API
         .withNamespace(config.getNamespace())
-        .withLabels(Map.of(HARNESS_NAME_LABEL, K8SResourceHelper.getPodName(taskGroupId)))
+        .withLabels(getLabels(taskGroupId))
         .endMetadata()
         .withNewSpec()
         .withRestartPolicy("Never")
@@ -78,7 +81,8 @@ public class PodBuilder extends V1PodBuilder {
   }
 
   public PodBuilder withTasks(final List<V1Container> containers) {
-    containers.forEach(container -> container.addVolumeMountsItem(WORKDIR_VOLUME_MNT));
+    containers.forEach(
+        container -> container.addVolumeMountsItem(WORKDIR_VOLUME_MNT).addVolumeMountsItem(ADDON_VOLUME_MNT));
     this.editOrNewSpec().addAllToContainers(containers).endSpec();
     return this;
   }
@@ -88,17 +92,22 @@ public class PodBuilder extends V1PodBuilder {
     return this;
   }
 
-  public V1Pod buildPod(final ResourceRequirements resource, final List<V1Volume> volumes, final V1Secret loggingSecret,
-      final PortMap portMap) {
-    return this.withAddon().withLiteEngine(resource, loggingSecret, portMap).withVolumes(volumes).build();
+  public V1Pod buildPod(
+      final K8SInfra k8SInfra, final List<V1Volume> volumes, final V1Secret loggingSecret, final PortMap portMap) {
+    return this.withAddon(k8SInfra).withLiteEngine(k8SInfra, loggingSecret, portMap).withVolumes(volumes).build();
   }
 
-  private PodBuilder withLiteEngine(
-      final ResourceRequirements resource, final V1Secret loggingSecret, final PortMap portMap) {
+  @NonNull
+  private static Map<String, String> getLabels(final String taskGroupId) {
+    return Map.of(HARNESS_NAME_LABEL, K8SResourceHelper.getPodName(taskGroupId), HARNESS_TASK_GROUP_LABEL,
+        normalizeLabel(taskGroupId));
+  }
+
+  private PodBuilder withLiteEngine(final K8SInfra k8SInfra, final V1Secret loggingSecret, final PortMap portMap) {
     final var portEnvMap =
         portMap.getPortMap().entrySet().stream().collect(toMap(e -> e.getKey() + SERVICE_PORT_SUFFIX, String::valueOf));
 
-    final var leContainer = containerFactory.createLEContainer(resource)
+    final var leContainer = containerFactory.createLEContainer(k8SInfra.getResource())
                                 .addToEnvFrom(K8SEnvVar.fromSecret(loggingSecret))
                                 .addAllToEnv(K8SEnvVar.fromMap(portEnvMap))
                                 .build();
@@ -107,8 +116,9 @@ public class PodBuilder extends V1PodBuilder {
   }
 
   // We want to download ci-addon in the init container
-  private PodBuilder withAddon() {
-    final var addonContainer = containerFactory.createAddonInitContainer().withVolumeMounts(ADDON_VOLUME_MNT).build();
+  private PodBuilder withAddon(K8SInfra k8SInfra) {
+    final var addonContainer =
+        containerFactory.createAddonInitContainer(k8SInfra).withVolumeMounts(ADDON_VOLUME_MNT).build();
     this.editOrNewSpec().addToInitContainers(addonContainer).addToVolumes(ADDON_VOLUME).endSpec();
     return this;
   }

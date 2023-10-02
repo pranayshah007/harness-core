@@ -881,7 +881,7 @@ public class HelmDeployStateTest extends CategoryTest {
 
     verify(activityService).updateStatus("activityId", APP_ID, ExecutionStatus.SUCCESS);
     verify(containerDeploymentHelper, times(1)).getInstanceStatusSummaries(any(), any());
-    verify(workflowExecutionService, times(1)).getWorkflowExecution(any(), any());
+    verify(workflowExecutionService, times(1)).getWorkflowExecution(any(), any(), any(String[].class));
     assertThat(executionResponse.getContextElements()).isNotEmpty();
     assertThat(((InstanceElementListParam) executionResponse.getContextElements().get(0))
                    .getInstanceElements()
@@ -910,7 +910,7 @@ public class HelmDeployStateTest extends CategoryTest {
 
     verify(activityService).updateStatus("activityId", APP_ID, ExecutionStatus.FAILED);
     verify(containerDeploymentHelper, times(0)).getInstanceStatusSummaries(any(), any());
-    verify(workflowExecutionService, times(0)).getWorkflowExecution(any(), any());
+    verify(workflowExecutionService, times(0)).getWorkflowExecution(any(), any(), any(String[].class));
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
     assertThat(executionResponse.getErrorMessage()).isEqualTo("Failed");
     assertThat(executionResponse.getStateExecutionData()).isNotNull();
@@ -939,7 +939,7 @@ public class HelmDeployStateTest extends CategoryTest {
 
     verify(activityService).updateStatus("activityId", APP_ID, ExecutionStatus.SUCCESS);
     verify(containerDeploymentHelper, times(0)).getInstanceStatusSummaries(any(), any());
-    verify(workflowExecutionService, times(1)).getWorkflowExecution(any(), any());
+    verify(workflowExecutionService, times(1)).getWorkflowExecution(any(), any(), any(String[].class));
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
     assertThat(executionResponse.getErrorMessage()).isEqualTo("Failed");
     assertThat(executionResponse.getStateExecutionData()).isNotNull();
@@ -1467,7 +1467,7 @@ public class HelmDeployStateTest extends CategoryTest {
         spy(WorkflowExecution.builder().appId(APP_ID).helmExecutionSummary(executionSummary).build());
     doReturn(workflowExecution)
         .when(workflowExecutionService)
-        .getWorkflowExecution(context.getAppId(), context.getWorkflowExecutionId());
+        .getWorkflowExecution(eq(context.getAppId()), eq(context.getWorkflowExecutionId()), any(String[].class));
 
     testUpdateHelmExecutionSummaryWithReleaseHistoryCommandResponse(executionSummary);
     testUpdateHelmExecutionSummaryWithoutHelmDeployStateType(executionSummary);
@@ -1516,7 +1516,7 @@ public class HelmDeployStateTest extends CategoryTest {
         spy(WorkflowExecution.builder().appId(APP_ID).helmExecutionSummary(executionSummary).build());
     doReturn(workflowExecution)
         .when(workflowExecutionService)
-        .getWorkflowExecution(context.getAppId(), context.getWorkflowExecutionId());
+        .getWorkflowExecution(eq(context.getAppId()), eq(context.getWorkflowExecutionId()), any(String[].class));
 
     testUpdateHelmExecutionSummaryWithHelmChartInfoDetails(executionSummary);
     testUpdateHelmExecutionSummaryWithContainerInfoList(executionSummary);

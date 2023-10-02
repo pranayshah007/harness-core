@@ -3,3 +3,4 @@ identifier: cgManagerServiceMetricsGroup
 labels:
   - namespace
   - containerName
+  - serviceName

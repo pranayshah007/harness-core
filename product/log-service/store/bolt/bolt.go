@@ -110,7 +110,24 @@ func (s *Store) Delete(ctx context.Context, key string) error {
 	})
 }
 
+func (s *Store) Exists(ctx context.Context, key string) (bool, error) {
+	return false, nil
+}
+
+// Delete deletes the log file from the Bolt datastore.
+func (s *Store) DeleteWithPrefix(ctx context.Context, key string) error {
+	return nil
+}
+
 // Ping pings the store for readiness
 func (s *Store) Ping() error {
 	return nil
+}
+
+func (s *Store) ListBlobPrefix(ctx context.Context, prefix string, limit int) ([]string, error) {
+	return nil, errors.New("not implemented, use the s3 Datastore")
+}
+
+func (s *Store) Finish(ctx context.Context, key string) (bool, error) {
+	return false, errors.New("not implemented, use the s3 Datastore")
 }

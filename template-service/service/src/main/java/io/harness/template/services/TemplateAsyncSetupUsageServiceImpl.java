@@ -6,9 +6,11 @@
  */
 
 package io.harness.template.services;
-
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.template.async.TemplateAsyncSetupUsageLogContext;
 import io.harness.template.async.beans.SetupUsageParams;
@@ -23,6 +25,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @Singleton
 @Slf4j
 public class TemplateAsyncSetupUsageServiceImpl implements TemplateAsyncSetupUsageService {

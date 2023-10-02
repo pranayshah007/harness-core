@@ -6,10 +6,14 @@
  */
 
 package io.harness.ng.core.serviceoverrides.resources;
-
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.pms.rbac.NGResourceType.ENVIRONMENT;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION;
 import static io.harness.utils.PageUtils.getNGPageResponse;
+
+import static java.lang.String.format;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
@@ -19,14 +23,20 @@ import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.account.AccountClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideCriteriaHelper;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideV2MigrationService;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideV2SettingsUpdateService;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.ServiceOverrideValidatorService;
+import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.manage.GlobalContextManager;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.beans.DocumentationConstants;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -36,15 +46,22 @@ import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
 import io.harness.ng.core.serviceoverridev2.beans.OverrideV2SettingsUpdateResponseDTO;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideBatchMigrationDTO;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideMigrationResponseDTO;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesResponseDTOV2;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.ng.core.serviceoverridev2.mappers.ServiceOverridesMapperV2;
 import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
 import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
+import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.CGRestUtils;
+import io.harness.security.SourcePrincipalContextData;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.security.dto.Principal;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -60,6 +77,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
@@ -84,6 +103,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @NextGenManagerAuth
 @Api("/serviceOverrides")
 @Path("/serviceOverrides")
@@ -126,6 +147,7 @@ public class ServiceOverridesResource {
   @Inject private ServiceOverrideV2SettingsUpdateService serviceOverrideV2SettingsUpdateService;
 
   @Inject private OrgAndProjectValidationHelper orgAndProjectValidationHelper;
+  @Inject private AccountClient accountClient;
   private static final int MAX_LIMIT = 1000;
 
   @GET
@@ -136,7 +158,7 @@ public class ServiceOverridesResource {
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             description =
-                "Returns the Service Overrides by the identifier and scope derived from accountId, org identifier and project identifier")
+                "Returns the Service Override by the identifier and scope derived from accountId, org identifier and project identifier")
       })
   public ResponseDTO<ServiceOverridesResponseDTOV2>
   get(@Parameter(description = NGCommonEntityConstants.SERVICE_OVERRIDES_IDENTIFIER) @PathParam(
@@ -151,7 +173,7 @@ public class ServiceOverridesResource {
         serviceOverridesServiceV2.get(accountId, orgIdentifier, projectIdentifier, identifier);
     if (serviceOverridesEntityOptional.isEmpty()) {
       throw new NotFoundException(
-          String.format("ServiceOverrides entity with identifier [%s] in project [%s], org [%s] not found", identifier,
+          format("ServiceOverride entity with identifier [%s] in project [%s], org [%s] not found", identifier,
               projectIdentifier, orgIdentifier));
     }
     NGServiceOverridesEntity serviceOverridesEntity = serviceOverridesEntityOptional.get();
@@ -163,7 +185,7 @@ public class ServiceOverridesResource {
         ResourceScope.of(envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
             envIdentifierRef.getProjectIdentifier()),
         Resource.of(ENVIRONMENT, envIdentifierRef.getIdentifier()), ENVIRONMENT_VIEW_PERMISSION,
-        String.format(
+        format(
             "Unauthorized to view environment %s referred in serviceOverrideEntity", envIdentifierRef.getIdentifier()));
 
     return ResponseDTO.newResponse(
@@ -187,6 +209,20 @@ public class ServiceOverridesResource {
                      value = DocumentationConstants.SERVICE_OVERRIDE_V2_REQUEST_DTO,
                      description = "Sample Service Override Request"))
       }) @Valid ServiceOverrideRequestDTOV2 requestDTOV2) {
+    String yamlInternal = requestDTOV2.getYamlInternal();
+    // if request is coming from v1 automation, yamlInternal is only to be used for sending back to v1 api response
+    // In this case it cant be used for creating spec as v1 yaml and v2 yaml (created from spec) are different
+    if (isNotEmpty(yamlInternal) && !requestDTOV2.isV1Api()) {
+      try {
+        ServiceOverridesSpec spec = YamlUtils.read(yamlInternal, ServiceOverridesSpec.class);
+        requestDTOV2.setSpec(spec);
+      } catch (Exception ex) {
+        log.error("Failed to create the service override entity through harness terraform provider", ex);
+        throw new InvalidRequestException(format(
+            "Creation of the service override entity through harness terraform provider failed due to following error: [%s]",
+            ex.getMessage()));
+      }
+    }
     overrideValidatorService.validateRequestOrThrow(requestDTOV2, accountId);
 
     NGServiceOverridesEntity serviceOverride = ServiceOverridesMapperV2.toEntity(accountId, requestDTOV2);
@@ -210,6 +246,18 @@ public class ServiceOverridesResource {
                      value = DocumentationConstants.SERVICE_OVERRIDE_V2_REQUEST_DTO,
                      description = "Sample Service Override Request"))
       }) @Valid ServiceOverrideRequestDTOV2 requestDTOV2) throws IOException {
+    String yamlInternal = requestDTOV2.getYamlInternal();
+    if (isNotEmpty(yamlInternal) && !requestDTOV2.isV1Api()) {
+      try {
+        ServiceOverridesSpec spec = YamlUtils.read(yamlInternal, ServiceOverridesSpec.class);
+        requestDTOV2.setSpec(spec);
+      } catch (Exception ex) {
+        log.error("Failed to update the service override entity through harness terraform provider", ex);
+        throw new InvalidRequestException(format(
+            "Updating the service override entity through harness terraform provider failed due to following error: [%s]",
+            ex.getMessage()));
+      }
+    }
     overrideValidatorService.validateRequestOrThrow(requestDTOV2, accountId);
 
     NGServiceOverridesEntity requestedServiceOverride = ServiceOverridesMapperV2.toEntity(accountId, requestDTOV2);
@@ -262,9 +310,8 @@ public class ServiceOverridesResource {
     Optional<NGServiceOverridesEntity> ngServiceOverridesEntityOptional =
         serviceOverridesServiceV2.get(accountId, orgIdentifier, projectIdentifier, identifier);
     if (ngServiceOverridesEntityOptional.isEmpty()) {
-      throw new InvalidRequestException(
-          String.format("Service Override [%s], Project[%s], Organization [%s] does not exist", identifier,
-              projectIdentifier, orgIdentifier));
+      throw new InvalidRequestException(format("Service Override [%s], Project[%s], Organization [%s] does not exist",
+          identifier, projectIdentifier, orgIdentifier));
     }
     NGServiceOverridesEntity ngServiceOverridesEntity = ngServiceOverridesEntityOptional.get();
     overrideValidatorService.validateEnvWithRBACOrThrow(
@@ -307,8 +354,8 @@ public class ServiceOverridesResource {
   }
 
   @POST
-  @Path("/migrate")
   @Hidden
+  @Path("/migrate")
   @ApiOperation(value = "Migrate ServiceOverride to V2", nickname = "migrateServiceOverride")
   @Operation(operationId = "migrateServiceOverride", summary = "Migrate ServiceOverride to V2",
       responses =
@@ -323,14 +370,64 @@ public class ServiceOverridesResource {
           NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+    if (Boolean.FALSE.equals(isHarnessSupportedUser())) {
+      throw new AccessDeniedException("User doesn't have permission to migrate overrides.", USER);
+    }
+
     ServiceOverrideMigrationResponseDTO serviceOverrideMigrationResponseDTO =
         serviceOverrideV2MigrationService.migrateToV2(accountId, orgIdentifier, projectIdentifier, true, false);
     return ResponseDTO.newResponse(serviceOverrideMigrationResponseDTO);
   }
 
   @POST
-  @Path("/migrateScope")
   @Hidden
+  @Path("/batch-migrate-and-enable")
+  @ApiOperation(
+      value = "Migrate ServiceOverride to V2 and enable setting ", nickname = "migrateAndEnableServiceOverrideV2")
+  @Operation(operationId = "migrateServiceOverride", summary = "Migrate ServiceOverride to V2 and Enable Setting ",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns Override Migration Details")
+      })
+  public ResponseDTO<List<ServiceOverrideMigrationResponseDTO>>
+  migrateAndEnableServiceOverrideV2(
+      @RequestBody(required = true, description = "Details of accounts to be migrated to override v2") @NonNull
+      @Valid ServiceOverrideBatchMigrationDTO batchMigrationDTO) {
+    if (Boolean.FALSE.equals(isHarnessSupportedUser())) {
+      throw new AccessDeniedException("User doesn't have permission to migrate overrides.", USER);
+    }
+
+    List<ServiceOverrideMigrationResponseDTO> migrationResponseDTOS = new ArrayList<>();
+
+    for (String accountId : batchMigrationDTO.getAccountIds()) {
+      try {
+        ServiceOverrideMigrationResponseDTO serviceOverrideMigrationResponseDTO =
+            serviceOverrideV2MigrationService.migrateToV2(accountId, null, null, true, false);
+        if (serviceOverrideMigrationResponseDTO.isSuccessful()) {
+          OverrideV2SettingsUpdateResponseDTO overrideV2SettingsUpdateResponseDTO =
+              serviceOverrideV2SettingsUpdateService.settingsUpdateToV2(accountId, null, null, false, false);
+          serviceOverrideMigrationResponseDTO.setOverrideV2SettingsUpdateResponseDTO(
+              overrideV2SettingsUpdateResponseDTO);
+          log.info(String.format(
+              "Account level override migration succeeded for accountId: %s. Enabling account level setting for overrides v2",
+              accountId));
+        } else {
+          log.warn(String.format("Account level override v2 migration failed for accountId: %s", accountId));
+        }
+
+        migrationResponseDTOS.add(serviceOverrideMigrationResponseDTO);
+      } catch (Exception e) {
+        log.error(String.format("Could not migrate and enable setting for override v2 accountId: %s", accountId), e);
+      }
+    }
+
+    return ResponseDTO.newResponse(migrationResponseDTOS);
+  }
+
+  @POST
+  @Hidden
+  @Path("/migrateScope")
   @ApiOperation(value = "Migrate ServiceOverride to V2 at one scope", nickname = "migrateServiceOverrideScoped")
   @Operation(operationId = "migrateServiceOverrideScoped", summary = "Migrate ServiceOverride to V2 at one scope",
       responses =
@@ -345,9 +442,21 @@ public class ServiceOverridesResource {
           NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+    if (Boolean.FALSE.equals(isHarnessSupportedUser())) {
+      throw new AccessDeniedException("User doesn't have permission to migrate overrides.", USER);
+    }
+
     ServiceOverrideMigrationResponseDTO serviceOverrideMigrationResponseDTO =
         serviceOverrideV2MigrationService.migrateToV2(accountId, orgIdentifier, projectIdentifier, false, false);
     return ResponseDTO.newResponse(serviceOverrideMigrationResponseDTO);
+  }
+
+  private Boolean isHarnessSupportedUser() {
+    SourcePrincipalContextData sourcePrincipalContextData =
+        (SourcePrincipalContextData) GlobalContextManager.get(SourcePrincipalContextData.SOURCE_PRINCIPAL);
+    Principal principal = sourcePrincipalContextData.getPrincipal();
+    String userId = principal.getName();
+    return CGRestUtils.getResponse(accountClient.isHarnessSupportUserId(userId));
   }
 
   @POST
@@ -367,6 +476,10 @@ public class ServiceOverridesResource {
           NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+    if (Boolean.FALSE.equals(isHarnessSupportedUser())) {
+      throw new AccessDeniedException("User doesn't have permission to revert overrides migration.", USER);
+    }
+
     ServiceOverrideMigrationResponseDTO serviceOverrideMigrationResponseDTO =
         serviceOverrideV2MigrationService.migrateToV2(accountId, orgIdentifier, projectIdentifier, true, true);
     OverrideV2SettingsUpdateResponseDTO overrideV2SettingsUpdateResponseDTO =
@@ -395,6 +508,10 @@ public class ServiceOverridesResource {
           NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+    if (Boolean.FALSE.equals(isHarnessSupportedUser())) {
+      throw new AccessDeniedException("User doesn't have permission to revert overrides migration.", USER);
+    }
+
     ServiceOverrideMigrationResponseDTO serviceOverrideMigrationResponseDTO =
         serviceOverrideV2MigrationService.migrateToV2(accountId, orgIdentifier, projectIdentifier, false, true);
     OverrideV2SettingsUpdateResponseDTO overrideV2SettingsUpdateResponseDTO =
@@ -423,9 +540,73 @@ public class ServiceOverridesResource {
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Parameter(description = "Boolean field to decide whether to also update settings of all lower scoped entities.")
       @QueryParam("updateChildren") boolean updateChildren) {
+    if (Boolean.FALSE.equals(isHarnessSupportedUser())) {
+      throw new AccessDeniedException("User doesn't have permission to update overrides v2 setting.", USER);
+    }
+
     OverrideV2SettingsUpdateResponseDTO overrideV2SettingsUpdateResponseDTO =
         serviceOverrideV2SettingsUpdateService.settingsUpdateToV2(
             accountId, orgIdentifier, projectIdentifier, updateChildren, false);
     return ResponseDTO.newResponse(overrideV2SettingsUpdateResponseDTO);
+  }
+
+  @GET
+  @Path("/get-with-yaml/{identifier}")
+  @Hidden
+  @ApiOperation(value = "Gets Service Overrides by Identifier including the yaml of spec also in response",
+      nickname = "getWithYamlServiceOverridesV2")
+  @Operation(operationId = "getWithYamlServiceOverridesV2",
+      summary = "Gets Service Overrides by Identifier including the yaml of spec also in response",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            description =
+                "Returns the Service Overrides by the identifier and scope derived from accountId, org identifier and project identifier")
+      })
+  public ResponseDTO<ServiceOverridesResponseDTOV2>
+  getWithYaml(@Parameter(description = NGCommonEntityConstants.SERVICE_OVERRIDES_IDENTIFIER) @PathParam(
+                  "identifier") @ResourceIdentifier @NotNull String identifier,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NonNull String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier) {
+    Optional<NGServiceOverridesEntity> serviceOverridesEntityOptional =
+        serviceOverridesServiceV2.get(accountId, orgIdentifier, projectIdentifier, identifier);
+    if (serviceOverridesEntityOptional.isEmpty()) {
+      throw new NotFoundException(
+          format("ServiceOverrides entity with identifier [%s] in project [%s], org [%s] not found", identifier,
+              projectIdentifier, orgIdentifier));
+    }
+    NGServiceOverridesEntity serviceOverridesEntity = serviceOverridesEntityOptional.get();
+
+    IdentifierRef envIdentifierRef = IdentifierRefHelper.getIdentifierRef(
+        serviceOverridesEntity.getEnvironmentRef(), accountId, orgIdentifier, projectIdentifier);
+
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
+            envIdentifierRef.getProjectIdentifier()),
+        Resource.of(ENVIRONMENT, envIdentifierRef.getIdentifier()), ENVIRONMENT_VIEW_PERMISSION,
+        format(
+            "Unauthorized to view environment %s referred in serviceOverrideEntity", envIdentifierRef.getIdentifier()));
+
+    ServiceOverridesSpec spec = serviceOverridesEntity.getSpec();
+    String yamlInternal = serviceOverridesEntity.getYamlInternal();
+    if (spec != null && isEmpty(yamlInternal)) {
+      try {
+        String yamlInternalFromSpec = JsonPipelineUtils.writeJsonString(spec);
+        serviceOverridesEntity.setYamlInternal(yamlInternalFromSpec);
+      } catch (Exception ex) {
+        log.error("Failed to generate yaml from the service override entity's spec", ex);
+        throw new InvalidRequestException(
+            format("Generation of yaml for service override entity's spec failed due to following error: [%s]",
+                ex.getMessage()));
+      }
+    }
+
+    return ResponseDTO.newResponse(
+        serviceOverridesEntityOptional.map(entity -> ServiceOverridesMapperV2.toResponseDTO(entity, false))
+            .orElse(null));
   }
 }

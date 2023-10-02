@@ -46,6 +46,7 @@ public class KubernetesClusterConfigSerializationDeserializationTest extends Cat
   String connectorIdentifier = "identifier";
   String name = "name";
   String description = "description";
+  String accountIdentifier = "accountIdentifier";
   String projectIdentifier = "projectIdentifier";
   String orgIdentifier = "orgIdentifier";
   private ObjectMapper objectMapper;
@@ -85,6 +86,7 @@ public class KubernetesClusterConfigSerializationDeserializationTest extends Cat
         .name(name)
         .identifier(connectorIdentifier)
         .description(description)
+        .accountIdentifier(accountIdentifier)
         .projectIdentifier(projectIdentifier)
         .orgIdentifier(orgIdentifier)
         .tags(tags)

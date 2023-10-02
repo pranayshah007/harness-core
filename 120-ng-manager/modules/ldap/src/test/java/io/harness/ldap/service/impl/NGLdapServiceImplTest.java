@@ -7,9 +7,14 @@
 
 package io.harness.ldap.service.impl;
 
+import static io.harness.ldap.service.impl.NGLdapServiceImpl.LDAP_TASK_DEFAULT_MAXIMUM_TIMEOUT_MILLIS;
+import static io.harness.ldap.service.impl.NGLdapServiceImpl.LDAP_TASK_DEFAULT_MINIMUM_TIMEOUT_MILLIS;
+import static io.harness.rule.OwnerRule.ADITYA;
 import static io.harness.rule.OwnerRule.PRATEEK;
+import static io.harness.rule.OwnerRule.RAGHAV_MURALI;
 import static io.harness.rule.OwnerRule.SHASHANK;
 
+import static software.wings.beans.TaskType.NG_LDAP_SEARCH_GROUPS;
 import static software.wings.beans.sso.LdapTestResponse.Status.FAILURE;
 import static software.wings.beans.sso.LdapTestResponse.Status.SUCCESS;
 
@@ -65,10 +70,12 @@ import software.wings.helpers.ext.ldap.LdapConstants;
 import software.wings.helpers.ext.ldap.LdapResponse;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -102,10 +109,12 @@ public class NGLdapServiceImplTest extends CategoryTest {
   @Before
   public void setup() {
     initMocks(this);
-    ldapSettingsWithEncryptedDataDetail = LdapSettingsWithEncryptedDataDetail.builder()
-                                              .ldapSettings(LdapSettings.builder().uuid(LDAP_SETTINGS_ID).build())
-                                              .encryptedDataDetail(EncryptedDataDetail.builder().build())
-                                              .build();
+    LdapConnectionSettings settings = new LdapConnectionSettings();
+    ldapSettingsWithEncryptedDataDetail =
+        LdapSettingsWithEncryptedDataDetail.builder()
+            .ldapSettings(LdapSettings.builder().uuid(LDAP_SETTINGS_ID).connectionSettings(settings).build())
+            .encryptedDataDetail(EncryptedDataDetail.builder().build())
+            .build();
   }
 
   @Test
@@ -144,6 +153,24 @@ public class NGLdapServiceImplTest extends CategoryTest {
       assertThat(ex).isInstanceOf(HintException.class);
       assertEquals(ex.getMessage(), HintException.CHECK_LDAP_CONNECTION);
     }
+  }
+
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testWithInvalidHost() throws IOException {
+    final String accountId = "testAccountId";
+
+    software.wings.beans.sso.LdapSettings ldapSettings = getLdapSettings(accountId);
+    ldapSettings.getConnectionSettings().setHost("abc");
+    LdapTestResponse unsuccessfulTestResponse =
+        LdapTestResponse.builder().status(FAILURE).message(INVALID_CREDENTIALS).build();
+    mockCgClientCall();
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(NGLdapDelegateTaskResponse.builder().ldapTestResponse(unsuccessfulTestResponse).build());
+
+    assertThatThrownBy(() -> ngLdapService.validateLdapConnectionSettings(accountId, null, null, ldapSettings))
+        .isInstanceOf(HintException.class);
   }
 
   @Test
@@ -372,6 +399,7 @@ public class NGLdapServiceImplTest extends CategoryTest {
                         .accountIdentifier(ACCOUNT_ID)
                         .orgIdentifier(ORG_ID)
                         .projectIdentifier(PROJECT_ID)
+                        .isSsoLinked(true)
                         .ssoGroupId(groupDn)
                         .users(Collections.singletonList(testUserEmail))
                         .build();
@@ -383,6 +411,7 @@ public class NGLdapServiceImplTest extends CategoryTest {
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(NGLdapGroupSyncTaskResponse.builder().ldapGroupsResponse(response).build());
     when(userGroupService.getUserGroupsBySsoId(anyString(), anyString())).thenReturn(Collections.singletonList(ug1));
+    when(userGroupService.get(anyString(), anyString(), anyString(), anyString())).thenReturn(Optional.of(ug1));
     ngLdapService.syncUserGroupsJob(ACCOUNT_ID, ORG_ID, PROJECT_ID);
     verify(managerClient, times(1)).getLdapSettingsUsingAccountId(ACCOUNT_ID);
     verify(groupSyncHelper, times(1)).reconcileAllUserGroups(usrGroupToLdapGroupMap, LDAP_SETTINGS_ID, ACCOUNT_ID);
@@ -491,6 +520,114 @@ public class NGLdapServiceImplTest extends CategoryTest {
         .isInstanceOf(HintException.class)
         .getCause()
         .isInstanceOf(ExplanationException.class);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testResponseTimeoutDurationFromLdapSettingsTimeout() {
+    software.wings.beans.sso.LdapSettings ldapSettings = getLdapSettings(ACCOUNT_ID);
+    ldapSettings.getConnectionSettings().setResponseTimeout(5000); // 5 seconds
+
+    Duration timeoutDuration = ngLdapService.getLdapDelegateTaskResponseTimeout(
+        ldapSettings.getConnectionSettings().getResponseTimeout(), NG_LDAP_SEARCH_GROUPS.name(), ACCOUNT_ID);
+
+    // Assert
+    assertNotNull(timeoutDuration);
+    assertThat(timeoutDuration.getSeconds() * 1000).isEqualTo((long) LDAP_TASK_DEFAULT_MINIMUM_TIMEOUT_MILLIS);
+
+    ldapSettings.getConnectionSettings().setResponseTimeout(125000); // 125 seconds
+    timeoutDuration = ngLdapService.getLdapDelegateTaskResponseTimeout(
+        ldapSettings.getConnectionSettings().getResponseTimeout(), NG_LDAP_SEARCH_GROUPS.name(), ACCOUNT_ID);
+
+    // Assert
+    assertNotNull(timeoutDuration);
+    assertThat(timeoutDuration.getSeconds() * 1000).isEqualTo((long) 125000);
+
+    ldapSettings.getConnectionSettings().setResponseTimeout(500000); // 500 seconds
+    timeoutDuration = ngLdapService.getLdapDelegateTaskResponseTimeout(
+        ldapSettings.getConnectionSettings().getResponseTimeout(), NG_LDAP_SEARCH_GROUPS.name(), ACCOUNT_ID);
+
+    // Assert
+    assertNotNull(timeoutDuration);
+    assertThat(timeoutDuration.getSeconds() * 1000).isEqualTo((long) LDAP_TASK_DEFAULT_MAXIMUM_TIMEOUT_MILLIS);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_MURALI)
+  @Category(UnitTests.class)
+  public void testIsUserGroupSsoStateValidTrue() {
+    final String groupDn = "testGrpDn";
+    final String testUserEmail = "test123@hn.io";
+
+    UserGroup ug1 = UserGroup.builder()
+                        .identifier("UG1")
+                        .accountIdentifier(ACCOUNT_ID)
+                        .orgIdentifier(ORG_ID)
+                        .projectIdentifier(PROJECT_ID)
+                        .isSsoLinked(true)
+                        .ssoGroupId(groupDn)
+                        .users(Collections.singletonList(testUserEmail))
+                        .build();
+
+    when(userGroupService.get(anyString(), anyString(), anyString(), anyString())).thenReturn(Optional.of(ug1));
+    boolean ssoStateValid = ngLdapService.isUserGroupSsoStateValid(ug1);
+    assertThat(ssoStateValid).isTrue();
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_MURALI)
+  @Category(UnitTests.class)
+  public void testIsUserGroupSsoStateValidFalseSsoNotLinked() {
+    final String groupDn = "testGrpDn";
+    final String testUserEmail = "test123@hn.io";
+
+    UserGroup ug1 = UserGroup.builder()
+                        .identifier("UG1")
+                        .accountIdentifier(ACCOUNT_ID)
+                        .orgIdentifier(ORG_ID)
+                        .projectIdentifier(PROJECT_ID)
+                        .isSsoLinked(false)
+                        .ssoGroupId(groupDn)
+                        .users(Collections.singletonList(testUserEmail))
+                        .build();
+
+    when(userGroupService.get(anyString(), anyString(), anyString(), anyString())).thenReturn(Optional.of(ug1));
+    boolean ssoStateValid = ngLdapService.isUserGroupSsoStateValid(ug1);
+    assertThat(ssoStateValid).isFalse();
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_MURALI)
+  @Category(UnitTests.class)
+  public void testIsUserGroupSsoStateValidFalseSsoGroupIdInvalid() {
+    final String groupDn1 = "testGrpDn";
+    final String groupDn2 = "testGrpDn1";
+    final String testUserEmail = "test123@hn.io";
+
+    UserGroup ug1 = UserGroup.builder()
+                        .identifier("UG1")
+                        .accountIdentifier(ACCOUNT_ID)
+                        .orgIdentifier(ORG_ID)
+                        .projectIdentifier(PROJECT_ID)
+                        .isSsoLinked(true)
+                        .ssoGroupId(groupDn1)
+                        .users(Collections.singletonList(testUserEmail))
+                        .build();
+
+    UserGroup ug2 = UserGroup.builder()
+                        .identifier("UG1")
+                        .accountIdentifier(ACCOUNT_ID)
+                        .orgIdentifier(ORG_ID)
+                        .projectIdentifier(PROJECT_ID)
+                        .isSsoLinked(true)
+                        .ssoGroupId(groupDn2)
+                        .users(Collections.singletonList(testUserEmail))
+                        .build();
+
+    when(userGroupService.get(anyString(), anyString(), anyString(), anyString())).thenReturn(Optional.of(ug2));
+    boolean ssoStateValid = ngLdapService.isUserGroupSsoStateValid(ug1);
+    assertThat(ssoStateValid).isFalse();
   }
 
   private software.wings.beans.sso.LdapSettings getLdapSettings(String accountId) {

@@ -6,7 +6,6 @@
  */
 
 package io.harness.template.helpers;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
@@ -23,8 +22,11 @@ import static io.harness.template.utils.TemplateUtils.validateAndGetYamlNode;
 
 import io.harness.EntityType;
 import io.harness.NgAutoLogContextForMethod;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.Scope;
 import io.harness.common.EntityReferenceHelper;
@@ -79,6 +81,9 @@ import javax.ws.rs.InternalServerErrorException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY, HarnessModuleComponent.CDS_PIPELINE,
+        HarnessModuleComponent.CDS_GITX})
 @OwnedBy(HarnessTeam.CDC)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
@@ -145,13 +150,17 @@ public class TemplateMergeServiceHelper {
               templateIdentifierRef.getIdentifier(), versionLabel, false, loadFromCache);
     }
     if (!templateEntity.isPresent()) {
-      throw new NGTemplateException(String.format(
-          "The template identifier %s and version label %s does not exist. Could not replace this template",
-          templateIdentifierRef.getIdentifier(), versionLabel));
+      throwTemplateNotFoundException(templateIdentifierRef.getIdentifier(), versionLabel);
     }
     TemplateEntity template = templateEntity.get();
     templateCacheMap.put(templateUniqueIdentifier, template);
     return template;
+  }
+
+  private void throwTemplateNotFoundException(String templateIdentifier, String versionLabel) {
+    throw new NGTemplateException(String.format(
+        "The template identifier [%s] and version label [%s] does not exist. Please check identifier and version is correct and exists",
+        templateIdentifier, versionLabel));
   }
 
   // Checks if the current Json node is a Template node with fieldName as TEMPLATE and Non-null Value

@@ -6,9 +6,13 @@
  */
 
 package io.harness.template.services;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.template.async.beans.SetupUsageParams;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 public interface TemplateAsyncSetupUsageService {
   void populateAsyncSetupUsage(SetupUsageParams setupUsageParams);
 }

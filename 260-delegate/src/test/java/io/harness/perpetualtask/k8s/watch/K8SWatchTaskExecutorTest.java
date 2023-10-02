@@ -130,6 +130,9 @@ public class K8SWatchTaskExecutorTest extends DelegateTestBase {
     k8SWatchTaskExecutor = new K8SWatchTaskExecutor(eventPublisher, k8sWatchServiceDelegate, apiClientFactory,
         kryoSerializer, containerDeploymentDelegateHelper, k8sConnectorHelper);
 
+    stubFor(get(urlMatching("/api/v1/namespaces/ns1/pods.*"))
+                .willReturn(aResponse().withStatus(200).withBody(new Gson().toJson(getPodList()))));
+
     stubFor(get(urlPathEqualTo("/api/v1/namespaces/kube-system"))
                 .willReturn(aResponse().withStatus(200).withBody(new Gson().toJson(new V1NamespaceBuilder()
                                                                                        .withApiVersion("v1")
@@ -206,6 +209,7 @@ public class K8SWatchTaskExecutorTest extends DelegateTestBase {
     PerpetualTaskId perpetualTaskId = PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK_ID).build();
     PerpetualTaskExecutionParams params =
         PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(k8sWatchTaskParams)).build();
+    when(k8sWatchServiceDelegate.getK8sControllerFetcher(any())).thenReturn(new K8sControllerFetcher(any(), any()));
 
     PerpetualTaskResponse perpetualTaskResponse = k8SWatchTaskExecutor.runOnce(perpetualTaskId, params, heartBeatTime);
     assertThat(perpetualTaskResponse.getResponseCode()).isEqualTo(200);
@@ -225,6 +229,7 @@ public class K8SWatchTaskExecutorTest extends DelegateTestBase {
     PerpetualTaskId perpetualTaskId = PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK_ID).build();
     PerpetualTaskExecutionParams params =
         PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(k8sWatchTaskParams)).build();
+    when(k8sWatchServiceDelegate.getK8sControllerFetcher(any())).thenReturn(new K8sControllerFetcher(any(), any()));
 
     PerpetualTaskResponse perpetualTaskResponse = k8SWatchTaskExecutor.runOnce(perpetualTaskId, params, heartBeatTime);
     assertThat(perpetualTaskResponse.getResponseCode()).isEqualTo(200);

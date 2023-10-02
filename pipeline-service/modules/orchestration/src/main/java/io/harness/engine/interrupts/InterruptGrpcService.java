@@ -44,4 +44,14 @@ public class InterruptGrpcService extends InterruptProtoServiceImplBase {
     responseObserver.onNext(InterruptResponse.newBuilder().build());
     responseObserver.onCompleted();
   }
+
+  // TODO Combine all 3 methods into one
+  @Override
+  public void handleExpire(InterruptRequest request, StreamObserver<InterruptResponse> responseObserver) {
+    log.info("InterruptGrpcService#handleExpireInterrupt reached.");
+    // adding a dummy response data object
+    waitNotifyEngine.doneWith(request.getNotifyId(), BinaryResponseData.builder().build());
+    responseObserver.onNext(InterruptResponse.newBuilder().build());
+    responseObserver.onCompleted();
+  }
 }

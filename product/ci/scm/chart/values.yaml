@@ -2,6 +2,9 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
+  commonAnnotations: {}
+  commonLabels: {}
+  kubeVersion: ""
   loadbalancerURL: ""
   imagePullSecrets: []
 replicaCount: 1
@@ -13,7 +16,7 @@ image:
   repository: harness/ci-scm-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: release-65
+  tag: release-161-ubi
   digest: ""
   imagePullSecrets: []
 
@@ -42,21 +45,21 @@ service:
   type: ClusterIP
   protocol: TCP
   port: 8091
+  annotations: {}
 
 resources:
   limits:
-    cpu: 0.1
     memory: 512Mi
   requests:
     cpu: 0.1
     memory: 512Mi
 
 autoscaling:
-  enabled: true
+  enabled: false
   minReplicas: 1
   maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
+  targetCPU: ""
+  targetMemory: ""
 
 nodeSelector: {}
 

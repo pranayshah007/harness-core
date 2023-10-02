@@ -95,6 +95,8 @@ public class CIK8ExecuteStepTaskHandler implements CIExecuteStepTaskHandler {
 
     final ExecuteStepRequest finalExecuteStepRequest = executeStepRequest;
     String target = format("%s:%d", cik8ExecuteStepTaskParams.getIp(), cik8ExecuteStepTaskParams.getPort());
+    log.info("target ip for step {} is {} with executionID {}", executeStepRequest.getStep().getId(), target,
+        executeStepRequest.getExecutionId());
     ManagedChannelBuilder managedChannelBuilder = ManagedChannelBuilder.forTarget(target).usePlaintext();
     if (!cik8ExecuteStepTaskParams.isLocal()) {
       managedChannelBuilder.proxyDetector(GrpcUtil.NOOP_PROXY_DETECTOR);

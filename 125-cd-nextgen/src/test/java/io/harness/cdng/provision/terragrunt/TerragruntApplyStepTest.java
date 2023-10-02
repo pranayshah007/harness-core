@@ -14,6 +14,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.when;
@@ -22,7 +23,9 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.manifest.yaml.GithubStore;
+import io.harness.cdng.manifest.yaml.TerragruntCommandFlagType;
 import io.harness.cdng.provision.ProvisionerOutputHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
@@ -89,6 +92,7 @@ public class TerragruntApplyStepTest extends CategoryTest {
   @Mock private ProvisionerOutputHelper provisionerOutputHelper;
   @InjectMocks private TerragruntApplyStep terragruntApplyStep = new TerragruntApplyStep();
   @Captor ArgumentCaptor<List<EntityDetail>> captor;
+  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Before
   public void setUpMocks() {
@@ -168,6 +172,10 @@ public class TerragruntApplyStepTest extends CategoryTest {
             .configuration(
                 TerragruntStepConfigurationParameters.builder()
                     .type(TerragruntStepConfigurationType.INLINE)
+                    .commandFlags(List.of(TerragruntCliOptionFlag.builder()
+                                              .commandType(TerragruntCommandFlagType.APPLY)
+                                              .flag(ParameterField.createValueField("-lock-timeout=0s"))
+                                              .build()))
                     .spec(TerragruntExecutionDataParameters.builder()
                               .configFiles(configFilesWrapper)
                               .backendConfig(backendConfig)
@@ -204,6 +212,12 @@ public class TerragruntApplyStepTest extends CategoryTest {
                                 .encryptionConfig(VaultConfig.builder().build())
                                 .encryptedData(EncryptedRecordData.builder().build())
                                 .build()));
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+    doReturn(new HashMap<String, String>() {
+      { put("APPLY", "-lock-timeout=0s"); }
+    })
+        .when(terragruntStepHelper)
+        .getTerragruntCliFlags(any());
     Mockito.mockStatic(TaskRequestsUtils.class);
 
     terragruntApplyStep.obtainTaskAfterRbac(
@@ -211,7 +225,7 @@ public class TerragruntApplyStepTest extends CategoryTest {
 
     PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
     TaskRequestsUtils.prepareCDTaskRequest(
-        any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terragrunt Apply Task"), any(), any());
+        any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terragrunt Apply Task V2"), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
     TerragruntApplyTaskParameters params =
@@ -228,6 +242,7 @@ public class TerragruntApplyStepTest extends CategoryTest {
     assertThat(((InlineStoreDelegateConfig) params.getBackendFilesStore()).getIdentifier())
         .isEqualTo("test-backend-id");
     assertThat(((GitStoreDelegateConfig) params.getConfigFilesStore()).getConnectorName()).isEqualTo("terragrunt");
+    assertThat(params.getTerragruntCommandFlags().get("APPLY")).isEqualTo("-lock-timeout=0s");
   }
 
   @Test
@@ -238,6 +253,10 @@ public class TerragruntApplyStepTest extends CategoryTest {
         TerragruntApplyStepParameters.infoBuilder()
             .provisionerIdentifier(ParameterField.createValueField("test-provisionerId"))
             .configuration(TerragruntStepConfigurationParameters.builder()
+                               .commandFlags(List.of(TerragruntCliOptionFlag.builder()
+                                                         .commandType(TerragruntCommandFlagType.APPLY)
+                                                         .flag(ParameterField.createValueField("-lock-timeout=0s"))
+                                                         .build()))
                                .type(TerragruntStepConfigurationType.INHERIT_FROM_PLAN)
                                .build())
             .build();
@@ -295,6 +314,12 @@ public class TerragruntApplyStepTest extends CategoryTest {
                                 .encryptionConfig(VaultConfig.builder().build())
                                 .encryptedData(EncryptedRecordData.builder().build())
                                 .build()));
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+    doReturn(new HashMap<String, String>() {
+      { put("APPLY", "-lock-timeout=0s"); }
+    })
+        .when(terragruntStepHelper)
+        .getTerragruntCliFlags(any());
     Mockito.mockStatic(TaskRequestsUtils.class);
 
     terragruntApplyStep.obtainTaskAfterRbac(
@@ -302,7 +327,7 @@ public class TerragruntApplyStepTest extends CategoryTest {
 
     PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
     TaskRequestsUtils.prepareCDTaskRequest(
-        any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terragrunt Apply Task"), any(), any());
+        any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terragrunt Apply Task V2"), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
     TerragruntApplyTaskParameters params =
@@ -319,6 +344,7 @@ public class TerragruntApplyStepTest extends CategoryTest {
     assertThat(((InlineStoreDelegateConfig) params.getBackendFilesStore()).getIdentifier())
         .isEqualTo("test-backend-id");
     assertThat(((GitStoreDelegateConfig) params.getConfigFilesStore()).getConnectorName()).isEqualTo("terragrunt");
+    assertThat(params.getTerragruntCommandFlags().get("APPLY")).isEqualTo("-lock-timeout=0s");
   }
 
   @Test

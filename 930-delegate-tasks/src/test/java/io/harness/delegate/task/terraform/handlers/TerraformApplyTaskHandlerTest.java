@@ -16,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -27,6 +28,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cli.CliResponse;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.service.git.NGGitService;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.connector.task.shell.SshSessionConfigMapper;
 import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthenticationDTO;
@@ -92,6 +94,7 @@ public class TerraformApplyTaskHandlerTest extends CategoryTest {
   @Mock DelegateFileManagerBase delegateFileManager;
   @Mock private SshSessionConfigMapper sshSessionConfigMapper;
   @Mock private NGGitService ngGitService;
+  @Mock private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   private final EncryptedRecordData encryptedPlanContent =
       EncryptedRecordData.builder().name("planName").encryptedValue("encryptedPlan".toCharArray()).build();
@@ -101,6 +104,7 @@ public class TerraformApplyTaskHandlerTest extends CategoryTest {
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
+    doReturn(GitConfigDTO.builder().build()).when(scmConnectorMapperDelegate).toGitConfigDTO(any(), any());
     when(terraformBaseHelper.getBaseDir(any())).thenReturn("./some/dir/entityId");
   }
 

@@ -15,11 +15,11 @@ public interface ViewFieldConstants {
   String CLUSTER_TYPE_FIELD_ID = "clusterType";
   String NAMESPACE_FIELD_ID = "namespace";
   String WORKLOAD_NAME_FIELD_ID = "workloadName";
+  String SERVICE_NAME_FIELD_ID = "serviceName";
   String INSTANCE_NAME_FIELD_ID = "instanceName";
   String STORAGE_FIELD_ID = "storage";
   String APP_NAME_FIELD_ID = "appName";
   String ENV_NAME_FIELD_ID = "envName";
-  String SERVICE_NAME_FIELD_ID = "serviceName";
   String CLOUD_PROVIDER_FIELD_ID = "cloudProvider";
   String CLOUD_SERVICE_NAME_FIELD_ID = "cloudServiceName";
   String TASK_FIELD_ID = "taskId";
@@ -29,6 +29,8 @@ public interface ViewFieldConstants {
   String AWS_ACCOUNT_FIELD_ID = "awsUsageaccountid";
   String AWS_INSTANCE_TYPE_FIELD_ID = "awsInstancetype";
   String AWS_USAGE_TYPE_ID = "awsUsageType";
+  String AWS_BILLING_ENTITY = "awsBillingEntity";
+  String AWS_LINE_ITEM_TYPE = "awsLineItemType";
 
   String AZURE_SUBSCRIPTION_GUID = "azureSubscriptionGuid";
   String AZURE_RESOURCE_GROUP = "azureResourceGroup";
@@ -37,6 +39,7 @@ public interface ViewFieldConstants {
   String GCP_PRODUCT_FIELD_ID = "gcpProduct";
   String GCP_PROJECT_FIELD_ID = "gcpProjectId";
   String GCP_SKU_DESCRIPTION_FIELD_ID = "gcpSkuDescription";
+  String GCP_INVOICE_MONTH_FIELD_ID = "gcpInvoiceMonth";
 
   String REGION_FIELD_ID = "region";
   String PRODUCT_FIELD_ID = "product";

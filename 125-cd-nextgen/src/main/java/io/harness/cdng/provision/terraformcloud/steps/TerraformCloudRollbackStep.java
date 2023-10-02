@@ -12,8 +12,11 @@ import static io.harness.delegate.task.terraformcloud.TerraformCloudTaskType.ROL
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.terraformcloud.TerraformCloudConstants;
@@ -37,7 +40,6 @@ import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.plancreator.steps.TaskSelectorYaml;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
@@ -49,6 +51,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
@@ -64,6 +67,7 @@ import java.util.HashMap;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class TerraformCloudRollbackStep extends CdTaskExecutable<TerraformCloudRollbackTaskResponse> {
@@ -81,18 +85,18 @@ public class TerraformCloudRollbackStep extends CdTaskExecutable<TerraformCloudR
 
   @Override
   public Class getStepParametersClass() {
-    return StepElementParameters.class;
+    return StepBaseParameters.class;
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {}
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters StepBaseParameters, StepInputPackage inputPackage) {
     log.info("Starting execution ObtainTask after Rbac for the Terraform Cloud Rollback Step");
     TerraformCloudRollbackStepParameters rollbackStepParameters =
-        (TerraformCloudRollbackStepParameters) stepElementParameters.getSpec();
+        (TerraformCloudRollbackStepParameters) StepBaseParameters.getSpec();
 
     String provisionerIdentifier =
         ParameterFieldHelper.getParameterFieldValue(rollbackStepParameters.getProvisionerIdentifier());
@@ -138,7 +142,7 @@ public class TerraformCloudRollbackStep extends CdTaskExecutable<TerraformCloudR
                             .async(true)
                             .taskType(TaskType.TERRAFORM_CLOUD_TASK_NG.name())
                             .timeout(StepUtils.getTimeoutMillis(
-                                stepElementParameters.getTimeout(), TerraformCloudConstants.DEFAULT_TIMEOUT))
+                                StepBaseParameters.getTimeout(), TerraformCloudConstants.DEFAULT_TIMEOUT))
                             .parameters(new Object[] {terraformCloudTaskParamsImpl})
                             .build();
 
@@ -152,9 +156,9 @@ public class TerraformCloudRollbackStep extends CdTaskExecutable<TerraformCloudR
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
-      StepElementParameters stepElementParameters,
-      ThrowingSupplier<TerraformCloudRollbackTaskResponse> responseSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepBaseParameters StepBaseParameters, ThrowingSupplier<TerraformCloudRollbackTaskResponse> responseSupplier)
+      throws Exception {
     log.info("Handling Task result with Security Context for the Terraform Cloud Rollback Step");
     StepResponseBuilder stepResponseBuilder = StepResponse.builder();
     TerraformCloudRollbackTaskResponse terraformCloudRunTaskResponse = responseSupplier.get();
@@ -185,7 +189,7 @@ public class TerraformCloudRollbackStep extends CdTaskExecutable<TerraformCloudR
     if (CommandExecutionStatus.SUCCESS == terraformCloudRunTaskResponse.getCommandExecutionStatus()) {
       String runId = terraformCloudRunTaskResponse.getRunId();
       String provisionerIdentifier = ParameterFieldHelper.getParameterFieldValue(
-          ((TerraformCloudRollbackStepParameters) stepElementParameters.getSpec()).getProvisionerIdentifier());
+          ((TerraformCloudRollbackStepParameters) StepBaseParameters.getSpec()).getProvisionerIdentifier());
       helper.saveTerraformCloudPlanExecutionDetails(
           ambiance, null, terraformCloudRunTaskResponse.getPolicyChecksJsonFileId(), provisionerIdentifier, null);
       stepResponseBuilder.stepOutcome(

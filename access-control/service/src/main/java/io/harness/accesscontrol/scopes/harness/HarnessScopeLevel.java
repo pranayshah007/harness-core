@@ -7,12 +7,12 @@
 
 package io.harness.accesscontrol.scopes.harness;
 
+import static io.harness.accesscontrol.commons.AccessControlConstants.ACCOUNT_ENTITY;
+import static io.harness.accesscontrol.commons.AccessControlConstants.ORGANIZATION_ENTITY;
+import static io.harness.accesscontrol.commons.AccessControlConstants.PROJECT_ENTITY;
 import static io.harness.accesscontrol.scopes.harness.HarnessScopeParams.ACCOUNT_LEVEL_PARAM_NAME;
 import static io.harness.accesscontrol.scopes.harness.HarnessScopeParams.ORG_LEVEL_PARAM_NAME;
 import static io.harness.accesscontrol.scopes.harness.HarnessScopeParams.PROJECT_LEVEL_PARAM_NAME;
-import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
-import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ORGANIZATION_ENTITY;
-import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
 
 import io.harness.accesscontrol.scopes.core.ScopeLevel;
 import io.harness.annotations.dev.HarnessTeam;

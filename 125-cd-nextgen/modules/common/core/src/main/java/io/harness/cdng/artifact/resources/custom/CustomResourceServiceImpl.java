@@ -6,10 +6,12 @@
  */
 
 package io.harness.cdng.artifact.resources.custom;
-
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.DelegateTaskRequest.DelegateTaskRequestBuilder;
 import io.harness.cdng.expressionEvaluator.CustomScriptSecretExpressionEvaluator;
@@ -52,6 +54,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Slf4j
 public class CustomResourceServiceImpl implements CustomResourceService {
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;

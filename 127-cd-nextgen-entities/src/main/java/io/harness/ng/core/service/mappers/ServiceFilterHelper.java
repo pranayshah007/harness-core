@@ -15,9 +15,11 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.NGResourceFilterConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
-import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.encryption.Scope;
@@ -27,7 +29,6 @@ import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.pms.yaml.YamlField;
-import io.harness.pms.yaml.YamlNode;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.common.base.Predicates;
@@ -35,12 +36,13 @@ import com.google.common.collect.Iterables;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class ServiceFilterHelper {
@@ -51,28 +53,23 @@ public class ServiceFilterHelper {
 
   public Criteria createCriteriaForGetList(String accountId, String orgIdentifier, String projectIdentifier,
       boolean deleted, String searchTerm, ServiceDefinitionType type, Boolean gitOpsEnabled,
-      boolean includeAllServicesAccessibleAtScope) {
+      boolean includeAllServicesAccessibleAtScope, String repoName) {
     return createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, null, deleted, searchTerm, type,
-        gitOpsEnabled, includeAllServicesAccessibleAtScope);
+        gitOpsEnabled, includeAllServicesAccessibleAtScope, repoName);
   }
 
   public Criteria createCriteriaForGetList(String accountId, String orgIdentifier, String projectIdentifier,
       List<String> scopedServiceRefs, boolean deleted, String searchTerm, ServiceDefinitionType type,
-      Boolean gitOpsEnabled, boolean includeAllServicesAccessibleAtScope) {
-    Criteria criteria = createCriteriaForGetList(
-        accountId, orgIdentifier, projectIdentifier, scopedServiceRefs, deleted, includeAllServicesAccessibleAtScope);
-    final List<Criteria> andCriterias = new ArrayList<>();
-    if (isNotEmpty(searchTerm)) {
-      Criteria searchCriteria = createSearchTermCriteria(searchTerm);
-      andCriterias.add(searchCriteria);
+      Boolean gitOpsEnabled, boolean includeAllServicesAccessibleAtScope, String repoName) {
+    Criteria criteria = createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, scopedServiceRefs,
+        deleted, includeAllServicesAccessibleAtScope, searchTerm);
+
+    if (isNotEmpty(repoName)) {
+      criteria.and(ServiceEntityKeys.repo).is(repoName);
     }
 
     if (type != null) {
       criteria.and(ServiceEntityKeys.type).is(type.name());
-    }
-
-    if (isNotEmpty(andCriterias)) {
-      criteria = criteria.andOperator(andCriterias.toArray(Criteria[] ::new));
     }
 
     return applyBooleanFilter(criteria, gitOpsEnabled, ServiceEntityKeys.gitOpsEnabled);
@@ -147,7 +144,7 @@ public class ServiceFilterHelper {
   }
 
   public Criteria createCriteriaForGetList(String accountId, String orgIdentifier, String projectIdentifier,
-      List<String> scopedServiceRefs, boolean deleted, boolean includeAllServicesAccessibleAtScope) {
+      List<String> scopedServiceRefs, boolean deleted, boolean includeAllServicesAccessibleAtScope, String searchTerm) {
     Criteria criteria = new Criteria();
     if (isNotEmpty(accountId)) {
       // accountId
@@ -175,6 +172,12 @@ public class ServiceFilterHelper {
       if (scopedServicesCriteria != null) {
         criteriaList.add(scopedServicesCriteria);
       }
+
+      if (isNotEmpty(searchTerm)) {
+        Criteria searchCriteria = createSearchTermCriteria(searchTerm);
+        criteriaList.add(searchCriteria);
+      }
+
       if (criteriaList.size() != 0) {
         criteria.andOperator(criteriaList.toArray(new Criteria[0]));
       }
@@ -304,35 +307,5 @@ public class ServiceFilterHelper {
         }
       }
     }
-  }
-
-  public YamlField getManifestsNodeFromServiceDefinitionYaml(YamlField serviceDefinitionField) {
-    if (serviceDefinitionField == null) {
-      return null;
-    }
-
-    YamlField serviceSpecField = serviceDefinitionField.getNode().getField(YamlTypes.SERVICE_SPEC);
-    if (serviceSpecField == null) {
-      return null;
-    }
-
-    return serviceSpecField.getNode().getField(YamlTypes.MANIFEST_LIST_CONFIG);
-  }
-
-  public List<String> getManifestIdentifiersFilteredOnServiceType(YamlField manifestsField, String serviceType) {
-    List<String> manifestIdentifierList = new ArrayList<>();
-    List<YamlNode> manifests = manifestsField.getNode().asArray();
-    Set<String> supportedManifestTypes = ManifestType.getSupportedManifestTypes(serviceType);
-    for (YamlNode manifestConfig : manifests) {
-      if (manifestConfig == null) {
-        continue;
-      }
-      YamlNode manifest = manifestConfig.getField(YamlTypes.MANIFEST_CONFIG).getNode();
-      if (manifest != null && supportedManifestTypes.contains(manifest.getType())) {
-        String manifestIdentifier = manifest.getIdentifier();
-        manifestIdentifierList.add(manifestIdentifier);
-      }
-    }
-    return manifestIdentifierList;
   }
 }

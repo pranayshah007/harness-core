@@ -16,6 +16,7 @@ trigger:
         connectorRef: account.conn
         imagePath: test1
         region: us-east-1
+        registryId: registry
         tag: <+trigger.artifact.build>
         eventConditions:
           - key: build

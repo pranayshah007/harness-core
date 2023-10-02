@@ -20,10 +20,13 @@ import static io.harness.timescaledb.Tables.POD_INFO;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static org.jooq.impl.DSL.concat;
+import static org.jooq.impl.DSL.field;
 import static org.jooq.impl.DSL.greatest;
 import static org.jooq.impl.DSL.max;
+import static org.jooq.impl.DSL.name;
 import static org.jooq.impl.DSL.select;
 import static org.jooq.impl.DSL.sum;
+import static org.jooq.impl.DSL.table;
 import static org.jooq.impl.DSL.val;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -33,6 +36,7 @@ import io.harness.ccm.commons.beans.InstanceType;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.beans.billing.InstanceCategory;
 import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
+import io.harness.ccm.commons.beans.recommendation.CCMServiceNowDetails;
 import io.harness.ccm.commons.beans.recommendation.K8sServiceProvider;
 import io.harness.ccm.commons.beans.recommendation.NodePoolId;
 import io.harness.ccm.commons.beans.recommendation.NodePoolId.NodePoolIdKeys;
@@ -68,23 +72,30 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.DeleteConditionStep;
 import org.jooq.Field;
 import org.jooq.Record;
+import org.jooq.Result;
+import org.jooq.Select;
 import org.jooq.SelectFinalStep;
 import org.jooq.SelectSelectStep;
 import org.jooq.Table;
@@ -106,6 +117,15 @@ public class K8sRecommendationDAO {
   private static final String SUMMEMORY = "summemory";
   private static final String TIME = "time";
   private static final String ACCOUNT_ID = "accountid";
+  public static final String HARDCODED_MINIMUM_START_TIME = "2018-01-01T00:00:00+00";
+  public static final String MIN_STARTTIME = "min_starttime";
+  public static final String TABLE_NAME = "table_name";
+  public static final String CTE_NODE = "cte_node";
+  public static final String CTE_POD = "cte_pod";
+  public static final String CTE_KUBE = "cte_kube";
+  public static final String NODE_INFO_TABLE = "node_info";
+  public static final String POD_INFO_TABLE = "pod_info";
+  public static final String KUBERNETES_UTILIZATION_DATA_TABLE = "kubernetes_utilization_data";
 
   @Inject private HPersistence hPersistence;
   @Inject private DSLContext dslContext;
@@ -130,6 +150,16 @@ public class K8sRecommendationDAO {
             .set(K8sWorkloadRecommendationKeys.jiraDetails, jiraDetails));
   }
 
+  @NonNull
+  public void updateServicenowDetailsInWorkloadRecommendation(
+      @NonNull String accountId, @NonNull String id, CCMServiceNowDetails serviceNowDetails) {
+    hPersistence.upsert(hPersistence.createQuery(K8sWorkloadRecommendation.class)
+                            .filter(K8sWorkloadRecommendationKeys.accountId, accountId)
+                            .filter(K8sWorkloadRecommendationKeys.uuid, id),
+        hPersistence.createUpdateOperations(K8sWorkloadRecommendation.class)
+            .set(K8sWorkloadRecommendationKeys.serviceNowDetails, serviceNowDetails));
+  }
+
   public List<PartialRecommendationHistogram> fetchPartialRecommendationHistograms(
       @NonNull String accountId, @NonNull ResourceId resourceId, @NonNull Instant startTime, @NonNull Instant endTime) {
     return hPersistence.createQuery(PartialRecommendationHistogram.class)
@@ -150,7 +180,7 @@ public class K8sRecommendationDAO {
       @NonNull String accountId, @Nullable Condition condition, @NonNull Long offset, @NonNull Long limit) {
     return dslContext.selectFrom(CE_RECOMMENDATIONS)
         .where(CE_RECOMMENDATIONS.ACCOUNTID.eq(accountId).and(firstNonNull(condition, DSL.noCondition())))
-        .orderBy(CE_RECOMMENDATIONS.MONTHLYSAVING.desc().nullsLast())
+        .orderBy(CE_RECOMMENDATIONS.MONTHLYSAVING.desc().nullsLast(), CE_RECOMMENDATIONS.ID.asc().nullsLast())
         .offset(offset)
         .limit(limit)
         .fetchInto(CeRecommendations.class);
@@ -213,12 +243,25 @@ public class K8sRecommendationDAO {
 
     SelectFinalStep<? extends Record> finalStepT3 = dslContext.select(selectStepT3.getSelect()).from(t2);
     log.info("maxResourceOfAllTimeBucketsForANodePool, final query\n{}", finalStepT3.toString());
+    long startTime = System.nanoTime();
+    TotalResourceUsage totalResourceUsage = finalStepT3.fetchOneInto(TotalResourceUsage.class);
+    logQueryExecutionStats(jobConstants, nodePoolId, startTime);
+    return totalResourceUsage;
+  }
 
-    return finalStepT3.fetchOneInto(TotalResourceUsage.class);
+  private static void logQueryExecutionStats(
+      @NotNull JobConstants jobConstants, @NotNull NodePoolId nodePoolId, long startTime) {
+    long endTime = System.nanoTime();
+    long duration = (endTime - startTime) / 1_000_000;
+    log.info(
+        "NodePoolRecommendation Query execution: accountId: {}, nodePoolName: {}, clusterId: {}, startTime: {}. Total time in ms: {}",
+        jobConstants.getAccountId(), nodePoolId.getNodepoolname(), nodePoolId.getClusterid(),
+        new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(jobConstants.getJobStartTime())), duration);
   }
 
   private Table<? extends Record> sumResourceForEachTimeBucket(JobConstants jobConstants, NodePoolId nodePoolId) {
-    Table<? extends Record> t1 = groupByInstanceIdForEachTimeBucket(jobConstants, nodePoolId);
+    OffsetDateTime minStartTime = getMinStartTimeFromTables(jobConstants, nodePoolId);
+    Table<? extends Record> t1 = groupByInstanceIdForEachTimeBucket(jobConstants, nodePoolId, minStartTime);
 
     SelectSelectStep<? extends Record> selectStep = select(sum(t1.field(KUBERNETES_UTILIZATION_DATA.CPU)).as(SUMCPU),
         sum(t1.field(KUBERNETES_UTILIZATION_DATA.MEMORY)).as(SUMMEMORY),
@@ -228,8 +271,70 @@ public class K8sRecommendationDAO {
     return dslContext.select(selectStep.getSelect()).from(t1).groupBy(t1.field(TIME)).asTable();
   }
 
-  private Table<? extends Record> groupByInstanceIdForEachTimeBucket(JobConstants jobConstants, NodePoolId nodePoolId) {
-    Table<? extends Record> t0 = getPodRequest(jobConstants, nodePoolId);
+  private OffsetDateTime getMinStartTimeFromTables(JobConstants jobConstants, NodePoolId nodePoolId) {
+    long execStartTime = System.currentTimeMillis();
+    Select<?> cteNode = dslContext.select(DSL.min(NODE_INFO.STARTTIME).as(MIN_STARTTIME))
+                            .from(NODE_INFO)
+                            .where(NODE_INFO.ACCOUNTID.eq(jobConstants.getAccountId())
+                                       .and(NODE_INFO.CLUSTERID.eq(nodePoolId.getClusterid()))
+                                       .and(NODE_INFO.NODEPOOLNAME.eq(nodePoolId.getNodepoolname()))
+                                       .and(NODE_INFO.STARTTIME.gt(
+                                           DSL.offsetDateTime(OffsetDateTime.parse(HARDCODED_MINIMUM_START_TIME)))));
+
+    Select<?> ctePod = dslContext.select(DSL.min(POD_INFO.STARTTIME).as(MIN_STARTTIME))
+                           .from(POD_INFO)
+                           .where(POD_INFO.ACCOUNTID.eq(jobConstants.getAccountId())
+                                      .and(POD_INFO.CLUSTERID.eq(nodePoolId.getClusterid()))
+                                      .and(POD_INFO.STARTTIME.gt(
+                                          DSL.offsetDateTime(OffsetDateTime.parse(HARDCODED_MINIMUM_START_TIME)))));
+
+    Select<?> cteKube = dslContext.select(DSL.min(KUBERNETES_UTILIZATION_DATA.STARTTIME).as(MIN_STARTTIME))
+                            .from(KUBERNETES_UTILIZATION_DATA)
+                            .where(KUBERNETES_UTILIZATION_DATA.ACCOUNTID.eq(jobConstants.getAccountId())
+                                       .and(KUBERNETES_UTILIZATION_DATA.CLUSTERID.eq(nodePoolId.getClusterid()))
+                                       .and(KUBERNETES_UTILIZATION_DATA.STARTTIME.gt(
+                                           DSL.offsetDateTime(OffsetDateTime.parse(HARDCODED_MINIMUM_START_TIME)))));
+
+    Result<?> result =
+        dslContext.with(CTE_NODE)
+            .as(cteNode)
+            .with(CTE_POD)
+            .as(ctePod)
+            .with(CTE_KUBE)
+            .as(cteKube)
+            .select(val(NODE_INFO_TABLE).as(TABLE_NAME), field(name(CTE_NODE, MIN_STARTTIME)))
+            .from(table(name(CTE_NODE)))
+            .union(dslContext.select(val(POD_INFO_TABLE).as(TABLE_NAME), field(name(CTE_POD, MIN_STARTTIME)))
+                       .from(table(name(CTE_POD))))
+            .union(
+                dslContext
+                    .select(val(KUBERNETES_UTILIZATION_DATA_TABLE).as(TABLE_NAME), field(name(CTE_KUBE, MIN_STARTTIME)))
+                    .from(table(name(CTE_KUBE))))
+            .fetch();
+
+    Timestamp minStartTime = result.stream()
+                                 .filter(Objects::nonNull)
+                                 .map(record -> (Timestamp) record.get(MIN_STARTTIME))
+                                 .filter(Objects::nonNull)
+                                 .min(Timestamp::compareTo)
+                                 .orElse(null);
+
+    if (minStartTime == null) {
+      return OffsetDateTime.parse(HARDCODED_MINIMUM_START_TIME);
+    }
+
+    log.info(
+        "NodePoolRecommendation getMinStartTimeFromTables(): accountId: {}, nodePoolName: {}, clusterId: {}, startTime: {}. Total time in ms: {}. minStartTime: {}",
+        jobConstants.getAccountId(), nodePoolId.getNodepoolname(), nodePoolId.getClusterid(),
+        new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(jobConstants.getJobStartTime())),
+        System.currentTimeMillis() - execStartTime, minStartTime);
+
+    return val(toOffsetDateTime(minStartTime.toInstant())).getValue();
+  }
+
+  private Table<? extends Record> groupByInstanceIdForEachTimeBucket(
+      JobConstants jobConstants, NodePoolId nodePoolId, OffsetDateTime minStartTime) {
+    Table<? extends Record> t0 = getPodRequest(jobConstants, nodePoolId, minStartTime);
 
     Field<OffsetDateTime> timeBucket =
         Routines.timeBucket2(val(YearToSecond.valueOf(Duration.ofMinutes(20))), KUBERNETES_UTILIZATION_DATA.STARTTIME)
@@ -239,10 +344,11 @@ public class K8sRecommendationDAO {
         KUBERNETES_UTILIZATION_DATA.ACTUALINSTANCEID.eq(t0.field(KUBERNETES_UTILIZATION_DATA.ACTUALINSTANCEID))
             .and(KUBERNETES_UTILIZATION_DATA.ACCOUNTID.eq(jobConstants.getAccountId())
                      .and(KUBERNETES_UTILIZATION_DATA.CLUSTERID.eq(nodePoolId.getClusterid())
-                              .and(TimescaleUtils.isAlive(KUBERNETES_UTILIZATION_DATA.STARTTIME,
-                                  KUBERNETES_UTILIZATION_DATA.ENDTIME, jobConstants.getJobStartTime(),
-                                  jobConstants.getJobEndTime()))));
-
+                              .and(TimescaleUtils
+                                       .isAlive(KUBERNETES_UTILIZATION_DATA.STARTTIME,
+                                           KUBERNETES_UTILIZATION_DATA.ENDTIME, jobConstants.getJobStartTime(),
+                                           jobConstants.getJobEndTime())
+                                       .and(KUBERNETES_UTILIZATION_DATA.STARTTIME.greaterOrEqual(minStartTime)))));
     SelectSelectStep<? extends Record> selectStepT1 = select(timeBucket,
         greatest(max(KUBERNETES_UTILIZATION_DATA.CPU), max(t0.field(POD_INFO.CPUREQUEST)))
             .as(KUBERNETES_UTILIZATION_DATA.CPU),
@@ -259,7 +365,8 @@ public class K8sRecommendationDAO {
         .asTable();
   }
 
-  private Table<? extends Record> getPodRequest(JobConstants jobConstants, NodePoolId nodePoolId) {
+  private Table<? extends Record> getPodRequest(
+      JobConstants jobConstants, NodePoolId nodePoolId, OffsetDateTime minStartTime) {
     final String kube_system_namespace = "kube-system";
     final String namespace_name_separator = "/";
 
@@ -275,7 +382,8 @@ public class K8sRecommendationDAO {
                 NODE_INFO.STARTTIME, NODE_INFO.STOPTIME, jobConstants.getJobStartTime(), jobConstants.getJobEndTime()),
             POD_INFO.NAMESPACE.notEqual(kube_system_namespace),
             TimescaleUtils.isAlive(
-                POD_INFO.STARTTIME, POD_INFO.STOPTIME, jobConstants.getJobStartTime(), jobConstants.getJobEndTime())))
+                POD_INFO.STARTTIME, POD_INFO.STOPTIME, jobConstants.getJobStartTime(), jobConstants.getJobEndTime()),
+            POD_INFO.STARTTIME.greaterOrEqual(minStartTime), NODE_INFO.STARTTIME.greaterOrEqual(minStartTime)))
         .asTable();
   }
 
@@ -424,6 +532,7 @@ public class K8sRecommendationDAO {
         .set(CE_RECOMMENDATIONS.CLUSTERNAME, clusterName) // for updating older rows having clusterId instead
         .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT, toOffsetDateTime(lastReceivedUntilAt))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
+        .set(CE_RECOMMENDATIONS.CLOUDPROVIDER, CloudProvider.UNKNOWN.name())
         .execute();
   }
 
@@ -441,9 +550,21 @@ public class K8sRecommendationDAO {
   }
 
   @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public List<CeRecommendations> getNodepoolsAlreadyUpdated(
+      @NonNull String accountId, @NonNull JobConstants jobConstants, List<String> clusterNames) {
+    return dslContext.selectFrom(CE_RECOMMENDATIONS)
+        .where(CE_RECOMMENDATIONS.ACCOUNTID.eq(accountId))
+        .and(CE_RECOMMENDATIONS.RESOURCETYPE.eq(ResourceType.NODE_POOL.name()))
+        .and(CE_RECOMMENDATIONS.CLUSTERNAME.in(clusterNames))
+        .and(CE_RECOMMENDATIONS.LASTPROCESSEDAT.greaterOrEqual(
+            toOffsetDateTime(Instant.ofEpochMilli(jobConstants.getJobEndTime()))))
+        .fetchInto(CeRecommendations.class);
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
   public void upsertCeRecommendation(String entityUuid, @NonNull JobConstants jobConstants,
       @NonNull NodePoolId nodePoolId, String clusterName, @NonNull RecommendationOverviewStats stats,
-      Instant lastReceivedUntilAt) {
+      Instant lastReceivedUntilAt, String cloudProvider) {
     dslContext.insertInto(CE_RECOMMENDATIONS)
         .set(CE_RECOMMENDATIONS.ACCOUNTID, jobConstants.getAccountId())
         .set(CE_RECOMMENDATIONS.ID, entityUuid)
@@ -455,7 +576,7 @@ public class K8sRecommendationDAO {
         .set(CE_RECOMMENDATIONS.ISVALID, true)
         .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT, toOffsetDateTime(lastReceivedUntilAt))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
-        .set(CE_RECOMMENDATIONS.CLOUDPROVIDER, CloudProvider.UNKNOWN.name())
+        .set(CE_RECOMMENDATIONS.CLOUDPROVIDER, cloudProvider)
         .onConflictOnConstraint(CE_RECOMMENDATIONS.getPrimaryKey())
         .doUpdate()
         .set(CE_RECOMMENDATIONS.MONTHLYCOST, stats.getTotalMonthlyCost())
@@ -464,6 +585,7 @@ public class K8sRecommendationDAO {
         .set(CE_RECOMMENDATIONS.CLUSTERNAME, clusterName) // for updating older rows having clusterId instead
         .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT, toOffsetDateTime(lastReceivedUntilAt))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
+        .set(CE_RECOMMENDATIONS.CLOUDPROVIDER, cloudProvider)
         .execute();
   }
 
@@ -474,6 +596,18 @@ public class K8sRecommendationDAO {
         .set(CE_RECOMMENDATIONS.JIRACONNECTORREF, jiraConnectorRef)
         .set(CE_RECOMMENDATIONS.JIRAISSUEKEY, jiraIssueKey)
         .set(CE_RECOMMENDATIONS.JIRASTATUS, jiraStatus)
+        .where(CE_RECOMMENDATIONS.ID.eq(entityUuid))
+        .execute();
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public void updateServicenowDetailsInTimescale(@NonNull String entityUuid, @Nullable String servicenowConnectorRef,
+      @Nullable String servicenowTicketType, @Nullable String servicenowIssueKey, @Nullable String servicenowStatus) {
+    dslContext.update(CE_RECOMMENDATIONS)
+        .set(CE_RECOMMENDATIONS.SERVICENOWCONNECTORREF, servicenowConnectorRef)
+        .set(CE_RECOMMENDATIONS.SERVICENOWTICKETTYPE, servicenowTicketType)
+        .set(CE_RECOMMENDATIONS.SERVICENOWISSUEKEY, servicenowIssueKey)
+        .set(CE_RECOMMENDATIONS.SERVICENOWSTATUS, servicenowStatus)
         .where(CE_RECOMMENDATIONS.ID.eq(entityUuid))
         .execute();
   }
@@ -615,6 +749,16 @@ public class K8sRecommendationDAO {
                             .filter(K8sNodeRecommendationKeys.uuid, new ObjectId(id)),
         hPersistence.createUpdateOperations(K8sNodeRecommendation.class)
             .set(K8sNodeRecommendationKeys.jiraDetails, jiraDetails));
+  }
+
+  @NonNull
+  public void updateServicenowDetailsInNodeRecommendation(
+      @NonNull String accountId, @NonNull String id, CCMServiceNowDetails serviceNowDetails) {
+    hPersistence.upsert(hPersistence.createQuery(K8sNodeRecommendation.class)
+                            .filter(K8sNodeRecommendationKeys.accountId, accountId)
+                            .filter(K8sNodeRecommendationKeys.uuid, new ObjectId(id)),
+        hPersistence.createUpdateOperations(K8sNodeRecommendation.class)
+            .set(K8sNodeRecommendationKeys.serviceNowDetails, serviceNowDetails));
   }
 
   public int fetchRecommendationsCount(@NonNull String accountId, Condition condition) {

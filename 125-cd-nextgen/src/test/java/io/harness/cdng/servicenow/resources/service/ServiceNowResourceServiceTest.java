@@ -7,6 +7,8 @@
 
 package io.harness.cdng.servicenow.resources.service;
 
+import static io.harness.eraro.ErrorCode.SERVICENOW_ERROR;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.vivekveman;
@@ -15,6 +17,7 @@ import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -23,6 +26,8 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.servicenow.ServiceNowTemplateTypeEnum;
 import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -40,6 +45,8 @@ import io.harness.exception.DelegateNotAvailableException;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ServiceNowException;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.rule.Owner;
@@ -56,9 +63,13 @@ import io.harness.servicenow.ServiceNowTicketTypeDTO;
 import io.harness.servicenow.ServiceNowTicketTypeNG;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -69,7 +80,9 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import retrofit2.Call;
 
 public class ServiceNowResourceServiceTest extends CategoryTest {
   private static final String ACCOUNT_ID = "accountId";
@@ -87,6 +100,7 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
   @Mock ConnectorService connectorService;
   @Mock SecretManagerClientService secretManagerClientService;
   @Mock DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Mock CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @InjectMocks @Inject ServiceNowResourceServiceImpl serviceNowResourceService;
 
@@ -102,6 +116,7 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void testGetIssueCreateMeta() {
+    when(cdFeatureFlagHelper.isEnabled(any(), any())).thenReturn(false);
     List<ServiceNowFieldNG> serviceNowFieldNGList =
         Arrays.asList(ServiceNowFieldNG.builder().name("name1").key("key1").internalType("string").build(),
             ServiceNowFieldNG.builder().name("name2").key("key2").internalType("unknown_xyz").build());
@@ -149,6 +164,7 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
   @Owner(developers = NAMANG)
   @Category(UnitTests.class)
   public void testGetIssueCreateMetaWhenDelegateResponseNotHaveType() {
+    when(cdFeatureFlagHelper.isEnabled(any(), any())).thenReturn(false);
     ServiceNowFieldNG field1 = ServiceNowFieldNG.builder().name("name1").key("key1").build();
     ServiceNowFieldNG field2 = ServiceNowFieldNG.builder().name("name2").key("key2").build();
     List<ServiceNowFieldNG> serviceNowFieldNGList = Arrays.asList(field1, field2);
@@ -178,6 +194,75 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
     assertThat(requestArgumentCaptor.getValue().getAccountId()).isEqualTo(ACCOUNT_ID);
     ServiceNowTaskNGParameters parameters =
         (ServiceNowTaskNGParameters) requestArgumentCaptor.getValue().getTaskParameters();
+    assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_TICKET_CREATE_METADATA);
+    assertThat(parameters.getTicketType()).isEqualTo("CHANGE_REQUEST");
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetIssueCreateMetaWhenDelegateResponseNotHaveTypeAndFFOn() throws IOException {
+    when(cdFeatureFlagHelper.isEnabled(any(), any())).thenReturn(true);
+    JsonNode columnsResponse = readResource("servicenow/resources/service/serviceNowMetadataResponse.json");
+
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(
+            ServiceNowTaskNGResponse.builder().serviceNowFieldJsonNGListAsString(columnsResponse.toString()).build());
+    List<ServiceNowFieldNG> serviceNowFieldNGListResponse =
+        serviceNowResourceService.getMetadata(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "CHANGE_TASK");
+    assertThat(serviceNowFieldNGListResponse.size()).isEqualTo(8);
+    for (ServiceNowFieldNG serviceNowField : serviceNowFieldNGListResponse) {
+      if ("sys_id".equals(serviceNowField.getKey())) {
+        assertThat(serviceNowField.isRequired()).isFalse();
+      }
+    }
+    ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(requestArgumentCaptor.capture());
+    ServiceNowTaskNGParameters parameters =
+        (ServiceNowTaskNGParameters) requestArgumentCaptor.getValue().getTaskParameters();
+    assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_METADATA_V2);
+    assertThat(parameters.getTicketType()).isEqualTo("CHANGE_TASK");
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetIssueCreateMetaWhenDelegateResponseNotHaveTypeAndFFOnWhenKryoError() {
+    when(cdFeatureFlagHelper.isEnabled(any(), any())).thenReturn(true);
+    ServiceNowFieldNG field1 = ServiceNowFieldNG.builder().name("name1").key("key1").build();
+    ServiceNowFieldNG field2 = ServiceNowFieldNG.builder().name("name2").key("key2").build();
+    List<ServiceNowFieldNG> serviceNowFieldNGList = Arrays.asList(field1, field2);
+    List<ServiceNowFieldNG> serviceNowFieldNGListExpected = Arrays.asList(
+        ServiceNowFieldNG.builder()
+            .name("name1")
+            .key("key1")
+            .internalType(null)
+            .schema(ServiceNowFieldSchemaNG.builder().array(false).customType(null).typeStr(null).type(null).build())
+            .build(),
+        ServiceNowFieldNG.builder()
+            .name("name2")
+            .key("key2")
+            .internalType(null)
+            .schema(ServiceNowFieldSchemaNG.builder().array(false).customType(null).typeStr(null).type(null).build())
+            .build());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenThrow(new HintException(
+            "kryo exception occurred", new DelegateNotAvailableException("Delegate might not be available")))
+        .thenReturn(ServiceNowTaskNGResponse.builder().serviceNowFieldNGList(serviceNowFieldNGList).build());
+    List<ServiceNowFieldNG> serviceNowFieldNGListReturn = serviceNowResourceService.getIssueCreateMetadata(
+        identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "CHANGE_REQUEST");
+    assertTrue(serviceNowFieldNGListReturn.size() == serviceNowFieldNGListExpected.size()
+        && serviceNowFieldNGListReturn.containsAll(serviceNowFieldNGListExpected)
+        && serviceNowFieldNGListExpected.containsAll(serviceNowFieldNGListReturn));
+    ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    verify(delegateGrpcClientWrapper, times(2)).executeSyncTaskV2(requestArgumentCaptor.capture());
+    assertThat(requestArgumentCaptor.getValue().getTaskType()).isEqualTo(NGTaskType.SERVICENOW_TASK_NG.name());
+    assertThat(requestArgumentCaptor.getValue().getAccountId()).isEqualTo(ACCOUNT_ID);
+    ServiceNowTaskNGParameters parameters =
+        (ServiceNowTaskNGParameters) requestArgumentCaptor.getAllValues().get(0).getTaskParameters();
+    assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_METADATA_V2);
+    assertThat(parameters.getTicketType()).isEqualTo("CHANGE_REQUEST");
+    parameters = (ServiceNowTaskNGParameters) requestArgumentCaptor.getAllValues().get(1).getTaskParameters();
     assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_TICKET_CREATE_METADATA);
     assertThat(parameters.getTicketType()).isEqualTo("CHANGE_REQUEST");
   }
@@ -212,10 +297,12 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
                                             .build();
     return ConnectorResponseDTO.builder().connector(connectorInfoDTO).build();
   }
+
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
   public void testGetMetadata() {
+    when(cdFeatureFlagHelper.isEnabled(any(), any())).thenReturn(false);
     List<ServiceNowFieldNG> serviceNowFieldNGList =
         Arrays.asList(ServiceNowFieldNG.builder().name("name1").key("key1").build(),
             ServiceNowFieldNG.builder().name("name2").key("key2").build());
@@ -232,6 +319,102 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetMetadataWhenFFEnabled() throws IOException {
+    when(cdFeatureFlagHelper.isEnabled(any(), any())).thenReturn(true);
+    JsonNode columnsResponse = readResource("servicenow/resources/service/serviceNowMetadataResponse.json");
+
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(
+            ServiceNowTaskNGResponse.builder().serviceNowFieldJsonNGListAsString(columnsResponse.toString()).build());
+    List<ServiceNowFieldNG> serviceNowFieldNGListResponse =
+        serviceNowResourceService.getMetadata(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "CHANGE_TASK");
+    assertThat(serviceNowFieldNGListResponse.size()).isEqualTo(8);
+    for (ServiceNowFieldNG serviceNowField : serviceNowFieldNGListResponse) {
+      if ("sys_id".equals(serviceNowField.getKey())) {
+        assertThat(serviceNowField.isRequired()).isFalse();
+      }
+    }
+    ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(requestArgumentCaptor.capture());
+    ServiceNowTaskNGParameters parameters =
+        (ServiceNowTaskNGParameters) requestArgumentCaptor.getValue().getTaskParameters();
+    assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_METADATA_V2);
+    assertThat(parameters.getTicketType()).isEqualTo("CHANGE_TASK");
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetMetadataWhenFFEnabledWhenV2ThrowsKryoError() {
+    when(cdFeatureFlagHelper.isEnabled(any(), any())).thenReturn(true);
+    List<ServiceNowFieldNG> serviceNowFieldNGList =
+        Arrays.asList(ServiceNowFieldNG.builder().name("name1").key("key1").build(),
+            ServiceNowFieldNG.builder().name("name2").key("key2").build());
+
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenThrow(new InvalidArgumentsException("The task got expired or not picked up"))
+        .thenReturn(ServiceNowTaskNGResponse.builder().serviceNowFieldNGList(serviceNowFieldNGList).build());
+    List<ServiceNowFieldNG> serviceNowFieldNGListResponse =
+        serviceNowResourceService.getMetadata(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "CHANGE_TASK");
+    assertThat(serviceNowFieldNGListResponse).isEqualTo(serviceNowFieldNGList);
+
+    ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    verify(delegateGrpcClientWrapper, times(2)).executeSyncTaskV2(requestArgumentCaptor.capture());
+    ServiceNowTaskNGParameters parameters =
+        (ServiceNowTaskNGParameters) requestArgumentCaptor.getAllValues().get(0).getTaskParameters();
+    assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_METADATA_V2);
+    assertThat(parameters.getTicketType()).isEqualTo("CHANGE_TASK");
+    parameters = (ServiceNowTaskNGParameters) requestArgumentCaptor.getAllValues().get(1).getTaskParameters();
+    assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_METADATA);
+    assertThat(parameters.getTicketType()).isEqualTo("CHANGE_TASK");
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetMetadataWhenFFEnabledWhenV2TaskExpired() {
+    when(cdFeatureFlagHelper.isEnabled(any(), any())).thenReturn(true);
+    List<ServiceNowFieldNG> serviceNowFieldNGList =
+        Arrays.asList(ServiceNowFieldNG.builder().name("name1").key("key1").build(),
+            ServiceNowFieldNG.builder().name("name2").key("key2").build());
+
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenThrow(new HintException(
+            "Kryo exception no enum constant", new DelegateNotAvailableException("Delegate might be not available")))
+        .thenReturn(ServiceNowTaskNGResponse.builder().serviceNowFieldNGList(serviceNowFieldNGList).build());
+    List<ServiceNowFieldNG> serviceNowFieldNGListResponse =
+        serviceNowResourceService.getMetadata(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "CHANGE_TASK");
+    assertThat(serviceNowFieldNGListResponse).isEqualTo(serviceNowFieldNGList);
+
+    ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    verify(delegateGrpcClientWrapper, times(2)).executeSyncTaskV2(requestArgumentCaptor.capture());
+    ServiceNowTaskNGParameters parameters =
+        (ServiceNowTaskNGParameters) requestArgumentCaptor.getAllValues().get(0).getTaskParameters();
+    assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_METADATA_V2);
+    assertThat(parameters.getTicketType()).isEqualTo("CHANGE_TASK");
+    parameters = (ServiceNowTaskNGParameters) requestArgumentCaptor.getAllValues().get(1).getTaskParameters();
+    assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_METADATA);
+    assertThat(parameters.getTicketType()).isEqualTo("CHANGE_TASK");
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetMetadataWhenFFEnabledWhenRandomError() {
+    when(cdFeatureFlagHelper.isEnabled(any(), any())).thenReturn(true);
+    List<ServiceNowFieldNG> serviceNowFieldNGList =
+        Arrays.asList(ServiceNowFieldNG.builder().name("name1").key("key1").build(),
+            ServiceNowFieldNG.builder().name("name2").key("key2").build());
+
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenThrow(new InvalidRequestException("random"));
+    assertThatThrownBy(
+        () -> serviceNowResourceService.getMetadata(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "CHANGE_TASK"))
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
   public void testgetTemplateList() {
@@ -240,8 +423,8 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
             ServiceNowTemplate.builder().name("name2").sys_id("key2").build());
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ServiceNowTaskNGResponse.builder().serviceNowTemplateList(serviceNowFieldNGList1).build());
-    assertThat(serviceNowResourceService.getTemplateList(
-                   identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, 0, 0, TEMPLATE_NAME, "CHANGE_TASK"))
+    assertThat(serviceNowResourceService.getTemplateList(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, 50, 2,
+                   TEMPLATE_NAME, "CHANGE_TASK", "filter", null))
         .isEqualTo(serviceNowFieldNGList1);
     ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
     verify(delegateGrpcClientWrapper).executeSyncTaskV2(requestArgumentCaptor.capture());
@@ -249,6 +432,64 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
         (ServiceNowTaskNGParameters) requestArgumentCaptor.getValue().getTaskParameters();
     assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_TEMPLATE);
     assertThat(parameters.getTicketType()).isEqualTo("CHANGE_TASK");
+    assertThat(parameters.getSearchTerm()).isEqualTo("filter");
+    assertThat(parameters.getTemplateListOffset()).isEqualTo(100);
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testgetTemplateListForIncidentStandardTemplate() {
+    List<ServiceNowTemplate> serviceNowFieldNGList1 =
+        Arrays.asList(ServiceNowTemplate.builder().name("name1").sys_id("key1").build(),
+            ServiceNowTemplate.builder().name("name2").sys_id("key2").build());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(ServiceNowTaskNGResponse.builder().serviceNowTemplateList(serviceNowFieldNGList1).build());
+    assertThatThrownBy(
+        ()
+            -> serviceNowResourceService.getTemplateList(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, 50, 2,
+                TEMPLATE_NAME, "INCIDENT", "filter", ServiceNowTemplateTypeEnum.STANDARD))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Get template metadata is supported for ticketType CHANGE_REQUEST and templateType STANDARD");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testgetTemplateListForStandardTemplateFFoff() {
+    List<ServiceNowTemplate> serviceNowFieldNGList1 =
+        Arrays.asList(ServiceNowTemplate.builder().name("name1").sys_id("key1").build(),
+            ServiceNowTemplate.builder().name("name2").sys_id("key2").build());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(ServiceNowTaskNGResponse.builder().serviceNowTemplateList(serviceNowFieldNGList1).build());
+    assertThatThrownBy(
+        ()
+            -> serviceNowResourceService.getTemplateList(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, 50, 2,
+                TEMPLATE_NAME, "CHANGE_REQUEST", "filter", ServiceNowTemplateTypeEnum.STANDARD))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Feature flag CDS_GET_SERVICENOW_STANDARD_TEMPLATE is not enabled for this account");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testgetTemplateListForStandardTemplate() {
+    when(cdFeatureFlagHelper.isEnabled(any(), any())).thenReturn(true);
+    List<ServiceNowTemplate> serviceNowFieldNGList1 =
+        Arrays.asList(ServiceNowTemplate.builder().name("name1").sys_id("key1").build(),
+            ServiceNowTemplate.builder().name("name2").sys_id("key2").build());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(
+            ServiceNowTaskNGResponse.builder()
+                .serviceNowFieldJsonNGListAsString(
+                    "short_description=Include a title for your change no greater than 100 characters^description=Describe what you plan to do^implementation_plan=List the steps in order of completion that will be worked through when implementing this change^EQ")
+                .serviceNowTemplateList(serviceNowFieldNGList1)
+                .build());
+    List<ServiceNowTemplate> serviceNowTemplateList =
+        serviceNowResourceService.getTemplateList(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, 50, 2,
+            TEMPLATE_NAME, "CHANGE_REQUEST", "filter", ServiceNowTemplateTypeEnum.STANDARD);
+    ServiceNowTemplate serviceNowTemplate = serviceNowTemplateList.get(0);
+    assertThat(serviceNowTemplate.getFields().size()).isEqualTo(3);
+    assertThat(serviceNowTemplate.getFields()).containsKeys("short_description", "description", "implementation_plan");
   }
 
   @Test
@@ -394,5 +635,135 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
         (ServiceNowTaskNGParameters) requestArgumentCaptor.getValue().getTaskParameters();
 
     assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_TICKET_TYPES);
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void shouldGetTicketWithRetryWithQueryFields() {
+    Call mockCall = Mockito.mock(Call.class);
+
+    when(mockCall.clone()).thenReturn(mockCall);
+    List<String> queryFields = new ArrayList<>();
+    queryFields.add("active");
+    queryFields.add("opened_at");
+    queryFields.add("approval_set");
+    queryFields.add("number");
+    queryFields.add("caused_by");
+
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(getConnector(true)));
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(ServiceNowTaskNGResponse.builder().build());
+    assertThat(serviceNowResourceService.getTicketDetails(
+                   identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "CHANGE_REQUEST", "INC-", queryFields))
+        .isEqualTo(null);
+    ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
+
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(requestArgumentCaptor.capture());
+    ServiceNowTaskNGParameters parameters =
+        (ServiceNowTaskNGParameters) requestArgumentCaptor.getValue().getTaskParameters();
+
+    assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_TICKET);
+    assertThat(parameters.getQueryFields()).isEqualTo("active,opened_at,approval_set,number,caused_by");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void shouldGetStandardTemplateReadOnlyFields() {
+    Call mockCall = Mockito.mock(Call.class);
+
+    when(mockCall.clone()).thenReturn(mockCall);
+
+    String serviceNowStandardTemplateReadOnlyFields =
+        "description,backout_plan,test_plan,implementation_plan,short_description";
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(getConnector(true)));
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(ServiceNowTaskNGResponse.builder()
+                        .serviceNowStandardTemplateReadOnlyFields(serviceNowStandardTemplateReadOnlyFields)
+                        .build());
+    List<String> result =
+        serviceNowResourceService.getStandardTemplateReadOnlyFields(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    assertThat(result).hasSize(5);
+    assertThat(result.get(0)).isEqualTo("description");
+    assertThat(result.get(1)).isEqualTo("backout_plan");
+    assertThat(result.get(2)).isEqualTo("test_plan");
+    assertThat(result.get(3)).isEqualTo("implementation_plan");
+    assertThat(result.get(4)).isEqualTo("short_description");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void shouldGetStandardTemplateReadOnlyFieldsForEmptyString() {
+    Call mockCall = Mockito.mock(Call.class);
+
+    when(mockCall.clone()).thenReturn(mockCall);
+
+    String serviceNowStandardTemplateReadOnlyFields = "";
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(getConnector(true)));
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(ServiceNowTaskNGResponse.builder()
+                        .serviceNowStandardTemplateReadOnlyFields(serviceNowStandardTemplateReadOnlyFields)
+                        .build());
+    List<String> result =
+        serviceNowResourceService.getStandardTemplateReadOnlyFields(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    assertThat(result).hasSize(0);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void shouldGetStandardTemplateReadOnlyFieldsForSingleEntry() {
+    Call mockCall = Mockito.mock(Call.class);
+
+    when(mockCall.clone()).thenReturn(mockCall);
+
+    String serviceNowStandardTemplateReadOnlyFields = "description";
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(getConnector(true)));
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(ServiceNowTaskNGResponse.builder()
+                        .serviceNowStandardTemplateReadOnlyFields(serviceNowStandardTemplateReadOnlyFields)
+                        .build());
+    List<String> result =
+        serviceNowResourceService.getStandardTemplateReadOnlyFields(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0)).isEqualTo("description");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void shouldGetStandardTemplateReadOnlyFieldsForNullString() {
+    Call mockCall = Mockito.mock(Call.class);
+
+    when(mockCall.clone()).thenReturn(mockCall);
+
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(getConnector(true)));
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(ServiceNowTaskNGResponse.builder().build());
+    List<String> result =
+        serviceNowResourceService.getStandardTemplateReadOnlyFields(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    assertThat(result).hasSize(0);
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void shouldGetStandardTemplateReadOnlyHandleException() {
+    Call mockCall = Mockito.mock(Call.class);
+
+    when(mockCall.clone()).thenReturn(mockCall);
+
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(getConnector(true)));
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenThrow(new ServiceNowException(
+            "User is unauthorized to access table: std_change_properties", SERVICENOW_ERROR, USER));
+    List<String> result =
+        serviceNowResourceService.getStandardTemplateReadOnlyFields(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    assertThat(result).hasSize(4);
+    assertThat(result).contains("description", "backout_plan", "test_plan", "implementation_plan");
+  }
+  private JsonNode readResource(String filePath) throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL jsonFile = classLoader.getResource(filePath);
+    ObjectMapper mapper = new ObjectMapper();
+    return mapper.readTree(jsonFile);
   }
 }

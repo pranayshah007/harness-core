@@ -6,9 +6,11 @@
  */
 
 package io.harness.delegate.task.artifactory;
-
 import static io.harness.encryption.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryConfigRequest.ArtifactoryConfigRequestBuilder;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthType;
@@ -17,6 +19,7 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsern
 
 import com.google.inject.Singleton;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Singleton
 public class ArtifactoryRequestMapper {
   public ArtifactoryConfigRequest toArtifactoryRequest(ArtifactoryConnectorDTO artifactoryConnector) {

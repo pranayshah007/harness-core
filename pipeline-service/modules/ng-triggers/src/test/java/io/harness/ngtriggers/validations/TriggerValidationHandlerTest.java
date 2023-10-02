@@ -25,6 +25,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
@@ -226,6 +227,38 @@ public class TriggerValidationHandlerTest extends CategoryTest {
         pipelineRefValidator.validate(TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).build());
     assertThat(validate.isSuccess()).isFalse();
     assertThat(validate.getMessage()).isEqualTo("Pipeline with Ref -> acc:org:prj:pipeline does not exists");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testPipelineRefValidatorWhenPipelineBranchNameIsExpression() {
+    doReturn(Optional.empty()).doReturn(Optional.empty()).when(buildTriggerHelper).fetchPipelineYamlForTrigger(any());
+
+    PipelineRefValidator pipelineRefValidator = new PipelineRefValidator(buildTriggerHelper);
+    ValidationResult validate = pipelineRefValidator.validate(
+        TriggerDetails.builder()
+            .ngTriggerEntity(ngTriggerEntity)
+            .ngTriggerConfigV2(NGTriggerConfigV2.builder().pipelineBranchName("<+trigger.branch>").build())
+            .build());
+    assertThat(validate.isSuccess()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testPipelineRefValidatorWhenPipelineBranchNameIsNull() {
+    TriggerDetails triggerDetails1 = TriggerDetails.builder()
+                                         .ngTriggerEntity(ngTriggerEntity)
+                                         .ngTriggerConfigV2(NGTriggerConfigV2.builder().build())
+                                         .build();
+    doReturn(Optional.of("placeholder_for_actual_pipeline_yml"))
+        .when(buildTriggerHelper)
+        .fetchPipelineYamlForTrigger(triggerDetails1);
+
+    PipelineRefValidator pipelineRefValidator = new PipelineRefValidator(buildTriggerHelper);
+    ValidationResult validate = pipelineRefValidator.validate(triggerDetails1);
+    assertThat(validate.isSuccess()).isTrue();
   }
 
   @Test

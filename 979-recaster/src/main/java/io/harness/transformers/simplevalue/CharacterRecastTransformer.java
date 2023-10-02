@@ -8,9 +8,11 @@
 package io.harness.transformers.simplevalue;
 
 import io.harness.beans.CastedField;
+import io.harness.core.Recaster;
 import io.harness.transformers.RecastTransformer;
 
 import com.google.common.collect.ImmutableList;
+import java.util.Map;
 
 public class CharacterRecastTransformer extends RecastTransformer implements SimpleValueTransformer {
   public CharacterRecastTransformer() {
@@ -25,6 +27,12 @@ public class CharacterRecastTransformer extends RecastTransformer implements Sim
 
     if (object instanceof Character) {
       return object;
+    }
+
+    // Handling first class recast encoded value
+    if (object instanceof Map) {
+      Object decodedObject = ((Map<String, Object>) object).get(Recaster.ENCODED_VALUE);
+      return decode(targetClass, decodedObject, castedField);
     }
 
     return String.valueOf(object).toCharArray()[0];

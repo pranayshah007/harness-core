@@ -12,39 +12,36 @@ import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.IdentifierRef;
+import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
-import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
-import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
-import io.harness.cdng.manifest.yaml.GithubStore;
-import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.serverless.ServerlessEntityHelper;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2StepInfo;
-import io.harness.connector.ConnectorInfoDTO;
-import io.harness.connector.ConnectorResponseDTO;
+import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaV2BaseStepInfo;
 import io.harness.connector.services.ConnectorService;
-import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
-import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
-import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
-import io.harness.delegate.task.serverless.ServerlessAwsLambdaInfraConfig;
-import io.harness.encryption.SecretRefData;
+import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
-import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ImageDetails;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
+import io.harness.pms.contracts.plan.PluginCreationResponse;
 import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
 import io.harness.pms.contracts.plan.PluginDetails;
+import io.harness.pms.contracts.plan.PluginDetails.Builder;
+import io.harness.pms.contracts.plan.StepInfoProto;
+import io.harness.pms.sdk.core.plugin.ContainerPluginParseException;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
@@ -54,17 +51,16 @@ import io.harness.yaml.extended.ci.container.ContainerResource;
 
 import com.google.inject.name.Named;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
@@ -110,9 +106,7 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProviderTest extends CategoryT
             .connectorRef(ParameterField.<String>builder().value("connectorRef").build())
             .build();
     doReturn(serverlessAwsLambdaDeployV2StepInfo).when(cdAbstractStepNode).getStepSpecType();
-    doReturn(Collections.emptyMap())
-        .when(serverlessAwsLambdaDeployV2PluginInfoProvider)
-        .getEnvironmentVariables(any(), any());
+    doReturn(Collections.emptyMap()).when(serverlessV2PluginInfoProviderHelper).getEnvironmentVariables(any(), any());
     PluginCreationResponseWrapper pluginCreationResponseWrapper = mock(PluginCreationResponseWrapper.class);
     doReturn(pluginCreationResponseWrapper)
         .when(serverlessAwsLambdaDeployV2PluginInfoProvider)
@@ -131,103 +125,116 @@ public class ServerlessAwsLambdaDeployV2PluginInfoProviderTest extends CategoryT
         .isEqualTo(pluginCreationResponseWrapper);
   }
 
-  @Test
+  @Test(expected = ContainerPluginParseException.class)
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
-  public void testGetEnvironmentVariables() {
+  public void testGetPluginInfoWhenException() throws IOException {
     String accountId = "accountId";
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
 
-    List<String> paths = Arrays.asList("path1");
-    GithubStore storeConfig = GithubStore.builder()
-                                  .connectorRef(ParameterField.<String>builder().value("connector").build())
-                                  .paths(ParameterField.<List<String>>builder().value(paths).build())
-                                  .build();
+    String jsonNode = "jsonNdod";
+    PluginCreationRequest pluginCreationRequest = PluginCreationRequest.newBuilder().setStepJsonNode(jsonNode).build();
+    CdAbstractStepNode cdAbstractStepNode = mock(CdAbstractStepNode.class);
+    doReturn("identifier").when(cdAbstractStepNode).getIdentifier();
+    doReturn("name").when(cdAbstractStepNode).getName();
+    doReturn("uuid").when(cdAbstractStepNode).getUuid();
+
     ServerlessAwsLambdaDeployV2StepInfo serverlessAwsLambdaDeployV2StepInfo =
         ServerlessAwsLambdaDeployV2StepInfo.infoBuilder()
-            .deployCommandOptions(ParameterField.createValueField(Collections.emptyList()))
+            .resources(ContainerResource.builder().build())
+            .runAsUser(ParameterField.<Integer>builder().value(1).build())
+            .connectorRef(ParameterField.<String>builder().value("connectorRef").build())
             .build();
-    ManifestsOutcome manifestsOutcome = new ManifestsOutcome();
-    ServerlessAwsLambdaManifestOutcome serverlessAwsLambdaManifestOutcome =
-        ServerlessAwsLambdaManifestOutcome.builder().store(storeConfig).build();
-    doReturn(manifestsOutcome)
+    doReturn(serverlessAwsLambdaDeployV2StepInfo).when(cdAbstractStepNode).getStepSpecType();
+    doReturn(Collections.emptyMap()).when(serverlessV2PluginInfoProviderHelper).getEnvironmentVariables(any(), any());
+    PluginCreationResponseWrapper pluginCreationResponseWrapper = mock(PluginCreationResponseWrapper.class);
+    doReturn(pluginCreationResponseWrapper)
         .when(serverlessAwsLambdaDeployV2PluginInfoProvider)
-        .resolveServerlessManifestsOutcome(any());
-    doReturn(serverlessAwsLambdaManifestOutcome)
-        .when(pluginInfoProviderUtils)
-        .getServerlessManifestOutcome(any(), any());
+        .getPluginCreationResponseWrapper(any(), any());
 
-    String configOverridePath = "config";
-    doReturn(configOverridePath).when(serverlessAwsLambdaDeployV2PluginInfoProvider).getConfigOverridePath(any());
+    doReturn(mock(ImageDetails.class)).when(serverlessAwsLambdaDeployV2PluginInfoProvider).getImageDetails(any());
 
-    doReturn(paths).when(serverlessAwsLambdaDeployV2PluginInfoProvider).getFolderPathsForManifest(any());
-
-    ServerlessAwsLambdaInfrastructureOutcome infrastructureOutcome =
-        ServerlessAwsLambdaInfrastructureOutcome.builder().connectorRef("connector").build();
-
-    doReturn(infrastructureOutcome).when(outcomeService).resolve(any(), any());
-
-    ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig = mock(ServerlessAwsLambdaInfraConfig.class);
-    doReturn(serverlessAwsLambdaInfraConfig)
+    PluginDetails.Builder pluginBuilder = PluginDetails.newBuilder();
+    doReturn(pluginBuilder)
         .when(serverlessAwsLambdaDeployV2PluginInfoProvider)
-        .getServerlessInfraConfig(any(), any());
+        .getPluginDetailsBuilder(any(), any(), any());
+    doThrow(IOException.class).when(serverlessAwsLambdaDeployV2PluginInfoProvider).getRead(jsonNode);
 
-    String stage = "stage";
-    String region = "region";
+    serverlessAwsLambdaDeployV2PluginInfoProvider.getPluginInfo(
+        pluginCreationRequest, Collections.emptySet(), ambiance);
+  }
 
-    doReturn(stage).when(serverlessAwsLambdaInfraConfig).getStage();
-    doReturn(region).when(serverlessAwsLambdaInfraConfig).getRegion();
+  @Test()
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testGetPluginCreationResponseWrapper() {
+    PluginCreationResponse pluginCreationResponse = mock(PluginCreationResponse.class);
+    StepInfoProto stepInfoProto = mock(StepInfoProto.class);
+    PluginCreationResponseWrapper pluginCreationResponseWrapper =
+        serverlessAwsLambdaDeployV2PluginInfoProvider.getPluginCreationResponseWrapper(
+            pluginCreationResponse, stepInfoProto);
+    assertThat(pluginCreationResponseWrapper.getResponse()).isEqualTo(pluginCreationResponse);
+    assertThat(pluginCreationResponseWrapper.getStepInfo()).isEqualTo(stepInfoProto);
+  }
 
-    NGAccess ngAccess = mock(NGAccess.class);
-    doReturn(ngAccess).when(serverlessAwsLambdaDeployV2PluginInfoProvider).getNgAccess(any());
+  @Test()
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testGetPluginCreationResponse() {
+    Builder builder = mock(Builder.class);
+    PluginDetails pluginDetails = mock(PluginDetails.class);
+    doReturn(pluginDetails).when(builder).build();
+    PluginCreationResponse pluginCreationResponse =
+        serverlessAwsLambdaDeployV2PluginInfoProvider.getPluginCreationResponse(builder);
+    assertThat(pluginCreationResponse.getPluginDetails()).isEqualTo(pluginDetails);
+  }
 
-    IdentifierRef identifierRef = mock(IdentifierRef.class);
-    doReturn(identifierRef).when(serverlessAwsLambdaDeployV2PluginInfoProvider).getIdentifierRef(any(), any());
+  @Test()
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testGetImageDetails() {
+    ServerlessAwsLambdaV2BaseStepInfo serverlessAwsLambdaV2BaseStepInfo =
+        ServerlessAwsLambdaDeployV2StepInfo.infoBuilder()
+            .connectorRef(ParameterField.createValueField("ref"))
+            .image(ParameterField.createValueField("ref"))
+            .imagePullPolicy(ParameterField.createValueField(ImagePullPolicy.ALWAYS))
+            .build();
+    Mockito.mockStatic(PluginInfoProviderHelper.class);
+    ImageDetails imageDetails = mock(ImageDetails.class);
+    when(PluginInfoProviderHelper.getImageDetails(any(), any(), any())).thenReturn(imageDetails);
+    assertThat(serverlessAwsLambdaDeployV2PluginInfoProvider.getImageDetails(serverlessAwsLambdaV2BaseStepInfo))
+        .isEqualTo(imageDetails);
+  }
 
-    ConnectorResponseDTO connectorResponseDTO = mock(ConnectorResponseDTO.class);
-    Optional<ConnectorResponseDTO> optionalConnectorResponseDTO = Optional.of(connectorResponseDTO);
+  @Test()
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testGetPluginDetailsBuilder() {
+    ContainerResource containerResource = mock(ContainerResource.class);
+    Mockito.mockStatic(PluginInfoProviderHelper.class);
+    ImageDetails imageDetails = mock(ImageDetails.class);
+    Builder builder = mock(Builder.class);
+    when(PluginInfoProviderHelper.buildPluginDetails(any(), any(), any(), anyBoolean())).thenReturn(builder);
+    Set<Integer> usedPorts = new HashSet<>();
+    usedPorts.add(1);
+    assertThat(serverlessAwsLambdaDeployV2PluginInfoProvider.getPluginDetailsBuilder(
+                   containerResource, ParameterField.createValueField(1), usedPorts))
+        .isEqualTo(builder);
+  }
 
-    doReturn(optionalConnectorResponseDTO).when(connectorService).get(any(), any(), any(), any());
+  @Test()
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testIsSupportedWhenTrue() {
+    assertThat(serverlessAwsLambdaDeployV2PluginInfoProvider.isSupported(
+                   StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2))
+        .isTrue();
+  }
 
-    ConnectorInfoDTO connectorInfoDTO = mock(ConnectorInfoDTO.class);
-    doReturn(connectorInfoDTO).when(connectorResponseDTO).getConnector();
-
-    SecretRefData awsAccess = mock(SecretRefData.class);
-    SecretRefData awsSecret = mock(SecretRefData.class);
-    AwsManualConfigSpecDTO awsCredentialSpecDTO =
-        AwsManualConfigSpecDTO.builder().accessKey("").accessKeyRef(awsAccess).secretKeyRef(awsSecret).build();
-    AwsCredentialDTO awsCredentialDTO = AwsCredentialDTO.builder().config(awsCredentialSpecDTO).build();
-    AwsConnectorDTO connectorConfigDTO = AwsConnectorDTO.builder().credential(awsCredentialDTO).build();
-    doReturn(connectorConfigDTO).when(connectorInfoDTO).getConnectorConfig();
-
-    String access = "access";
-    String secret = "sercret";
-
-    doReturn(access).when(serverlessAwsLambdaDeployV2PluginInfoProvider).getKey(ambiance, awsAccess);
-    doReturn(secret).when(serverlessAwsLambdaDeployV2PluginInfoProvider).getKey(ambiance, awsSecret);
-
-    doReturn("path1")
-        .when(serverlessV2PluginInfoProviderHelper)
-        .getServerlessAwsLambdaDirectoryPathFromManifestOutcome(any());
-
-    Map<String, String> response = serverlessAwsLambdaDeployV2PluginInfoProvider.getEnvironmentVariables(
-        ambiance, serverlessAwsLambdaDeployV2StepInfo);
-    assertThat(response.containsKey("PLUGIN_SERVERLESS_DIR")).isTrue();
-    assertThat(response.get("PLUGIN_SERVERLESS_DIR")).isEqualTo(paths.get(0));
-
-    assertThat(response.containsKey("PLUGIN_SERVERLESS_YAML_CUSTOM_PATH")).isTrue();
-    assertThat(response.get("PLUGIN_SERVERLESS_YAML_CUSTOM_PATH")).isEqualTo(configOverridePath);
-
-    assertThat(response.containsKey("PLUGIN_SERVERLESS_STAGE")).isTrue();
-    assertThat(response.get("PLUGIN_SERVERLESS_STAGE")).isEqualTo(stage);
-
-    assertThat(response.containsKey("PLUGIN_AWS_ACCESS_KEY")).isTrue();
-    assertThat(response.get("PLUGIN_AWS_ACCESS_KEY")).isEqualTo(access);
-
-    assertThat(response.containsKey("PLUGIN_AWS_SECRET_KEY")).isTrue();
-    assertThat(response.get("PLUGIN_AWS_SECRET_KEY")).isEqualTo(secret);
-
-    assertThat(response.containsKey("PLUGIN_REGION")).isTrue();
-    assertThat(response.get("PLUGIN_REGION")).isEqualTo(region);
+  @Test()
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testIsSupportedWhenFalse() {
+    assertThat(serverlessAwsLambdaDeployV2PluginInfoProvider.isSupported("asdf")).isFalse();
   }
 }

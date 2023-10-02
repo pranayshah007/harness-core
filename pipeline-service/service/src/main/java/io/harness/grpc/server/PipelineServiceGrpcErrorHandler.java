@@ -15,9 +15,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.ExceptionLogger;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 
+import com.google.inject.Inject;
 import io.grpc.ForwardingServerCallListener.SimpleForwardingServerCallListener;
 import io.grpc.Metadata;
 import io.grpc.ServerCall;
@@ -31,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public class PipelineServiceGrpcErrorHandler implements ServerInterceptor {
+  @Inject ExceptionManager exceptionManager;
   @Override
   public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
       ServerCall<ReqT, RespT> call, Metadata metadata, ServerCallHandler<ReqT, RespT> next) {
@@ -64,14 +66,11 @@ public class PipelineServiceGrpcErrorHandler implements ServerInterceptor {
       }
 
       private void handleException(Exception ex) {
-        if (ex instanceof WingsException) {
-          handleWingsException((WingsException) ex);
-        } else if (ex instanceof StatusRuntimeException) {
+        if (ex instanceof StatusRuntimeException) {
           handleStatusRuntimeException((StatusRuntimeException) ex);
         } else {
-          String message = ExceptionUtils.getMessage(ex);
-          log.error("Unknown exception in grpc call: " + message, ex);
-          call.close(Status.INTERNAL.withDescription(message).withCause(ex), new Metadata());
+          ex = exceptionManager.processException(ex);
+          handleWingsException((WingsException) ex);
         }
       }
 

@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.integrationstage;
+package io.harness.ci.execution.integrationstage;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -49,9 +49,12 @@ public class BuildJobEnvInfoBuilder {
         return InitializeStepInfo.DEFAULT_TIMEOUT_WITH_QUEUE;
       }
       return VM_INIT_TIMEOUT_MILLIS;
+    } else {
+      if (queueEnabled) {
+        return InitializeStepInfo.DEFAULT_TIMEOUT_WITH_QUEUE;
+      }
+      return InitializeStepInfo.DEFAULT_TIMEOUT;
     }
-
-    return InitializeStepInfo.DEFAULT_TIMEOUT;
   }
 
   private int getK8Timeout(K8sDirectInfraYaml k8sDirectInfraYaml, boolean queueEnabled) {

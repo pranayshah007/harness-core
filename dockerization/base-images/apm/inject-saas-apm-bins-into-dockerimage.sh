@@ -34,7 +34,7 @@ function download_saas_apm_binaries(){
 
 export APPD_AGENT='https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/appd/AppServerAgent-1.8-23.2.0.34668.zip'
 export ET_AGENT='https://get.et.harness.io/releases/latest/nix/harness-et-agent.tar.gz'
-export OT_AGENT='https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/opentelemetry/opentelemetry-javaagent.jar'
+export OT_AGENT='https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/opentelemetry/1.27.0/opentelemetry-javaagent.jar'
 export JACOCO_AGENT='https://repo1.maven.org/maven2/org/jacoco/jacoco/0.8.7/jacoco-0.8.7.zip'
 
 echo "STEP 1: INFO: Downloading APM Binaries Locally..."

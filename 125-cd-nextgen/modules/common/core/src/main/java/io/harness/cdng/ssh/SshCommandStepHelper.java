@@ -21,7 +21,9 @@ import static io.harness.cdng.ssh.utils.CommandStepUtils.mergeEnvironmentVariabl
 import static io.harness.common.ParameterFieldHelper.getBooleanParameterFieldValue;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
+import static io.harness.delegate.task.shell.winrm.WinRmCommandConstants.SESSION_TIMEOUT;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.steps.shellscript.ShellScriptBaseSource.HARNESS;
 import static io.harness.steps.shellscript.ShellScriptBaseSource.INLINE;
@@ -30,7 +32,10 @@ import static io.harness.utils.IdentifierRefHelper.getIdentifierRef;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.FileReference;
 import io.harness.beans.common.VariablesSweepingOutput;
@@ -50,6 +55,7 @@ import io.harness.cdng.ssh.rollback.CommandStepRollbackHelper;
 import io.harness.cdng.ssh.rollback.SshWinRmPrepareRollbackDataOutcome;
 import io.harness.cdng.ssh.rollback.SshWinRmRollbackData;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.common.NGTimeConversionHelper;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.shell.CommandTaskParameters;
@@ -75,7 +81,6 @@ import io.harness.logging.UnitStatus;
 import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.ng.core.models.Secret;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
@@ -87,6 +92,7 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.secretmanagerclient.SecretType;
@@ -114,6 +120,8 @@ import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @Singleton
 @OwnedBy(CDP)
 @Slf4j
@@ -131,7 +139,7 @@ public class SshCommandStepHelper extends CDStepHelper {
   @Inject private NGSecretServiceV2 ngSecretServiceV2;
 
   public CommandTaskParameters buildCommandTaskParameters(
-      @Nonnull Ambiance ambiance, @Nonnull CommandStepParameters commandStepParameters) {
+      @Nonnull Ambiance ambiance, @Nonnull CommandStepParameters commandStepParameters, String sessionTimeout) {
     ServiceStepOutcome serviceOutcome = (ServiceStepOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
     InfrastructureOutcome infrastructure = getInfrastructureOutcome(ambiance);
@@ -142,14 +150,14 @@ public class SshCommandStepHelper extends CDStepHelper {
       return buildSshCommandTaskParameters(ambiance, commandStepParameters, mergedEnvVariables);
     } else if (ServiceSpecType.WINRM.toLowerCase(Locale.ROOT)
                    .equals(serviceOutcome.getType().toLowerCase(Locale.ROOT))) {
-      return buildWinRmTaskParameters(ambiance, commandStepParameters, mergedEnvVariables);
+      return buildWinRmTaskParameters(ambiance, commandStepParameters, mergedEnvVariables, sessionTimeout);
     } else {
       throw new UnsupportedOperationException(
           format("Unsupported service type: [%s] selected for command step", serviceOutcome.getType()));
     }
   }
 
-  public StepResponse handleTaskException(Ambiance ambiance, StepElementParameters stepElementParameters, Exception e)
+  public StepResponse handleTaskException(Ambiance ambiance, StepBaseParameters stepElementParameters, Exception e)
       throws Exception {
     // Trying to figure out if exception is coming from command task or it is an exception from delegate service.
     // In the second case we need to close log stream and provide unit progress data as part of response
@@ -201,8 +209,8 @@ public class SshCommandStepHelper extends CDStepHelper {
     }
   }
 
-  private WinrmTaskParameters buildWinRmTaskParameters(
-      Ambiance ambiance, CommandStepParameters commandStepParameters, Map<String, String> mergedEnvVariables) {
+  private WinrmTaskParameters buildWinRmTaskParameters(Ambiance ambiance, CommandStepParameters commandStepParameters,
+      Map<String, String> mergedEnvVariables, String sessionTimeout) {
     OptionalSweepingOutput optionalInfraOutput = executionSweepingOutputService.resolveOptional(ambiance,
         RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.WINRM_INFRA_DELEGATE_CONFIG_OUTPUT_NAME));
     if (!optionalInfraOutput.isFound()) {
@@ -211,10 +219,12 @@ public class SshCommandStepHelper extends CDStepHelper {
 
     WinRmInfraDelegateConfigOutput delegateConfig = (WinRmInfraDelegateConfigOutput) optionalInfraOutput.getOutput();
     if (commandStepParameters.isRollback) {
-      return createRollbackWinRmTaskParameters(ambiance, commandStepParameters, mergedEnvVariables, delegateConfig);
+      return createRollbackWinRmTaskParameters(
+          ambiance, commandStepParameters, mergedEnvVariables, delegateConfig, sessionTimeout);
     } else {
       prepareSshWinRmRollbackData(ambiance);
-      return createWinRmTaskParameters(ambiance, commandStepParameters, mergedEnvVariables, delegateConfig);
+      return createWinRmTaskParameters(
+          ambiance, commandStepParameters, mergedEnvVariables, delegateConfig, sessionTimeout);
     }
   }
 
@@ -232,7 +242,6 @@ public class SshCommandStepHelper extends CDStepHelper {
     finalEnvVariables = mergeEnvironmentVariables(evaluatedStageVariables, finalEnvVariables);
     finalEnvVariables = mergeEnvironmentVariables(evaluatedPipelineVariables, finalEnvVariables);
     finalEnvVariables = mergeEnvironmentVariables(getServiceVariables(ambiance), finalEnvVariables);
-    finalEnvVariables = mergeEnvironmentVariables(infrastructure.getEnvironment().getVariables(), finalEnvVariables);
     return mergeEnvironmentVariables(commandStepParameters.getEnvironmentVariables(), finalEnvVariables);
   }
 
@@ -326,6 +335,8 @@ public class SshCommandStepHelper extends CDStepHelper {
         .commandUnits(
             mapCommandUnits(ambiance, commandStepParameters.getCommandUnits(), onDelegate, Collections.emptyMap()))
         .host(onDelegate ? null : getHost(commandStepParameters))
+        .disableEvaluateExportVariable(cdFeatureFlagHelper.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_DISABLE_EVALUATE_EXPORT_VARIABLES))
         .build();
   }
 
@@ -350,11 +361,14 @@ public class SshCommandStepHelper extends CDStepHelper {
         .commandUnits(
             mapCommandUnits(ambiance, commandStepParameters.getCommandUnits(), onDelegate, Collections.emptyMap()))
         .host(onDelegate ? null : getHost(commandStepParameters))
+        .disableEvaluateExportVariable(cdFeatureFlagHelper.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_DISABLE_EVALUATE_EXPORT_VARIABLES))
         .build();
   }
 
   private WinrmTaskParameters createWinRmTaskParameters(Ambiance ambiance, CommandStepParameters commandStepParameters,
-      Map<String, String> mergedEnvVariables, WinRmInfraDelegateConfigOutput winRmInfraDelegateConfigOutput) {
+      Map<String, String> mergedEnvVariables, WinRmInfraDelegateConfigOutput winRmInfraDelegateConfigOutput,
+      String sessionTimeout) {
     commandStepRollbackHelper.updateRollbackData(getScope(ambiance), ambiance.getStageExecutionId(),
         commandStepParameters.getEnvironmentVariables(), commandStepParameters.getOutputVariables());
     String accountId = AmbianceUtils.getAccountId(ambiance);
@@ -379,12 +393,17 @@ public class SshCommandStepHelper extends CDStepHelper {
         .disableWinRMCommandEncodingFFSet(
             cdFeatureFlagHelper.isEnabled(accountId, FeatureName.DISABLE_WINRM_COMMAND_ENCODING_NG))
         .winrmScriptCommandSplit(cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_SCRIPT_COMMAND_SPLIT_NG))
+        .sessionTimeout(isNotEmpty(sessionTimeout)
+                ? Math.max(NGTimeConversionHelper.convertTimeStringToMilliseconds(sessionTimeout), SESSION_TIMEOUT)
+                : SESSION_TIMEOUT)
+        .disableWinRmEnvVarEscaping(
+            cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_NG_DISABLE_SPECIAL_CHARS_ESCAPE_OF_WINRM_ENV_VARS))
         .build();
   }
 
   private WinrmTaskParameters createRollbackWinRmTaskParameters(Ambiance ambiance,
       CommandStepParameters commandStepParameters, Map<String, String> mergedEnvVariables,
-      WinRmInfraDelegateConfigOutput winRmInfraDelegateConfigOutput) {
+      WinRmInfraDelegateConfigOutput winRmInfraDelegateConfigOutput, String sessionTimeout) {
     // Rollback Logic
     // Get the rollback data from the latest successful deployment, getting it from DB.
     SshWinRmRollbackData sshWinRmRollbackData =
@@ -409,6 +428,11 @@ public class SshCommandStepHelper extends CDStepHelper {
         .disableWinRMCommandEncodingFFSet(
             cdFeatureFlagHelper.isEnabled(accountId, FeatureName.DISABLE_WINRM_COMMAND_ENCODING_NG))
         .winrmScriptCommandSplit(cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_SCRIPT_COMMAND_SPLIT_NG))
+        .sessionTimeout(isNotEmpty(sessionTimeout)
+                ? Math.max(NGTimeConversionHelper.convertTimeStringToMilliseconds(sessionTimeout), SESSION_TIMEOUT)
+                : SESSION_TIMEOUT)
+        .disableWinRmEnvVarEscaping(
+            cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_NG_DISABLE_SPECIAL_CHARS_ESCAPE_OF_WINRM_ENV_VARS))
         .build();
   }
 
@@ -461,12 +485,9 @@ public class SshCommandStepHelper extends CDStepHelper {
 
   @Nullable
   private FileDelegateConfig getFileDelegateConfig(@NotNull Ambiance ambiance) {
-    boolean shouldRenderConfigFiles =
-        cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_NG_CONFIG_FILE_EXPRESSION);
     Optional<ConfigFilesOutcome> configFilesOutcomeOptional = getConfigFilesOutcome(ambiance);
     return configFilesOutcomeOptional
-        .map(configFilesOutcome
-            -> sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance, shouldRenderConfigFiles))
+        .map(configFilesOutcome -> sshWinRmConfigFileHelper.getFileDelegateConfig(configFilesOutcome, ambiance))
         .orElse(null);
   }
 

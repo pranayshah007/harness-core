@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl;
-
 import static io.harness.beans.PageRequest.UNLIMITED;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -14,8 +13,11 @@ import static io.harness.mongo.MongoConfig.NO_LIMIT;
 
 import static software.wings.common.VerificationConstants.ML_RECORDS_TTL_MONTHS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageRequest.PageRequestBuilder;
 import io.harness.beans.SearchFilter;
@@ -52,6 +54,8 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Created by rsingh on 2/16/18.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 @OwnedBy(HarnessTeam.CV)
 public class WorkflowExecutionBaselineServiceImpl implements WorkflowExecutionBaselineService {

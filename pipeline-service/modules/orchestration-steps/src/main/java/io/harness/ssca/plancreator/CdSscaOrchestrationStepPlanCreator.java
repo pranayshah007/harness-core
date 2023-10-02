@@ -50,6 +50,7 @@ public class CdSscaOrchestrationStepPlanCreator extends AbstractContainerStepPla
         .identifier(ContainerCommandUnitConstants.SscaOrchestrationStep.replaceAll("\\s", ""))
         .stepType(SscaConstants.CD_SSCA_ORCHESTRATION_STEP_TYPE)
         .group(StepOutcomeGroup.STEP.name())
+        .adviserObtainments(adviserObtainments)
         .stepParameters(stepParameters)
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()

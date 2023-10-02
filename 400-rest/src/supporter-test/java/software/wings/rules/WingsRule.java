@@ -62,6 +62,9 @@ import io.harness.manage.GlobalContextManager.GlobalContextGuard;
 import io.harness.module.DelegateServiceModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.notification.MongoBackendConfiguration;
+import io.harness.notification.NotificationClientConfiguration;
+import io.harness.notification.constant.NotificationClientSecrets;
 import io.harness.observer.NoOpRemoteObserverInformerImpl;
 import io.harness.observer.RemoteObserver;
 import io.harness.observer.RemoteObserverInformer;
@@ -83,7 +86,6 @@ import io.harness.serializer.kryo.TestManagerKryoRegistrar;
 import io.harness.serializer.morphia.ManagerTestMorphiaRegistrar;
 import io.harness.service.impl.DelegateCacheImpl;
 import io.harness.service.intfc.DelegateCache;
-import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
@@ -365,7 +367,6 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
     configuration.setGrpcDMSClientConfig(
         GrpcClientConfig.builder().target("localhost:15011").authority("localhost").build());
     configuration.setDmsSecret("dummy_key");
-
     configuration.setGrpcClientConfig(
         GrpcClientConfig.builder().target("localhost:9880").authority("localhost").build());
 
@@ -455,6 +456,19 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
                                                     .certValidationRequired(false)
                                                     .build();
     configuration.setSegmentConfiguration(segmentConfiguration);
+    MongoBackendConfiguration mongoBackendConfiguration =
+        MongoBackendConfiguration.builder().uri("mongodb://localhost:27017/notification").build();
+    mongoBackendConfiguration.setType("MONGO");
+    configuration.setNotificationClientConfiguration(
+        NotificationClientConfiguration.builder()
+            .notificationSecrets(
+                NotificationClientSecrets.builder()
+                    .notificationClientSecret(
+                        "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM")
+                    .build())
+            .notificationClientBackendConfiguration(mongoBackendConfiguration)
+            .serviceHttpClientConfig(ServiceHttpClientConfig.builder().baseUrl("http://localhost:9005").build())
+            .build());
     return configuration;
   }
 
@@ -559,7 +573,6 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
     });
     modules.add(new ValidationModule(validatorFactory));
     modules.add(TestMongoModule.getInstance());
-    modules.add(new SpringPersistenceTestModule());
     modules.add(new DelegateServiceModule());
     modules.add(new WingsModule((MainConfiguration) configuration, StartupMode.MANAGER));
     modules.add(new SimpleTotpModule());

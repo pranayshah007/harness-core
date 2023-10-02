@@ -9,7 +9,6 @@ package io.harness.connector.impl;
 
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.beans.FeatureName.DO_NOT_RENEW_APPROLE_TOKEN;
 import static io.harness.beans.FeatureName.ENABLE_CERT_VALIDATION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -65,7 +64,6 @@ import io.harness.delegatetasks.NGVaultRenewalTaskResponse;
 import io.harness.delegatetasks.NGVaultTokenLookupTaskResponse;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
-import io.harness.encryption.SecretRefHelper;
 import io.harness.encryptors.DelegateTaskUtils;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.AzureServiceException;
@@ -85,7 +83,6 @@ import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ng.core.encryptors.NGManagerEncryptorHelper;
 import io.harness.ng.core.entities.NGEncryptedData;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.ConnectorRepository;
 import io.harness.secretmanagerclient.NGSecretManagerMetadata;
 import io.harness.secretmanagerclient.SecretType;
@@ -119,6 +116,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -172,10 +170,17 @@ public class NGVaultServiceImpl implements NGVaultService {
     NGVaultRenewalTaskParameters parameters =
         NGVaultRenewalTaskParameters.builder().encryptionConfig(baseVaultConfig).build();
 
-    DelegateResponseData delegateResponseData =
-        getDelegateResponseData(vaultConnector.getAccountIdentifier(), parameters, NG_VAULT_RENEW_TOKEN);
+    DelegateResponseData delegateResponseData;
+    try {
+      delegateResponseData =
+          getDelegateResponseData(vaultConnector.getAccountIdentifier(), parameters, NG_VAULT_RENEW_TOKEN);
+    } catch (Exception ex) {
+      pauseRenewalIfStale(vaultConnector);
+      throw ex;
+    }
 
     if (!(delegateResponseData instanceof NGVaultRenewalTaskResponse)) {
+      pauseRenewalIfStale(vaultConnector);
       throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, UNKNOWN_RESPONSE, USER);
     }
 
@@ -186,6 +191,8 @@ public class NGVaultServiceImpl implements NGVaultService {
       vaultConnector.setRenewedAt(System.currentTimeMillis());
       connectorRepository.save(vaultConnector, ChangeType.NONE);
       updatePerpetualTaskWhenTokenIsRenewed(vaultConnector);
+    } else {
+      pauseRenewalIfStale(vaultConnector);
     }
   }
 
@@ -219,47 +226,8 @@ public class NGVaultServiceImpl implements NGVaultService {
 
   @Override
   public void renewAppRoleClientToken(VaultConnector vaultConnector) {
-    if (CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(
-            DO_NOT_RENEW_APPROLE_TOKEN.name(), vaultConnector.getAccountIdentifier()))) {
-      vaultConnector.setRenewAppRoleToken(false);
-      connectorRepository.save(vaultConnector, ChangeType.NONE);
-      return;
-    }
-    SecretManagerConfig secretManagerConfig = getSecretManagerConfig(vaultConnector.getAccountIdentifier(),
-        vaultConnector.getOrgIdentifier(), vaultConnector.getProjectIdentifier(), vaultConnector.getIdentifier());
-    BaseVaultConfig baseVaultConfig = (BaseVaultConfig) secretManagerConfig;
-    VaultAppRoleLoginResult vaultAppRoleLoginResult = appRoleLogin(baseVaultConfig);
-
-    SecretRefData secretRef = SecretRefHelper.createSecretRef(vaultConnector.getAuthTokenRef());
-    Scope scope = secretRef.getScope();
-    String accountIdentifier = vaultConnector.getAccountIdentifier();
-    String orgIdentifier = getOrgIdentifier(vaultConnector.getOrgIdentifier(), scope);
-    String projectIdentifier = getProjectIdentifier(vaultConnector.getProjectIdentifier(), scope);
-
-    SecretTextSpecDTO secretTextSpecDTO = SecretTextSpecDTO.builder()
-                                              .value(String.valueOf(vaultAppRoleLoginResult.getClientToken()))
-                                              .valueType(ValueType.Inline)
-                                              .secretManagerIdentifier(HARNESS_SECRET_MANAGER_IDENTIFIER)
-                                              .build();
-    SecretDTOV2 secretDTOV2 = SecretDTOV2.builder()
-                                  .type(SecretType.SecretText)
-                                  .identifier(secretRef.getIdentifier())
-                                  .projectIdentifier(projectIdentifier)
-                                  .orgIdentifier(orgIdentifier)
-                                  .spec(secretTextSpecDTO)
-                                  .build();
-
-    try {
-      encryptedDataService.updateSecretText(accountIdentifier, secretDTOV2);
-    } catch (Exception e) {
-      String message = "NG: Failed to update token for AppRole based login for secret manager "
-          + vaultConnector.getName() + " at " + vaultConnector.getVaultUrl();
-      log.error(message, e);
-      throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, USER);
-    }
-    vaultConnector.setRenewedAt(System.currentTimeMillis());
+    vaultConnector.setRenewAppRoleToken(false);
     connectorRepository.save(vaultConnector, ChangeType.NONE);
-    updatePerpetualTaskWhenTokenIsRenewed(vaultConnector);
   }
 
   @Override
@@ -317,15 +285,7 @@ public class NGVaultServiceImpl implements NGVaultService {
     if (vaultTokenLookupResult.getExpiryTime() == null || !vaultTokenLookupResult.isRenewable()) {
       // 1st condition means that this token is a root token
       // 2nd condition means that this token is not renewable ; both conditions imply that renewal is not required.
-
-      Criteria criteria = Criteria.where(ConnectorKeys.id).is(vaultConnector.getId());
-      Update update = new Update()
-                          .set(VaultConnectorKeys.lastTokenLookupAt, System.currentTimeMillis())
-                          .set(VaultConnectorKeys.renewalIntervalMinutes, 0L);
-      connectorRepository.update(criteria, update, NONE, vaultConnector.getProjectIdentifier(),
-          vaultConnector.getOrgIdentifier(), vaultConnector.getAccountIdentifier());
-
-      log.info("Renewal interval set to 0 for the Vault connector: {}", vaultConnector.getUuid());
+      stopRenewal(vaultConnector);
       return true;
     }
     return false;
@@ -395,13 +355,13 @@ public class NGVaultServiceImpl implements NGVaultService {
 
   @Override
   public void processTokenLookup(ConnectorDTO connectorDTO, String accountIdentifier) {
+    if (!isTokenLookupRequired(connectorDTO)) {
+      return;
+    }
     AccountId accountId = AccountId.newBuilder().setId(accountIdentifier).build();
     io.harness.delegate.TaskType taskType =
         io.harness.delegate.TaskType.newBuilder().setType(NG_VAULT_TOKEN_LOOKUP.name()).build();
     if (!delegateService.isTaskTypeSupported(accountId, taskType)) {
-      return;
-    }
-    if (!isTokenLookupRequired(connectorDTO)) {
       return;
     }
 
@@ -1026,5 +986,33 @@ public class NGVaultServiceImpl implements NGVaultService {
       return specDTO.getXVaultAwsIamServerId();
     }
     return null;
+  }
+
+  private void stopRenewal(VaultConnector vaultConnector) {
+    Criteria criteria = Criteria.where(ConnectorKeys.id).is(vaultConnector.getId());
+    Update update = new Update()
+                        .set(VaultConnectorKeys.lastTokenLookupAt, System.currentTimeMillis())
+                        .set(VaultConnectorKeys.renewalIntervalMinutes, 0L);
+    connectorRepository.update(criteria, update, NONE, vaultConnector.getProjectIdentifier(),
+        vaultConnector.getOrgIdentifier(), vaultConnector.getAccountIdentifier());
+
+    log.info("Renewal interval set to 0 for the Vault connector: {}", vaultConnector.getUuid());
+  }
+
+  private void pauseRenewalIfStale(VaultConnector vaultConnector) {
+    // a static buffer of 5 mins buffer has been added to tackle iterator delay
+    if (vaultConnector.getRenewedAt() < OffsetDateTime.now()
+                                            .minusMinutes(vaultConnector.getRenewalIntervalMinutes() + 5)
+                                            .toInstant()
+                                            .toEpochMilli()) {
+      log.warn("Stopping renewal iterator for vault- {} with id- {}", vaultConnector.getName(), vaultConnector.getId());
+
+      Criteria criteria = Criteria.where(ConnectorKeys.id).is(vaultConnector.getId());
+
+      Update update = new Update().set(ConnectorKeys.renewalPaused, true);
+
+      connectorRepository.update(vaultConnector.getAccountIdentifier(), vaultConnector.getOrgIdentifier(),
+          vaultConnector.getProjectIdentifier(), criteria, update);
+    }
   }
 }

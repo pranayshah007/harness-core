@@ -13,7 +13,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.pms.sdk.execution.events.NotifyEventHandler;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -30,8 +29,8 @@ public class PmsNotifyEventMessageListenerTest {
   @Test
   @Category(UnitTests.class)
   public void shouldValidateEventMessageListener() {
-    PmsNotifyEventMessageListener messageListener = Mockito.spy(
-        new PmsNotifyEventMessageListener("RANDOM_SERVICE", eventHandler, MoreExecutors.newDirectExecutorService()));
+    PmsNotifyEventMessageListener messageListener =
+        Mockito.spy(new PmsNotifyEventMessageListener("RANDOM_SERVICE", eventHandler));
 
     Boolean listenerProcessable = messageListener.isProcessable(Message.newBuilder().build());
     assertThat(listenerProcessable).isEqualTo(true);

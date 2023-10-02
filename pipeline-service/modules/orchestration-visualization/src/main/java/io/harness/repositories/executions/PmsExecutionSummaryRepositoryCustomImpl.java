@@ -13,7 +13,10 @@ import static org.springframework.data.domain.Sort.by;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -35,13 +38,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Collation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.repository.support.PageableExecutionUtils;
 import org.springframework.data.util.CloseableIterator;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
 @Slf4j
 @OwnedBy(PIPELINE)
@@ -61,6 +64,15 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
   }
 
   @Override
+  public void multiUpdate(Query query, Update update) {
+    RetryPolicy<Object> retryPolicy =
+        getRetryPolicy("[Retrying]: Failed updating PipelineExecutionSummary; attempt: {}",
+            "[Failed]: Failed updating PipelineExecutionSummary; attempt: {}");
+    Failsafe.with(retryPolicy)
+        .get(() -> mongoTemplate.updateMulti(query, update, PipelineExecutionSummaryEntity.class));
+  }
+
+  @Override
   public UpdateResult deleteAllExecutionsWhenPipelineDeleted(Query query, Update update) {
     RetryPolicy<Object> retryPolicy =
         getRetryPolicy("[Retrying]: Failed deleting PipelineExecutionSummary; attempt: {}",
@@ -73,7 +85,26 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
   public Page<PipelineExecutionSummaryEntity> findAll(Criteria criteria, Pageable pageable) {
     try {
       Query query = new Query(criteria).with(pageable);
-      query.collation(Collation.of("en").strength(Collation.ComparisonLevel.secondary()));
+      // Do not add directly the read helper inside the lambda, as secondary mongo reads were not going through if used
+      // inside lambda in PageableExecutionUtils
+      long count = pmsExecutionSummaryReadHelper.findCount(query);
+      List<PipelineExecutionSummaryEntity> summaryEntities = pmsExecutionSummaryReadHelper.find(query);
+      return PageableExecutionUtils.getPage(summaryEntities, pageable, () -> count);
+    } catch (IllegalArgumentException ex) {
+      log.error(ex.getMessage(), ex);
+      throw new InvalidRequestException("Execution Status not found", ex);
+    }
+  }
+
+  @Override
+  public Page<PipelineExecutionSummaryEntity> findAllWithProjection(
+      Criteria criteria, Pageable pageable, List<String> projections) {
+    try {
+      Query query = new Query(criteria).with(pageable);
+
+      for (String key : projections) {
+        query.fields().include(key);
+      }
       // Do not add directly the read helper inside the lambda, as secondary mongo reads were not going through if used
       // inside lambda in PageableExecutionUtils
       long count = pmsExecutionSummaryReadHelper.findCount(query);
@@ -166,15 +197,17 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
   }
 
   @Override
-  public List<String> findListOfUniqueBranches(Criteria criteria) {
+  public CloseableIterator<PipelineExecutionSummaryEntity> findListOfBranches(Criteria criteria) {
     Query query = new Query(criteria);
-    return pmsExecutionSummaryReadHelper.findListOfUniqueBranches(query);
+    query.fields().include(PlanExecutionSummaryKeys.entityGitDetailsBranch);
+    return pmsExecutionSummaryReadHelper.fetchExecutionSummaryEntityFromSecondary(query);
   }
 
   @Override
-  public List<String> findListOfUniqueRepositories(Criteria criteria) {
+  public CloseableIterator<PipelineExecutionSummaryEntity> findListOfRepositories(Criteria criteria) {
     Query query = new Query(criteria);
-    return pmsExecutionSummaryReadHelper.findListOfUniqueRepositories(query);
+    query.fields().include(PlanExecutionSummaryKeys.entityGitDetailsRepoName);
+    return pmsExecutionSummaryReadHelper.fetchExecutionSummaryEntityFromSecondary(query);
   }
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {

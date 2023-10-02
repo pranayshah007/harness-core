@@ -6,8 +6,10 @@
  */
 
 package io.harness.beans.environment.pod;
-
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.delegate.beans.ci.pod.PVCParams;
 import io.harness.delegate.beans.ci.pod.PodVolume;
@@ -25,6 +27,7 @@ import org.springframework.data.annotation.TypeAlias;
  * Stores all details require to spawn pod
  */
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Data
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)

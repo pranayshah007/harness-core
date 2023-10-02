@@ -3,3 +3,4 @@ identifier: accessControlServiceMetricsGroup
 labels:
   - namespace
   - containerName
+  - serviceName

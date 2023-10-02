@@ -49,25 +49,12 @@ public class ACLDAOImplTest extends AccessControlCoreTestBase {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testOnlyEnabledACLMatch() {
-    aclDaoImpl = new ACLDAOImpl(aclRepository, scopeLevels, true);
+    aclDaoImpl = new ACLDAOImpl(aclRepository, scopeLevels);
     Principal principal = Principal.of(PrincipalType.USER, randomAlphabetic(10));
     List<PermissionCheck> permissionChecks = new ArrayList<>();
     permissionChecks.add(PermissionCheck.builder().resourceType("user").permission("core_user_view").build());
     aclDaoImpl.getMatchingACLs(principal, permissionChecks);
 
     verify(aclRepository, times(1)).getByAclQueryStringInAndEnabled(any(), anyBoolean());
-  }
-
-  @Test
-  @Owner(developers = ASHISHSANODIA)
-  @Category(UnitTests.class)
-  public void testAllACLMatch() {
-    aclDaoImpl = new ACLDAOImpl(aclRepository, scopeLevels, false);
-    Principal principal = Principal.of(PrincipalType.USER, randomAlphabetic(10));
-    List<PermissionCheck> permissionChecks = new ArrayList<>();
-    permissionChecks.add(PermissionCheck.builder().resourceType("user").permission("core_user_view").build());
-    aclDaoImpl.getMatchingACLs(principal, permissionChecks);
-
-    verify(aclRepository, times(1)).getByAclQueryStringIn(any());
   }
 }

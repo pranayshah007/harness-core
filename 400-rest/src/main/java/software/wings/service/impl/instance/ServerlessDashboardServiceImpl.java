@@ -516,9 +516,9 @@ public class ServerlessDashboardServiceImpl implements ServerlessDashboardServic
 
     if (isNotEmpty(instanceList)) {
       HashSet<ServerlessInstance> instanceSet = new HashSet<>(instanceList);
-      log.info("Instances reported {}, set count {}", counter, instanceSet.size());
+      log.debug("Instances reported {}, set count {}", counter, instanceSet.size());
     } else {
-      log.info("Instances reported {}", counter);
+      log.debug("Instances reported {}", counter);
     }
     return instanceList;
   }

@@ -1,0 +1,14 @@
+---
+orgIdentifier: cvng_org_gc5qeLWq1W
+projectIdentifier: cvng_proj_fve79nRfOe
+identifier: cvng_service_UxrHvd7oNa_cvng_env_prod_NWceMzD9XM
+name: cvng_service_UxrHvd7oNa_cvng_env_prod_NWceMzD9XM
+type: Application
+description: ''
+serviceRef: cvng_service_UxrHvd7oNa
+environmentRefList: [cvng_env_prod_NWceMzD9XM]
+tags: {}
+enabled : true
+sources:
+  changeSources: []
+dependencies: []

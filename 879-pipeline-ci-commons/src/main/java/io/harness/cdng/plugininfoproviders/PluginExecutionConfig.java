@@ -7,6 +7,9 @@
 
 package io.harness.cdng.plugininfoproviders;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.steps.container.execution.plugin.StepImageConfig;
 
 import lombok.AccessLevel;
@@ -16,6 +19,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVERLESS, HarnessModuleComponent.CDS_ECS})
 @Data
 @Builder
 @NoArgsConstructor
@@ -27,5 +32,7 @@ public class PluginExecutionConfig {
   StepImageConfig gitCloneConfig;
   StepImageConfig serverlessPrepareRollbackV2StepImageConfig;
   StepImageConfig serverlessAwsLambdaDeployV2StepImageConfig;
+  StepImageConfig serverlessAwsLambdaPackageV2StepImageConfig;
+  StepImageConfig serverlessAwsLambdaRollbackV2StepImageConfig;
   String apiUrl;
 }

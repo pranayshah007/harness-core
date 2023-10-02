@@ -22,11 +22,15 @@ go_library(
     importpath = "github.com/harness/harness-core/product/log-service/handler",
     visibility = ["//visibility:public"],
     deps = [
+        "//product/log-service/cache",
         "//product/log-service/config",
+        "//product/log-service/entity",
         "//product/log-service/logger",
+        "//product/log-service/queue",
         "//product/log-service/store",
         "//product/log-service/store/bolt",
         "//product/log-service/stream",
+        "//product/log-service/stream/redis",
         "//product/platform/client",
         "@com_github_aws_aws_sdk_go//aws/awserr",
         "@com_github_aws_aws_sdk_go//service/s3",
@@ -44,9 +48,19 @@ go_test(
     srcs = ["middleware_test.go"],
     embed = [":handler"],
     deps = [
+        "//product/log-service/cache/memory",
         "//product/log-service/config",
+        "//product/log-service/entity",
         "//product/platform/client",
         "@com_github_dchest_authcookie//:authcookie",
         "@com_github_stretchr_testify//assert",
     ],
+)
+
+load("//:tools/bazel/macros.bzl", "run_analysis")
+
+run_analysis(
+    language = "go",
+    targets = [":handler"],
+    test_targets = [":handler_test"],
 )

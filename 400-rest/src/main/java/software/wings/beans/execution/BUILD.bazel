@@ -12,6 +12,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//957-cg-beans:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
     ],
 )

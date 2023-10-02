@@ -6,9 +6,11 @@
  */
 
 package io.harness.repositories.polling;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.polling.bean.PollingDocument;
 import io.harness.polling.bean.PollingInfo;
 import io.harness.polling.bean.PollingType;
@@ -16,13 +18,17 @@ import io.harness.polling.bean.PollingType;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
+import java.util.Map;
 import org.springframework.data.mongodb.core.query.Criteria;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(HarnessTeam.CDC)
 public interface PollingRepositoryCustom {
   PollingDocument addSubscribersToExistingPollingDoc(String accountId, String orgId, String projectId,
-      PollingType pollingType, PollingInfo pollingInfo, List<String> signatures);
-  PollingDocument addSubscribersToExistingPollingDoc(String accountId, String uuId, List<String> signatures);
+      PollingType pollingType, PollingInfo pollingInfo, List<String> signatures,
+      Map<String, List<String>> signaturesLock);
+  PollingDocument addSubscribersToExistingPollingDoc(
+      String accountId, String uuId, List<String> signatures, Map<String, List<String>> signaturesLock);
   PollingDocument deleteDocumentIfOnlySubscriber(String accountId, String orgId, String projectId,
       PollingType pollingType, PollingInfo pollingInfo, List<String> signatures);
   PollingDocument removeDocumentIfOnlySubscriber(String accountId, String pollingDocId, List<String> signatures);
@@ -32,6 +38,8 @@ public interface PollingRepositoryCustom {
       String accountId, String pollingDocId, List<String> signatures);
   UpdateResult updateSelectiveEntity(String accountId, String pollDocId, String key, Object value);
   PollingDocument findByUuidAndAccountIdAndSignature(String pollingDocId, String accountId, List<String> signature);
+  List<PollingDocument> findManyByUuidsAndAccountId(List<String> pollingDocIds, String accountId);
+  List<PollingDocument> findUuidsBySignaturesAndAccountId(List<String> signatures, String accountId);
 
   DeleteResult deleteAll(Criteria criteria);
 }

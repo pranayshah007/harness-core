@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
@@ -239,7 +240,9 @@ public class TemplateGitXServiceImplTest {
   @Owner(developers = UTKARSH_CHOUBEY)
   @Category(UnitTests.class)
   public void testImportTemplateFromRemoteFunction() {
-    doReturn("yaml").when(gitAwareEntityHelper).fetchYAMLFromRemote(anyString(), anyString(), anyString());
+    doReturn("yaml")
+        .when(gitAwareEntityHelper)
+        .fetchYAMLFromRemote(anyString(), anyString(), anyString(), anyBoolean());
     templateGitXService.importTemplateFromRemote(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
   }
 }

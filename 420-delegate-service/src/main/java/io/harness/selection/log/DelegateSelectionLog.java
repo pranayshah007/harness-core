@@ -23,6 +23,7 @@ import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.GoogleDataStoreAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
+import io.harness.selection.log.DelegateMetaData.DelegateMetaDataKeys;
 import io.harness.validation.Update;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -70,6 +71,12 @@ public class DelegateSelectionLog
                  .build())
         .build();
   }
+  public static final String DELEGATE_NAME =
+      DelegateSelectionLogKeys.delegateMetaData + "." + DelegateMetaDataKeys.delegateName;
+  public static final String HOST_NAME =
+      DelegateSelectionLogKeys.delegateMetaData + "." + DelegateMetaDataKeys.hostName;
+  public static final String DELEGATE_ID =
+      DelegateSelectionLogKeys.delegateMetaData + "." + DelegateMetaDataKeys.delegateId;
 
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
 
@@ -79,6 +86,7 @@ public class DelegateSelectionLog
   @NotEmpty private String message;
   @NotEmpty private String conclusion;
   @NotEmpty private long eventTimestamp;
+  private DelegateMetaData delegateMetaData;
   private long createdAt;
   /*
    * Used for deduplication of logs. Standalone logs will have a unique value and groups will have fixed.
@@ -102,6 +110,12 @@ public class DelegateSelectionLog
                 LongValue.newBuilder(eventTimestamp).setExcludeFromIndexes(true).build())
             .set(DelegateSelectionLogKeys.validUntil, validUntil.getTime());
 
+    if (delegateMetaData != null) {
+      logEntityBuilder.set(DELEGATE_NAME, delegateMetaData.getDelegateName());
+      logEntityBuilder.set(DELEGATE_ID, delegateMetaData.getDelegateId());
+      logEntityBuilder.set(HOST_NAME, delegateMetaData.getHostName());
+    }
+
     if (isNotEmpty(delegateIds)) {
       logEntityBuilder.set(DelegateSelectionLogKeys.delegateIds, delegateIds.stream().collect(Collectors.joining(",")));
     }
@@ -118,6 +132,12 @@ public class DelegateSelectionLog
             .message(readString(entity, DelegateSelectionLogKeys.message))
             .conclusion(readString(entity, DelegateSelectionLogKeys.conclusion))
             .eventTimestamp(readLong(entity, DelegateSelectionLogKeys.eventTimestamp))
+            .delegateMetaData(DelegateMetaData.builder()
+                                  .delegateId(readString(entity, DELEGATE_ID))
+                                  .delegateName(readString(entity, DELEGATE_NAME))
+                                  .hostName(readString(entity, HOST_NAME))
+                                  .build())
+
             .build();
 
     String delegateIdsString = readString(entity, DelegateSelectionLogKeys.delegateIds);

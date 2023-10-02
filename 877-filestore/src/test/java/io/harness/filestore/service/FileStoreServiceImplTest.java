@@ -29,6 +29,7 @@ import static io.harness.repositories.FileStoreRepositoryCriteriaCreator.createS
 import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.IVAN;
+import static io.harness.rule.OwnerRule.VITALIE;
 import static io.harness.rule.OwnerRule.VLAD;
 
 import static java.lang.String.format;
@@ -38,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
@@ -62,6 +64,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.ChecksumType;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.FileUploadLimit;
+import io.harness.eraro.ErrorMessageConstants;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -87,6 +90,9 @@ import io.harness.ng.core.filestore.dto.FileDTO;
 import io.harness.ng.core.filestore.dto.FileFilterDTO;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.spring.FileStoreRepository;
 import io.harness.rule.Owner;
 
@@ -110,6 +116,8 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.data.domain.Page;
@@ -130,6 +138,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
   @Mock private AccountService accountService;
   @Mock private OrganizationService organizationService;
   @Mock private ProjectService projectService;
+  @Mock private NGSettingsClient settingsClient;
 
   @Spy @InjectMocks private FileValidationService fileValidationService = new FileValidationServiceImpl();
 
@@ -144,6 +153,22 @@ public class FileStoreServiceImplTest extends CategoryTest {
     givenThatDatabaseIsEmpty();
 
     when(fileReferenceService.countEntitiesReferencingFile(any())).thenReturn(0L);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testFolderCreate() {
+    FileDTO newFolder = aFolderDto();
+    newFolder.setParentIdentifier(ROOT_FOLDER_IDENTIFIER);
+    when(fileFailsafeService.saveAndPublish(any())).thenReturn(newFolder);
+
+    FileDTO createdFolder = fileStoreService.create(newFolder, null);
+
+    assertThat(createdFolder).isNotNull();
+    assertThat(createdFolder.getName()).isEqualTo(newFolder.getName());
+    assertThat(createdFolder.getDescription()).isEqualTo(newFolder.getDescription());
+    assertThat(createdFolder.getTags()).isEqualTo(newFolder.getTags());
   }
 
   @Test
@@ -183,6 +208,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
     assertThat(result).isNotNull();
     assertThat(result.getName()).isEqualTo(newFolder.getName());
     assertThat(result.getDescription()).isEqualTo(newFolder.getDescription());
+    assertThat(result.getTags()).isEqualTo(newFolder.getTags());
   }
 
   @Test
@@ -256,6 +282,8 @@ public class FileStoreServiceImplTest extends CategoryTest {
     assertThat(folder.getLastModifiedBy()).isEqualTo(getEmbeddedUserDetailsDTO());
     assertThat(folder.getLastModifiedAt()).isEqualTo(1L);
     assertThat(folder.getPath()).isEqualTo("/some/dummy/path");
+    assertThat(folder.getDescription()).isEqualTo("some description");
+    assertThat(folder.getTags()).isEqualTo(getNgTags());
   }
 
   @Test
@@ -560,7 +588,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
              ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER))
         .thenReturn(Optional.empty());
     assertThatThrownBy(
-        () -> fileStoreService.delete(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER))
+        () -> fileStoreService.delete(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER, false))
         .isInstanceOf(InvalidArgumentsException.class)
         .hasMessage(
             "Not found file/folder with identifier [identifier], accountIdentifier [accountIdentifier], orgIdentifier [orgIdentifier] and projectIdentifier [projectIdentifier]");
@@ -575,10 +603,10 @@ public class FileStoreServiceImplTest extends CategoryTest {
     when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
              ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER))
         .thenReturn(Optional.of(file));
-    when(fileFailsafeService.deleteAndPublish(any())).thenReturn(true);
-    boolean result = fileStoreService.delete(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER);
+    when(fileFailsafeService.deleteAndPublish(any(), anyBoolean())).thenReturn(true);
+    boolean result = fileStoreService.delete(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER, false);
     assertThat(result).isTrue();
-    verify(fileFailsafeService).deleteAndPublish(file);
+    verify(fileFailsafeService).deleteAndPublish(file, false);
     verify(fileService).deleteFile(fileUuid, FileBucket.FILE_STORE);
   }
 
@@ -606,11 +634,11 @@ public class FileStoreServiceImplTest extends CategoryTest {
     when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndParentIdentifier(
              ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, folder1))
         .thenReturn(Arrays.asList(file));
-    when(fileFailsafeService.deleteAndPublish(any())).thenReturn(true);
-    boolean result = fileStoreService.delete(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, folder1);
+    when(fileFailsafeService.deleteAndPublish(any(), anyBoolean())).thenReturn(true);
+    boolean result = fileStoreService.delete(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, folder1, false);
     assertThat(result).isTrue();
-    verify(fileFailsafeService).deleteAndPublish(file);
-    verify(fileFailsafeService).deleteAndPublish(parentFolder);
+    verify(fileFailsafeService).deleteAndPublish(file, false);
+    verify(fileFailsafeService).deleteAndPublish(parentFolder, false);
     verify(fileService).deleteFile(fileUuid, FileBucket.FILE_STORE);
   }
 
@@ -638,17 +666,89 @@ public class FileStoreServiceImplTest extends CategoryTest {
     when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndParentIdentifier(
              ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, folder1))
         .thenReturn(Arrays.asList(file));
-    when(fileFailsafeService.deleteAndPublish(any())).thenReturn(true);
+    when(fileFailsafeService.deleteAndPublish(any(), anyBoolean())).thenReturn(true);
     doThrow(
         new ReferencedEntityException(format(
             "Folder [%s], or its subfolders, contain file(s) referenced by %s other entities and can not be deleted.",
             parentFolder.getIdentifier(), 1L)))
         .when(fileReferenceService)
         .validateReferenceByAndThrow(parentFolder);
-    assertThatThrownBy(() -> fileStoreService.delete(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, folder1))
+    assertThatThrownBy(
+        () -> fileStoreService.delete(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, folder1, false))
         .isInstanceOf(ReferencedEntityException.class)
         .hasMessage(
             "Folder [folder1], or its subfolders, contain file(s) referenced by 1 other entities and can not be deleted.");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void shouldForceDeleteFolderWithReferences() {
+    String fileUuid = "fileUUID";
+    NGFile file = builder().name(IDENTIFIER).fileUuid(fileUuid).build();
+    String folder1 = "folder1";
+    NGFile parentFolder = builder()
+                              .name(folder1)
+                              .identifier(folder1)
+                              .type(NGFileType.FOLDER)
+                              .accountIdentifier(ACCOUNT_IDENTIFIER)
+                              .orgIdentifier(ORG_IDENTIFIER)
+                              .projectIdentifier(PROJECT_IDENTIFIER)
+                              .build();
+    when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER))
+        .thenReturn(Optional.of(file));
+    when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, folder1))
+        .thenReturn(Optional.of(parentFolder));
+    when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndParentIdentifier(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, folder1))
+        .thenReturn(Arrays.asList(file));
+    when(fileFailsafeService.deleteAndPublish(any(), anyBoolean())).thenReturn(true);
+
+    when(settingsClient.getSetting(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(mock(retrofit2.Call.class));
+
+    SettingValueResponseDTO settingValueResponseDTOMock = mock(SettingValueResponseDTO.class);
+
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(settingValueResponseDTOMock);
+
+    when(settingValueResponseDTOMock.getValue()).thenReturn("true");
+
+    doThrow(
+        new ReferencedEntityException(format(
+            "Folder [%s], or its subfolders, contain file(s) referenced by %s other entities and can not be deleted.",
+            parentFolder.getIdentifier(), 1L)))
+        .when(fileReferenceService)
+        .validateReferenceByAndThrow(parentFolder);
+
+    boolean result = fileStoreService.delete(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, folder1, true);
+
+    mockRestStatic.close();
+    assertThat(result).isTrue();
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void shouldFailForceDeleteIfNotEnabled() {
+    when(settingsClient.getSetting(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(mock(retrofit2.Call.class));
+
+    SettingValueResponseDTO settingValueResponseDTOMock = mock(SettingValueResponseDTO.class);
+
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(settingValueResponseDTOMock);
+
+    when(settingValueResponseDTOMock.getValue()).thenReturn("false");
+
+    assertThatThrownBy(
+        () -> fileStoreService.delete(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "fileId", true))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(ErrorMessageConstants.FORCE_DELETE_SETTING_NOT_ENABLED);
+
+    mockRestStatic.close();
   }
 
   @Test
@@ -696,13 +796,13 @@ public class FileStoreServiceImplTest extends CategoryTest {
     when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndParentIdentifier(
              ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, folder2))
         .thenReturn(Arrays.asList(childFile));
-    when(fileFailsafeService.deleteAndPublish(any())).thenReturn(true);
-    boolean result = fileStoreService.delete(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, folder1);
+    when(fileFailsafeService.deleteAndPublish(any(), anyBoolean())).thenReturn(true);
+    boolean result = fileStoreService.delete(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, folder1, false);
     assertThat(result).isTrue();
-    verify(fileFailsafeService).deleteAndPublish(file);
-    verify(fileFailsafeService).deleteAndPublish(parentFolder);
-    verify(fileFailsafeService).deleteAndPublish(childFile);
-    verify(fileFailsafeService).deleteAndPublish(childFolder);
+    verify(fileFailsafeService).deleteAndPublish(file, false);
+    verify(fileFailsafeService).deleteAndPublish(parentFolder, false);
+    verify(fileFailsafeService).deleteAndPublish(childFile, false);
+    verify(fileFailsafeService).deleteAndPublish(childFolder, false);
     verify(fileService).deleteFile(fileUuid1, FileBucket.FILE_STORE);
     verify(fileService).deleteFile(fileUuid2, FileBucket.FILE_STORE);
   }
@@ -729,8 +829,9 @@ public class FileStoreServiceImplTest extends CategoryTest {
     when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndParentIdentifier(
              ACCOUNT_IDENTIFIER, null, null, folder1))
         .thenReturn(Arrays.asList(file));
-    assertThatThrownBy(
-        () -> fileStoreService.delete(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "account." + folder1))
+    assertThatThrownBy(()
+                           -> fileStoreService.delete(
+                               ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "account." + folder1, false))
         .isInstanceOf(InvalidArgumentsException.class)
         .hasMessage(
             "Not found file/folder with identifier [account.folder1], accountIdentifier [accountIdentifier], orgIdentifier [orgIdentifier] and projectIdentifier [projectIdentifier]");
@@ -742,7 +843,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
   public void shouldDeleteRootFolder() {
     String rootIdentifier = ROOT_FOLDER_IDENTIFIER;
     assertThatThrownBy(
-        () -> fileStoreService.delete(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, rootIdentifier))
+        () -> fileStoreService.delete(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, rootIdentifier, false))
         .isInstanceOf(InvalidArgumentsException.class)
         .hasMessage("Root folder [Root] can not be deleted.");
   }
@@ -1203,7 +1304,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
     NGFile ngFile = createNgFileTypeFile();
     List<String> fileIdentifiers = Collections.singletonList(FILE_IDENTIFIER);
     doNothing().when(fileService).deleteFile(any(), any(FileBucket.class));
-    when(fileFailsafeService.deleteAndPublish(any())).thenReturn(true);
+    when(fileFailsafeService.deleteAndPublish(any(), anyBoolean())).thenReturn(true);
     when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
              ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, FILE_IDENTIFIER))
         .thenReturn(Optional.of(ngFile));
@@ -1212,7 +1313,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
     fileStoreService.deleteBatch(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, fileIdentifiers);
 
     verify(fileService, times(1)).deleteFile(fileChunksIdCaptor.capture(), any(FileBucket.class));
-    verify(fileFailsafeService, times(1)).deleteAndPublish(ngFile);
+    verify(fileFailsafeService, times(1)).deleteAndPublish(ngFile, false);
 
     String fileChunksId = fileChunksIdCaptor.getValue();
     assertThat(fileChunksId).isEqualTo(FILE_UUID);
@@ -1224,14 +1325,14 @@ public class FileStoreServiceImplTest extends CategoryTest {
   public void testDeleteBatchFolder() {
     NGFile ngFile = createNgFileTypeFolder();
     List<String> fileIdentifiers = Collections.singletonList(FOLDER_IDENTIFIER);
-    when(fileFailsafeService.deleteAndPublish(any())).thenReturn(true);
+    when(fileFailsafeService.deleteAndPublish(any(), anyBoolean())).thenReturn(true);
     when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
              ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, FOLDER_IDENTIFIER))
         .thenReturn(Optional.of(ngFile));
 
     fileStoreService.deleteBatch(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, fileIdentifiers);
 
-    verify(fileFailsafeService, times(1)).deleteAndPublish(ngFile);
+    verify(fileFailsafeService, times(1)).deleteAndPublish(ngFile, false);
   }
 
   @Test
@@ -1310,13 +1411,14 @@ public class FileStoreServiceImplTest extends CategoryTest {
         .build();
   }
 
-  private static FileDTO aFolderDto() {
+  private FileDTO aFolderDto() {
     return FileDTO.builder()
         .identifier(FOLDER_IDENTIFIER)
         .accountIdentifier(ACCOUNT_IDENTIFIER)
-        .description("some description")
-        .name("folder-name")
         .type(NGFileType.FOLDER)
+        .name("folder-name")
+        .description("some description")
+        .tags(getNgTags())
         .build();
   }
 
@@ -1380,6 +1482,8 @@ public class FileStoreServiceImplTest extends CategoryTest {
         .lastUpdatedBy(EmbeddedUser.builder().name(ADMIN_USER_NAME).email(ADMIN_USER_EMAIL).build())
         .lastModifiedAt(1L)
         .path("/some/dummy/path")
+        .description("some description")
+        .tags(getNgTags())
         .build();
   }
 

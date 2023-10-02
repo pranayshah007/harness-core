@@ -26,6 +26,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,6 +37,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BadRequestException;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -48,6 +50,8 @@ import org.apache.commons.lang3.StringUtils;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(name = "NextGenHealthSource",
+    description = "This is the NextGenHealthSource Health Source spec entity defined in Harness")
 public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
   DataSourceType dataSourceType;
   @UniqueIdentifierCheck List<QueryDefinition> queryDefinitions = Collections.emptyList();
@@ -119,14 +123,20 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
 
   @Override
   public void validate() {
-    Preconditions.checkNotNull(dataSourceType, "The data source type cannot be null");
+    if (Objects.isNull(dataSourceType)) {
+      throw new BadRequestException("The data source type cannot be null");
+    }
     Set<String> uniqueQueryNames = new HashSet<>();
     queryDefinitions.forEach((QueryDefinition query) -> {
-      Preconditions.checkArgument(
-          StringUtils.isNotBlank(query.getIdentifier()), "Query identifier does not match the expected pattern.");
-      Preconditions.checkArgument(StringUtils.isNotBlank(query.getGroupName()), "Query Group Name must be present.");
-      Preconditions.checkArgument(StringUtils.isNotBlank(query.getName()), "Query Name must be present.");
-
+      if (StringUtils.isEmpty(query.getIdentifier())) {
+        throw new BadRequestException("Query identifier does not match the expected pattern.");
+      }
+      if (StringUtils.isEmpty(query.getGroupName())) {
+        throw new BadRequestException("Query Group Name must be present.");
+      }
+      if (StringUtils.isEmpty(query.getName())) {
+        throw new RuntimeException("Query Name must be present.");
+      }
       if (uniqueQueryNames.contains(query.getName())) {
         throw new InvalidRequestException(String.format("Duplicate query name present %s", query.getName()));
       }

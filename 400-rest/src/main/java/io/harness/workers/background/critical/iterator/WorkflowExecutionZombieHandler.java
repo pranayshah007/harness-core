@@ -6,11 +6,13 @@
  */
 
 package io.harness.workers.background.critical.iterator;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionInterruptType;
 import io.harness.beans.ExecutionStatus;
@@ -34,6 +36,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Sort;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -41,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
@@ -58,7 +62,7 @@ public class WorkflowExecutionZombieHandler implements MongoPersistenceIterator.
   @Inject private FeatureFlagService featureFlagService;
 
   public WorkflowExecutionZombieHandler() {
-    this.zombieStatus = ExecutionStatus.flowingStatuses();
+    this.zombieStatus = new HashSet<>(ExecutionStatus.flowingStatuses());
     this.zombieStatus.remove(ExecutionStatus.PAUSED);
   }
 

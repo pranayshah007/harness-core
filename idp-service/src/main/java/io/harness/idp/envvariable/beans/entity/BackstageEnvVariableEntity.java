@@ -16,6 +16,8 @@ import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariableResponse;
+import io.harness.spec.server.idp.v1.model.ResolvedEnvVariable;
+import io.harness.spec.server.idp.v1.model.ResolvedEnvVariableResponse;
 
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
@@ -77,6 +79,12 @@ public abstract class BackstageEnvVariableEntity implements PersistentEntity {
     static List<BackstageEnvVariableResponse> toResponseList(List<BackstageEnvVariable> variables) {
       List<BackstageEnvVariableResponse> response = new ArrayList<>();
       variables.forEach(variable -> response.add(new BackstageEnvVariableResponse().envVariable(variable)));
+      return response;
+    }
+
+    static ResolvedEnvVariableResponse toResolvedVariableResponse(String variables) {
+      ResolvedEnvVariableResponse response = new ResolvedEnvVariableResponse();
+      response.setResolvedEnvVariables(variables);
       return response;
     }
   }

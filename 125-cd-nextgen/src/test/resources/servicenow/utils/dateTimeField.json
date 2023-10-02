@@ -1,0 +1,18 @@
+{
+  "filterable": true,
+  "canmatch": true,
+  "label": "Closed",
+  "type": "glide_date_time",
+  "max_unit": "days",
+  "mandatory": false,
+  "default": "",
+  "base_type": "datetime",
+  "read_only": false,
+  "hint": "",
+  "name": "closed_at",
+  "attributes": "edge_encryption_enabled=true,sla_closure=incident,timeDimension=true",
+  "column_type": "element",
+  "internal_type": "glide_date_time",
+  "cansort": true,
+  "max_length": 40
+}

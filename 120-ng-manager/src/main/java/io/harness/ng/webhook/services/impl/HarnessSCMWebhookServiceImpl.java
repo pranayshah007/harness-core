@@ -21,6 +21,7 @@ import io.harness.delegate.beans.connector.scm.harness.HarnessApiAccessType;
 import io.harness.delegate.beans.connector.scm.harness.HarnessConnectorDTO;
 import io.harness.delegate.beans.connector.scm.harness.HarnessJWTTokenSpecDTO;
 import io.harness.encryption.SecretRefData;
+import io.harness.git.GitClientHelper;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.BaseUrls;
 import io.harness.ng.webhook.UpsertWebhookRequestDTO;
@@ -57,14 +58,23 @@ public class HarnessSCMWebhookServiceImpl implements WebhookEventService {
   @Override
   public UpsertWebhookResponseDTO upsertWebhook(UpsertWebhookRequestDTO upsertWebhookRequestDTO) {
     UpsertWebhookResponseDTO upsertWebhookResponseDTO = null;
-    ScmConnector scmConnector = getScmConnector(upsertWebhookRequestDTO.getRepoURL());
+    // upsertWebhookRequestDTO.getRepoURL() - this points to scoped repo name.
+    ScmConnector scmConnector =
+        getDummyScmConnector(upsertWebhookRequestDTO.getRepoURL(), upsertWebhookRequestDTO.getProjectIdentifier(),
+            upsertWebhookRequestDTO.getOrgIdentifier(), upsertWebhookRequestDTO.getAccountIdentifier());
     try (AutoLogContext ignore1 = new NgAutoLogContext(upsertWebhookRequestDTO.getProjectIdentifier(),
              upsertWebhookRequestDTO.getOrgIdentifier(), upsertWebhookRequestDTO.getAccountIdentifier(),
              AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
       String target = getTargetUrl(upsertWebhookRequestDTO.getAccountIdentifier());
       GitWebhookDetails gitWebhookDetails =
-          GitWebhookDetails.builder().hookEventType(upsertWebhookRequestDTO.getHookEventType()).target(target).build();
+          GitWebhookDetails.builder()
+              .hookEventType(upsertWebhookRequestDTO.getHookEventType())
+              .target(target)
+              // todo(abhinav): check about secret
+              //                  .secret(upsertWebhookRequestDTO.getWebhookSecretIdentifierRef())
+              .build();
       CreateWebhookResponse createWebhookResponse = scmClient.upsertWebhook(scmConnector, gitWebhookDetails);
+
       UpsertWebhookResponseDTO response = UpsertWebhookResponseDTO.builder()
                                               .webhookResponse(createWebhookResponse.getWebhook())
                                               .error(createWebhookResponse.getError())
@@ -82,7 +92,7 @@ public class HarnessSCMWebhookServiceImpl implements WebhookEventService {
   }
 
   private String getTargetUrl(String accountIdentifier) {
-    String basewebhookUrl = baseUrls.getNgManagerScmBaseUrl();
+    String basewebhookUrl = baseUrls.getNgManagerInternalBaseUrl();
     if (!basewebhookUrl.endsWith("/")) {
       basewebhookUrl += "/";
     }
@@ -96,11 +106,14 @@ public class HarnessSCMWebhookServiceImpl implements WebhookEventService {
     return webhookUrl.toString();
   }
 
-  private ScmConnector getScmConnector(String repoURL) {
+  private ScmConnector getDummyScmConnector(
+      String repoName, String projectIdentifier, String orgIdentifier, String accountId) {
+    // todo(abhinav): if org scope/account scope scm comes in we need to change here.
     return HarnessConnectorDTO.builder()
         .connectionType(GitConnectionType.REPO)
-        .url(repoURL)
+        .slug(GitClientHelper.convertToHarnessRepoName(accountId, orgIdentifier, projectIdentifier, repoName) + "/+")
         .apiAccess(getApiAccess())
+        .apiUrl(baseUrls.getScmServiceBaseUrl())
         .build();
   }
 

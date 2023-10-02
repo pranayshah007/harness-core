@@ -23,7 +23,9 @@ import io.harness.timescaledb.tables.PipelineExecutionSummaryCi;
 import io.harness.timescaledb.tables.Pipelines;
 import io.harness.timescaledb.tables.PodInfo;
 import io.harness.timescaledb.tables.ServiceInfraInfo;
+import io.harness.timescaledb.tables.ServiceInstancesLicenseDailyReport;
 import io.harness.timescaledb.tables.Services;
+import io.harness.timescaledb.tables.ServicesLicenseDailyReport;
 import io.harness.timescaledb.tables.UtilizationData;
 
 import org.jooq.Index;
@@ -207,6 +209,25 @@ public class Indexes {
           false);
   public static final Index POD_INFO_STARTTIME_IDX = Internal.createIndex(DSL.name("pod_info_starttime_idx"),
       PodInfo.POD_INFO, new OrderField[] {PodInfo.POD_INFO.STARTTIME.desc()}, false);
+  public static final Index SERVICE_INSTANCES_LICENSE_ACCOUNT_ID_INDEX = Internal.createIndex(
+      DSL.name("service_instances_license_account_id_index"),
+      ServiceInstancesLicenseDailyReport.SERVICE_INSTANCES_LICENSE_DAILY_REPORT,
+      new OrderField[] {ServiceInstancesLicenseDailyReport.SERVICE_INSTANCES_LICENSE_DAILY_REPORT.ACCOUNT_ID}, false);
+  public static final Index SERVICE_INSTANCES_LICENSE_ACCOUNT_ID_REPORTED_DAY_INDEX =
+      Internal.createIndex(DSL.name("service_instances_license_account_id_reported_day_index"),
+          ServiceInstancesLicenseDailyReport.SERVICE_INSTANCES_LICENSE_DAILY_REPORT,
+          new OrderField[] {ServiceInstancesLicenseDailyReport.SERVICE_INSTANCES_LICENSE_DAILY_REPORT.ACCOUNT_ID,
+              ServiceInstancesLicenseDailyReport.SERVICE_INSTANCES_LICENSE_DAILY_REPORT.REPORTED_DAY.desc()},
+          false);
+  public static final Index SERVICES_LICENSE_ACCOUNT_ID_INDEX = Internal.createIndex(
+      DSL.name("services_license_account_id_index"), ServicesLicenseDailyReport.SERVICES_LICENSE_DAILY_REPORT,
+      new OrderField[] {ServicesLicenseDailyReport.SERVICES_LICENSE_DAILY_REPORT.ACCOUNT_ID}, false);
+  public static final Index SERVICES_LICENSE_ACCOUNT_ID_REPORTED_DAY_INDEX =
+      Internal.createIndex(DSL.name("services_license_account_id_reported_day_index"),
+          ServicesLicenseDailyReport.SERVICES_LICENSE_DAILY_REPORT,
+          new OrderField[] {ServicesLicenseDailyReport.SERVICES_LICENSE_DAILY_REPORT.ACCOUNT_ID,
+              ServicesLicenseDailyReport.SERVICES_LICENSE_DAILY_REPORT.REPORTED_DAY.desc()},
+          false);
   public static final Index POD_INFO_STARTTIME_UNIQUE_RECORD_INDEX =
       Internal.createIndex(DSL.name("pod_info_starttime_unique_record_index"), PodInfo.POD_INFO,
           new OrderField[] {PodInfo.POD_INFO.ACCOUNTID, PodInfo.POD_INFO.CLUSTERID, PodInfo.POD_INFO.INSTANCEID,

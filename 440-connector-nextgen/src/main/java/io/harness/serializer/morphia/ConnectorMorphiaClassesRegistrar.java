@@ -6,7 +6,6 @@
  */
 
 package io.harness.serializer.morphia;
-
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;

@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl.instance;
-
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
@@ -30,7 +29,6 @@ import static io.harness.validation.Validator.notNullCheck;
 import static software.wings.beans.Base.CREATED_AT_KEY;
 import static software.wings.beans.EntityType.APPLICATION;
 import static software.wings.beans.EntityType.ARTIFACT;
-import static software.wings.beans.WorkflowExecution.WFE_EXECUTIONS_SEARCH_SERVICEIDS;
 import static software.wings.beans.infrastructure.instance.Instance.InstanceKeys;
 import static software.wings.features.DeploymentHistoryFeature.FEATURE_NAME;
 import static software.wings.sm.StateType.PHASE;
@@ -47,7 +45,10 @@ import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.ExecutionStatus;
@@ -168,6 +169,8 @@ import org.apache.commons.lang3.ObjectUtils;
 /**
  * @author rktummala on 8/13/17
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @Slf4j
 @OwnedBy(DX)
@@ -459,7 +462,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
       }
     }
 
-    log.info("Instances reported {}", count);
+    log.debug("Instances reported {}", count);
     return count;
   }
 
@@ -494,9 +497,9 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     int counter = instanceSet.size();
 
     if (isNotEmpty(instanceSet)) {
-      log.info("Instances reported {}, set count {}", counter, instanceSet.size());
+      log.debug("Instances reported {}, set count {}", counter, instanceSet.size());
     } else {
-      log.info("Instances reported {}", counter);
+      log.debug("Instances reported {}", counter);
     }
     return new ArrayList<>(instanceSet);
   }
@@ -1232,16 +1235,13 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     PageRequest<WorkflowExecution> finalPageRequest;
 
     if (pageRequest == null) {
-      PageRequestBuilder pageRequestBuilder =
-          aPageRequest()
-              .addFilter(WorkflowExecutionKeys.accountId, EQ, accountId)
-              .addFilter(WorkflowExecutionKeys.appId, EQ, appId)
-              .addFilter(WorkflowExecutionKeys.workflowType, EQ, ORCHESTRATION)
-              .addFilter(WorkflowExecutionKeys.serviceIds, HAS, serviceId)
-              .addOrder(WorkflowExecutionKeys.createdAt, OrderType.DESC)
-              .withIndexHint(
-                  BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), WFE_EXECUTIONS_SEARCH_SERVICEIDS))
-              .withLimit("10");
+      PageRequestBuilder pageRequestBuilder = aPageRequest()
+                                                  .addFilter(WorkflowExecutionKeys.accountId, EQ, accountId)
+                                                  .addFilter(WorkflowExecutionKeys.appId, EQ, appId)
+                                                  .addFilter(WorkflowExecutionKeys.workflowType, EQ, ORCHESTRATION)
+                                                  .addFilter(WorkflowExecutionKeys.serviceIds, HAS, serviceId)
+                                                  .addOrder(WorkflowExecutionKeys.createdAt, OrderType.DESC)
+                                                  .withLimit("10");
 
       finalPageRequest = pageRequestBuilder.build();
     } else {

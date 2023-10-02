@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngmigration.service.step.terraform;
-
 import static io.harness.provision.TerraformConstants.LOCAL_STORE_TYPE;
 import static io.harness.provision.TerraformConstants.REMOTE_STORE_TYPE;
 
@@ -15,8 +14,11 @@ import static software.wings.ngmigration.NGMigrationEntityType.INFRA_PROVISIONER
 import static software.wings.ngmigration.NGMigrationEntityType.SECRET;
 import static software.wings.ngmigration.NGMigrationEntityType.SECRET_MANAGER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.GitStore.GitStoreBuilder;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
@@ -85,6 +87,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @OwnedBy(HarnessTeam.CDC)
 public abstract class BaseTerraformProvisionerMapper extends StepMapper {
   private static final String SECRET_FORMAT = "<+secrets.getValue(\"%s\")>";
@@ -182,6 +185,7 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
     StringBuilder content = new StringBuilder();
     for (NameValuePair valuePair : valuePairs) {
       String val = valuePair.getValue();
+      val = wrapInlineVariablesWithDoubleQuotes(val);
       if ("ENCRYPTED_TEXT".equals(valuePair.getValueType())) {
         String secretIdentifier =
             MigratorUtility.getIdentifierWithScopeDefaults(migratedEntities, valuePair.getValue(), SECRET);
@@ -191,6 +195,22 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
     }
 
     return content.toString();
+  }
+
+  private String wrapInlineVariablesWithDoubleQuotes(String val) {
+    if (val == null) {
+      return "";
+    }
+    boolean wrappedWithDoubleQuotes = !val.isEmpty() && val.charAt(0) == '"' && val.endsWith("\"");
+    boolean wrappedWithBrackets = !val.isEmpty() && val.charAt(0) == '[' && val.endsWith("]");
+    boolean wrappedWithParenthesis = !val.isEmpty() && val.charAt(0) == '(' && val.endsWith(")");
+    boolean wrappedWithCurlyBraces = !val.isEmpty() && val.charAt(0) == '{' && val.endsWith("}");
+    boolean alreadyWrapped =
+        wrappedWithParenthesis || wrappedWithBrackets || wrappedWithCurlyBraces || wrappedWithDoubleQuotes;
+    if (!alreadyWrapped) {
+      return "\"" + val + "\"";
+    }
+    return val;
   }
 
   private TerraformBackendConfig toInlineBackendConfig(
@@ -357,6 +377,12 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
     }
     TerraformInfrastructureProvisioner provisioner = (TerraformInfrastructureProvisioner) node.getEntity();
     GitStoreBuilder storeBuilder = GitStore.builder();
+    String repoName = provisioner.getRepoName();
+    if (repoName != null) {
+      boolean isExpression = repoName.startsWith("<+");
+      storeBuilder.repoName(isExpression ? ParameterField.createExpressionField(true, repoName, null, true)
+                                         : ParameterField.createValueField(repoName));
+    }
     if (StringUtils.isNotBlank(provisioner.getSourceRepoSettingId())) {
       storeBuilder.connectorRef(ParameterField.createValueField(
           MigratorUtility.getIdentifierWithScopeDefaults(migratedEntities, provisioner.getSourceRepoSettingId(),
@@ -415,6 +441,14 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
     Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     CaseFormat identifierCaseFormat = migrationContext.getInputDTO().getIdentifierCaseFormat();
     TerraformProvisionState state = (TerraformProvisionState) getState(graphNode);
+    CgEntityNode provisionerNode =
+        entities.getOrDefault(CgEntityId.builder().id(state.getProvisionerId()).type(INFRA_PROVISIONER).build(), null);
+    if (provisionerNode != null && provisionerNode.getEntity() instanceof TerraformInfrastructureProvisioner) {
+      TerraformInfrastructureProvisioner terraformProvisioner =
+          (TerraformInfrastructureProvisioner) provisionerNode.getEntity();
+      MigratorExpressionUtils.render(migrationContext, terraformProvisioner, new HashMap<>());
+    }
+
     if (state.isRunPlanOnly()) {
       TerraformPlanExecutionData executionData = getPlanExecutionData(entities, migratedEntities, state);
       TerraformPlanStepInfo stepInfo =
@@ -430,7 +464,9 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
     } else {
       TerraformStepConfiguration stepConfiguration = new TerraformStepConfiguration();
       stepConfiguration.setTerraformExecutionData(getExecutionData(entities, migratedEntities, state));
-      stepConfiguration.setTerraformStepConfigurationType(TerraformStepConfigurationType.INLINE);
+      stepConfiguration.setTerraformStepConfigurationType(state.isInheritApprovedPlan()
+              ? TerraformStepConfigurationType.INHERIT_FROM_PLAN
+              : TerraformStepConfigurationType.INLINE);
       TerraformApplyStepInfo stepInfo =
           TerraformApplyStepInfo.infoBuilder()
               .delegateSelectors(getDelegateSelectors(state))

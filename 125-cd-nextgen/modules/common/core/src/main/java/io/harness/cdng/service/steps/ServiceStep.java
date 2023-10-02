@@ -10,9 +10,11 @@ package io.harness.cdng.service.steps;
 import static io.harness.eraro.ErrorCode.FREEZE_EXCEPTION;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.freeze.FreezeOutcome;
 import io.harness.cdng.helpers.NgExpressionHelper;
 import io.harness.cdng.service.steps.constants.ServiceStepConstants;
@@ -59,7 +61,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class ServiceStep implements SyncExecutable<ServiceStepParameters> {
@@ -109,10 +112,7 @@ public class ServiceStep implements SyncExecutable<ServiceStepParameters> {
                              .group(StepOutcomeGroup.STAGE.name())
                              .build())
             .build();
-    if (ngFeatureFlagHelperService.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_STAGE_EXECUTION_DATA_SYNC)) {
-      serviceStepsHelper.saveServiceExecutionDataToStageInfo(ambiance, stepResponse);
-    }
+    serviceStepsHelper.saveServiceExecutionDataToStageInfo(ambiance, stepResponse);
     return stepResponse;
   }
 

@@ -8,6 +8,7 @@
 package io.harness.serializer.kryo;
 
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
+import io.harness.beans.steps.StepStatusMetadata;
 import io.harness.beans.steps.output.CIStageOutput;
 import io.harness.beans.sweepingoutputs.ContainerPortDetails;
 import io.harness.beans.sweepingoutputs.ContextElement;
@@ -35,6 +36,7 @@ public class ContainerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(StageInfraDetails.class);
     set.add(DliteVmStageInfraDetails.class);
     set.add(CIStageOutput.class);
+    set.add(StepStatusMetadata.class);
   }
 
   @Override

@@ -8,8 +8,11 @@
 package io.harness.cdng.infra.beans;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.helper.K8sCloudConfigMetadata;
 import io.harness.helper.K8sRancherCloudConfigMetadata;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
@@ -21,6 +24,7 @@ import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_K8S})
 @Value
 @Builder
 @JsonTypeName(InfrastructureKind.KUBERNETES_RANCHER)
@@ -34,6 +38,7 @@ public class K8sRancherInfrastructureOutcome extends InfrastructureOutcomeAbstra
   String releaseName;
   @VariableExpression(skipVariableExpression = true) EnvironmentOutcome environment;
   String infrastructureKey;
+  String infrastructureKeyShort;
 
   @Override
   public String getKind() {

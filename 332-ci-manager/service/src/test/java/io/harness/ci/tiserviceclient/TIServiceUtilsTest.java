@@ -7,6 +7,7 @@
 
 package io.harness.ci.tiserviceclient;
 
+import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.VISTAAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -68,5 +69,23 @@ public class TIServiceUtilsTest extends CIExecutionTestBase {
     assertThatThrownBy(() -> tiServiceUtils.getTIServiceToken(accountID)).isInstanceOf(GeneralException.class);
     verify(tiServiceTokenCall, times(1)).execute();
     verify(tiServiceClient, times(1)).generateToken(eq(accountID), eq(globalToken));
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testClean() throws Exception {
+    String baseUrl = "http://localhost:8078";
+    String accountID = "account";
+    String globalToken = "token";
+    Call<String> cleanupCall = mock(Call.class);
+    when(cleanupCall.execute()).thenReturn(Response.success(null));
+    when(tiServiceClient.clean(eq(accountID), eq(globalToken))).thenReturn(cleanupCall);
+    TIServiceConfig tiServiceConfig = TIServiceConfig.builder().globalToken(globalToken).baseUrl(baseUrl).build();
+    TIServiceUtils tiServiceUtils = new TIServiceUtils(tiServiceClient, tiServiceConfig);
+
+    tiServiceUtils.clean(accountID);
+    verify(cleanupCall, times(1)).execute();
+    verify(tiServiceClient, times(1)).clean(eq(accountID), eq(globalToken));
   }
 }

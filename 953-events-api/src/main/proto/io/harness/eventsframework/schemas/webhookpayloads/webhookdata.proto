@@ -9,6 +9,7 @@ import "product/ci/scm/proto/scm_service.proto";
 package io.harness.eventsframework.webhookpayloads.webhookdata;
 
 option java_multiple_files = true;
+import "980-commons/src/main/proto/io/harness/security/principal.proto";
 option go_package = "953_events_api";
 
 message TriggerExecutionDTO {
@@ -31,6 +32,7 @@ message WebhookDTO {
   string accountId = 7;
   string eventId = 8;
   int64 time = 9;
+  io.harness.security.Principal principal = 10;
 }
 
 message EventHeader {

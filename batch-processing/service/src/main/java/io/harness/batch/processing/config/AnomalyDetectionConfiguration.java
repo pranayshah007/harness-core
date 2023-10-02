@@ -23,6 +23,7 @@ import io.harness.batch.processing.anomalydetection.reader.cloud.AnomalyDetectio
 import io.harness.batch.processing.anomalydetection.reader.cloud.AnomalyDetectionGcpSkuReader;
 import io.harness.batch.processing.anomalydetection.reader.k8s.AnomalyDetectionClusterTimescaleReader;
 import io.harness.batch.processing.anomalydetection.reader.k8s.AnomalyDetectionNamespaceTimescaleReader;
+import io.harness.batch.processing.anomalydetection.reader.k8s.AnomalyDetectionServiceTimescaleReader;
 import io.harness.batch.processing.anomalydetection.writer.AnomalyDetectionTimeScaleWriter;
 import io.harness.batch.processing.ccm.BatchJobType;
 import io.harness.batch.processing.svcmetrics.BatchJobExecutionListener;
@@ -51,12 +52,13 @@ public class AnomalyDetectionConfiguration {
   @Bean
   @Qualifier(value = "anomalyDetectionInClusterDailyJob")
   public Job anomalyDetectionInClusterDailyJob(JobBuilderFactory jobBuilderFactory, Step statisticalModelClusterStep,
-      Step statisticalModelNamespaceStep, Step removeDuplicatesStep) {
+      Step statisticalModelNamespaceStep, Step statisticalModelServiceStep, Step removeDuplicatesStep) {
     return jobBuilderFactory.get(BatchJobType.ANOMALY_DETECTION_K8S.name())
         .incrementer(new RunIdIncrementer())
         .listener(batchJobExecutionListener)
         .start(statisticalModelClusterStep)
         .next(statisticalModelNamespaceStep)
+        .next(statisticalModelServiceStep)
         .next(removeDuplicatesStep)
         .build();
   }
@@ -101,6 +103,16 @@ public class AnomalyDetectionConfiguration {
     return stepBuilderFactory.get("statisticalModelNamespaceDailyAnomalyDetectionStep")
         .<AnomalyDetectionTimeSeries, Anomaly>chunk(AnomalyDetectionConstants.BATCH_SIZE)
         .reader(namespaceItemReader())
+        .processor(modelProcessor())
+        .writer(timescaleWriter())
+        .build();
+  }
+
+  @Bean
+  protected Step statisticalModelServiceStep(StepBuilderFactory stepBuilderFactory) {
+    return stepBuilderFactory.get("statisticalModelServiceDailyAnomalyDetectionStep")
+        .<AnomalyDetectionTimeSeries, Anomaly>chunk(AnomalyDetectionConstants.BATCH_SIZE)
+        .reader(servieItemReader())
         .processor(modelProcessor())
         .writer(timescaleWriter())
         .build();
@@ -225,6 +237,11 @@ public class AnomalyDetectionConfiguration {
   @Bean
   public ItemReader<AnomalyDetectionTimeSeries> namespaceItemReader() {
     return new AnomalyDetectionNamespaceTimescaleReader();
+  }
+
+  @Bean
+  public ItemReader<AnomalyDetectionTimeSeries> servieItemReader() {
+    return new AnomalyDetectionServiceTimescaleReader();
   }
 
   @Bean

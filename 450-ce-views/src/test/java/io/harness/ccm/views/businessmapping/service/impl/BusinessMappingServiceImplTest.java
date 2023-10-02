@@ -7,6 +7,7 @@
 
 package io.harness.ccm.views.businessmapping.service.impl;
 
+import static io.harness.rule.OwnerRule.ANMOL;
 import static io.harness.rule.OwnerRule.SAHILDEEP;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,6 +35,7 @@ import io.harness.rule.Owner;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -156,5 +158,33 @@ public class BusinessMappingServiceImplTest extends CategoryTest {
     assertThat(viewField.getFieldName()).isEqualTo(BusinessMappingTestHelper.TEST_NAME);
     assertThat(viewField.getIdentifier()).isEqualTo(ViewFieldIdentifier.BUSINESS_MAPPING);
     assertThat(viewField.getIdentifierName()).isEqualTo(ViewFieldIdentifier.BUSINESS_MAPPING.getDisplayName());
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testGetBusinessMappingIds() {
+    final List<BusinessMapping> businessMappings = Collections.singletonList(
+        BusinessMappingTestHelper.getBusinessMappingOnlyWithUuid(BusinessMappingTestHelper.TEST_ID));
+    when(businessMappingDao.findBusinessMappingIdsByAccountId(BusinessMappingTestHelper.TEST_ACCOUNT_ID))
+        .thenReturn(businessMappings);
+    final Set<String> response =
+        businessMappingService.getBusinessMappingIds(BusinessMappingTestHelper.TEST_ACCOUNT_ID);
+    verify(businessMappingDao).findBusinessMappingIdsByAccountId(BusinessMappingTestHelper.TEST_ACCOUNT_ID);
+    assertThat(response.size()).isEqualTo(1);
+    assertThat(response.iterator().next()).isEqualTo(BusinessMappingTestHelper.TEST_ID);
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testGetBusinessMappingIds_FindBusinessMappingIdsByAccountIdReturnedNoElements() {
+    when(businessMappingDao.findBusinessMappingIdsByAccountId(BusinessMappingTestHelper.TEST_ACCOUNT_ID))
+        .thenReturn(Collections.emptyList());
+    final Set<String> response =
+        businessMappingService.getBusinessMappingIds(BusinessMappingTestHelper.TEST_ACCOUNT_ID);
+    verify(businessMappingDao).findBusinessMappingIdsByAccountId(BusinessMappingTestHelper.TEST_ACCOUNT_ID);
+    assertThat(response.size()).isEqualTo(0);
+    assertThat(response.iterator().hasNext()).isEqualTo(false);
   }
 }

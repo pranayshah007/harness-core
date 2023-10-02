@@ -19,7 +19,10 @@ import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
 import com.google.common.collect.ImmutableSet;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +31,7 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 public class BatchJobScheduledDataServiceImpl implements BatchJobScheduledDataService {
+  public static final String UTC = "UTC";
   @Autowired private BatchJobScheduledDataDao batchJobScheduledDataDao;
   @Autowired private CloudToHarnessMappingService cloudToHarnessMappingService;
   @Autowired protected LastReceivedPublishedMessageDao lastReceivedPublishedMessageDao;
@@ -49,6 +53,10 @@ public class BatchJobScheduledDataServiceImpl implements BatchJobScheduledDataSe
     if (null == instant) {
       if (batchJobType.equals(BatchJobType.MSP_MARKUP_AMOUNT)) {
         return Instant.now().minus(5, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
+      } else if (batchJobType.equals(BatchJobType.RERUN_JOB)) {
+        return Instant.ofEpochMilli(Instant.now().toEpochMilli())
+            .truncatedTo(ChronoUnit.DAYS)
+            .minus(2, ChronoUnit.DAYS);
       }
       if (ImmutableSet.of(BatchJobBucket.OUT_OF_CLUSTER, BatchJobBucket.OUT_OF_CLUSTER_ECS)
               .contains(batchJobType.getBatchJobBucket())) {
@@ -66,6 +74,9 @@ public class BatchJobScheduledDataServiceImpl implements BatchJobScheduledDataSe
               Instant.ofEpochMilli(Instant.now().toEpochMilli()).truncatedTo(ChronoUnit.DAYS).minus(2, ChronoUnit.DAYS);
           connectorCreationTime = startInstant.isBefore(connectorCreationTime) ? startInstant : connectorCreationTime;
           log.info("Getting startTime for ANOMALY_DETECTION_CLOUD: {}", connectorCreationTime);
+        } else if (isSyncBillingReport(batchJobType)) {
+          Instant startInstant = Instant.now().minus(2, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
+          connectorCreationTime = startInstant.isAfter(connectorCreationTime) ? startInstant : connectorCreationTime;
         } else {
           Instant startInstant = Instant.now().minus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
           connectorCreationTime = startInstant.isAfter(connectorCreationTime) ? startInstant : connectorCreationTime;
@@ -132,10 +143,16 @@ public class BatchJobScheduledDataServiceImpl implements BatchJobScheduledDataSe
                 .of(BatchJobType.AWS_ECS_CLUSTER_SYNC, BatchJobType.AWS_EC2_SERVICE_RECOMMENDATION,
                     BatchJobType.AWS_ECS_SERVICE_RECOMMENDATION, BatchJobType.AZURE_VM_RECOMMENDATION)
                 .contains(batchJobType)) {
-      Instant startInstant = Instant.now().minus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
-      instant = startInstant.isAfter(instant) ? startInstant : instant;
+      if (isSyncBillingReport(batchJobType)) {
+        instant = adjustInstantToStartOfDayIfNecessary(instant);
+        // We will run jobs for max last 2 days only.
+        Instant startInstant = Instant.now().minus(2, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
+        instant = startInstant.isAfter(instant) ? startInstant : instant;
+      } else {
+        Instant startInstant = Instant.now().minus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
+        instant = startInstant.isAfter(instant) ? startInstant : instant;
+      }
     }
-
     if (null != instant && batchJobType == BatchJobType.K8S_WORKLOAD_RECOMMENDATION) {
       Instant startInstant = Instant.now().minus(2, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS);
       instant = startInstant.isAfter(instant) ? startInstant : instant;
@@ -154,6 +171,23 @@ public class BatchJobScheduledDataServiceImpl implements BatchJobScheduledDataSe
       instant = startInstant.isAfter(instant) ? startInstant : instant;
     }
     return instant;
+  }
+
+  private static Instant adjustInstantToStartOfDayIfNecessary(Instant instant) {
+    if (instant.getEpochSecond() % 86400 != 0) {
+      LocalDate localDate = instant.atZone(ZoneId.of(UTC)).toLocalDate();
+      // Create a new Instant with time set to 00:00:00
+      Instant newInstant = localDate.atStartOfDay(ZoneId.of(UTC)).toInstant();
+      instant = Date.from(newInstant).toInstant();
+    }
+    return instant;
+  }
+
+  private static boolean isSyncBillingReport(BatchJobType batchJobType) {
+    return ImmutableSet
+        .of(BatchJobType.SYNC_BILLING_REPORT_S3, BatchJobType.SYNC_BILLING_REPORT_GCP,
+            BatchJobType.SYNC_BILLING_REPORT_AZURE)
+        .contains(batchJobType);
   }
 
   @Override

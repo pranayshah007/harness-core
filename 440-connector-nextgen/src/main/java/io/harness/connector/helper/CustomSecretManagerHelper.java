@@ -6,11 +6,13 @@
  */
 
 package io.harness.connector.helper;
-
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.services.NGConnectorSecretManagerService;
 import io.harness.data.algorithm.HashGenerator;
@@ -22,6 +24,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.validation.InputSetValidatorFactory;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.dto.CustomSecretManagerConfigDTO;
 import io.harness.security.encryption.EncryptedDataParams;
@@ -45,6 +48,7 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 public class CustomSecretManagerHelper {
   private static final String EXPRESSION_FUNCTOR_TOKEN = "expressionFunctorToken";
@@ -53,6 +57,7 @@ public class CustomSecretManagerHelper {
   private static final String SCRIPT = "Script";
   @Inject private TemplateResourceClient templateResourceClient;
   @Inject private NGConnectorSecretManagerService ngConnectorSecretManagerService;
+  @Inject private InputSetValidatorFactory inputSetValidatorFactory;
   private final ObjectMapper objectMapper = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 
   public Set<EncryptedDataParams> prepareEncryptedDataParamsSet(
@@ -69,7 +74,7 @@ public class CustomSecretManagerHelper {
     log.info("Yaml received from template service is \n" + mergedYaml);
     int functorToken = HashGenerator.generateIntegerHash();
     ShellScriptYamlExpressionEvaluator shellScriptYamlExpressionEvaluator =
-        new ShellScriptYamlExpressionEvaluator(mergedYaml, functorToken);
+        new ShellScriptYamlExpressionEvaluator(mergedYaml, functorToken, inputSetValidatorFactory);
     ShellScriptBaseDTO shellScriptBaseDTO;
     try {
       shellScriptBaseDTO = YamlUtils.read(mergedYaml, ShellScriptYamlDTO.class).getShellScriptBaseDTO();

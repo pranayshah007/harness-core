@@ -9,6 +9,9 @@ package io.harness.ngmigration.template;
 
 import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
@@ -27,8 +30,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class ShellScriptTemplateService implements NgTemplateService {
   @Override
   public boolean isMigrationSupported() {
@@ -69,7 +74,7 @@ public class ShellScriptTemplateService implements NgTemplateService {
           .distinct()
           .map(String.class ::cast)
           .map(value -> value.substring(2, value.length() - 1))
-          .forEach(value -> variables.add(getEnvironmentVariable(value)));
+          .forEach(value -> variables.add(getEnvironmentVariable(value, null)));
     }
 
     MigratorExpressionUtils.render(context, shellScriptTemplate, customExpressions);
@@ -78,8 +83,11 @@ public class ShellScriptTemplateService implements NgTemplateService {
       template.getVariables()
           .stream()
           .filter(variable -> StringUtils.isNotBlank(variable.getName()))
-          .forEach(variable -> variables.add(getEnvironmentVariable(variable.getName())));
+          .forEach(variable -> variables.add(getEnvironmentVariable(variable.getName(), variable.getValue())));
     }
+
+    updateTemplateSpecWithNewExpressions(context, shellScriptTemplate, variables);
+
     Map<String, Object> templateSpec =
         ImmutableMap.<String, Object>builder()
             .put("delegateSelectors", RUNTIME_INPUT)
@@ -116,11 +124,30 @@ public class ShellScriptTemplateService implements NgTemplateService {
     return StringUtils.isNotBlank(val) ? MigratorUtility.generateName(val).replace('-', '_') : "";
   }
 
-  static Map<String, String> getEnvironmentVariable(String varName) {
+  static void updateTemplateSpecWithNewExpressions(
+      MigrationContext context, ShellScriptTemplate scriptTemplate, List<Map<String, String>> environmentVariables) {
+    // More details here: https://harness.atlassian.net/browse/CDS-73356
+    if (EmptyPredicate.isEmpty(environmentVariables)) {
+      return;
+    }
+    Map<String, Object> customExpressions =
+        environmentVariables.stream()
+            .filter(EmptyPredicate::isNotEmpty)
+            .map(map -> map.get("name"))
+            .distinct()
+            .filter(StringUtils::isNotBlank)
+            .collect(Collectors.toMap(s -> s, s -> String.format("<+spec.environmentVariables.%s>", s)));
+
+    MigratorExpressionUtils.render(context, scriptTemplate, customExpressions);
+  }
+
+  static Map<String, String> getEnvironmentVariable(String varName, String value) {
     return ImmutableMap.<String, String>builder()
         .put("name", valueOrDefaultEmpty(varName))
         .put("type", "String")
-        .put("value", RUNTIME_INPUT)
+        .put("value",
+            StringUtils.isNotBlank(value) ? String.format("<+input>.default(%s)", value.replaceAll(":\\s+", ":"))
+                                          : RUNTIME_INPUT)
         .build();
   }
 

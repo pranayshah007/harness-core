@@ -6,10 +6,12 @@
  */
 
 package io.harness.steps.executable;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncChainExecutableResponse;
 import io.harness.pms.sdk.core.steps.executables.AsyncChainExecutable;
@@ -22,6 +24,7 @@ import io.harness.tasks.ResponseData;
 
 import lombok.SneakyThrows;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 public interface AsyncChainExecutableWithRbac<T extends StepParameters> extends AsyncChainExecutable<T> {
   void validateResources(Ambiance ambiance, T stepParameters);

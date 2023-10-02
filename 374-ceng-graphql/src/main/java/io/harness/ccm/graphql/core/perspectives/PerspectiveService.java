@@ -18,12 +18,12 @@ import io.harness.ccm.graphql.dto.perspectives.PerspectiveFilterData;
 import io.harness.ccm.graphql.dto.perspectives.PerspectiveOverviewStatsData;
 import io.harness.ccm.graphql.dto.perspectives.PerspectiveTrendStats;
 import io.harness.ccm.views.dto.PerspectiveTimeSeriesData;
+import io.harness.ccm.views.entities.ViewPreferences;
 import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.graphql.QLCEView;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.ccm.views.graphql.QLCEViewGroupBy;
-import io.harness.ccm.views.graphql.QLCEViewPreferences;
 import io.harness.ccm.views.graphql.QLCEViewSortCriteria;
 import io.harness.ccm.views.graphql.QLCEViewTrendData;
 import io.harness.ccm.views.graphql.QLCEViewTrendInfo;
@@ -60,31 +60,7 @@ public class PerspectiveService {
   private static final int MAX_LIMIT_VALUE = 10_000;
 
   public PerspectiveTrendStats perspectiveTrendStats(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
-      List<QLCEViewAggregation> aggregateFunction, Boolean isClusterQuery, String accountId) {
-    isClusterQuery = isClusterQuery != null && isClusterQuery;
-    groupBy = groupBy != null ? groupBy : Collections.emptyList();
-
-    ViewQueryParams viewQueryParams = viewsQueryHelper.buildQueryParams(accountId, isClusterQuery);
-
-    // Group by is only needed in case of business mapping
-    if (!viewsQueryHelper.isGroupByBusinessMappingPresent(groupBy)) {
-      viewQueryParams = viewsQueryHelper.buildQueryParamsWithSkipGroupBy(viewQueryParams, true);
-    }
-
-    QLCEViewTrendData trendStatsData =
-        viewsBillingService.getTrendStatsDataNg(filters, groupBy, aggregateFunction, viewQueryParams);
-    return PerspectiveTrendStats.builder()
-        .cost(getStats(trendStatsData.getTotalCost()))
-        .idleCost(getStats(trendStatsData.getIdleCost()))
-        .unallocatedCost(getStats(trendStatsData.getUnallocatedCost()))
-        .systemCost(getStats(trendStatsData.getSystemCost()))
-        .utilizedCost(getStats(trendStatsData.getUtilizedCost()))
-        .efficiencyScoreStats(trendStatsData.getEfficiencyScoreStats())
-        .build();
-  }
-
-  public PerspectiveTrendStats perspectiveForecastCost(List<QLCEViewFilterWrapper> filters,
-      List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, Boolean isClusterQuery,
+      List<QLCEViewAggregation> aggregateFunction, ViewPreferences viewPreferences, Boolean isClusterQuery,
       String accountId) {
     isClusterQuery = isClusterQuery != null && isClusterQuery;
     groupBy = groupBy != null ? groupBy : Collections.emptyList();
@@ -96,8 +72,33 @@ public class PerspectiveService {
       viewQueryParams = viewsQueryHelper.buildQueryParamsWithSkipGroupBy(viewQueryParams, true);
     }
 
+    QLCEViewTrendData trendStatsData =
+        viewsBillingService.getTrendStatsDataNg(filters, groupBy, aggregateFunction, viewPreferences, viewQueryParams);
+    return PerspectiveTrendStats.builder()
+        .cost(getStats(trendStatsData.getTotalCost()))
+        .idleCost(getStats(trendStatsData.getIdleCost()))
+        .unallocatedCost(getStats(trendStatsData.getUnallocatedCost()))
+        .systemCost(getStats(trendStatsData.getSystemCost()))
+        .utilizedCost(getStats(trendStatsData.getUtilizedCost()))
+        .efficiencyScoreStats(trendStatsData.getEfficiencyScoreStats())
+        .build();
+  }
+
+  public PerspectiveTrendStats perspectiveForecastCost(List<QLCEViewFilterWrapper> filters,
+      List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, ViewPreferences viewPreferences,
+      Boolean isClusterQuery, String accountId) {
+    isClusterQuery = isClusterQuery != null && isClusterQuery;
+    groupBy = groupBy != null ? groupBy : Collections.emptyList();
+
+    ViewQueryParams viewQueryParams = viewsQueryHelper.buildQueryParams(accountId, isClusterQuery);
+
+    // Group by is only needed in case of business mapping
+    if (!viewsQueryHelper.isGroupByBusinessMappingPresent(groupBy)) {
+      viewQueryParams = viewsQueryHelper.buildQueryParamsWithSkipGroupBy(viewQueryParams, true);
+    }
+
     QLCEViewTrendInfo forecastCostData =
-        viewsBillingService.getForecastCostData(filters, groupBy, aggregateFunction, viewQueryParams);
+        viewsBillingService.getForecastCostData(filters, groupBy, aggregateFunction, viewPreferences, viewQueryParams);
     return PerspectiveTrendStats.builder()
         .cost(StatsInfo.builder()
                   .statsTrend(forecastCostData.getStatsTrend())
@@ -111,7 +112,8 @@ public class PerspectiveService {
 
   public PerspectiveEntityStatsData perspectiveGrid(List<QLCEViewAggregation> aggregateFunction,
       List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy, List<QLCEViewSortCriteria> sortCriteria,
-      Integer limit, Integer offset, Boolean isClusterQuery, Boolean skipRoundOff, String accountId) {
+      Integer limit, Integer offset, ViewPreferences viewPreferences, Boolean isClusterQuery, Boolean skipRoundOff,
+      String accountId) {
     isClusterQuery = isClusterQuery != null && isClusterQuery;
     skipRoundOff = skipRoundOff != null && skipRoundOff;
     final int maxLimit = Objects.isNull(limit) ? MAX_LIMIT_VALUE : Integer.min(limit, MAX_LIMIT_VALUE);
@@ -119,7 +121,7 @@ public class PerspectiveService {
     return PerspectiveEntityStatsData.builder()
         .data(viewsBillingService
                   .getEntityStatsDataPointsNg(filters, groupBy, aggregateFunction, sortCriteria, maxLimit, offset,
-                      viewsQueryHelper.buildQueryParams(accountId, isClusterQuery, skipRoundOff))
+                      viewPreferences, viewsQueryHelper.buildQueryParams(accountId, isClusterQuery, skipRoundOff))
                   .getData())
         .build();
   }
@@ -141,10 +143,11 @@ public class PerspectiveService {
 
   public PerspectiveTimeSeriesData perspectiveTimeSeriesStats(List<QLCEViewAggregation> aggregateFunction,
       List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy, List<QLCEViewSortCriteria> sortCriteria,
-      Integer limit, Integer offset, QLCEViewPreferences preferences, Boolean isClusterQuery, String accountId) {
-    final boolean includeOthers = Objects.nonNull(preferences) && Boolean.TRUE.equals(preferences.getIncludeOthers());
+      Integer limit, Integer offset, ViewPreferences viewPreferences, Boolean isClusterQuery, String accountId) {
+    final boolean includeOthers =
+        Objects.nonNull(viewPreferences) && Boolean.TRUE.equals(viewPreferences.getIncludeOthers());
     final boolean includeUnallocatedCost =
-        Objects.nonNull(preferences) && Boolean.TRUE.equals(preferences.getIncludeUnallocatedCost());
+        Objects.nonNull(viewPreferences) && Boolean.TRUE.equals(viewPreferences.getIncludeUnallocatedCost());
     final int maxLimit = Objects.isNull(limit) ? MAX_LIMIT_VALUE : Integer.min(limit, MAX_LIMIT_VALUE);
     long timePeriod = perspectiveTimeSeriesHelper.getTimePeriod(groupBy);
     String conversionField = null;
@@ -158,8 +161,8 @@ public class PerspectiveService {
     isClusterQuery = isClusterQuery && businessMappingId == null;
 
     ViewQueryParams viewQueryParams = viewsQueryHelper.buildQueryParams(accountId, true, false, isClusterQuery, false);
-    Map<String, Map<Timestamp, Double>> sharedCostFromFilters =
-        getSharedCostFromFilters(aggregateFunction, filters, groupBy, sortCriteria, businessMappingId, viewQueryParams);
+    Map<String, Map<Timestamp, Double>> sharedCostFromFilters = getSharedCostFromFilters(
+        aggregateFunction, filters, groupBy, sortCriteria, viewPreferences, businessMappingId, viewQueryParams);
     boolean addSharedCostFromGroupBy = false;
 
     ViewQueryParams viewQueryParamsWithSkipDefaultGroupBy =
@@ -168,12 +171,12 @@ public class PerspectiveService {
     PerspectiveTimeSeriesData data;
     if (isClickHouseEnabled) {
       data = clickHouseViewsBillingService.getClickHouseTimeSeriesStatsNg(filters, groupBy, aggregateFunction,
-          sortCriteria, includeOthers, maxLimit, viewQueryParams, timePeriod, conversionField, businessMappingId,
-          sharedCostFromFilters, addSharedCostFromGroupBy);
+          sortCriteria, includeOthers, maxLimit, viewPreferences, viewQueryParams, timePeriod, conversionField,
+          businessMappingId, sharedCostFromFilters, addSharedCostFromGroupBy);
     } else {
       data = perspectiveTimeSeriesHelper.fetch(
-          viewsBillingService.getTimeSeriesStatsNg(
-              filters, groupBy, aggregateFunction, sortCriteria, includeOthers, maxLimit, viewQueryParams),
+          viewsBillingService.getTimeSeriesStatsNg(filters, groupBy, aggregateFunction, sortCriteria, includeOthers,
+              maxLimit, viewPreferences, viewQueryParams),
           timePeriod, conversionField, businessMappingId, accountId, groupBy, sharedCostFromFilters,
           addSharedCostFromGroupBy);
     }
@@ -181,13 +184,13 @@ public class PerspectiveService {
     Map<Long, Double> othersTotalCost = Collections.emptyMap();
     if (includeOthers) {
       othersTotalCost = viewsBillingService.getOthersTotalCostDataNg(
-          filters, groupBy, Collections.emptyList(), viewQueryParamsWithSkipDefaultGroupBy);
+          filters, groupBy, Collections.emptyList(), viewPreferences, viewQueryParamsWithSkipDefaultGroupBy);
     }
 
     Map<Long, Double> unallocatedCost = Collections.emptyMap();
     if (includeUnallocatedCost) {
       unallocatedCost = viewsBillingService.getUnallocatedCostDataNg(
-          filters, groupBy, Collections.emptyList(), viewQueryParamsWithSkipDefaultGroupBy);
+          filters, groupBy, Collections.emptyList(), viewPreferences, viewQueryParamsWithSkipDefaultGroupBy);
     }
 
     return perspectiveTimeSeriesHelper.postFetch(data, includeOthers, othersTotalCost, unallocatedCost);
@@ -195,11 +198,11 @@ public class PerspectiveService {
 
   private Map<String, Map<Timestamp, Double>> getSharedCostFromFilters(List<QLCEViewAggregation> aggregateFunction,
       List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy, List<QLCEViewSortCriteria> sortCriteria,
-      String businessMappingId, ViewQueryParams viewQueryParams) {
+      ViewPreferences viewPreferences, String businessMappingId, ViewQueryParams viewQueryParams) {
     Map<String, Map<Timestamp, Double>> sharedCostFromFilters = new HashMap<>();
     if (Objects.nonNull(businessMappingId)) {
-      sharedCostFromFilters = viewsBillingService.getSharedCostPerTimestampFromFilters(
-          filters, groupBy, aggregateFunction, sortCriteria, viewQueryParams, viewQueryParams.isSkipRoundOff());
+      sharedCostFromFilters = viewsBillingService.getSharedCostPerTimestampFromFilters(filters, groupBy,
+          aggregateFunction, sortCriteria, viewPreferences, viewQueryParams, viewQueryParams.isSkipRoundOff());
     }
     return sharedCostFromFilters;
   }
@@ -217,12 +220,12 @@ public class PerspectiveService {
     return viewService.getAllViews(accountId, folderId, true, sortCriteria);
   }
 
-  public Integer perspectiveTotalCount(
-      List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy, Boolean isClusterQuery, String accountId) {
+  public Integer perspectiveTotalCount(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy,
+      ViewPreferences viewPreferences, Boolean isClusterQuery, String accountId) {
     isClusterQuery = isClusterQuery != null && isClusterQuery;
 
-    return viewsBillingService.getTotalCountForQuery(
-        filters, groupBy, viewsQueryHelper.buildQueryParams(accountId, false, false, isClusterQuery, true));
+    return viewsBillingService.getTotalCountForQuery(filters, groupBy, viewPreferences,
+        viewsQueryHelper.buildQueryParams(accountId, false, false, isClusterQuery, true));
   }
 
   public Map<String, Map<String, String>> workloadLabels(

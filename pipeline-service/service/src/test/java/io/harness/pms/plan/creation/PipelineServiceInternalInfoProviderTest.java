@@ -75,6 +75,7 @@ import io.harness.steps.jira.JiraStepVariableCreator;
 import io.harness.steps.jira.JiraUpdateStepVariableCreator;
 import io.harness.steps.jira.create.JiraCreateStepPlanCreator;
 import io.harness.steps.jira.update.JiraUpdateStepPlanCreator;
+import io.harness.steps.pipelinestage.PipelineStageOutputsVariableCreator;
 import io.harness.steps.pipelinestage.PipelineStageVariableCreator;
 import io.harness.steps.policy.step.PolicyStepPlanCreator;
 import io.harness.steps.policy.variables.PolicyStepVariableCreator;
@@ -104,7 +105,7 @@ import org.mockito.MockitoAnnotations;
 public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
   public static final int PLAN_CREATOR_NUMBER = 38;
   public static final int FILTER_JSON_CREATOR_NUMBER = 13;
-  public static final int VARIABLE_CREATOR_NUMBER = 25;
+  public static final int VARIABLE_CREATOR_NUMBER = 26;
 
   @InjectMocks PipelineServiceInternalInfoProvider pipelineServiceInternalInfoProvider;
   @InjectMocks PipelineServiceInfoDecoratorImpl serviceInfoDecorator;
@@ -218,6 +219,7 @@ public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
     assertThat(variableCreatorClasses.contains(CustomStageVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(QueueStepVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(PipelineStageVariableCreator.class)).isTrue();
+    assertThat(variableCreatorClasses.contains(PipelineStageOutputsVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(ContainerStepVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(WaitStepVariableCreator.class)).isTrue();
     assertThat(variableCreatorClasses.contains(BarrierStepVariableCreator.class)).isTrue();

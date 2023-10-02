@@ -28,13 +28,10 @@ import io.harness.helpers.ext.azure.KeyVaultAuthenticator;
 import com.azure.core.credential.TokenCredential;
 import com.azure.core.exception.HttpResponseException;
 import com.azure.core.http.HttpClient;
-import com.azure.resourcemanager.AzureResourceManager;
-import com.azure.resourcemanager.keyvault.models.Vault;
-import com.azure.resourcemanager.resources.fluentcore.arm.models.HasName;
-import com.azure.resourcemanager.resources.models.ResourceGroup;
+import com.azure.core.management.ProxyResource;
+import com.azure.resourcemanager.keyvault.fluent.KeyVaultManagementClient;
 import com.microsoft.aad.msal4j.MsalServiceException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -84,7 +81,6 @@ public class NGAzureKeyVaultFetchEngineTask extends AbstractDelegateRunnableTask
   }
 
   private List<String> listVaultsInternal(AzureKeyVaultConnectorDTO azureKeyVaultConnectorDTO) throws IOException {
-    List<Vault> vaultList = new ArrayList<>();
     HttpClient httpClient = AzureUtils.getAzureHttpClient();
     TokenCredential credentials = null;
     if (BooleanUtils.isTrue(azureKeyVaultConnectorDTO.getUseManagedIdentity())) {
@@ -95,16 +91,9 @@ public class NGAzureKeyVaultFetchEngineTask extends AbstractDelegateRunnableTask
           String.valueOf(azureKeyVaultConnectorDTO.getSecretKey().getDecryptedValue()),
           azureKeyVaultConnectorDTO.getTenantId(), httpClient, azureKeyVaultConnectorDTO.getAzureEnvironmentType());
     }
-
-    AzureResourceManager azureResourceManager =
-        KeyVaultAuthenticator.getAzureResourceManager(credentials, azureKeyVaultConnectorDTO, httpClient);
-
-    for (ResourceGroup rGroup : azureResourceManager.resourceGroups().list()) {
-      vaultList.addAll(
-          azureResourceManager.vaults().listByResourceGroup(rGroup.name()).stream().collect(Collectors.toList()));
-    }
-
-    return vaultList.stream().map(HasName::name).collect(Collectors.toList());
+    KeyVaultManagementClient keyVaultClient =
+        KeyVaultAuthenticator.getAzureKeyVaultClient(credentials, azureKeyVaultConnectorDTO, httpClient);
+    return keyVaultClient.getVaults().list().stream().map(ProxyResource::name).collect(Collectors.toList());
   }
 
   public boolean isSupportingErrorFramework() {

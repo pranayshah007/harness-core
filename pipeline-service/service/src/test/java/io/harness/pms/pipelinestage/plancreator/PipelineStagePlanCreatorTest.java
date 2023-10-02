@@ -18,7 +18,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.contracts.plan.ExpressionMode;
@@ -33,7 +32,7 @@ import io.harness.pms.pipelinestage.helper.PipelineStageHelper;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -51,7 +50,6 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -75,11 +73,6 @@ public class PipelineStagePlanCreatorTest {
   private String PROJ = "proj";
   private String PIPELINE = "pipeline";
   private String ACC = "acc";
-
-  @Before
-  public void setup() {
-    doReturn(false).when(pmsFeatureFlagService).isEnabled(ACC, FeatureName.PIE_PROCESS_ON_JSON_NODE);
-  }
 
   @Test
   @Owner(developers = PRASHANTSHARMA)
@@ -116,15 +109,15 @@ public class PipelineStagePlanCreatorTest {
                                      .project(PROJ)
                                      .inputSetReferences(Collections.singletonList("ref"))
                                      .build();
-    doReturn("inputYaml").when(pipelineStageHelper).getInputSetYaml(yamlField, PipelineVersion.V0);
+    doReturn(null).when(pipelineStageHelper).getInputSetJsonNode(yamlField, HarnessYamlVersion.V0);
 
     PipelineStageStepParameters stepParameters =
-        pipelineStagePlanCreator.getStepParameter(config, yamlField, "planNodeId", PipelineVersion.V0, "acc");
+        pipelineStagePlanCreator.getStepParameter(config, yamlField, "planNodeId", HarnessYamlVersion.V0, "acc");
     assertThat(stepParameters.getPipeline()).isEqualTo(PIPELINE);
     assertThat(stepParameters.getOrg()).isEqualTo(ORG);
     assertThat(stepParameters.getProject()).isEqualTo(PROJ);
     assertThat(stepParameters.getStageNodeId()).isEqualTo("planNodeId");
-    assertThat(stepParameters.getPipelineInputs()).isEqualTo("inputYaml");
+    assertThat(stepParameters.getPipelineInputsJsonNode()).isEqualTo(null);
     assertThat(stepParameters.getInputSetReferences().size()).isEqualTo(1);
     assertThat(stepParameters.getInputSetReferences().get(0)).isEqualTo("ref");
   }
@@ -280,6 +273,6 @@ public class PipelineStagePlanCreatorTest {
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void testGetSupportedYamlVersions() {
-    assertThat(pipelineStagePlanCreator.getSupportedYamlVersions()).isEqualTo(Set.of(PipelineVersion.V0));
+    assertThat(pipelineStagePlanCreator.getSupportedYamlVersions()).isEqualTo(Set.of(HarnessYamlVersion.V0));
   }
 }

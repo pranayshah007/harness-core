@@ -28,11 +28,11 @@ public class DelegateProxyFactory {
 
   public <T> T get(Class<T> klass, SyncTaskContext syncTaskContext) {
     return (T) Proxy.newProxyInstance(klass.getClassLoader(), new Class[] {klass},
-        new DelegateInvocationHandler(syncTaskContext, delegateService, taskSetupAbstractionHelper, false));
+        new DelegateInvocationHandler(syncTaskContext, delegateService, taskSetupAbstractionHelper));
   }
 
   public <T> T getV2(Class<T> klass, SyncTaskContext syncTaskContext) {
     return (T) Proxy.newProxyInstance(klass.getClassLoader(), new Class[] {klass},
-        new DelegateInvocationHandler(syncTaskContext, delegateService, taskSetupAbstractionHelper, true));
+        new DelegateInvocationHandler(syncTaskContext, delegateService, taskSetupAbstractionHelper));
   }
 }

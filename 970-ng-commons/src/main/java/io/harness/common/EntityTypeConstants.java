@@ -9,15 +9,22 @@ package io.harness.common;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(PL)
 public interface EntityTypeConstants {
   String GITOPS_CREATE_PR = "CreatePR";
   String GITOPS_MERGE_PR = "MergePR";
+  String GITOPS_REVERT_PR = "RevertPR";
   String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
   String GITOPS_FETCH_LINKED_APPS = "GitOpsFetchLinkedApps";
   String GITOPS_SYNC = "GitOpsSync";
+  String UPDATE_GITOPS_APP = "UpdateGitOpsApp";
   String PROJECTS = "Projects";
   String PIPELINES = "Pipelines";
   String PIPELINE_STEPS = "PipelineSteps";
@@ -183,6 +190,9 @@ public interface EntityTypeConstants {
   String ECS_BLUE_GREEN_CREATE_SERVICE = "EcsBlueGreenCreateService";
   String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = "EcsBlueGreenSwapTargetGroups";
   String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
+  String ECS_SERVICE_SETUP = "EcsServiceSetup";
+  String ECS_UPGRADE_CONTAINER = "EcsUpgradeContainer";
+  String ECS_BASIC_ROLLBACK = "EcsBasicRollback";
   String WAIT_STEP = "Wait";
   String ARTIFACT_SOURCE_TEMPLATE = "ArtifactSource";
   String SHELL_SCRIPT_PROVISION_STEP = "ShellScriptProvision";
@@ -241,6 +251,8 @@ public interface EntityTypeConstants {
   String CD_SSCA_ORCHESTRATION = "CdSscaOrchestration";
   String TAS_ROUTE_MAPPING = "RouteMapping";
   String BACKSTAGE_ENVIRONMENT_VARIABLE = "BackstageEnvironmentVariable";
+  String IDP_SCORECARD = "IdpScorecard";
+  String IDP_CHECK = "IdpCheck";
   String SSCA_ENFORCEMENT = "SscaEnforcement";
   String IDP_CONNECTOR = "IdpConnector";
   String CD_SSCA_ENFORCEMENT = "CdSscaEnforcement";
@@ -248,4 +260,12 @@ public interface EntityTypeConstants {
   String SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2 = "ServerlessAwsLambdaPrepareRollbackV2";
   String SERVERLESS_AWS_LAMBDA_ROLLBACK_V2 = "ServerlessAwsLambdaRollbackV2";
   String SERVERLESS_AWS_LAMBDA_DEPLOY_V2 = "ServerlessAwsLambdaDeployV2";
+  String SERVERLESS_AWS_LAMBDA_PACKAGE_V2 = "ServerlessAwsLambdaPackageV2";
+  String AWS_CDK_BOOTSTRAP = "AwsCdkBootstrap";
+  String AWS_CDK_SYNTH = "AwsCdkSynth";
+  String AWS_CDK_DIFF = "AwsCdkDiff";
+  String AWS_CDK_DEPLOY = "AwsCdkDeploy";
+  String AWS_CDK_DESTROY = "AwsCdkDestroy";
+  String AWS_CDK_ROLLBACK = "AwsCdkRollback";
+  String SLSA_VERIFICATION = "SlsaVerification";
 }

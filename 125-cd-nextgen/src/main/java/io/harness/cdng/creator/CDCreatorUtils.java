@@ -7,8 +7,11 @@
 
 package io.harness.cdng.creator;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.executions.steps.StepSpecTypeConstants;
 
 import com.google.common.collect.Sets;
@@ -16,6 +19,9 @@ import java.util.Collections;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_ECS, HarnessModuleComponent.CDS_SERVERLESS,
+        HarnessModuleComponent.CDS_INFRA_PROVISIONERS, HarnessModuleComponent.CDS_GITOPS})
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
 public class CDCreatorUtils {
@@ -41,9 +47,10 @@ public class CDCreatorUtils {
         StepSpecTypeConstants.ECS_CANARY_DEPLOY, StepSpecTypeConstants.ECS_CANARY_DELETE,
         StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE, StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS,
         StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK, StepSpecTypeConstants.CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT,
-        StepSpecTypeConstants.SHELL_SCRIPT_PROVISION, StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO,
-        StepSpecTypeConstants.GITOPS_FETCH_LINKED_APPS, StepSpecTypeConstants.ECS_RUN_TASK,
-        StepSpecTypeConstants.CHAOS_STEP, StepSpecTypeConstants.ELASTIGROUP_DEPLOY,
+        StepSpecTypeConstants.ECS_SERVICE_SETUP, StepSpecTypeConstants.ECS_UPGRADE_CONTAINER,
+        StepSpecTypeConstants.ECS_BASIC_ROLLBACK, StepSpecTypeConstants.SHELL_SCRIPT_PROVISION,
+        StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO, StepSpecTypeConstants.GITOPS_FETCH_LINKED_APPS,
+        StepSpecTypeConstants.ECS_RUN_TASK, StepSpecTypeConstants.CHAOS_STEP, StepSpecTypeConstants.ELASTIGROUP_DEPLOY,
         StepSpecTypeConstants.ELASTIGROUP_ROLLBACK, StepSpecTypeConstants.ELASTIGROUP_SETUP,
         StepSpecTypeConstants.TERRAGRUNT_PLAN, StepSpecTypeConstants.TERRAGRUNT_APPLY,
         StepSpecTypeConstants.TERRAGRUNT_DESTROY, StepSpecTypeConstants.TERRAGRUNT_ROLLBACK,
@@ -69,6 +76,10 @@ public class CDCreatorUtils {
         StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK,
         StepSpecTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN,
         StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_V2,
-        StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2, StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2);
+        StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_V2, StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY_V2,
+        StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_PACKAGE_V2, StepSpecTypeConstants.GITOPS_REVERT_PR,
+        StepSpecTypeConstants.AWS_CDK_BOOTSTRAP, StepSpecTypeConstants.AWS_CDK_SYNTH,
+        StepSpecTypeConstants.AWS_CDK_DIFF, StepSpecTypeConstants.AWS_CDK_DEPLOY, StepSpecTypeConstants.AWS_CDK_DESTROY,
+        StepSpecTypeConstants.AWS_CDK_ROLLBACK, StepSpecTypeConstants.UPDATE_GITOPS_APP);
   }
 }

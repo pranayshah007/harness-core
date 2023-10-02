@@ -17,6 +17,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//commons/go/lib/filesystem",
+        "//product/ci/common/external",
         "@cc_mvdan_sh_v3//syntax",
         "@com_github_cenkalti_backoff_v4//:backoff",
         "@com_github_harness_ti_client//types",
@@ -38,4 +39,12 @@ go_test(
         "@com_github_cenkalti_backoff_v4//:backoff",
         "@com_github_stretchr_testify//assert",
     ],
+)
+
+load("//:tools/bazel/macros.bzl", "run_analysis")
+
+run_analysis(
+    language = "go",
+    targets = [":utils"],
+    test_targets = [":utils_test"],
 )

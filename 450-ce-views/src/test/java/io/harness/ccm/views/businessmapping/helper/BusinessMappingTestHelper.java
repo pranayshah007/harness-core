@@ -17,18 +17,20 @@ import io.harness.ccm.views.businessmapping.entities.SharingStrategy;
 import io.harness.ccm.views.businessmapping.entities.UnallocatedCost;
 import io.harness.ccm.views.businessmapping.entities.UnallocatedCostStrategy;
 import io.harness.ccm.views.entities.ViewCondition;
+import io.harness.ccm.views.entities.ViewField;
+import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewIdCondition;
+import io.harness.ccm.views.entities.ViewIdOperator;
 import io.harness.ccm.views.entities.ViewRule;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 
 public final class BusinessMappingTestHelper {
-  public static final String TEST_ID = UUID.randomUUID().toString();
+  public static final String TEST_ID = "businessMappingId";
   public static final String TEST_ACCOUNT_ID = "TEST_ACCOUNT_ID";
   public static final String TEST_NAME = "TEST_NAME";
   public static final String TEST_SEARCH_KEY = "SEARCH_KEY";
@@ -48,6 +50,21 @@ public final class BusinessMappingTestHelper {
         .build();
   }
 
+  public static BusinessMapping getLabelBusinessMapping(final String uuid) {
+    return BusinessMapping.builder()
+        .uuid(uuid)
+        .accountId(TEST_ACCOUNT_ID)
+        .name(TEST_NAME)
+        .costTargets(getLabelCostTargets())
+        .sharedCosts(getLabelSharedCosts())
+        .unallocatedCost(getUnallocatedCost(UnallocatedCostStrategy.DISPLAY_NAME))
+        .build();
+  }
+
+  public static BusinessMapping getBusinessMappingOnlyWithUuid(final String uuid) {
+    return BusinessMapping.builder().uuid(uuid).build();
+  }
+
   public static CostTarget getCostTarget(final String name, final List<ViewRule> rules) {
     return CostTarget.builder().name(name).rules(rules).build();
   }
@@ -55,6 +72,12 @@ public final class BusinessMappingTestHelper {
   @NotNull
   public static List<CostTarget> getCostTargets() {
     final List<ViewRule> rules = getRules();
+    return Stream.of(getCostTarget(TEST_NAME, rules), getCostTarget(TEST_NAME, rules)).collect(Collectors.toList());
+  }
+
+  @NotNull
+  public static List<CostTarget> getLabelCostTargets() {
+    final List<ViewRule> rules = getLabelRules();
     return Stream.of(getCostTarget(TEST_NAME, rules), getCostTarget(TEST_NAME, rules)).collect(Collectors.toList());
   }
 
@@ -66,6 +89,16 @@ public final class BusinessMappingTestHelper {
   @NotNull
   public static List<SharedCost> getSharedCosts() {
     final List<ViewRule> rules = getRules();
+    final List<SharedCostSplit> splits = getSharedCostSplits();
+    return Stream
+        .of(getSharedCost(TEST_NAME, rules, SharingStrategy.EQUAL, splits),
+            getSharedCost(TEST_NAME, rules, SharingStrategy.PROPORTIONAL, splits))
+        .collect(Collectors.toList());
+  }
+
+  @NotNull
+  public static List<SharedCost> getLabelSharedCosts() {
+    final List<ViewRule> rules = getLabelRules();
     final List<SharedCostSplit> splits = getSharedCostSplits();
     return Stream
         .of(getSharedCost(TEST_NAME, rules, SharingStrategy.EQUAL, splits),
@@ -88,7 +121,31 @@ public final class BusinessMappingTestHelper {
 
   @NotNull
   public static List<ViewRule> getRules() {
-    final List<ViewCondition> viewConditions = Collections.singletonList(ViewIdCondition.builder().build());
+    final List<ViewCondition> viewConditions =
+        Collections.singletonList(ViewIdCondition.builder()
+                                      .viewField(ViewField.builder()
+                                                     .fieldId("awsUsageAccountId")
+                                                     .fieldName("Account")
+                                                     .identifier(ViewFieldIdentifier.AWS)
+                                                     .identifierName(ViewFieldIdentifier.AWS.getDisplayName())
+                                                     .build())
+                                      .viewOperator(ViewIdOperator.NOT_NULL)
+                                      .build());
+    return Collections.singletonList(ViewRule.builder().viewConditions(viewConditions).build());
+  }
+
+  @NotNull
+  public static List<ViewRule> getLabelRules() {
+    final List<ViewCondition> viewConditions =
+        Collections.singletonList(ViewIdCondition.builder()
+                                      .viewField(ViewField.builder()
+                                                     .fieldId("labels.value")
+                                                     .fieldName("labelName")
+                                                     .identifier(ViewFieldIdentifier.LABEL)
+                                                     .identifierName(ViewFieldIdentifier.LABEL.getDisplayName())
+                                                     .build())
+                                      .viewOperator(ViewIdOperator.NOT_NULL)
+                                      .build());
     return Collections.singletonList(ViewRule.builder().viewConditions(viewConditions).build());
   }
 

@@ -19,16 +19,14 @@ import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.LateBindingValue;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.ambiance.Level;
-import io.harness.pms.execution.utils.AmbianceUtils;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Value;
+import org.apache.commons.jexl3.JexlEngine;
 
 /**
  * NodeExecutionValue implements a LateBindingValue which matches expressions starting from startNodeExecution. If we
@@ -45,6 +43,7 @@ public class NodeExecutionValue implements LateBindingValue {
   Ambiance ambiance;
   NodeExecution startNodeExecution;
   Set<NodeExecutionEntityType> entityTypes;
+  JexlEngine engine;
 
   @Override
   public Object bind() {
@@ -58,6 +57,7 @@ public class NodeExecutionValue implements LateBindingValue {
         .nodeExecution(startNodeExecution)
         .entityTypes(entityTypes)
         .children(map)
+        .engine(engine)
         .build();
   }
 
@@ -74,13 +74,12 @@ public class NodeExecutionValue implements LateBindingValue {
   }
 
   private boolean canAdd(NodeExecution nodeExecution) {
-    Level level = Objects.requireNonNull(AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()));
-    return !level.getSkipExpressionChain() && EmptyPredicate.isNotEmpty(level.getIdentifier())
+    return !nodeExecution.getSkipExpressionChain() && EmptyPredicate.isNotEmpty(nodeExecution.getIdentifier())
         && !nodeExecution.getOldRetry();
   }
 
   private void addToMap(Map<String, Object> map, NodeExecution nodeExecution) {
-    String key = AmbianceUtils.obtainStepIdentifier(nodeExecution.getAmbiance());
+    String key = nodeExecution.getIdentifier();
     NodeExecutionValue childValue = NodeExecutionValue.builder()
                                         .nodeExecutionsCache(nodeExecutionsCache)
                                         .pmsOutcomeService(pmsOutcomeService)
@@ -88,6 +87,7 @@ public class NodeExecutionValue implements LateBindingValue {
                                         .ambiance(ambiance)
                                         .startNodeExecution(nodeExecution)
                                         .entityTypes(entityTypes)
+                                        .engine(engine)
                                         .build();
     map.compute(key, (k, v) -> {
       if (v == null) {

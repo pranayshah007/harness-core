@@ -6,7 +6,6 @@
  */
 
 package io.harness.changehandlers;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -14,7 +13,10 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.util.Arrays.asList;
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.changestreamsframework.ChangeEvent;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
@@ -29,6 +31,7 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_DASHBOARD})
 @Slf4j
 @OwnedBy(CDP)
 public class RuntimeInputsInfoCDChangeDataHandler extends AbstractChangeDataHandler {
@@ -89,10 +92,12 @@ public class RuntimeInputsInfoCDChangeDataHandler extends AbstractChangeDataHand
     if (dbObject == null) {
       return null;
     }
-    if (dbObject.get(PlanExecutionSummaryKeys.inputSetYaml) == null) {
+    if (dbObject.get(PlanExecutionSummaryKeys.inputSetYaml) == null
+        || isEmpty(dbObject.get(PlanExecutionSummaryKeys.inputSetYaml).toString())) {
       return nodeMap;
     }
-    if (dbObject.get(PlanExecutionSummaryKeys.pipelineTemplate) == null) {
+    if (dbObject.get(PlanExecutionSummaryKeys.pipelineTemplate) == null
+        || isEmpty(dbObject.get(PlanExecutionSummaryKeys.pipelineTemplate).toString())) {
       return nodeMap;
     }
     YamlConfig inputSetYamlConfig = new YamlConfig(dbObject.get(PlanExecutionSummaryKeys.inputSetYaml).toString());
@@ -134,6 +139,13 @@ public class RuntimeInputsInfoCDChangeDataHandler extends AbstractChangeDataHand
         continue;
       }
       String fqn = entry.getKey().getExpressionFqn();
+      String displayName = entry.getKey().getFieldName();
+      if (!isEmpty(fqn)) {
+        String[] fqnArray = fqn.split("\\.");
+        if (!isEmpty(fqnArray)) {
+          displayName = fqnArray[fqnArray.length - 1];
+        }
+      }
       Map<String, String> columnValueMapping = new HashMap<>();
       columnValueMapping.put("id", changeEvent.getUuid());
       columnValueMapping.put("account_id", accountId);
@@ -141,7 +153,7 @@ public class RuntimeInputsInfoCDChangeDataHandler extends AbstractChangeDataHand
       columnValueMapping.put("project_identifier", projectIdentifier);
       columnValueMapping.put("plan_execution_id", planExecutionId);
       columnValueMapping.put(FQN_HASH, DigestUtils.md5Hex(fqn));
-      columnValueMapping.put("display_name", entry.getKey().getFieldName());
+      columnValueMapping.put("display_name", displayName);
       columnValueMapping.put("fqn", fqn);
       columnValueMapping.put(
           "input_value", entry.getValue() == null ? "" : entry.getValue().toString().replaceAll("\"", "'"));

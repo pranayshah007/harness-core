@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.buildstate;
+package io.harness.ci.execution.buildstate;
 
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.TASK_SELECTORS;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
@@ -20,6 +20,7 @@ import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.sweepingoutputs.TaskSelectorSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
+import io.harness.ci.buildstate.SecretUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.utils.BaseConnectorUtils;
@@ -29,22 +30,27 @@ import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.exception.ConnectorNotFoundException;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.git.GitClientHelper;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.security.JWTTokenServiceUtils;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -58,6 +64,7 @@ public class ConnectorUtils extends BaseConnectorUtils {
   private final CIExecutionServiceConfig cIExecutionServiceConfig;
   @Inject private CIFeatureFlagService featureFlagService;
   @Inject @Named("ngBaseUrl") private String ngBaseUrl;
+  private final long TEN_HOURS_IN_MS = TimeUnit.MILLISECONDS.convert(10, TimeUnit.HOURS);
 
   @Inject
   public ConnectorUtils(ConnectorResourceClient connectorResourceClient, SecretUtils secretUtils,
@@ -110,8 +117,6 @@ public class ConnectorUtils extends BaseConnectorUtils {
           K8sDirectInfraYaml k8sDirectInfraYaml = (K8sDirectInfraYaml) k8StageInfraDetails.getInfrastructure();
 
           clusterConnectorRef = k8sDirectInfraYaml.getSpec().getConnectorRef().getValue();
-        } else if (k8StageInfraDetails.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_HOSTED) {
-          clusterConnectorRef = "account.Harness_Kubernetes_Cluster";
         } else {
           throw new CIStageExecutionException("Wrong k8s type");
         }
@@ -155,8 +160,12 @@ public class ConnectorUtils extends BaseConnectorUtils {
     if (isGitConnector && isEmpty(connectorIdentifier)
         && featureFlagService.isEnabled(FeatureName.CODE_ENABLED, ngAccess.getAccountIdentifier())) {
       log.info("fetching harness scm connector");
-      String baseUrl = getSCMBaseUrl(ngBaseUrl);
-      return super.getHarnessConnectorDetails(ngAccess, baseUrl);
+      String gitBaseUrl = getSCMBaseUrl(ngBaseUrl);
+      String authToken = "";
+      // todo: with this internal url we assume scm is in same cluster as ci manager, will need changes for ci saas and
+      // scm on prem or vice versa
+      return super.getHarnessConnectorDetails(ngAccess, gitBaseUrl, authToken,
+          cIExecutionServiceConfig.getGitnessConfig().getHttpClientConfig().getBaseUrl());
     }
 
     if (isEmpty(connectorIdentifier)) {
@@ -164,5 +173,41 @@ public class ConnectorUtils extends BaseConnectorUtils {
     }
 
     return super.getConnectorDetails(ngAccess, connectorIdentifier);
+  }
+
+  public ConnectorDetails getConnectorDetailsWithToken(
+      NGAccess ngAccess, String connectorIdentifier, boolean isGitConnector, Ambiance ambiance, String repoName) {
+    if (isEmpty(connectorIdentifier)) {
+      if (isGitConnector && featureFlagService.isEnabled(FeatureName.CODE_ENABLED, ngAccess.getAccountIdentifier())) {
+        log.info("fetching harness scm connector");
+        String baseUrl = getSCMBaseUrl(ngBaseUrl);
+        String authToken = fetchAuthToken(ngAccess, ambiance, repoName);
+        // todo: with this internal url we assume scm is in same cluster as ci manager, will need changes for ci saas
+        // and scm on prem or vice versa
+        return super.getHarnessConnectorDetails(ngAccess, baseUrl, authToken,
+            cIExecutionServiceConfig.getGitnessConfig().getHttpClientConfig().getBaseUrl());
+      } else {
+        throw new CIStageExecutionException("Git connector is mandatory in case git clone is enabled");
+      }
+    }
+
+    return super.getConnectorDetails(ngAccess, connectorIdentifier);
+  }
+
+  private String fetchAuthToken(NGAccess ngAccess, Ambiance ambiance, String repoName) {
+    ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
+    String principal = executionPrincipalInfo.getPrincipal();
+    io.harness.pms.contracts.plan.PrincipalType principalType = executionPrincipalInfo.getPrincipalType();
+
+    String completeRepoName = GitClientHelper.convertToHarnessRepoName(
+        ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), repoName);
+
+    String[] allowedResources = {completeRepoName};
+
+    ImmutableMap<String, String> claims = ImmutableMap.of("name", principal, "type", principalType.name());
+    ImmutableMap<String, String[]> arrayClaims = ImmutableMap.of("allowedResources", allowedResources);
+
+    return JWTTokenServiceUtils.generateJWTToken(
+        claims, arrayClaims, TEN_HOURS_IN_MS, cIExecutionServiceConfig.getGitnessConfig().getJwtSecret());
   }
 }

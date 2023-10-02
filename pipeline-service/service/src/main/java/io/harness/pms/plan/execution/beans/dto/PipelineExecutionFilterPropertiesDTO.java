@@ -6,12 +6,15 @@
  */
 
 package io.harness.pms.plan.execution.beans.dto;
-
 import static io.harness.filter.FilterConstants.PIPELINE_EXECUTION_FILTER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterPropertiesDTO;
 import io.harness.ng.core.common.beans.NGTag;
+import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.TimeRange;
 import io.harness.yaml.core.NGLabel;
@@ -28,6 +31,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Data
 @Builder
 @NoArgsConstructor
@@ -44,7 +48,8 @@ public class PipelineExecutionFilterPropertiesDTO extends FilterPropertiesDTO {
   private String pipelineName;
   private TimeRange timeRange;
   private org.bson.Document moduleProperties;
-
+  private List<TriggerType> triggerTypes;
+  private List<String> triggerIdentifiers;
   @Override
   public FilterType getFilterType() {
     return FilterType.PIPELINEEXECUTION;

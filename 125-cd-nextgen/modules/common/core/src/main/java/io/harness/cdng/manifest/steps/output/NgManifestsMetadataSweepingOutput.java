@@ -8,9 +8,13 @@
 package io.harness.cdng.manifest.steps.output;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.manifestConfigs.ManifestConfigurations;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
@@ -22,7 +26,8 @@ import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
-
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.CDC)
 @Value
 @Builder
@@ -38,4 +43,7 @@ public class NgManifestsMetadataSweepingOutput implements ExecutionSweepingOutpu
   // added for override v2
   Map<ServiceOverridesType, List<ManifestConfigWrapper>> manifestsFromOverride;
   List<ManifestConfigWrapper> svcManifests;
+
+  // manifest configurations
+  ManifestConfigurations manifestConfigurations;
 }

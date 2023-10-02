@@ -31,14 +31,14 @@ public class NextGenLogHealthSourceSpecTransformer
         .healthSourceParams(HealthSourceParamsDTO.getHealthSourceParamsDTO(cvConfigs.get(0).getHealthSourceParams()))
         .dataSourceType(cvConfigs.get(0).getType())
         .queryDefinitions(cvConfigs.stream()
-                              .map((NextGenLogCVConfig cv)
-                                       -> QueryDefinition.builder()
-                                              .name(cv.getQueryName())
-                                              .query(cv.getQuery())
-                                              .groupName(cv.getGroupName())
-                                              .identifier(cv.getQueryIdentifier())
-                                              .queryParams(QueryParamsDTO.getQueryParamsDTO(cv.getQueryParams()))
-                                              .build())
+                              .map(cv
+                                  -> QueryDefinition.builder()
+                                         .name(cv.getQueryName())
+                                         .query(cv.getQuery())
+                                         .groupName(cv.getGroupName())
+                                         .identifier(cv.getQueryIdentifier())
+                                         .queryParams(QueryParamsDTO.getQueryParamsDTO(cv.getQueryParams()))
+                                         .build())
                               .collect(Collectors.toList()))
         .build();
   }

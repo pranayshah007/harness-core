@@ -24,12 +24,14 @@ import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.delegate.beans.connector.awsconnector.AwsCFTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsCFTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
+import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
@@ -62,6 +64,7 @@ public class AwsCFDelegateTaskHelperTest extends CategoryTest {
   @Mock AWSCloudformationClient awsCloudformationClient;
   @Mock AwsNgConfigMapper awsNgConfigMapper;
   @Mock SecretDecryptionService secretDecryptionService;
+  @Mock ScmConnectorMapperDelegate scmConnectorMapperDelegate;
 
   @InjectMocks AwsCFDelegateTaskHelper awsCFDelegateTaskHelper;
 
@@ -88,6 +91,7 @@ public class AwsCFDelegateTaskHelperTest extends CategoryTest {
     List<ParameterDeclaration> parameterDeclarationList = new ArrayList<>();
     parameterDeclarationList.add(new ParameterDeclaration().withParameterType("key").withParameterKey("value"));
     doReturn(parameterDeclarationList).when(awsCloudformationClient).getParamsData(any(), any(), any(), any());
+    doReturn(GitConfigDTO.builder().build()).when(scmConnectorMapperDelegate).toGitConfigDTO(any(), any());
 
     AwsCFTaskResponse response = (AwsCFTaskResponse) awsCFDelegateTaskHelper.getCFParamsList(awsCFTaskParamsRequest);
     assertThat(response.getListOfParams().size()).isEqualTo(1);

@@ -8,13 +8,16 @@
 package io.harness.batch.processing.governance;
 
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.AWS;
+import static io.harness.ccm.views.entities.ViewFieldIdentifier.AZURE;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.COMMON;
 
 import io.harness.batch.processing.cloudevents.aws.ecs.service.support.intfc.AwsEC2HelperService;
 import io.harness.batch.processing.cloudevents.aws.ecs.service.tasklet.support.ng.NGConnectorHelper;
+import io.harness.batch.processing.cloudevents.azure.vm.service.AzureHelperService;
 import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.shard.AccountShardService;
 import io.harness.ccm.governance.entities.AwsRecommendationAdhocDTO;
+import io.harness.ccm.governance.entities.AzureRecommendationAdhocDTO;
 import io.harness.ccm.governance.entities.RecommendationAdhocDTO;
 import io.harness.ccm.views.dao.RuleDAO;
 import io.harness.ccm.views.dto.GovernanceJobEnqueueDTO;
@@ -25,6 +28,7 @@ import io.harness.ccm.views.graphql.QLCEViewAggregateOperation;
 import io.harness.ccm.views.graphql.QLCEViewAggregation;
 import io.harness.ccm.views.graphql.QLCEViewEntityStatsDataPoint;
 import io.harness.ccm.views.graphql.QLCEViewFieldInput;
+import io.harness.ccm.views.graphql.QLCEViewFieldInput.QLCEViewFieldInputBuilder;
 import io.harness.ccm.views.graphql.QLCEViewFilter;
 import io.harness.ccm.views.graphql.QLCEViewFilterOperator;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
@@ -44,6 +48,7 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.delegate.beans.connector.CEFeatures;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
+import io.harness.delegate.beans.connector.ceazure.CEAzureConnectorDTO;
 
 import software.wings.beans.AwsCrossAccountAttributes;
 
@@ -76,7 +81,12 @@ public class GovernanceRecommendationService {
   @Autowired private RuleDAO ruleDAO;
   @Autowired BatchMainConfig configuration;
   @Autowired private NGConnectorHelper ngConnectorHelper;
+  @Autowired private AzureHelperService azureHelperService;
   private static final String DEFAULT_TIMEZONE = "GMT";
+  private static final String AWS_USAGE_ACCOUNT_ID = "awsUsageaccountid";
+  private static final String ACCOUNT = "Account";
+  private static final String AZURE_SUBSCRIPTION_GUID = "azureSubscriptionGuid";
+  private static final String SUBSCRIPTION_ID = "Subscription id";
 
   public void generateRecommendation(List<ConnectorType> ceEnabledConnectorType) {
     // get all ce enabled accounts
@@ -93,10 +103,12 @@ public class GovernanceRecommendationService {
         accountId, ceEnabledConnectorType, Arrays.asList(CEFeatures.GOVERNANCE), null);
     if (!nextGenConnectorResponses.isEmpty()) {
       if (ceEnabledConnectorType.get(0).equals(ConnectorType.CE_AWS)) {
-        generateAwsRecommendationForAccount(accountId, nextGenConnectorResponses);
+        generateRecommendationForAccount(accountId, nextGenConnectorResponses, RuleCloudProviderType.AWS,
+            AWS_USAGE_ACCOUNT_ID, ACCOUNT, AWS, AWS.getDisplayName());
       }
       if (ceEnabledConnectorType.get(0).equals(ConnectorType.CE_AZURE)) {
-        generateAzureRecommendationForAccount(accountId, nextGenConnectorResponses);
+        generateRecommendationForAccount(accountId, nextGenConnectorResponses, RuleCloudProviderType.AZURE,
+            AZURE_SUBSCRIPTION_GUID, SUBSCRIPTION_ID, AZURE, AZURE.getDisplayName());
       }
 
       try {
@@ -109,64 +121,85 @@ public class GovernanceRecommendationService {
     }
   }
 
-  public void generateAwsRecommendationForAccount(
-      String accountId, List<ConnectorResponseDTO> nextGenConnectorResponses) {
+  public void generateRecommendationForAccount(String accountId, List<ConnectorResponseDTO> nextGenConnectorResponses,
+      RuleCloudProviderType ruleCloudProviderType, String fieldId, String fieldName, ViewFieldIdentifier identifier,
+      String identifierName) {
     Set<Rule> ruleList = new HashSet<>();
-    ruleList.addAll(ruleDAO.forRecommendation());
+    ruleList.addAll(ruleDAO.forRecommendation(ruleCloudProviderType, accountId));
 
     // getting the needed fields for recommendation
     List<RecommendationAdhocDTO> recommendationAdhocDTOList = new ArrayList<>();
     // List to get identifiers out; later used in fetching top accounts
-    List<String> awsIdentifiers = new ArrayList<>();
+    List<String> cloudProviderIdentifiers = new ArrayList<>();
     for (ConnectorResponseDTO connector : nextGenConnectorResponses) {
       ConnectorInfoDTO connectorInfoDTO = connector.getConnector();
-      CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorInfoDTO.getConnectorConfig();
-      awsIdentifiers.add(ceAwsConnectorDTO.getAwsAccountId());
-      recommendationAdhocDTOList.add(AwsRecommendationAdhocDTO.builder()
-                                         .targetAccountId(ceAwsConnectorDTO.getAwsAccountId())
-                                         .roleArn(ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn())
-                                         .externalId(ceAwsConnectorDTO.getCrossAccountAccess().getExternalId())
-                                         .build());
+      if (ruleCloudProviderType == RuleCloudProviderType.AWS) {
+        CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorInfoDTO.getConnectorConfig();
+        cloudProviderIdentifiers.add(ceAwsConnectorDTO.getAwsAccountId());
+        recommendationAdhocDTOList.add(AwsRecommendationAdhocDTO.builder()
+                                           .targetAccountId(ceAwsConnectorDTO.getAwsAccountId())
+                                           .roleArn(ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn())
+                                           .externalId(ceAwsConnectorDTO.getCrossAccountAccess().getExternalId())
+                                           .cloudConnectorId(connectorInfoDTO.getIdentifier())
+                                           .build());
+      } else if (ruleCloudProviderType == RuleCloudProviderType.AZURE) {
+        CEAzureConnectorDTO ceAzureConnectorDTO = (CEAzureConnectorDTO) connectorInfoDTO.getConnectorConfig();
+        cloudProviderIdentifiers.add(ceAzureConnectorDTO.getSubscriptionId());
+        recommendationAdhocDTOList.add(AzureRecommendationAdhocDTO.builder()
+                                           .tenantId(ceAzureConnectorDTO.getTenantId())
+                                           .subscriptionId(ceAzureConnectorDTO.getSubscriptionId())
+                                           .cloudConnectorId(connectorInfoDTO.getIdentifier())
+                                           .build());
+      }
     }
 
     // get top regions
     List<String> regions = new ArrayList<>();
-    List<QLCEViewEntityStatsDataPoint> accountNames = getAccountNames(accountId, awsIdentifiers);
+    List<QLCEViewEntityStatsDataPoint> accountNames =
+        getAccountNames(accountId, cloudProviderIdentifiers, fieldId, fieldName, identifier, identifierName);
     // filter out final list of rolearn,externalId etc based on top accounts
     List<RecommendationAdhocDTO> recommendationAdhocDTOListFinal = new ArrayList<>();
     if (!accountNames.isEmpty()) {
-      List<String> awsIdentifiersFinal = new ArrayList<>();
+      List<String> cloudProviderIdentifiersFinal = new ArrayList<>();
       for (QLCEViewEntityStatsDataPoint accountData : accountNames) {
         recommendationAdhocDTOListFinal.add(recommendationAdhocDTOList.stream()
                                                 .filter(e -> e.getTargetInfo().matches(accountData.getId()))
                                                 .findFirst()
                                                 .get());
-        awsIdentifiersFinal.add(accountData.getName());
+        cloudProviderIdentifiersFinal.add(accountData.getName());
       }
-      log.info("Account {} connectors: {}\n\n\n awsIdentifiers{} ", accountId, recommendationAdhocDTOListFinal,
-          awsIdentifiersFinal);
-      List<QLCEViewEntityStatsDataPoint> regionsFromPerspective = getTopRegions(accountId, awsIdentifiersFinal);
-      regions = regionsFromPerspective.stream().map(QLCEViewEntityStatsDataPoint::getId).collect(Collectors.toList());
+      log.info("Account {} connectors: {}\n\n\n {} Identifiers{} ", accountId, recommendationAdhocDTOListFinal,
+          ruleCloudProviderType.name(), cloudProviderIdentifiersFinal);
+
+      if (ruleCloudProviderType == RuleCloudProviderType.AWS) {
+        List<QLCEViewEntityStatsDataPoint> regionsFromPerspective =
+            getTopRegions(accountId, cloudProviderIdentifiersFinal, fieldId, fieldName, identifier);
+        regions = regionsFromPerspective.stream().map(QLCEViewEntityStatsDataPoint::getId).collect(Collectors.toList());
+      }
     } else {
       log.info("Failed to get account and regions from perspective {} ", accountId);
       recommendationAdhocDTOListFinal.addAll(
           recommendationAdhocDTOList.subList(0, Math.min(recommendationAdhocDTOList.size(), 5)));
     }
     // enqueue call
-    enqueueRecommendationForAccount(recommendationAdhocDTOListFinal, ruleList, regions, accountId);
+    enqueueRecommendationForAccount(
+        recommendationAdhocDTOListFinal, ruleList, regions, accountId, ruleCloudProviderType);
   }
 
-  public void generateAzureRecommendationForAccount(
-      String accountId, List<ConnectorResponseDTO> nextGenConnectorResponses) {}
-
   void enqueueRecommendationForAccount(List<RecommendationAdhocDTO> recommendationAdhocDTOListFinal, Set<Rule> ruleList,
-      List<String> regions, String accountId) {
+      List<String> regions, String accountId, RuleCloudProviderType ruleCloudProviderType) {
     for (RecommendationAdhocDTO recommendationAdhoc : recommendationAdhocDTOListFinal) {
       if (Lists.isNullOrEmpty(regions)) {
-        regions = awsEC2HelperService.listRegions(AwsCrossAccountAttributes.builder()
-                                                      .crossAccountRoleArn(recommendationAdhoc.getRoleInfo())
-                                                      .externalId(recommendationAdhoc.getRoleId())
-                                                      .build());
+        if (ruleCloudProviderType == RuleCloudProviderType.AWS) {
+          regions = awsEC2HelperService.listRegions(AwsCrossAccountAttributes.builder()
+                                                        .crossAccountRoleArn(recommendationAdhoc.getRoleInfo())
+                                                        .externalId(recommendationAdhoc.getRoleId())
+                                                        .build(),
+              configuration.getCeAwsServiceEndpointConfig());
+        } else if (ruleCloudProviderType == RuleCloudProviderType.AZURE) {
+          regions = azureHelperService.getValidRegions(accountId, recommendationAdhoc);
+          log.info("Regions for running azure policy : {}", regions);
+        }
       }
       for (Rule rule : ruleList) {
         for (String region : regions) {
@@ -175,7 +208,7 @@ public class GovernanceRecommendationService {
                                                                 .ruleId(rule.getUuid())
                                                                 .isDryRun(true)
                                                                 .policy(rule.getRulesYaml())
-                                                                .ruleCloudProviderType(RuleCloudProviderType.AWS)
+                                                                .ruleCloudProviderType(ruleCloudProviderType)
                                                                 .targetAccountDetails(recommendationAdhoc)
                                                                 .targetRegion(region)
                                                                 .build();
@@ -191,77 +224,87 @@ public class GovernanceRecommendationService {
   }
 
   // Get high impact region per account (Top 5 regions) using  aggreated names of different accounts
-  private List<QLCEViewEntityStatsDataPoint> getTopRegions(String accountId, List<String> awsID) {
+  private List<QLCEViewEntityStatsDataPoint> getTopRegions(
+      String accountId, List<String> awsID, String fieldId, String fieldName, ViewFieldIdentifier identifier) {
     List<QLCEViewAggregation> aggregateFunction = Collections.singletonList(
         QLCEViewAggregation.builder().columnName("cost").operationType(QLCEViewAggregateOperation.SUM).build());
 
-    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
-    groupBy.add(QLCEViewGroupBy.builder()
-                    .entityGroupBy(QLCEViewFieldInput.builder()
-                                       .fieldId("region")
-                                       .fieldName("Region")
-                                       .identifierName("Common")
-                                       .identifier(COMMON)
-                                       .build())
-                    .build());
+    QLCEViewFieldInputBuilder regionQlceViewFieldInputBuilder =
+        QLCEViewFieldInput.builder().fieldId("region").fieldName("Region").identifier(COMMON);
 
     List<QLCEViewFilterWrapper> filters = new ArrayList<>();
     filters.add(getTimeFilter(getStartOfMonth(true), QLCEViewTimeFilterOperator.AFTER));
     filters.add(getTimeFilter(getStartOfMonth(false) - 1000, QLCEViewTimeFilterOperator.BEFORE));
     filters.add(QLCEViewFilterWrapper.builder()
                     .idFilter(QLCEViewFilter.builder()
+                                  .field(regionQlceViewFieldInputBuilder.build())
+                                  .operator(QLCEViewFilterOperator.NOT_IN)
+                                  .values(new String[] {"global"})
+                                  .build())
+                    .build());
+    filters.add(QLCEViewFilterWrapper.builder()
+                    .idFilter(QLCEViewFilter.builder()
+                                  .field(regionQlceViewFieldInputBuilder.build())
+                                  .operator(QLCEViewFilterOperator.NOT_NULL)
+                                  .values(new String[] {""})
+                                  .build())
+                    .build());
+    filters.add(QLCEViewFilterWrapper.builder()
+                    .idFilter(QLCEViewFilter.builder()
                                   .field(QLCEViewFieldInput.builder()
-                                             .fieldId("awsUsageaccountid")
-                                             .fieldName("Account")
-                                             .identifier(AWS)
+                                             .fieldId(fieldId)
+                                             .fieldName(fieldName)
+                                             .identifier(identifier)
                                              .build())
                                   .operator(QLCEViewFilterOperator.IN)
                                   .values(awsID.toArray(new String[0]))
                                   .build())
                     .build());
+
+    regionQlceViewFieldInputBuilder = regionQlceViewFieldInputBuilder.identifierName(COMMON.getDisplayName());
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(QLCEViewGroupBy.builder().entityGroupBy(regionQlceViewFieldInputBuilder.build()).build());
+
     List<QLCEViewSortCriteria> sort = Collections.singletonList(
         QLCEViewSortCriteria.builder().sortOrder(QLCESortOrder.DESCENDING).sortType(QLCEViewSortType.COST).build());
     return viewsBillingService
         .getEntityStatsDataPointsNg(filters, groupBy, aggregateFunction, sort,
-            configuration.getRecommendationConfig().getRegionsLimit(), 0,
+            configuration.getRecommendationConfig().getRegionsLimit(), 0, null,
             viewsQueryHelper.buildQueryParams(accountId, false, false))
         .getData();
   }
 
   // Get aggreated names of different accounts
-  private List<QLCEViewEntityStatsDataPoint> getAccountNames(String accountId, List<String> awsID) {
+  private List<QLCEViewEntityStatsDataPoint> getAccountNames(String accountId, List<String> awsID, String fieldId,
+      String fieldName, ViewFieldIdentifier identifier, String identifierName) {
     List<QLCEViewAggregation> aggregateFunction = Collections.singletonList(
         QLCEViewAggregation.builder().columnName("cost").operationType(QLCEViewAggregateOperation.SUM).build());
 
-    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
-    groupBy.add(QLCEViewGroupBy.builder()
-                    .entityGroupBy(QLCEViewFieldInput.builder()
-                                       .fieldId("awsUsageaccountid")
-                                       .fieldName("Account")
-                                       .identifierName("AWS")
-                                       .identifier(AWS)
-                                       .build())
-                    .build());
-    List<QLCEViewSortCriteria> sort = Collections.singletonList(
-        QLCEViewSortCriteria.builder().sortOrder(QLCESortOrder.DESCENDING).sortType(QLCEViewSortType.COST).build());
+    QLCEViewFieldInputBuilder qlceViewFieldInputBuilder =
+        QLCEViewFieldInput.builder().fieldId(fieldId).fieldName(fieldName).identifier(identifier);
 
     List<QLCEViewFilterWrapper> filters = new ArrayList<>();
     filters.add(getTimeFilter(getStartOfMonth(true), QLCEViewTimeFilterOperator.AFTER));
     filters.add(getTimeFilter(getStartOfMonth(false) - 1000, QLCEViewTimeFilterOperator.BEFORE));
     filters.add(QLCEViewFilterWrapper.builder()
                     .idFilter(QLCEViewFilter.builder()
-                                  .field(QLCEViewFieldInput.builder()
-                                             .fieldId("awsUsageaccountid")
-                                             .fieldName("Account")
-                                             .identifier(AWS)
-                                             .build())
+                                  .field(qlceViewFieldInputBuilder.build())
                                   .operator(QLCEViewFilterOperator.IN)
                                   .values(awsID.toArray(new String[0]))
                                   .build())
                     .build());
+
+    qlceViewFieldInputBuilder = qlceViewFieldInputBuilder.identifierName(identifierName);
+
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(QLCEViewGroupBy.builder().entityGroupBy(qlceViewFieldInputBuilder.build()).build());
+    List<QLCEViewSortCriteria> sort = Collections.singletonList(
+        QLCEViewSortCriteria.builder().sortOrder(QLCESortOrder.DESCENDING).sortType(QLCEViewSortType.COST).build());
+
     return viewsBillingService
         .getEntityStatsDataPointsNg(filters, groupBy, aggregateFunction, sort,
-            configuration.getRecommendationConfig().getAccountLimit(), 0,
+            configuration.getRecommendationConfig().getAccountLimit(), 0, null,
             viewsQueryHelper.buildQueryParams(accountId, false, false))
         .getData();
   }

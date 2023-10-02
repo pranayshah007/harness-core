@@ -31,6 +31,7 @@ import io.harness.ngmigration.service.entity.SecretManagerTemplateMigrationServi
 import io.harness.ngmigration.service.entity.SecretMigrationService;
 import io.harness.ngmigration.service.entity.ServiceCommandTemplateMigrationService;
 import io.harness.ngmigration.service.entity.ServiceMigrationService;
+import io.harness.ngmigration.service.entity.ServiceTemplateMigrationService;
 import io.harness.ngmigration.service.entity.ServiceVariableMigrationService;
 import io.harness.ngmigration.service.entity.TemplateMigrationService;
 import io.harness.ngmigration.service.entity.TriggerMigrationService;
@@ -69,8 +70,8 @@ public class NgMigrationFactory {
   @Inject SecretManagerTemplateMigrationService secretManagerTemplateMigrationService;
   @Inject UserGroupMigrationService userGroupMigrationService;
   @Inject FileStoreMigrationService fileStoreMigrationService;
-
   @Inject MonitoredServiceMigrationService monitoredServiceMigrationService;
+  @Inject ServiceTemplateMigrationService serviceTemplateMigrationService;
 
   public NgMigrationService getMethod(NGMigrationEntityType type) {
     switch (type) {
@@ -106,6 +107,8 @@ public class NgMigrationFactory {
         return manifestMigrationService;
       case SERVICE_VARIABLE:
         return serviceVariableMigrationService;
+      case SERVICE_TEMPLATE:
+        return serviceTemplateMigrationService;
       case CONFIG_FILE:
         return configFileMigrationService;
       case ECS_SERVICE_SPEC:

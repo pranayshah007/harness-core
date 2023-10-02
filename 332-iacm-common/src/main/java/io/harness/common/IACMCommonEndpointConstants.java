@@ -22,4 +22,7 @@ public class IACMCommonEndpointConstants {
   public static final String IACM_SERVICE_GET_WORKSPACE_VARIABLES_ENDPOINT =
       "api/orgs/{org}/projects/{project}/workspaces/{workspaceId}/variables";
   public static final String IACM_SERVICE_POST_EXECUTION = "api/orgs/{org}/projects/{project}/executions";
+
+  public static final String IACM_SERVICE_GET_WORKSPACE_RESOUCES_ENDPOINT =
+      "api/orgs/{org}/projects/{project}/workspaces/{workspaceId}/resources";
 }

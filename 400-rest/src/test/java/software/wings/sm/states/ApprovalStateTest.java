@@ -877,7 +877,7 @@ public class ApprovalStateTest extends WingsBaseTest {
     String approvalValue = "DONE";
     when(context.renderExpression(any())).thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
     when(jiraHelperService.fetchIssue(any(), any(), any(), any()))
-        .thenReturn(JiraExecutionData.builder().currentStatus(approvalValue).build());
+        .thenReturn(JiraExecutionData.builder().currentStatus(approvalValue).executionStatus(SUCCESS).build());
 
     ApprovalStateParams approvalStateParams = new ApprovalStateParams();
     JiraApprovalParams jiraApprovalParams = new JiraApprovalParams();
@@ -900,7 +900,7 @@ public class ApprovalStateTest extends WingsBaseTest {
     String rejectionValue = "REJECTED";
     when(context.renderExpression(any())).thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
     when(jiraHelperService.fetchIssue(any(), any(), any(), any()))
-        .thenReturn(JiraExecutionData.builder().currentStatus(rejectionValue).build());
+        .thenReturn(JiraExecutionData.builder().currentStatus(rejectionValue).executionStatus(REJECTED).build());
 
     ApprovalStateParams approvalStateParams = new ApprovalStateParams();
     JiraApprovalParams jiraApprovalParams = new JiraApprovalParams();

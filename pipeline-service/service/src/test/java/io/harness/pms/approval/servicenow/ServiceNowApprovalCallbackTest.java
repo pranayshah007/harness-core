@@ -9,6 +9,7 @@ package io.harness.pms.approval.servicenow;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
+import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.PRABU;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -21,6 +22,7 @@ import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -185,6 +187,44 @@ public class ServiceNowApprovalCallbackTest extends CategoryTest {
       // To throw exception while casting the response to ResponseData and catch the exception
       doReturn(null).when(kryoSerializer).asInflatedObject(any());
       serviceNowApprovalCallback.push(response);
+    }
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testPushWhenReceiveInflatedObject() {
+    // Test fallback when already inflated response is received from delegate
+
+    try (MockedStatic<ServiceNowCriteriaEvaluator> mockStatic = Mockito.mockStatic(ServiceNowCriteriaEvaluator.class)) {
+      mockStatic.when(() -> ServiceNowCriteriaEvaluator.evaluateCriteria(any(), any())).thenReturn(true);
+      mockStatic.when(() -> ServiceNowCriteriaEvaluator.validateWithinChangeWindow(any(), any(), any()))
+          .thenReturn(true);
+      on(serviceNowApprovalCallback).set("approvalInstanceId", approvalInstanceId);
+      Ambiance ambiance = Ambiance.newBuilder()
+                              .putSetupAbstractions("accountId", accountId)
+                              .putSetupAbstractions("orgIdentifier", orgIdentifier)
+                              .putSetupAbstractions("projectIdentifier", projectIdentifier)
+                              .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
+                              .build();
+      ServiceNowApprovalInstance instance = getServiceNowApprovalInstance(ambiance);
+      instance.setDeadline(Long.MAX_VALUE);
+      Map<String, ServiceNowFieldValueNG> fields = new HashMap<>();
+      fields.put("dummyField", ServiceNowFieldValueNG.builder().build());
+      Map<String, ResponseData> inflatedResponse = new HashMap<>();
+      inflatedResponse.put("data",
+          ServiceNowTaskNGResponse.builder().ticket(ServiceNowTicketNG.builder().fields(fields).build()).build());
+
+      doReturn(iLogStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(ambiance);
+      doReturn(instance).when(approvalInstanceService).get(approvalInstanceId);
+      serviceNowApprovalCallback.push(inflatedResponse);
+      verify(approvalInstanceService, times(1))
+          .finalizeStatus(eq(approvalInstanceId), eq(ApprovalStatus.APPROVED), nullable(TicketNG.class));
+
+      inflatedResponse.clear();
+      inflatedResponse.put("data", ErrorNotifyResponseData.builder().build());
+      serviceNowApprovalCallback.push(inflatedResponse);
+      verifyNoInteractions(kryoSerializer);
     }
   }
 

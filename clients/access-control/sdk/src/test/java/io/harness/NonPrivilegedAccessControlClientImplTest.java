@@ -8,11 +8,13 @@
 package io.harness;
 
 import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static java.util.Collections.emptyList;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNull;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
@@ -24,9 +26,11 @@ import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
 import io.harness.accesscontrol.acl.api.AccessControlDTO;
 import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
+import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlHttpClient;
 import io.harness.accesscontrol.clients.NonPrivilegedAccessControlClientImpl;
+import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -106,6 +110,45 @@ public class NonPrivilegedAccessControlClientImplTest {
     when(accessControlHttpClient.checkForAccess(any())).thenReturn(responseDTOCall);
     when(responseDTOCall.execute()).thenReturn(response);
     accessControlClient.checkForAccessOrThrow(permissionCheckDTOList);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void checkForAccessOrThrow_ForSomeResourceNotHavingPermission_ShouldThrowExceptionWithPrincipalInformation()
+      throws IOException {
+    List<PermissionCheckDTO> permissionCheckDTOList = getPermissionsList();
+    AccessCheckResponseDTO accessCheckResponseDTO = getAccessCheckResponse(false);
+    accessCheckResponseDTO.setPrincipal(
+        Principal.builder().principalIdentifier("some_principal").principalType(PrincipalType.USER).build());
+    ResponseDTO<AccessCheckResponseDTO> restResponse = ResponseDTO.newResponse(accessCheckResponseDTO);
+    Response<ResponseDTO<AccessCheckResponseDTO>> response = Response.success(restResponse);
+    Call<ResponseDTO<AccessCheckResponseDTO>> responseDTOCall = mock(Call.class);
+    when(accessControlHttpClient.checkForAccess(any())).thenReturn(responseDTOCall);
+    when(responseDTOCall.execute()).thenReturn(response);
+    assertThatThrownBy(() -> accessControlClient.checkForAccessOrThrow(permissionCheckDTOList))
+        .isInstanceOf(NGAccessDeniedException.class)
+        .hasMessage(String.format("Principal of type USER with identifier some_principal : Missing permission %s on %s",
+            accessCheckResponseDTO.getAccessControlList().get(0).getPermission(),
+            accessCheckResponseDTO.getAccessControlList().get(0).getResourceType()));
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void checkForAccessOrThrow_ForSomeResourceNotHavingPermission_ShouldThrowExceptionWithCustomMessage()
+      throws IOException {
+    List<PermissionCheckDTO> permissionCheckDTOList = getPermissionsList();
+    AccessCheckResponseDTO accessCheckResponseDTO = getAccessCheckResponse(false);
+    ResponseDTO<AccessCheckResponseDTO> restResponse = ResponseDTO.newResponse(accessCheckResponseDTO);
+    Response<ResponseDTO<AccessCheckResponseDTO>> response = Response.success(restResponse);
+    Call<ResponseDTO<AccessCheckResponseDTO>> responseDTOCall = mock(Call.class);
+    when(accessControlHttpClient.checkForAccess(any())).thenReturn(responseDTOCall);
+    when(responseDTOCall.execute()).thenReturn(response);
+    String customExceptionMessage = "CustomExceptionMessage";
+    assertThatThrownBy(() -> accessControlClient.checkForAccessOrThrow(permissionCheckDTOList, customExceptionMessage))
+        .isInstanceOf(NGAccessDeniedException.class)
+        .hasMessage(customExceptionMessage);
   }
 
   private AccessCheckResponseDTO getAccessCheckResponse(boolean permitted) {

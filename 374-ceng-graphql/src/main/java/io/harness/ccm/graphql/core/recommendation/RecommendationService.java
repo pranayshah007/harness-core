@@ -51,6 +51,8 @@ public class RecommendationService {
                    .resourceType(ResourceType.valueOf(ceRecommendations.getResourcetype()))
                    .monthlyCost(ceRecommendations.getMonthlycost())
                    .monthlySaving(ceRecommendations.getMonthlysaving())
+                   .isValid(ceRecommendations.getIsvalid())
+                   .lastProcessedAt(ceRecommendations.getLastprocessedat())
                    .recommendationState(RecommendationState.valueOf(ceRecommendations.getRecommendationstate()))
                    .jiraConnectorRef(ceRecommendations.getJiraconnectorref())
                    .jiraIssueKey(ceRecommendations.getJiraissuekey())

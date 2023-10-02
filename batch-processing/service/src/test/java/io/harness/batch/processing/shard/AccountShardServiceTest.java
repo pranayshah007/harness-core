@@ -21,6 +21,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
 import software.wings.beans.Account;
+import software.wings.security.authentication.BatchQueryConfig;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
 import com.google.common.collect.ImmutableList;
@@ -51,7 +52,9 @@ public class AccountShardServiceTest extends CategoryTest {
   public void testGetActiveAccounts() {
     PodInfoConfig podInfoConfig =
         PodInfoConfig.builder().name(POD_NAME).replica(REPLICAS).isolatedReplica(ISOLATED_REPLICAS).build();
+    BatchQueryConfig batchQueryConfig = BatchQueryConfig.builder().disableBatchJobsInCG(false).build();
     when(mainConfig.getPodInfoConfig()).thenReturn(podInfoConfig);
+    when(mainConfig.getBatchQueryConfig()).thenReturn(batchQueryConfig);
     ImmutableList<Account> accounts = ImmutableList.of(getAccount("accountId1"), getAccount("accountId2"),
         getAccount("accountId3"), getAccount("accountId4"), getAccount("accountId5"));
     when(cloudToHarnessMappingService.getCeEnabledAccounts()).thenReturn(accounts);
@@ -68,7 +71,9 @@ public class AccountShardServiceTest extends CategoryTest {
   public void testGetIsolatedAccounts() {
     PodInfoConfig podInfoConfig =
         PodInfoConfig.builder().name(ISOLATED_POD_NAME).replica(REPLICAS).isolatedReplica(ISOLATED_REPLICAS).build();
+    BatchQueryConfig batchQueryConfig = BatchQueryConfig.builder().disableBatchJobsInCG(false).build();
     when(mainConfig.getPodInfoConfig()).thenReturn(podInfoConfig);
+    when(mainConfig.getBatchQueryConfig()).thenReturn(batchQueryConfig);
     ImmutableList<Account> accounts = ImmutableList.of(getAccount("accountId1"), getAccount("accountId2"),
         getAccount("accountId3"), getAccount("accountId4"), getAccount("accountId5"), getAccount("accountId6"));
     when(cloudToHarnessMappingService.getCeEnabledAccounts()).thenReturn(accounts);

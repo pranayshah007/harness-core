@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.terraform.handlers;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.encoding.EncodingUtils.decodeBase64;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -15,7 +14,10 @@ import static io.harness.network.SafeHttpCall.execute;
 import static java.lang.Boolean.TRUE;
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptedRecord;
 import io.harness.beans.DelegateFileEncryptedDataPackage;
 import io.harness.beans.DelegateFileEncryptedRecordDataPackage;
@@ -39,6 +41,8 @@ import java.time.Instant;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(PL)
 @Slf4j
 public class HarnessSMEncryptionDecryptionHandler {

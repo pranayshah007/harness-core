@@ -1,0 +1,18 @@
+moduleType: STO
+clients:
+  - name: stomanager
+    clientConfig: ciManagerClientConfig
+    secretConfig: nextGenConfig.ciManagerSecret
+features:
+  - name: SECURITY
+    description: Security Test Orchestration
+    restrictions:
+      FREE:
+        restrictionType: AVAILABILITY
+        enabled: false
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: false
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true

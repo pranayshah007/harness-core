@@ -46,8 +46,11 @@ import static software.wings.common.TemplateConstants.PATH_DELIMITER;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.cf.PcfCommandTaskBaseHelper;
@@ -111,6 +114,7 @@ import org.zeroturnaround.exec.stream.LogOutputStream;
 /**
  * Stateles helper class
  */
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PCF})
 @Singleton
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)

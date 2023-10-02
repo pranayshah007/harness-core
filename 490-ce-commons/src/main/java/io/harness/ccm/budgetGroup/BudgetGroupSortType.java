@@ -8,7 +8,9 @@
 package io.harness.ccm.budgetGroup;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.commons.entities.billing.BudgetSortType.ACTUAL_COST;
 import static io.harness.ccm.commons.entities.billing.BudgetSortType.BUDGET_AMOUNT;
+import static io.harness.ccm.commons.entities.billing.BudgetSortType.FORECASTED_COST;
 import static io.harness.ccm.commons.entities.billing.BudgetSortType.NAME;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -18,7 +20,9 @@ import io.harness.ccm.commons.entities.billing.BudgetSortType;
 @OwnedBy(CE)
 public enum BudgetGroupSortType {
   BUDGET_GROUP_AMOUNT(BudgetGroupKeys.budgetGroupAmount, BUDGET_AMOUNT),
-  BUDGET_GROUP_NAME(BudgetGroupKeys.name, NAME);
+  BUDGET_GROUP_NAME(BudgetGroupKeys.name, NAME),
+  BUDGET_GROUP_ACTUAL_COST(BudgetGroupKeys.actualCost, ACTUAL_COST),
+  BUDGET_GROUP_FORECASTED_COST(BudgetGroupKeys.forecastCost, FORECASTED_COST);
 
   private final String columnName;
   private final BudgetSortType budgetSortType;

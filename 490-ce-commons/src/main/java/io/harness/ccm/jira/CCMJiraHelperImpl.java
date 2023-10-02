@@ -61,6 +61,7 @@ public class CCMJiraHelperImpl implements CCMJiraHelper {
       JiraClient jiraClient = getNGJiraClient(jiraConnectorDTO);
       return jiraClient.createIssue(projectKey, issueType, fields, false, false, false);
     } catch (Exception e) {
+      log.warn("logging jira error: ", e);
       throw new InvalidRequestException(getJiraException(e));
     }
   }
@@ -157,14 +158,22 @@ public class CCMJiraHelperImpl implements CCMJiraHelper {
 
   private String getJiraException(Exception e) {
     if (e.getCause().getClass().equals(HttpResponseException.class)) {
-      String responseJson = ((HttpResponseException) e.getCause()).getResponseMessage();
+      String responseJson;
+      try {
+        responseJson = ((HttpResponseException) e.getCause()).getResponseMessage();
+      } catch (Exception e1) {
+        log.warn("Exception in getting responseMessage from HttpResponseException", e1);
+        return ExceptionUtils.getMessage(e);
+      }
       try {
         JiraHttpResponseException jiraException = mapper.readValue(responseJson, JiraHttpResponseException.class);
-        return jiraException.getErrors().getSummary();
+        return jiraException.getErrorMessages().get(0);
       } catch (Exception ex) {
+        log.warn("Couldn't read error responseJson: {}", responseJson, ex);
         return responseJson;
       }
     } else {
+      log.info("Exception is not of type HttpResponseException");
       return ExceptionUtils.getMessage(e);
     }
   }
@@ -173,13 +182,6 @@ public class CCMJiraHelperImpl implements CCMJiraHelper {
   @NoArgsConstructor
   @JsonIgnoreProperties(ignoreUnknown = true)
   private static class JiraHttpResponseException {
-    private Errors errors;
-
-    @Data
-    @NoArgsConstructor
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class Errors {
-      public String summary;
-    }
+    private List<String> errorMessages;
   }
 }

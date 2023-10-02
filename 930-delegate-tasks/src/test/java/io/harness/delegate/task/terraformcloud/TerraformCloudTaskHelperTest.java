@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -25,6 +26,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.HintException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -49,6 +51,7 @@ import io.harness.terraformcloud.model.TerraformCloudResponse;
 import io.harness.terraformcloud.model.WorkspaceData;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -72,6 +75,7 @@ public class TerraformCloudTaskHelperTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock private TerraformCloudClient terraformCloudClient;
   @Mock LogCallback logCallback;
+  @Mock ObjectMapper objectMapperMock;
 
   @InjectMocks private TerraformCloudTaskHelper taskHelper;
 
@@ -327,23 +331,38 @@ public class TerraformCloudTaskHelperTest {
     assertThat(output).isEqualTo("{ \"x1\" : { \"value\" : {\"x1\":\"y1\"}, \"sensitive\" : false } }");
   }
 
+  // this
   @Test
   @Owner(developers = BUHA)
   @Category(UnitTests.class)
   public void testStreamSentinelPoliciesFailed() throws IOException {
     doReturn("policy check output").when(terraformCloudClient).getPolicyCheckOutput(any(), any(), any());
+    List<PolicyCheckData> policyCheckData = getPolicyCheckDataWithHardFailed(true);
     doReturn(TerraformCloudResponse.builder()
-                 .data(getPolicyCheckData(true))
+                 .data(policyCheckData)
                  .links(JsonUtils.readTree("{\"self\" : \"https:some.io\"}"))
                  .build())
         .when(terraformCloudClient)
         .listPolicyChecks(any(), any(), any(), anyInt());
 
-    taskHelper.streamSentinelPolicies("url", "token", "runId", logCallback);
+    on(taskHelper).set("objectMapper", objectMapperMock);
+
+    PolicyCheckData.Attributes.Result.Sentinel.PolicyData policyData = getTestHardMandatoryPolicyData();
+    Map<String, PolicyCheckData.Attributes.Result.Sentinel.PolicyData> sentinelHashMap = new HashMap<>();
+    sentinelHashMap.put("", policyData);
+
+    PolicyCheckData.Attributes.Result.Sentinel sentinel =
+        PolicyCheckData.Attributes.Result.Sentinel.builder().data(sentinelHashMap).build();
+
+    doReturn(sentinel).when(objectMapperMock).convertValue(any(), eq(PolicyCheckData.Attributes.Result.Sentinel.class));
+
+    assertThatThrownBy(() -> taskHelper.streamSentinelPolicies("url", "token", "runId", logCallback))
+        .isInstanceOf(HintException.class)
+        .hasMessage("Please check terraform configuration changes which resulted in hard-fail policy check");
 
     verify(terraformCloudClient, times(3)).getPolicyCheckOutput(any(), any(), any());
     verify(logCallback, times(1))
-        .saveExecutionLog("Policy check finished", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+        .saveExecutionLog("Policy check finished", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
   }
 
   @Test
@@ -497,5 +516,75 @@ public class TerraformCloudTaskHelperTest {
     policyCheckData3.setLinks(JsonUtils.readTree("{\"output\" : \"https:some.io\"}"));
     list.add(policyCheckData3);
     return list;
+  }
+
+  private List<PolicyCheckData> getPolicyCheckDataWithHardFailed(boolean failed) {
+    PolicyCheckData.Attributes.Result.Sentinel.PolicyData policyData = getTestHardMandatoryPolicyData();
+
+    Map<String, Object> sentinelHashMap = new HashMap<>();
+    sentinelHashMap.put("", policyData);
+
+    PolicyCheckData.Attributes.Result resultPolicyCheckData =
+        PolicyCheckData.Attributes.Result.builder().sentinel(sentinelHashMap).build();
+
+    List<PolicyCheckData> list = new ArrayList<>();
+    PolicyCheckData policyCheckData = new PolicyCheckData();
+    policyCheckData.setAttributes(PolicyCheckData.Attributes.builder()
+                                      .status(failed ? "hard_failed" : "passed")
+                                      .actions(PolicyCheckData.Attributes.Action.builder().isOverridable(true).build())
+                                      .result(resultPolicyCheckData)
+                                      .build());
+    policyCheckData.setId("id1");
+    policyCheckData.setLinks(JsonUtils.readTree("{\"output\" : \"https:some.io\"}"));
+    list.add(policyCheckData);
+    PolicyCheckData policyCheckData2 = new PolicyCheckData();
+    policyCheckData2.setAttributes(PolicyCheckData.Attributes.builder()
+                                       .status("passed")
+                                       .actions(PolicyCheckData.Attributes.Action.builder().isOverridable(true).build())
+                                       .result(resultPolicyCheckData)
+                                       .build());
+    policyCheckData2.setId("id2");
+    policyCheckData2.setLinks(JsonUtils.readTree("{\"output\" : \"https:some.io\"}"));
+    list.add(policyCheckData2);
+    PolicyCheckData policyCheckData3 = new PolicyCheckData();
+    policyCheckData3.setAttributes(
+        PolicyCheckData.Attributes.builder()
+            .status("passed")
+            .actions(PolicyCheckData.Attributes.Action.builder().isOverridable(false).build())
+            .result(resultPolicyCheckData)
+            .build());
+    policyCheckData3.setId("id3");
+    policyCheckData3.setLinks(JsonUtils.readTree("{\"output\" : \"https:some.io\"}"));
+    list.add(policyCheckData3);
+    return list;
+  }
+
+  private PolicyCheckData.Attributes.Result.Sentinel.PolicyData getTestHardMandatoryPolicyData() {
+    PolicyCheckData.Attributes.Result.Sentinel.PolicyData policyData =
+        PolicyCheckData.Attributes.Result.Sentinel.PolicyData.builder()
+            .policies(
+                List.of(PolicyCheckData.Attributes.Result.Sentinel.PolicyData.PolicySummary.builder()
+                            .result(false)
+                            .policy(PolicyCheckData.Attributes.Result.Sentinel.PolicyData.PolicySummary.Policy.builder()
+                                        .enforcementLevel("hard-mandatory")
+                                        .name("policy-check-hard-failed-1")
+                                        .build())
+                            .build(),
+                    PolicyCheckData.Attributes.Result.Sentinel.PolicyData.PolicySummary.builder()
+                        .result(true)
+                        .policy(PolicyCheckData.Attributes.Result.Sentinel.PolicyData.PolicySummary.Policy.builder()
+                                    .enforcementLevel("advisory")
+                                    .name("policy-check-advisory-2")
+                                    .build())
+                        .build(),
+                    PolicyCheckData.Attributes.Result.Sentinel.PolicyData.PolicySummary.builder()
+                        .result(false)
+                        .policy(PolicyCheckData.Attributes.Result.Sentinel.PolicyData.PolicySummary.Policy.builder()
+                                    .enforcementLevel("hard-mandatory")
+                                    .name("policy-check-hard-failed-3")
+                                    .build())
+                        .build()))
+            .build();
+    return policyData;
   }
 }

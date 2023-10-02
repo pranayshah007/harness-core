@@ -26,20 +26,23 @@ import (
 
 var (
 	getRemoteTiClient = external.GetTiHTTPClient
+	getWrkspcPath = external.GetWrkspcPath
+	getChFiles    = external.GetChangedFiles
 )
 
 const (
 	cgSchemaType = "callgraph"
 )
 
-// handler is used to implement EngineServer
+// handler is used to implement TI Service Calls
 type tiProxyHandler struct {
 	log *zap.SugaredLogger
+	procWriter io.Writer
 }
 
 // NewTiProxyHandler returns a GRPC handler that implements pb.TiProxyServer
-func NewTiProxyHandler(log *zap.SugaredLogger) pb.TiProxyServer {
-	return &tiProxyHandler{log}
+func NewTiProxyHandler(log *zap.SugaredLogger, procWriter io.Writer) pb.TiProxyServer {
+	return &tiProxyHandler{log, procWriter}
 }
 
 // SelectTests gets the list of selected tests to be run.
@@ -258,5 +261,58 @@ func (h *tiProxyHandler) GetTestTimes(ctx context.Context, req *pb.GetTestTimesR
 	}
 	return &pb.GetTestTimesResponse{
 		TimeDataMap: string(timeDataMapStr),
+	}, nil
+}
+
+// GetLastSuccCommitInfo gets the last successful commit info for a particular account, repo, branch in Push Trigger Case 
+func (h *tiProxyHandler) GetLastSuccCommitInfo(ctx context.Context, req *pb.GetLastSuccCommitInfoRequest) (*pb.GetLastSuccCommitInfoResponse, error) { 
+	repo := req.GetRepo()
+	var sha, commitLink string
+	skipVerify := false
+	tiClient := getRemoteTiClient(repo, sha, commitLink, skipVerify)
+
+	// SelectTests API call
+	stepID := req.GetStepId()
+	branch := req.GetBranch()
+	
+	commitInfoResp, err := tiClient.CommitInfo(ctx, stepID, branch)
+	if err != nil {
+		return nil, err
+	}
+
+	jsonStr, err := json.Marshal(commitInfoResp)
+	if err != nil {
+		return &pb.GetLastSuccCommitInfoResponse{}, err
+	}
+	return &pb.GetLastSuccCommitInfoResponse{
+		CommitInfo: string(jsonStr),
+	}, nil
+}
+
+// GetChangedFilesPushTrigger gives the changed files incase of a push trigger execution
+func (h *tiProxyHandler) GetChangedFilesPushTrigger(ctx context.Context, req *pb.GetChangedFilesPushTriggerRequest) (*pb.GetChangedFilesPushTriggerResponse, error) {
+	stepID := req.GetStepId()
+	lastSuccessfulCommitID := req.GetLastSuccCommit()
+	if lastSuccessfulCommitID == "" {
+		return nil, fmt.Errorf("last Successful Commit ID not present in request")
+	}
+
+	workspace, err := getWrkspcPath()
+	if err != nil {
+		return nil, err
+	}
+
+	chFiles, err := getChFiles(ctx, workspace, lastSuccessfulCommitID, true, h.log, h.procWriter)
+	if err != nil {
+		h.log.Errorw("failed to get changed files for push trigger in runTests step", "step_id", stepID, zap.Error(err))
+		return nil, err
+	}
+
+	jsonStr, err := json.Marshal(chFiles)
+	if err != nil {
+		return &pb.GetChangedFilesPushTriggerResponse{}, err
+	}
+	return &pb.GetChangedFilesPushTriggerResponse{
+		ChangedFiles: string(jsonStr),
 	}, nil
 }

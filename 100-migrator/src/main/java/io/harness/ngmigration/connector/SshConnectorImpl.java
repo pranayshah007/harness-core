@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.connector;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.exception.InvalidRequestException;
@@ -17,7 +19,9 @@ import io.harness.ng.core.dto.secrets.SSHAuthDTO;
 import io.harness.ng.core.dto.secrets.SSHConfigDTO;
 import io.harness.ng.core.dto.secrets.SSHCredentialType;
 import io.harness.ng.core.dto.secrets.SSHKeyPathCredentialDTO;
+import io.harness.ng.core.dto.secrets.SSHKeyPathCredentialDTO.SSHKeyPathCredentialDTOBuilder;
 import io.harness.ng.core.dto.secrets.SSHKeyReferenceCredentialDTO;
+import io.harness.ng.core.dto.secrets.SSHKeyReferenceCredentialDTO.SSHKeyReferenceCredentialDTOBuilder;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.ng.core.dto.secrets.SSHPasswordCredentialDTO;
 import io.harness.ng.core.dto.secrets.SecretSpecDTO;
@@ -42,6 +46,7 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public class SshConnectorImpl implements BaseConnector {
   @Override
@@ -82,27 +87,26 @@ public class SshConnectorImpl implements BaseConnector {
   private SSHConfigDTO getSSHConfig(
       HostConnectionAttributes connectionAttributes, Map<CgEntityId, NGYamlFile> migratedEntities) {
     if (connectionAttributes.getAccessType().equals(AccessType.KEY) && !connectionAttributes.isKeyless()) {
-      return SSHConfigDTO.builder()
-          .credentialType(SSHCredentialType.KeyReference)
-          .spec(SSHKeyReferenceCredentialDTO.builder()
-                    .userName(connectionAttributes.getUserName())
-                    .key(MigratorUtility.getSecretRef(migratedEntities, connectionAttributes.getEncryptedKey()))
-                    .encryptedPassphrase(
-                        MigratorUtility.getSecretRef(migratedEntities, connectionAttributes.getEncryptedPassphrase()))
-                    .build())
-          .build();
+      SSHKeyReferenceCredentialDTOBuilder builder =
+          SSHKeyReferenceCredentialDTO.builder()
+              .userName(connectionAttributes.getUserName())
+              .key(MigratorUtility.getSecretRef(migratedEntities, connectionAttributes.getEncryptedKey()));
+      if (StringUtils.isNotBlank(connectionAttributes.getEncryptedPassphrase())) {
+        builder.encryptedPassphrase(
+            MigratorUtility.getSecretRef(migratedEntities, connectionAttributes.getEncryptedPassphrase()));
+      }
+      return SSHConfigDTO.builder().credentialType(SSHCredentialType.KeyReference).spec(builder.build()).build();
     }
 
     if (connectionAttributes.getAccessType().equals(AccessType.KEY) && connectionAttributes.isKeyless()) {
-      return SSHConfigDTO.builder()
-          .credentialType(SSHCredentialType.KeyPath)
-          .spec(SSHKeyPathCredentialDTO.builder()
-                    .userName(connectionAttributes.getUserName())
-                    .keyPath(connectionAttributes.getKeyPath())
-                    .encryptedPassphrase(
-                        MigratorUtility.getSecretRef(migratedEntities, connectionAttributes.getEncryptedPassphrase()))
-                    .build())
-          .build();
+      SSHKeyPathCredentialDTOBuilder builder = SSHKeyPathCredentialDTO.builder()
+                                                   .userName(connectionAttributes.getUserName())
+                                                   .keyPath(connectionAttributes.getKeyPath());
+      if (StringUtils.isNotBlank(connectionAttributes.getEncryptedPassphrase())) {
+        builder.encryptedPassphrase(
+            MigratorUtility.getSecretRef(migratedEntities, connectionAttributes.getEncryptedPassphrase()));
+      }
+      return SSHConfigDTO.builder().credentialType(SSHCredentialType.KeyPath).spec(builder.build()).build();
     }
 
     return SSHConfigDTO.builder()

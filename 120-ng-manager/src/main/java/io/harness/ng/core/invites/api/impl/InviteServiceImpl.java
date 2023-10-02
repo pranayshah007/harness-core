@@ -9,6 +9,7 @@ package io.harness.ng.core.invites.api.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eraro.ErrorMessageConstants.TOKEN_EXPIRED;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.ng.accesscontrol.PlatformPermissions.INVITE_PERMISSION_IDENTIFIER;
@@ -41,8 +42,12 @@ import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
+import io.harness.enforcement.client.services.EnforcementClientService;
+import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.ExpiredTokenException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.InvalidTokenException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.invites.remote.InviteAcceptResponse;
@@ -169,6 +174,7 @@ public class InviteServiceImpl implements InviteService {
   private final TelemetryReporter telemetryReporter;
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
   private final ScheduledExecutorService scheduledExecutor;
+  private final EnforcementClientService enforcementClientService;
 
   private final RetryPolicy<Object> transactionRetryPolicy =
       getRetryPolicy("[Retrying]: Failed to mark previous invites as stale; attempt: {}",
@@ -181,7 +187,8 @@ public class InviteServiceImpl implements InviteService {
       OutboxService outboxService, AccessControlClient accessControlClient, UserClient userClient,
       AccountOrgProjectHelper accountOrgProjectHelper, @Named("isNgAuthUIEnabled") boolean isNgAuthUIEnabled,
       TelemetryReporter telemetryReporter, NGFeatureFlagHelperService ngFeatureFlagHelperService,
-      @Named(InviteModule.NG_INVITE_THREAD_EXECUTOR) ScheduledExecutorService scheduledExecutorService) {
+      @Named(InviteModule.NG_INVITE_THREAD_EXECUTOR) ScheduledExecutorService scheduledExecutorService,
+      EnforcementClientService enforcementClientService) {
     this.jwtPasswordSecret = jwtPasswordSecret;
     this.jwtGeneratorUtils = jwtGeneratorUtils;
     this.ngUserService = ngUserService;
@@ -197,6 +204,7 @@ public class InviteServiceImpl implements InviteService {
     this.telemetryReporter = telemetryReporter;
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
     this.scheduledExecutor = scheduledExecutorService;
+    this.enforcementClientService = enforcementClientService;
     MongoClientURI uri = new MongoClientURI(mongoConfig.getUri());
     useMongoTransactions = uri.getHosts().size() > 2;
   }
@@ -396,6 +404,10 @@ public class InviteServiceImpl implements InviteService {
     }
   }
 
+  private void checkNgLimit(String accountId) {
+    enforcementClientService.checkAvailabilityWithIncrement(FeatureRestrictionName.MULTIPLE_USERS, accountId, 1);
+  }
+
   private void createAndInviteNonPasswordUser(String accountIdentifier, String jwtToken, String email,
       boolean isScimInvite, boolean shouldSendTwoFactorAuthResetEmail, String displayName, String givenName,
       String familyName, String externalId, UserSource userSource) {
@@ -494,7 +506,12 @@ public class InviteServiceImpl implements InviteService {
   }
 
   public InviteAcceptResponse acceptInvite(String jwtToken) {
-    Optional<Invite> inviteOptional = getInviteFromToken(jwtToken, true);
+    Optional<Invite> inviteOptional = null;
+    try {
+      inviteOptional = getInviteFromTokenV2(jwtToken, true);
+    } catch (ExpiredTokenException e) {
+      return InviteAcceptResponse.builder().response(INVITE_EXPIRED).build();
+    }
     if (!inviteOptional.isPresent() || !inviteOptional.get().getInviteToken().equals(jwtToken)) {
       log.warn("Invite token {} is invalid", jwtToken);
       return InviteAcceptResponse.builder().response(INVITE_INVALID).build();
@@ -506,7 +523,6 @@ public class InviteServiceImpl implements InviteService {
       log.warn("Invite expired");
       return InviteAcceptResponse.builder().response(INVITE_EXPIRED).build();
     }
-
     Optional<UserMetadataDTO> ngUserOpt = ngUserService.getUserByEmail(invite.getEmail(), true);
     UserInfo userInfo = ngUserOpt
                             .map(user
@@ -544,6 +560,26 @@ public class InviteServiceImpl implements InviteService {
       log.error("Invalid invite JWT token", e);
     }
     if (!inviteIdOptional.isPresent()) {
+      log.warn("Invalid token. verification failed");
+      return Optional.empty();
+    }
+    return getInvite(inviteIdOptional.get(), allowDeleted);
+  }
+
+  @Override
+  public Optional<Invite> getInviteFromTokenV2(String jwtToken, boolean allowDeleted) {
+    if (isBlank(jwtToken)) {
+      return Optional.empty();
+    }
+    Optional<String> inviteIdOptional = Optional.empty();
+    try {
+      inviteIdOptional = getInviteIdFromTokenV2(jwtToken);
+    } catch (ExpiredTokenException e) {
+      throw new ExpiredTokenException(TOKEN_EXPIRED, WingsException.USER);
+    } catch (InvalidTokenException e) {
+      log.error("Invalid invite JWT token", e);
+    }
+    if (inviteIdOptional.isEmpty()) {
       log.warn("Invalid token. verification failed");
       return Optional.empty();
     }
@@ -601,7 +637,7 @@ public class InviteServiceImpl implements InviteService {
   }
 
   private InviteOperationResponse newInvite(Invite invite, boolean[] scimLdapArray) {
-    checkUserLimit(invite.getAccountIdentifier(), invite.getEmail());
+    checkNgLimit(invite.getAccountIdentifier());
     if (isNotEmpty(invite.getName())) {
       UserUtils.validateUserName(invite.getName());
     }
@@ -926,6 +962,15 @@ public class InviteServiceImpl implements InviteService {
 
   private Optional<String> getInviteIdFromToken(String token) {
     Map<String, Claim> claims = jwtGeneratorUtils.verifyJWTToken(token, jwtPasswordSecret);
+    return getInviteKeysFromClaims(claims);
+  }
+
+  private Optional<String> getInviteIdFromTokenV2(String token) {
+    Map<String, Claim> claims = jwtGeneratorUtils.verifyJWTTokenV2(token, jwtPasswordSecret);
+    return getInviteKeysFromClaims(claims);
+  }
+
+  private Optional<String> getInviteKeysFromClaims(Map<String, Claim> claims) {
     if (!claims.containsKey("exp")) {
       log.warn(this.getClass().getName() + " verifies JWT Token without Expiry Date");
       Principal principal = SecurityContextBuilder.getPrincipalFromClaims(claims);
@@ -939,7 +984,6 @@ public class InviteServiceImpl implements InviteService {
     }
     return Optional.of(claims.get(InviteKeys.id).asString());
   }
-
   private void validateRequest(String searchTerm, ACLAggregateFilter aclAggregateFilter) {
     if (!isBlank(searchTerm) && ACLAggregateFilter.isFilterApplied(aclAggregateFilter)) {
       log.error("Search term and filter on role/resourcegroup identifiers can't be applied at the same time");

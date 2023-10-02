@@ -20,7 +20,9 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.subscription.dto.CardDTO;
 import io.harness.subscription.dto.CreditCardDTO;
+import io.harness.subscription.responses.AccountCreditCardValidationResponse;
 import io.harness.subscription.responses.CreditCardResponse;
+import io.harness.subscription.responses.CreditCardValidationResponse;
 import io.harness.subscription.services.CreditCardService;
 
 import com.google.inject.Inject;
@@ -38,9 +40,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 
@@ -81,6 +85,18 @@ public class CreditCardResource {
     return ResponseDTO.newResponse(creditCardService.saveCreditCard(creditCardDTO));
   }
 
+  @DELETE
+  @Path("{identifier}")
+  @ApiOperation(value = "Deletes credit card information", nickname = "delete card")
+  @Operation(operationId = "deleteCreditCard", summary = "Deletes credit card information")
+  public ResponseDTO<CreditCardResponse> deleteCreditCard(
+      @Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(required = true, description = "Credit Card Identifier") @NotNull @Valid @PathParam(
+          "identifier") @NotNull String creditCardIdentifier) {
+    return ResponseDTO.newResponse(creditCardService.deleteCreditCard(accountIdentifier, creditCardIdentifier));
+  }
+
   @GET
   @Path("/default")
   @ApiOperation(value = "Gets the default card for the customer", nickname = "getDefaultCard")
@@ -92,7 +108,7 @@ public class CreditCardResource {
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
   public ResponseDTO<CardDTO>
-  getPrimaryCreditCard(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+  getDefaultCreditCard(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
     return ResponseDTO.newResponse(creditCardService.getDefaultCreditCard(accountIdentifier));
   }
@@ -101,8 +117,26 @@ public class CreditCardResource {
   @Path("/has-valid-card")
   @ApiOperation(value = "Checks for a valid credit card", nickname = "has a valid card")
   @Operation(operationId = "hasValidCard", summary = "Checks if the account has a valid credit card")
-  public ResponseDTO<Boolean> validateCreditCard(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE)
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
-    return ResponseDTO.newResponse(creditCardService.hasValidCard(accountIdentifier));
+  public ResponseDTO<AccountCreditCardValidationResponse> validateCreditCard(
+      @Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
+    return ResponseDTO.newResponse(
+        AccountCreditCardValidationResponse.builder()
+            .hasAtleastOneValidCreditCard(creditCardService.hasAtleastOneValidCreditCard(accountIdentifier))
+            .build());
+  }
+
+  @GET
+  @Path("{identifier}/is-valid")
+  @ApiOperation(value = "Checks validity of a credit card", nickname = "is valid")
+  @Operation(operationId = "isValid", summary = "Checks validity of a credit card in an account")
+  public ResponseDTO<CreditCardValidationResponse> isValid(
+      @Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(required = true, description = "Credit Card Identifier") @NotNull @PathParam(
+          "identifier") @NotNull String creditCardIdentifier) {
+    return ResponseDTO.newResponse(CreditCardValidationResponse.builder()
+                                       .isValid(creditCardService.isValid(accountIdentifier, creditCardIdentifier))
+                                       .build());
   }
 }

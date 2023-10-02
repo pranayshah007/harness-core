@@ -21,7 +21,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @OwnedBy(PL)
 public class EntityIdentifierValidator implements ConstraintValidator<EntityIdentifier, String> {
   // Start with: Alphabets, characters or Underscore
@@ -33,6 +35,7 @@ public class EntityIdentifierValidator implements ConstraintValidator<EntityIden
           .of("or", "and", "eq", "ne", "lt", "gt", "le", "ge", "div", "mod", "not", "null", "true", "false", "new",
               "var", "return", "step", "parallel", "stepGroup", "org", "account", "class", "shellScriptProvisioner")
           .collect(Collectors.toCollection(HashSet::new));
+  private static final String reservedKeyword = "_harness_system";
   private boolean allowBlank;
   private boolean allowScoped;
   private int maxLength;
@@ -79,7 +82,14 @@ public class EntityIdentifierValidator implements ConstraintValidator<EntityIden
           .addConstraintViolation();
       return false;
     }
+    if (containsReservedWord(identifier)) {
+      log.warn("Identifier {} contains harness reserved keyword", identifier);
+    }
     return true;
+  }
+
+  private boolean containsReservedWord(String identifier) {
+    return identifier.startsWith(reservedKeyword);
   }
 
   @VisibleForTesting

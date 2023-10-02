@@ -26,7 +26,6 @@ import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionComma
 import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionTrafficShiftResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
-import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -39,6 +38,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
@@ -65,13 +65,14 @@ public class GoogleFunctionsTrafficShiftStep extends CdTaskExecutable<GoogleFunc
   @Inject private InstanceInfoService instanceInfoService;
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+  public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // nothing
   }
 
   @Override
-  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<GoogleFunctionCommandResponse> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContextAndNodeInfo(Ambiance ambiance,
+      StepBaseParameters stepParameters, ThrowingSupplier<GoogleFunctionCommandResponse> responseDataSupplier)
+      throws Exception {
     StepResponse stepResponse = null;
     try {
       GoogleFunctionTrafficShiftResponse googleFunctionTrafficShiftResponse =
@@ -90,7 +91,7 @@ public class GoogleFunctionsTrafficShiftStep extends CdTaskExecutable<GoogleFunc
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
-      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, StepBaseParameters stepParameters, StepInputPackage inputPackage) {
     GoogleFunctionsTrafficShiftStepParameters googleFunctionsTrafficShiftStepParameters =
         (GoogleFunctionsTrafficShiftStepParameters) stepParameters.getSpec();
     if (EmptyPredicate.isEmpty(
@@ -145,8 +146,8 @@ public class GoogleFunctionsTrafficShiftStep extends CdTaskExecutable<GoogleFunc
   }
 
   @Override
-  public Class<StepElementParameters> getStepParametersClass() {
-    return StepElementParameters.class;
+  public Class<StepBaseParameters> getStepParametersClass() {
+    return StepBaseParameters.class;
   }
 
   private TaskRequest skipTaskRequest(String message) {

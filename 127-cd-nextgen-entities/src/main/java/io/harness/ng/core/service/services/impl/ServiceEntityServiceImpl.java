@@ -6,7 +6,6 @@
  */
 
 package io.harness.ng.core.service.services.impl;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -22,7 +21,10 @@ import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.EntityType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
@@ -42,6 +44,7 @@ import io.harness.exception.YamlException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.ng.DuplicateKeyExceptionParser;
 import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.dto.RepoListResponseDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.events.ServiceCreateEvent;
@@ -53,6 +56,7 @@ import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
+import io.harness.ng.core.service.mappers.ManifestFilterHelper;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.services.validators.ServiceEntityValidator;
@@ -110,6 +114,8 @@ import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.PredicateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.springframework.dao.DuplicateKeyException;
@@ -121,6 +127,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.support.TransactionTemplate;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_K8S, HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(PIPELINE)
 @Singleton
 @Slf4j
@@ -171,13 +179,18 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       validatePresenceOfRequiredFields(serviceEntity.getAccountId(), serviceEntity.getIdentifier());
       setNameIfNotPresent(serviceEntity);
       modifyServiceRequest(serviceEntity);
+
+      // cannot rely on Mongo repository throwing DuplicateKeyException since we're saving to git first
+      validateIdentifierIsUnique(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(),
+          serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier());
+
       Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(serviceEntity);
       ServiceEntityValidator serviceEntityValidator =
           serviceEntityValidatorFactory.getServiceEntityValidator(serviceEntity);
       serviceEntityValidator.validate(serviceEntity);
       ServiceEntity createdService =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-            ServiceEntity service = serviceRepository.save(serviceEntity);
+            ServiceEntity service = serviceRepository.saveGitAware(serviceEntity);
             outboxService.save(getServiceCreateEvent(serviceEntity));
             return service;
           }));
@@ -185,11 +198,22 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       publishEvent(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(),
           serviceEntity.getIdentifier(), EventsFrameworkMetadataConstants.CREATE_ACTION);
       return createdService;
-    } catch (DuplicateKeyException ex) {
+    } catch (Exception ex) {
+      log.error(String.format("Error while saving service [%s]", serviceEntity.getIdentifier()), ex);
+      throw new InvalidRequestException(
+          String.format("Error while saving service [%s]: %s", serviceEntity.getIdentifier(), ex.getMessage()));
+    }
+  }
+
+  private void validateIdentifierIsUnique(
+      String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
+    Optional<ServiceEntity> serviceEntity =
+        serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+            accountId, orgIdentifier, projectIdentifier, serviceIdentifier);
+    if (serviceEntity.isPresent()) {
       throw new DuplicateFieldException(
-          getDuplicateServiceExistsErrorMessage(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(),
-              serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier()),
-          USER_SRE, ex);
+          getDuplicateServiceExistsErrorMessage(accountId, orgIdentifier, projectIdentifier, serviceIdentifier),
+          USER_SRE);
     }
   }
 
@@ -215,24 +239,50 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
   @Override
   public Optional<ServiceEntity> get(
-      String accountId, String orgIdentifier, String projectIdentifier, String serviceRef, boolean deleted) {
-    checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
-
-    return getServiceByRef(accountId, orgIdentifier, projectIdentifier, serviceRef, deleted);
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceRef, boolean deleted) {
+    // default behavior to not load from cache and fallback branch
+    return get(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, deleted, false, false, false);
   }
 
-  private Optional<ServiceEntity> getServiceByRef(
-      String accountId, String orgIdentifier, String projectIdentifier, String serviceRef, boolean deleted) {
+  @Override
+  public Optional<ServiceEntity> getMetadata(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceRef, boolean deleted) {
+    // includeMetadataOnly fetches the entity from db so source code params are not needed
+    return get(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, deleted, false, false, true);
+  }
+
+  @Override
+  public Optional<ServiceEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
+      String serviceRef, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch) {
+    return get(
+        accountId, orgIdentifier, projectIdentifier, serviceRef, deleted, loadFromCache, loadFromFallbackBranch, false);
+  }
+
+  private Optional<ServiceEntity> get(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceRef, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch,
+      boolean getMetadataOnly) {
+    checkArgument(isNotEmpty(accountIdentifier), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
+
+    return getServiceByRef(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, deleted, loadFromCache,
+        loadFromFallbackBranch, getMetadataOnly);
+  }
+
+  private Optional<ServiceEntity> getServiceByRef(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceRef, boolean deleted, boolean loadFromCache,
+      boolean loadFromFallbackBranch, boolean getMetadataOnly) {
     String[] serviceRefSplit = StringUtils.split(serviceRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    // converted to service identifier
     if (serviceRefSplit == null || serviceRefSplit.length == 1) {
       return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
-          accountId, orgIdentifier, projectIdentifier, serviceRef, !deleted);
+          accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, !deleted, loadFromCache,
+          loadFromFallbackBranch, getMetadataOnly);
     } else {
       IdentifierRef serviceIdentifierRef =
-          IdentifierRefHelper.getIdentifierRef(serviceRef, accountId, orgIdentifier, projectIdentifier);
+          IdentifierRefHelper.getIdentifierRef(serviceRef, accountIdentifier, orgIdentifier, projectIdentifier);
       return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
           serviceIdentifierRef.getAccountIdentifier(), serviceIdentifierRef.getOrgIdentifier(),
-          serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getIdentifier(), !deleted);
+          serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getIdentifier(), !deleted, loadFromCache,
+          loadFromFallbackBranch, getMetadataOnly);
     }
   }
 
@@ -241,7 +291,6 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     validatePresenceOfRequiredFields(requestService.getAccountId(), requestService.getIdentifier());
     setNameIfNotPresent(requestService);
     modifyServiceRequest(requestService);
-    Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(requestService);
     Criteria criteria = getServiceEqualityCriteria(requestService, requestService.getDeleted());
     Optional<ServiceEntity> serviceEntityOptional =
         get(requestService.getAccountId(), requestService.getOrgIdentifier(), requestService.getProjectIdentifier(),
@@ -258,31 +307,40 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
           && !oldService.getGitOpsEnabled().equals(requestService.getGitOpsEnabled())) {
         throw new InvalidRequestException("GitOps Enabled is not allowed to change.");
       }
+      ServiceEntity serviceToUpdate = oldService.withYaml(requestService.getYaml())
+                                          .withDescription(requestService.getDescription())
+                                          .withName(requestService.getName())
+                                          .withTags(requestService.getTags())
+                                          .withType(requestService.getType())
+                                          .withGitOpsEnabled(requestService.getGitOpsEnabled());
 
+      // create final request service
       ServiceEntityValidator serviceEntityValidator =
-          serviceEntityValidatorFactory.getServiceEntityValidator(requestService);
-      serviceEntityValidator.validate(requestService);
+          serviceEntityValidatorFactory.getServiceEntityValidator(serviceToUpdate);
+      serviceEntityValidator.validate(serviceToUpdate);
+      Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(serviceToUpdate);
+
       ServiceEntity updatedService =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-            ServiceEntity updatedResult = serviceRepository.update(criteria, requestService);
+            ServiceEntity updatedResult = serviceRepository.update(criteria, serviceToUpdate);
             if (updatedResult == null) {
               throw new InvalidRequestException(String.format(
                   "Service [%s] under Project[%s], Organization [%s] couldn't be updated or doesn't exist.",
-                  requestService.getIdentifier(), requestService.getProjectIdentifier(),
-                  requestService.getOrgIdentifier()));
+                  serviceToUpdate.getIdentifier(), serviceToUpdate.getProjectIdentifier(),
+                  serviceToUpdate.getOrgIdentifier()));
             }
             outboxService.save(ServiceUpdateEvent.builder()
-                                   .accountIdentifier(requestService.getAccountId())
-                                   .orgIdentifier(requestService.getOrgIdentifier())
-                                   .projectIdentifier(requestService.getProjectIdentifier())
+                                   .accountIdentifier(serviceToUpdate.getAccountId())
+                                   .orgIdentifier(serviceToUpdate.getOrgIdentifier())
+                                   .projectIdentifier(serviceToUpdate.getProjectIdentifier())
                                    .newService(updatedResult)
                                    .oldService(oldService)
                                    .build());
             return updatedResult;
           }));
       entitySetupUsageHelper.updateSetupUsages(updatedService, referredEntities);
-      publishEvent(requestService.getAccountId(), requestService.getOrgIdentifier(),
-          requestService.getProjectIdentifier(), requestService.getIdentifier(),
+      publishEvent(serviceToUpdate.getAccountId(), serviceToUpdate.getOrgIdentifier(),
+          serviceToUpdate.getProjectIdentifier(), serviceToUpdate.getIdentifier(),
           EventsFrameworkMetadataConstants.UPDATE_ACTION);
       return updatedService;
     } else {
@@ -376,7 +434,9 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       checkThatServiceIsNotReferredByOthers(serviceEntity);
     }
     Criteria criteria = getServiceEqualityCriteria(serviceEntity, false);
-    Optional<ServiceEntity> serviceEntityOptional = get(accountId, orgIdentifier, projectIdentifier, serviceRef, false);
+
+    Optional<ServiceEntity> serviceEntityOptional =
+        getMetadata(accountId, orgIdentifier, projectIdentifier, serviceRef, false);
 
     if (serviceEntityOptional.isPresent()) {
       boolean success = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
@@ -618,8 +678,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Override
   public boolean isServiceField(String fieldName, JsonNode serviceValue) {
     return YamlTypes.SERVICE_ENTITY.equals(fieldName) && serviceValue.isObject()
-        && (serviceValue.get(YamlTypes.SERVICE_REF) != null
-            || serviceValue.get(YamlTypes.SERVICE_USE_FROM_STAGE) != null);
+        && (serviceValue.get(YamlTypes.SERVICE_REF) != null || serviceValue.get(YamlTypes.USE_FROM_STAGE) != null);
   }
 
   @Override
@@ -1085,17 +1144,29 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
             String.format("Yaml provided for service %s does not have service root field.", serviceIdentifier));
       }
 
-      YamlField serviceDefinitionField = serviceYamlField.getNode().getField(YamlTypes.SERVICE_DEFINITION);
-      YamlField manifestsField = ServiceFilterHelper.getManifestsNodeFromServiceDefinitionYaml(serviceDefinitionField);
+      YamlField manifestsField =
+          ManifestFilterHelper.getManifestsNodeFromServiceYaml(serviceYamlField, serviceIdentifier);
       if (manifestsField == null) {
         return new ManifestsResponseDTO();
       }
 
-      return new ManifestsResponseDTO().identifiers(ServiceFilterHelper.getManifestIdentifiersFilteredOnServiceType(
-          manifestsField, serviceDefinitionField.getType()));
+      return new ManifestsResponseDTO().identifiers(
+          ManifestFilterHelper.getManifestIdentifiersFilteredOnManifestType(manifestsField));
     } catch (IOException e) {
       throw new InvalidRequestException(
           String.format("Error occurred while fetching list of manifests for service %s", serviceIdentifier), e);
     }
+  }
+
+  @Override
+  public RepoListResponseDTO getListOfRepos(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      boolean includeAllServicesAccessibleAtScope) {
+    Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
+        accountIdentifier, orgIdentifier, projectIdentifier, null, false, includeAllServicesAccessibleAtScope, null);
+
+    List<String> uniqueRepos = serviceRepository.getListOfDistinctRepos(criteria);
+    CollectionUtils.filter(uniqueRepos, PredicateUtils.notNullPredicate());
+
+    return RepoListResponseDTO.builder().repositories(uniqueRepos).build();
   }
 }

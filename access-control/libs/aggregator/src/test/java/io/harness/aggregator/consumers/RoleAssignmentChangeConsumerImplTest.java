@@ -14,6 +14,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.UTKARSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -82,8 +83,10 @@ public class RoleAssignmentChangeConsumerImplTest extends AggregatorTestBase {
     userGroupService = mock(UserGroupService.class);
     scopeService = mock(ScopeService.class);
     roleAssignmentRepository = mock(RoleAssignmentRepository.class);
+    inMemoryPermissionRepository = mock(InMemoryPermissionRepository.class);
+    when(inMemoryPermissionRepository.isPermissionCompatibleWithResourceSelector(any(), any())).thenReturn(true);
     ACLGeneratorService changeConsumerService = new ACLGeneratorServiceImpl(roleService, userGroupService,
-        resourceGroupService, scopeService, new HashMap<>(), aclRepository, false, inMemoryPermissionRepository);
+        resourceGroupService, scopeService, new HashMap<>(), aclRepository, inMemoryPermissionRepository);
     roleAssignmentChangeConsumer = new RoleAssignmentChangeConsumerImpl(
         aclRepository, roleAssignmentRepository, changeConsumerService, roleAssignmentCRUDEventHandler);
     scopeIdentifier =
@@ -208,11 +211,11 @@ public class RoleAssignmentChangeConsumerImplTest extends AggregatorTestBase {
     verify(roleAssignmentRepository, times(1))
         .findByIdentifierAndScopeIdentifier(roleAssignmentDBO.getIdentifier(), roleAssignmentDBO.getScopeIdentifier());
     verify(roleAssignmentCRUDEventHandler, times(1)).handleRoleAssignmentCreate(roleAssignmentDBO);
-    verify(roleService, times(1)).get(role.getIdentifier(), role.getScopeIdentifier(), ManagedFilter.NO_FILTER);
+    verify(roleService, times(2)).get(role.getIdentifier(), role.getScopeIdentifier(), ManagedFilter.NO_FILTER);
     verify(resourceGroupService, times(2))
         .get(resourceGroup.getIdentifier(), resourceGroup.getScopeIdentifier(), ManagedFilter.NO_FILTER);
     if (roleAssignmentDBO.getPrincipalType().equals(USER_GROUP)) {
-      verify(userGroupService, times(1)).get(userGroup.getIdentifier(), userGroup.getScopeIdentifier());
+      verify(userGroupService, times(2)).get(userGroup.getIdentifier(), userGroup.getScopeIdentifier());
     } else {
       verify(userGroupService, times(0)).get(userGroup.getIdentifier(), userGroup.getScopeIdentifier());
     }

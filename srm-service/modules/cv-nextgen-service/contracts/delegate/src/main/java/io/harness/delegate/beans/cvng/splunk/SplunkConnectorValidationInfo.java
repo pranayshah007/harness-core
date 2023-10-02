@@ -10,7 +10,6 @@ package io.harness.delegate.beans.cvng.splunk;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectorDTO;
 import io.harness.delegate.beans.cvng.ConnectorValidationInfo;
 
-import java.util.HashMap;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
@@ -33,8 +32,6 @@ public class SplunkConnectorValidationInfo extends ConnectorValidationInfo<Splun
 
   @Override
   public Map<String, String> collectionHeaders() {
-    Map<String, String> headers = new HashMap<>();
-    headers.put("Authorization", SplunkUtils.getAuthorizationHeader(connectorConfigDTO));
-    return headers;
+    return SplunkUtils.collectionHeaders(connectorConfigDTO);
   }
 }

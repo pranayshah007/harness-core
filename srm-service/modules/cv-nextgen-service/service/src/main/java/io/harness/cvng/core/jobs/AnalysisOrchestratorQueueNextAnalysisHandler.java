@@ -32,6 +32,7 @@ public class AnalysisOrchestratorQueueNextAnalysisHandler
     if (shouldQueueAnalysisForTaskType(verificationTask)) {
       orchestrationService.queueAnalysisWithoutEventPublish(entity.getAccountId(),
           AnalysisInput.builder()
+              .accountId(entity.getAccountId())
               .verificationTaskId(entity.getVerificationTaskId())
               .startTime(Instant.now())
               .endTime(Instant.now())

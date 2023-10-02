@@ -10,6 +10,7 @@ package io.harness.idp.app;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.MongoConfig;
+import io.harness.notification.NotificationChannelPersistenceConfig;
 import io.harness.springdata.HTransactionTemplate;
 import io.harness.springdata.SpringPersistenceModule;
 
@@ -25,7 +26,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class IdpPersistenceModule extends SpringPersistenceModule {
   @Override
   protected Class<?>[] getConfigClasses() {
-    List<Class<?>> resultClasses = Lists.newArrayList(ImmutableList.of(IdpPersistenceConfig.class));
+    List<Class<?>> resultClasses =
+        Lists.newArrayList(ImmutableList.of(IdpPersistenceConfig.class, NotificationChannelPersistenceConfig.class));
     Class<?>[] resultClassesArray = new Class<?>[ resultClasses.size() ];
     return resultClasses.toArray(resultClassesArray);
   }
