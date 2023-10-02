@@ -338,6 +338,9 @@ public class ServiceMigrationService extends NgMigrationService {
             .projectIdentifier(yamlFile.getNgEntityDetail().getProjectIdentifier())
             .yaml(getYamlString(yamlFile))
             .build();
+
+    log.info("Service yaml: {}", getYamlString(yamlFile));
+
     Response<ResponseDTO<ServiceResponse>> resp =
         ngClient
             .createService(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
@@ -398,7 +401,6 @@ public class ServiceMigrationService extends NgMigrationService {
             .filter(entry -> CONFIG_FILE == entry.getType())
             .map(entry -> (ConfigFile) entry.getEntity())
             .filter(configFile -> configFile.getEntityType() == EntityType.SERVICE)
-            .filter(ConfigFile::isTargetToAllEnv)
             .filter(configFile -> StringUtils.equals(configFile.getEntityId(), service.getUuid()))
             .map(configFile -> CgEntityId.builder().type(CONFIG_FILE).id(configFile.getUuid()).build())
             .collect(Collectors.toSet());

@@ -108,6 +108,8 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("scoreComputerThreadsPerCore") private String scoreComputerThreadsPerCore;
   private String managerTarget;
   private String managerAuthority;
+  @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;
+
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
   public static final String IDP_SPEC_PACKAGE = "io.harness.spec.server.idp.v1";
   public static final String SERVICES_PROXY_PACKAGE = "io.harness.idp.proxy.services";

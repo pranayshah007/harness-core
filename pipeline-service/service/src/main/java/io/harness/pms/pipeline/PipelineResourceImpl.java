@@ -17,6 +17,7 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.accesscontrol.publicaccess.PublicAccessClient;
 import io.harness.accesscontrol.publicaccess.dto.PublicAccessResponse;
 import io.harness.accesscontrol.publicaccess.utils.PublicAccessClientUtils;
@@ -111,6 +112,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   private final PipelineCloneHelper pipelineCloneHelper;
   private final PipelineMetadataService pipelineMetadataService;
   private final PipelineAsyncValidationService pipelineAsyncValidationService;
+  private final AccessControlClient accessControlClient;
   private final PublicAccessClient publicAccessClient;
   private final String PIPELINE = "PIPELINE";
 
@@ -375,7 +377,6 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
         accountId, orgId, projectId, pipelineId, isNumeric(ifMatch) ? parseLong(ifMatch) : null));
   }
 
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<Page<PMSPipelineSummaryResponseDTO>> getListOfPipelines(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgId,
       @NotNull @ProjectIdentifier String projectId, int page, int size, List<String> sort,
@@ -386,15 +387,18 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
 
     Criteria criteria = pipelineServiceHelper.formCriteria(
         accountId, orgId, projectId, filterIdentifier, filterProperties, false, module, searchTerm);
-
     Pageable pageRequest =
         PageUtils.getPageRequest(page, size, sort, Sort.by(Sort.Direction.DESC, PipelineEntityKeys.lastUpdatedAt));
+
+    // We need to fetch only those pipeline of which the user have view permission
+    pipelineServiceHelper.setPermittedPipelines(accountId, orgId, projectId, criteria, PipelineEntityKeys.identifier);
 
     Page<PipelineEntity> pipelineEntities =
         pmsPipelineService.list(criteria, pageRequest, accountId, orgId, projectId, getDistinctFromBranches);
 
     List<String> pipelineIdentifiers =
         pipelineEntities.stream().map(PipelineEntity::getIdentifier).collect(Collectors.toList());
+
     Map<String, PipelineMetadataV2> pipelineMetadataMap =
         pipelineMetadataService.getMetadataForGivenPipelineIds(accountId, orgId, projectId, pipelineIdentifiers);
 

@@ -81,4 +81,6 @@ public interface PMSPipelineRepositoryCustom {
       Update metadataUpdate, Criteria metadataCriteria, MoveConfigOperationType moveConfigOperationType);
 
   PipelineEntity updateEntity(Criteria criteria, Update update);
+
+  List<String> findAllPipelineIdentifiers(Criteria criteria);
 }

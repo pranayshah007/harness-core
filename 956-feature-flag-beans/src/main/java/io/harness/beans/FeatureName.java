@@ -226,6 +226,9 @@ public enum FeatureName {
       "Enable Continuous Error Tracking agent column and settings in platform Monitored Services", HarnessTeam.CET),
   CET_AGENT_WIZARD("Enable agent configuration wizard in UI of Continuous Error Tracking module", HarnessTeam.CET),
   CET_SAVED_SEARCH("Enable saved search functionality in the UI of Continuous Error Tracking module", HarnessTeam.CET),
+  CET_SINGLE_NOTIFICATION("Enable non-digest notifications in the Continuous Error Tracking module", HarnessTeam.CET),
+  CET_SAVED_SEARCH_NOTIFICATION(
+      "Enable saved search notifications in the Continuous Error Tracking module", HarnessTeam.CET),
   CE_GCP_CUSTOM_PRICING("Use custom pricing data for k8s gcp from billing export", HarnessTeam.CE),
   CE_HARNESS_ENTITY_MAPPING("Internal FF to decide if harness entities mapping is needed", HarnessTeam.CE),
   CE_HARNESS_INSTANCE_QUERY("Internal FF to decide which table to use for querying mapping data", HarnessTeam.CE),
@@ -266,6 +269,7 @@ public enum FeatureName {
       "Enables use of generative AI to provide remediation information in CI step logs", HarnessTeam.CI),
   CI_BITBUCKET_STATUS_KEY_HASH("Hash and abbreviate the stage ID for Bitbucket SaaS", HarnessTeam.CI),
   CI_CACHE_INTELLIGENCE("Feature flag for cache intelligence feature", HarnessTeam.CI),
+  CI_CACHE_OVERRIDE_FALSE("Feature flag for cache intelligence to not override", HarnessTeam.CI),
   CI_CREDIT_CARD_ONBOARDING("Feature flag for credit card experience in CI onboarding", HarnessTeam.CI),
   CI_DISABLE_RESOURCE_OPTIMIZATION(
       "Used for disabling the resource optimization, AXA had asked this flag", HarnessTeam.CI),
@@ -912,6 +916,8 @@ public enum FeatureName {
   CDS_NG_K8S_SERVICE_RELEASE_NAME(
       "This flag enables the usage of release name in service configuration for K8s & Helm service types.",
       HarnessTeam.CDP),
+  CDS_K8S_EKS_LIST_CLUSTERS_ADD_REGION(
+      "Allow the user to specify the region to be used for listing EKS clusters.", HarnessTeam.CDP),
   CDS_SHELL_VARIABLES_EXPORT("Export shell script output variables to different scopes", HarnessTeam.CDC),
   CDS_CUSTOM_STAGE_WITH_ENV_INFRA("Enable optional environment and infrastructure in custom stage", HarnessTeam.CDC),
   CDS_ECS_BASIC_DEPLOYMENT_STRATEGY(

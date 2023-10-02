@@ -268,6 +268,16 @@ public class OrchestrationModule extends AbstractModule implements ServersModule
 
   @Provides
   @Singleton
+  @Named("pmsMetricsCache")
+  public Cache<String, Integer> metricsCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache("pmsMetricsCache", String.class, Integer.class,
+        AccessedExpiryPolicy.factoryOf(new Duration(TimeUnit.MINUTES, 1)),
+        versionInfoManager.getVersionInfo().getBuildNo());
+  }
+
+  @Provides
+  @Singleton
   public OrchestrationLogConfiguration orchestrationLogConfiguration() {
     return config.getOrchestrationLogConfiguration();
   }

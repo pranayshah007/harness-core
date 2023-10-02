@@ -3627,7 +3627,8 @@
           "type": "string",
           "enum": [
             "InheritFromDelegate",
-            "ManualConfig"
+            "ManualConfig",
+            "OidcAuthentication"
           ]
         }
       },

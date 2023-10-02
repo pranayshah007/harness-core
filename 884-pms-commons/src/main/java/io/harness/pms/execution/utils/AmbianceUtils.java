@@ -273,23 +273,17 @@ public class AmbianceUtils {
     return ambiance.getLevels(ambiance.getLevelsCount() - 2).getRuntimeId();
   }
 
-  public static String modifyIdentifier(Ambiance ambiance, String identifier) {
-    Level level = obtainCurrentLevel(ambiance);
-    return modifyIdentifier(level, identifier, shouldUseMatrixFieldName(ambiance));
+  public static String modifyIdentifier(StrategyMetadata metadata, String identifier, Ambiance ambiance) {
+    return modifyIdentifier(metadata, identifier, shouldUseMatrixFieldName(ambiance));
   }
 
-  public static String modifyIdentifier(Level level, String identifier, boolean useMatrixFieldName) {
-    return identifier.replaceAll(
-        StrategyValidationUtils.STRATEGY_IDENTIFIER_POSTFIX_ESCAPED, getStrategyPostfix(level, useMatrixFieldName));
+  public static String modifyIdentifier(
+      StrategyMetadata strategyMetadata, String identifier, boolean useMatrixFieldName) {
+    return identifier.replaceAll(StrategyValidationUtils.STRATEGY_IDENTIFIER_POSTFIX_ESCAPED,
+        getStrategyPostFixUsingMetadata(strategyMetadata, useMatrixFieldName));
   }
 
-  public static String getStrategyPostfix(Level level, boolean useMatrixFieldName) {
-    if (level == null || !hasStrategyMetadata(level)) {
-      return StringUtils.EMPTY;
-    }
-    return getStrategyPostFixUsingMetadata(level.getStrategyMetadata(), useMatrixFieldName);
-  }
-
+  // Todo: Use metadata.getIdentifierPostfix going forward.
   public static String getStrategyPostFixUsingMetadata(StrategyMetadata metadata, boolean useMatrixFieldName) {
     if (!metadata.hasMatrixMetadata()) {
       if (metadata.getTotalIterations() <= 0) {
@@ -523,10 +517,18 @@ public class AmbianceUtils {
 
   public boolean shouldSimplifyLogBaseKey(Ambiance ambiance) {
     return ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null
-        && ambiance.getMetadata().getFeatureFlagToValueMapMap().get(PIE_SIMPLIFY_LOG_BASE_KEY);
+        && ambiance.getMetadata().getFeatureFlagToValueMapMap().getOrDefault(PIE_SIMPLIFY_LOG_BASE_KEY, false);
   }
 
   public boolean hasStrategyMetadata(Level level) {
     return level.hasStrategyMetadata();
+  }
+
+  public int getCurrentIteration(Level level) {
+    return level.getStrategyMetadata().getCurrentIteration();
+  }
+
+  public int getTotalIteration(Level level) {
+    return level.getStrategyMetadata().getTotalIterations();
   }
 }

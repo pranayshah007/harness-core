@@ -388,44 +388,48 @@ public class TriggerEventExecutionHelper {
         runtimeInputYaml = triggerExecutionHelper.fetchInputSetYAML(triggerDetails, pseudoEvent);
       }
 
-      Type buildType = getBuildType(ngTriggerEntity);
-      Builder triggerPayloadBuilder = TriggerPayload.newBuilder().setType(buildType);
-
-      build = pollingResponse.getBuildInfo().getVersions(0);
-      log.info(
-          "Triggering pipeline execution for pollingDocumentId {}, build {}", pollingResponse.getPollingDocId(), build);
-      if (buildType == Type.ARTIFACT) {
-        Map<String, String> metadata = new HashMap<>();
-        if (pollingResponse.getBuildInfo().getMetadataCount() != 0) {
-          metadata = pollingResponse.getBuildInfo().getMetadata(0).getMetadataMap();
-        }
-        triggerPayloadBuilder.setArtifactData(
-            ArtifactData.newBuilder().setBuild(build).putAllMetadata(metadata).build());
-
-        // Fetching connectorRef and image path
-        if (triggerDetails.getNgTriggerConfigV2() != null && triggerDetails.getNgTriggerConfigV2().getSource() != null
-            && triggerDetails.getNgTriggerConfigV2().getSource().getSpec() instanceof ArtifactTriggerConfig) {
-          ArtifactTriggerConfig artifactConfig =
-              (ArtifactTriggerConfig) triggerDetails.getNgTriggerConfigV2().getSource().getSpec();
-          ArtifactConfigHelper.setConnectorAndImage(triggerPayloadBuilder, artifactConfig);
-        }
-
-      } else if (buildType == Type.MANIFEST) {
-        triggerPayloadBuilder.setManifestData(ManifestData.newBuilder().setVersion(build).build());
-      }
-      TriggerPayload triggerPayload = triggerPayloadBuilder.build();
-      PlanExecution response =
-          triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionRequestForArtifactManifestPollingFlow(
-              triggerDetails, triggerPayload, runtimeInputYaml);
+      TriggerPayload triggerPayload = buildTriggerPayloadBuilder(triggerDetails, pollingResponse).build();
       if (triggerPayload != null) {
         pseudoEvent.setPayload(triggerPayload.toString());
       }
+      PlanExecution response =
+          triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionRequestForArtifactManifestPollingFlow(
+              triggerDetails, triggerPayload, runtimeInputYaml);
       return generateEventHistoryForSuccess(
           triggerDetails, runtimeInputYaml, ngTriggerEntity, pseudoEvent, response, pollingDocId, build);
     } catch (Exception e) {
       return generateEventHistoryForError(
           pseudoEvent, triggerDetails, runtimeInputYaml, ngTriggerEntity, e, pollingDocId, build);
     }
+  }
+
+  public Builder buildTriggerPayloadBuilder(TriggerDetails triggerDetails, PollingResponse pollingResponse) {
+    NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
+    Type buildType = getBuildType(ngTriggerEntity);
+    String build = null;
+
+    Builder triggerPayloadBuilder = TriggerPayload.newBuilder().setType(buildType);
+
+    build = pollingResponse.getBuildInfo().getVersions(0);
+    if (buildType == Type.ARTIFACT) {
+      Map<String, String> metadata = new HashMap<>();
+      if (pollingResponse.getBuildInfo().getMetadataCount() != 0) {
+        metadata = pollingResponse.getBuildInfo().getMetadata(0).getMetadataMap();
+      }
+      triggerPayloadBuilder.setArtifactData(ArtifactData.newBuilder().setBuild(build).putAllMetadata(metadata).build());
+
+      // Fetching connectorRef and image path
+      if (triggerDetails.getNgTriggerConfigV2() != null && triggerDetails.getNgTriggerConfigV2().getSource() != null
+          && triggerDetails.getNgTriggerConfigV2().getSource().getSpec() instanceof ArtifactTriggerConfig) {
+        ArtifactTriggerConfig artifactConfig =
+            (ArtifactTriggerConfig) triggerDetails.getNgTriggerConfigV2().getSource().getSpec();
+        ArtifactConfigHelper.setConnectorAndImage(triggerPayloadBuilder, artifactConfig);
+      }
+
+    } else if (buildType == Type.MANIFEST) {
+      triggerPayloadBuilder.setManifestData(ManifestData.newBuilder().setVersion(build).build());
+    }
+    return triggerPayloadBuilder;
   }
 
   private TriggerEventResponse generateEventHistoryForSuccess(TriggerDetails triggerDetails, String runtimeInputYaml,

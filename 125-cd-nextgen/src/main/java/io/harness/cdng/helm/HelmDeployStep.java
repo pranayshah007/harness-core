@@ -45,6 +45,7 @@ import io.harness.delegate.task.helm.HelmInstallCommandRequestNG;
 import io.harness.delegate.task.helm.HelmInstallCommandRequestNG.HelmInstallCommandRequestNGBuilder;
 import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.k8s.model.K8sPod;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -66,6 +67,7 @@ import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
@@ -202,6 +204,9 @@ public class HelmDeployStep extends CdTaskChainExecutable implements NativeHelmS
 
     nativeHelmDeployOutcomeBuilder.containerInfoList(helmInstallCmdResponseNG.getContainerInfoList());
     nativeHelmDeployOutcomeBuilder.releaseName(helmInstallCmdResponseNG.getReleaseName());
+    nativeHelmDeployOutcomeBuilder.podIps(helmInstallCmdResponseNG.getK8sPodList() != null
+            ? helmInstallCmdResponseNG.getK8sPodList().stream().map(K8sPod::getPodIP).collect(Collectors.toList())
+            : null);
     nativeHelmDeployOutcome = nativeHelmDeployOutcomeBuilder.build();
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.HELM_DEPLOY_OUTCOME,
         nativeHelmDeployOutcome, StepOutcomeGroup.STEP.name());

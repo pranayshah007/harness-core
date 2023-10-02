@@ -21,13 +21,15 @@ metadata:
 spec:
   selector:
     app: harness-ingress-controller
-  {{- if .Values.nginx.loadBalancerEnabled }}
+  {{- if .Values.global.ggIngress.enabled }}
+  type: 'ClusterIP'
+  {{- else if .Values.nginx.loadBalancerEnabled }}
   type: 'LoadBalancer'
   loadBalancerIP: {{ .Values.nginx.loadBalancerIP }}
   {{- else }}
   type: 'NodePort'
   {{- end }}
-  externalTrafficPolicy: 'Cluster'
+  # externalTrafficPolicy: 'Cluster'
   ports:
   - name: health
     protocol: TCP
@@ -94,6 +96,7 @@ rules:
   - secrets
   - endpoints
   verbs:
+  - update
   - get
   - list
   - watch

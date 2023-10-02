@@ -29,4 +29,5 @@ public class K8sAwsInfraMapping implements InfraMapping {
   private String awsConnector;
   private String namespace;
   private String cluster;
+  private String region;
 }

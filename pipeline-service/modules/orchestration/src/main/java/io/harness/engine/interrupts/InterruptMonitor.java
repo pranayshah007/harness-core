@@ -246,7 +246,7 @@ public class InterruptMonitor implements Handler<Interrupt> {
         abortHelper.discontinueMarkedInstance(discontinuingParent, interrupt);
         return;
       case EXPIRE_ALL:
-        expiryHelper.expireMarkedInstance(discontinuingParent, interrupt);
+        expiryHelper.expireMarkedInstance(discontinuingParent, interrupt, true);
         return;
       default:
         // This cannot happen just returning

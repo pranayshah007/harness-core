@@ -170,6 +170,7 @@ public class ShellScriptStepMapperImpl extends StepMapper {
     shellScriptStepNode.setShellScriptStepInfo(
         ShellScriptStepInfo.infoBuilder()
             .onDelegate(ParameterField.createValueField(state.isExecuteOnDelegate()))
+            .includeInfraSelectors(ParameterField.createValueField(state.getIncludeInfraSelectors()))
             .shell(ScriptType.BASH.equals(state.getScriptType()) ? ShellType.Bash : ShellType.PowerShell)
             .source(ShellScriptSourceWrapper.builder()
                         .type("Inline")

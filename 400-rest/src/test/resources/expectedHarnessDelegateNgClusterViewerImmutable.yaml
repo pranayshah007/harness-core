@@ -127,6 +127,24 @@ spec:
 
 ---
 
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+   name: harness-delegate-hpa
+   namespace: harness-delegate-ng
+   labels:
+       harness.io/name: harness-delegate
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: harness-delegate
+  minReplicas: 1
+  maxReplicas: 1
+  targetCPUUtilizationPercentage: 99
+
+---
+
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:

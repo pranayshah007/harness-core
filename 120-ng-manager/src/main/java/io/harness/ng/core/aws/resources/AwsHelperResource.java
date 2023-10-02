@@ -417,6 +417,7 @@ public class AwsHelperResource {
   @Path("eks/clusters")
   @ApiOperation(value = "Get EKS clusters list", nickname = "getEKSClusterNames")
   public ResponseDTO<List<String>> getEKSClusterNames(@QueryParam("awsConnectorRef") String awsConnectorRef,
+      @QueryParam("region") String region,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
@@ -438,6 +439,7 @@ public class AwsHelperResource {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
 
-    return ResponseDTO.newResponse(awsHelperService.getEKSClusterNames(connectorRef, orgIdentifier, projectIdentifier));
+    return ResponseDTO.newResponse(
+        awsHelperService.getEKSClusterNames(connectorRef, orgIdentifier, projectIdentifier, region));
   }
 }

@@ -152,6 +152,7 @@ io.harness.delegate.beans.connector.awskmsconnector.outcome.AwsKmsConnectorCrede
 io.harness.delegate.beans.connector.gcpkmsconnector.outcome.GcpKmsConnectorOutcomeDTO
 io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthSADTO
 io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO
+io.harness.delegate.beans.connector.gcpconnector.GcpOidcDetailsDTO
 io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO
 io.harness.container.ContainerInfo
 io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO

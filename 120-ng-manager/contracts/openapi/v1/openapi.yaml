@@ -2812,6 +2812,8 @@ components:
         event_trigger_time:
           type: integer
           format: int64
+        repo_name:
+          type: string
     ReleaseDetailsResponse:
       title: ReleaseDetailsResponse
       x-stoplight:

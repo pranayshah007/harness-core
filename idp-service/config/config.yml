@@ -226,3 +226,5 @@ tiServiceConfig:
 
 cpu: 2
 scoreComputerThreadsPerCore: 2
+
+streamPerServiceConfiguration: ${PIE_STREAM_PER_SERVICE:- false}

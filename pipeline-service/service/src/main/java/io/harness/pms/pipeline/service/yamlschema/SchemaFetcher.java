@@ -121,7 +121,7 @@ public class SchemaFetcher {
     return triggerStaticSchema;
   }
 
-  private JsonNode fetchFile(String filePath) throws IOException {
+  JsonNode fetchFile(String filePath) throws IOException {
     ClassLoader classLoader = this.getClass().getClassLoader();
     String staticJson =
         Resources.toString(Objects.requireNonNull(classLoader.getResource(filePath)), StandardCharsets.UTF_8);

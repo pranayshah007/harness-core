@@ -67,7 +67,7 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
       compositeSLORecordService.create(compositeServiceLevelObjective, startTime, endTime, verificationTaskId);
       try (SLOMetricContext sloMetricContext = new SLOMetricContext(compositeServiceLevelObjective)) {
         metricService.recordDuration(CVNGMetricsUtils.SLO_DATA_ANALYSIS_METRIC,
-            Duration.between(clock.instant(), analysisState.getInputs().getStartTime()));
+            Duration.between(analysisState.getInputs().getStartTime(), clock.instant()));
       }
       analysisState.setStatus(AnalysisStatus.SUCCESS);
     } catch (Exception exception) {

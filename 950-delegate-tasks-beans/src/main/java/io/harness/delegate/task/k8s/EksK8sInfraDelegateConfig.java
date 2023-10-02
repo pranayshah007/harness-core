@@ -25,6 +25,7 @@ import lombok.Value;
 public class EksK8sInfraDelegateConfig implements K8sInfraDelegateConfig {
   String namespace;
   String cluster;
+  String region;
   AwsConnectorDTO awsConnectorDTO;
   List<EncryptedDataDetail> encryptionDataDetails;
   boolean addRegionalParam;

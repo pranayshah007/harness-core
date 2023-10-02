@@ -188,6 +188,10 @@ if [[ "" != "$DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT" ]]; then
   export $DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT; yq -i '.executorsConfig.dataReconciliationExecutorConfig.timeUnit=env($DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$DATA_RECONCILIATION_CRON_DURATION" ]]; then
+  export DATA_RECONCILIATION_CRON_DURATION; yq -i '.dataReconciliation.duration=env(DATA_RECONCILIATION_CRON_DURATION)' $CONFIG_FILE
+fi
+
 if [[ "" != "$EVENTS_MONGO_URI" ]]; then
   export EVENTS_MONGO_URI; yq -i '.events-mongo.uri=env(EVENTS_MONGO_URI)' $CONFIG_FILE
 else

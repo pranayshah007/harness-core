@@ -65,7 +65,6 @@ public class ConnectorUtils extends BaseConnectorUtils {
   @Inject private CIFeatureFlagService featureFlagService;
   @Inject @Named("ngBaseUrl") private String ngBaseUrl;
   private final long TEN_HOURS_IN_MS = TimeUnit.MILLISECONDS.convert(10, TimeUnit.HOURS);
-  private final String DOT_GIT = ".git";
 
   @Inject
   public ConnectorUtils(ConnectorResourceClient connectorResourceClient, SecretUtils secretUtils,
@@ -200,9 +199,8 @@ public class ConnectorUtils extends BaseConnectorUtils {
     String principal = executionPrincipalInfo.getPrincipal();
     io.harness.pms.contracts.plan.PrincipalType principalType = executionPrincipalInfo.getPrincipalType();
 
-    String completeRepoName = GitClientHelper.convertToHarnessRepoName(ngAccess.getAccountIdentifier(),
-                                  ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), repoName)
-        + DOT_GIT;
+    String completeRepoName = GitClientHelper.convertToHarnessRepoName(
+        ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), repoName);
 
     String[] allowedResources = {completeRepoName};
 

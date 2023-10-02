@@ -670,4 +670,6 @@ useNewNodeEntityConfiguration: ${USE_NEW_NODE_ENTITY_CONFIGURATION:-false}
 
 graphConsumerSleepIntervalMs: ${GRAPH_CONSUMER_SLEEP_INTERVAL_MS:-0}
 
+streamPerServiceConfiguration: ${PIE_STREAM_PER_SERVICE:- false}
+
 publishAdviserEventForCustomAdvisers: ${PUBLISH_ADVISER_EVENT_FOR_CUSTOM_ADVISERS:-false}
