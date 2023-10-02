@@ -159,18 +159,20 @@ func TestWrite_Success(t *testing.T) {
 	bytes1, _ := json.Marshal(&line1)
 	bytes2, _ := json.Marshal(&line2)
 	args1 := &redis.XAddArgs{
-		Stream: key,
-		ID:     "*",
-		MaxLen: maxStreamSize,
-		Approx: true,
-		Values: map[string]interface{}{entryKey: bytes1},
+		Stream:     key,
+		ID:         "*",
+		MaxLen:     maxStreamSize,
+		Approx:     true,
+		Values:     map[string]interface{}{entryKey: bytes1},
+		NoMkStream: true,
 	}
 	args2 := &redis.XAddArgs{
-		Stream: key,
-		ID:     "*",
-		MaxLen: maxStreamSize,
-		Approx: true,
-		Values: map[string]interface{}{entryKey: bytes2},
+		Stream:     key,
+		ID:         "*",
+		MaxLen:     maxStreamSize,
+		Approx:     true,
+		Values:     map[string]interface{}{entryKey: bytes2},
+		NoMkStream: true,
 	}
 	mock.ExpectExists([]string{key}...).SetVal(1)
 	mock.ExpectXAdd(args1).SetVal("success")
@@ -196,22 +198,25 @@ func TestWrite_Failure(t *testing.T) {
 	bytes2, _ := json.Marshal(&line2)
 	bytes3, _ := json.Marshal(&line3)
 	args1 := &redis.XAddArgs{
-		Stream: key,
-		ID:     "*",
-		MaxLen: maxStreamSize,
-		Values: map[string]interface{}{entryKey: bytes1},
+		Stream:     key,
+		ID:         "*",
+		MaxLen:     maxStreamSize,
+		Values:     map[string]interface{}{entryKey: bytes1},
+		NoMkStream: true,
 	}
 	args2 := &redis.XAddArgs{
-		Stream: key,
-		ID:     "*",
-		MaxLen: maxStreamSize,
-		Values: map[string]interface{}{entryKey: bytes2},
+		Stream:     key,
+		ID:         "*",
+		MaxLen:     maxStreamSize,
+		Values:     map[string]interface{}{entryKey: bytes2},
+		NoMkStream: true,
 	}
 	args3 := &redis.XAddArgs{
-		Stream: key,
-		ID:     "*",
-		MaxLen: maxStreamSize,
-		Values: map[string]interface{}{entryKey: bytes3},
+		Stream:     key,
+		ID:         "*",
+		MaxLen:     maxStreamSize,
+		Values:     map[string]interface{}{entryKey: bytes3},
+		NoMkStream: true,
 	}
 	mock.ExpectExists([]string{key}...).SetVal(1)
 	mock.ExpectXAdd(args1).SetVal("success")

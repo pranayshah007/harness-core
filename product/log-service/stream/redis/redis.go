@@ -131,6 +131,9 @@ func (r *Redis) Write(ctx context.Context, key string, lines ...*stream.Line) er
 			MaxLen: maxStreamSize,
 			Approx: true,
 			ID:     "*",
+			// don't create the stream if it doesn't exist. If a close operation comes in the middle
+			// while a write is still being processed, skip stream creation.
+			NoMkStream: true,
 		}
 		resp := r.Client.XAdd(ctx, arg)
 		if err := resp.Err(); err != nil {
