@@ -33,7 +33,7 @@ const (
 	readPollTime  = 100 * time.Millisecond
 	tailMaxTime   = 1 * time.Hour // maximum duration a tail can last
 	bufferSize    = 50            // buffer for slow consumers
-	maxStreamSize = 5000          // Maximum number of entries in each stream (ring buffer)
+	maxStreamSize = 1000          // Maximum number of entries in each stream (ring buffer)
 	// Maximum number of keys that we will return with a given prefix. If there are more than maxPrefixes keys with a given prefix,
 	// only the first maxPrefixes keys will be returned.
 	maxPrefixes = 200
@@ -122,8 +122,13 @@ func (r *Redis) Write(ctx context.Context, key string, lines ...*stream.Line) er
 		key = prefixedKey
 	}
 
+	if len(lines) > maxStreamSize {
+		lines = lines[:maxStreamSize]
+	}
+
 	// Write input to redis stream. "*" tells Redis to auto-generate a unique incremental ID.
 	for _, line := range lines {
+
 		bytes, _ := json.Marshal(line)
 		arg := &redis.XAddArgs{
 			Stream: key,
@@ -135,6 +140,7 @@ func (r *Redis) Write(ctx context.Context, key string, lines ...*stream.Line) er
 		resp := r.Client.XAdd(ctx, arg)
 		if err := resp.Err(); err != nil {
 			werr = fmt.Errorf("could not write to stream with key: %s. Error: %s", key, err)
+			break
 		}
 	}
 
