@@ -6,6 +6,7 @@
  */
 
 package io.harness.artifacts.azureartifacts.service;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.azure.utility.AzureUtils.executeRestCall;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
@@ -30,17 +31,7 @@ import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.InvalidRequestException;
 
 import software.wings.beans.artifact.ArtifactMetadataKeys;
-import software.wings.helpers.ext.azure.devops.AzureArtifactsFeed;
-import software.wings.helpers.ext.azure.devops.AzureArtifactsFeeds;
-import software.wings.helpers.ext.azure.devops.AzureArtifactsPackage;
-import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFileInfo;
-import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageVersion;
-import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageVersions;
-import software.wings.helpers.ext.azure.devops.AzureArtifactsPackages;
-import software.wings.helpers.ext.azure.devops.AzureArtifactsRestClient;
-import software.wings.helpers.ext.azure.devops.AzureDevopsProject;
-import software.wings.helpers.ext.azure.devops.AzureDevopsProjects;
-import software.wings.helpers.ext.azure.devops.AzureDevopsRestClient;
+import software.wings.helpers.ext.azure.devops.*;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import com.google.inject.Inject;
@@ -49,11 +40,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -92,28 +79,31 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
 
     String authHeader = getAuthHeader(azureArtifactsInternalConfig);
 
-    List<AzureArtifactsFeed> feeds = listFeeds(azureArtifactsInternalConfig, project);
-
     String feedId = null;
-
-    for (AzureArtifactsFeed azureArtifactsFeed : feeds) {
-      if (azureArtifactsFeed.getName().equals(feed)) {
-        feedId = azureArtifactsFeed.getId();
-
-        break;
-      }
-    }
-
-    List<AzureArtifactsPackage> packages = listPackages(azureArtifactsInternalConfig, project, feed, packageType);
-
     String packageId = null;
+    try {
+      List<AzureArtifactsFeed> feeds = listFeeds(azureArtifactsInternalConfig, project);
 
-    for (AzureArtifactsPackage azureArtifactsPackage : packages) {
-      if (azureArtifactsPackage.getName().equals(packageName)) {
-        packageId = azureArtifactsPackage.getId();
+      for (AzureArtifactsFeed azureArtifactsFeed : feeds) {
+        if (azureArtifactsFeed.getName().equals(feed)) {
+          feedId = azureArtifactsFeed.getId();
 
-        break;
+          break;
+        }
       }
+
+      List<AzureArtifactsPackage> packages = listPackages(azureArtifactsInternalConfig, project, feed, packageType);
+
+      for (AzureArtifactsPackage azureArtifactsPackage : packages) {
+        if (azureArtifactsPackage.getName().equals(packageName)) {
+          packageId = azureArtifactsPackage.getId();
+
+          break;
+        }
+      }
+    } catch (HintException e) {
+      log.warn("Failed to get Builds: {}", ExceptionUtils.getMessage(e), e);
+      throw new HintException(String.format("Failed to get Builds: %s", ExceptionUtils.getMessage(e)));
     }
 
     AzureArtifactsPackageVersions packageVersions =

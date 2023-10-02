@@ -8,19 +8,13 @@
 package io.harness.artifacts.azureartifacts.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.rule.OwnerRule.VITALIE;
-import static io.harness.rule.OwnerRule.VLICA;
-import static io.harness.rule.OwnerRule.vivekveman;
+import static io.harness.rule.OwnerRule.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -32,16 +26,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;
 
-import software.wings.helpers.ext.azure.devops.AzureArtifactsFeed;
-import software.wings.helpers.ext.azure.devops.AzureArtifactsFeeds;
-import software.wings.helpers.ext.azure.devops.AzureArtifactsPackage;
-import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFile;
-import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFileInfo;
-import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageVersion;
-import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageVersions;
-import software.wings.helpers.ext.azure.devops.AzureArtifactsProtocolMetadata;
-import software.wings.helpers.ext.azure.devops.AzureArtifactsProtocolMetadataData;
-import software.wings.helpers.ext.azure.devops.AzureArtifactsRestClient;
+import software.wings.helpers.ext.azure.devops.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -175,6 +160,93 @@ public class AzureArtifactsRegistryServiceImplTest extends CategoryTest {
                                feed, nugetPackageType, nugetPackageName, version))
         .isInstanceOf(InvalidArtifactServerException.class)
         .hasMessageContaining("Failed to download azure artifact");
+  }
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testListPackageVersionsWithFeedList() throws Exception {
+    AzureArtifactsInternalConfig azureArtifactsInternalConfig1 =
+        AzureArtifactsInternalConfig.builder().registryUrl("https://dev.azure.com/org").token("testToken").build();
+    AzureArtifactsRestClient azureArtifactsRestClient = mock(AzureArtifactsRestClient.class);
+
+    AzureArtifactsFeed azureArtifactsFeed = new AzureArtifactsFeed();
+    azureArtifactsFeed.setId("f5");
+    azureArtifactsFeed.setName("testFeed");
+    azureArtifactsFeed.setProject(null);
+    azureArtifactsFeed.setFullyQualifiedName("feed5");
+
+    AzureArtifactsPackage azureArtifactsPackage = new AzureArtifactsPackage();
+    azureArtifactsPackage.setName(mavenPackageName);
+    azureArtifactsPackage.setId("id");
+    azureArtifactsPackage.setProtocolType("protocol");
+
+    List<AzureArtifactsPackageVersion> azureArtifactsPackageVersionsList = new ArrayList<>();
+    AzureArtifactsPackageVersion azureArtifactsPackageVersion = new AzureArtifactsPackageVersion();
+    azureArtifactsPackageVersion.setVersion("1.0.0");
+    azureArtifactsPackageVersionsList.add(azureArtifactsPackageVersion);
+
+    AzureArtifactsPackageVersions azureArtifactsPackageVersions = new AzureArtifactsPackageVersions();
+    azureArtifactsPackageVersions.setCount(1);
+    azureArtifactsPackageVersions.setValue(azureArtifactsPackageVersionsList);
+
+    AzureArtifactsRegistryServiceImpl azureArtifactsRegistryServiceImpl1 = spy(azureArtifactsRegistryServiceImpl);
+    doThrow(new HintException("HINT")).when(azureArtifactsRegistryServiceImpl1).listFeeds(any(), any());
+    assertThatThrownBy(()
+                           -> azureArtifactsRegistryServiceImpl1.listPackageVersions(
+                               azureArtifactsInternalConfig1, "maven", mavenPackageName, "abc", feed, "project"))
+        .isInstanceOf(HintException.class)
+        .hasMessage("Failed to get Builds: HINT");
+  }
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testListPackageVersionsWithPackageList() throws Exception {
+    AzureArtifactsInternalConfig azureArtifactsInternalConfig1 =
+        AzureArtifactsInternalConfig.builder().registryUrl("https://dev.azure.com/org").token("testToken").build();
+    AzureArtifactsRestClient azureArtifactsRestClient = mock(AzureArtifactsRestClient.class);
+
+    AzureArtifactsFeed azureArtifactsFeed = new AzureArtifactsFeed();
+    azureArtifactsFeed.setId("f5");
+    azureArtifactsFeed.setName("testFeed");
+    azureArtifactsFeed.setProject(null);
+    azureArtifactsFeed.setFullyQualifiedName("feed5");
+    AzureArtifactsFeeds azureArtifactsFeeds = new AzureArtifactsFeeds();
+    azureArtifactsFeeds.setValue(Collections.singletonList(azureArtifactsFeed));
+
+    AzureArtifactsPackage azureArtifactsPackage = new AzureArtifactsPackage();
+    azureArtifactsPackage.setName(mavenPackageName);
+    azureArtifactsPackage.setId("id");
+    azureArtifactsPackage.setProtocolType("protocol");
+
+    List<AzureArtifactsPackageVersion> azureArtifactsPackageVersionsList = new ArrayList<>();
+    AzureArtifactsPackageVersion azureArtifactsPackageVersion = new AzureArtifactsPackageVersion();
+    azureArtifactsPackageVersion.setVersion("1.0.0");
+    azureArtifactsPackageVersionsList.add(azureArtifactsPackageVersion);
+
+    AzureArtifactsPackageVersions azureArtifactsPackageVersions = new AzureArtifactsPackageVersions();
+    azureArtifactsPackageVersions.setCount(1);
+    azureArtifactsPackageVersions.setValue(azureArtifactsPackageVersionsList);
+
+    AzureArtifactsRegistryServiceImpl azureArtifactsRegistryServiceImpl1 = spy(azureArtifactsRegistryServiceImpl);
+    doThrow(new HintException("HINT"))
+        .when(azureArtifactsRegistryServiceImpl1)
+        .listPackages(azureArtifactsInternalConfig1, "project", feed, mavenPackageType);
+    try (MockedStatic<AzureArtifactsRegistryServiceImpl> mockedStatic =
+             mockStatic(AzureArtifactsRegistryServiceImpl.class)) {
+      mockedStatic.when(() -> AzureArtifactsRegistryServiceImpl.getAzureArtifactsRestClient(any(), any()))
+          .thenReturn(azureArtifactsRestClient);
+
+      Call<ResponseDTO<AzureArtifactsFeeds>> callRequest = PowerMockito.mock(Call.class);
+      doReturn(callRequest).when(callRequest).clone();
+      doReturn(callRequest).when(azureArtifactsRestClient).listFeeds(any());
+      doReturn(Response.success(azureArtifactsFeeds)).when(callRequest).execute();
+
+      assertThatThrownBy(()
+                             -> azureArtifactsRegistryServiceImpl1.listPackageVersions(
+                                 azureArtifactsInternalConfig1, "maven", mavenPackageName, "abc", feed, "project"))
+          .isInstanceOf(HintException.class)
+          .hasMessage("Failed to get Builds: HINT");
+    }
   }
 
   @Test
