@@ -92,8 +92,8 @@ public class ProxyApiKeyResourceImpl implements Resource {
       return Collections.emptyList();
     }
 
-    List<ProxyAPIKeyResponseDTO> proxyApiKeys =
-        NGRestUtils.getResponse(proxyAPIKeyClient.getApiKeys(scope.getAccountIdentifier()));
+    List<ProxyApiKeyResponseDTO> proxyApiKeys =
+        NGRestUtils.getResponse(proxyApiKeyClient.getApiKeys(scope.getAccountIdentifier()));
     Set<Object> validResourceIds = proxyApiKeys.stream().map(e -> e.getUuid()).collect(Collectors.toSet());
 
     return resourceIds.stream().map(validResourceIds::contains).collect(toList());

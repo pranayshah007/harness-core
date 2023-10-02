@@ -21,7 +21,7 @@ import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 
-@OwnedBy(CE)
+@OwnedBy(FF)
 public class ProxyApiKeyClientModule extends AbstractModule {
   private final ServiceHttpClientConfig httpClientConfig;
   private final String serviceSecret;
