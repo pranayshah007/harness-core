@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.exception.ExceptionUtils.getMessage;
 import static io.harness.shell.AuthenticationScheme.KERBEROS;
 import static io.harness.shell.SshSessionFactory.generateTGTUsingSshConfig;
-import static io.harness.shell.SshSessionFactory.getSSHSession;
 
 import static software.wings.beans.yaml.YamlConstants.GIT_YAML_LOG_PREFIX;
 import static software.wings.utils.SshDelegateHelperUtils.createSshSessionConfig;
@@ -35,6 +34,7 @@ import io.harness.logging.NoopExecutionCallback;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.ssh.SshFactory;
 import io.harness.shell.ssh.client.jsch.JschConnection;
+import io.harness.shell.ssh.exception.SshClientException;
 
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitFileConfig;
@@ -131,10 +131,10 @@ public class GitServiceImpl implements GitService {
           throws JSchException {
         SshSessionConfig sshSessionConfig = createSshSessionConfig(settingAttribute, host);
         sshSessionConfig.setPort(port); // use port from repo URL
-        if (sshSessionConfig.isUseSshClient() || sshSessionConfig.isVaultSSH()) {
+        try {
           return ((JschConnection) SshFactory.getSshClient(sshSessionConfig).getConnection()).getSession();
-        } else {
-          return getSSHSession(sshSessionConfig);
+        } catch (SshClientException sshClientException) {
+          throw new JSchException(sshClientException.getMessage());
         }
       }
 

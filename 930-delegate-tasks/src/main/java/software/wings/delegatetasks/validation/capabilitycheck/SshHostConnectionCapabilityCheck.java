@@ -33,11 +33,10 @@ import io.harness.secretmanagerclient.SSHAuthScheme;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.SshSessionConfig;
-import io.harness.shell.SshSessionFactory;
 import io.harness.shell.ssh.SshClientManager;
+import io.harness.shell.ssh.exception.SshClientException;
 
 import com.google.inject.Inject;
-import com.jcraft.jsch.Session;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -85,13 +84,8 @@ public class SshHostConnectionCapabilityCheck implements CapabilityCheck {
     return capabilityResponseBuilder.build();
   }
 
-  void connect(SshSessionConfig config) throws Exception {
-    if (config.isUseSshClient() || config.isVaultSSH()) {
-      SshClientManager.test(config);
-    } else {
-      Session session = SshSessionFactory.getSSHSession(config);
-      session.disconnect();
-    }
+  void connect(SshSessionConfig config) throws SshClientException {
+    SshClientManager.test(config);
   }
 
   private SshSessionConfig generateSshSessionConfigForKerberos(SSHAuthDTO authDTO, String host,
