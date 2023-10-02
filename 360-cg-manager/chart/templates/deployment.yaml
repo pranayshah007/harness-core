@@ -93,8 +93,6 @@ spec:
               value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "notifications" ) }}
             - name: TIMESCALEDB_URI
               value: {{ include "harnesscommon.dbconnectionv2.timescaleConnection" (dict "protocol" "jdbc:postgresql" "database" "harness" "context" $) }}
-            - name: TIMESCALEDB_URI
-              value: {{ include "harnesscommon.dbconnection.timescaleConnection" (dict "protocol" "jdbc:postgresql" "database" "harness" "context" $) }}
             {{- if .Values.extraEnvVars }}
             {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
             {{- end }}
@@ -105,7 +103,6 @@ spec:
           {{- if .Values.lifecycleHooks }}
           lifecycle: {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.lifecycleHooks "context" $) | nindent 12 }}
           {{- end }}
-
           livenessProbe:
             failureThreshold: 20
             initialDelaySeconds: 180
@@ -119,7 +116,7 @@ spec:
           name: manager
           ports:
           {{- include "harnesscommon.monitoring.containerPort" . | nindent 12 }}
-            - containerPort: {{.Values.service.grpcport}}
+            - containerPort: {{ .Values.service.grpcport }}
               protocol: TCP
           readinessProbe:
             failureThreshold: 6

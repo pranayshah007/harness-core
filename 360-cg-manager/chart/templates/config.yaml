@@ -59,7 +59,6 @@ data:
   MONGO_SSL_CA_TRUST_STORE_PATH: /opt/harness/keystore.jks
   MONGO_SSL_CA_TRUST_STORE_PASSWORD: password
   {{- end }}
-  VERIFICATION_SERVICE_SECRET: 59MR5RlVARcdH7zb7pNx6GzqiglBmXR8
   ENABLE_ITERATORS: 'true'
   ITERATOR_CONFIG_PATH: '/opt/harness/config'
   LICENSE_INFO: '{{ .Values.global.license.cg }}'
