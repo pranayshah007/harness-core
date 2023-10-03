@@ -519,6 +519,12 @@ public abstract class WorkflowHandler {
         }
       }
     }
+    MigratorExpressionUtils.render(migrationContext, stepWrappers,
+        MigExpressionOverrides.builder()
+            .workflowVarsAsPipeline(context.isWorkflowVarsAsPipeline())
+            .customExpressions(MigratorUtility.getExpressions(
+                phase, context.getStepExpressionFunctors(), context.getIdentifierCaseFormat()))
+            .build());
     return stepWrappers;
   }
 
