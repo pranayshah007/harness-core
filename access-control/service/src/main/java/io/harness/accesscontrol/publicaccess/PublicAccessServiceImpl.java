@@ -16,6 +16,7 @@ import static io.harness.exception.WingsException.USER;
 
 import io.harness.accesscontrol.common.filter.ManagedFilter;
 import io.harness.accesscontrol.principals.PrincipalType;
+import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupService;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroup;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupFactory;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupService;
@@ -66,6 +67,7 @@ public class PublicAccessServiceImpl implements PublicAccessService {
   private final MongoTemplate mongoTemplate;
 
   private final ScopeService scopeService;
+  private final HarnessResourceGroupService harnessResourceGroupService;
 
   private final PublicAccessUtils publicAccessUtil;
   List<PublicAccessRoleAssignmentMapping> publicAccessRoleAssignmentMappings;
@@ -77,13 +79,14 @@ public class PublicAccessServiceImpl implements PublicAccessService {
   public PublicAccessServiceImpl(RoleAssignmentService roleAssignmentService,
       @Named("PRIVILEGED") ResourceGroupClient resourceGroupClient, ResourceGroupService resourceGroupService,
       ResourceGroupFactory resourceGroupFactory, MongoTemplate mongoTemplate, ScopeService scopeService,
-      PublicAccessUtils publicAccessUtil) {
+      HarnessResourceGroupService harnessResourceGroupService, PublicAccessUtils publicAccessUtil) {
     this.roleAssignmentService = roleAssignmentService;
     this.resourceGroupClient = resourceGroupClient;
     this.resourceGroupService = resourceGroupService;
     this.resourceGroupFactory = resourceGroupFactory;
     this.mongoTemplate = mongoTemplate;
     this.scopeService = scopeService;
+    this.harnessResourceGroupService = harnessResourceGroupService;
     this.publicAccessUtil = publicAccessUtil;
     this.publicAccessRoleAssignmentMappings = publicAccessUtil.getPublicAccessRoleAssignmentMapping();
   }
@@ -112,6 +115,8 @@ public class PublicAccessServiceImpl implements PublicAccessService {
                                .concat(resourceType.getIdentifier())
                                .concat(PATH_DELIMITER)
                                .concat(resourceIdentifier);
+
+    harnessResourceGroupService.sync(PUBLIC_RESOURCE_GROUP_IDENTIFIER, scope);
     Optional<ResourceGroup> existingResourceGroupOptional =
         resourceGroupService.get(PUBLIC_RESOURCE_GROUP_IDENTIFIER, scope.toString(), ManagedFilter.NO_FILTER);
     if (existingResourceGroupOptional.isPresent()) {
@@ -214,11 +219,14 @@ public class PublicAccessServiceImpl implements PublicAccessService {
     if (resourceFilter != null) {
       resourceSelectors = resourceFilter.getResources();
     }
-    List<String> existingResources = resourceSelectors.stream()
-                                         .filter(x -> x.getResourceType().equals(resourceType.getIdentifier()))
-                                         .map(ResourceSelector::getIdentifiers)
-                                         .collect(Collectors.toList())
-                                         .get(0);
+    List<List<String>> existingResourcesSelector =
+        resourceSelectors.stream()
+            .filter(x -> x.getResourceType().equals(resourceType.getIdentifier()))
+            .map(ResourceSelector::getIdentifiers)
+            .collect(Collectors.toList());
+
+    List<String> existingResources =
+        isNotEmpty(existingResourcesSelector) ? existingResourcesSelector.get(0) : new ArrayList<>();
 
     if (ADD.equals(action) && existingResources.contains(resourceIdentifier)) {
       throw new InvalidRequestException(

@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.accesscontrol.AccessControlTestBase;
 import io.harness.accesscontrol.common.filter.ManagedFilter;
+import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupService;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroup;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupFactory;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupService;
@@ -69,6 +70,7 @@ public class PublicAccessServiceImplTest extends AccessControlTestBase {
   @Mock private ResourceGroupFactory resourceGroupFactory;
   @Mock private MongoTemplate mongoTemplate;
   @Mock private ScopeService scopeService;
+  @Mock private HarnessResourceGroupService harnessResourceGroupService;
   private PublicAccessUtils publicAccessUtil;
 
   private PublicAccessServiceImpl publicAccessService;
@@ -91,8 +93,9 @@ public class PublicAccessServiceImplTest extends AccessControlTestBase {
   public void setup() {
     MockitoAnnotations.initMocks(this);
     this.publicAccessUtil = new PublicAccessUtils();
-    this.publicAccessService = new PublicAccessServiceImpl(roleAssignmentService, resourceGroupClient,
-        resourceGroupService, resourceGroupFactory, mongoTemplate, scopeService, this.publicAccessUtil);
+    this.publicAccessService =
+        new PublicAccessServiceImpl(roleAssignmentService, resourceGroupClient, resourceGroupService,
+            resourceGroupFactory, mongoTemplate, scopeService, harnessResourceGroupService, this.publicAccessUtil);
   }
 
   @Test
@@ -208,6 +211,7 @@ public class PublicAccessServiceImplTest extends AccessControlTestBase {
     boolean result = publicAccessService.isResourcePublic(RESOURCE_ID, resourceType, scope);
     assertThat(result).isNotNull();
     assertThat(result).isTrue();
+    verify(harnessResourceGroupService, times(1)).sync(PUBLIC_RESOURCE_GROUP_IDENTIFIER, scope1);
   }
 
   @Test
