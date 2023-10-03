@@ -648,6 +648,8 @@ public class SLODashboardServiceImpl implements SLODashboardService {
         monitoredServiceResponseList.stream()
             .map(monitoredServiceResponse
                 -> getEnvironmentIdentifierResponse(projectParams, monitoredServiceResponse.getMonitoredServiceDTO()))
+            .collect(Collectors.toSet())
+            .stream()
             .collect(Collectors.toList());
 
     return PageUtils.offsetAndLimit(environmentIdentifierResponseList, pageParams.getPage(), pageParams.getSize());

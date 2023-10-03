@@ -193,6 +193,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
           .build();
     }
     NGEnvironmentInfoConfig environmentConfig = ((NGEnvironmentConfig) yamlFile.getYaml()).getNgEnvironmentInfoConfig();
+
     EnvironmentRequestDTO environmentRequestDTO = EnvironmentRequestDTO.builder()
                                                       .identifier(environmentConfig.getIdentifier())
                                                       .type(environmentConfig.getType())
@@ -208,6 +209,23 @@ public class EnvironmentMigrationService extends NgMigrationService {
             .createEnvironment(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
                 JsonUtils.asTree(environmentRequestDTO))
             .execute();
+
+    if (!(resp.code() >= 200 && resp.code() < 300)) {
+      environmentRequestDTO = EnvironmentRequestDTO.builder()
+                                  .identifier(environmentConfig.getIdentifier())
+                                  .type(environmentConfig.getType())
+                                  .orgIdentifier(environmentConfig.getOrgIdentifier())
+                                  .projectIdentifier(environmentConfig.getProjectIdentifier())
+                                  .name(environmentConfig.getName())
+                                  .tags(environmentConfig.getTags())
+                                  .description(environmentConfig.getDescription())
+                                  .yaml(getYamlStringV2(yamlFile))
+                                  .build();
+      resp = ngClient
+                 .createEnvironment(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                     JsonUtils.asTree(environmentRequestDTO))
+                 .execute();
+    }
     log.info("Environment creation Response details {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);
   }

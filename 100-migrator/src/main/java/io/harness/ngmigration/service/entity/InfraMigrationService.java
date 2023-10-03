@@ -214,6 +214,26 @@ public class InfraMigrationService extends NgMigrationService {
             .createInfrastructure(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
                 JsonUtils.asTree(infraReqDTO))
             .execute();
+
+    if (!(resp.code() >= 200 && resp.code() < 300)) {
+      infraReqDTO = InfrastructureRequestDTO.builder()
+                        .identifier(infraConfig.getIdentifier())
+                        .type(infraConfig.getType())
+                        .orgIdentifier(infraConfig.getOrgIdentifier())
+                        .projectIdentifier(infraConfig.getProjectIdentifier())
+                        .name(infraConfig.getName())
+                        .tags(infraConfig.getTags())
+                        .type(infraConfig.getType())
+                        .environmentRef(infraConfig.getEnvironmentRef())
+                        .description(infraConfig.getDescription())
+                        .yaml(getYamlStringV2(yamlFile))
+                        .build();
+      resp = ngClient
+                 .createInfrastructure(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                     JsonUtils.asTree(infraReqDTO))
+                 .execute();
+    }
+
     log.info("Infrastructure creation Response details {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);
   }

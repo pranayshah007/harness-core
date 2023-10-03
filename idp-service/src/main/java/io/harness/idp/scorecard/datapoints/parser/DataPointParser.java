@@ -30,6 +30,10 @@ public interface DataPointParser {
     data.put(ERROR_MESSAGE_KEY, errorMessage);
     if (inputValue.equals(DEFAULT_BRANCH_KEY_ESCAPED)) {
       return Map.of(DEFAULT_BRANCH_KEY, data);
+    } else if (inputValue.startsWith("\"")) {
+      inputValue = inputValue.replaceFirst("\"", "");
+      inputValue = inputValue.substring(0, inputValue.length() - 1);
+      return Map.of(inputValue, data);
     } else {
       return Map.of(inputValue, data);
     }

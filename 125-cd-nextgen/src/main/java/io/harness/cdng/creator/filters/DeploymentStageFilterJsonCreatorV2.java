@@ -138,10 +138,17 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
 
   private void validateMultiServices(
       FilterCreationContext filterCreationContext, DeploymentStageConfig deploymentStageConfig) {
-    if (usesServicesFromAnotherStage(deploymentStageConfig)
-        & hasNoSiblingStages(filterCreationContext.getCurrentField())) {
-      throw new InvalidYamlRuntimeException(
-          "Stage template that propagates services from another stage cannot be saved.");
+    if (usesServicesFromAnotherStage(deploymentStageConfig)) {
+      if (hasNoSiblingStages(filterCreationContext.getCurrentField())) {
+        throw new InvalidYamlRuntimeException(
+            "Stage template that propagates services from another stage cannot be saved.");
+      }
+      String useFromStageIdentifier = deploymentStageConfig.getServices().getUseFromStage().getStage();
+      if (referredStageForPropagationDoesNotExist(filterCreationContext.getCurrentField(), useFromStageIdentifier)) {
+        throw new InvalidYamlRuntimeException(String.format(
+            "Stage with identifier [%s] given for multi-service propagation does not exist. Please add it and try again.",
+            useFromStageIdentifier));
+      }
     }
   }
 
@@ -178,16 +185,30 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
   }
 
   private void validateV2(FilterCreationContext filterCreationContext, DeploymentStageConfig deploymentStageConfig) {
-    if (usesServiceFromAnotherStage(deploymentStageConfig)
-        & hasNoSiblingStages(filterCreationContext.getCurrentField())) {
-      throw new InvalidYamlRuntimeException(
-          "Stage template that propagates service from another stage cannot be saved. Please remove useFromStage and set the serviceRef to fixed value, runtime or an expression and try again");
+    if (usesServiceFromAnotherStage(deploymentStageConfig)) {
+      if (hasNoSiblingStages(filterCreationContext.getCurrentField())) {
+        throw new InvalidYamlRuntimeException(
+            "Stage template that propagates service from another stage cannot be saved. Please remove useFromStage and set the serviceRef to fixed value, runtime or an expression and try again");
+      }
+      String useFromStageIdentifier = deploymentStageConfig.getService().getUseFromStage().getStage();
+      if (referredStageForPropagationDoesNotExist(filterCreationContext.getCurrentField(), useFromStageIdentifier)) {
+        throw new InvalidYamlRuntimeException(String.format(
+            "Stage with identifier [%s] given for service propagation does not exist. Please add it and try again.",
+            useFromStageIdentifier));
+      }
     }
 
-    if (usesEnvironmentFromAnotherStage(deploymentStageConfig)
-        & hasNoSiblingStages(filterCreationContext.getCurrentField())) {
-      throw new InvalidYamlRuntimeException(
-          "Stage template that propagates environment from another stage cannot be saved. Please remove useFromStage and set the environmentRef to fixed value, runtime or an expression and try again");
+    if (usesEnvironmentFromAnotherStage(deploymentStageConfig)) {
+      if (hasNoSiblingStages(filterCreationContext.getCurrentField())) {
+        throw new InvalidYamlRuntimeException(
+            "Stage template that propagates environment from another stage cannot be saved. Please remove useFromStage and set the environmentRef to fixed value, runtime or an expression and try again");
+      }
+      String useFromStageIdentifier = deploymentStageConfig.getEnvironment().getUseFromStage().getStage();
+      if (referredStageForPropagationDoesNotExist(filterCreationContext.getCurrentField(), useFromStageIdentifier)) {
+        throw new InvalidYamlRuntimeException(String.format(
+            "Stage with identifier [%s] given for environment propagation does not exist. Please add it and try again.",
+            useFromStageIdentifier));
+      }
     }
     if (deploymentStageConfig.getInfrastructure() != null) {
       throw new InvalidYamlRuntimeException(format(
@@ -215,6 +236,11 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     // spec -> stage -> null
     return currentField != null && currentField.getNode().getParentNode() != null
         && currentField.getNode().getParentNode().getParentNode() == null;
+  }
+
+  private boolean referredStageForPropagationDoesNotExist(YamlField currentField, String stageIdentifier) {
+    YamlField propagatedFromStageConfig = PlanCreatorUtils.getStageConfig(currentField, stageIdentifier);
+    return propagatedFromStageConfig == null;
   }
 
   private boolean usesServiceFromAnotherStage(DeploymentStageConfig deploymentStageConfig) {

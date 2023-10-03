@@ -262,6 +262,16 @@ public class PipelineMigrationService extends NgMigrationService {
                   inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
                   RequestBody.create(MediaType.parse("application/yaml"), yaml), StoreType.INLINE)
               .execute();
+
+      if (!(resp.code() >= 200 && resp.code() < 300)) {
+        yaml = getYamlStringV2(yamlFile);
+        resp = pmsClient
+                   .createPipeline(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                       inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
+                       RequestBody.create(MediaType.parse("application/yaml"), yaml), StoreType.INLINE)
+                   .execute();
+      }
+
       log.info("Pipeline creation Response details {} {}", resp.code(), resp.message());
       if (resp.code() >= 400) {
         log.info("Pipeline generated is \n - {}", yaml);
@@ -709,7 +719,8 @@ public class PipelineMigrationService extends NgMigrationService {
 
     // Get Barrier Identifiers and add them to the set
     WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
-    allBarriers.addAll(workflowHandler.getBarriers(workflow));
+    Set<String> workflowBarriers = workflowHandler.getBarriers(workflow);
+    allBarriers.addAll(workflowBarriers);
 
     // Case where CG workflow is being migrated as Pipeline in NG. Chained Pipeline scenario
     if (migratedWorkflow.getYaml() instanceof PipelineConfig) {
@@ -769,6 +780,9 @@ public class PipelineMigrationService extends NgMigrationService {
     Map<String, String> workflowVariables = stageElement.getWorkflowVariables();
     // Set common runtime inputs
     if (templateInputs != null) {
+      if (!workflowBarriers.isEmpty()) {
+        fixBarrierInputs(templateInputs);
+      }
       String whenInput = templateInputs.at("/when/condition").asText();
       if (RUNTIME_INPUT.equals(whenInput)) {
         String when = getWhenCondition(migrationContext, stageElement, stageIdentifier, allExpFunctors);
@@ -843,6 +857,33 @@ public class PipelineMigrationService extends NgMigrationService {
     populateEntityIdToStageMap(infraToStageMap, stageIdentifier, infraId);
 
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(templateStageNode)).build();
+  }
+
+  private void fixBarrierInputs(JsonNode templateInputs) {
+    ArrayNode stepGroups = (ArrayNode) templateInputs.at("/spec/execution/steps");
+    if (stepGroups == null) {
+      log.warn("StepGroup is null, cant fix barrier identifiers");
+      return;
+    }
+    stepGroups.forEach(stepGroupNode -> {
+      ArrayNode stepsArray = (ArrayNode) stepGroupNode.get("stepGroup").get("steps");
+
+      stepsArray.elements().forEachRemaining(stepNode -> {
+        String type = stepNode.get("step").get("type").asText();
+
+        if ("Barrier".equals(type)) {
+          ObjectNode specNode = (ObjectNode) stepNode.get("step").get("spec");
+          if (specNode != null && specNode.has("barrierRef")) {
+            String barrierRef = specNode.get("barrierRef").asText();
+            if (barrierRef.contains("<+input>.default")) {
+              String contentInsideDefault = barrierRef.replace("<+input>.default('", "").replace("')", "");
+
+              specNode.put("barrierRef", contentInsideDefault);
+            }
+          }
+        }
+      });
+    });
   }
 
   private void populateEntityIdToStageMap(

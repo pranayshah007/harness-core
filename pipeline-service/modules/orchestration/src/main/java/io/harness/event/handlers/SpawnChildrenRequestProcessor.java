@@ -15,12 +15,15 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.concurrency.MaxConcurrentChildCallback;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.pms.resume.EngineResumeCallback;
 import io.harness.execution.InitiateNodeHelper;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
+import io.harness.execution.PlanExecutionMetadata;
 import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -33,6 +36,7 @@ import io.harness.pms.contracts.execution.events.SpawnChildrenRequest;
 import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.PostExecutionRollbackInfo;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.execution.utils.PlanExecutionProjectionConstants;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -54,6 +58,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
   @Inject private NodeExecutionService nodeExecutionService;
+  @Inject private PlanExecutionMetadataService planExecutionMetadataService;
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private InitiateNodeHelper initiateNodeHelper;
   @Inject private PmsFeatureFlagService pmsFeatureFlagService;
@@ -175,9 +180,10 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
    */
   @VisibleForTesting
   List<Child> getFilteredChildren(Ambiance ambiance, List<Child> children) {
-    if (ambiance.getMetadata().getExecutionMode() == ExecutionMode.POST_EXECUTION_ROLLBACK) {
-      List<PostExecutionRollbackInfo> postExecutionRollbackInfos =
-          ambiance.getMetadata().getPostExecutionRollbackInfoList();
+    // Calculating children only when strategy is at stage level - AmbianceUtils.isCurrentStrategyLevelAtStage(ambiance)
+    if (ambiance.getMetadata().getExecutionMode() == ExecutionMode.POST_EXECUTION_ROLLBACK
+        && AmbianceUtils.isCurrentStrategyLevelAtStage(ambiance)) {
+      List<PostExecutionRollbackInfo> postExecutionRollbackInfos = getPostExecutionRollbackInfo(ambiance);
       Multimap<String, StrategyMetadata> strategyMetadataMap = HashMultimap.create();
       postExecutionRollbackInfos.forEach(
           o -> strategyMetadataMap.put(o.getPostExecutionRollbackStageId(), o.getRollbackStageStrategyMetadata()));
@@ -200,6 +206,16 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
       return filteredChild;
     }
     return children;
+  }
+
+  private List<PostExecutionRollbackInfo> getPostExecutionRollbackInfo(Ambiance ambiance) {
+    PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataService.getWithFieldsIncludedFromSecondary(
+        ambiance.getPlanExecutionId(), PlanExecutionProjectionConstants.fieldsForPostProdRollback);
+    // TODO(archit): Remove get from execution_metadata from next release
+    if (EmptyPredicate.isEmpty(planExecutionMetadata.getPostExecutionRollbackInfos())) {
+      return ambiance.getMetadata().getPostExecutionRollbackInfoList();
+    }
+    return planExecutionMetadata.getPostExecutionRollbackInfos();
   }
 
   private boolean shouldCreateAndStart(int maxConcurrency, int currentChild) {

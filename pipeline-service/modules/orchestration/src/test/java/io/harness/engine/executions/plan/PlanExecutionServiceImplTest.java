@@ -43,6 +43,7 @@ import io.harness.engine.observers.NodeUpdateInfo;
 import io.harness.engine.observers.PlanExecutionDeleteObserver;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
+import io.harness.monitoring.ExecutionCountWithAccountResult;
 import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.observer.Subject;
 import io.harness.pms.contracts.execution.Status;
@@ -462,5 +463,25 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
     planExecutionService.updateTTL(generateUuid(), ttlExpiry);
 
     verify(planExecutionRepositoryMock, times(1)).multiUpdatePlanExecution(any(), any());
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestAggregateRunningExecutionCountPerAccount() {
+    Map<String, String> m1 = new HashMap<>();
+    m1.put(SetupAbstractionKeys.accountId, generateUuid());
+    planExecutionService.save(
+        PlanExecution.builder().setupAbstractions(m1).uuid(generateUuid()).status(Status.RUNNING).build());
+    m1.put(SetupAbstractionKeys.accountId, generateUuid());
+    planExecutionService.save(
+        PlanExecution.builder().setupAbstractions(m1).uuid(generateUuid()).status(Status.APPROVAL_WAITING).build());
+    m1.put(SetupAbstractionKeys.accountId, generateUuid());
+    planExecutionService.save(
+        PlanExecution.builder().setupAbstractions(m1).uuid(generateUuid()).status(SUCCEEDED).build());
+
+    List<ExecutionCountWithAccountResult> accountResults =
+        planExecutionService.aggregateRunningExecutionCountPerAccount();
+    assertThat(accountResults.size()).isEqualTo(2);
   }
 }

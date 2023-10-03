@@ -66,9 +66,11 @@ public class Constants {
   public static final String KUBERNETES_IDENTIFIER = "kubernetes";
   public static final String CUSTOM_IDENTIFIER = "custom";
   public static final String PAGERDUTY_IDENTIFIER = "pagerduty";
+  public static final String JIRA_IDENTIFIER = "jira";
   public static final String DSL_RESPONSE = "dsl_response";
   public static final String DATA_POINT_VALUE_KEY = "value";
   public static final String ERROR_MESSAGE_KEY = "error_messages";
+  public static final String ERROR_MESSAGES_KEY = "errorMessages";
   public static final String MESSAGE_KEY = "message";
 
   public static final String QA_HOST = "qa.harness.io";

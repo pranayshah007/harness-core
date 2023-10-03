@@ -9,6 +9,7 @@ package io.harness.steps.shellscript;
 
 import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,6 +32,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
@@ -80,6 +82,10 @@ public class ShellScriptStepTest extends CategoryTest {
         .putSetupAbstractions(SetupAbstractionKeys.accountId, "accId")
         .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "orgId")
         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "projId")
+        .setMetadata(ExecutionMetadata.newBuilder()
+                         .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                         .setPipelineIdentifier("pipelineIdentifier")
+                         .build())
         .build();
   }
 
@@ -115,7 +121,8 @@ public class ShellScriptStepTest extends CategoryTest {
     assertThat(taskRequest.getDelegateTaskRequest().getRequest().getDetails().getExecutionTimeout().getSeconds())
         .isEqualTo(2700);
     assertThat(taskRequest.getDelegateTaskRequest().getLogKeysList())
-        .containsExactly("accountId:accId/orgId:orgId/projectId:projId/pipelineId:/runSequence:0-commandUnit:Execute");
+        .containsExactly(
+            "accountId:accId/orgId:orgId/projectId:projId/pipelineId:pipelineIdentifier/runSequence:0-commandUnit:Execute");
     assertThat(taskRequest).isNotNull();
   }
 
@@ -135,8 +142,8 @@ public class ShellScriptStepTest extends CategoryTest {
     TaskRequest taskRequest = shellScriptStep.obtainTask(ambiance, stepElementParameters, null);
     assertThat(new HashSet<>(taskRequest.getDelegateTaskRequest().getLogKeysList()))
         .containsExactlyInAnyOrder(
-            "accountId:accId/orgId:orgId/projectId:projId/pipelineId:/runSequence:0-commandUnit:Initialize",
-            "accountId:accId/orgId:orgId/projectId:projId/pipelineId:/runSequence:0-commandUnit:Execute");
+            "accountId:accId/orgId:orgId/projectId:projId/pipelineId:pipelineIdentifier/runSequence:0-commandUnit:Initialize",
+            "accountId:accId/orgId:orgId/projectId:projId/pipelineId:pipelineIdentifier/runSequence:0-commandUnit:Execute");
     assertThat(taskRequest).isNotNull();
   }
 

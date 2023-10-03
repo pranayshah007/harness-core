@@ -20,10 +20,12 @@ import io.harness.beans.ExecutionErrorInfo;
 import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
+import io.harness.execution.PlanExecutionMetadata;
 import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.plan.Node;
 import io.harness.plan.NodeType;
@@ -32,6 +34,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.execution.utils.PlanExecutionProjectionConstants;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.plan.execution.ExecutionSummaryUpdateUtils;
 import io.harness.pms.plan.execution.LayoutNodeGraphConstants;
@@ -63,7 +66,8 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
   @Inject PlanService planService;
   @Inject private PmsExecutionSummaryRepository pmsExecutionSummaryRepository;
   @Inject AbortInfoHelper abortInfoHelper;
-  @Inject private NodeExecutionInfoService pmsGraphStepDetailsService;
+  @Inject private NodeExecutionInfoService nodeExecutionInfoService;
+  @Inject private PlanExecutionMetadataService planExecutionMetadataService;
 
   /**
    * Performs the following:
@@ -117,7 +121,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
       // For parallelism, the maxConcurrency cannot be defined via yaml, so we are ignoring its addition in graph.
       if (!graphLayoutNode.get(nodeExecution.getNodeId()).getNodeType().equals(StrategyType.PARALLELISM.name())) {
         ConcurrentChildInstance concurrentChildInstance =
-            pmsGraphStepDetailsService.fetchConcurrentChildInstance(nodeExecution.getUuid());
+            nodeExecutionInfoService.fetchConcurrentChildInstance(nodeExecution.getUuid());
         if (concurrentChildInstance != null && !nodeExecution.getExecutableResponses().isEmpty()) {
           update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getNodeId()
                   + ".moduleInfo.maxConcurrency.value",
@@ -174,8 +178,10 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
   @Override
   public void regenerateStageLayoutGraph(String planExecutionId, List<NodeExecution> nodeExecutions) {
     Update update = new Update();
+    PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataService.getWithFieldsIncludedFromSecondary(
+        planExecutionId, PlanExecutionProjectionConstants.fieldsForPostProdRollback);
     for (NodeExecution nodeExecution : nodeExecutions) {
-      ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution);
+      ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution, planExecutionMetadata);
     }
     Criteria criteria = Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionId);
     Query query = new Query(criteria);
@@ -196,7 +202,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     }
 
     ConcurrentChildInstance concurrentChildInstance =
-        pmsGraphStepDetailsService.fetchConcurrentChildInstance(strategyNodeExecution.getUuid());
+        nodeExecutionInfoService.fetchConcurrentChildInstance(strategyNodeExecution.getUuid());
     if (concurrentChildInstance != null && !strategyNodeExecution.getExecutableResponses().isEmpty()) {
       Node node = planService.fetchNode(strategyNodeExecution.getPlanId(), strategyNodeExecution.getNodeId());
       // TODO: Revisit this logic seems to violating a few principles
@@ -273,7 +279,10 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
       ExecutionSummaryUpdateUtils.updateNextIdOfStageBeforePipelineRollback(
           update, nodeExecution.getNodeId(), previousStagePlanNodeId);
     }
-    return ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution) || updateRequired;
+    PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataService.getWithFieldsIncludedFromSecondary(
+        planExecutionId, PlanExecutionProjectionConstants.fieldsForPostProdRollback);
+    return ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution, planExecutionMetadata)
+        || updateRequired;
   }
 
   @Override

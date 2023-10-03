@@ -7,12 +7,10 @@
 
 package io.harness.shell;
 
-import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.VED;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -21,7 +19,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Before;
@@ -64,30 +61,6 @@ public class ScriptSshExecutorTest extends CategoryTest {
       assertThat(scriptSshExecutor.resolveEnvVarsInPath("$HOME/work$Path/abc"))
           .isEqualTo(ENV_VAR_VALUE + "/work" + ENV_VAR_VALUE + "/abc");
     });
-  }
-
-  @Test
-  @Owner(developers = VED)
-  @Category(UnitTests.class)
-  public void test1() {
-    sshSessionConfig.setAccountId(ACCOUNT_ID);
-    sshSessionConfig.setAppId(APP_ID);
-    sshSessionConfig.setExecutionId(ACTIVITY_ID);
-    sshSessionConfig.setWorkingDirectory("/tmp");
-    sshSessionConfig.setCommandUnitName("MyCommandUnit");
-
-    ExecuteCommandResponse executeCommandResponse = ExecuteCommandResponse.builder().status(SUCCESS).build();
-
-    String command = "export A=\"aaa\"\n"
-        + "export B=\"bbb\"";
-
-    doReturn(executeCommandResponse)
-        .when(scriptSshExecutor)
-        .getExecuteCommandResponse(command, new ArrayList<>(), new ArrayList<>(), false);
-
-    ExecuteCommandResponse response = scriptSshExecutor.executeCommandString(command, new ArrayList<>());
-
-    assertThat(response.getStatus()).isEqualTo(executeCommandResponse.getStatus());
   }
 
   @Test

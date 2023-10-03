@@ -14,7 +14,6 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -28,8 +27,7 @@ public class GitXWebhookEventsRepositoryCustomImpl implements GitXWebhookEventsR
   }
 
   @Override
-  public List<GitXWebhookEvent> list(Criteria criteria) {
-    Query query = new Query(criteria);
+  public List<GitXWebhookEvent> list(Query query) {
     return mongoTemplate.find(query, GitXWebhookEvent.class);
   }
 

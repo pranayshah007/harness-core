@@ -279,3 +279,4 @@ featureFlagConfig:
   syncFeaturesToCF: false
 
 enableParallelProcessingOfUserGroupUpdates: ${ENABLE_PARALLEL_PROCESSING_OF_USERGROUP_UPDATES:-false}
+enableAclProcessingThroughOutbox: ${ENABLE_ACL_PROCESSING_THROUGH_OUTBOX:-false}

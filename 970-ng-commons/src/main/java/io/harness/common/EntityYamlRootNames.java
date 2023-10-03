@@ -194,6 +194,9 @@ public class EntityYamlRootNames {
   public static final String ECS_BLUE_GREEN_CREATE_SERVICE = "EcsBlueGreenCreateService";
   public static final String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = "EcsBlueGreenSwapTargetGroups";
   public static final String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
+  public static final String ECS_SERVICE_SETUP = "EcsServiceSetup";
+  public static final String ECS_UPGRADE_CONTAINER = "EcsUpgradeContainer";
+  public static final String ECS_BASIC_ROLLBACK = "EcsBasicRollback";
   public static final String WAIT_STEP = "Wait";
   public static final String SHELL_SCRIPT_PROVISION_STEP = "ShellScriptProvision";
   public static final String FREEZE = "freeze";

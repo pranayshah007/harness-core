@@ -100,8 +100,9 @@ public class ExpireAllInterruptHandler extends InterruptPropagatorHandler implem
     executorService.submit(() -> {
       if (interrupt.getNodeExecutionId() != null) {
         handleInterruptForNodeExecution(savedInterrupt, interrupt.getNodeExecutionId());
+      } else {
+        handleInterrupt(savedInterrupt);
       }
-      handleInterrupt(savedInterrupt);
     });
     return savedInterrupt;
   }
@@ -116,7 +117,7 @@ public class ExpireAllInterruptHandler extends InterruptPropagatorHandler implem
 
   @Override
   protected void handleMarkedInstance(NodeExecution nodeExecution, Interrupt interrupt) {
-    expiryHelper.expireMarkedInstance(nodeExecution, interrupt);
+    expiryHelper.expireMarkedInstance(nodeExecution, interrupt, true);
   }
 
   @Override

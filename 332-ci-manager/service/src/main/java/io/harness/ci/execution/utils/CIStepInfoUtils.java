@@ -34,7 +34,6 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
-import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.ssca.beans.stepinfo.ProvenanceStepInfo;
@@ -262,14 +261,13 @@ public class CIStepInfoUtils {
     Optional<Level> optionalStageLevel = AmbianceUtils.getStageLevelFromAmbiance(ambiance);
     Level stepLevel = AmbianceUtils.obtainCurrentLevel(ambiance);
     if (optionalStageLevel.isPresent() && stepLevel != null) {
-      StrategyMetadata stageStrategyMetadata = optionalStageLevel.get().getStrategyMetadata();
-      StrategyMetadata stepStrategyMetadata = stepLevel.getStrategyMetadata();
-      int stageCurrentIteration = stageStrategyMetadata.getCurrentIteration();
-      int stageTotalIterations =
-          stageStrategyMetadata.getTotalIterations() > 0 ? stageStrategyMetadata.getTotalIterations() : 1;
-      int stepCurrentIteration = stepStrategyMetadata.getCurrentIteration();
+      int stageCurrentIteration = AmbianceUtils.getCurrentIteration(optionalStageLevel.get());
+      int stageTotalIterations = AmbianceUtils.getTotalIteration(optionalStageLevel.get()) > 0
+          ? AmbianceUtils.getTotalIteration(optionalStageLevel.get())
+          : 1;
+      int stepCurrentIteration = AmbianceUtils.getCurrentIteration(stepLevel);
       int stepTotalIterations =
-          stepStrategyMetadata.getTotalIterations() > 0 ? stepStrategyMetadata.getTotalIterations() : 1;
+          AmbianceUtils.getTotalIteration(stepLevel) > 0 ? AmbianceUtils.getTotalIteration(stepLevel) : 1;
       int harnessNodeIndex = 0;
       int harnessNodeTotal = 1;
 

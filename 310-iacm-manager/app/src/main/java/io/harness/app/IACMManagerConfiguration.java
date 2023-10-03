@@ -87,6 +87,7 @@ public class IACMManagerConfiguration extends Configuration implements AssetsBun
   @JsonProperty("segmentConfiguration") @ConfigSecret private SegmentConfiguration segmentConfiguration;
   @JsonProperty("enforcementClientConfiguration") EnforcementClientConfiguration enforcementClientConfiguration;
   @JsonProperty("distributedLockImplementation") DistributedLockImplementation distributedLockImplementation;
+  @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;
 
   private ScmConnectionConfig scmConnectionConfig;
 

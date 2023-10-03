@@ -32,14 +32,16 @@ public abstract class NodeExecutionEvent implements Event {
   String projectIdentifier;
   String pipelineIdentifier;
   String planExecutionId;
+  Integer runSequence;
 
   public NodeExecutionEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String planExecutionId) {
+      String pipelineIdentifier, String planExecutionId, Integer runSequence) {
     this.accountIdentifier = accountIdentifier;
     this.orgIdentifier = orgIdentifier;
     this.projectIdentifier = projectIdentifier;
     this.pipelineIdentifier = pipelineIdentifier;
     this.planExecutionId = planExecutionId;
+    this.runSequence = runSequence;
   }
 
   @JsonIgnore

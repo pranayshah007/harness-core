@@ -66,6 +66,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
@@ -275,8 +276,10 @@ public class EnvironmentResourceV2 {
   public ResponseDTO<EnvironmentResponse>
   create(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @Parameter(description = "Details of the Environment to be created")
-      @Valid EnvironmentRequestDTO environmentRequestDTO) throws IOException {
+      @Parameter(
+          description = "Details of the Environment to be created") @Valid EnvironmentRequestDTO environmentRequestDTO,
+      @Parameter(description = "This contains details of Git Entity like Git Branch, Git Repository to be created",
+          hidden = true) @BeanParam GitEntityCreateInfoDTO gitEntityCreateInfo) throws IOException {
     throwExceptionForNoRequestDTO(environmentRequestDTO);
     validateEnvironmentScope(environmentRequestDTO);
 

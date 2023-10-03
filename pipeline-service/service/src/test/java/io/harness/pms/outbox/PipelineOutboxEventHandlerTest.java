@@ -261,7 +261,7 @@ public class PipelineOutboxEventHandlerTest extends CategoryTest {
         TriggeredInfo.builder().identifier("admin").extraInfo(Map.of("email", "email@em.com")).build();
 
     PipelineAbortEvent pipelineAbortEvent = new PipelineAbortEvent(
-        accountIdentifier, orgIdentifier, projectIdentifier, identifier, "planExecutionId", triggeredInfo);
+        accountIdentifier, orgIdentifier, projectIdentifier, identifier, "planExecutionId", triggeredInfo, 0);
     String eventData = objectMapper.writeValueAsString(pipelineAbortEvent);
 
     OutboxEvent outboxEvent = OutboxEvent.builder()
@@ -299,7 +299,7 @@ public class PipelineOutboxEventHandlerTest extends CategoryTest {
         TriggeredInfo.builder().identifier("admin").extraInfo(Map.of("email", "email@em.com")).build();
 
     PipelineStartEvent pipelineStartEvent = new PipelineStartEvent(accountIdentifier, orgIdentifier, projectIdentifier,
-        identifier, "planExecutionId", triggeredInfo, Instant.now().toEpochMilli());
+        identifier, "planExecutionId", triggeredInfo, Instant.now().toEpochMilli(), 0);
     String eventData = objectMapper.writeValueAsString(pipelineStartEvent);
 
     OutboxEvent outboxEvent = OutboxEvent.builder()
@@ -338,7 +338,7 @@ public class PipelineOutboxEventHandlerTest extends CategoryTest {
 
     PipelineEndEvent pipelineEndEvent =
         new PipelineEndEvent(accountIdentifier, orgIdentifier, projectIdentifier, identifier, "planExecutionId",
-            triggeredInfo, "RUNNING", Instant.now().toEpochMilli() - 60, Instant.now().toEpochMilli());
+            triggeredInfo, "RUNNING", Instant.now().toEpochMilli() - 60, Instant.now().toEpochMilli(), 1);
     String eventData = objectMapper.writeValueAsString(pipelineEndEvent);
 
     OutboxEvent outboxEvent = OutboxEvent.builder()
@@ -377,7 +377,7 @@ public class PipelineOutboxEventHandlerTest extends CategoryTest {
 
     StageStartEvent stageStartEvent =
         new StageStartEvent(accountIdentifier, orgIdentifier, projectIdentifier, identifier, "planExecutionId",
-            "stageIdentifier", "Deploy", Instant.now().toEpochMilli(), "nodeExecutionId", triggeredInfo);
+            "stageIdentifier", "Deploy", Instant.now().toEpochMilli(), "nodeExecutionId", 1, triggeredInfo);
     String eventData = objectMapper.writeValueAsString(stageStartEvent);
 
     OutboxEvent outboxEvent = OutboxEvent.builder()
@@ -416,7 +416,7 @@ public class PipelineOutboxEventHandlerTest extends CategoryTest {
 
     StageEndEvent stageEndEvent = new StageEndEvent(accountIdentifier, orgIdentifier, projectIdentifier, identifier,
         "planExecutionId", "stageIdentifier", "Deploy", Instant.now().toEpochMilli() - 10, "nodeExecutionId",
-        Instant.now().toEpochMilli(), "RUNNING", triggeredInfo);
+        Instant.now().toEpochMilli(), "RUNNING", 1, triggeredInfo);
     String eventData = objectMapper.writeValueAsString(stageEndEvent);
 
     OutboxEvent outboxEvent = OutboxEvent.builder()

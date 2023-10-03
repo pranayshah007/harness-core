@@ -226,3 +226,12 @@ tiServiceConfig:
 
 cpu: 2
 scoreComputerThreadsPerCore: 2
+
+streamPerServiceConfiguration: ${PIE_STREAM_PER_SERVICE:- false}
+
+auditClientConfig:
+  baseUrl: http://localhost:9005/api/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+enableAudit: false

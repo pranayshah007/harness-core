@@ -6978,6 +6978,34 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "EcsBasicRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "EcsBlueGreenCreateServiceStepInfo": {
       "allOf": [
         {
@@ -7421,6 +7449,49 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "EcsServiceSetupStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resizeStrategy": {
+              "type": "string"
+            },
+            "sameAsAlreadyRunningInstances": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "EcsServiceSpec": {
       "allOf": [
         {
@@ -7450,6 +7521,80 @@
             },
             "store": {
               "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EcsUpgradeContainerStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "newServiceInstanceCount",
+            "newServiceInstanceUnit"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ]
+            },
+            "downsizeOldServiceInstanceCount": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "downsizeOldServiceInstanceUnit": {
+              "type": "string"
+            },
+            "newServiceInstanceCount": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "newServiceInstanceUnit": {
+              "type": "string"
             }
           }
         }
@@ -11200,6 +11345,9 @@
               "minLength": 1
             },
             "provisioner": {
+              "type": "string"
+            },
+            "region": {
               "type": "string"
             },
             "releaseName": {
@@ -19368,6 +19516,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "EcsBasicRollback"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/EcsBasicRollbackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "EcsBlueGreenCreateService"
               }
             }
@@ -19488,6 +19652,38 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/EcsRunTaskStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "EcsServiceSetup"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/EcsServiceSetupStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "EcsUpgradeContainer"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/EcsUpgradeContainerStepInfo"
               }
             }
           }
@@ -23724,7 +23920,8 @@
             "WORKSPACE",
             "PLAN",
             "APPLY",
-            "DESTROY"
+            "DESTROY",
+            "OUTPUT"
           ]
         },
         "flag": {

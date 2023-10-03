@@ -52,11 +52,13 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver, N
       return;
     }
 
-    NodeOutboxInfo nodeOutboxInfo = NodeOutboxInfo.builder()
-                                        .nodeExecution(nodeStartInfo.getNodeExecution())
-                                        .updatedTs(nodeStartInfo.getUpdatedTs())
-                                        .type(NodeExecutionOutboxEventConstants.NODE_START_INFO)
-                                        .build();
+    NodeOutboxInfo nodeOutboxInfo =
+        NodeOutboxInfo.builder()
+            .nodeExecution(nodeStartInfo.getNodeExecution())
+            .updatedTs(nodeStartInfo.getUpdatedTs())
+            .type(NodeExecutionOutboxEventConstants.NODE_START_INFO)
+            .runSequence(nodeStartInfo.getNodeExecution().getAmbiance().getMetadata().getRunSequence())
+            .build();
     sendOutboxEvents(nodeOutboxInfo);
   }
 
@@ -66,11 +68,13 @@ public class NodeExecutionOutboxHandler implements NodeExecutionStartObserver, N
       return;
     }
 
-    NodeOutboxInfo nodeOutboxInfo = NodeOutboxInfo.builder()
-                                        .nodeExecution(nodeUpdateInfo.getNodeExecution())
-                                        .updatedTs(nodeUpdateInfo.getUpdatedTs())
-                                        .type(NodeExecutionOutboxEventConstants.NODE_UPDATE_INFO)
-                                        .build();
+    NodeOutboxInfo nodeOutboxInfo =
+        NodeOutboxInfo.builder()
+            .nodeExecution(nodeUpdateInfo.getNodeExecution())
+            .updatedTs(nodeUpdateInfo.getUpdatedTs())
+            .type(NodeExecutionOutboxEventConstants.NODE_UPDATE_INFO)
+            .runSequence(nodeUpdateInfo.getNodeExecution().getAmbiance().getMetadata().getRunSequence())
+            .build();
     sendOutboxEvents(nodeOutboxInfo);
   }
 

@@ -208,7 +208,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         customSecretManagerConfigDTO.getTemplate().getTemplateInputs();
 
     List<NameValuePairWithDefault> envVariables =
-        (connectorTemplateInputs != null) ? connectorTemplateInputs.get(ENVIRONMENT_VARIABLES) : new ArrayList<>();
+        (isNotEmpty(connectorTemplateInputs)) ? connectorTemplateInputs.get(ENVIRONMENT_VARIABLES) : new ArrayList<>();
 
     if (envVariables.isEmpty()) {
       return;

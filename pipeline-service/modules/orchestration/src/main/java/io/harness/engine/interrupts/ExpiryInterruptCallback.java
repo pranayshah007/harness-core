@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.interrupts;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
@@ -42,14 +43,16 @@ public class ExpiryInterruptCallback implements OldNotifyCallback {
   String interruptId;
   InterruptConfig interruptConfig;
   InterruptType interruptType;
+  Boolean expireAndEndExecution;
 
   @Builder
-  public ExpiryInterruptCallback(
-      String nodeExecutionId, String interruptId, InterruptConfig interruptConfig, InterruptType interruptType) {
+  public ExpiryInterruptCallback(String nodeExecutionId, String interruptId, InterruptConfig interruptConfig,
+      InterruptType interruptType, Boolean expireAndEndExecution) {
     this.nodeExecutionId = nodeExecutionId;
     this.interruptId = interruptId;
     this.interruptConfig = interruptConfig;
     this.interruptType = interruptType;
+    this.expireAndEndExecution = expireAndEndExecution;
   }
 
   @Override
@@ -72,7 +75,12 @@ public class ExpiryInterruptCallback implements OldNotifyCallback {
   void expireNode(Map<String, ResponseData> response) {
     NodeExecution nodeExecution = nodeExecutionService.getWithFieldsIncluded(
         nodeExecutionId, Set.of(NodeExecutionKeys.uuid, NodeExecutionKeys.ambiance, NodeExecutionKeys.unitProgresses));
-    expiryHelper.expireDiscontinuedInstance(nodeExecution, interruptConfig, interruptId, interruptType);
+    if (expireAndEndExecution) {
+      expiryHelper.expireDiscontinuedInstanceAndEndAllNodesExecution(
+          nodeExecution, interruptConfig, interruptId, interruptType);
+    } else {
+      expiryHelper.expireDiscontinuedInstance(nodeExecution, interruptConfig, interruptId, interruptType);
+    }
     ResponseData responseData = isEmpty(response) ? null : response.values().iterator().next();
     waitNotifyEngine.doneWith(nodeExecutionId + "|" + interruptId, responseData);
   }

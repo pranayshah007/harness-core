@@ -359,3 +359,5 @@ opaClientConfig:
   baseUrl: http://localhost:3000
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
+
+streamPerServiceConfiguration: ${PIE_STREAM_PER_SERVICE:- false}

@@ -10,6 +10,7 @@ package io.harness.pms.pipeline.service;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SAMARTH;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
@@ -47,6 +48,7 @@ import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.references.PipelineSetupUsageCreationHelper;
 import io.harness.pms.pipeline.validation.PipelineValidationResponse;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
@@ -55,6 +57,7 @@ import io.harness.yaml.validator.InvalidYamlException;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -80,6 +83,7 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
   @Mock PipelineGovernanceService pipelineGovernanceService;
   @Mock PmsFeatureFlagService pmsFeatureFlagService;
   @Mock PipelineSetupUsageCreationHelper pipelineSetupUsageCreationHelper;
+  @Mock PMSPipelineService pmsPipelineService;
   @Spy @InjectMocks PMSPipelineServiceHelper pmsPipelineServiceHelper;
 
   String accountIdentifier = "account";
@@ -463,5 +467,30 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
     GitEntityInfo gitEntityInfo1 = GitContextHelper.getGitEntityInfo();
 
     assertEquals(gitEntityInfo1.getBranch(), gitEntityInfo.getBranch());
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testSetPermittedPipeline() {
+    Criteria criteria = new Criteria();
+    List<String> pipelinelist = Arrays.asList(pipelineIdentifier);
+    doReturn(false)
+        .when(pmsPipelineService)
+        .validateViewPermission(accountIdentifier, orgIdentifier, projectIdentifier);
+    doReturn(pipelinelist).when(pmsPipelineService).listAllIdentifiers(any());
+    doReturn(pipelinelist)
+        .when(pmsPipelineService)
+        .getPermittedPipelineIdentifier(accountIdentifier, orgIdentifier, projectIdentifier, pipelinelist);
+    pmsPipelineServiceHelper.setPermittedPipelines(
+        accountIdentifier, orgIdentifier, projectIdentifier, criteria, PlanExecutionSummaryKeys.pipelineIdentifier);
+
+    assertThat(criteria.getCriteriaObject().get(PlanExecutionSummaryKeys.pipelineIdentifier).toString())
+        .isEqualTo("Document{{$in=[pipeline]}}");
+
+    pmsPipelineServiceHelper.setPermittedPipelines(
+        accountIdentifier, orgIdentifier, projectIdentifier, criteria, PipelineEntityKeys.identifier);
+    assertThat(criteria.getCriteriaObject().get(PipelineEntityKeys.identifier).toString())
+        .isEqualTo("Document{{$in=[pipeline]}}");
   }
 }

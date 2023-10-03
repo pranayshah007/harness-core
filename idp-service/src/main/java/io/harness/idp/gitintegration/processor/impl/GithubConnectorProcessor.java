@@ -16,6 +16,8 @@ import static io.harness.idp.gitintegration.utils.GitIntegrationConstants.CATALO
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cistatus.service.GithubAppConfig;
+import io.harness.cistatus.service.GithubService;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.scm.adapter.GithubToGitMapper;
@@ -27,6 +29,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.github.outcome.GithubHttpCredentialsOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.git.GitClientHelper;
 import io.harness.idp.common.Constants;
 import io.harness.idp.configmanager.utils.ConfigManagerUtils;
 import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
@@ -37,6 +40,7 @@ import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.CatalogConnectorInfo;
 
+import com.google.inject.Inject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +52,9 @@ import org.apache.commons.lang3.StringUtils;
 public class GithubConnectorProcessor extends ConnectorProcessor {
   private static final String SUFFIX_FOR_GITHUB_APP_CONNECTOR = "_App";
   private static final String TARGET_TO_REPLACE_IN_CONFIG_FOR_GITHUB_API_BASE_URL = "API_BASE_URL";
+
+  @Inject GithubService githubService;
+
   @Override
   public String getInfraConnectorType(ConnectorInfoDTO connectorInfoDTO) {
     GithubConnectorDTO config = (GithubConnectorDTO) connectorInfoDTO.getConnectorConfig();
@@ -157,12 +164,28 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
     String username = "HarnessIdp";
     if (outcome.getType().equals(USERNAME_AND_TOKEN)) {
       GithubUsernameTokenDTO spec = (GithubUsernameTokenDTO) outcome.getSpec();
-      username = StringUtils.isEmpty(spec.getUsername()) ? username : spec.getUsername();
+      username = spec.getUsername();
+      if (StringUtils.isEmpty(username)) {
+        username = GitIntegrationUtils.decryptSecret(ngSecretService, accountIdentifier, null, null,
+            spec.getUsernameRef().getIdentifier(), catalogConnectorInfo.getConnector().getIdentifier());
+      }
     } else if (outcome.getType().equals(GITHUB_APP)) {
       GithubAppDTO spec = (GithubAppDTO) outcome.getSpec();
-      username = StringUtils.isEmpty(spec.getApplicationId()) && StringUtils.isEmpty(spec.getInstallationId())
-          ? username + "-GithubApp"
-          : username + "-GithubApp-" + spec.getApplicationId() + "-" + spec.getInstallationId();
+      String applicationId = spec.getApplicationId();
+      if (StringUtils.isEmpty(applicationId)) {
+        applicationId = GitIntegrationUtils.decryptSecret(ngSecretService, accountIdentifier, null, null,
+            spec.getApplicationIdRef().getIdentifier(), catalogConnectorInfo.getConnector().getIdentifier());
+      }
+      String installationId = spec.getInstallationId();
+      if (StringUtils.isEmpty(installationId)) {
+        installationId = GitIntegrationUtils.decryptSecret(ngSecretService, accountIdentifier, null, null,
+            spec.getInstallationIdRef().getIdentifier(), catalogConnectorInfo.getConnector().getIdentifier());
+      }
+      username = username + "-GithubApp";
+      username = StringUtils.isEmpty(spec.getApplicationId()) ? username : username + "-" + spec.getApplicationId();
+      username = StringUtils.isEmpty(spec.getInstallationId()) ? username : username + "-" + spec.getInstallationId();
+      githubConnectorSecret = githubService.getToken(buildGithubAppConfig(applicationId, installationId,
+          githubConnectorSecret, ((GithubConnectorDTO) connectorInfoDTO.getConnectorConfig()).getUrl()));
     }
 
     config.setUrl(catalogConnectorInfo.getRepo());
@@ -185,5 +208,15 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
   private String getGithubApiBaseUrlFromHost(String host) {
     return (host.equals("github.com")) ? String.format("https://api.%s", host)
                                        : String.format("https://%s/api/v3", host);
+  }
+
+  private GithubAppConfig buildGithubAppConfig(
+      String applicationId, String installationId, String privateKey, String url) {
+    return GithubAppConfig.builder()
+        .appId(applicationId)
+        .installationId(installationId)
+        .privateKey(privateKey)
+        .githubUrl(GitClientHelper.getGithubApiURL(url))
+        .build();
   }
 }

@@ -31,6 +31,7 @@ import io.harness.delegate.task.k8s.K8sRollingRollbackDeployRequest;
 import io.harness.delegate.task.k8s.K8sRollingRollbackDeployRequest.K8sRollingRollbackDeployRequestBuilder;
 import io.harness.delegate.task.k8s.K8sTaskType;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.k8s.model.K8sPod;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -54,6 +55,7 @@ import io.harness.supplier.ThrowingSupplier;
 
 import com.google.inject.Inject;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @OwnedBy(CDP)
 public class K8sRollingRollbackStep extends CdTaskExecutable<K8sDeployResponse> {
@@ -188,7 +190,12 @@ public class K8sRollingRollbackStep extends CdTaskExecutable<K8sDeployResponse> 
       final K8sRollingDeployRollbackResponse response =
           (K8sRollingDeployRollbackResponse) executionResponse.getK8sNGTaskResponse();
       K8sRollingRollbackOutcome k8sRollingRollbackOutcome =
-          K8sRollingRollbackOutcome.builder().recreatedResourceIds(response.getRecreatedResourceIds()).build();
+          K8sRollingRollbackOutcome.builder()
+              .recreatedResourceIds(response.getRecreatedResourceIds())
+              .podIps(response.getK8sPodList() != null
+                      ? response.getK8sPodList().stream().map(K8sPod::getPodIP).collect(Collectors.toList())
+                      : null)
+              .build();
 
       StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(
           ambiance, K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(response.getK8sPodList(), null));

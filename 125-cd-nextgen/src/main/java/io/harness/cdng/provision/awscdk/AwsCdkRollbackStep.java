@@ -23,7 +23,6 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.plugin.AbstractContainerStepV2;
 import io.harness.pms.sdk.core.plugin.ContainerStepExecutionResponseHelper;
 import io.harness.pms.sdk.core.plugin.ContainerUnitStepUtils;
@@ -96,9 +95,8 @@ public class AwsCdkRollbackStep extends AbstractContainerStepV2<StepElementParam
       StepMapOutput stepOutput = (StepMapOutput) stepStatusTaskResponseData.getStepStatus().getOutput();
       Map<String, String> processedOutput = awsCdkStepHelper.processOutput(stepOutput);
       stepOutput.setMap(processedOutput);
-      AwsCdkConfig awsCdkConfig = awsCdkConfigDAL.getRollbackAwsCdkConfig(
+      awsCdkConfigDAL.deleteAwsCdkConfig(
           ambiance, getParameterFieldValue(awsCdkRollbackStepParameters.getProvisionerIdentifier()));
-      awsCdkConfigDAL.saveAwsCdkConfig(getAwsCdkConfig(ambiance, awsCdkConfig, awsCdkRollbackStepParameters));
     }
     return super.handleAsyncResponse(ambiance, stepParameters, responseDataMap);
   }
@@ -121,26 +119,6 @@ public class AwsCdkRollbackStep extends AbstractContainerStepV2<StepElementParam
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
     awsCdkStepHelper.validateFeatureEnabled(ambiance);
-  }
-
-  protected AwsCdkConfig getAwsCdkConfig(
-      Ambiance ambiance, AwsCdkConfig awsCdkConfig, AwsCdkRollbackStepParameters awsCdkRollbackStepParameters) {
-    return AwsCdkConfig.builder()
-        .accountId(AmbianceUtils.getAccountId(ambiance))
-        .orgId(AmbianceUtils.getOrgIdentifier(ambiance))
-        .projectId(AmbianceUtils.getProjectIdentifier(ambiance))
-        .provisionerIdentifier(awsCdkConfig.getProvisionerIdentifier())
-        .stageExecutionId(AmbianceUtils.getStageExecutionIdForExecutionMode(ambiance))
-        .resources(awsCdkConfig.getResources())
-        .runAsUser(awsCdkConfig.getRunAsUser())
-        .connectorRef(awsCdkConfig.getConnectorRef())
-        .image(awsCdkConfig.getImage())
-        .imagePullPolicy(awsCdkConfig.getImagePullPolicy())
-        .envVariables(getEnvironmentVariables(awsCdkConfig, awsCdkRollbackStepParameters))
-        .parameters(awsCdkConfig.getParameters())
-        .privileged(awsCdkConfig.getPrivileged())
-        .commitId(awsCdkConfig.getCommitId())
-        .build();
   }
 
   private Map<String, String> getEnvironmentVariables(
