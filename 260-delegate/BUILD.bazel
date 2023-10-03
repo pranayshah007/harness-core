@@ -44,6 +44,7 @@ java_library(
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/jenkins:module",
         "//931-delegate-decryption-service/src/java/software/wings/service/impl/security:module",
         "//931-encryption-service/src/java/software/wings/service/impl/security:module",
+        "//980-commons/src/main/java/io/harness/security/delegate:module",
         "//platform-service/modules/notification-service/delegate-tasks:module",
         "@maven//:org_apache_logging_log4j_log4j_api",
         "@maven//:org_apache_logging_log4j_log4j_to_slf4j",

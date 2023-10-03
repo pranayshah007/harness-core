@@ -5,11 +5,14 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.logging;
+package io.harness.logging.common;
 
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
+import io.harness.logging.AutoLogContext;
+import io.harness.logging.MdcKeyLogContext;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
@@ -53,7 +56,7 @@ public class CustomJsonLayout extends JsonLayoutBase<ILoggingEvent> {
     this(null);
   }
 
-  CustomJsonLayout(LoggerContext context) {
+  public CustomJsonLayout(LoggerContext context) {
     this.context = context;
     timestampFormat = "yyyy-MM-dd HH:mm:ss.SSS Z";
     appendLineSeparator = true;
@@ -74,7 +77,7 @@ public class CustomJsonLayout extends JsonLayoutBase<ILoggingEvent> {
   }
 
   @Override
-  protected Map<String, Object> toJsonMap(ILoggingEvent event) {
+  public Map<String, Object> toJsonMap(ILoggingEvent event) {
     Map<String, Object> map = new HashMap<>();
 
     final String formattedMessage = truncateLog(event.getFormattedMessage());
