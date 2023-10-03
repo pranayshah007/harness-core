@@ -65,7 +65,8 @@ public class TemplateRefHelper {
         FQNNode secondLastNode = fqnList.get(fqnList.size() - 2);
         if ((YAMLFieldNameConstants.TYPE.equals(fqnList.get(fqnList.size() - 1).getKey())
                 && YAMLFieldNameConstants.TEMPLATE.equals(((JsonNode) fqnObjectMap.get(key)).asText()))
-            || ("ref".equals(lastNode.getKey()) && YAMLFieldNameConstants.SPEC.equals(secondLastNode.getKey()))) {
+            || (YAMLFieldNameConstants.REF.equals(lastNode.getKey())
+                && YAMLFieldNameConstants.SPEC.equals(secondLastNode.getKey()))) {
           return true;
         }
 

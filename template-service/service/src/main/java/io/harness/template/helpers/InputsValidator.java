@@ -27,7 +27,6 @@ import io.harness.ng.core.template.refresh.v2.UnknownNodeErrorSummary;
 import io.harness.ng.core.template.refresh.v2.ValidateInputsResponseDTO;
 import io.harness.pms.merger.helpers.RuntimeInputsValidator;
 import io.harness.pms.yaml.HarnessYamlVersion;
-import io.harness.pms.yaml.NGYamlHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -119,8 +118,8 @@ public class InputsValidator {
         validateTemplateInputs(accountId, orgId, projectId, yamlNode, templateCacheMap, depth, loadFromCache);
     String resolvedTemplatesYaml = yaml;
     if (TemplateRefHelper.hasTemplateRef(yaml)) {
-      Map<String, Object> resolvedTemplatesMap = templateMergeServiceHelper.mergeTemplateInputsInObject(accountId,
-          orgId, projectId, yamlNode, templateCacheMap, 0, loadFromCache, false, NGYamlHelper.getVersion(yaml));
+      Map<String, Object> resolvedTemplatesMap = templateMergeServiceHelper.mergeTemplateInputsInObject(
+          accountId, orgId, projectId, yamlNode, templateCacheMap, 0, loadFromCache, false, HarnessYamlVersion.V0);
       resolvedTemplatesYaml = YamlUtils.writeYamlString(resolvedTemplatesMap);
     }
     InputsValidationResponse ngManagerInputsValidationResponse =
@@ -192,7 +191,7 @@ public class InputsValidator {
       JsonNode value = currentYamlNode.getCurrJsonNode();
 
       // If Template is present, validate the Template Inputs
-      if (templateMergeServiceHelper.isTemplatePresent(fieldName, value)) {
+      if (templateMergeServiceHelper.isV0TemplatePresent(fieldName, value)) {
         depth++;
         if (depth >= MAX_DEPTH) {
           throw new InvalidRequestException("Exponentially growing template nesting. Aborting");

@@ -20,7 +20,6 @@ import io.harness.ng.core.template.RefreshResponseDTO;
 import io.harness.ng.core.template.refresh.NgManagerRefreshRequestDTO;
 import io.harness.pms.merger.helpers.YamlRefreshHelper;
 import io.harness.pms.yaml.HarnessYamlVersion;
-import io.harness.pms.yaml.NGYamlHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -82,8 +81,8 @@ public class TemplateInputsRefreshHelper {
     String inputsRefreshYaml = YamlUtils.writeYamlString(refreshedTemplateInputsMap);
     String resolvedTemplatesYaml = inputsRefreshYaml;
     if (TemplateRefHelper.hasTemplateRef(yaml)) {
-      Map<String, Object> resolvedTemplatesMap = templateMergeServiceHelper.mergeTemplateInputsInObject(accountId,
-          orgId, projectId, yamlNode, templateCacheMap, 0, loadFromCache, false, NGYamlHelper.getVersion(yaml));
+      Map<String, Object> resolvedTemplatesMap = templateMergeServiceHelper.mergeTemplateInputsInObject(
+          accountId, orgId, projectId, yamlNode, templateCacheMap, 0, loadFromCache, false, HarnessYamlVersion.V0);
       resolvedTemplatesYaml = YamlUtils.writeYamlString(resolvedTemplatesMap);
     }
     RefreshResponseDTO ngManagerRefreshResponseDto =
@@ -107,7 +106,7 @@ public class TemplateInputsRefreshHelper {
       JsonNode value = childYamlField.getNode().getCurrJsonNode();
 
       // If Template is present, Refresh the Template Inputs
-      if (templateMergeServiceHelper.isTemplatePresent(fieldName, value)) {
+      if (templateMergeServiceHelper.isV0TemplatePresent(fieldName, value)) {
         // Updated JsonNode with Refreshed TemplateInputs
         value = getUpdatedTemplateValue(accountId, orgId, projectId, value, templateCacheMap, loadFromCache);
       }

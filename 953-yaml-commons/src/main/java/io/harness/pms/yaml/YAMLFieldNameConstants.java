@@ -125,4 +125,5 @@ public class YAMLFieldNameConstants {
   public final String COMBINED_ROLLBACK_STATUS = "combinedRollbackStatus";
   public final String RETRY_STEP_GROUP = "retryStepGroup";
   public final String CUSTOM = "Custom";
+  public final String REF = "ref";
 }
