@@ -27,7 +27,7 @@ public class CdInstanceSummaryServiceImpl implements CdInstanceSummaryService {
   @Override
   public void upsertInstance(Instance instance) {
     Criteria criteria = Criteria.where(CdInstanceSummaryKeys.artifactCorrelationId)
-                            .is(null)
+                            .is(instance.getPrimaryArtifact().getArtifactIdentity().getImage())
                             .and(CdInstanceSummaryKeys.accountIdentifier)
                             .is(instance.getAccountIdentifier())
                             .and(CdInstanceSummaryKeys.orgIdentifier)
@@ -50,7 +50,7 @@ public class CdInstanceSummaryServiceImpl implements CdInstanceSummaryService {
   @Override
   public void removeInstance(Instance instance) {
     Criteria criteria = Criteria.where(CdInstanceSummaryKeys.artifactCorrelationId)
-                            .is(null)
+                            .is(instance.getPrimaryArtifact().getArtifactIdentity().getImage())
                             .and(CdInstanceSummaryKeys.accountIdentifier)
                             .is(instance.getAccountIdentifier())
                             .and(CdInstanceSummaryKeys.orgIdentifier)
@@ -74,7 +74,7 @@ public class CdInstanceSummaryServiceImpl implements CdInstanceSummaryService {
 
   private CdInstanceSummary createInstanceSummary(Instance instance) {
     return CdInstanceSummary.builder()
-        .artifactCorrelationId(null)
+        .artifactCorrelationId(instance.getPrimaryArtifact().getArtifactIdentity().getImage())
         .accountIdentifier(instance.getAccountIdentifier())
         .orgIdentifier(instance.getOrgIdentifier())
         .projectIdentifier(instance.getProjectIdentifier())
