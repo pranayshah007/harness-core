@@ -50,7 +50,7 @@ public class StageLevelAmbianceModifier implements AmbianceModifier {
     if (AmbianceUtils.obtainCurrentLevel(ambiance).getStepType().getStepCategory().equals(StepCategory.STRATEGY)) {
       // postExecutionRollbackStageId will be the strategy setup id, that is what we need as the current setup id
       String strategySetupId = AmbianceUtils.obtainCurrentSetupId(ambiance);
-      int currentIteration = stageLevel.getStrategyMetadata().getCurrentIteration();
+      int currentIteration = AmbianceUtils.getCurrentIteration(stageLevel);
       return postExecutionRollbackInfoList.stream()
           .filter(info -> Objects.equals(info.getPostExecutionRollbackStageId(), strategySetupId))
           .filter(info -> info.getRollbackStageStrategyMetadata().getCurrentIteration() == currentIteration)

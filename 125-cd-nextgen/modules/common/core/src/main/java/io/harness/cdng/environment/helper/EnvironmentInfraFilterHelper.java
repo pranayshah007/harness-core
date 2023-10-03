@@ -179,12 +179,10 @@ public class EnvironmentInfraFilterHelper {
     return new HashSet<>();
   }
 
-  public Set<InfrastructureEntity> getInfrastructureForEnvironmentList(String accountIdentifier, String orgIdentifier,
+  public List<InfrastructureEntity> getInfrastructureForEnvironmentList(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String envRef, ServiceDefinitionType deploymentType) {
-    List<InfrastructureEntity> infrastructureEntityList =
-        infrastructureEntityService.getAllInfrastructureFromEnvRefAndDeploymentType(
-            accountIdentifier, orgIdentifier, projectIdentifier, envRef, deploymentType);
-    return new HashSet<>(infrastructureEntityList);
+    return infrastructureEntityService.getAllInfrastructureFromEnvRefAndDeploymentType(
+        accountIdentifier, orgIdentifier, projectIdentifier, envRef, deploymentType);
   }
 
   public static List<EnvironmentYamlV2> getEnvYamlV2WithFilters(
@@ -360,7 +358,7 @@ public class EnvironmentInfraFilterHelper {
   private List<EnvironmentYamlV2> getEnvYamlV2AfterFiltering(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, List<FilterYaml> filterYamls, String envRef, ServiceDefinitionType deploymentType) {
     List<EnvironmentYamlV2> environmentYamlV2List = new ArrayList<>();
-    Set<InfrastructureEntity> infrastructureEntitySet = getInfrastructureForEnvironmentList(
+    List<InfrastructureEntity> infrastructureEntitySet = getInfrastructureForEnvironmentList(
         accountIdentifier, orgIdentifier, projectIdentifier, envRef, deploymentType);
 
     if (isNotEmpty(infrastructureEntitySet)) {
@@ -371,9 +369,9 @@ public class EnvironmentInfraFilterHelper {
   }
 
   public List<EnvironmentYamlV2> filterInfras(
-      List<FilterYaml> filterYamls, String env, Set<InfrastructureEntity> infrastructureEntitySet) {
+      List<FilterYaml> filterYamls, String env, List<InfrastructureEntity> infrastructureEntitySet) {
     List<EnvironmentYamlV2> environmentYamlV2List = new ArrayList<>();
-    Set<InfrastructureEntity> filteredInfras =
+    List<InfrastructureEntity> filteredInfras =
         EnvironmentInfraFilterUtils.applyFilteringOnInfras(filterYamls, infrastructureEntitySet);
 
     if (isNotEmpty(filteredInfras)) {

@@ -175,7 +175,7 @@ public class QuickFilterTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testFormCriteriaOROperatorOnModulesFilterProperties() {
     // making a filterProperties object with a status value
-    doNothing().when(pmsPipelineServiceHelper).setPermittedPipelines(any(), any(), any(), any());
+    doNothing().when(pmsPipelineServiceHelper).setPermittedPipelines(any(), any(), any(), any(), any());
     Criteria form = pmsExecutionServiceImpl.formCriteriaOROperatorOnModules(null, null, null, null,
         PipelineExecutionFilterPropertiesDTO.builder()
             .status(Collections.singletonList(ExecutionStatus.ABORTED))

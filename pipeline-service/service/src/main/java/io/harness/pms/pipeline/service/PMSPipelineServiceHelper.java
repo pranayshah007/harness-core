@@ -689,7 +689,8 @@ public class PMSPipelineServiceHelper {
             .build());
   }
 
-  public void setPermittedPipelines(String accountId, String orgId, String projectId, Criteria criteria) {
+  public void setPermittedPipelines(
+      String accountId, String orgId, String projectId, Criteria criteria, String pipelineIdentifierKey) {
     /*
     If user is having all pipeline view permission, we do not need to check for individual pipeline view permission
      */
@@ -699,7 +700,7 @@ public class PMSPipelineServiceHelper {
       List<String> permittedPipelineIdentifiers =
           pmsPipelineService.getPermittedPipelineIdentifier(accountId, orgId, projectId, allPipelineIdentifiers);
 
-      criteria.and(PipelineEntityKeys.identifier).in(permittedPipelineIdentifiers);
+      criteria.and(pipelineIdentifierKey).in(permittedPipelineIdentifiers);
     }
   }
 }

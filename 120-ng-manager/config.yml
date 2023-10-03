@@ -579,3 +579,5 @@ awsServiceEndpointUrls:
   ecsEndPointUrl: https://ecs.us-east-1.amazonaws.com
   cloudwatchEndPointUrl: https://monitoring.us-east-1.amazonaws.com
 
+
+streamPerServiceConfiguration: ${PIE_STREAM_PER_SERVICE:- false}

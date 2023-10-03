@@ -32,7 +32,7 @@ public class GithubMeanTimeToMergeParser implements DataPointParser {
     Map<String, Object> dataPointData = new HashMap<>();
     for (String inputValue : inputValues) {
       if (!data.containsKey(inputValue)) {
-        dataPointData.putAll(constructDataPointInfo(inputValue, false, INVALID_BRANCH_NAME_ERROR));
+        dataPointData.putAll(constructDataPointInfo(inputValue, Long.MAX_VALUE, INVALID_BRANCH_NAME_ERROR));
         continue;
       }
 
@@ -40,8 +40,8 @@ public class GithubMeanTimeToMergeParser implements DataPointParser {
       List<Map<String, Object>> edges =
           (List<Map<String, Object>>) CommonUtils.findObjectByName(inputValueData, "edges");
       if (isEmpty(edges)) {
-        dataPointData.putAll(
-            constructDataPointInfo(inputValue, false, format(NO_PULL_REQUESTS_FOUND, inputValue.replace("\"", ""))));
+        dataPointData.putAll(constructDataPointInfo(
+            inputValue, Long.MAX_VALUE, format(NO_PULL_REQUESTS_FOUND, inputValue.replace("\"", ""))));
         continue;
       }
       int numberOfPullRequests = edges.size();

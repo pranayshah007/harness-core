@@ -999,8 +999,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
                        .resourceType("PIPELINE")
                        .build())
             .collect(Collectors.toList());
-    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
-    return accessCheckResponse;
+    return accessControlClient.checkForAccessOrThrow(permissionChecks);
   }
 
   @Override

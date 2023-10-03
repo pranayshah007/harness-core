@@ -40,5 +40,12 @@
     "identifier": "kubernetes",
     "name": "Kubernetes",
     "description": "Kubernetes"
+  },
+  {
+    "id": "65143c57b8d9da056543d678",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "jira",
+    "name": "Jira",
+    "description": "Jira"
   }
 ]

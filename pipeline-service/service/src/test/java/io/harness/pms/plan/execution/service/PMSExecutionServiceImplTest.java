@@ -203,9 +203,9 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
         PipelineExecutionFilterPropertiesDTO.builder()
             .triggerIdentifiers(Collections.singletonList("triggerIdentifier"))
             .build();
-    doNothing().when(pmsPipelineServiceHelper).setPermittedPipelines(any(), any(), any(), any());
+    doNothing().when(pmsPipelineServiceHelper).setPermittedPipelines(any(), any(), any(), any(), any());
     Criteria form1 = pmsExecutionService.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
-        null, pipelineExecutionFilterPropertiesDTO, null, null, null, false, !PIPELINE_DELETED, true);
+        null, pipelineExecutionFilterPropertiesDTO, null, null, null, false, !PIPELINE_DELETED, false);
     assertThat(form1.getCriteriaObject().toString())
         .isEqualTo(
             "Document{{accountId=account_id, orgIdentifier=orgId, projectIdentifier=projId, pipelineIdentifier=Document{{$in=[basichttpFail]}}, isLatestExecution=Document{{$ne=false}}, executionMode=Document{{$ne=PIPELINE_ROLLBACK}}, $and=[Document{{$and=[Document{{executionTriggerInfo.triggeredBy.triggerIdentifier=Document{{$in=[triggerIdentifier]}}}}]}}]}}");
@@ -214,17 +214,22 @@ public class PMSExecutionServiceImplTest extends CategoryTest {
             .triggerTypes(Collections.singletonList(TriggerType.WEBHOOK))
             .build();
     Criteria form2 = pmsExecutionService.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
-        null, pipelineExecutionFilterPropertiesDTO1, null, null, null, false, !PIPELINE_DELETED, true);
+        null, pipelineExecutionFilterPropertiesDTO1, null, null, null, false, !PIPELINE_DELETED, false);
     assertThat(form2.getCriteriaObject().toString())
         .isEqualTo(
             "Document{{accountId=account_id, orgIdentifier=orgId, projectIdentifier=projId, pipelineIdentifier=Document{{$in=[basichttpFail]}}, isLatestExecution=Document{{$ne=false}}, executionMode=Document{{$ne=PIPELINE_ROLLBACK}}, $and=[Document{{$and=[Document{{executionTriggerInfo.triggerType=Document{{$in=[WEBHOOK]}}}}]}}]}}");
+    Criteria form3 = pmsExecutionService.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER,
+        null, pipelineExecutionFilterPropertiesDTO1, null, null, null, false, !PIPELINE_DELETED, true);
+    assertThat(form3.getCriteriaObject().toString())
+        .isEqualTo(
+            "Document{{accountId=account_id, orgIdentifier=orgId, projectIdentifier=projId, pipelineIdentifier=Document{{$in=[basichttpFail]}}, executionMode=Document{{$ne=PIPELINE_ROLLBACK}}, $and=[Document{{$and=[Document{{executionTriggerInfo.triggerType=Document{{$in=[WEBHOOK]}}}}]}}]}}");
   }
 
   @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void testFormCriteriaForParentInfoCriteria() {
-    doNothing().when(pmsPipelineServiceHelper).setPermittedPipelines(any(), any(), any(), any());
+    doNothing().when(pmsPipelineServiceHelper).setPermittedPipelines(any(), any(), any(), any(), any());
     Criteria form = pmsExecutionService.formCriteria(
         null, null, null, "", null, null, null, null, null, false, !PIPELINE_DELETED, true);
     Criteria childCriteria = new Criteria();

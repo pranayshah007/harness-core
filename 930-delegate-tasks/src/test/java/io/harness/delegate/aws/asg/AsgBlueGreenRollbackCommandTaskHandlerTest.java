@@ -66,7 +66,7 @@ public class AsgBlueGreenRollbackCommandTaskHandlerTest extends CategoryTest {
 
   static final String LAUNCH_TEMPLATE_CONTENT = "{\"LaunchTemplateData\": { \"InstanceType\": \"t2.micro\" }}";
   static final String CONFIG_CONTENT =
-      "{\"minSize\": 1,\"maxSize\": 1,\"desiredCapacity\": 1,\"launchTemplate\": {\"version\": \"1\"}}";
+      "{\"minSize\": 1,\"maxSize\": 1,\"desiredCapacity\": 1,\"launchTemplate\": {\"version\": \"1\", \"launchTemplateName\": \"asg\"}}";
 
   @Mock AsgTaskHelper asgTaskHelper;
   @Mock ElbV2Client elbV2Client;
@@ -90,7 +90,7 @@ public class AsgBlueGreenRollbackCommandTaskHandlerTest extends CategoryTest {
     doReturn(AwsInternalConfig.builder().build()).when(awsUtils).getAwsInternalConfig(any(), anyString());
     doReturn(LAUNCH_TEMPLATE_CONTENT).when(asgTaskHelper).getAsgLaunchTemplateContent(any());
     doReturn(CONFIG_CONTENT).when(asgTaskHelper).getAsgConfigurationContent(any());
-    doReturn(new LaunchTemplate().withLatestVersionNumber(1L))
+    doReturn(new LaunchTemplate().withLatestVersionNumber(1L).withLaunchTemplateName(PROD_ASG_NAME))
         .when(asgSdkManager)
         .createLaunchTemplate(anyString(), any());
     doReturn(new AutoScalingGroup().withAutoScalingGroupName(PROD_ASG_NAME)).when(asgSdkManager).getASG(anyString());
@@ -115,7 +115,7 @@ public class AsgBlueGreenRollbackCommandTaskHandlerTest extends CategoryTest {
     verify(asgSdkManager, times(1)).deleteAsg(asgNameCaptor.capture());
     assertThat(asgNameCaptor.getValue()).isEqualTo(STAGE_ASG_NAME);
 
-    verify(asgSdkManager, times(0)).updateASG(anyString(), anyString(), any());
+    verify(asgSdkManager, times(0)).updateASG(anyString(), anyString(), anyString(), any());
     verify(asgSdkManager, times(0)).modifySpecificListenerRule(anyString(), anyString(), any(), any());
     verify(asgSdkManager, times(0)).updateBGTags(anyString(), anyString());
   }
@@ -137,7 +137,7 @@ public class AsgBlueGreenRollbackCommandTaskHandlerTest extends CategoryTest {
     verify(asgSdkManager, times(1)).deleteAsg(asgNameCaptor.capture());
     assertThat(asgNameCaptor.getValue()).isEqualTo(STAGE_ASG_NAME);
 
-    verify(asgSdkManager, times(1)).updateASG(anyString(), anyString(), any());
+    verify(asgSdkManager, times(1)).updateASG(anyString(), anyString(), anyString(), any());
     verify(asgSdkManager, times(0)).modifySpecificListenerRule(anyString(), anyString(), any(), any());
     verify(asgSdkManager, times(0)).updateBGTags(anyString(), anyString());
   }
@@ -156,7 +156,7 @@ public class AsgBlueGreenRollbackCommandTaskHandlerTest extends CategoryTest {
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
 
     verify(asgSdkManager, times(0)).deleteAsg(anyString());
-    verify(asgSdkManager, times(2)).updateASG(anyString(), anyString(), any());
+    verify(asgSdkManager, times(2)).updateASG(anyString(), anyString(), anyString(), any());
     verify(asgSdkManager, times(2)).modifySpecificListenerRule(anyString(), anyString(), any(), any());
     verify(asgSdkManager, times(2)).updateBGTags(anyString(), anyString());
   }
@@ -175,7 +175,7 @@ public class AsgBlueGreenRollbackCommandTaskHandlerTest extends CategoryTest {
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
 
     verify(asgSdkManager, times(0)).deleteAsg(anyString());
-    verify(asgSdkManager, times(2)).updateASG(anyString(), anyString(), any());
+    verify(asgSdkManager, times(2)).updateASG(anyString(), anyString(), anyString(), any());
     verify(asgSdkManager, times(0)).modifySpecificListenerRule(anyString(), anyString(), any(), any());
     verify(asgSdkManager, times(0)).updateBGTags(anyString(), anyString());
   }

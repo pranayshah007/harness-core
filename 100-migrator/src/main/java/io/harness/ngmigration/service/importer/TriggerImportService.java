@@ -234,9 +234,10 @@ public class TriggerImportService implements ImportService {
 
     Map<String, Object> inputDetails = new HashMap<>();
     JsonNode inputNode = getInputDetails(inputDTO, pipelineDetail, inputDetails);
-    ArrayNode stagesNode = (ArrayNode) inputDetails.get("stages");
+    Object jsonStagesNode = inputDetails.get("stages");
 
-    if (stagesNode != null) {
+    if (jsonStagesNode instanceof ArrayNode) {
+      ArrayNode stagesNode = (ArrayNode) jsonStagesNode;
       for (int i = 0; i < stagesNode.size(); i++) {
         JsonNode stageNode = stagesNode.get(i);
         Optional<ArtifactSelection> firstArtifactSelection = trigger.getArtifactSelections().stream().findFirst();

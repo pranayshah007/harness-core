@@ -155,6 +155,7 @@ public enum FeatureName {
       "With enabling this FF with serviceV2 setup, pipeline in different projects but having the same infra key can be executed parallely",
       HarnessTeam.CDC),
   CDS_QUERY_OPTIMIZATION("Feature flag to optimize CG Queries", HarnessTeam.CDC),
+  CDS_QUERY_OPTIMIZATION_V2("Feature flag to optimize CG Queries V2", HarnessTeam.CDC),
   CDS_QUERY_OPTIMIZATION_GLOBAL(
       "Feature flag to optimize CG Queries when accountId is not present", HarnessTeam.CDC, Scope.GLOBAL),
   CDS_RANCHER_SUPPORT_NG("Enable Rancher support in NG.", HarnessTeam.CDP),
@@ -269,6 +270,7 @@ public enum FeatureName {
       "Enables use of generative AI to provide remediation information in CI step logs", HarnessTeam.CI),
   CI_BITBUCKET_STATUS_KEY_HASH("Hash and abbreviate the stage ID for Bitbucket SaaS", HarnessTeam.CI),
   CI_CACHE_INTELLIGENCE("Feature flag for cache intelligence feature", HarnessTeam.CI),
+  CI_CACHE_OVERRIDE_FALSE("Feature flag for cache intelligence to not override", HarnessTeam.CI),
   CI_CREDIT_CARD_ONBOARDING("Feature flag for credit card experience in CI onboarding", HarnessTeam.CI),
   CI_DISABLE_RESOURCE_OPTIMIZATION(
       "Used for disabling the resource optimization, AXA had asked this flag", HarnessTeam.CI),
@@ -449,7 +451,6 @@ public enum FeatureName {
   HELM_MERGE_CAPABILITIES("Add helm merge capabilities", HarnessTeam.CDP),
   HELM_STEADY_STATE_CHECK_1_16,
   HELM_VERSION_3_8_0,
-  HELP_PANEL,
   HIDE_ABORT,
   HONOR_DELEGATE_SCOPING,
   HOSTED_BUILDS("Used to enabled Hosted builds in paid accounts", HarnessTeam.CI),
@@ -923,6 +924,9 @@ public enum FeatureName {
       "This flag enables the basic deployment strategy in ECS Deployment Swimlane", HarnessTeam.CDP),
   CDS_TF_TG_SKIP_ERROR_LOGS_COLORING(
       "Skip coloring execution logs that are coming form standart error output of process executor for terraform and terragrunt steps",
+      HarnessTeam.CDP),
+  CDS_NOT_SUPPORT_SECRETS_BASE64_EXPRESSION(
+      "This flag to not support secrets in files which content will be used in configFile.getAsBase64 and fileStore.getAsBase64 expressions",
       HarnessTeam.CDP);
 
   // keep-sorted end

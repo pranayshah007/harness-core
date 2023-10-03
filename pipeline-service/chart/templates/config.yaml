@@ -16,6 +16,7 @@ data:
   CACHE_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
   CACHE_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
   CACHE_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  DEPLOY_MODE: KUBERNETES_ONPREM
   LOGGING_LEVEL: {{ .Values.appLogLevel }}
   LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   LOCK_CONFIG_SENTINEL_MASTER_NAME: harness-redis

@@ -1121,17 +1121,16 @@ def ingest_into_unified(jsonData):
     insert_columns = """product, cost, gcpProduct,gcpSkuId,gcpSkuDescription, startTime, endTime, gcpProjectId,
                 gcpProjectName, gcpProjectNumber,
                 region,zone,gcpBillingAccountId,cloudProvider, discount, labels, fxRateSrcToDest, ccmPreferredCurrency,
-                gcpInvoiceMonth, gcpCostType, gcpCredits, gcpSystemLabels, gcpCostAtList"""
+                gcpInvoiceMonth, gcpCostType, gcpCredits, gcpUsage, gcpSystemLabels, gcpCostAtList"""
 
     select_columns = """service.description AS product, (cost %s) AS cost, service.description AS gcpProduct, sku.id AS gcpSkuId,
                      sku.description AS gcpSkuDescription, TIMESTAMP_TRUNC(usage_start_time, DAY) as startTime, TIMESTAMP_TRUNC(usage_end_time, DAY) as endTime, project.id AS gcpProjectId, project.name AS gcpProjectName, project.number AS gcpProjectNumber,
                      location.region AS region, location.zone AS zone, billing_account_id AS gcpBillingAccountId, "GCP" AS cloudProvider, (SELECT SUM(c.amount %s) FROM UNNEST(credits) c) as discount, labels AS labels,
                      %s as fxRateSrcToDest, %s as ccmPreferredCurrency, 
-                     invoice.month as gcpInvoiceMonth, cost_type as gcpCostType, credits as gcpCredits, system_labels as gcpSystemLabels, cost_at_list as gcpCostAtList""" % (
+                     invoice.month as gcpInvoiceMonth, cost_type as gcpCostType, credits as gcpCredits, usage as gcpUsage, system_labels as gcpSystemLabels, cost_at_list as gcpCostAtList""" % (
                     fx_rate_multiplier_query, fx_rate_multiplier_query,
                     ("fxRateSrcToDest" if jsonData["ccmPreferredCurrency"] else "cast(null as float64)"),
                     (f"'{jsonData['ccmPreferredCurrency']}'" if jsonData["ccmPreferredCurrency"] else "cast(null as string)"))
-
 
     # supporting additional fields in unifiedTable for Elevance
     if jsonData.get("isBillingExportDetailed", False):

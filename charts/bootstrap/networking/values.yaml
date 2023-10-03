@@ -1,4 +1,12 @@
 global:
+  ggIngress:
+    enabled: false
+    className: "harness-global"
+    hosts:
+      - 'myhost.example.com'
+    tls:
+      enabled: true
+      secretName: harness-cert
   commonAnnotations: {}
   commonLabels: {}
   ingress:

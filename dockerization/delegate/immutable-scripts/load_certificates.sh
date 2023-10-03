@@ -28,13 +28,10 @@ function import_der_file() {
   keytool -noprompt -importcert -trustcacerts -alias $ALIAS -file $DER_FILE_PATH -keystore $TRUST_STORE_FILE -storepass $PASSWORD
 }
 
-if [ -z "$CA_CERTS_DIR" ]; then
-  echo "CA_CERTS_DIR not set. Skip importing certificates."
-  return 0
-fi
+CA_CERTS_DIR="$HOME/ca-bundle"
 
 if [ ! -d "$CA_CERTS_DIR" ]; then
-  echo "CA_CERTS_DIR is not a directory. Skip importing certificates."
+  echo "Directory $CA_CERTS_DIR does not exist. Skip importing certificates."
   return 0
 fi
 
@@ -46,13 +43,13 @@ fi
 PASSWORD="changeit"
 ANCHOR_PATH="/etc/pki/ca-trust/source/anchors/"
 
-# Support certificates is PEM formats
-# Only support x509 certificate. PKCS#7 chain not supported, please convert to x509 PEM format file before running the
-# script.
-# Multiple certificates can put in one PEM file, thus this script support ca bundle pem file
+# Supports PEM formats
+# Only support x509 certificate. PKCS#7 chain not supported, please convert to x509 v3 PEM format file before running
+# the script.
+# Multiple certificates can put in one PEM file, thus this script support ca bundle file
 # DER format file can contain only one certificate in it.
-# PEM format files includes .crt .cer and .pem
-# DER format files includes .der .cer
+# PEM format files have suffix .crt .cer and .pem
+# DER format files have suffix .der .cer
 
 # copy certs to /etc/pki/ca-trust/source/anchors/ to update RHEL trust system
 # root user required

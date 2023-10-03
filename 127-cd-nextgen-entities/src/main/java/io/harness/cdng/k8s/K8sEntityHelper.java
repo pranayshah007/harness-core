@@ -213,6 +213,7 @@ public class K8sEntityHelper {
           return EksK8sInfraDelegateConfig.builder()
               .namespace(k8sAwsInfrastructure.getNamespace())
               .cluster(k8sAwsInfrastructure.getCluster())
+              .region(k8sAwsInfrastructure.getRegion())
               .awsConnectorDTO((AwsConnectorDTO) connectorDTO.getConnectorConfig())
               .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
               .addRegionalParam(cdFeatureFlagHelper.isEnabled(
