@@ -20,6 +20,9 @@ tags:
   - name: Approvals
     description: This contains APIs for Approvals.
     x-displayName: Approvals
+  - name: Pipeline Execution
+    description: This contains APIs for Pipeline Execution.
+    x-displayName: 'Pipeline Execution [Beta]'
 paths:
   '/v1/orgs/{org}/projects/{project}/pipelines':
     parameters:
