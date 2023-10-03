@@ -61,6 +61,12 @@ global:
       # -- Enable TimescaleDB SSL
       sslEnabled: false
       # -- TimescaleDB secrets
+      secretName: ""
+      userKey: ""
+      passwordKey: ""
+      extraArgs: ""
+      certName: ""
+      certKey: ""
       secrets:
         kubernetesSecrets:
           - secretName: ""
@@ -83,12 +89,7 @@ global:
                 TIMESCALEDB_SSL_ROOT_CERT:
                   name: ""
                   property: ""
-      secretName: ""
-      userKey: ""
-      passwordKey: ""
-      extraArgs: ""
-      certName: ""
-      certKey: ""
+
     redis:
       installed: true
       protocol: "redis"
@@ -129,6 +130,20 @@ global:
   license:
     cg: ''
     ng: ''
+    secrets:
+      kubernetesSecrets:
+        - secretName: ""
+          keys:
+            CG_LICENSE: ""
+      secretManagement: 
+        externalSecretsOperator:
+          - secretStore:
+              name: ""
+              kind: ""
+            remoteKeys:
+              CG_LICENSE:
+                name: ""
+                property: ""
   cd:
     enabled: false
   ci:
