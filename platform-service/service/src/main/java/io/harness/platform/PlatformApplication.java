@@ -47,6 +47,7 @@ import io.harness.platform.remote.HealthResource;
 import io.harness.platform.resourcegroup.ResourceGroupServiceModule;
 import io.harness.platform.resourcegroup.ResourceGroupServiceSetup;
 import io.harness.request.RequestContextFilter;
+import io.harness.resourcegroup.eventframework.ResourceGroupConsumerService;
 import io.harness.secret.ConfigSecretUtils;
 import io.harness.security.InternalApiAuthFilter;
 import io.harness.security.NextGenAuthenticationFilter;
@@ -198,6 +199,7 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
         appConfig.getNotificationServiceConfig(), environment, godInjector.get(NOTIFICATION_SERVICE));
 
     if (appConfig.getResoureGroupServiceConfig().isEnableResourceGroup()) {
+      createResourceGroupConsumerThreadsToListenToEvents(environment, godInjector.get(RESOURCE_GROUP_SERVICE));
       new ResourceGroupServiceSetup().setup(
           appConfig.getResoureGroupServiceConfig(), environment, godInjector.get(RESOURCE_GROUP_SERVICE));
     }
@@ -206,6 +208,10 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
       new AuditServiceSetup().setup(appConfig.getAuditServiceConfig(), environment, godInjector.get(AUDIT_SERVICE));
     }
     MaintenanceController.forceMaintenance(false);
+  }
+
+  private void createResourceGroupConsumerThreadsToListenToEvents(Environment environment, Injector injector) {
+    environment.lifecycle().manage(injector.getInstance(ResourceGroupConsumerService.class));
   }
 
   private void createConsumerThreadsToListenToEvents(Environment environment, Injector injector) {
