@@ -85,25 +85,25 @@ public class CannyClient {
 
       Response response = createCannyPost(authorId, boardId, title, details);
       if (!response.isSuccessful()) {
-        log.error("Request to canny failed trying to create post. Response body: {}", response.body().string());
-        throw new UnexpectedException(
-            "Request to canny failed trying to create post. Response body: " + response.body().string());
+        String responseBody = response.body().string();
+        log.error("Request to canny failed trying to create post. Response body: {}", responseBody);
+        throw new UnexpectedException("Request to canny failed trying to create post. Response body: " + responseBody);
       }
 
       String postId = objectMapper.readTree(response.body().byteStream()).get(CannyClientConstants.ID_NODE).asText();
       Response postDetailsResponse = retrieveCannyPostDetails(postId);
       if (!postDetailsResponse.isSuccessful()) {
-        log.error("Request to canny failed trying to retrieve post details. Response body: {}",
-            postDetailsResponse.body().string());
-        throw new UnexpectedException("Request to canny failed trying to retrieve post details. Response body: "
-            + postDetailsResponse.body().string());
+        String responseBody = postDetailsResponse.body().string();
+        log.error("Request to canny failed trying to retrieve post details. Response body: {}", responseBody);
+        throw new UnexpectedException(
+            "Request to canny failed trying to retrieve post details. Response body: " + responseBody);
       }
       String postUrl = objectMapper.readTree(postDetailsResponse.body().byteStream()).get("url").asText();
       return CannyPostResponseDTO.builder().postURL(postUrl).message("Post created successfully").build();
 
     } catch (Exception e) {
       log.error("Exception occurred while creating post at createPost()", e);
-      throw new UnexpectedException("Exception occurred while creating post at createPost(): ", e);
+      throw new UnexpectedException("Exception occurred while creating post at createPost(): " + e.getMessage());
     }
   }
 
@@ -113,17 +113,18 @@ public class CannyClient {
       JsonNode jsonResponse = objectMapper.readTree(response.body().byteStream());
 
       // if user doesn't exist on canny(checked through email since it is a unique entity on harness), create user
-      if (!response.isSuccessful() && response.code() != 500
+      if (!response.isSuccessful() && response.code() == 400
           && CannyClientConstants.INVALID_EMAIL_ERROR.equals(
               jsonResponse.get(CannyClientConstants.ERROR_NODE).asText())) {
         // use harness emailId as unique Identifier for canny
         Response createUserResponse = createCannyUser(emailId, emailId, name);
 
         if (!createUserResponse.isSuccessful()) {
+          String responseBody = createUserResponse.body().string();
           log.error("Request to canny failed trying to create user during getPostCreationAuthorId. Response body: {}",
-              response.body().string());
-          throw new UnexpectedException("Request to canny failed trying to create user during getPostCreationAuthorId."
-              + response.body().string());
+              responseBody);
+          throw new UnexpectedException(
+              "Request to canny failed trying to create user during getPostCreationAuthorId." + responseBody);
         }
 
         JsonNode createUserResponseJson = objectMapper.readTree(createUserResponse.body().byteStream());
@@ -137,7 +138,8 @@ public class CannyClient {
       }
     } catch (Exception e) {
       log.error("Exception occurred while retrieving user at getPostCreationAuthorId(): {}", e);
-      throw new UnexpectedException("Exception occurred while retrieving user at getPostCreationAuthorId(): ", e);
+      throw new UnexpectedException(
+          "Exception occurred while retrieving user at getPostCreationAuthorId(): " + e.getMessage());
     }
   }
 
@@ -187,7 +189,7 @@ public class CannyClient {
                             .build();
       return okHttpClient.newCall(request).execute();
     } catch (Exception e) {
-      log.error("Exception occurred while creating canny user at createCannyUser() : {}", e.getMessage(), e);
+      log.error("Exception occurred while creating canny user at createCannyUser() : {}", e);
       throw new UnexpectedException("Exception occurred while creating canny user at createCannyUser() : ", e);
     }
   }
@@ -206,7 +208,7 @@ public class CannyClient {
                             .build();
       return okHttpClient.newCall(request).execute();
     } catch (Exception e) {
-      log.error("Exception occurred while making request to create Canny Post(): {}", e.getMessage(), e);
+      log.error("Exception occurred while making request to create Canny Post(): {}", e);
       throw new UnexpectedException("Exception occurred while making request to create Canny Post(): ", e);
     }
   }
@@ -222,7 +224,7 @@ public class CannyClient {
                             .build();
       return okHttpClient.newCall(request).execute();
     } catch (Exception e) {
-      log.error("Exception occurred while trying to retrieve post from Canny: {}", e.getMessage(), e);
+      log.error("Exception occurred while trying to retrieve post from Canny: {}", e);
       throw new UnexpectedException("Exception occurred while trying to retrieve post from Canny:", e);
     }
   }

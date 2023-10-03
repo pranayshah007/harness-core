@@ -36,6 +36,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -101,13 +102,13 @@ public class CannyResource {
         ApiResponse(responseCode = "default", description = "create Canny Post for given user")
       })
   public ResponseDTO<CannyPostResponseDTO>
-  createCannyPost(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+  createCannyPost(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotEmpty @QueryParam(
                       "accountIdentifier") String accountIdentifier,
-      @Parameter(description = "emailId for user creating post") @NotNull @FormDataParam("email") String email,
-      @Parameter(description = "name of user creating post") @NotNull @FormDataParam("name") String name,
-      @Parameter(description = "title of the post") @NotNull @FormDataParam("title") String title,
+      @Parameter(description = "emailId for user creating post") @NotEmpty @FormDataParam("email") String email,
+      @Parameter(description = "name of user creating post") @NotEmpty @FormDataParam("name") String name,
+      @Parameter(description = "title of the post") @NotEmpty @FormDataParam("title") String title,
       @Parameter(description = "details of the post") @NotNull @FormDataParam("details") String details,
-      @Parameter(description = "boardId where post must be created") @NotNull @FormDataParam(
+      @Parameter(description = "boardId where post must be created") @NotEmpty @FormDataParam(
           "boardId") String boardId) {
     return ResponseDTO.newResponse(cannyClient.createPost(email, name, title, details, boardId));
   }
