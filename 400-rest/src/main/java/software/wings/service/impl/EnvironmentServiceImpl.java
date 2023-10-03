@@ -10,6 +10,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.EnvironmentType.NON_PROD;
 import static io.harness.beans.EnvironmentType.PROD;
 import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION;
+import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION_GLOBAL;
 import static io.harness.beans.FeatureName.HARNESS_TAGS;
 import static io.harness.beans.FeatureName.PURGE_DANGLING_APP_ENV_REFS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
@@ -688,7 +689,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     } else {
       PageRequest<Environment> pageRequest = aPageRequest()
                                                  .addFilter(EnvironmentKeys.accountId, EQ, accountId)
-                                                 .addFilter(EnvironmentKeys.appId, Operator.IN, appIds.toArray())
+                                                 .addFilter(EnvironmentKeys.appId, IN, appIds.toArray())
                                                  .addFieldsIncluded("_id", "appId", "environmentType")
                                                  .build();
 

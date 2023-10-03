@@ -440,6 +440,18 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
       }
     }
 
+    if (accountId != null && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION_V2, accountId)
+        && hitSecondary) {
+      if (addAccountFilterAutomatically && !accountIdPresentInPageRequest(request)) {
+        request.addFilter("accountId", EQ, accountId);
+      }
+      return getPageResponseViaSecondaryNode(request, entityType, withTags);
+    } else {
+      return getPageResponse(request, entityType, withTags);
+    }
+  }
+
+  private <T> PageResponse<T> getPageResponse(PageRequest<T> request, EntityType entityType, boolean withTags) {
     PageResponse<T> pageResponse;
 
     switch (entityType) {

@@ -7,6 +7,7 @@
 
 package software.wings.delegatetasks.buildsource;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION_V2;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 import static io.harness.mongo.MongoConfig.NO_LIMIT;
@@ -192,5 +193,15 @@ public class BuildSourceCleanupHelper {
   private void printBuildNumber(ArtifactStream artifactStream, List<Artifact> artifacts) {
     log.info("[{}] artifacts deleted for artifactStreamId {}",
         artifacts.stream().map(Artifact::getBuildNo).collect(Collectors.toList()), artifactStream.getUuid());
+  }
+
+  private FindOptions createFindOptionsToHitSecondaryNode(String accountId) {
+    if (isEmpty(accountId)) {
+      log.info("accountId provided for mongoQery is null");
+    }
+    if (accountId != null && featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION_V2, accountId)) {
+      return new FindOptions().readPreference(ReadPreference.secondaryPreferred());
+    }
+    return new FindOptions();
   }
 }

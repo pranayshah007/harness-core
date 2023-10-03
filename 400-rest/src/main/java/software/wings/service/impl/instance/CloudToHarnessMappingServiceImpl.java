@@ -535,4 +535,11 @@ public class CloudToHarnessMappingServiceImpl implements CloudToHarnessMappingSe
   public List<ClusterRecord> listCeEnabledClusters(String accountId) {
     return clusterRecordDao.listCeEnabledClusters(accountId);
   }
+
+  private FindOptions createFindOptionsToHitSecondaryNode(String accountId) {
+    if (accountId != null && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION_V2, accountId)) {
+      return new FindOptions().readPreference(ReadPreference.secondaryPreferred());
+    }
+    return new FindOptions();
+  }
 }
