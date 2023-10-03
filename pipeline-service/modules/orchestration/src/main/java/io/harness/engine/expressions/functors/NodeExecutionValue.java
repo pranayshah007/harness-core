@@ -18,6 +18,7 @@ import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.LateBindingValue;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 
 import java.util.HashMap;
@@ -40,6 +41,7 @@ public class NodeExecutionValue implements LateBindingValue {
   NodeExecutionsCache nodeExecutionsCache;
   PmsOutcomeService pmsOutcomeService;
   PmsSweepingOutputService pmsSweepingOutputService;
+  NodeExecutionInfoService nodeExecutionInfoService;
   Ambiance ambiance;
   NodeExecution startNodeExecution;
   Set<NodeExecutionEntityType> entityTypes;
@@ -53,6 +55,7 @@ public class NodeExecutionValue implements LateBindingValue {
         .nodeExecutionsCache(nodeExecutionsCache)
         .pmsOutcomeService(pmsOutcomeService)
         .pmsSweepingOutputService(pmsSweepingOutputService)
+        .nodeExecutionInfoService(nodeExecutionInfoService)
         .ambiance(ambiance)
         .nodeExecution(startNodeExecution)
         .entityTypes(entityTypes)
@@ -84,6 +87,7 @@ public class NodeExecutionValue implements LateBindingValue {
                                         .nodeExecutionsCache(nodeExecutionsCache)
                                         .pmsOutcomeService(pmsOutcomeService)
                                         .pmsSweepingOutputService(pmsSweepingOutputService)
+                                        .nodeExecutionInfoService(nodeExecutionInfoService)
                                         .ambiance(ambiance)
                                         .startNodeExecution(nodeExecution)
                                         .entityTypes(entityTypes)
