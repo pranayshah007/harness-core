@@ -132,23 +132,30 @@ public class STOServiceUtils {
 
     result.put("JOB_ID", scanId);
     result.put("JOB_STATUS", scanStatus);
-    result.put("CRITICAL", responseBody.get("critical").getAsString());
-    result.put("HIGH", responseBody.get("high").getAsString());
-    result.put("MEDIUM", responseBody.get("medium").getAsString());
-    result.put("LOW", responseBody.get("low").getAsString());
-    result.put("INFO", responseBody.get("info").getAsString());
-    result.put("UNASSIGNED", responseBody.get("unassigned").getAsString());
+//    result.put("CRITICAL", responseBody.get("critical").getAsString());
+//    result.put("HIGH", responseBody.get("high").getAsString());
+//    result.put("MEDIUM", responseBody.get("medium").getAsString());
+//    result.put("LOW", responseBody.get("low").getAsString());
+//    result.put("INFO", responseBody.get("info").getAsString());
+//    result.put("UNASSIGNED", responseBody.get("unassigned").getAsString());
     result.put("TOTAL",
         getTotalFromResponse(responseBody, Arrays.asList("critical", "high", "medium", "low", "info", "unassigned")));
-    result.put("NEW_CRITICAL", responseBody.get("newCritical").getAsString());
-    result.put("NEW_HIGH", responseBody.get("newHigh").getAsString());
-    result.put("NEW_MEDIUM", responseBody.get("newMedium").getAsString());
-    result.put("NEW_LOW", responseBody.get("newLow").getAsString());
-    result.put("NEW_INFO", responseBody.get("newInfo").getAsString());
-    result.put("NEW_UNASSIGNED", responseBody.get("newUnassigned").getAsString());
+//    result.put("NEW_CRITICAL", responseBody.get("newCritical").getAsString());
+//    result.put("NEW_HIGH", responseBody.get("newHigh").getAsString());
+//    result.put("NEW_MEDIUM", responseBody.get("newMedium").getAsString());
+//    result.put("NEW_LOW", responseBody.get("newLow").getAsString());
+//    result.put("NEW_INFO", responseBody.get("newInfo").getAsString());
+//    result.put("NEW_UNASSIGNED", responseBody.get("newUnassigned").getAsString());
     result.put("NEW_TOTAL",
         getTotalFromResponse(
             responseBody, Arrays.asList("newCritical", "newHigh", "newMedium", "newLow", "newInfo", "newUnassigned")));
+
+    for (Map.Entry<String, JsonElement> entry : responseBody.entrySet()) {
+      String key = entry.getKey().replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase();
+      if (!result.containsKey(key)) {
+        result.put(key, entry.getValue().getAsString());
+      }
+    }
 
     return result;
   }
