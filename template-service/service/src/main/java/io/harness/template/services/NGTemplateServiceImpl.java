@@ -85,7 +85,6 @@ import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.pms.yaml.HarnessYamlVersion;
-import io.harness.pms.yaml.NGYamlHelper;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -365,7 +364,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   }
 
   private void applyTemplatesToYamlAndValidateSchema(TemplateEntity templateEntity) {
-    String yamlVersion = NGYamlHelper.getVersion(templateEntity.getYaml());
+    String yamlVersion = templateEntity.getHarnessVersion();
     TemplateMergeResponseDTO templateMergeResponseDTO = null;
     templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(templateEntity.getAccountId(),
         templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(),
