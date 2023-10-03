@@ -84,13 +84,12 @@ spec:
         resources:
           {{- toYaml .Values.resources | nindent 12 }}
         env:
-          {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
-          {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" . "variableName" "OPA_SERVER_SECRET" "defaultKubernetesSecretName" "pipeline-service" "defaultKubernetesSecretKey" "OPA_SERVER_SECRET" "extKubernetesSecretCtxs" (list .Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $localESOSecretCtxIdentifier "secretCtx" .Values.secrets.secretManagement.externalSecretsOperator))) | indent 10 }}
-          {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" . "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD" "localRedisCtx" .Values.redis "globalRedisCtx" .Values.global.database.redis) | indent 10 }}
-          {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" . "userVariableName" "CACHE_CONFIG_REDIS_USERNAME" "passwordVariableName" "CACHE_CONFIG_REDIS_PASSWORD" "localRedisCtx" .Values.redis "globalRedisCtx" .Values.global.database.redis) | indent 10 }}
-          {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" . "userVariableName" "LOCK_CONFIG_REDIS_USERNAME" "passwordVariableName" "LOCK_CONFIG_REDIS_PASSWORD" "localRedisCtx" .Values.redis "globalRedisCtx" .Values.global.database.redis) | indent 10 }}
-          {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" . "localDBCtx" .Values.mongo "globalDBCtx" .Values.global.database.mongo) | indent 10 }}
-          {{- include "harnesscommon.dbconnectionv2.timescaleEnv" (dict "ctx" . "localTimescaleDBCtx" .Values.timescaledb "globalTimescaleDBCtx" .Values.global.database.timescaledb) | indent 10 }}
+          {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" . "variableName" "OPA_SERVER_SECRET" "defaultKubernetesSecretName" "pipeline-service" "defaultKubernetesSecretKey" "OPA_SERVER_SECRET") | indent 10 }}
+          {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" . "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 10 }}
+          {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" . "userVariableName" "CACHE_CONFIG_REDIS_USERNAME" "passwordVariableName" "CACHE_CONFIG_REDIS_PASSWORD") | indent 10 }}
+          {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" . "userVariableName" "LOCK_CONFIG_REDIS_USERNAME" "passwordVariableName" "LOCK_CONFIG_REDIS_PASSWORD") | indent 10 }}
+          {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" .) | indent 10 }}
+          {{- include "harnesscommon.dbconnectionv2.timescaleEnv" (dict "ctx" .) | indent 10 }}
           - name: MONGO_URI
             value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "database" "pms-harness" "ctx" $) }}
           - name : NOTIFICATION_MONGO_URI
