@@ -20,7 +20,6 @@ import io.harness.PipelineServiceTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.expressions.NodeExecutionsCache;
 import io.harness.engine.expressions.OrchestrationConstants;
-import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.MatrixMetadata;
@@ -31,7 +30,6 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -54,7 +52,6 @@ public class StrategyFunctorTest extends PipelineServiceTestBase {
   private static final String SECTION_RUNTIME_ID = generateUuid();
   private static final String SECTION_SETUP_ID = generateUuid();
   @Mock NodeExecutionsCache nodeExecutionsCache;
-  @Inject NodeExecutionInfoService nodeExecutionInfoService;
 
   @Test
   @Owner(developers = SAHIL)
@@ -73,8 +70,7 @@ public class StrategyFunctorTest extends PipelineServiceTestBase {
     expected.put("repeat", new HashMap<>());
     expected.put("currentStatus", "RUNNING");
     for (String key : expected.keySet()) {
-      assertThat(new StrategyFunctor(ambiance, nodeExecutionsCache, nodeExecutionInfoService).get(key))
-          .isEqualTo(expected.get(key));
+      assertThat(new StrategyFunctor(ambiance, nodeExecutionsCache).get(key)).isEqualTo(expected.get(key));
     }
   }
 
@@ -84,7 +80,7 @@ public class StrategyFunctorTest extends PipelineServiceTestBase {
   public void testMatrixFunctorWithoutStrategyMetadata() {
     Ambiance ambiance = buildAmbiance(false);
     Map<String, Object> expected = new HashMap<>();
-    assertThat(new StrategyFunctor(ambiance, nodeExecutionsCache, nodeExecutionInfoService).get("matrix")).isNotNull();
+    assertThat(new StrategyFunctor(ambiance, nodeExecutionsCache).get("matrix")).isNotNull();
   }
 
   @Test
@@ -93,19 +89,15 @@ public class StrategyFunctorTest extends PipelineServiceTestBase {
   public void testCurrentStatus() {
     NodeExecutionsCache nodeExecutionsCache1 = Mockito.mock(NodeExecutionsCache.class);
     Ambiance ambiance = buildAmbiance(false);
-    assertThat(
-        new StrategyFunctor(ambiance, nodeExecutionsCache, nodeExecutionInfoService).get(StrategyFunctor.NODE_KEY))
-        .isNotNull();
+    assertThat(new StrategyFunctor(ambiance, nodeExecutionsCache).get(StrategyFunctor.NODE_KEY)).isNotNull();
     StrategyNodeFunctor strategyNodeFunctor =
-        (StrategyNodeFunctor) new StrategyFunctor(ambiance, nodeExecutionsCache, nodeExecutionInfoService)
-            .get(StrategyFunctor.NODE_KEY);
+        (StrategyNodeFunctor) new StrategyFunctor(ambiance, nodeExecutionsCache).get(StrategyFunctor.NODE_KEY);
     assertThat(strategyNodeFunctor.getNodeExecutionsCache()).isEqualTo(nodeExecutionsCache);
 
     doReturn(Collections.singletonList(Status.SUCCEEDED))
         .when(nodeExecutionsCache1)
         .findAllTerminalChildrenStatusOnly(any(), eq(true));
-    assertThat(new StrategyFunctor(ambiance, nodeExecutionsCache1, nodeExecutionInfoService)
-                   .get(OrchestrationConstants.CURRENT_STATUS))
+    assertThat(new StrategyFunctor(ambiance, nodeExecutionsCache1).get(OrchestrationConstants.CURRENT_STATUS))
         .isEqualTo(Status.SUCCEEDED.name());
   }
 

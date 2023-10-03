@@ -11,7 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.execution.expansion.PlanExpansionService;
-import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
+import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -26,7 +26,6 @@ import lombok.Builder;
 public class ExpandedJsonFunctor {
   Ambiance ambiance;
   PlanExpansionService planExpansionService;
-  NodeExecutionInfoService nodeExecutionInfoService;
 
   transient Map<String, String> groupAliases;
 
@@ -42,12 +41,10 @@ public class ExpandedJsonFunctor {
         ambiance.getLevelsList().stream().filter(AmbianceUtils::hasStrategyMetadata).collect(Collectors.toList());
     boolean useMatrixFieldName = AmbianceUtils.shouldUseMatrixFieldName(ambiance);
     if (EmptyPredicate.isNotEmpty(levelsWithStrategyMetadata)) {
-      response.put(
-          "strategy", nodeExecutionInfoService.fetchStrategyObjectMap(levelsWithStrategyMetadata, useMatrixFieldName));
+      response.put("strategy", StrategyUtils.fetchStrategyObjectMap(levelsWithStrategyMetadata, useMatrixFieldName));
     } else {
       response.put("strategy",
-          nodeExecutionInfoService.fetchStrategyObjectMap(
-              AmbianceUtils.obtainCurrentLevel(ambiance), useMatrixFieldName));
+          StrategyUtils.fetchStrategyObjectMap(AmbianceUtils.obtainCurrentLevel(ambiance), useMatrixFieldName));
     }
     return response;
   }

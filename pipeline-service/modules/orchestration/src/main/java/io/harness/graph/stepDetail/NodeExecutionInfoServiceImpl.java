@@ -30,7 +30,6 @@ import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.observer.Subject;
 import io.harness.plancreator.strategy.IterationVariables;
 import io.harness.plancreator.strategy.StrategyUtils;
-import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.StrategyMetadata;
@@ -227,7 +226,7 @@ public class NodeExecutionInfoServiceImpl implements NodeExecutionInfoService {
   @Override
   public Map<String, Object> fetchStrategyObjectMap(Level level, boolean useMatrixFieldName) {
     Map<String, Object> strategyObjectMap = new HashMap<>();
-    if (AmbianceUtils.hasStrategyMetadata(level)) {
+    if (level.hasStrategyMetadata()) {
       return fetchStrategyObjectMap(Lists.newArrayList(level), useMatrixFieldName);
     }
     strategyObjectMap.put(ITERATION, 0);
@@ -309,19 +308,5 @@ public class NodeExecutionInfoServiceImpl implements NodeExecutionInfoService {
     }
     return nodeExecutionsInfo.stream().collect(
         Collectors.toMap(NodeExecutionsInfo::getNodeExecutionId, NodeExecutionsInfo::getStrategyMetadata));
-  }
-
-  @Override
-  public StrategyMetadata getStrategyMetadata(Ambiance ambiance) {
-    return getStrategyMetadata(AmbianceUtils.obtainCurrentLevel(ambiance));
-  }
-
-  @Override
-  public StrategyMetadata getStrategyMetadata(Level level) {
-    Map<String, StrategyMetadata> strategyMetadataMap = fetchStrategyMetadata(Lists.newArrayList(level.getRuntimeId()));
-    if (strategyMetadataMap.isEmpty()) {
-      return level.getStrategyMetadata();
-    }
-    return strategyMetadataMap.get(level.getRuntimeId());
   }
 }

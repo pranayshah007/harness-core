@@ -11,7 +11,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stepDetail.NodeExecutionsInfo;
 import io.harness.concurrency.ConcurrentChildInstance;
-import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.StrategyMetadata;
@@ -67,7 +66,4 @@ public interface NodeExecutionInfoService {
   Map<String, Object> fetchStrategyObjectMap(List<Level> levelsWithStrategyMetadata, boolean useMatrixFieldName);
 
   Map<String, StrategyMetadata> fetchStrategyMetadata(List<String> nodeExecutionIds);
-
-  StrategyMetadata getStrategyMetadata(Ambiance ambiance);
-  StrategyMetadata getStrategyMetadata(Level level);
 }
