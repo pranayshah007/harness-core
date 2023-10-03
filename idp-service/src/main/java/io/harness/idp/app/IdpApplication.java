@@ -54,6 +54,7 @@ import io.harness.notification.Team;
 import io.harness.notification.module.NotificationClientModule;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.notification.templates.PredefinedTemplate;
+import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.events.base.PipelineEventConsumerController;
 import io.harness.pms.sdk.PmsSdkConfiguration;
@@ -74,6 +75,7 @@ import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEvent
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
 import io.harness.pms.sdk.execution.events.progress.NodeProgressEventRedisConsumerV2;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
+import io.harness.request.RequestContextFilter;
 import io.harness.request.RequestLoggingFilter;
 import io.harness.security.InternalApiAuthFilter;
 import io.harness.security.NextGenAuthenticationFilter;
@@ -193,6 +195,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     registerMigrations(injector);
     registerHealthCheck(environment, injector);
     registerNotificationTemplates(configuration, injector);
+    registerRequestContextFilter(environment);
     registerIterators(injector, configuration.getScorecardScoreComputationIteratorConfig());
     environment.jersey().register(RequestLoggingFilter.class);
 
@@ -209,6 +212,7 @@ public class IdpApplication extends Application<IdpConfiguration> {
     environment.lifecycle().manage(injector.getInstance(ConfigPurgeJob.class));
     environment.lifecycle().manage(injector.getInstance(DefaultAccountIdToNamespaceMappingForPrEnv.class));
     environment.lifecycle().manage(injector.getInstance(PipelineEventConsumerController.class));
+    environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
         .scheduleWithFixedDelay(injector.getInstance(DelegateSyncServiceImpl.class), 0L, 2L, TimeUnit.SECONDS);
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
@@ -227,6 +231,10 @@ public class IdpApplication extends Application<IdpConfiguration> {
     if (iteratorConfig.isEnabled()) {
       injector.getInstance(ScoreComputationHandler.class).registerIterators(iteratorConfig);
     }
+  }
+
+  private void registerRequestContextFilter(Environment environment) {
+    environment.jersey().register(new RequestContextFilter());
   }
 
   private void initMetrics(Injector injector) {

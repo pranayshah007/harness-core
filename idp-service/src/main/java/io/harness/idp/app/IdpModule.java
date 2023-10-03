@@ -7,6 +7,8 @@
 
 package io.harness.idp.app;
 
+import static io.harness.audit.ResourceTypeConstants.IDP_APP_CONFIGS;
+import static io.harness.audit.ResourceTypeConstants.IDP_CONFIG_ENV_VARIABLES;
 import static io.harness.authorization.AuthorizationServiceHeader.IDP_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.idp.provision.ProvisionConstants.PROVISION_MODULE_CONFIG;
@@ -17,6 +19,7 @@ import io.harness.AccessControlClientModule;
 import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.audit.client.remote.AuditClientModule;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
@@ -40,6 +43,9 @@ import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.idp.allowlist.resources.AllowListApiImpl;
 import io.harness.idp.allowlist.services.AllowListService;
 import io.harness.idp.allowlist.services.AllowListServiceImpl;
+import io.harness.idp.audittrials.eventhandlers.AppConfigEventHandler;
+import io.harness.idp.audittrials.eventhandlers.BackstageSecretEnvEventHandler;
+import io.harness.idp.audittrials.eventhandlers.IDPNextGenOutboxEventHandler;
 import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
 import io.harness.idp.common.delegateselectors.cache.memory.DelegateSelectorsInMemoryCache;
 import io.harness.idp.common.delegateselectors.cache.redis.DelegateSelectorsRedisCache;
@@ -139,6 +145,7 @@ import io.harness.ng.core.event.MessageListener;
 import io.harness.ngsettings.client.remote.NGSettingsClientModule;
 import io.harness.organization.OrganizationClientModule;
 import io.harness.outbox.TransactionOutboxModule;
+import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
@@ -331,6 +338,8 @@ public class IdpModule extends AbstractModule {
     });
     install(new DelegateServiceDriverGrpcClientModule(
         appConfig.getManagerServiceSecret(), appConfig.getManagerTarget(), appConfig.getManagerAuthority(), true));
+    install(new AuditClientModule(appConfig.getAuditClientConfig(), appConfig.getNgManagerServiceSecret(),
+        IDP_SERVICE.getServiceId(), appConfig.isEnableAudit()));
 
     bind(IdpConfiguration.class).toInstance(appConfig);
     install(PersistentLockModule.getInstance());
@@ -344,6 +353,9 @@ public class IdpModule extends AbstractModule {
                 .setNameFormat("default-idp-service-executor-%d")
                 .setPriority(Thread.MIN_PRIORITY)
                 .build()));
+
+    registerOutboxEventHandlers();
+    bind(OutboxEventHandler.class).to(IDPNextGenOutboxEventHandler.class);
     bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
     bind(ConfigManagerService.class).to(ConfigManagerServiceImpl.class);
     bind(BackstageEnvVariableService.class).to(BackstageEnvVariableServiceImpl.class);
@@ -431,6 +443,13 @@ public class IdpModule extends AbstractModule {
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("taskPollExecutor"))
         .toInstance(new ManagedScheduledExecutorService("TaskPoll-Thread"));
+  }
+
+  private void registerOutboxEventHandlers() {
+    MapBinder<String, OutboxEventHandler> outboxEventHandlerMapBinder =
+        MapBinder.newMapBinder(binder(), String.class, OutboxEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(IDP_APP_CONFIGS).to(AppConfigEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(IDP_CONFIG_ENV_VARIABLES).to(BackstageSecretEnvEventHandler.class);
   }
 
   @Provides
@@ -632,5 +651,19 @@ public class IdpModule extends AbstractModule {
   @Named("idpServiceSecret")
   public String idpServiceSecret() {
     return this.appConfig.getIdpServiceSecret();
+  }
+
+  @Provides
+  @Singleton
+  @Named("auditClientConfig")
+  public ServiceHttpClientConfig auditClientConfig() {
+    return this.appConfig.getAuditClientConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("enableAudit")
+  public Boolean enableAudit() {
+    return this.appConfig.isEnableAudit();
   }
 }
