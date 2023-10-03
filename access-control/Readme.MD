@@ -1,7 +1,7 @@
 # Access Control
 
 ## Overview
-
+Codeowner
 Access Control is built to provide intra-account fine grained Access Control for multiple principals (User, User Groups and Service Accounts) on multiple resources (Pipelines, Secrets, etc). It has been designed based on Role Based Access Control (RBAC) while keeping in mind the hierarchical structure of Harness NG. The model is explained in detail here - [Access Control Model](https://harness.atlassian.net/wiki/spaces/PLATFORM/pages/1291649236/NG+Access+Control+Model).
 
 Access Control Service is a separate microservice in Harness. The service boundaries for Access Control are explained here - [Access Control Service Boundaries](https://harness.atlassian.net/wiki/spaces/PLATFORM/pages/21011857501/Access+Control+Service+Boundary#Access-Control-Service-Boundary). As a microservice, access control is dependent on other services as well as some common libraries. The dependencies are mentioned here - [Access Control Dependencies](https://harness.atlassian.net/wiki/spaces/PLATFORM/pages/21017133469/Access+Control+Dependencies). A detailed technical specification on the broad internals of the service can be found here - [Access Control Technical Specification](https://harness.atlassian.net/wiki/spaces/PLATFORM/pages/21060943873/NG+Access+Control+Technical+Specification).
