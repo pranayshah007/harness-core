@@ -33,7 +33,7 @@ import io.harness.delegate.beans.instancesync.InstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.core.beans.AcquireTasksResponse;
 import io.harness.delegate.core.beans.SetupInfraResponse;
 import io.harness.delegate.task.validation.DelegateConnectionResultDetail;
-import io.harness.logging.AccessTokenBean;
+import io.harness.logging.common.AccessTokenBean;
 import io.harness.perpetualtask.HeartbeatRequest;
 import io.harness.perpetualtask.HeartbeatResponse;
 import io.harness.perpetualtask.PerpetualTaskContextResponse;

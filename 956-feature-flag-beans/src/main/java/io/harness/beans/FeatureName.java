@@ -495,7 +495,6 @@ public enum FeatureName {
   NEW_KUBECTL_VERSION,
   NEW_KUSTOMIZE_BINARY,
   NEW_LEFT_NAVBAR_SETTINGS("Used for new left navbar configuration", HarnessTeam.PL),
-  NG_ARTIFACT_SOURCES("Flag to support multi artifact sources for service V2", HarnessTeam.CDC),
   NG_DASHBOARDS("", HarnessTeam.CE),
   NG_EXECUTION_INPUT,
   NG_EXPRESSIONS_NEW_INPUT_ELEMENT(

@@ -218,7 +218,20 @@ public class PublicAccessServiceImplTest extends AccessControlTestBase {
         ResourceType.builder().identifier(RESOURCE_TYPE).isPublic(true).permissionKey(RESOURCE_TYPE).build();
 
     exceptionRule.expect(InvalidRequestException.class);
-    exceptionRule.expectMessage("Resource identifier should not be empty");
+    exceptionRule.expectMessage("Resource identifier and resourceType should not be empty.");
+    boolean result = publicAccessService.disablePublicAccess(
+        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, resourceType, "");
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDisablePublicAccess_resourceTypeEmpty() {
+    ResourceType resourceType =
+        ResourceType.builder().identifier(RESOURCE_TYPE).isPublic(true).permissionKey(RESOURCE_TYPE).build();
+
+    exceptionRule.expect(InvalidRequestException.class);
+    exceptionRule.expectMessage("Resource identifier and resourceType should not be empty.");
     boolean result = publicAccessService.disablePublicAccess(
         ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, resourceType, "");
   }

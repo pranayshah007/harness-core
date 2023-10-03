@@ -14,10 +14,14 @@ import io.harness.filter.FilterType;
 import io.harness.ng.core.common.beans.NGTag;
 
 import java.util.List;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @OwnedBy(DX)
+@NoArgsConstructor
+@AllArgsConstructor
 public abstract class FilterProperties {
   List<NGTag> tags;
   FilterType type;

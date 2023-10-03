@@ -284,8 +284,8 @@ public class HeatMapServiceImpl implements HeatMapService {
   @Override
   public Map<String, RiskData> getLatestRiskScoreByMonitoredService(
       ProjectParams projectParams, List<String> monitoredServiceIdentifiers) {
-    Preconditions.checkArgument(monitoredServiceIdentifiers.size() <= 100,
-        "Based on page size, the health score calculation should be done for less than 100 services");
+    Preconditions.checkArgument(monitoredServiceIdentifiers.size() <= 500,
+        "Based on page size, the health score calculation should be done for less than 500 services");
     int size = monitoredServiceIdentifiers.size();
     if (size == 0) {
       return Collections.emptyMap();

@@ -128,11 +128,11 @@ public class PublicAccessServiceImpl implements PublicAccessService {
   @Override
   public boolean disablePublicAccess(
       String account, String org, String project, ResourceType resourceType, String resourceIdentifier) {
-    if (isNotEmpty(resourceIdentifier)) {
+    if (isNotEmpty(resourceIdentifier) && resourceType != null) {
       disablePublicAccessOnResource(account, org, project, resourceType, resourceIdentifier);
       return true;
     } else {
-      throw new InvalidRequestException("Resource identifier should not be empty.");
+      throw new InvalidRequestException("Resource identifier and resourceType should not be empty.");
     }
   }
 
@@ -301,6 +301,7 @@ public class PublicAccessServiceImpl implements PublicAccessService {
           resourceSelector.getIdentifiers().add(resourceIdentifier);
         } else if (REMOVE.equals(action)) {
           resourceSelector.getIdentifiers().remove(resourceIdentifier);
+          return resourceSelectors.stream().filter(x -> isNotEmpty(x.getIdentifiers())).collect(Collectors.toList());
         }
 
         return resourceSelectors;

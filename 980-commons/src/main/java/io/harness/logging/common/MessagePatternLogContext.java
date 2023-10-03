@@ -5,15 +5,14 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.logging;
+package io.harness.logging.common;
 
-import lombok.Builder;
-import lombok.Data;
+import io.harness.logging.AutoLogContext;
 
-@Data
-@Builder
-public class AccessTokenBean {
-  private String projectId;
-  private String tokenValue;
-  private long expirationTimeMillis;
+public class MessagePatternLogContext extends AutoLogContext {
+  public static final String ID = "LogMessagePattern";
+
+  public MessagePatternLogContext(String key, OverrideBehavior behavior) {
+    super(ID, key, behavior);
+  }
 }

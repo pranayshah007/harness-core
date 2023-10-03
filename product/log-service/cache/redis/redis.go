@@ -17,8 +17,8 @@ type Redis struct {
 	Client redis.Cmdable
 }
 
-func NewWithClient(cmdable *redis.Cmdable) *Redis {
-	return &Redis{Client: *cmdable}
+func NewWithClient(cmdable redis.Cmdable) *Redis {
+	return &Redis{Client: cmdable}
 }
 
 func New(endpoint, password string, useTLS, disableExpiryWatcher bool, certPathForTLS string) *Redis {

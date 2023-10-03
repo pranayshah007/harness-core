@@ -23,6 +23,7 @@ import java.util.Optional;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(PL)
 public interface ResourceGroupService {
@@ -44,6 +45,8 @@ public interface ResourceGroupService {
   void deleteManaged(@NotEmpty String identifier);
 
   void deleteByScope(Scope scope);
+
+  boolean deleteMulti(Criteria criteria);
 
   List<ResourceGroup> getPermittedResourceGroups(List<ResourceGroup> resourceGroups);
 

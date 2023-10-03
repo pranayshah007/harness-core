@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.logging;
+package io.harness.logging.common;
 
 import ch.qos.logback.classic.pattern.ThrowableHandlingConverter;
 import ch.qos.logback.classic.spi.ILoggingEvent;

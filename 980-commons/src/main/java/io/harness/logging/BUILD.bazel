@@ -25,6 +25,7 @@ java_library(
         "//980-commons/src/main/java/io/harness/expression:module",
         "//980-commons/src/main/java/io/harness/govern:module",
         "//980-commons/src/main/java/io/harness/logging/autolog:module",
+        "//980-commons/src/main/java/io/harness/logging/common:module",
         "//980-commons/src/main/java/io/harness/network:module",
         "//980-commons/src/main/java/io/harness/version:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",

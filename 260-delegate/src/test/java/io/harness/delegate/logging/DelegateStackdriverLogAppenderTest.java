@@ -22,7 +22,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.logging.AccessTokenBean;
+import io.harness.logging.common.AccessTokenBean;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
