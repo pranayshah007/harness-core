@@ -182,9 +182,9 @@ public class TemplateMergeServiceHelper {
   }
 
   public boolean isTemplatePresentV1(JsonNode jsonNode) {
-    return ((jsonNode.has(YAMLFieldNameConstants.TYPE)
-                && YAMLFieldNameConstants.TEMPLATE.equals(jsonNode.get(YAMLFieldNameConstants.TYPE).asText()))
-        || (jsonNode.has(YAMLFieldNameConstants.SPEC) && jsonNode.get(YAMLFieldNameConstants.SPEC).has("ref")));
+    return (jsonNode.has(YAMLFieldNameConstants.TYPE)
+               && YAMLFieldNameConstants.TEMPLATE.equals(jsonNode.get(YAMLFieldNameConstants.TYPE).asText()))
+        || (jsonNode.has(YAMLFieldNameConstants.SPEC) && jsonNode.get(YAMLFieldNameConstants.SPEC).has("ref"));
   }
   // Generates a unique Template Identifier
   private String generateUniqueTemplateIdentifier(
