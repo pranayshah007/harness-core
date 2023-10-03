@@ -103,7 +103,7 @@ import io.harness.hsqs.client.model.EnqueueResponse;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logstreaming.LogStreamingHelper;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.dto.AccountDTO;
@@ -118,6 +118,7 @@ import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
@@ -148,11 +149,9 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -216,6 +215,8 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     addExecutionRecord(ambiance, stepParameters, accountId);
     String runTime = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     String stageRuntimeId = AmbianceUtils.getStageRuntimeIdAmbiance(ambiance);
+    InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepParameters.getSpec();
+    Infrastructure infrastructure = initializeStepInfo.getInfrastructure();
 
     stepExecutionParametersRepository.save(StepExecutionParameters.builder()
                                                .accountId(accountId)
@@ -224,12 +225,16 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
                                                .stepParameters(RecastOrchestrationUtils.toJson(stepParameters))
                                                .build());
 
-    boolean availableCapacity = buildEnforcer.checkBuildEnforcement(
-        AmbianceUtils.getAccountId(ambiance), Arrays.asList(Status.RUNNING.toString(), Status.QUEUED.toString()));
+    boolean shouldQueue = false;
+    boolean queueConcurrencyEnabled = infrastructure.getType() == Infrastructure.Type.HOSTED_VM
+        && ciFeatureFlagService.isEnabled(QUEUE_CI_EXECUTIONS_CONCURRENCY, accountId);
 
-    boolean queueConcurrencyEnabled =
-        ciFeatureFlagService.isEnabled(QUEUE_CI_EXECUTIONS_CONCURRENCY, AmbianceUtils.getAccountId(ambiance));
-    if (queueConcurrencyEnabled && !availableCapacity) {
+    // only check if queue is enabled
+    if (queueConcurrencyEnabled) {
+      shouldQueue = buildEnforcer.shouldQueue(accountId, infrastructure);
+    }
+
+    if (shouldQueue) {
       String topic = ciExecutionServiceConfig.getQueueServiceClientConfig().getTopic();
       log.info("start executeAsyncAfterRbac for initialize step with queue. Topic: {}", topic);
       taskId = generateUuid();
@@ -259,8 +264,8 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
         AsyncExecutableResponse.newBuilder().addCallbackIds(taskId).addAllLogKeys(
             CollectionUtils.emptyIfNull(singletonList(logKey)));
 
-    // Sending the status if feature flag is enabled
-    if (queueConcurrencyEnabled && !availableCapacity) {
+    // Sending the status if shouldQueue is true
+    if (shouldQueue) {
       return responseBuilder.setStatus(Status.QUEUED_LICENSE_LIMIT_REACHED).build();
     } else {
       InitStepV2DelegateTaskInfo initStepV2DelegateTaskInfo =
@@ -509,10 +514,11 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
           "Hosted builds are not enabled for this account. Please contact Harness support.");
     }
   }
+
   private String getLogKey(Ambiance ambiance) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance);
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    return LogStreamingStepClientFactory.getLogBaseKey(ambiance);
   }
+
   public TaskData getTaskData(
       StepElementParameters stepElementParameters, CIInitializeTaskParams buildSetupTaskParams) {
     long timeout =
@@ -749,8 +755,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
   }
 
   private String getLogPrefix(Ambiance ambiance) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance, "STAGE");
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    return LogStreamingStepClientFactory.getLogBaseKey(ambiance, StepCategory.STAGE.name());
   }
 
   private LiteEnginePodDetailsOutcome getPodDetailsOutcome(CiK8sTaskResponse ciK8sTaskResponse) {

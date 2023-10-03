@@ -179,6 +179,7 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
             .pmsSweepingOutputService(pmsSweepingOutputService)
             .ambiance(ambiance)
             .entityTypes(entityTypes)
+            .engine(getEngine())
             .build());
     // Access StepParameters and Outcomes of ancestors.
     addToContext("ancestor",
@@ -189,6 +190,7 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
             .ambiance(ambiance)
             .entityTypes(entityTypes)
             .groupAliases(groupAliases)
+            .engine(getEngine())
             .build());
     // Access StepParameters and Outcomes using fully qualified names.
     addToContext("qualified",
@@ -198,6 +200,7 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
             .pmsSweepingOutputService(pmsSweepingOutputService)
             .ambiance(ambiance)
             .entityTypes(entityTypes)
+            .engine(getEngine())
             .build());
   }
 

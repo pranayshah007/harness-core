@@ -93,4 +93,5 @@ public interface ApprovalInstanceService {
       @NotNull @Valid HarnessApprovalActivityRequestDTO request, boolean shouldCloseStep);
 
   void updateLatestDelegateTaskId(@NotNull String approvalInstanceId, String latestDelegateTaskId);
+  void updateKeyListInKeyValueCriteria(@NotNull String approvalInstanceId, String keyListInKeyValueCriteria);
 }

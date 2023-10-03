@@ -17,6 +17,7 @@ import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeLevel;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.audit.beans.ResourceScopeDTO;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -129,5 +130,46 @@ public class ScopeMapper {
           .projectIdentifier(harnessScopeParams.getProjectIdentifier())
           .build();
     }
+  }
+
+  public static ResourceScopeDTO toResourceScopeDTO(@Valid Scope scope) {
+    Map<String, String> params = new HashMap<>();
+    Scope currentScope = scope;
+    while (currentScope != null) {
+      ScopeLevel scopeLevel = currentScope.getLevel();
+      if (scopeLevel instanceof HarnessScopeLevel) {
+        HarnessScopeLevel harnessScopeLevel = (HarnessScopeLevel) scopeLevel;
+        params.put(harnessScopeLevel.getParamName(), currentScope.getInstanceId());
+      }
+      currentScope = currentScope.getParentScope();
+    }
+    return ResourceScopeDTO.builder()
+        .accountIdentifier(params.get(ACCOUNT_LEVEL_PARAM_NAME))
+        .orgIdentifier(params.get(ORG_LEVEL_PARAM_NAME))
+        .projectIdentifier(params.get(PROJECT_LEVEL_PARAM_NAME))
+        .build();
+  }
+
+  public static Scope toScope(@Valid ResourceScopeDTO resourceScopeDTO) {
+    Scope scope = null;
+    if (isNotEmpty(resourceScopeDTO.getAccountIdentifier())) {
+      scope =
+          Scope.builder().instanceId(resourceScopeDTO.getAccountIdentifier()).level(HarnessScopeLevel.ACCOUNT).build();
+    }
+    if (isNotEmpty(resourceScopeDTO.getOrgIdentifier())) {
+      scope = Scope.builder()
+                  .instanceId(resourceScopeDTO.getOrgIdentifier())
+                  .level(HarnessScopeLevel.ORGANIZATION)
+                  .parentScope(scope)
+                  .build();
+    }
+    if (isNotEmpty(resourceScopeDTO.getProjectIdentifier())) {
+      scope = Scope.builder()
+                  .instanceId(resourceScopeDTO.getProjectIdentifier())
+                  .level(HarnessScopeLevel.PROJECT)
+                  .parentScope(scope)
+                  .build();
+    }
+    return scope;
   }
 }

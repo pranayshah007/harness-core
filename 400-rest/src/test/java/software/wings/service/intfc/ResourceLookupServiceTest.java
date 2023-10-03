@@ -308,7 +308,7 @@ public class ResourceLookupServiceTest extends WingsBaseTest {
     String filter =
         "{\"resourceTypes\":[\"SERVICE\"],\"harnessTagFilter\":{\"matchAll\":false,\"conditions\":[{\"name\":\"tagName\",\"operator\":\"IN\",\"values\":[\"tagValue\"]}]}}";
     PageResponse<ResourceLookup> response =
-        resourceLookupService.listWithTagFilters(pageRequest, filter, EntityType.SERVICE, false, false);
+        resourceLookupService.listWithTagFilters(pageRequest, filter, EntityType.SERVICE, false, false, false);
 
     assertThat(response).isNotNull();
     assertThat(response.size()).isEqualTo(1);

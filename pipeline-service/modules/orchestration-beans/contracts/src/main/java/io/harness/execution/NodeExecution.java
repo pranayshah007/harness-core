@@ -18,6 +18,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.engine.pms.data.ResolverUtils;
 import io.harness.engine.pms.steps.identity.IdentityStepParameters;
 import io.harness.interrupts.InterruptEffect;
 import io.harness.logging.UnitProgress;
@@ -159,8 +160,20 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
     return executableResponses.get(executableResponses.size() - 1);
   }
 
+  public List<String> getLevelRuntimeIdx() {
+    if (EmptyPredicate.isEmpty(levelRuntimeIdx)) {
+      if (ambiance != null) {
+        return ResolverUtils.prepareLevelRuntimeIdIndices(ambiance);
+      }
+      return null;
+    }
+    return levelRuntimeIdx;
+  }
   @Override
   public NodeType getNodeType() {
+    if (null == ambiance) {
+      return null;
+    }
     if (EmptyPredicate.isEmpty(nodeType)) {
       return NodeType.valueOf(AmbianceUtils.obtainNodeType(ambiance));
     }

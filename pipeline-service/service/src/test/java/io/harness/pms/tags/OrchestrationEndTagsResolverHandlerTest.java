@@ -25,7 +25,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.Sets;
@@ -67,7 +67,7 @@ public class OrchestrationEndTagsResolverHandlerTest extends CategoryTest {
   public void testOnEnd() {
     PipelineExecutionSummaryEntity dummyEntity = PipelineExecutionSummaryEntity.builder()
                                                      .tag(NGTag.builder().key("key1").value("value1").build())
-                                                     .pipelineVersion(PipelineVersion.V0)
+                                                     .pipelineVersion(HarnessYamlVersion.V0)
                                                      .build();
     List<NGTag> dummyTags = new ArrayList<>();
     Ambiance ambiance =

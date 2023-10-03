@@ -7,6 +7,8 @@
 
 package io.harness.gitsync.gitxwebhooks.service;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
 
 import static java.lang.String.format;
@@ -20,37 +22,59 @@ import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InternalServerErrorException;
 import io.harness.gitsync.common.beans.GitXWebhookEventStatus;
+import io.harness.gitsync.gitxwebhooks.dtos.GitXEventDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.GitXEventUpdateRequestDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.GitXEventsListRequestDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.GitXEventsListResponseDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.UpdateGitXWebhookCriteriaDTO;
+import io.harness.gitsync.gitxwebhooks.dtos.UpdateGitXWebhookRequestDTO;
 import io.harness.gitsync.gitxwebhooks.entity.Author;
 import io.harness.gitsync.gitxwebhooks.entity.GitXWebhook;
 import io.harness.gitsync.gitxwebhooks.entity.GitXWebhookEvent;
+import io.harness.gitsync.gitxwebhooks.entity.GitXWebhookEvent.GitXWebhookEventKeys;
+import io.harness.gitsync.gitxwebhooks.loggers.GitXWebhookLogContext;
+import io.harness.gitsync.gitxwebhooks.utils.GitXWebhookUtils;
 import io.harness.repositories.gitxwebhook.GitXWebhookEventsRepository;
-import io.harness.repositories.gitxwebhook.GitXWebhookRepository;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
   @Inject GitXWebhookEventsRepository gitXWebhookEventsRepository;
-  @Inject GitXWebhookRepository gitXWebhookRepository;
+  @Inject GitXWebhookService gitXWebhookService;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "GitX Webhook event with event identifier [%s] already exists in the account [%s].";
+
+  private static final String WEBHOOK_FAILURE_ERROR_MESSAGE =
+      "Unexpected error occurred while [%s] git webhook. Please contact Harness Support.";
+
+  private static final String LISTING_EVENTS = "listing events";
 
   @Override
   public void processEvent(WebhookDTO webhookDTO) {
     try {
       GitXWebhook gitXWebhook =
           fetchGitXWebhook(webhookDTO.getAccountId(), webhookDTO.getParsedResponse().getPush().getRepo().getName());
-      if (!shouldParsePayload(gitXWebhook, webhookDTO)) {
-        log.info("The webhook event will not be parsed as the webhook is disabled or the folder paths don't match.");
+      if (gitXWebhook == null) {
+        log.info(String.format("Skipping processing of event [%s] as no GitX Webhook found.", webhookDTO.getEventId()));
         return;
       }
       GitXWebhookEvent gitXWebhookEvent = buildGitXWebhookEvent(webhookDTO, gitXWebhook.getIdentifier());
       GitXWebhookEvent createdGitXWebhookEvent = gitXWebhookEventsRepository.create(gitXWebhookEvent);
+      updateGitXWebhook(gitXWebhook, webhookDTO.getTime());
       log.info(
           String.format("Successfully created the webhook event %s", createdGitXWebhookEvent.getEventIdentifier()));
     } catch (DuplicateKeyException ex) {
@@ -62,14 +86,112 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
     }
   }
 
-  private GitXWebhook fetchGitXWebhook(String accountIdentifier, String repoName) {
-    GitXWebhook gitXWebhook = gitXWebhookRepository.findByAccountIdentifierAndRepoName(accountIdentifier, repoName);
-    if (gitXWebhook == null) {
-      throw new InternalServerErrorException(
-          String.format("No GitXWebhook found for the given key with accountIdentifier %s and repo %s.",
-              accountIdentifier, repoName));
+  @Override
+  public GitXEventsListResponseDTO listEvents(GitXEventsListRequestDTO gitXEventsListRequestDTO) {
+    try (GitXWebhookLogContext context = new GitXWebhookLogContext(gitXEventsListRequestDTO)) {
+      try {
+        if (isNotEmpty(gitXEventsListRequestDTO.getRepoName())) {
+          GitXWebhook gitXWebhook =
+              fetchGitXWebhook(gitXEventsListRequestDTO.getAccountIdentifier(), gitXEventsListRequestDTO.getRepoName());
+          if (gitXWebhook != null) {
+            gitXEventsListRequestDTO.setWebhookIdentifier(gitXWebhook.getIdentifier());
+          }
+        }
+        Query query = buildEventsListQuery(gitXEventsListRequestDTO);
+        List<GitXWebhookEvent> gitXWebhookEventList = gitXWebhookEventsRepository.list(query);
+        return GitXEventsListResponseDTO.builder()
+            .gitXEventDTOS(prepareGitXWebhookEvents(gitXEventsListRequestDTO.getFilePath(), gitXWebhookEventList))
+            .build();
+      } catch (Exception exception) {
+        log.error(String.format(
+            "Error occurred while GitX listing events in account %s", gitXEventsListRequestDTO.getAccountIdentifier()));
+        throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, LISTING_EVENTS));
+      }
     }
-    return gitXWebhook;
+  }
+
+  @Override
+  public void updateEvent(
+      String accountIdentifier, String eventIdentifier, GitXEventUpdateRequestDTO gitXEventUpdateRequestDTO) {
+    Criteria criteria = buildCriteria(accountIdentifier, eventIdentifier);
+    Query query = new Query(criteria);
+    Update update = buildGitXWebhookEventUpdate(gitXEventUpdateRequestDTO);
+    gitXWebhookEventsRepository.update(query, update);
+  }
+
+  private Criteria buildCriteria(String accountIdentifier, String eventIdentifier) {
+    return Criteria.where(GitXWebhookEventKeys.accountIdentifier)
+        .is(accountIdentifier)
+        .and(GitXWebhookEventKeys.eventIdentifier)
+        .is(eventIdentifier);
+  }
+
+  private Update buildGitXWebhookEventUpdate(GitXEventUpdateRequestDTO gitXEventUpdateRequestDTO) {
+    Update update = new Update();
+    update.set(GitXWebhookEventKeys.eventStatus, gitXEventUpdateRequestDTO.getGitXWebhookEventStatus().name());
+    if (isNotEmpty(gitXEventUpdateRequestDTO.getProcessedFilePaths())) {
+      update.set(GitXWebhookEventKeys.processedFilePaths, gitXEventUpdateRequestDTO.getProcessedFilePaths());
+    }
+    return update;
+  }
+
+  private List<GitXEventDTO> prepareGitXWebhookEvents(
+      String entityFilePath, List<GitXWebhookEvent> gitXWebhookEventList) {
+    List<GitXEventDTO> gitXEventList = new ArrayList<>();
+    for (GitXWebhookEvent gitXWebhookEvent : gitXWebhookEventList) {
+      if (isEmpty(entityFilePath)) {
+        gitXEventList.add(buildGitXEventDTO(gitXWebhookEvent));
+      } else if (isNotEmpty(entityFilePath)
+          && isFilePathMatching(entityFilePath, gitXWebhookEvent.getProcessedFilePaths())) {
+        gitXEventList.add(buildGitXEventDTO(gitXWebhookEvent));
+      }
+    }
+    return gitXEventList;
+  }
+
+  private GitXEventDTO buildGitXEventDTO(GitXWebhookEvent gitXWebhookEvent) {
+    return GitXEventDTO.builder()
+        .webhookIdentifier(gitXWebhookEvent.getWebhookIdentifier())
+        .authorName(gitXWebhookEvent.getAuthor().getName())
+        .eventTriggerTime(gitXWebhookEvent.getEventTriggeredTime())
+        .payload(gitXWebhookEvent.getPayload())
+        .eventIdentifier(gitXWebhookEvent.getEventIdentifier())
+        .build();
+  }
+
+  private boolean isFilePathMatching(String entityFilePath, List<String> modifiedFilePaths) {
+    return isNotEmpty(
+        GitXWebhookUtils.compareFolderPaths(Collections.singletonList(entityFilePath), modifiedFilePaths));
+  }
+
+  private Criteria buildEventsListCriteria(GitXEventsListRequestDTO gitXEventsListRequestDTO) {
+    Criteria criteria = new Criteria();
+    criteria.and(GitXWebhookEventKeys.accountIdentifier).is(gitXEventsListRequestDTO.getAccountIdentifier());
+    if (isNotEmpty(gitXEventsListRequestDTO.getWebhookIdentifier())) {
+      criteria.and(GitXWebhookEventKeys.webhookIdentifier).is(gitXEventsListRequestDTO.getWebhookIdentifier());
+    }
+    if (gitXEventsListRequestDTO.getEventStartTime() != null && gitXEventsListRequestDTO.getEventEndTime() != null) {
+      criteria.and(GitXWebhookEventKeys.eventTriggeredTime)
+          .gte(gitXEventsListRequestDTO.getEventStartTime())
+          .lte(gitXEventsListRequestDTO.getEventEndTime());
+    }
+    return criteria;
+  }
+
+  private Query buildEventsListQuery(GitXEventsListRequestDTO gitXEventsListRequestDTO) {
+    Criteria criteria = buildEventsListCriteria(gitXEventsListRequestDTO);
+    Query query = new Query(criteria);
+    query.addCriteria(Criteria.where(GitXWebhookEventKeys.createdAt).exists(true))
+        .with(Sort.by(Sort.Direction.DESC, GitXWebhookEventKeys.createdAt));
+    return query;
+  }
+
+  private GitXWebhook fetchGitXWebhook(String accountIdentifier, String repoName) {
+    Optional<GitXWebhook> optionalGitXWebhook = gitXWebhookService.getGitXWebhook(accountIdentifier, null, repoName);
+    if (optionalGitXWebhook.isEmpty()) {
+      return null;
+    }
+    return optionalGitXWebhook.get();
   }
 
   private GitXWebhookEvent buildGitXWebhookEvent(WebhookDTO webhookDTO, String webhookIdentifier) {
@@ -80,6 +202,10 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
         .author(buildAuthor(webhookDTO))
         .eventTriggeredTime(webhookDTO.getTime())
         .eventStatus(GitXWebhookEventStatus.QUEUED.name())
+        .payload(webhookDTO.getJsonPayload())
+        .afterCommitId(webhookDTO.getParsedResponse().getPush().getAfter())
+        .beforeCommitId(webhookDTO.getParsedResponse().getPush().getBefore())
+        .branch(webhookDTO.getParsedResponse().getPush().getRepo().getBranch())
         .build();
   }
 
@@ -87,7 +213,11 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
     return Author.builder().name(webhookDTO.getParsedResponse().getPush().getCommit().getAuthor().getName()).build();
   }
 
-  private boolean shouldParsePayload(GitXWebhook gitXWebhook, WebhookDTO webhookDTO) {
-    return false;
+  private void updateGitXWebhook(GitXWebhook gitXWebhook, long triggerEventTime) {
+    gitXWebhookService.updateGitXWebhook(UpdateGitXWebhookCriteriaDTO.builder()
+                                             .accountIdentifier(gitXWebhook.getAccountIdentifier())
+                                             .webhookIdentifier(gitXWebhook.getIdentifier())
+                                             .build(),
+        UpdateGitXWebhookRequestDTO.builder().lastEventTriggerTime(triggerEventTime).build());
   }
 }

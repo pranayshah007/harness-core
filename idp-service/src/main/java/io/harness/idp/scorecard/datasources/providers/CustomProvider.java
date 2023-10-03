@@ -34,13 +34,13 @@ public class CustomProvider extends DataSourceProvider {
   }
 
   @Override
-  public Map<String, Map<String, Object>> fetchData(
-      String accountIdentifier, BackstageCatalogEntity entity, Map<String, Set<String>> dataPointsAndInputValues) {
+  public Map<String, Map<String, Object>> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
+      Map<String, Set<String>> dataPointsAndInputValues, String configs) {
     return new HashMap<>();
   }
 
   @Override
-  public Map<String, String> getAuthHeaders(String accountIdentifier) {
+  public Map<String, String> getAuthHeaders(String accountIdentifier, String configs) {
     return Collections.emptyMap();
   }
 }

@@ -55,9 +55,10 @@ public class PcfDeployStepMapperImpl extends PcfAbstractStepMapper {
     PcfDeployState deployState = (PcfDeployState) state;
     Integer timeoutIntervalInMinutes = deployState.getTimeoutIntervalInMinutes();
     if (null != timeoutIntervalInMinutes) {
-      return MigratorUtility.getTimeout(timeoutIntervalInMinutes * 60 * 1000);
+      return MigratorUtility.getTimeout(timeoutIntervalInMinutes * 60 * 1000L);
     } else {
-      return MigratorUtility.getTimeout(state.getTimeoutMillis());
+      Integer timeoutMillis = state.getTimeoutMillis();
+      return MigratorUtility.getTimeout(timeoutMillis != null ? timeoutMillis.longValue() : null);
     }
   }
 

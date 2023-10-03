@@ -14,10 +14,10 @@ import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
+import static io.harness.logging.LogLevel.WARN;
 import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MAX_INSTANCES;
 import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MIN_INSTANCES;
 import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_TARGET_INSTANCES;
-import static io.harness.spotinst.model.SpotInstConstants.DELETE_NEW_ELASTI_GROUP;
 import static io.harness.spotinst.model.SpotInstConstants.SWAP_ROUTES_COMMAND_UNIT;
 
 import static java.lang.String.format;
@@ -26,10 +26,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.ecs.ElbV2Client;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
+import io.harness.delegate.task.spot.elastigroup.rollback.ElastigroupRollbackTaskParameters;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
@@ -41,10 +43,14 @@ import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupCapacity;
 import io.harness.spotinst.model.ElastiGroupRenameRequest;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.ActionTypeEnum;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeListenersRequest;
@@ -156,9 +162,7 @@ public class ElastigroupDeployTaskHelper {
   }
 
   public void deleteElastigroup(ElastiGroup elastigroup, String spotInstToken, String spotInstAccountId,
-      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws Exception {
-    final LogCallback logCallback =
-        getLogCallback(logStreamingTaskClient, DELETE_NEW_ELASTI_GROUP, commandUnitsProgress);
+      LogCallback logCallback) throws Exception {
     try {
       if (elastigroup == null || isEmpty(elastigroup.getId())) {
         logCallback.saveExecutionLog("No Elastigroup eligible for deletion.", INFO, SUCCESS);
@@ -169,10 +173,47 @@ public class ElastigroupDeployTaskHelper {
           "Sending request to Spotinst to delete newly created Elastigroup: %s", getElastigroupString(elastigroup)));
       spotInstHelperServiceDelegate.deleteElastiGroup(spotInstToken, spotInstAccountId, elastigroup.getId());
       logCallback.saveExecutionLog(
-          format("Elastigroup: %s deleted successfully", getElastigroupString(elastigroup)), INFO, SUCCESS);
+          format("Elastigroup: %s deleted successfully", getElastigroupString(elastigroup)), INFO);
     } catch (Exception e) {
       logCallback.saveExecutionLog(
-          format("Exception while deleting Elastigroup, Error message: [%s]", e.getMessage()), ERROR, FAILURE);
+          format("Exception while deleting Elastigroup, Error message: [%s]", e.getMessage()), ERROR);
+      throw e;
+    }
+  }
+
+  public void cleanupNewElastigroups(boolean blueGreen, ElastigroupRollbackTaskParameters parameters,
+      String spotInstAccountId, String spotInstToken, LogCallback logCallback) throws Exception {
+    try {
+      List<ElastiGroup> prevElastigroups = parameters.getPrevElastigroups();
+      List<ElastiGroup> currentElastigroups = elastigroupCommandTaskNGHelper.listElastigroups(
+          blueGreen, parameters.getElastigroupNamePrefix(), spotInstAccountId, spotInstToken);
+      Set<String> prevElastigroupIds = prevElastigroups.stream().map(ElastiGroup::getId).collect(Collectors.toSet());
+      Set<String> currentElastigroupIds =
+          currentElastigroups.stream().map(ElastiGroup::getId).collect(Collectors.toSet());
+      Set<String> newElastigroupIds = Sets.difference(currentElastigroupIds, prevElastigroupIds);
+      if (EmptyPredicate.isEmpty(newElastigroupIds)) {
+        logCallback.saveExecutionLog("No Elastigroup eligible for deletion.", INFO);
+        return;
+      }
+      final AtomicBoolean deletionSuccess = new AtomicBoolean(true);
+      newElastigroupIds.forEach(newElastigroupId -> {
+        try {
+          spotInstHelperServiceDelegate.deleteElastiGroup(spotInstToken, spotInstAccountId, newElastigroupId);
+          logCallback.saveExecutionLog(format("Elastigroup: %s deleted successfully", newElastigroupId), INFO);
+        } catch (Exception e) {
+          deletionSuccess.set(false);
+          logCallback.saveExecutionLog(format("Failed to delete Elastgroup: %s", newElastigroupId), WARN);
+        }
+      });
+
+      if (deletionSuccess.get()) {
+        logCallback.saveExecutionLog("Successfully deleted newly created Elastigroups", INFO);
+      } else {
+        logCallback.saveExecutionLog("Failed to delete newly created Elastigroups", WARN);
+      }
+    } catch (Exception e) {
+      logCallback.saveExecutionLog(
+          format("Exception while deleting newly created Elastigroup, Error message: [%s]", e.getMessage()), ERROR);
       throw e;
     }
   }

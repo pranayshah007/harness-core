@@ -220,10 +220,6 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       logCallback.saveExecutionLog(
           "List all existing deployed releases for release name: " + commandRequest.getReleaseName());
 
-      if (HelmVersion.V380.equals(commandRequest.getHelmVersion())) {
-        helmTaskHelperBase.revokeReadPermission(commandRequest.getKubeConfigLocation());
-      }
-
       HelmCliResponse helmCliResponse =
           helmClient.releaseHistory(HelmCommandDataMapperNG.getHelmCmdDataNG(commandRequest), true);
 
@@ -366,6 +362,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
               existingPodList);
       commandResponse.setPreviousK8sPodList(existingPodList);
       commandResponse.setK8sPodList(newPodList);
+      commandResponse.setWorkloadLabelSelectors(getWorkloadLabelSelectors(manifest, isImprovedHelmTracking));
       return commandResponse;
 
     } catch (InterruptedException ex) {
@@ -706,6 +703,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
           existingPodList);
       commandResponse.setPreviousK8sPodList(existingPodList);
       commandResponse.setK8sPodList(newPodList);
+      commandResponse.setWorkloadLabelSelectors(
+          getWorkloadLabelSelectors(manifest, commandRequest.isImprovedHelmTracking()));
       return commandResponse;
     } catch (UncheckedTimeoutException e) {
       log.error(TIMED_OUT_IN_STEADY_STATE, ExceptionMessageSanitizer.sanitizeException(e));

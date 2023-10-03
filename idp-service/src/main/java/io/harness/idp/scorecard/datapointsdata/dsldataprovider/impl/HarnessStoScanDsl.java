@@ -37,8 +37,13 @@ public class HarnessStoScanDsl implements DslDataProvider {
   DashboardResourceClient dashboardResourceClient;
 
   @Override
-  public Map<String, Object> getDslData(String accountIdentifier, DataSourceDataPointInfo dataSourceDataPointInfo) {
+  public Map<String, Object> getDslData(String accountIdentifier, Object config) {
     Map<String, Object> returnData = new HashMap<>();
+    if (!(config instanceof DataSourceDataPointInfo)) {
+      return returnData;
+    }
+
+    DataSourceDataPointInfo dataSourceDataPointInfo = (DataSourceDataPointInfo) config;
 
     log.info("STO scan setup DSL invoked for account - {} datapoints - {}", accountIdentifier,
         dataSourceDataPointInfo.getDataSourceLocation().getDataPoints());

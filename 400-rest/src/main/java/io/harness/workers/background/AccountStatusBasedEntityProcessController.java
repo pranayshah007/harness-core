@@ -16,7 +16,7 @@ import io.harness.iterator.PersistentIterable;
 import io.harness.mongo.EntityProcessController;
 import io.harness.persistence.AccountAccess;
 
-import software.wings.beans.AccountStatus;
+import software.wings.beans.account.AccountStatus;
 import software.wings.exception.AccountNotFoundException;
 import software.wings.service.intfc.AccountService;
 

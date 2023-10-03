@@ -22,6 +22,7 @@ import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SRIDHAR;
 import static io.harness.rule.OwnerRule.VINICIUS;
+import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,6 +37,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.authorization.AuthorizationServiceHeader;
+import io.harness.beans.FeatureName;
 import io.harness.beans.HeaderConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.retry.RetryExecutionParameters;
@@ -91,7 +93,7 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.ExecutionHelper;
 import io.harness.pms.plan.execution.beans.ExecArgs;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.product.ci.scm.proto.Commit;
 import io.harness.product.ci.scm.proto.PullRequest;
 import io.harness.product.ci.scm.proto.PullRequestHook;
@@ -107,6 +109,7 @@ import io.harness.security.dto.Principal;
 import io.harness.security.dto.ServiceAccountPrincipal;
 import io.harness.security.dto.ServicePrincipal;
 import io.harness.security.dto.UserPrincipal;
+import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
@@ -157,6 +160,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
   @Mock PMSPipelineService pmsPipelineService;
   @Mock ExecutionHelper executionHelper;
   @Mock WebhookEventPayloadParser webhookEventPayloadParser;
+  @Mock PmsFeatureFlagHelper pmsFeatureFlagHelper;
   @Before
   public void setUp() {
     triggerWebhookEvent =
@@ -186,7 +190,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
                            .identifier(pipelineId)
                            .yaml(simplifiedYaml)
                            .runSequence(394)
-                           .harnessVersion(PipelineVersion.V1)
+                           .harnessVersion(HarnessYamlVersion.V1)
                            .build();
   }
 
@@ -675,7 +679,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
                                         .projectIdentifier(projectId)
                                         .identifier(pipelineId)
                                         .yaml(pipelineYaml)
-                                        .harnessVersion(PipelineVersion.V0)
+                                        .harnessVersion(HarnessYamlVersion.V0)
                                         .build();
     String triggerYaml = readFile("trigger-without-inputs.yml");
     NGTriggerElementMapper elementMapper = new NGTriggerElementMapper(null, null, null, null, null);
@@ -713,7 +717,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
                                         .projectIdentifier(projectId)
                                         .identifier(pipelineId)
                                         .yaml(pipelineYaml)
-                                        .harnessVersion(PipelineVersion.V0)
+                                        .harnessVersion(HarnessYamlVersion.V0)
                                         .build();
     String triggerYaml = readFile("trigger-without-inputs.yml");
     NGTriggerElementMapper elementMapper = new NGTriggerElementMapper(null, null, null, null, null);
@@ -749,7 +753,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
                                         .projectIdentifier(projectId)
                                         .identifier(pipelineId)
                                         .yaml(pipelineYaml)
-                                        .harnessVersion(PipelineVersion.V0)
+                                        .harnessVersion(HarnessYamlVersion.V0)
                                         .build();
     String triggerYaml = readFile("trigger-without-inputs.yml");
     NGTriggerElementMapper elementMapper = new NGTriggerElementMapper(null, null, null, null, null);
@@ -792,7 +796,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
                                         .projectIdentifier(projectId)
                                         .identifier(pipelineId)
                                         .yaml(pipelineYaml)
-                                        .harnessVersion(PipelineVersion.V0)
+                                        .harnessVersion(HarnessYamlVersion.V0)
                                         .build();
     String triggerYaml = readFile("trigger-without-inputs.yml");
     NGTriggerElementMapper elementMapper = new NGTriggerElementMapper(null, null, null, null, null);
@@ -872,5 +876,45 @@ public class TriggerExecutionHelperTest extends CategoryTest {
     assertThatThrownBy(() -> triggerExecutionHelper.resolveBranchExpression("<+trigger.branch>", event))
         .isInstanceOf(TriggerException.class)
         .hasMessage("Please ensure the expression <+trigger.branch> has the right branch information");
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testResolveBranchExpressionForCustomTriggerWithCustomExpression() {
+    String payload = "{\"repository\":{\"name\":\"main\"}}";
+    TriggerWebhookEvent event = TriggerWebhookEvent.builder().sourceRepoType("CUSTOM").payload(payload).build();
+    when(webhookEventPayloadParser.parseEvent(event))
+        .thenReturn(
+            WebhookPayloadData.builder().originalEvent(TriggerWebhookEvent.builder().payload(payload).build()).build());
+    doReturn(true).when(pmsFeatureFlagHelper).isEnabled(any(), (FeatureName) any());
+    String resolvedBranch = triggerExecutionHelper.resolveBranchExpression("<+trigger.payload.repository.name>", event);
+    assertThat(resolvedBranch).isEqualTo("main");
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testResolveBranchExpressionForCustomTriggerWithEmptyBranchExpression() {
+    String payload = "{\"branch\":\"branchValue\"}";
+    TriggerWebhookEvent event = TriggerWebhookEvent.builder().sourceRepoType("CUSTOM").payload(payload).build();
+    when(webhookEventPayloadParser.parseEvent(event))
+        .thenReturn(
+            WebhookPayloadData.builder().originalEvent(TriggerWebhookEvent.builder().payload(payload).build()).build());
+    doReturn(true).when(pmsFeatureFlagHelper).isEnabled(any(), (FeatureName) any());
+    assertThat(triggerExecutionHelper.resolveBranchExpression("", event)).isEqualTo("branchValue");
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testResolveBranchExpressionForCustomTriggerWithNullBranchExpression() {
+    String payload = "{\"branch\":\"branchValue\"}";
+    TriggerWebhookEvent event = TriggerWebhookEvent.builder().sourceRepoType("CUSTOM").payload(payload).build();
+    when(webhookEventPayloadParser.parseEvent(event))
+        .thenReturn(
+            WebhookPayloadData.builder().originalEvent(TriggerWebhookEvent.builder().payload(payload).build()).build());
+    doReturn(true).when(pmsFeatureFlagHelper).isEnabled(any(), (FeatureName) any());
+    assertThat(triggerExecutionHelper.resolveBranchExpression(null, event)).isEqualTo("branchValue");
   }
 }

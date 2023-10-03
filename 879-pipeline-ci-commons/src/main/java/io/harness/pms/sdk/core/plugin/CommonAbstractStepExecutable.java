@@ -62,7 +62,7 @@ import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.execution.CIDelegateTaskExecutor;
 import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logstreaming.LogStreamingHelper;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plugin.service.BasePluginCompatibleSerializer;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -100,7 +100,6 @@ import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -196,8 +195,7 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
       long timeoutInMillis, String stringTimeout, StageInfraDetails stageInfraDetails, StageDetails stageDetails);
 
   private String getLogKey(Ambiance ambiance) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance);
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    return LogStreamingStepClientFactory.getLogBaseKey(ambiance);
   }
 
   public abstract void resolveGitAppFunctor(Ambiance ambiance, CIStepInfo ciStepInfo);
@@ -438,18 +436,20 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
     if (shouldPublishArtifact(stepStatus)) {
       publishArtifact(ambiance, stepParameters, stepIdentifier, stepStatus, stepResponseBuilder);
     }
-    if (shouldPublishOutcome(stepStatus)) {
-      if (stepStatus.getOutput() != null) {
-        populateCIStageOutputs(((StepMapOutput) stepStatus.getOutput()).getMap(), AmbianceUtils.getAccountId(ambiance),
-            ambiance.getStageExecutionId());
-        StepResponse.StepOutcome stepOutcome =
-            StepResponse.StepOutcome.builder()
-                .outcome(
-                    CIStepOutcome.builder().outputVariables(((StepMapOutput) stepStatus.getOutput()).getMap()).build())
-                .name("output")
-                .build();
-        stepResponseBuilder.stepOutcome(stepOutcome);
-      }
+
+    if (shouldPublishOutcome(stepStatus) && stepStatus.getOutput() != null) {
+      populateCIStageOutputs(((StepMapOutput) stepStatus.getOutput()).getMap(), AmbianceUtils.getAccountId(ambiance),
+          ambiance.getStageExecutionId());
+      StepResponse.StepOutcome stepOutcome =
+          StepResponse.StepOutcome.builder()
+              .outcome(
+                  CIStepOutcome.builder().outputVariables(((StepMapOutput) stepStatus.getOutput()).getMap()).build())
+              .name("output")
+              .build();
+      stepResponseBuilder.stepOutcome(stepOutcome);
+    }
+
+    if (stepStatus.getStepExecutionStatus() == StepExecutionStatus.SUCCESS) {
       return stepResponseBuilder.status(Status.SUCCEEDED).build();
     } else if (stepStatus.getStepExecutionStatus() == StepExecutionStatus.SKIPPED) {
       return stepResponseBuilder.status(Status.SKIPPED).build();

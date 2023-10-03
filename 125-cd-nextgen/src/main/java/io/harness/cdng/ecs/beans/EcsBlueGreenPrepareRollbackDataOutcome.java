@@ -44,4 +44,5 @@ public class EcsBlueGreenPrepareRollbackDataOutcome implements Outcome, Executio
   List<String> greenServiceScalingPolicyRequestBuilderStrings;
   boolean greenServiceExist;
   boolean greenServiceRollbackDataExist;
+  EcsServiceDeployConfig ecsBGServiceDeployConfig;
 }

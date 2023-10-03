@@ -372,6 +372,7 @@ public class CIExecutionConfigService {
         .sscaOrchestrationTag(config.getSscaOrchestrationConfig().getImage())
         .sscaEnforcementTag(config.getSscaEnforcementConfig().getImage())
         .provenanceTag(config.getProvenanceConfig().getImage())
+        .provenanceGcrTag(config.getProvenanceGcrConfig().getImage())
         .slsaVerificationTag(config.getSlsaVerificationConfig().getImage())
         .build();
   }
@@ -394,6 +395,7 @@ public class CIExecutionConfigService {
         .sscaOrchestrationTag(config.getSscaOrchestrationTag())
         .sscaEnforcementTag(config.getSscaEnforcementTag())
         .provenanceTag(config.getProvenanceTag())
+        .provenanceGcrTag(config.getProvenanceGcrTag())
         .slsaVerificationTag(config.getSlsaVerificationTag())
         .build();
   }
@@ -543,6 +545,11 @@ public class CIExecutionConfigService {
           image = ciExecutionConfig.getProvenanceTag();
         }
         break;
+      case PROVENANCE_GCR:
+        if (Strings.isNotBlank(ciExecutionConfig.getProvenanceGcrTag())) {
+          image = ciExecutionConfig.getProvenanceGcrTag();
+        }
+        break;
       case SLSA_VERIFICATION:
         if (Strings.isNotBlank(ciExecutionConfig.getSlsaVerificationTag())) {
           image = ciExecutionConfig.getSlsaVerificationTag();
@@ -591,6 +598,8 @@ public class CIExecutionConfigService {
         return ciExecutionServiceConfig.getStepConfig().getSscaEnforcementConfig();
       case PROVENANCE:
         return ciExecutionServiceConfig.getStepConfig().getProvenanceConfig();
+      case PROVENANCE_GCR:
+        return ciExecutionServiceConfig.getStepConfig().getProvenanceGcrConfig();
       case SLSA_VERIFICATION:
         return ciExecutionServiceConfig.getStepConfig().getSlsaVerificationConfig();
       case IACM_TERRAFORM_PLUGIN:

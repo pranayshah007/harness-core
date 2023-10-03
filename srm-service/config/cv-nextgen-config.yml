@@ -28,6 +28,8 @@ logging:
     org.quartz.plugins: WARN
     org.glassfish.jersey: WARN
     allbegray.slack: WARN
+    dev.morphia.query.FieldEndImpl: ERROR
+    dev.morphia.mapping.Mapper: ERROR
     # the following is to suppress "Error retrieving job for trigger XYZ, setting trigger state to ERROR."
     # TODO: remove this suppression when the mentioned issue is resolved
     com.novemberain.quartz.mongodb.TriggerRunner: "OFF"

@@ -15,6 +15,7 @@ import io.harness.k8s.model.K8sPod;
 import io.harness.logging.CommandExecutionStatus;
 
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
@@ -28,11 +29,13 @@ public class HelmInstallCmdResponseNG extends HelmCommandResponseNG {
   private int prevReleaseVersion;
   private String releaseName;
   private HelmVersion helmVersion;
+  private Map<String, List<String>> workloadLabelSelectors;
 
   @Builder
   public HelmInstallCmdResponseNG(CommandExecutionStatus commandExecutionStatus, String output,
       List<ContainerInfo> containerInfoList, HelmChartInfo helmChartInfo, int prevReleaseVersion, String releaseName,
-      HelmVersion helmVersion, List<K8sPod> k8sPodList, List<K8sPod> previousK8sPodList) {
+      HelmVersion helmVersion, List<K8sPod> k8sPodList, List<K8sPod> previousK8sPodList,
+      Map<String, List<String>> workloadLabelSelectors) {
     super(commandExecutionStatus, output);
     this.containerInfoList = containerInfoList;
     this.helmChartInfo = helmChartInfo;
@@ -41,6 +44,7 @@ public class HelmInstallCmdResponseNG extends HelmCommandResponseNG {
     this.helmVersion = helmVersion;
     this.k8sPodList = k8sPodList;
     this.previousK8sPodList = previousK8sPodList;
+    this.workloadLabelSelectors = workloadLabelSelectors;
   }
 
   public List<K8sPod> getPreviousK8sPodList() {

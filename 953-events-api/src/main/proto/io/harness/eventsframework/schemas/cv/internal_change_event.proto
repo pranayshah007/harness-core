@@ -20,6 +20,10 @@ message InternalChangeEventDTO {
   int64 executionTime = 7;
   string type = 8;
   int64 executionEndTime = 9;
+  string pipelineId = 10;
+  string planExecutionId = 11;
+  string stageId = 12;
+  string stageStepId = 13;
 }
 
 message EventDetails {

@@ -57,7 +57,6 @@ import io.harness.ff.FeatureFlagService;
 
 import software.wings.beans.Account;
 import software.wings.beans.AccountEvent;
-import software.wings.beans.AccountEventType;
 import software.wings.beans.AccountType;
 import software.wings.beans.EntityType;
 import software.wings.beans.Pipeline;
@@ -68,6 +67,7 @@ import software.wings.beans.UserInvite;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
+import software.wings.beans.account.AccountEventType;
 import software.wings.beans.security.UserGroup;
 import software.wings.beans.security.access.Whitelist;
 import software.wings.beans.sso.LdapSettings;
@@ -284,7 +284,7 @@ public class EventPublishHelper {
               .addOrder(UserGroup.CREATED_AT_KEY, OrderType.ASC)
               .build();
       pageRequest.setOptions(Arrays.asList(PageRequest.Option.SKIPCOUNT));
-      PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, false, null, null);
+      PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, false, null, null, false);
       List<UserGroup> userGroups = pageResponse.getResponse();
       if (isEmpty(userGroups)) {
         return false;

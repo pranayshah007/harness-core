@@ -7,6 +7,7 @@
 
 package io.harness.idp.scorecard.scorecardchecks.service;
 
+import static io.harness.idp.common.Constants.DOT_SEPARATOR;
 import static io.harness.idp.common.Constants.GLOBAL_ACCOUNT_ID;
 import static io.harness.rule.OwnerRule.VIGNESWARA;
 
@@ -24,6 +25,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
+import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.scorecardchecks.entity.CheckEntity;
 import io.harness.idp.scorecard.scorecardchecks.repositories.CheckRepository;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -32,12 +34,15 @@ import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
+import io.harness.spec.server.idp.v1.model.DataPoint;
 import io.harness.spec.server.idp.v1.model.Rule;
 import io.harness.utils.PageUtils;
 
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,17 +62,21 @@ public class CheckServiceImplTest extends CategoryTest {
   @Mock CheckRepository checkRepository;
   @Mock NGSettingsClient settingsClient;
   @Mock EntitySetupUsageClient entitySetupUsageClient;
+  @Mock DataPointService dataPointService;
   @Captor private ArgumentCaptor<CheckEntity> checkEntityCaptor;
   private static final String ACCOUNT_ID = "123";
   private static final String GITHUB_CHECK_NAME = "Github Checks";
   private static final String GITHUB_CHECK_ID = "github_checks";
   private static final String CATALOG_CHECK_NAME = "Catalog Checks";
   private static final String CATALOG_CHECK_ID = "catalog_checks";
+  private static final String DATA_SOURCE_ID = "github";
+  private static final String DATA_POINT_ID = "isFileExist";
+  private static final String README_FILE = "README.md";
 
   @Before
   public void setUp() {
     MockitoAnnotations.openMocks(this);
-    checkServiceImpl = new CheckServiceImpl(checkRepository, settingsClient, entitySetupUsageClient);
+    checkServiceImpl = new CheckServiceImpl(checkRepository, settingsClient, entitySetupUsageClient, dataPointService);
   }
 
   @Test
@@ -75,9 +84,19 @@ public class CheckServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateCheck() {
     when(checkRepository.update(any())).thenReturn(CheckEntity.builder().build());
-    checkServiceImpl.createCheck(getCheckDetails(), ACCOUNT_ID);
+    when(dataPointService.getDataPointsMap(ACCOUNT_ID)).thenReturn(getDataPointMap());
+    checkServiceImpl.createCheck(getCheckDetails(README_FILE), ACCOUNT_ID);
     verify(checkRepository).save(checkEntityCaptor.capture());
     assertEquals(GITHUB_CHECK_ID, checkEntityCaptor.getValue().getIdentifier());
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testCreateCheckThrowsException() {
+    when(checkRepository.update(any())).thenReturn(CheckEntity.builder().build());
+    when(dataPointService.getDataPointsMap(ACCOUNT_ID)).thenReturn(new HashMap<>());
+    checkServiceImpl.createCheck(getCheckDetails(README_FILE), ACCOUNT_ID);
   }
 
   @Test
@@ -85,7 +104,8 @@ public class CheckServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testUpdateCheck() {
     when(checkRepository.update(any())).thenReturn(CheckEntity.builder().build());
-    checkServiceImpl.updateCheck(getCheckDetails(), ACCOUNT_ID);
+    when(dataPointService.getDataPointsMap(ACCOUNT_ID)).thenReturn(getDataPointMap());
+    checkServiceImpl.updateCheck(getCheckDetails(README_FILE), ACCOUNT_ID);
     verify(checkRepository).update(checkEntityCaptor.capture());
     assertEquals(GITHUB_CHECK_ID, checkEntityCaptor.getValue().getIdentifier());
   }
@@ -94,8 +114,18 @@ public class CheckServiceImplTest extends CategoryTest {
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testUpdateCheckThrowsException() {
+    when(checkRepository.update(any())).thenReturn(CheckEntity.builder().build());
+    when(dataPointService.getDataPointsMap(ACCOUNT_ID)).thenReturn(getDataPointMap());
+    checkServiceImpl.updateCheck(getCheckDetails(null), ACCOUNT_ID);
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = VIGNESWARA)
+  @Category(UnitTests.class)
+  public void testUpdateDefaultCheckThrowsException() {
     when(checkRepository.update(any())).thenReturn(null);
-    checkServiceImpl.updateCheck(getCheckDetails(), ACCOUNT_ID);
+    when(dataPointService.getDataPointsMap(ACCOUNT_ID)).thenReturn(getDataPointMap());
+    checkServiceImpl.updateCheck(getCheckDetails(README_FILE), ACCOUNT_ID);
   }
 
   @Test
@@ -212,13 +242,13 @@ public class CheckServiceImplTest extends CategoryTest {
     checkServiceImpl.deleteCustomCheck(ACCOUNT_ID, GITHUB_CHECK_ID, false);
   }
 
-  private CheckDetails getCheckDetails() {
+  private CheckDetails getCheckDetails(String conditionalInput) {
     List<Rule> rules = new ArrayList<>();
     Rule rule = new Rule();
-    rule.setDataPointIdentifier("github");
-    rule.setDataPointIdentifier("isFileExist");
+    rule.setDataSourceIdentifier(DATA_SOURCE_ID);
+    rule.setDataPointIdentifier(DATA_POINT_ID);
     rule.setOperator("==");
-    rule.setConditionalInputValue("README.md");
+    rule.setConditionalInputValue(conditionalInput);
     rule.setValue("true");
     rules.add(rule);
     CheckDetails checkDetails = new CheckDetails();
@@ -228,6 +258,13 @@ public class CheckServiceImplTest extends CategoryTest {
     checkDetails.setRules(rules);
     checkDetails.setCustom(true);
     return checkDetails;
+  }
+
+  private Map<String, DataPoint> getDataPointMap() {
+    DataPoint dataPoint = new DataPoint();
+    dataPoint.setDataPointIdentifier(DATA_POINT_ID);
+    dataPoint.setIsConditional(true);
+    return Map.of(DATA_SOURCE_ID + DOT_SEPARATOR + DATA_POINT_ID, dataPoint);
   }
 
   private Page<CheckEntity> getPageCheckEntity(Boolean custom) {

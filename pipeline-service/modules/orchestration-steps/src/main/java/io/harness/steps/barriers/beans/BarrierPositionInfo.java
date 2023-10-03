@@ -27,7 +27,7 @@ public class BarrierPositionInfo {
   List<BarrierPosition> barrierPositionList;
 
   @Data
-  @Builder
+  @Builder(toBuilder = true)
   @FieldNameConstants(innerTypeName = "BarrierPositionKeys")
   @FieldDefaults(level = AccessLevel.PRIVATE)
   public static class BarrierPosition {
@@ -42,6 +42,15 @@ public class BarrierPositionInfo {
 
     String stepSetupId;
     String stepRuntimeId;
+
+    /* `strategySetupId` contains the setupId of the closest parent node containing a looping strategy
+     (if there is any). */
+    String strategySetupId;
+
+    /* `strategyNodeType` is used to store whether the closest parent node containing a looping strategy
+     is of type STEP_GROUP or STAGE. This field is used in `BarrierServiceImpl.obtainRuntimeIdUpdate` and
+    `BarrierWithinStrategyExpander` for updating runtime info related to a given BarrierPosition. */
+    BarrierPositionType strategyNodeType;
 
     boolean stepGroupRollback;
 

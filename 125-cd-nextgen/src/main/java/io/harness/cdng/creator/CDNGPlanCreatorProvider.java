@@ -135,6 +135,7 @@ import io.harness.cdng.creator.plan.steps.TerraformApplyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformDestroyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformPlanStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.UpdateGitOpsAppStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.asg.AsgBlueGreenDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.asg.AsgBlueGreenRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.asg.AsgBlueGreenSwapServiceStepPlanCreator;
@@ -158,6 +159,7 @@ import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppRollbackStepPl
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotDeploymentStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotSwapSlotPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppTrafficShiftStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.ecs.EcsBasicRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ecs.EcsBlueGreenCreateServiceStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ecs.EcsBlueGreenRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ecs.EcsBlueGreenSwapTargetGroupsStepPlanCreator;
@@ -166,6 +168,8 @@ import io.harness.cdng.creator.plan.steps.ecs.EcsCanaryDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ecs.EcsRollingDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ecs.EcsRollingRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ecs.EcsRunTaskStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.ecs.EcsServiceSetupStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.ecs.EcsUpgradeContainerStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupBGStageSetupStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupSetupStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupSwapRouteStepPlanCreator;
@@ -198,6 +202,7 @@ import io.harness.cdng.creator.variables.CommandStepVariableCreator;
 import io.harness.cdng.creator.variables.CustomStageVariableCreator;
 import io.harness.cdng.creator.variables.DeploymentStageVariableCreator;
 import io.harness.cdng.creator.variables.DownloadManifestsStepVariableCreator;
+import io.harness.cdng.creator.variables.EcsBasicRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsBlueGreenCreateServiceStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsBlueGreenRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsBlueGreenSwapTargetGroupsStepVariableCreator;
@@ -206,6 +211,8 @@ import io.harness.cdng.creator.variables.EcsCanaryDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsRollingDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsRollingRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsRunTaskStepVariableCreator;
+import io.harness.cdng.creator.variables.EcsServiceSetupStepVariableCreator;
+import io.harness.cdng.creator.variables.EcsUpgradeContainerStepVariableCreator;
 import io.harness.cdng.creator.variables.ElastigroupBGStageSetupStepVariableCreator;
 import io.harness.cdng.creator.variables.ElastigroupDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.ElastigroupRollbackStepVariableCreator;
@@ -246,6 +253,7 @@ import io.harness.cdng.creator.variables.TasRollingRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.TasRouteMappingStepVariableCreator;
 import io.harness.cdng.creator.variables.TasSwapRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.TasSwapRoutesStepVariableCreator;
+import io.harness.cdng.creator.variables.UpdateGitOpsAppStepVariableCreator;
 import io.harness.cdng.creator.variables.aws.AwsLambdaDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.aws.AwsLambdaRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.aws.sam.AwsSamBuildStepVariableCreator;
@@ -393,6 +401,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
   @Inject InjectorUtils injectorUtils;
   @Inject DeploymentStageVariableCreator deploymentStageVariableCreator;
+  @Inject CustomStageVariableCreator customStageVariableCreator;
 
   @Override
   public List<PartialPlanCreator<?>> getPlanCreators() {
@@ -400,6 +409,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new GitOpsMergePRStepPlanCreatorV2());
     planCreators.add(new GitOpsUpdateReleaseRepoStepPlanCreator());
     planCreators.add(new GitOpsRevertPRStepPlanCreator());
+    planCreators.add(new UpdateGitOpsAppStepPlanCreator());
     planCreators.add(new GitOpsFetchLinkedAppsStepPlanCreatorV2());
     planCreators.add(new GitOpsSyncStepPlanCreator());
     planCreators.add(new DeploymentStagePMSPlanCreatorV2());
@@ -456,6 +466,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new EcsBlueGreenSwapTargetGroupsStepPlanCreator());
     planCreators.add(new EcsBlueGreenRollbackStepPlanCreator());
     planCreators.add(new EcsRunTaskStepPlanCreator());
+    planCreators.add(new EcsServiceSetupStepPlanCreator());
+    planCreators.add(new EcsUpgradeContainerStepPlanCreator());
+    planCreators.add(new EcsBasicRollbackStepPlanCreator());
 
     planCreators.add(new AzureCreateARMResourceStepPlanCreator());
     planCreators.add(new AzureCreateBPResourceStepPlanCreator());
@@ -579,6 +592,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new EmptyVariableCreator(SERVICE_DEFINITION, EMPTY_SERVICE_DEFINITION_TYPES));
     variableCreators.add(new GitOpsMergePRStepVariableCreator());
     variableCreators.add(new GitOpsRevertPRStepVariableCreator());
+    variableCreators.add(new UpdateGitOpsAppStepVariableCreator());
     variableCreators.add(new GitOpsUpdateReleaseRepoStepVariableCreator());
     variableCreators.add(new GitOpsFetchLinkedAppsStepVariableCreator());
     variableCreators.add(new GitOpsSyncStepVariableCreator());
@@ -621,6 +635,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new EcsBlueGreenSwapTargetGroupsStepVariableCreator());
     variableCreators.add(new EcsBlueGreenRollbackStepVariableCreator());
     variableCreators.add(new EcsRunTaskStepVariableCreator());
+    variableCreators.add(new EcsServiceSetupStepVariableCreator());
+    variableCreators.add(new EcsUpgradeContainerStepVariableCreator());
+    variableCreators.add(new EcsBasicRollbackStepVariableCreator());
 
     variableCreators.add(new AzureCreateARMResourceStepVariableCreator());
     variableCreators.add(new AzureCreateBPStepVariableCreator());
@@ -700,7 +717,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new AwsCdkDestroyVariableCreator());
     variableCreators.add(new AwsCdkRollbackVariableCreator());
 
-    variableCreators.add(new CustomStageVariableCreator());
+    variableCreators.add(customStageVariableCreator);
 
     return variableCreators;
   }
@@ -718,7 +735,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("GitOps Revert PR")
             .setType(StepSpecTypeConstants.GITOPS_REVERT_PR)
-            .setFeatureFlag(FeatureName.GITOPS_REVERT_PR.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").setFolderPath("GitOps").build())
             .build();
 
@@ -740,6 +756,14 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("GitOps Fetch Linked Apps")
             .setType(StepSpecTypeConstants.GITOPS_FETCH_LINKED_APPS)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").setFolderPath("GitOps").build())
+            .build();
+
+    StepInfo updateGitOpsApp =
+        StepInfo.newBuilder()
+            .setName("Update GitOps App")
+            .setType(StepSpecTypeConstants.UPDATE_GITOPS_APP)
+            .setFeatureFlag(FeatureName.GITOPS_UPDATE_APP_STEP.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").setFolderPath("GitOps").build())
             .build();
 
@@ -958,6 +982,30 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.ECS_RUN_TASK)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
             .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
+            .build();
+
+    StepInfo ecsServiceSetup =
+        StepInfo.newBuilder()
+            .setName("ECS Service Setup")
+            .setType(StepSpecTypeConstants.ECS_SERVICE_SETUP)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
+            .setFeatureFlag(FeatureName.CDS_ECS_BASIC_DEPLOYMENT_STRATEGY.name())
+            .build();
+
+    StepInfo ecsUpgradeContainer =
+        StepInfo.newBuilder()
+            .setName("ECS Upgrade Container")
+            .setType(StepSpecTypeConstants.ECS_UPGRADE_CONTAINER)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
+            .setFeatureFlag(FeatureName.CDS_ECS_BASIC_DEPLOYMENT_STRATEGY.name())
+            .build();
+
+    StepInfo ecsBasicRollback =
+        StepInfo.newBuilder()
+            .setName("ECS Basic Rollback")
+            .setType(StepSpecTypeConstants.ECS_BASIC_ROLLBACK)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
+            .setFeatureFlag(FeatureName.CDS_ECS_BASIC_DEPLOYMENT_STRATEGY.name())
             .build();
 
     StepInfo googleFunctionDeploy =
@@ -1552,6 +1600,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     stepInfos.add(gitOpsMergePR);
     stepInfos.add(gitOpsRevertPR);
+    stepInfos.add(updateGitOpsApp);
     stepInfos.add(gitOpsSync);
     stepInfos.add(updateReleaseRepo);
     stepInfos.add(fetchLinkedApps);
@@ -1649,6 +1698,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(awsCdkDeploy);
     stepInfos.add(awsCdkDestroy);
     stepInfos.add(awsCdkRollback);
+    stepInfos.add(ecsServiceSetup);
+    stepInfos.add(ecsUpgradeContainer);
+    stepInfos.add(ecsBasicRollback);
     return stepInfos;
   }
 }

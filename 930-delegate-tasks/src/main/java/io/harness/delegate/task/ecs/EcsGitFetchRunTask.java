@@ -175,7 +175,7 @@ public class EcsGitFetchRunTask extends AbstractDelegateRunnableTask {
         gitFetchTaskHelper.printFileNames(executionLogCallback, filePaths, closeLogStream);
         try {
           filesResult =
-              gitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
+              gitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO, false);
         } catch (Exception e) {
           throw NestedExceptionUtils.hintWithExplanationException(
               format(

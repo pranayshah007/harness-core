@@ -22,9 +22,9 @@ import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import software.wings.beans.Account;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
 import software.wings.beans.LicenseInfo;
+import software.wings.beans.account.AccountStatus;
 import software.wings.beans.security.UserGroup;
 import software.wings.helpers.ext.url.SubdomainUrlHelper;
 import software.wings.security.authentication.TwoFactorAuthenticationManager;
@@ -258,6 +258,13 @@ public class AccountResourceNG {
       @PathParam("accountId") @AccountIdentifier String accountId, @Body AccountDTO dto) {
     return new RestResponse(
         AccountMapper.toAccountDTO(accountService.updateDefaultExperience(accountId, dto.getDefaultExperience())));
+  }
+
+  @PUT
+  @Path("/{accountId}/harness-support-access")
+  public RestResponse<Boolean> updateHarnessSupportAccess(
+      @PathParam("accountId") @AccountIdentifier String accountId, @Body boolean isHarnessSupportAccessAllowed) {
+    return new RestResponse(accountService.updateHarnessSupportAccess(accountId, isHarnessSupportAccessAllowed));
   }
 
   @PUT

@@ -179,7 +179,7 @@ public class ContainerDeploymentDelegateBaseHelper {
       EksK8sInfraDelegateConfig eksK8sInfraDelegateConfig = (EksK8sInfraDelegateConfig) clusterConfigDTO;
       AwsConnectorDTO awsConnectorDTO = eksK8sInfraDelegateConfig.getAwsConnectorDTO();
       return awsEKSDelegateTaskHelper.getKubeConfig(awsConnectorDTO, eksK8sInfraDelegateConfig.getCluster(),
-          eksK8sInfraDelegateConfig.getNamespace(), logCallback);
+          eksK8sInfraDelegateConfig.isAddRegionalParam(), eksK8sInfraDelegateConfig.getNamespace(), logCallback);
     } else if (clusterConfigDTO instanceof RancherK8sInfraDelegateConfig) {
       RancherK8sInfraDelegateConfig rancherK8sInfraDelegateConfig = (RancherK8sInfraDelegateConfig) clusterConfigDTO;
       return rancherKubeConfigGenerator.createKubernetesConfig(
@@ -308,6 +308,7 @@ public class ContainerDeploymentDelegateBaseHelper {
           log.info("File doesn't exist. Creating file at path {}", configFilePath);
           FileUtils.forceMkdir(file.getParentFile());
           FileUtils.writeStringToFile(file, configFileContent, UTF_8);
+          kubernetesContainerService.modifyFileReadableProperties(configFilePath);
           log.info("Created file with size {}", file.length());
         }
         return file.getAbsolutePath();

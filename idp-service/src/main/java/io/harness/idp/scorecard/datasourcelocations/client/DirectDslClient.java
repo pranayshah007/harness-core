@@ -13,10 +13,19 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
 import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
+import io.harness.security.AllTrustingX509TrustManager;
 
+import com.google.common.collect.ImmutableList;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.HttpUrl;
@@ -30,9 +39,12 @@ import okhttp3.RequestBody;
 public class DirectDslClient implements DslClient {
   private static final String POST_METHOD = "POST";
   private static final String GET_METHOD = "GET";
+  private static final ImmutableList<TrustManager> TRUST_ALL_CERTS =
+      ImmutableList.of(new AllTrustingX509TrustManager());
 
   @Override
-  public Response call(String accountIdentifier, ApiRequestDetails apiRequestDetails) {
+  public Response call(String accountIdentifier, ApiRequestDetails apiRequestDetails)
+      throws NoSuchAlgorithmException, KeyManagementException {
     OkHttpClient client = buildOkHttpClient();
     String url = apiRequestDetails.getUrl();
     String method = apiRequestDetails.getMethod();
@@ -44,13 +56,17 @@ public class DirectDslClient implements DslClient {
     return executeRequest(client, request);
   }
 
-  private OkHttpClient buildOkHttpClient() {
+  private OkHttpClient buildOkHttpClient() throws NoSuchAlgorithmException, KeyManagementException {
+    final SSLContext sslContext = SSLContext.getInstance("SSL");
+    sslContext.init(null, TRUST_ALL_CERTS.toArray(new TrustManager[1]), new java.security.SecureRandom());
+    final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
     return new OkHttpClient()
         .newBuilder()
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(10, TimeUnit.SECONDS)
         .writeTimeout(10, TimeUnit.SECONDS)
         .retryOnConnectionFailure(true)
+        .sslSocketFactory(sslSocketFactory, (X509TrustManager) TRUST_ALL_CERTS.get(0))
         .build();
   }
 

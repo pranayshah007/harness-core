@@ -11,11 +11,16 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.persistance.GitSyncableEntity;
 import io.harness.mongo.collation.CollationLocale;
 import io.harness.mongo.collation.CollationStrength;
 import io.harness.mongo.index.Collation;
@@ -27,6 +32,7 @@ import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.persistence.PersistentEntity;
+import io.harness.persistence.gitaware.GitAware;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.common.collect.ImmutableList;
@@ -48,6 +54,8 @@ import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false,
+    components = {HarnessModuleComponent.CDS_K8S, HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(PIPELINE)
 @Data
 @Builder
@@ -57,7 +65,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("environmentsNG")
 @ChangeDataCapture(table = "environments", dataStore = "ng-harness", fields = {}, handler = "Environments")
 @TypeAlias("io.harness.ng.core.environment.beans.Environment")
-public class Environment implements PersistentEntity, ScopeAware {
+public class Environment implements PersistentEntity, ScopeAware, GitAware, GitSyncableEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -109,6 +117,13 @@ public class Environment implements PersistentEntity, ScopeAware {
   @Setter @NonFinal String filePath;
   @Setter @NonFinal String rootFolder;
 
+  // GitX Entities
+  @Wither @Setter @NonFinal StoreType storeType;
+  @Wither @Setter @NonFinal String repo;
+  @Wither @Setter @NonFinal String connectorRef;
+  @Wither @Setter @NonFinal String repoURL;
+  @Wither @Setter @NonFinal String fallBackBranch;
+
   // Service Override V2 migration
   @Builder.Default @Setter @NonFinal Boolean isMigratedToOverride = Boolean.FALSE;
 
@@ -122,5 +137,30 @@ public class Environment implements PersistentEntity, ScopeAware {
 
   public String fetchRef() {
     return IdentifierRefHelper.getRefFromIdentifierOrRef(accountId, orgIdentifier, projectIdentifier, identifier);
+  }
+
+  @Override
+  public String getUuid() {
+    return id;
+  }
+
+  @Override
+  public String getInvalidYamlString() {
+    return yaml;
+  }
+
+  @Override
+  public String getData() {
+    return this.yaml;
+  }
+
+  @Override
+  public void setData(String data) {
+    this.yaml = data;
+  }
+
+  @Override
+  public String getAccountIdentifier() {
+    return accountId;
   }
 }

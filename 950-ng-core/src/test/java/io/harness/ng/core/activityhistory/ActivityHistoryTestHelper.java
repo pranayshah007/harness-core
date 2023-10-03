@@ -8,10 +8,13 @@
 package io.harness.ng.core.activityhistory;
 
 import static io.harness.EntityType.CONNECTORS;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
+import static java.util.Objects.isNull;
 
 import io.harness.EntityType;
 import io.harness.beans.EntityReference;
+import io.harness.encryption.Scope;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.activityhistory.dto.EntityUsageActivityDetailDTO;
 import io.harness.ng.core.activityhistory.dto.NGActivityDTO;
@@ -24,20 +27,26 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ActivityHistoryTestHelper {
   public static NGActivityDTO createActivityHistoryDTO(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String identifier, NGActivityStatus status, long activityTime,
-      NGActivityType activityType, EntityType referredByEntityType) {
-    String identifier1;
-    if (isNotEmpty(projectIdentifier)) {
-      identifier1 = "identifier1";
-    } else if (isNotEmpty(orgIdentifier)) {
-      identifier1 = "org.identifier1";
-    } else {
-      identifier1 = "account.identifier";
+      String projectIdentifier, String identifier, String referredByEntityIdentifier, NGActivityStatus status,
+      long activityTime, NGActivityType activityType, EntityType referredByEntityType, Scope referredByEntityScope) {
+    if (isNull(referredByEntityScope)) {
+      referredByEntityScope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
     }
+
+    if (isEmpty(referredByEntityIdentifier)) {
+      if (Scope.PROJECT.equals(referredByEntityScope)) {
+        referredByEntityIdentifier = "identifier1";
+      } else if (Scope.ORG.equals(referredByEntityScope)) {
+        referredByEntityIdentifier = "org.identifier1";
+      } else {
+        referredByEntityIdentifier = "account.identifier1";
+      }
+    }
+
     EntityReference referredEntityRef =
         IdentifierRefHelper.getIdentifierRef(identifier, accountIdentifier, orgIdentifier, projectIdentifier);
-    EntityReference referredByEntityRef =
-        IdentifierRefHelper.getIdentifierRef(identifier1, accountIdentifier, orgIdentifier, projectIdentifier);
+    EntityReference referredByEntityRef = IdentifierRefHelper.getIdentifierRef(
+        referredByEntityIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
     EntityDetail referredEntity = EntityDetail.builder().entityRef(referredEntityRef).type(CONNECTORS).build();
     EntityDetail referredByEntity =
         EntityDetail.builder().entityRef(referredByEntityRef).type(referredByEntityType).build();

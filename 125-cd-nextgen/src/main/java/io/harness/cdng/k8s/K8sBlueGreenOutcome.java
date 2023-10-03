@@ -40,4 +40,5 @@ public class K8sBlueGreenOutcome implements Outcome, ExecutionSweepingOutput {
   List<KubernetesResourceId> prunedResourceIds;
   K8sGitFetchInfo manifest;
   Boolean stageDeploymentSkipped;
+  List<String> podIps;
 }

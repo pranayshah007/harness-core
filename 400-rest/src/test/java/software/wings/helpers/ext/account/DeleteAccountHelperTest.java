@@ -46,13 +46,13 @@ import io.harness.scheduler.PersistentScheduler;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.Account;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
 import software.wings.beans.Application;
 import software.wings.beans.DeletedEntity;
 import software.wings.beans.LicenseInfo;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.User;
+import software.wings.beans.account.AccountStatus;
 import software.wings.beans.entityinterface.ApplicationAccess;
 import software.wings.licensing.LicenseService;
 import software.wings.scheduler.events.segment.SegmentGroupEventJobContext;

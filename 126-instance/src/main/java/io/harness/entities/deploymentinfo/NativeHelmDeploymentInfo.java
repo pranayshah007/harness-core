@@ -16,6 +16,8 @@ import io.harness.helper.K8sCloudConfigMetadata;
 import io.harness.k8s.model.HelmVersion;
 
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -32,4 +34,5 @@ public class NativeHelmDeploymentInfo extends DeploymentInfo {
   private HelmChartInfo helmChartInfo;
   @NotNull private HelmVersion helmVersion;
   @EqualsAndHashCode.Exclude private K8sCloudConfigMetadata cloudConfigMetadata;
+  private Map<String, List<String>> workloadLabelSelectors;
 }

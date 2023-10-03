@@ -118,7 +118,6 @@ import io.harness.lock.PersistentLockModule;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.migration.NGMigrationSdkModule;
 import io.harness.organization.OrganizationClientModule;
-import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.project.ProjectClientModule;
 import io.harness.queue.QueueController;
@@ -321,12 +320,11 @@ public class AccessControlModule extends AbstractModule {
         config.getNgManagerServiceConfiguration().getNgManagerServiceSecret(), ACCESS_CONTROL_SERVICE.getServiceId(),
         ClientMode.PRIVILEGED));
 
-    install(new TransactionOutboxModule(config.getOutboxPollConfig(), ACCESS_CONTROL_SERVICE.getServiceId(),
-        config.getAggregatorConfiguration().isExportMetricsToStackDriver()));
     install(NGMigrationSdkModule.getInstance());
 
     install(AccessControlPersistenceModule.getInstance(config.getMongoConfig()));
-    install(AccessControlCoreModule.getInstance());
+    install(AccessControlCoreModule.getInstance(
+        config.getOutboxPollConfig(), config.getAggregatorConfiguration().isExportMetricsToStackDriver()));
     install(AccessControlPreferenceModule.getInstance());
     install(new AbstractTelemetryModule() {
       @Override
@@ -424,9 +422,11 @@ public class AccessControlModule extends AbstractModule {
     bind(OrgRoleAssignmentsApi.class).to(OrgRoleAssignmentsApiImpl.class);
     bind(ProjectRoleAssignmentsApi.class).to(ProjectRoleAssignmentsApiImpl.class);
 
-    bind(boolean.class).annotatedWith(Names.named("disableRedundantACLs")).toInstance(config.isDisableRedundantACLs());
     bind(boolean.class)
         .annotatedWith(Names.named("enableParallelProcessingOfUserGroupUpdates"))
         .toInstance(config.isEnableParallelProcessingOfUserGroupUpdates());
+    bind(boolean.class)
+        .annotatedWith(Names.named("enableAclProcessingThroughOutbox"))
+        .toInstance(config.isEnableAclProcessingThroughOutbox());
   }
 }

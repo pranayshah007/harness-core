@@ -47,14 +47,14 @@ public class PerpetualTaskValidationCallback implements OldNotifyCallback {
 
   @Override
   public void notify(Map<String, ResponseData> response) {
-    log.info("PT validation task for {} response {} for account {}", perpetualTaskId, response, accountId);
+    log.debug("PT validation task for {} response {} for account {}", perpetualTaskId, response, accountId);
     DelegateResponseData notifyResponseData = (DelegateResponseData) response.values().iterator().next();
     handleResponse(notifyResponseData);
   }
 
   @Override
   public void notifyError(Map<String, ResponseData> response) {
-    log.info("PT validation task failed for {} with response {} for account {}", perpetualTaskId, response, accountId);
+    log.debug("PT validation task failed for {} with response {} for account {}", perpetualTaskId, response, accountId);
     DelegateResponseData notifyResponseData = (DelegateResponseData) response.values().iterator().next();
     handleResponse(notifyResponseData);
   }

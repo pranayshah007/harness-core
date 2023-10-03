@@ -12,7 +12,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.service.beans.ServiceUseFromStage;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 
 import java.util.Arrays;
@@ -32,13 +31,6 @@ public class ServiceConfigStepParameters implements StepParameters {
   ParameterField<String> serviceRef;
 
   String childNodeId;
-
-  // Todo(Alexei) Remove this when @RecastIgnore annotation is added
-  @Override
-  public String toViewJson() {
-    return RecastOrchestrationUtils.toJson(
-        ServiceConfigStepParameters.builder().useFromStage(useFromStage).serviceRef(serviceRef).build());
-  }
 
   @Override
   public List<String> excludeKeysFromStepInputs() {

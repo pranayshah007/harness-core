@@ -173,17 +173,19 @@ public class DebugServiceImpl implements DebugService {
       sliIdentifierToSLIRecordMap.put(serviceLevelIndicator.getIdentifier(),
           sliRecordService.getLatestCountSLIRecords(serviceLevelIndicator.getUuid(), 100));
 
-      String verificationTaskId = verificationTaskService.getSLIVerificationTaskId(
+      Optional<String> verificationTaskId = verificationTaskService.getSLIVerificationTaskId(
           projectParams.getAccountIdentifier(), serviceLevelIndicator.getUuid());
 
-      sliIdentifierToAnalysisStateMachineMap.put(serviceLevelIndicator.getIdentifier(),
-          analysisStateMachineService.getExecutingStateMachine(verificationTaskId));
+      if (verificationTaskId.isPresent()) {
+        sliIdentifierToAnalysisStateMachineMap.put(serviceLevelIndicator.getIdentifier(),
+            analysisStateMachineService.getExecutingStateMachine(verificationTaskId.get()));
 
-      sliIdentifierToTimeSeriesRecords.put(serviceLevelIndicator.getIdentifier(),
-          timeSeriesRecordService.getLatestTimeSeriesRecords(verificationTaskId, 100));
+        sliIdentifierToTimeSeriesRecords.put(serviceLevelIndicator.getIdentifier(),
+            timeSeriesRecordService.getLatestTimeSeriesRecords(verificationTaskId.get(), 100));
 
-      sliIdentifierToAnalysisOrchestrator.put(
-          serviceLevelIndicator.getIdentifier(), orchestrationService.getAnalysisOrchestrator(verificationTaskId));
+        sliIdentifierToAnalysisOrchestrator.put(serviceLevelIndicator.getIdentifier(),
+            orchestrationService.getAnalysisOrchestrator(verificationTaskId.get()));
+      }
     }
 
     return SLODebugResponse.builder()
@@ -412,10 +414,12 @@ public class DebugServiceImpl implements DebugService {
     ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
         projectParams, simpleServiceLevelObjective.getServiceLevelIndicators().get(0));
     Preconditions.checkNotNull(serviceLevelIndicator, "SLI is not present in database");
-    String verificationTaskId = verificationTaskService.getSLIVerificationTaskId(
+    Optional<String> sliVerificationTaskId = verificationTaskService.getSLIVerificationTaskId(
         projectParams.getAccountIdentifier(), serviceLevelIndicator.getUuid());
-    serviceLevelIndicatorService.enqueueDataCollectionFailureInstanceAndTriggerAnalysis(
-        verificationTaskId, Instant.ofEpochSecond(startTime), Instant.ofEpochSecond(endTime), serviceLevelIndicator);
+    if (sliVerificationTaskId.isPresent()) {
+      serviceLevelIndicatorService.enqueueDataCollectionFailureInstanceAndTriggerAnalysis(sliVerificationTaskId.get(),
+          Instant.ofEpochSecond(startTime), Instant.ofEpochSecond(endTime), serviceLevelIndicator);
+    }
   }
 
   @Override

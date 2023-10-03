@@ -54,8 +54,10 @@ public class EcsBlueGreenCreateServiceStepInfo
   public EcsBlueGreenCreateServiceStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<String> loadBalancer, ParameterField<String> prodListener,
       ParameterField<String> prodListenerRuleArn, ParameterField<String> stageListener,
-      ParameterField<String> stageListenerRuleArn) {
-    super(delegateSelectors, loadBalancer, prodListener, prodListenerRuleArn, stageListener, stageListenerRuleArn);
+      ParameterField<String> stageListenerRuleArn, ParameterField<Boolean> sameAsAlreadyRunningInstances,
+      ParameterField<Boolean> enableAutoscalingInSwapStep) {
+    super(delegateSelectors, loadBalancer, prodListener, prodListenerRuleArn, stageListener, stageListenerRuleArn,
+        sameAsAlreadyRunningInstances, enableAutoscalingInSwapStep);
   }
 
   @Override
@@ -77,6 +79,8 @@ public class EcsBlueGreenCreateServiceStepInfo
         .stageListener(this.getStageListener())
         .prodListenerRuleArn(this.getProdListenerRuleArn())
         .stageListenerRuleArn(this.getStageListenerRuleArn())
+        .sameAsAlreadyRunningInstances(this.getSameAsAlreadyRunningInstances())
+        .enableAutoScalingInSwapStep(this.getEnableAutoScalingInSwapStep())
         .build();
   }
 

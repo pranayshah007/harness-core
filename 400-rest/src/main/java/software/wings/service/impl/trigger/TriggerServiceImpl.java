@@ -240,7 +240,7 @@ public class TriggerServiceImpl implements TriggerService {
   @Override
   public PageResponse<Trigger> list(PageRequest<Trigger> pageRequest, boolean withTags, String tagFilter) {
     PageResponse<Trigger> response =
-        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.TRIGGER, withTags, false);
+        resourceLookupService.listWithTagFilters(pageRequest, tagFilter, EntityType.TRIGGER, withTags, false, false);
     return postProcessTriggers(response);
   }
 

@@ -8,9 +8,12 @@
 package io.harness.delegate.task.servicenow;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.delegate.beans.connector.servicenow.ServiceNowConstants.INVALID_SERVICE_NOW_CREDENTIALS;
+import static io.harness.delegate.beans.connector.servicenow.ServiceNowConstants.NOT_FOUND;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,24 +43,31 @@ import io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePassword
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.encryption.SecretRefData;
+import io.harness.eraro.ErrorCode;
 import io.harness.exception.HintException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ServiceNowException;
+import io.harness.exception.WingsException;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.serializer.JsonUtils;
+import io.harness.servicenow.ChangeTaskUpdateMultiple;
 import io.harness.servicenow.ServiceNowActionNG;
 import io.harness.servicenow.ServiceNowFieldNG;
 import io.harness.servicenow.ServiceNowImportSetResponseNG;
 import io.harness.servicenow.ServiceNowStagingTable;
 import io.harness.servicenow.ServiceNowTemplate;
 import io.harness.servicenow.ServiceNowTicketTypeDTO;
+import io.harness.servicenow.ServiceNowUpdateMultipleTaskNode;
 
 import software.wings.helpers.ext.servicenow.ServiceNowRestClient;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.MoreExecutors;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
@@ -73,6 +83,7 @@ import okhttp3.ResponseBody;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
@@ -658,6 +669,331 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
           .getTemplateList(anyString(), eq("change_request"), anyInt(), anyInt(), anyString(), eq(null));
     }
   }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetStandardChangeRequestTemplateList() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getStandardTemplate(anyString(), anyString(), anyString(), anyInt(), anyInt()))
+        .thenReturn(mockCall);
+
+    List<ImmutableMap<String, JsonNode>> responsemap = new ArrayList<>();
+    responsemap.add(ImmutableMap.of("template", JsonUtils.asTree(Collections.singletonMap("value", "12678")), "sys_id",
+        new TextNode("12345677"), "sys_name", new TextNode("test s 1")));
+    responsemap.add(ImmutableMap.of("template", JsonUtils.asTree(Collections.singletonMap("value", "1279")), "sys_id",
+        new TextNode("12345678"), "sys_name", new TextNode("test s 2")));
+
+    JsonNode successResponse = JsonUtils.asTree(Collections.singletonMap("result", responsemap));
+    Response<JsonNode> jsonNodeResponse = Response.success(successResponse);
+    when(mockCall.clone()).thenReturn(mockCall);
+    doReturn(jsonNodeResponse).when(mockCall).execute();
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response =
+          serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                           .action(ServiceNowActionNG.GET_STANDARD_TEMPLATE)
+                                                           .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                           .ticketType("change_request")
+                                                           .templateListLimit(1)
+                                                           .templateListOffset(0)
+                                                           .build(),
+              logStreamingTaskClient);
+      ArgumentCaptor<String> queryCaptor = ArgumentCaptor.forClass(String.class);
+
+      verify(serviceNowRestClient)
+          .getStandardTemplate(anyString(), queryCaptor.capture(), anyString(), anyInt(), anyInt());
+      String query = queryCaptor.getValue();
+      assertThat(query).isEqualTo("active=true^ORDERBYsys_created_on");
+      assertThat(response.getServiceNowTemplateList()).hasSize(2);
+
+      // template fields
+      ServiceNowTemplate serviceNowTemplate = response.getServiceNowTemplateList().get(0);
+      assertThat(serviceNowTemplate.getName()).isEqualTo("test s 1");
+      assertThat(serviceNowTemplate.getSys_id()).isEqualTo("12345677");
+
+      serviceNowTemplate = response.getServiceNowTemplateList().get(1);
+      assertThat(serviceNowTemplate.getName()).isEqualTo("test s 2");
+      assertThat(serviceNowTemplate.getSys_id()).isEqualTo("12345678");
+
+      verify(secretDecryptionService).decrypt(any(), any());
+    }
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetStandardChangeRequestTemplateListHandleException() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getStandardTemplate(anyString(), anyString(), anyString(), anyInt(), anyInt()))
+        .thenReturn(mockCall);
+    when(mockCall.clone()).thenReturn(mockCall);
+    doThrow(new InvalidRequestException("no data found", ErrorCode.SERVICENOW_ERROR, WingsException.USER))
+        .when(mockCall)
+        .execute();
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+
+      assertThatThrownBy(
+          ()
+              -> serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                                  .action(ServiceNowActionNG.GET_STANDARD_TEMPLATE)
+                                                                  .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                                  .ticketType("change_request")
+                                                                  .templateListLimit(1)
+                                                                  .templateListOffset(0)
+                                                                  .build(),
+                  logStreamingTaskClient))
+          .isInstanceOf(ServiceNowException.class)
+          .hasMessage(
+              "Error occurred while fetching serviceNow Standard templates: InvalidRequestException: no data found");
+    }
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetStandardChangeRequestTemplateWithTemplateName() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getStandardTemplate(anyString(), anyString(), anyString(), anyInt(), anyInt()))
+        .thenReturn(mockCall);
+    Call mockCall2 = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getStandardTemplate(anyString(), anyString())).thenReturn(mockCall2);
+    List<ImmutableMap<String, JsonNode>> responsemap = new ArrayList<>();
+    responsemap.add(ImmutableMap.of("template", JsonUtils.asTree(Collections.singletonMap("value", "12678")), "sys_id",
+        new TextNode("12345677"), "sys_name", new TextNode(CHANGE_REQUEST_TEMPLATE_NAME)));
+
+    JsonNode successResponse = JsonUtils.asTree(Collections.singletonMap("result", responsemap));
+    Response<JsonNode> jsonNodeResponse = Response.success(successResponse);
+    when(mockCall.clone()).thenReturn(mockCall);
+    when(mockCall2.clone()).thenReturn(mockCall2);
+    doReturn(jsonNodeResponse).when(mockCall).execute();
+    doReturn(
+        Response.success(JsonUtils.asTree(Collections.singletonMap("result",
+            ImmutableMap.of("template",
+                "short_description=Include a title for your change no greater than 100 characters^description=Describe what you plan to do^implementation_plan=List the steps")))))
+        .when(mockCall2)
+        .execute();
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response =
+          serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                           .action(ServiceNowActionNG.GET_STANDARD_TEMPLATE)
+                                                           .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                           .ticketType("change_request")
+                                                           .templateName(CHANGE_REQUEST_TEMPLATE_NAME)
+                                                           .templateListLimit(1)
+                                                           .templateListOffset(0)
+                                                           .build(),
+              logStreamingTaskClient);
+      ArgumentCaptor<String> queryCaptor = ArgumentCaptor.forClass(String.class);
+
+      verify(serviceNowRestClient)
+          .getStandardTemplate(anyString(), queryCaptor.capture(), anyString(), anyInt(), anyInt());
+      String query = queryCaptor.getValue();
+      assertThat(query).isEqualTo("active=true^sys_name=standard_change_template^ORDERBYsys_created_on");
+      // template fields
+      assertThat(response.getServiceNowFieldJsonNGListAsString())
+          .isEqualTo(
+              "short_description=Include a title for your change no greater than 100 characters^description=Describe what you plan to do^implementation_plan=List the steps");
+
+      verify(serviceNowRestClient).getStandardTemplate(anyString(), queryCaptor.capture());
+      query = queryCaptor.getValue();
+      assertThat(query).isEqualTo("12678");
+      verify(secretDecryptionService).decrypt(any(), any());
+    }
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetStandardChangeRequestTemplateWithTemplateNameAndIncorrectResponse() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getStandardTemplate(anyString(), anyString(), anyString(), anyInt(), anyInt()))
+        .thenReturn(mockCall);
+    Call mockCall2 = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getStandardTemplate(anyString(), anyString())).thenReturn(mockCall2);
+    List<ImmutableMap<String, JsonNode>> responsemap = new ArrayList<>();
+    responsemap.add(ImmutableMap.of("template", JsonUtils.asTree(Collections.singletonMap("value", "12678")), "sys_id",
+        new TextNode("12345677"), "sys_name", new TextNode("incorrect")));
+
+    JsonNode successResponse = JsonUtils.asTree(Collections.singletonMap("result", responsemap));
+    Response<JsonNode> jsonNodeResponse = Response.success(successResponse);
+    when(mockCall.clone()).thenReturn(mockCall);
+    when(mockCall2.clone()).thenReturn(mockCall2);
+    doReturn(jsonNodeResponse).when(mockCall).execute();
+    doReturn(
+        Response.success(JsonUtils.asTree(Collections.singletonMap("result",
+            ImmutableMap.of("template",
+                "short_description=Include a title for your change no greater than 100 characters^description=Describe what you plan to do^implementation_plan=List the steps")))))
+        .when(mockCall2)
+        .execute();
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+
+      assertThatThrownBy(
+          ()
+              -> serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                                  .action(ServiceNowActionNG.GET_STANDARD_TEMPLATE)
+                                                                  .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                                  .ticketType("change_request")
+                                                                  .templateName(CHANGE_REQUEST_TEMPLATE_NAME)
+                                                                  .templateListLimit(1)
+                                                                  .templateListOffset(0)
+                                                                  .build(),
+                  logStreamingTaskClient))
+          .isInstanceOf(ServiceNowException.class)
+          .hasMessage(
+              "Standard Template fetched incorrect is not matched with template name standard_change_template provided");
+    }
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetStandardChangeRequestTemplateWithTemplateException() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getStandardTemplate(anyString(), anyString(), anyString(), anyInt(), anyInt()))
+        .thenReturn(mockCall);
+    Call mockCall2 = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getStandardTemplate(anyString(), anyString())).thenReturn(mockCall2);
+    List<ImmutableMap<String, JsonNode>> responsemap = new ArrayList<>();
+    responsemap.add(ImmutableMap.of("template", JsonUtils.asTree(Collections.singletonMap("value", "12678")), "sys_id",
+        new TextNode("12345677"), "sys_name", new TextNode(CHANGE_REQUEST_TEMPLATE_NAME)));
+
+    JsonNode successResponse = JsonUtils.asTree(Collections.singletonMap("result", responsemap));
+    Response<JsonNode> jsonNodeResponse = Response.success(successResponse);
+    when(mockCall.clone()).thenReturn(mockCall);
+    when(mockCall2.clone()).thenReturn(mockCall2);
+    doReturn(jsonNodeResponse).when(mockCall).execute();
+    doThrow(new InvalidRequestException("no data found", ErrorCode.SERVICENOW_ERROR, WingsException.USER))
+        .when(mockCall2)
+        .execute();
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      assertThatThrownBy(
+          ()
+              -> serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                                  .action(ServiceNowActionNG.GET_STANDARD_TEMPLATE)
+                                                                  .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                                  .ticketType("change_request")
+                                                                  .templateListLimit(1)
+                                                                  .templateName(CHANGE_REQUEST_TEMPLATE_NAME)
+                                                                  .templateListOffset(0)
+                                                                  .build(),
+                  logStreamingTaskClient))
+          .isInstanceOf(ServiceNowException.class)
+          .hasMessage(
+              "Error occurred while fetching serviceNow standard template fields: InvalidRequestException: no data found");
+    }
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetReadOnlyFieldsForStandardTemplate() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getReadOnlyFieldsForStandardTemplate(anyString())).thenReturn(mockCall);
+    Map<String, String> responseMap =
+        ImmutableMap.of("readonly_fields", "description,backout_plan,test_plan,implementation_plan,short_description");
+    JsonNode successResponse =
+        JsonUtils.asTree(Collections.singletonMap("result", Collections.singletonList(responseMap)));
+    Response<JsonNode> jsonNodeResponse = Response.success(successResponse);
+    when(mockCall.clone()).thenReturn(mockCall);
+    doReturn(jsonNodeResponse).when(mockCall).execute();
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response = serviceNowTaskNgHelper.getServiceNowResponse(
+          ServiceNowTaskNGParameters.builder()
+              .action(ServiceNowActionNG.GET_STANDARD_TEMPLATES_READONLY_FIELDS)
+              .serviceNowConnectorDTO(serviceNowConnectorDTO)
+              .build(),
+          logStreamingTaskClient);
+
+      assertThat(response.getDelegateMetaInfo()).isNull();
+      assertThat(response.getServiceNowStandardTemplateReadOnlyFields())
+          .isEqualTo("description,backout_plan,test_plan,implementation_plan,short_description");
+
+      verify(secretDecryptionService).decrypt(any(), any());
+
+      verify(serviceNowRestClient).getReadOnlyFieldsForStandardTemplate(anyString());
+    }
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetReadOnlyFieldsForStandardTemplatForNullResponse() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getReadOnlyFieldsForStandardTemplate(anyString())).thenReturn(mockCall);
+    when(mockCall.clone()).thenReturn(mockCall);
+    JsonNode successResponse = JsonUtils.asTree(Collections.singletonMap("result1", null));
+    Response<JsonNode> jsonNodeResponse = Response.success(successResponse);
+    doReturn(jsonNodeResponse).when(mockCall).execute();
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+
+      ServiceNowTaskNGParameters serviceNowTaskNGParameters =
+          ServiceNowTaskNGParameters.builder()
+              .action(ServiceNowActionNG.GET_STANDARD_TEMPLATES_READONLY_FIELDS)
+              .serviceNowConnectorDTO(serviceNowConnectorDTO)
+              .build();
+      assertThatThrownBy(
+          () -> serviceNowTaskNgHelper.getServiceNowResponse(serviceNowTaskNGParameters, logStreamingTaskClient))
+          .isInstanceOf(ServiceNowException.class)
+          .hasMessage(
+              "Failed to fetch read only fields for standard templates  response: Response{protocol=http/1.1, code=200, message=OK, url=http://localhost/}");
+
+      verify(secretDecryptionService).decrypt(any(), any());
+
+      verify(serviceNowRestClient).getReadOnlyFieldsForStandardTemplate(anyString());
+    }
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetReadOnlyFieldsForStandardTemplateForNullString() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getReadOnlyFieldsForStandardTemplate(anyString())).thenReturn(mockCall);
+    Map<String, String> responseMap = ImmutableMap.of("dummy", "hello");
+    JsonNode successResponse = JsonUtils.asTree(Collections.singletonMap("result", Collections.singleton(responseMap)));
+    Response<JsonNode> jsonNodeResponse = Response.success(successResponse);
+    when(mockCall.clone()).thenReturn(mockCall);
+    doReturn(jsonNodeResponse).when(mockCall).execute();
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response = serviceNowTaskNgHelper.getServiceNowResponse(
+          ServiceNowTaskNGParameters.builder()
+              .action(ServiceNowActionNG.GET_STANDARD_TEMPLATES_READONLY_FIELDS)
+              .serviceNowConnectorDTO(serviceNowConnectorDTO)
+              .build(),
+          logStreamingTaskClient);
+
+      assertThat(response.getDelegateMetaInfo()).isNull();
+      assertThat(response.getServiceNowStandardTemplateReadOnlyFields()).isEqualTo(null);
+      verify(secretDecryptionService).decrypt(any(), any());
+      verify(serviceNowRestClient).getReadOnlyFieldsForStandardTemplate(anyString());
+    }
+  }
 
   @Test
   @Owner(developers = vivekveman)
@@ -670,12 +1006,12 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
     Response<JsonNode> jsonNodeResponse1 = Response.error(401, body);
     assertThatThrownBy(() -> serviceNowTaskNgHelper.handleResponse(jsonNodeResponse1, ""))
         .isInstanceOf(ServiceNowException.class)
-        .hasMessage(ServiceNowTaskNgHelper.INVALID_SERVICE_NOW_CREDENTIALS);
+        .hasMessage(INVALID_SERVICE_NOW_CREDENTIALS);
 
     Response<JsonNode> jsonNodeResponse2 = Response.error(404, body);
     assertThatThrownBy(() -> serviceNowTaskNgHelper.handleResponse(jsonNodeResponse2, ""))
         .isInstanceOf(ServiceNowException.class)
-        .hasMessage(ServiceNowTaskNgHelper.NOT_FOUND);
+        .hasMessage(NOT_FOUND);
 
     when(body.string()).thenReturn("dummy error message");
     Response<JsonNode> jsonNodeResponse3 = Response.error(400, body);
@@ -1179,5 +1515,294 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
     ObjectMapper mapper = new ObjectMapper();
     JsonNode responseNode = mapper.readTree(jsonFile);
     return Response.success(responseNode);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void testUpdateServiceNowWithoutTemplateToUpdateTicketWithMultipleTasksAndWithTemplateWithRetry()
+      throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+    serviceNowTaskNgHelper.executorService = MoreExecutors.newDirectExecutorService();
+
+    Call mockFetchChangeRequestFromCR = Mockito.mock(Call.class);
+    when(serviceNowRestClient.fetchChangeTasksFromCR(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(mockFetchChangeRequestFromCR);
+
+    List<Map<String, String>> getChangeRequestTaskResponseMap =
+        List.of(ImmutableMap.of("number", "CTASK0011062", "sys_id", "9193f27f1bf4b91044cbdb58b04bcbce",
+                    "change_task_type", "planning"),
+            ImmutableMap.of(
+                "number", "CTASK0011061", "sys_id", "a683f6fb1bf4b91044cbdb58b04bcbca", "change_task_type", "planning"),
+            ImmutableMap.of("number", "CTASK0011060", "sys_id", "1044cbdb58b04bcbcaa683f6fb1bf4b9", "change_task_type",
+                "planning"));
+    JsonNode fetchChangeRequestResponse =
+        JsonUtils.asTree(Collections.singletonMap("result", getChangeRequestTaskResponseMap));
+    Response<JsonNode> jsonNodeFetchChangeRequestResponse = Response.success(fetchChangeRequestResponse);
+    when(mockFetchChangeRequestFromCR.clone()).thenReturn(mockFetchChangeRequestFromCR);
+    doThrow(new SocketTimeoutException())
+        .doReturn(jsonNodeFetchChangeRequestResponse)
+        .when(mockFetchChangeRequestFromCR)
+        .execute();
+
+    Call mockCall = Mockito.mock(Call.class);
+    Call mockFetchIssueCall = Mockito.mock(Call.class);
+    List<String> listTickets = List.of(TICKET_NUMBER + 1, TICKET_NUMBER + 2, TICKET_NUMBER + 3);
+    for (String item : List.of("9193f27f1bf4b91044cbdb58b04bcbce", "a683f6fb1bf4b91044cbdb58b04bcbca",
+             "1044cbdb58b04bcbcaa683f6fb1bf4b9")) {
+      int i = 0;
+      when(serviceNowRestClient.updateUsingTemplate(anyString(), anyString(), anyString(), anyString()))
+          .thenReturn(mockCall);
+
+      ImmutableMap<String, String> responseMap = ImmutableMap.of("record_sys_id", item, "record_link",
+          "incident.do?sys_id=aacc24dcdb5f85509e7c2a59139619c4&sysparm_stack=incident_list.do?sysparm_query=active=true",
+          "record_number", listTickets.get(i));
+
+      JsonNode successResponse = JsonUtils.asTree(Collections.singletonMap("result", responseMap));
+      Response<JsonNode> jsonNodeResponse = Response.success(successResponse);
+      when(mockCall.clone()).thenReturn(mockCall);
+      doThrow(new SocketTimeoutException()).doReturn(jsonNodeResponse).when(mockCall).execute();
+
+      when(serviceNowRestClient.getIssue(anyString(), anyString(), anyString(), anyString()))
+          .thenReturn(mockFetchIssueCall);
+      Map<String, Map<String, String>> getIssueResponseMap =
+          ImmutableMap.of("parent", ImmutableMap.of("value", "", "display_value", ""), "description",
+              ImmutableMap.of("value", "BEvalue2", "display_value", "UIvalue2"), "number",
+              ImmutableMap.of("value", listTickets.get(i), "display_value", listTickets.get(i)));
+
+      JsonNode fetchIssueResponse =
+          JsonUtils.asTree(Collections.singletonMap("result", Collections.singletonList(getIssueResponseMap)));
+      Response<JsonNode> jsonNodeFetchIssueResponse = Response.success(fetchIssueResponse);
+      when(mockFetchIssueCall.clone()).thenReturn(mockFetchIssueCall);
+      doThrow(new SocketTimeoutException()).doReturn(jsonNodeFetchIssueResponse).when(mockFetchIssueCall).execute();
+      i++;
+    }
+
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      Map<String, String> fieldmap = ImmutableMap.of("value", "BEvalue2", "display_value", "UIvalue2");
+
+      ServiceNowUpdateMultipleTaskNode serviceNowUpdateMultiple = ServiceNowUpdateMultipleTaskNode.builder()
+                                                                      .type("change_task")
+                                                                      .spec(ChangeTaskUpdateMultiple.builder()
+                                                                                .changeTaskType("planning")
+                                                                                .changeRequestNumber(TICKET_NUMBER)
+                                                                                .build())
+                                                                      .build();
+
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+
+      ServiceNowTaskNGParameters serviceNowTaskNGParameters = ServiceNowTaskNGParameters.builder()
+                                                                  .action(ServiceNowActionNG.UPDATE_TICKET)
+                                                                  .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                                  .useServiceNowTemplate(true)
+                                                                  .templateName("aoeu")
+                                                                  .ticketType("change_task")
+                                                                  .updateMultiple(serviceNowUpdateMultiple)
+                                                                  .fields(fieldmap)
+                                                                  .build();
+
+      ServiceNowTaskNGResponse response =
+          serviceNowTaskNgHelper.getServiceNowResponse(serviceNowTaskNGParameters, logStreamingTaskClient);
+
+      assertThat(response.getDelegateMetaInfo()).isNull();
+
+      // ServiceNow Outcome
+      assertThat(response.getTicket()).isNull();
+      assertThat(response.getTickets()).hasSize(3);
+      assertThat(response.getTickets().get(0).getFields()).hasSize(2);
+      assertThat(response.getTickets().get(1).getFields()).hasSize(2);
+      assertThat(response.getTickets().get(2).getFields()).hasSize(2);
+      verify(secretDecryptionService).decrypt(any(), any());
+      verify(serviceNowRestClient, times(3)).updateUsingTemplate(anyString(), anyString(), anyString(), anyString());
+    }
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void testUpdateServiceNowWithoutTemplateToUpdateTicketWithMultipleTasksAndWithoutTemplateWithRetry()
+      throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+    serviceNowTaskNgHelper.executorService = MoreExecutors.newDirectExecutorService();
+
+    Call mockFetchChangeRequestFromCR = Mockito.mock(Call.class);
+    when(serviceNowRestClient.fetchChangeTasksFromCR(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(mockFetchChangeRequestFromCR);
+
+    List<Map<String, String>> getChangeRequestTaskResponseMap =
+        List.of(ImmutableMap.of("number", "CTASK0011062", "sys_id", "9193f27f1bf4b91044cbdb58b04bcbce",
+                    "change_task_type", "planning"),
+            ImmutableMap.of(
+                "number", "CTASK0011061", "sys_id", "a683f6fb1bf4b91044cbdb58b04bcbca", "change_task_type", "planning"),
+            ImmutableMap.of("number", "CTASK0011060", "sys_id", "1044cbdb58b04bcbcaa683f6fb1bf4b9", "change_task_type",
+                "planning"));
+    JsonNode fetchChangeRequestResponse =
+        JsonUtils.asTree(Collections.singletonMap("result", getChangeRequestTaskResponseMap));
+    Response<JsonNode> jsonNodeFetchChangeRequestResponse = Response.success(fetchChangeRequestResponse);
+    when(mockFetchChangeRequestFromCR.clone()).thenReturn(mockFetchChangeRequestFromCR);
+    doThrow(new SocketTimeoutException())
+        .doReturn(jsonNodeFetchChangeRequestResponse)
+        .when(mockFetchChangeRequestFromCR)
+        .execute();
+
+    Call mockCall = Mockito.mock(Call.class);
+    for (String item : List.of("9193f27f1bf4b91044cbdb58b04bcbce", "a683f6fb1bf4b91044cbdb58b04bcbca",
+             "1044cbdb58b04bcbcaa683f6fb1bf4b9")) {
+      when(serviceNowRestClient.updateTicket(anyString(), anyString(), anyString(), eq("all"), isNull(), anyMap()))
+          .thenReturn(mockCall);
+
+      ImmutableMap<String, JsonNode> responseMap =
+          ImmutableMap.of("number", JsonUtils.asTree(Collections.singletonMap("display_value", item)));
+
+      JsonNode successResponse = JsonUtils.asTree(Collections.singletonMap("result", responseMap));
+      Response<JsonNode> jsonNodeResponse = Response.success(successResponse);
+      when(mockCall.clone()).thenReturn(mockCall);
+      doThrow(new SocketTimeoutException()).doReturn(jsonNodeResponse).when(mockCall).execute();
+    }
+
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      Map<String, String> fieldmap = ImmutableMap.of("value", "BEvalue2", "display_value", "UIvalue2");
+
+      ServiceNowUpdateMultipleTaskNode serviceNowUpdateMultiple = ServiceNowUpdateMultipleTaskNode.builder()
+                                                                      .type("change_task")
+                                                                      .spec(ChangeTaskUpdateMultiple.builder()
+                                                                                .changeTaskType("planning")
+                                                                                .changeRequestNumber(TICKET_NUMBER)
+                                                                                .build())
+                                                                      .build();
+
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+
+      ServiceNowTaskNGParameters serviceNowTaskNGParameters = ServiceNowTaskNGParameters.builder()
+                                                                  .action(ServiceNowActionNG.UPDATE_TICKET)
+                                                                  .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                                  .useServiceNowTemplate(false)
+                                                                  .updateMultiple(serviceNowUpdateMultiple)
+                                                                  .ticketType("change_task")
+                                                                  .fields(fieldmap)
+                                                                  .build();
+
+      ServiceNowTaskNGResponse response =
+          serviceNowTaskNgHelper.getServiceNowResponse(serviceNowTaskNGParameters, logStreamingTaskClient);
+
+      assertThat(response.getDelegateMetaInfo()).isNull();
+
+      // ServiceNow Outcome
+      assertThat(response.getTicket()).isNull();
+      assertThat(response.getTickets()).hasSize(3);
+      assertThat(response.getTickets().get(0).getFields()).hasSize(1);
+      assertThat(response.getTickets().get(1).getFields()).hasSize(1);
+      assertThat(response.getTickets().get(2).getFields()).hasSize(1);
+      verify(secretDecryptionService).decrypt(any(), any());
+      verify(serviceNowRestClient, times(3))
+          .updateTicket(anyString(), anyString(), anyString(), anyString(), any(), any());
+      verify(serviceNowRestClient, times(1))
+          .updateTicket(anyString(), anyString(), eq("9193f27f1bf4b91044cbdb58b04bcbce"), anyString(), any(), any());
+      verify(serviceNowRestClient, times(1))
+          .updateTicket(anyString(), anyString(), eq("a683f6fb1bf4b91044cbdb58b04bcbca"), anyString(), any(), any());
+      verify(serviceNowRestClient, times(1))
+          .updateTicket(anyString(), anyString(), eq("1044cbdb58b04bcbcaa683f6fb1bf4b9"), anyString(), any(), any());
+    }
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void testUpdateServiceNowWithoutTemplateToUpdateTicketWithMultipleWithALLTasksAndWithTemplateWithRetry()
+      throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+    serviceNowTaskNgHelper.executorService = MoreExecutors.newDirectExecutorService();
+
+    Call mockFetchChangeRequestFromCR = Mockito.mock(Call.class);
+    when(serviceNowRestClient.fetchChangeTasksFromCR(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(mockFetchChangeRequestFromCR);
+
+    List<Map<String, String>> getChangeRequestTaskResponseMap =
+        List.of(ImmutableMap.of("number", "CTASK0011062", "sys_id", "9193f27f1bf4b91044cbdb58b04bcbce",
+                    "change_task_type", "planning"),
+            ImmutableMap.of(
+                "number", "CTASK0011061", "sys_id", "a683f6fb1bf4b91044cbdb58b04bcbca", "change_task_type", "planning"),
+            ImmutableMap.of("number", "CTASK0011060", "sys_id", "1044cbdb58b04bcbcaa683f6fb1bf4b9", "change_task_type",
+                "planning"));
+    JsonNode fetchChangeRequestResponse =
+        JsonUtils.asTree(Collections.singletonMap("result", getChangeRequestTaskResponseMap));
+    Response<JsonNode> jsonNodeFetchChangeRequestResponse = Response.success(fetchChangeRequestResponse);
+    when(mockFetchChangeRequestFromCR.clone()).thenReturn(mockFetchChangeRequestFromCR);
+    doThrow(new SocketTimeoutException())
+        .doReturn(jsonNodeFetchChangeRequestResponse)
+        .when(mockFetchChangeRequestFromCR)
+        .execute();
+
+    Call mockCall = Mockito.mock(Call.class);
+    Call mockFetchIssueCall = Mockito.mock(Call.class);
+    List<String> listTickets = List.of(TICKET_NUMBER + 1, TICKET_NUMBER + 2, TICKET_NUMBER + 3);
+    for (String item : List.of("9193f27f1bf4b91044cbdb58b04bcbce", "a683f6fb1bf4b91044cbdb58b04bcbca",
+             "1044cbdb58b04bcbcaa683f6fb1bf4b9")) {
+      int i = 0;
+      when(serviceNowRestClient.updateUsingTemplate(anyString(), anyString(), anyString(), anyString()))
+          .thenReturn(mockCall);
+
+      ImmutableMap<String, String> responseMap = ImmutableMap.of("record_sys_id", item, "record_link",
+          "incident.do?sys_id=aacc24dcdb5f85509e7c2a59139619c4&sysparm_stack=incident_list.do?sysparm_query=active=true",
+          "record_number", listTickets.get(i));
+
+      JsonNode successResponse = JsonUtils.asTree(Collections.singletonMap("result", responseMap));
+      Response<JsonNode> jsonNodeResponse = Response.success(successResponse);
+      when(mockCall.clone()).thenReturn(mockCall);
+      doThrow(new SocketTimeoutException()).doReturn(jsonNodeResponse).when(mockCall).execute();
+
+      when(serviceNowRestClient.getIssue(anyString(), anyString(), anyString(), anyString()))
+          .thenReturn(mockFetchIssueCall);
+      Map<String, Map<String, String>> getIssueResponseMap =
+          ImmutableMap.of("parent", ImmutableMap.of("value", "", "display_value", ""), "description",
+              ImmutableMap.of("value", "BEvalue2", "display_value", "UIvalue2"), "number",
+              ImmutableMap.of("value", listTickets.get(i), "display_value", listTickets.get(i)));
+
+      JsonNode fetchIssueResponse =
+          JsonUtils.asTree(Collections.singletonMap("result", Collections.singletonList(getIssueResponseMap)));
+      Response<JsonNode> jsonNodeFetchIssueResponse = Response.success(fetchIssueResponse);
+      when(mockFetchIssueCall.clone()).thenReturn(mockFetchIssueCall);
+      doThrow(new SocketTimeoutException()).doReturn(jsonNodeFetchIssueResponse).when(mockFetchIssueCall).execute();
+      i++;
+    }
+
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      Map<String, String> fieldmap = ImmutableMap.of("value", "BEvalue2", "display_value", "UIvalue2");
+
+      ServiceNowUpdateMultipleTaskNode serviceNowUpdateMultiple =
+          ServiceNowUpdateMultipleTaskNode.builder()
+              .type("change_task")
+              .spec(ChangeTaskUpdateMultiple.builder().changeRequestNumber(TICKET_NUMBER).build())
+              .build();
+
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+
+      ServiceNowTaskNGParameters serviceNowTaskNGParameters = ServiceNowTaskNGParameters.builder()
+                                                                  .action(ServiceNowActionNG.UPDATE_TICKET)
+                                                                  .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                                  .useServiceNowTemplate(true)
+                                                                  .templateName("aoeu")
+                                                                  .ticketType("change_task")
+                                                                  .updateMultiple(serviceNowUpdateMultiple)
+                                                                  .fields(fieldmap)
+                                                                  .build();
+
+      ServiceNowTaskNGResponse response =
+          serviceNowTaskNgHelper.getServiceNowResponse(serviceNowTaskNGParameters, logStreamingTaskClient);
+
+      assertThat(response.getDelegateMetaInfo()).isNull();
+
+      // ServiceNow Outcome
+      assertThat(response.getTicket()).isNull();
+      assertThat(response.getTickets()).hasSize(3);
+      assertThat(response.getTickets().get(0).getFields()).hasSize(2);
+      assertThat(response.getTickets().get(1).getFields()).hasSize(2);
+      assertThat(response.getTickets().get(2).getFields()).hasSize(2);
+      verify(secretDecryptionService).decrypt(any(), any());
+      verify(serviceNowRestClient, times(3)).updateUsingTemplate(anyString(), anyString(), anyString(), anyString());
+    }
   }
 }

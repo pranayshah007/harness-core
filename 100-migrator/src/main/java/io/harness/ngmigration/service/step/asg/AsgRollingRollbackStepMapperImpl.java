@@ -13,7 +13,6 @@ import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.plancreator.steps.AbstractStepNode;
 
 import software.wings.beans.GraphNode;
@@ -22,7 +21,7 @@ import software.wings.sm.states.AwsAmiServiceRollback;
 
 import java.util.Map;
 
-public class AsgRollingRollbackStepMapperImpl extends StepMapper {
+public class AsgRollingRollbackStepMapperImpl extends AsgBaseStepMapper {
   @Override
   public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.ASG_ROLLING_ROLLBACK;

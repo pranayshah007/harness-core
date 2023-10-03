@@ -49,6 +49,7 @@ import io.harness.k8s.ProcessResponse;
 import io.harness.k8s.kubectl.ApplyCommand;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.kubectl.KubectlFactory;
+import io.harness.k8s.manifest.DryRunOutput;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesConfig;
@@ -173,7 +174,9 @@ public class K8sDryRunManifestRequestHandler extends K8sRequestHandler {
         logExecutableFailed(result, executionLogCallback);
         throw new KubernetesCliTaskRuntimeException(response, KubernetesCliCommandType.DRY_RUN);
       }
-      String dryRunManifestYaml = ManifestHelper.toYamlForLogs(this.resources);
+
+      List<DryRunOutput> dryRunOutputList = ManifestHelper.toDryRunOutput(this.resources);
+      String dryRunManifestYaml = ManifestHelper.toYamlOutput(dryRunOutputList);
       if (dryRunManifestYaml.getBytes(StandardCharsets.UTF_8).length >= MAX_VARIABLE_SIZE) {
         dryRunManifestYaml = "";
         executionLogCallback.saveExecutionLog(

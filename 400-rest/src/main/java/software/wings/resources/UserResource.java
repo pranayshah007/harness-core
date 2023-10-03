@@ -59,7 +59,6 @@ import io.harness.security.annotations.PublicApi;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Account;
-import software.wings.beans.AccountJoinRequest;
 import software.wings.beans.AccountRole;
 import software.wings.beans.ApplicationRole;
 import software.wings.beans.BugsnagTab;
@@ -72,6 +71,7 @@ import software.wings.beans.User;
 import software.wings.beans.UserInvite;
 import software.wings.beans.UserInvite.UserInviteBuilder;
 import software.wings.beans.ZendeskSsoLoginResponse;
+import software.wings.beans.account.AccountJoinRequest;
 import software.wings.beans.loginSettings.PasswordSource;
 import software.wings.beans.marketplace.MarketPlaceType;
 import software.wings.beans.security.UserGroup;

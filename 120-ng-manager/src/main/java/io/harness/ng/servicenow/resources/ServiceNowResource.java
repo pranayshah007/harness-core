@@ -10,8 +10,12 @@ package io.harness.ng.servicenow.resources;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.servicenow.ServiceNowTemplateTypeEnum;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceService;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -37,6 +41,7 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -56,6 +61,7 @@ import lombok.AllArgsConstructor;
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 public class ServiceNowResource {
   private final ServiceNowResourceService serviceNowResourceService;
   @GET
@@ -146,11 +152,12 @@ public class ServiceNowResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgId,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectId, @QueryParam("ticketType") String ticketType,
       @QueryParam("templateName") String templateName, @QueryParam("limit") int limit, @QueryParam("offset") int offset,
+      @DefaultValue("Form") @QueryParam("templateType") ServiceNowTemplateTypeEnum templateType,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @QueryParam("searchTerm") String searchTerm) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(serviceNowConnectorRef, accountId, orgId, projectId);
     List<ServiceNowTemplate> metadataResponse = serviceNowResourceService.getTemplateList(
-        connectorRef, orgId, projectId, limit, offset, templateName, ticketType, searchTerm);
+        connectorRef, orgId, projectId, limit, offset, templateName, ticketType, searchTerm, templateType);
     return ResponseDTO.newResponse(metadataResponse);
   }
   @POST
@@ -169,5 +176,22 @@ public class ServiceNowResource {
     ServiceNowTicketNG ticketDetails = serviceNowResourceService.getTicketDetails(
         connectorRef, orgId, projectId, ticketType, ticketNumber, fieldsList);
     return ResponseDTO.newResponse(ticketDetails);
+  }
+
+  @GET
+  @Path("getStandardTemplateReadOnlyFields")
+  @ApiOperation(
+      value = "Get read-only fields for standard change templates", nickname = "getStandardTemplateReadOnlyFields")
+  public ResponseDTO<List<String>>
+  getStandardTemplateReadOnlyFields(@NotNull @QueryParam("connectorRef") String serviceNowConnectorRef,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgId,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectId,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(serviceNowConnectorRef, accountId, orgId, projectId);
+    List<String> standardTemplateReadOnlyFields =
+        serviceNowResourceService.getStandardTemplateReadOnlyFields(connectorRef, orgId, projectId);
+    return ResponseDTO.newResponse(standardTemplateReadOnlyFields);
   }
 }

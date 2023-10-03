@@ -51,6 +51,9 @@ public interface SwaggerConstants {
   String BAMBOO_PARAMETER_FIELD_TYPE_ENUM_CLASSPATH = "io.harness.cdng.bamboo.BambooParameterFieldType";
   String BAMBOO_PARAMETER_FIELD_CLASSPATH = "[Lio.harness.cdng.bamboo.BambooParameterField;";
 
+  String ASG_LOAD_BALANCER_CONFIGURATION_CLASSPATH = "[Lio.harness.cdng.aws.asg.AwsAsgLoadBalancerConfigYaml;";
+  String ASG_INSTANCES_CLASSPATH = "io.harness.cdng.aws.asg.AsgInstances";
+
   String FAILURE_STRATEGY_CONFIG_LIST_CLASSPATH = "[Lio.harness.yaml.core.failurestrategy.FailureStrategyConfig;";
   String STAGE_WHEN_CLASSPATH = "io.harness.when.beans.StageWhenCondition";
   String STEP_WHEN_CLASSPATH = "io.harness.when.beans.StepWhenCondition";

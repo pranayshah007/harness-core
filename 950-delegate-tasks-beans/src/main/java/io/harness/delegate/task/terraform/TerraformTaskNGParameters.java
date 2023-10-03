@@ -91,6 +91,7 @@ public class TerraformTaskNGParameters
   EncryptedRecordData encryptedTfPlan;
   String planName;
   boolean encryptDecryptPlanForHarnessSMOnManager;
+  boolean skipColorLogs;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

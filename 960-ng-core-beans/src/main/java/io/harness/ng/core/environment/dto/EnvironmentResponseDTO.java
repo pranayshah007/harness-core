@@ -8,7 +8,10 @@
 package io.harness.ng.core.environment.dto;
 
 import io.harness.beans.IdentifierRef;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.environment.beans.EnvironmentType;
+import io.harness.ng.core.template.CacheResponseMetadataDTO;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -40,6 +43,11 @@ public class EnvironmentResponseDTO {
   Map<String, String> tags;
   @JsonIgnore Long version;
   String yaml;
+  @Schema(hidden = true) EntityGitDetails entityGitDetails;
+  @Schema(hidden = true) String connectorRef;
+  @Schema(hidden = true) StoreType storeType;
+  @Schema(hidden = true) String fallbackBranch;
+  @Schema(hidden = true) CacheResponseMetadataDTO cacheResponseMetadataDTO;
 
   @JsonIgnore
   public String getFullyQualifiedIdentifier() {

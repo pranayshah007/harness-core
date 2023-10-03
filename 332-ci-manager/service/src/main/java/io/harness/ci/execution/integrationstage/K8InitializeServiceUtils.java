@@ -127,11 +127,12 @@ public class K8InitializeServiceUtils {
     }
 
     String imagePullPolicy = RunTimeInputHandler.resolveImagePullPolicy(service.getImagePullPolicy());
-    Infrastructure infrastructure = stageNode.getIntegrationStageConfig().getInfrastructure();
-
-    if (infrastructure.getType() == Infrastructure.Type.KUBERNETES_DIRECT && StringUtils.isBlank(imagePullPolicy)) {
-      K8sDirectInfraYaml k8Infra = (K8sDirectInfraYaml) infrastructure;
-      imagePullPolicy = RunTimeInputHandler.resolveImagePullPolicy(k8Infra.getSpec().getImagePullPolicy());
+    if (stageNode != null && stageNode.getIntegrationStageConfig() != null) {
+      Infrastructure infrastructure = stageNode.getIntegrationStageConfig().getInfrastructure();
+      if (infrastructure.getType() == Infrastructure.Type.KUBERNETES_DIRECT && StringUtils.isBlank(imagePullPolicy)) {
+        K8sDirectInfraYaml k8Infra = (K8sDirectInfraYaml) infrastructure;
+        imagePullPolicy = RunTimeInputHandler.resolveImagePullPolicy(k8Infra.getSpec().getImagePullPolicy());
+      }
     }
     return ContainerDefinitionInfo.builder()
         .name(containerName)

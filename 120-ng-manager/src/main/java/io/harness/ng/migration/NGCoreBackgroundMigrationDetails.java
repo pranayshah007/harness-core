@@ -22,6 +22,7 @@ import io.harness.ng.core.migration.background.CleanupCdAccountExecutionMetadata
 import io.harness.ng.core.migration.background.CleanupDeploymentAccounts;
 import io.harness.ng.core.migration.background.CleanupDeploymentSummaryNg;
 import io.harness.ng.core.migration.background.CleanupInfrastructureMappingNg;
+import io.harness.ng.core.migration.background.CleanupInstanceNg;
 import io.harness.ng.core.migration.background.DeleteSoftDeletedConnectorsMigration;
 import io.harness.ng.core.migration.background.PopulateYamlAuthFieldInNGJiraConnectorMigration;
 import io.harness.ng.core.migration.background.PopulateYamlAuthFieldInNGServiceNowConnectorMigration;
@@ -66,6 +67,7 @@ public class NGCoreBackgroundMigrationDetails implements MigrationDetails {
         .add(Pair.of(16, CleanupDeploymentAccounts.class))
         .add(Pair.of(17, CleanupDeploymentSummaryNg.class))
         .add(Pair.of(18, CleanupInfrastructureMappingNg.class))
+        .add(Pair.of(19, CleanupInstanceNg.class))
         .build();
   }
 }

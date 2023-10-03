@@ -71,9 +71,10 @@ import io.harness.delegate.task.citasks.vm.helper.StepExecutionHelper;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
-import io.harness.logstreaming.LogStreamingHelper;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
@@ -82,7 +83,6 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.ssca.client.SSCAServiceUtils;
-import io.harness.steps.StepUtils;
 import io.harness.stoserviceclient.STOServiceUtils;
 import io.harness.vm.VmExecuteStepUtils;
 import io.harness.yaml.core.variables.NGVariable;
@@ -150,7 +150,10 @@ public class VmInitializeTaskParamsBuilder {
         fallbackPoolIds.add(fallbackPoolId);
       }
     }
-    CIVmInitializeTaskParams params = getVmInitializeParams(initializeStepInfo, ambiance, poolId, fallbackPoolIds);
+    boolean distributed =
+        featureFlagService.isEnabled(FeatureName.CI_DLITE_DISTRIBUTED, AmbianceUtils.getAccountId(ambiance));
+    CIVmInitializeTaskParams params =
+        getVmInitializeParams(initializeStepInfo, ambiance, poolId, fallbackPoolIds, distributed);
     SetupVmRequest setupVmRequest = convertHostedSetupParams(params, ambiance);
     List<ExecuteStepRequest> services = new ArrayList<>();
     if (isNotEmpty(params.getServiceDependencies())) {
@@ -159,8 +162,11 @@ public class VmInitializeTaskParamsBuilder {
       }
     }
 
-    DliteVmInitializeTaskParams taskParams =
-        DliteVmInitializeTaskParams.builder().setupVmRequest(setupVmRequest).services(services).build();
+    DliteVmInitializeTaskParams taskParams = DliteVmInitializeTaskParams.builder()
+                                                 .setupVmRequest(setupVmRequest)
+                                                 .services(services)
+                                                 .distributed(distributed)
+                                                 .build();
 
     hostedVmSecretResolver.resolve(ambiance, taskParams);
     return taskParams;
@@ -173,11 +179,11 @@ public class VmInitializeTaskParamsBuilder {
     vmInitializeUtils.validateDebug(infrastructure, ambiance);
     VmPoolYaml vmPoolYaml = (VmPoolYaml) ((VmInfraYaml) infrastructure).getSpec();
     String poolId = getPoolName(vmPoolYaml);
-    return getVmInitializeParams(initializeStepInfo, ambiance, poolId, Collections.emptyList());
+    return getVmInitializeParams(initializeStepInfo, ambiance, poolId, Collections.emptyList(), false);
   }
 
-  public CIVmInitializeTaskParams getVmInitializeParams(
-      InitializeStepInfo initializeStepInfo, Ambiance ambiance, String poolId, List<String> fallbackPoolIds) {
+  public CIVmInitializeTaskParams getVmInitializeParams(InitializeStepInfo initializeStepInfo, Ambiance ambiance,
+      String poolId, List<String> fallbackPoolIds, boolean distributed) {
     Infrastructure infrastructure = initializeStepInfo.getInfrastructure();
     if (infrastructure == null) {
       throw new CIStageExecutionException("Input infrastructure can not be empty");
@@ -202,7 +208,7 @@ public class VmInitializeTaskParamsBuilder {
       harnessImageConnectorRef = optionalHarnessImageConnectorRef.get().getValue();
     }
 
-    saveStageInfraDetails(ambiance, poolId, workDir, harnessImageConnectorRef, volToMountPath, infraInfo);
+    saveStageInfraDetails(ambiance, poolId, workDir, harnessImageConnectorRef, volToMountPath, infraInfo, distributed);
     StageDetails stageDetails = getStageDetails(ambiance);
 
     CIExecutionArgs ciExecutionArgs =
@@ -369,7 +375,7 @@ public class VmInitializeTaskParamsBuilder {
   //  }
 
   private void saveStageInfraDetails(Ambiance ambiance, String poolId, String workDir, String harnessImageConnectorRef,
-      Map<String, String> volToMountPath, CIInitializeTaskParams.Type infraInfo) {
+      Map<String, String> volToMountPath, CIInitializeTaskParams.Type infraInfo, boolean distributedDlite) {
     if (infraInfo == CIVmInitializeTaskParams.Type.VM || infraInfo == CIVmInitializeTaskParams.Type.DOCKER) {
       consumeSweepingOutput(ambiance,
           VmStageInfraDetails.builder()
@@ -388,6 +394,7 @@ public class VmInitializeTaskParamsBuilder {
               .volToMountPathMap(volToMountPath)
               .harnessImageConnectorRef(harnessImageConnectorRef)
               .infraInfo(infraInfo)
+              .distributed(distributedDlite)
               .build(),
           STAGE_INFRA_DETAILS);
     }
@@ -534,13 +541,11 @@ public class VmInitializeTaskParamsBuilder {
   }
 
   private String getLogKey(Ambiance ambiance) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance);
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    return LogStreamingStepClientFactory.getLogBaseKey(ambiance);
   }
 
   private String getLogPrefix(Ambiance ambiance) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance, "STAGE");
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    return LogStreamingStepClientFactory.getLogBaseKey(ambiance, StepCategory.STAGE.name());
   }
 
   // getHostedPoolId returns a pool ID that can be used for GCP hosted builds. If fallback is set to true,

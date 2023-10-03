@@ -167,6 +167,8 @@ public class AzureWebAppRollbackRequestHandler extends AzureWebAppRequestHandler
         .steadyStateTimeoutInMin(
             azureAppServiceResourceUtilities.getTimeoutIntervalInMin(taskRequest.getTimeoutIntervalInMin()))
         .isBasicDeployment(DEPLOYMENT_SLOT_PRODUCTION_NAME.equalsIgnoreCase(preDeploymentData.getSlotName()))
+        .cleanDeployment(taskRequest.isCleanDeployment())
+        .useNewDeployApi(taskRequest.isCleanDeployment())
         .build();
   }
 

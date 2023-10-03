@@ -7,10 +7,14 @@
 
 package io.harness.idp.scorecard.datasources.providers;
 
+import static io.harness.idp.common.Constants.BITBUCKET_IDENTIFIER;
 import static io.harness.idp.common.Constants.CATALOG_IDENTIFIER;
 import static io.harness.idp.common.Constants.CUSTOM_IDENTIFIER;
 import static io.harness.idp.common.Constants.GITHUB_IDENTIFIER;
 import static io.harness.idp.common.Constants.HARNESS_IDENTIFIER;
+import static io.harness.idp.common.Constants.JIRA_IDENTIFIER;
+import static io.harness.idp.common.Constants.KUBERNETES_IDENTIFIER;
+import static io.harness.idp.common.Constants.PAGERDUTY_IDENTIFIER;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -20,6 +24,7 @@ import io.harness.idp.scorecard.datapoints.parser.DataSourceDataPointParserFacto
 import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
+import io.harness.idp.scorecard.datasources.utils.ConfigReader;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 
 import com.google.inject.Inject;
@@ -38,6 +43,8 @@ public class DataSourceProviderFactory {
   @Inject IdpAuthInterceptor idpAuthInterceptor;
   @Inject @Named("env") private String env;
 
+  @Inject ConfigReader configReader;
+
   public DataSourceProvider getProvider(String dataSource) {
     switch (dataSource) {
       case CATALOG_IDENTIFIER:
@@ -46,13 +53,26 @@ public class DataSourceProviderFactory {
       case GITHUB_IDENTIFIER:
         return new GithubProvider(dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
             dataSourceDataPointParserFactory.getDataPointParserFactory(GITHUB_IDENTIFIER),
-            backstageEnvVariableRepository, ngSecretService);
+            backstageEnvVariableRepository, ngSecretService, configReader);
+      case BITBUCKET_IDENTIFIER:
+        return new BitbucketProvider(dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
+            dataSourceDataPointParserFactory.getDataPointParserFactory(BITBUCKET_IDENTIFIER), configReader);
       case HARNESS_IDENTIFIER:
         return new HarnessProvider(dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
             dataSourceDataPointParserFactory.getDataPointParserFactory(HARNESS_IDENTIFIER), idpAuthInterceptor, env);
       case CUSTOM_IDENTIFIER:
         return new CustomProvider(dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
             dataSourceDataPointParserFactory.getDataPointParserFactory(CUSTOM_IDENTIFIER));
+      case PAGERDUTY_IDENTIFIER:
+        return new PagerDutyProvider(dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
+            dataSourceDataPointParserFactory.getDataPointParserFactory(PAGERDUTY_IDENTIFIER), configReader);
+      case JIRA_IDENTIFIER:
+        return new JiraProvider(dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
+            dataSourceDataPointParserFactory.getDataPointParserFactory(JIRA_IDENTIFIER), configReader);
+      case KUBERNETES_IDENTIFIER:
+        return new KubernetesProvider(dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
+            dataSourceDataPointParserFactory.getDataPointParserFactory(KUBERNETES_IDENTIFIER), configReader,
+            idpAuthInterceptor, env);
       default:
         throw new IllegalArgumentException("DataSource provider " + dataSource + " is not supported yet");
     }

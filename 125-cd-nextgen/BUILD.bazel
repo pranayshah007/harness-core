@@ -62,6 +62,7 @@ java_library(
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/envGroup/yaml:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/environment:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/environment/helper:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/environment/helper/beans:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/environment/steps:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/environment/yaml:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/events:module",

@@ -10,6 +10,7 @@ package io.harness.pms.expressions;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static junit.framework.TestCase.assertEquals;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -19,11 +20,14 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.expressions.functors.InputsFunctor;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
+import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -54,7 +58,11 @@ public class InputsExpressionEvaluatorTest extends CategoryTest {
         new InputsExpressionEvaluator(YamlUtils.readAsJsonNode(inputsYaml), YamlUtils.readAsJsonNode(pipelineYaml));
     String resolvedPipelineYaml =
         (String) evaluator.resolve(pipelineYaml, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
-    YamlField stagesField = YamlUtils.readTree(resolvedPipelineYaml).getNode().getField("stages");
+    YamlField stagesField = YamlUtils.readTree(resolvedPipelineYaml)
+                                .getNode()
+                                .getField(YAMLFieldNameConstants.SPEC)
+                                .getNode()
+                                .getField("stages");
     JsonNode specNode = stagesField.getNode().getCurrJsonNode().get(0).get("steps").get(0).get("spec");
     assertEquals(specNode.get("image").asText(), "alpine");
     assertEquals(specNode.get("settings").get("repo").asText(), "harness-core");
@@ -63,6 +71,14 @@ public class InputsExpressionEvaluatorTest extends CategoryTest {
     assertEquals(specNode.get("settings").get("f1").asText(), "defaultValue");
     // Default value provided in pipeline, but input provided. So provided value will be returned.
     assertEquals(specNode.get("settings").get("f2").asText(), "defaultValue2");
+
+    ObjectNode pipelineYamlNodeWithoutSpec = (ObjectNode) YamlUtils.readAsJsonNode(pipelineYaml);
+    pipelineYamlNodeWithoutSpec.remove("spec");
+
+    EngineExpressionEvaluator evaluator1 = new InputsExpressionEvaluator(YamlUtils.readAsJsonNode(inputsYaml),
+        YamlUtils.readAsJsonNode(YamlPipelineUtils.writeYamlString(pipelineYamlNodeWithoutSpec)));
+    assertThatCode(() -> evaluator1.resolve(pipelineYaml, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
+        .doesNotThrowAnyException();
   }
 
   private String readFile(String filename) {

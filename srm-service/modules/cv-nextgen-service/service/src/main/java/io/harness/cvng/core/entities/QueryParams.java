@@ -9,6 +9,7 @@ package io.harness.cvng.core.entities;
 
 import io.harness.cvng.utils.AggregationType;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 
@@ -23,4 +24,5 @@ public class QueryParams {
   String healthSourceMetricName;
   String healthSourceMetricNamespace;
   AggregationType aggregationType;
+  List<String> indexes;
 }

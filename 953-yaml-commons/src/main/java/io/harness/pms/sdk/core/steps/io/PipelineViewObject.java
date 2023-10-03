@@ -12,9 +12,6 @@ import java.util.List;
 
 public interface PipelineViewObject {
   String DEFAULT = "default";
-  default String toViewJson() {
-    return DEFAULT;
-  }
 
   // This is a list of keys which needs to be excluded from stepParameter to view for customer, if nested keys ->
   // separate keys by dot, example spec.output to remove only output inside spec

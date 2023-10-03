@@ -73,6 +73,7 @@ public class NormalizedSBOMComponentEntity implements PersistentEntity {
   @Field("pipelineidentifier") String pipelineIdentifier;
   @Field("projectidentifier") String projectIdentifier;
   @Field("orgidentifier") String orgIdentifier;
+
   @Field("sequenceid") String sequenceId;
   @Field("accountid") String accountId;
 }

@@ -13,5 +13,5 @@ metadata:
 spec:
   minAvailable: "50%"
   selector:
-   matchLabels:
-    app: ci-manager
+    matchLabels:
+    {{- include "ci-manager.selectorLabels" . | nindent 6 }}

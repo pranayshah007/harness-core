@@ -21,6 +21,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Value;
+import org.apache.commons.jexl3.JexlEngine;
 
 @OwnedBy(CDC)
 @Value
@@ -31,6 +32,7 @@ public class NodeExecutionChildFunctor implements LateBindingValue {
   PmsSweepingOutputService pmsSweepingOutputService;
   Ambiance ambiance;
   Set<NodeExecutionEntityType> entityTypes;
+  JexlEngine engine;
 
   @Override
   public Object bind() {
@@ -51,6 +53,7 @@ public class NodeExecutionChildFunctor implements LateBindingValue {
         .ambiance(ambiance)
         .startNodeExecution(nodeExecution)
         .entityTypes(entityTypes)
+        .engine(engine)
         .build()
         .bind();
   }

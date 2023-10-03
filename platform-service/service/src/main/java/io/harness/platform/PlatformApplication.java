@@ -194,7 +194,6 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
     registerOasResource(appConfig, environment, godInjector.get(PLATFORM_SERVICE));
     createConsumerThreadsToListenToEvents(environment, godInjector.get(AUDIT_SERVICE));
     createConsumerThreadsToListenToNotificationEvents(environment, godInjector.get(NOTIFICATION_SERVICE));
-    initMetrics(godInjector);
     new NotificationServiceSetup().setup(
         appConfig.getNotificationServiceConfig(), environment, godInjector.get(NOTIFICATION_SERVICE));
 

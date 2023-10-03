@@ -1,6 +1,6 @@
 # ng-manager
 
-![Version: 0.8.0](https://img.shields.io/badge/Version-0.8.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.79819](https://img.shields.io/badge/AppVersion-0.0.79819-informational?style=flat-square)
+![Version: 0.10.2](https://img.shields.io/badge/Version-0.10.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.80209](https://img.shields.io/badge/AppVersion-0.0.80209-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -36,8 +36,16 @@ A Helm chart for Kubernetes
 | extraVolumeMounts | list | `[]` |  |
 | extraVolumes | list | `[]` |  |
 | fullnameOverride | string | `""` |  |
+| global.awsServiceEndpointUrls.cloudwatchEndPointUrl | string | `"https://monitoring.us-east-2.amazonaws.com"` |  |
+| global.awsServiceEndpointUrls.ecsEndPointUrl | string | `"https://ecs.us-east-2.amazonaws.com"` |  |
+| global.awsServiceEndpointUrls.enabled | bool | `false` |  |
+| global.awsServiceEndpointUrls.endPointRegion | string | `"us-east-2"` |  |
+| global.awsServiceEndpointUrls.stsEndPointUrl | string | `"https://sts.us-east-2.amazonaws.com"` |  |
 | global.ccm.enabled | bool | `false` |  |
+| global.cg.enabled | bool | `false` |  |
 | global.chaos.enabled | bool | `false` |  |
+| global.commonAnnotations | object | `{}` |  |
+| global.commonLabels | object | `{}` |  |
 | global.database.mongo.extraArgs | string | `""` |  |
 | global.database.mongo.hosts | list | `[]` | provide default values if mongo.installed is set to false |
 | global.database.mongo.installed | bool | `true` |  |
@@ -81,12 +89,24 @@ A Helm chart for Kubernetes
 | global.license.ng | string | `""` |  |
 | global.loadbalancerURL | string | `""` |  |
 | global.opa.enabled | bool | `false` |  |
+| global.proxy.enabled | bool | `false` |  |
+| global.proxy.host | string | `"localhost"` |  |
+| global.proxy.password | string | `""` |  |
+| global.proxy.port | int | `80` |  |
+| global.proxy.protocol | string | `"http"` |  |
+| global.proxy.username | string | `""` |  |
 | global.secrets.app.external.enabled | bool | `false` |  |
 | global.secrets.app.external.kind.csiSecretDriver | bool | `false` |  |
 | global.secrets.app.external.kind.externalSecrets | bool | `false` |  |
 | global.secrets.database.external.enabled | bool | `false` |  |
 | global.secrets.database.external.kind.csiSecretDriver | bool | `false` |  |
 | global.secrets.database.external.kind.externalSecrets | bool | `false` |  |
+| global.smtpCreateSecret.SMTP_HOST | string | `""` |  |
+| global.smtpCreateSecret.SMTP_PASSWORD | string | `""` |  |
+| global.smtpCreateSecret.SMTP_PORT | string | `"465"` |  |
+| global.smtpCreateSecret.SMTP_USERNAME | string | `""` |  |
+| global.smtpCreateSecret.SMTP_USE_SSL | string | `"true"` |  |
+| global.smtpCreateSecret.enabled | bool | `false` |  |
 | global.stackDriverLoggingEnabled | bool | `false` |  |
 | global.useExternalSecrets | bool | `false` |  |
 | image.digest | string | `""` |  |
@@ -94,14 +114,16 @@ A Helm chart for Kubernetes
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.registry | string | `"docker.io"` |  |
 | image.repository | string | `"harness/ng-manager-signed"` |  |
-| image.tag | string | `"79819"` |  |
+| image.tag | string | `"80209"` |  |
 | imagePullSecrets | object | `{}` |  |
+| ingress.annotations | object | `{}` |  |
 | initContainer.image.digest | string | `""` |  |
 | initContainer.image.imagePullSecrets | list | `[]` |  |
 | initContainer.image.registry | string | `"docker.io"` |  |
 | initContainer.image.repository | string | `"busybox"` |  |
 | initContainer.image.tag | string | `"1.35.0"` |  |
 | java.memory | string | `"4096m"` |  |
+| java17flags | string | `""` |  |
 | maxSurge | int | `1` |  |
 | maxUnavailable | int | `0` |  |
 | mongoSecrets.password.key | string | `"mongodb-root-password"` |  |
@@ -133,6 +155,7 @@ A Helm chart for Kubernetes
 | resources.requests.memory | string | `"200Mi"` |  |
 | securityContext.runAsNonRoot | bool | `true` |  |
 | securityContext.runAsUser | int | `65534` |  |
+| service.annotations | object | `{}` |  |
 | service.gitsyncgrpcport | int | `13002` |  |
 | service.grpcport | int | `9979` |  |
 | service.port | int | `7090` |  |
@@ -144,6 +167,7 @@ A Helm chart for Kubernetes
 | timescaleSecret.password.key | string | `"timescaledbPostgresPassword"` |  |
 | timescaleSecret.password.name | string | `"harness-secrets"` |  |
 | tolerations | list | `[]` |  |
+| virtualService.annotations | object | `{}` |  |
 | waitForInitContainer.image.digest | string | `""` |  |
 | waitForInitContainer.image.imagePullSecrets | list | `[]` |  |
 | waitForInitContainer.image.pullPolicy | string | `"IfNotPresent"` |  |

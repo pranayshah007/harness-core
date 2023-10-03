@@ -7,6 +7,7 @@
 
 package io.harness.windows;
 
+import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.PUNEET;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,5 +46,35 @@ public class CmdUtilsTest extends CategoryTest {
     assertThat(CmdUtils.escapeEnvValueSpecialChars("path%%path")).isEqualTo("");
     assertThat(CmdUtils.escapeEnvValueSpecialChars("%pa%th%")).isEqualTo("");
     assertThat(CmdUtils.escapeEnvValueSpecialChars("4dGl$KJA%%cC2*XY&amp;rK5Nv2!B6p!wj")).isEqualTo("");
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testEscapeEnvironmentValueWithPercentageAndLessThenGreaterThenOccurence() {
+    assertThat(CmdUtils.escapeEnvValueIllegalSymbols("%path%")).isEqualTo("%path%");
+    assertThat(CmdUtils.escapeEnvValueIllegalSymbols("%path%me")).isEqualTo("%path%me");
+    assertThat(CmdUtils.escapeEnvValueIllegalSymbols("%path%%path%")).isEqualTo("%path%%path%");
+
+    // Invalids
+    assertThat(CmdUtils.escapeEnvValueIllegalSymbols("%path")).isEqualTo("");
+    assertThat(CmdUtils.escapeEnvValueIllegalSymbols("path%")).isEqualTo("");
+    assertThat(CmdUtils.escapeEnvValueIllegalSymbols("%%path")).isEqualTo("");
+    assertThat(CmdUtils.escapeEnvValueIllegalSymbols("path%%path")).isEqualTo("");
+    assertThat(CmdUtils.escapeEnvValueIllegalSymbols("%pa%th%")).isEqualTo("");
+    assertThat(CmdUtils.escapeEnvValueIllegalSymbols("4dGl$KJA%%cC2*XY&amp;rK5Nv2!B6p!wj")).isEqualTo("");
+
+    assertThat(CmdUtils.escapeEnvValueIllegalSymbols("<var>")).isEqualTo("<var>");
+    assertThat(CmdUtils.escapeEnvValueIllegalSymbols("<var")).isEqualTo("<var");
+    assertThat(CmdUtils.escapeEnvValueIllegalSymbols("var>")).isEqualTo("var>");
+    assertThat(CmdUtils.escapeEnvValueIllegalSymbols("><var")).isEqualTo("><var");
+    assertThat(CmdUtils.escapeEnvValueIllegalSymbols("var><")).isEqualTo("var><");
+
+    assertThat(CmdUtils.escapeEnvValueIllegalSymbols("var<>")).isEqualTo("");
+    assertThat(CmdUtils.escapeEnvValueIllegalSymbols("<>var")).isEqualTo("");
+    assertThat(CmdUtils.escapeEnvValueIllegalSymbols("<>")).isEqualTo("");
+
+    assertThat(CmdUtils.escapeEnvValueIllegalSymbols("http://google.com?var=value&var2=vale^2d|and<s>d"))
+        .isEqualTo("http://google.com?var=value&var2=vale^2d|and<s>d");
   }
 }

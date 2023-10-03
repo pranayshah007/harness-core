@@ -84,6 +84,7 @@ import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.organization.remote.OrganizationClient;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -246,8 +247,10 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
     // apply templates to template yaml for validation and populating module info
     applyTemplatesToYamlAndValidateSchema(templateEntity);
-
-    List<EntityDetailProtoDTO> referredEntities = templateReferenceHelper.calculateTemplateReferences(templateEntity);
+    List<EntityDetailProtoDTO> referredEntities = new ArrayList<>();
+    if (!HarnessYamlVersion.isV1(templateEntity.getHarnessVersion())) {
+      referredEntities = templateReferenceHelper.calculateTemplateReferences(templateEntity);
+    }
 
     try {
       // Check if this is template identifier first entry, for marking it as stable template.
@@ -369,9 +372,11 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     checkLinkedTemplateAccess(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
         templateEntity.getProjectIdentifier(), templateMergeResponseDTO);
 
-    // validate schema on resolved yaml to validate template inputs value as well.
-    ngTemplateSchemaService.validateYamlSchemaInternal(
-        templateEntity.withYaml(templateMergeResponseDTO.getMergedPipelineYaml()));
+    if (HarnessYamlVersion.V0.equals(templateEntity.getHarnessVersion())) {
+      // validate schema on resolved yaml to validate template inputs value as well.
+      ngTemplateSchemaService.validateYamlSchemaInternal(
+          templateEntity.withYaml(templateMergeResponseDTO.getMergedPipelineYaml()));
+    }
   }
 
   private void populateLinkedTemplatesModules(
@@ -398,8 +403,10 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     // apply templates to template yaml for validations and populating module info
     applyTemplatesToYamlAndValidateSchema(templateEntity);
     // calculate the references, returns error if any errors occur while fetching references
-    List<EntityDetailProtoDTO> referredEntities = templateReferenceHelper.calculateTemplateReferences(templateEntity);
-
+    List<EntityDetailProtoDTO> referredEntities = new ArrayList<>();
+    if (!HarnessYamlVersion.isV1(templateEntity.getHarnessVersion())) {
+      referredEntities = templateReferenceHelper.calculateTemplateReferences(templateEntity);
+    }
     TemplateEntity template = null;
 
     template = transactionHelper.performTransaction(() -> {

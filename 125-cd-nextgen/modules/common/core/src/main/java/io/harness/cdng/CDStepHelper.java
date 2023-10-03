@@ -9,6 +9,8 @@ package io.harness.cdng;
 
 import static io.harness.beans.FeatureName.CDS_GITHUB_APP_AUTHENTICATION;
 import static io.harness.beans.FeatureName.OPTIMIZED_GIT_FETCH_FILES;
+import static io.harness.cdng.ReleaseNameAutoCorrector.isDnsCompliant;
+import static io.harness.cdng.ReleaseNameAutoCorrector.makeDnsCompliant;
 import static io.harness.common.ParameterFieldHelper.getBooleanParameterFieldValue;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
@@ -42,6 +44,7 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
 import io.harness.beans.FileReference;
+import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.ConfigFilesOutcome;
@@ -54,6 +57,8 @@ import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sRancherInfrastructureOutcome;
+import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
+import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
 import io.harness.cdng.k8s.K8sEntityHelper;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
@@ -66,6 +71,8 @@ import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
+import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigType;
+import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.service.steps.ServiceSweepingOutput;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.ssh.SshEntityHelper;
@@ -155,7 +162,10 @@ import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
+import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.core.filestore.NGFileType;
+import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -178,12 +188,15 @@ import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.pms.yaml.validation.ExpressionUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.secrets.remote.SecretNGManagerClient;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
+import io.harness.utils.IdentifierRefHelper;
 import io.harness.validation.Validator;
 
 import software.wings.beans.LogColor;
@@ -229,12 +242,15 @@ public class CDStepHelper {
   @Inject protected StepHelper stepHelper;
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
   @Inject private CDExpressionResolver cdExpressionResolver;
+  @Inject @Named("PRIVILEGED") private SecretNGManagerClient secretManagerClient;
 
   public static final String RELEASE_NAME_VALIDATION_REGEX =
       "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
 
   public static final Pattern releaseNamePattern = Pattern.compile(RELEASE_NAME_VALIDATION_REGEX);
   public static final String GIT = "/_git/";
+  private static final String RELEASE_NAME_AUTOCORRECTION_ERROR =
+      "The release name [%s] provided in Service configuration is not valid. %n: 1. Cannot be empty. %n2. Cannot contain more than 63 characters. %n3. Contain only lowercase alphanumeric characters or \"-\". %n4. Start with an alphabetic char and end with an alphanumeric char.";
 
   // Optimised (SCM based) file fetch methods:
   public boolean isGitlabTokenAuth(ScmConnector scmConnector) {
@@ -632,6 +648,11 @@ public class CDStepHelper {
 
   // releaseName helper methods:
   public String getReleaseName(Ambiance ambiance, InfrastructureOutcome infrastructure) {
+    Optional<String> releaseNameFromServiceOptional = getReleaseNameFromService(ambiance);
+    if (releaseNameFromServiceOptional.isPresent()) {
+      return correctReleaseNameIfNeeded(releaseNameFromServiceOptional.get());
+    }
+
     String releaseName;
     switch (infrastructure.getKind()) {
       case KUBERNETES_DIRECT:
@@ -657,12 +678,43 @@ public class CDStepHelper {
       default:
         throw new UnsupportedOperationException(format("Unknown infrastructure type: [%s]", infrastructure.getKind()));
     }
+    return resolveAndValidateReleaseName(ambiance, releaseName);
+  }
+
+  private static String correctReleaseNameIfNeeded(String releaseName) {
+    if (!isDnsCompliant(releaseName) || releaseName.length() == 1) {
+      String correctedReleaseName = makeDnsCompliant(releaseName);
+      if (isEmpty(correctedReleaseName) || !isDnsCompliant(correctedReleaseName)) {
+        // 2nd check for DNS compliance for added safety
+        throw new InvalidRequestException(format(RELEASE_NAME_AUTOCORRECTION_ERROR, releaseName));
+      }
+      return correctedReleaseName;
+    }
+    return releaseName;
+  }
+
+  private String resolveAndValidateReleaseName(Ambiance ambiance, String releaseName) {
+    releaseName = resolveReleaseName(ambiance, releaseName);
+    validateReleaseName(releaseName);
+    return releaseName;
+  }
+
+  private String resolveReleaseName(Ambiance ambiance, String releaseName) {
     if (EngineExpressionEvaluator.hasExpressions(releaseName)) {
       releaseName = engineExpressionService.renderExpression(ambiance, releaseName);
     }
-
-    validateReleaseName(releaseName);
     return releaseName;
+  }
+
+  private Optional<String> getReleaseNameFromService(Ambiance ambiance) {
+    ServiceStepOutcome serviceStepOutcome = (ServiceStepOutcome) outcomeService.resolve(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
+    if (serviceStepOutcome != null && serviceStepOutcome.getRelease() != null
+        && serviceStepOutcome.getRelease().getName() != null) {
+      String rawReleaseName = serviceStepOutcome.getRelease().getName();
+      return Optional.ofNullable(resolveReleaseName(ambiance, rawReleaseName));
+    }
+    return Optional.empty();
   }
 
   public String getFileContentAsBase64(Ambiance ambiance, String scopedFilePath, long allowedBytesFileSize) {
@@ -750,13 +802,6 @@ public class CDStepHelper {
               format("Invalid connector selected in %s. Select Http Helm connector", message));
         }
         break;
-      case ManifestStoreType.OCI:
-        if (!(connectorInfoDTO.getConnectorConfig() instanceof OciHelmConnectorDTO)) {
-          throw new InvalidRequestException(
-              format("Invalid connector selected in %s. Select Oci Helm connector", message));
-        }
-        break;
-
       case ManifestStoreType.S3:
         if (!((connectorInfoDTO.getConnectorConfig()) instanceof AwsConnectorDTO)) {
           throw new InvalidRequestException(
@@ -781,6 +826,26 @@ public class CDStepHelper {
         break;
       default:
         throw new UnsupportedOperationException(format("Unknown manifest store type: [%s]", manifestStoreType));
+    }
+  }
+
+  public void validateOciManifest(
+      OciHelmChartStoreConfigType ociStoreConfigType, ConnectorInfoDTO connectorInfoDTO, String message) {
+    switch (ociStoreConfigType) {
+      case GENERIC:
+        if (!(connectorInfoDTO.getConnectorConfig() instanceof OciHelmConnectorDTO)) {
+          throw new InvalidRequestException(
+              format("Invalid connector selected in %s. Select Oci Helm connector", message));
+        }
+        break;
+      case ECR:
+        if (!(connectorInfoDTO.getConnectorConfig() instanceof AwsConnectorDTO)) {
+          throw new InvalidRequestException(
+              format("Invalid connector selected in %s. Select Amazon Web Services connector", message));
+        }
+        break;
+      default:
+        throw new UnsupportedOperationException(format("Unknown manifest store type: [%s]", ociStoreConfigType));
     }
   }
 
@@ -1171,5 +1236,43 @@ public class CDStepHelper {
     } else {
       return gitConfigDTO;
     }
+  }
+
+  public Optional<SecretDTOV2> getCredentialSpecDto(InfrastructureOutcome infrastructureOutcome, Ambiance ambiance) {
+    if ((InfrastructureKind.SSH_WINRM_AWS).equals(infrastructureOutcome.getKind())) {
+      SshWinRmAwsInfrastructureOutcome sshWinRmAwsInfrastructureOutcome =
+          (SshWinRmAwsInfrastructureOutcome) infrastructureOutcome;
+      return Optional.ofNullable(getCredentialSpecDto(sshWinRmAwsInfrastructureOutcome.getCredentialsRef(),
+          AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+          AmbianceUtils.getProjectIdentifier(ambiance)));
+    }
+    if ((InfrastructureKind.SSH_WINRM_AZURE).equals(infrastructureOutcome.getKind())) {
+      SshWinRmAzureInfrastructureOutcome sshWinRmAzureInfrastructureOutcome =
+          (SshWinRmAzureInfrastructureOutcome) infrastructureOutcome;
+      return Optional.ofNullable(getCredentialSpecDto(sshWinRmAzureInfrastructureOutcome.getCredentialsRef(),
+          AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+          AmbianceUtils.getProjectIdentifier(ambiance)));
+    }
+
+    return Optional.empty();
+  }
+
+  public SecretDTOV2 getCredentialSpecDto(
+      final String credentialsRef, final String accountId, final String orgIdentifier, final String projectIdentifier) {
+    if (isEmpty(credentialsRef)) {
+      throw new InvalidRequestException("Missing SSH/WinRM credentials for configured host(s)");
+    }
+    IdentifierRef identifierRef =
+        IdentifierRefHelper.getIdentifierRef(credentialsRef, accountId, orgIdentifier, projectIdentifier);
+    String errorMSg = "No secret configured with identifier: " + credentialsRef;
+    SecretResponseWrapper secretResponseWrapper = NGRestUtils.getResponse(
+        secretManagerClient.getSecret(identifierRef.getIdentifier(), identifierRef.getAccountIdentifier(),
+            identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier()),
+        errorMSg);
+    if (secretResponseWrapper == null) {
+      throw new InvalidRequestException(errorMSg);
+    }
+
+    return secretResponseWrapper.getSecret();
   }
 }

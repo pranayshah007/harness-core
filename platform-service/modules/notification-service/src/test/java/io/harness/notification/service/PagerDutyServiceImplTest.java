@@ -16,6 +16,8 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -33,6 +35,7 @@ import io.harness.notification.senders.PagerDutySenderImpl;
 import io.harness.notification.service.PagerDutyServiceImpl.PagerDutyTemplate;
 import io.harness.notification.service.api.NotificationSettingsService;
 import io.harness.notification.service.api.NotificationTemplateService;
+import io.harness.notification.utils.NotificationSettingsHelper;
 import io.harness.rule.Owner;
 import io.harness.serializer.YamlUtils;
 import io.harness.service.DelegateGrpcClientWrapper;
@@ -55,6 +58,7 @@ public class PagerDutyServiceImplTest extends CategoryTest {
   @Mock private YamlUtils yamlUtils;
   @Mock private PagerDutySenderImpl pagerDutySender;
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Mock private NotificationSettingsHelper notificationSettingsHelper;
   private PagerDutyServiceImpl pagerdutyService;
   private String accountId = "accountId";
   private String pdTemplateName = "pd_test";
@@ -67,7 +71,7 @@ public class PagerDutyServiceImplTest extends CategoryTest {
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
     pagerdutyService = new PagerDutyServiceImpl(notificationSettingsService, notificationTemplateService, yamlUtils,
-        pagerDutySender, delegateGrpcClientWrapper);
+        pagerDutySender, delegateGrpcClientWrapper, notificationSettingsHelper);
     pdTemplate.setSummary("this is test mail");
   }
 
@@ -143,6 +147,8 @@ public class PagerDutyServiceImplTest extends CategoryTest {
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(pagerDutySender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(yamlUtils.read(any(), (TypeReference<PagerDutyTemplate>) any())).thenReturn(pdTemplate);
+    when(notificationSettingsHelper.getRecipientsWithValidDomain(anyList(), anyString(), anyString()))
+        .thenReturn(Collections.singletonList(pdKey));
 
     NotificationProcessingResponse notificationProcessingResponse = pagerdutyService.send(notificationRequest);
     assertTrue(notificationProcessingResponse.equals(NotificationProcessingResponse.trivialResponseWithNoRetries));
@@ -193,6 +199,8 @@ public class PagerDutyServiceImplTest extends CategoryTest {
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(pagerDutySender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(yamlUtils.read(any(), (TypeReference<PagerDutyTemplate>) any())).thenReturn(pdTemplate);
+    when(notificationSettingsHelper.getRecipientsWithValidDomain(anyList(), anyString(), anyString()))
+        .thenReturn(Collections.singletonList(pdKey));
 
     NotificationProcessingResponse notificationProcessingResponse = pagerdutyService.send(notificationRequest);
     assertTrue(notificationProcessingResponse.equals(NotificationProcessingResponse.trivialResponseWithNoRetries));
@@ -248,6 +256,8 @@ public class PagerDutyServiceImplTest extends CategoryTest {
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
     when(pagerDutySender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(yamlUtils.read(any(), (TypeReference<PagerDutyTemplate>) any())).thenReturn(pdTemplate);
+    when(notificationSettingsHelper.getRecipientsWithValidDomain(anyList(), anyString(), anyString()))
+        .thenReturn(Collections.singletonList(pdKey));
 
     NotificationProcessingResponse notificationProcessingResponse = pagerdutyService.send(notificationRequest);
     assertEquals(notificationProcessingResponse, NotificationProcessingResponse.trivialResponseWithNoRetries);

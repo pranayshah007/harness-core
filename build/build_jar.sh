@@ -31,6 +31,7 @@ modify_service_name() {
     ["310-iacm-manager"]=1
     ["315-sto-manager"]=1
     ["332-ci-manager"]=1
+    ["idp-service"]=1
   )
   declare -A modified_service_name_with_service=(
     ["debezium-service"]=1
@@ -58,12 +59,19 @@ modify_service_name() {
   if [[ $modified_service_name == *"srm-service"* ]]; then
     modified_service_name="srm-service/modules/cv-nextgen-service/service"
   fi
+
+  # revisit to handle this - vishal
+  if [[ $modified_service_name == *"idp-service"* ]]; then
+    modified_service_name="idp-service/src/main/java/io/harness/idp/app"
+  fi
+
   echo "$modified_service_name"
 }
 
 # Call the function and pass the service name as an argument
 modified_service_name=$(modify_service_name "$SERVICE_NAME")
-
+echo "modified_service_name is $modified_service_name"
+echo "bazel ${bazelrc} build --remote_cache=https://storage.googleapis.com/harness-bazel-cache --google_credentials=/tmp/storage_secret.json //${modified_service_name}":module_deploy.jar" ${BAZEL_ARGUMENTS}"
 bazel ${bazelrc} build --remote_cache=https://storage.googleapis.com/harness-bazel-cache --google_credentials=/tmp/storage_secret.json //${modified_service_name}":module_deploy.jar" ${BAZEL_ARGUMENTS}
 
 
@@ -84,6 +92,17 @@ if [ "${PLATFORM}" == "jenkins" ] && [ "${SERVICE_NAME}" == "ci-manager" ]; then
   bazel query "deps(//${module}/app:module)" | grep -i "KryoRegistrar" | rev | cut -f 1 -d "/" | rev | cut -f 1 -d "." > /tmp/KryoDeps.text
   cp scripts/interface-hash/module-deps.sh .
   sh module-deps.sh //${module}/service:module > /tmp/ProtoDeps.text
+  bazel ${bazelrc} run ${BAZEL_ARGUMENTS}  //001-microservice-intfc-tool:module -- kryo-file=/tmp/KryoDeps.text proto-file=/tmp/ProtoDeps.text ignore-json | grep "Codebase Hash:" > ${moduleName}-protocol.info
+  rm module-deps.sh /tmp/ProtoDeps.text /tmp/KryoDeps.text
+fi
+
+if [ "${PLATFORM}" == "jenkins" ] && [ "${SERVICE_NAME}" == "idp-service" ]; then
+  module=idp-service
+  moduleName=idp-service
+
+  bazel query "deps(//${module}/src/main/java/io/harness/idp/app:module)" | grep -i "KryoRegistrar" | rev | cut -f 1 -d "/" | rev | cut -f 1 -d "." > /tmp/KryoDeps.text
+  cp scripts/interface-hash/module-deps.sh .
+  sh module-deps.sh //${module}/src/main/java/io/harness/idp/app:module > /tmp/ProtoDeps.text
   bazel ${bazelrc} run ${BAZEL_ARGUMENTS}  //001-microservice-intfc-tool:module -- kryo-file=/tmp/KryoDeps.text proto-file=/tmp/ProtoDeps.text ignore-json | grep "Codebase Hash:" > ${moduleName}-protocol.info
   rm module-deps.sh /tmp/ProtoDeps.text /tmp/KryoDeps.text
 fi

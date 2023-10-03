@@ -1289,10 +1289,8 @@ public class K8InitializeStepUtils {
   }
 
   private String getImagePullPolicy(IntegrationStageNode stageNode, CIStepInfo ciStepInfo) {
-    Infrastructure infra = stageNode.getIntegrationStageConfig().getInfrastructure();
-    if (infra.getType() == Infrastructure.Type.KUBERNETES_DIRECT) {
-      K8sDirectInfraYaml k8Infra = (K8sDirectInfraYaml) infra;
-      String imagePullPolicy = null;
+    String imagePullPolicy = null;
+    if (ciStepInfo != null) {
       switch (ciStepInfo.getNonYamlInfo().getStepInfoType()) {
         case RUN:
           RunStepInfo runStepInfo = (RunStepInfo) ciStepInfo;
@@ -1317,14 +1315,15 @@ public class K8InitializeStepUtils {
                 RunTimeInputHandler.resolveImagePullPolicy(CIStepInfoUtils.getImagePullPolicy(pluginCompatibleStep));
           }
       }
+    }
 
-      // This is when if any stepInfo don't have ImagePullPolicy and want to fetch it from K8Infra.
-      if (StringUtils.isBlank(imagePullPolicy)) {
+    if (stageNode != null && stageNode.getIntegrationStageConfig() != null) {
+      Infrastructure infra = stageNode.getIntegrationStageConfig().getInfrastructure();
+      if (infra.getType() == Infrastructure.Type.KUBERNETES_DIRECT && StringUtils.isBlank(imagePullPolicy)) {
+        K8sDirectInfraYaml k8Infra = (K8sDirectInfraYaml) infra;
         imagePullPolicy = RunTimeInputHandler.resolveImagePullPolicy(k8Infra.getSpec().getImagePullPolicy());
       }
-      return imagePullPolicy;
-    } else {
-      return null;
     }
+    return imagePullPolicy;
   }
 }

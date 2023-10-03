@@ -8,6 +8,7 @@ syntax = "proto3";
 package io.harness.delegate.core.beans;
 
 import "955-delegate-beans/src/main/proto/io/harness/delegate/core/beans/plugin.proto";
+import "955-delegate-beans/src/main/proto/io/harness/delegate/core/beans/secret.proto";
 
 option java_multiple_files = true;
 
@@ -40,8 +41,8 @@ message TaskPayload {
   string runnerType = 3;
   string log_token =
       4;  // Token for log stream. It's not in the payload data because log token is assigned when acquire
-  InputData task_data = 5;      // binary data for task inputs.
-  InputData infra_data = 6;     // binary data for infra config
-  string executionInfraId = 7;  // Id for the execution infra to use
-  // TODO: secrets + decryptableEntities
+  InputData task_data = 5;        // binary data for task inputs.
+  InputData infra_data = 6;       // binary data for infra config
+  string execution_infra_id = 7;  // Id for the execution infra to use
+  repeated Secret secrets = 8;    // Secrets to be decrypted
 }

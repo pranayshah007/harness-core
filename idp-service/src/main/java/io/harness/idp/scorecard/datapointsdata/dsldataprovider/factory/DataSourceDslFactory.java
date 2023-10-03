@@ -7,6 +7,7 @@
 package io.harness.idp.scorecard.datapointsdata.dsldataprovider.factory;
 
 import static io.harness.idp.common.Constants.HARNESS_IDENTIFIER;
+import static io.harness.idp.common.Constants.KUBERNETES_IDENTIFIER;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -19,11 +20,14 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class DataSourceDslFactory {
   HarnessDslFactory harnessDslFactory;
+  KubernetesDslFactory kubernetesDslFactory;
 
   public DataSourceDsl getDataSourceDataProvider(String dataSourceIdentifier) {
     switch (dataSourceIdentifier) {
       case HARNESS_IDENTIFIER:
         return harnessDslFactory;
+      case KUBERNETES_IDENTIFIER:
+        return kubernetesDslFactory;
       default:
         throw new UnsupportedOperationException(
             String.format("Datasource - %s is not supported ", dataSourceIdentifier));

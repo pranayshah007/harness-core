@@ -64,7 +64,7 @@ public class NoOpCache<K, V> implements Cache<K, V> {
 
   @Override
   public boolean putIfAbsent(K key, V value) {
-    return false;
+    return true;
   }
 
   @Override

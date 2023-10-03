@@ -47,4 +47,5 @@ public interface JiraConstantsNG {
   String REMAINING_ESTIMATE_NAME = "Remaining Estimate";
   String ORIGINAL_ESTIMATE_KEY = "originalEstimate";
   String REMAINING_ESTIMATE_KEY = "remainingEstimate";
+  String JIRA_USER_KEY = "JIRAUSER";
 }

@@ -7,13 +7,16 @@
 
 package io.harness.encryptors.clients;
 
+import static io.harness.SecretConstants.VERSION;
 import static io.harness.eraro.ErrorCode.GCP_SECRET_OPERATION_ERROR;
 import static io.harness.govern.IgnoreThrowable.ignoredOnPurpose;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.PIYUSH;
 import static io.harness.rule.OwnerRule.SHREYAS;
 import static io.harness.rule.OwnerRule.TEJAS;
 
+import static java.lang.String.valueOf;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -43,6 +46,7 @@ import com.google.cloud.secretmanager.v1.SecretPayload;
 import com.google.cloud.secretmanager.v1.SecretVersion;
 import com.google.cloud.secretmanager.v1.SecretVersionName;
 import com.google.protobuf.ByteString;
+import com.jayway.jsonpath.PathNotFoundException;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
@@ -218,6 +222,82 @@ public class GcpSecretsManagerEncryptorTest extends CategoryTest {
     char[] fetchedSecretValue =
         gcpSecretsManagerEncryptor.fetchSecretValue(accountId, existingEncryptedRecord, gcpSecretsManagerConfig);
     assertThat(plaintext.toCharArray()).isEqualTo(fetchedSecretValue);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void test_itShouldFetchJsonSecretValueByKeyAndPath() throws IOException {
+    String jsonText =
+        "{\"key1\":\"value1\",\"key2\":{\"key21\":\"value21\",\"key22\":\"value22\"},\"key3\":{\"key31\":{\"key311\":\"value311\"}}}";
+    SecretPayload payload = SecretPayload.newBuilder().setData(ByteString.copyFromUtf8(jsonText)).build();
+    AccessSecretVersionResponse accessedSecretVersionResponse =
+        AccessSecretVersionResponse.newBuilder().setPayload(payload).build();
+    doReturn(accessedSecretVersionResponse)
+        .when(secretManagerServiceClient)
+        .accessSecretVersion(any(SecretVersionName.class));
+
+    EncryptedRecordData.EncryptedRecordDataBuilder encryptedRecordDataBuilder =
+        EncryptedRecordData.builder()
+            .encryptionKey(mockedSecret.getName())
+            .path(mockedSecrectVersion.getName())
+            .additionalMetadata(AdditionalMetadata.builder().value(VERSION, "v1").build())
+            .encryptedValue(mockedSecrectVersion.getName().toCharArray());
+
+    char[] fetchedSecretValue = gcpSecretsManagerEncryptor.fetchSecretValue(
+        accountId, encryptedRecordDataBuilder.build(), gcpSecretsManagerConfig);
+    assertThat(valueOf(fetchedSecretValue)).isEqualTo(jsonText);
+
+    fetchedSecretValue = gcpSecretsManagerEncryptor.fetchSecretValue(accountId,
+        encryptedRecordDataBuilder.path(mockedSecrectVersion.getName() + "#").build(), gcpSecretsManagerConfig);
+    assertThat(valueOf(fetchedSecretValue)).isEqualTo(jsonText);
+
+    fetchedSecretValue = gcpSecretsManagerEncryptor.fetchSecretValue(accountId,
+        encryptedRecordDataBuilder.path(mockedSecrectVersion.getName() + "#key1").build(), gcpSecretsManagerConfig);
+    assertThat(valueOf(fetchedSecretValue)).isEqualTo("value1");
+
+    fetchedSecretValue = gcpSecretsManagerEncryptor.fetchSecretValue(accountId,
+        encryptedRecordDataBuilder.path(mockedSecrectVersion.getName() + "#key2").build(), gcpSecretsManagerConfig);
+    assertThat(valueOf(fetchedSecretValue)).isEqualTo("{\"key21\":\"value21\",\"key22\":\"value22\"}");
+
+    fetchedSecretValue = gcpSecretsManagerEncryptor.fetchSecretValue(accountId,
+        encryptedRecordDataBuilder.path(mockedSecrectVersion.getName() + "#key3").build(), gcpSecretsManagerConfig);
+    assertThat(valueOf(fetchedSecretValue)).isEqualTo("{\"key31\":{\"key311\":\"value311\"}}");
+
+    fetchedSecretValue = gcpSecretsManagerEncryptor.fetchSecretValue(accountId,
+        encryptedRecordDataBuilder.path(mockedSecrectVersion.getName() + "#key3.key31").build(),
+        gcpSecretsManagerConfig);
+    assertThat(valueOf(fetchedSecretValue)).isEqualTo("{\"key311\":\"value311\"}");
+
+    fetchedSecretValue = gcpSecretsManagerEncryptor.fetchSecretValue(accountId,
+        encryptedRecordDataBuilder.path(mockedSecrectVersion.getName() + "#key3.key31.key311").build(),
+        gcpSecretsManagerConfig);
+    assertThat(valueOf(fetchedSecretValue)).isEqualTo("value311");
+  }
+
+  @Test(expected = PathNotFoundException.class)
+  @Owner(developers = {ASHISHSANODIA})
+  @Category(UnitTests.class)
+  public void testFetchJsonSecret_throwsExceptionForInvalidKey() {
+    String jsonText =
+        "{\"key1\":\"value1\",\"key2\":{\"key21\":\"value21\",\"key22\":\"value22\"},\"key3\":{\"key31\":{\"key311\":\"value311\"}}}";
+    SecretPayload payload = SecretPayload.newBuilder().setData(ByteString.copyFromUtf8(jsonText)).build();
+    AccessSecretVersionResponse accessedSecretVersionResponse =
+        AccessSecretVersionResponse.newBuilder().setPayload(payload).build();
+    doReturn(accessedSecretVersionResponse)
+        .when(secretManagerServiceClient)
+        .accessSecretVersion(any(SecretVersionName.class));
+
+    EncryptedRecordData.EncryptedRecordDataBuilder encryptedRecordDataBuilder =
+        EncryptedRecordData.builder()
+            .encryptionKey(mockedSecret.getName())
+            .path(mockedSecrectVersion.getName())
+            .additionalMetadata(AdditionalMetadata.builder().value(VERSION, "v1").build())
+            .encryptedValue(mockedSecrectVersion.getName().toCharArray());
+
+    gcpSecretsManagerEncryptor.fetchSecretValue(accountId,
+        encryptedRecordDataBuilder.path(mockedSecrectVersion.getName() + "#invalidKey").build(),
+        gcpSecretsManagerConfig);
   }
 
   @Test

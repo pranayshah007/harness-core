@@ -39,6 +39,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.EnvironmentValidationHelper;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.ServiceEntityValidationHelper;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
+import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
@@ -159,7 +161,8 @@ public class EnvironmentResourceV2Test extends CategoryTest {
                                                       .type(EnvironmentType.PreProduction)
                                                       .build();
 
-    assertThatThrownBy(() -> environmentResourceV2.create(ACCOUNT_ID, environmentRequestDTO))
+    assertThatThrownBy(
+        () -> environmentResourceV2.create(ACCOUNT_ID, environmentRequestDTO, GitEntityCreateInfoDTO.builder().build()))
         .isInstanceOf(InvalidRequestException.class);
 
     verify(entityYamlSchemaHelper, times(1)).validateSchema(ACCOUNT_ID, environmentRequestDTO.getYaml());
@@ -307,8 +310,8 @@ public class EnvironmentResourceV2Test extends CategoryTest {
         .thenReturn(AccessCheckResponseDTO.builder()
                         .accessControlList(Arrays.asList(AccessControlDTO.builder().permitted(true).build()))
                         .build());
-    ResponseDTO<EnvironmentResponse> environmentResponseResponseDTO =
-        environmentResourceV2.get(IDENTIFIER, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
+    ResponseDTO<EnvironmentResponse> environmentResponseResponseDTO = environmentResourceV2.get(IDENTIFIER, ACCOUNT_ID,
+        ORG_IDENTIFIER, PROJ_IDENTIFIER, false, GitEntityFindInfoDTO.builder().build(), "false", false);
     assertThat(environmentResponseResponseDTO.getEntityTag()).isNull();
   }
 

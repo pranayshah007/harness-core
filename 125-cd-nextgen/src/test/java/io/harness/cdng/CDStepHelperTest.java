@@ -10,6 +10,7 @@ package io.harness.cdng;
 import static io.harness.beans.FeatureName.OPTIMIZED_GIT_FETCH_FILES;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
+import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ACHYUTH;
@@ -40,9 +41,11 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome.K8sDirectInfrastructureOutcomeBuilder;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
+import io.harness.cdng.k8s.HarnessRelease;
 import io.harness.cdng.k8s.K8sEntityHelper;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.ManifestStoreType;
@@ -58,6 +61,8 @@ import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
 import io.harness.cdng.manifest.yaml.KustomizePatchesManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
+import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigType;
+import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -119,6 +124,8 @@ import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.execution.tasks.DelegateTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.refobjects.RefObject;
+import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
@@ -153,11 +160,13 @@ public class CDStepHelperTest extends CategoryTest {
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Mock private ConnectorInfoDTO connectorInfoDTO;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Mock OutcomeService outcomeService;
 
   @Spy @InjectMocks private K8sManifestDelegateMapper manifestDelegateMapper;
   @Spy @InjectMocks private K8sEntityHelper k8sEntityHelper;
   @Spy @InjectMocks private CDStepHelper cdStepHelper;
   @Spy @InjectMocks private K8sHelmCommonStepHelper k8sHelmCommonStepHelper;
+  private InfrastructureOutcome infrastructureOutcome;
   private final Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", "test-account").build();
   private String id = "identifier";
   private final ParameterField folderPath = ParameterField.createValueField("folderPath/");
@@ -590,6 +599,54 @@ public class CDStepHelperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testInvalidReleaseNamesInService() {
+    List<String> invalidReleaseNames = List.of("", "!@#", "7", "  ", "%");
+    for (String releaseName : invalidReleaseNames) {
+      doReturn(ServiceStepOutcome.builder().release(HarnessRelease.builder().name(releaseName).build()).build())
+          .when(outcomeService)
+          .resolve(any(Ambiance.class), any(RefObject.class));
+      assertThatThrownBy(() -> cdStepHelper.getReleaseName(ambiance, infrastructureOutcome))
+          .isInstanceOf(InvalidRequestException.class);
+    }
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testAutocorrectedReleaseNamesInService() {
+    Map<String, String> correctedReleaseNamesMap = new HashMap<>();
+    correctedReleaseNamesMap.put("NameWithUpperCase", "namewithuppercase");
+    correctedReleaseNamesMap.put("-starting.with.non.alphanumeric", "starting-with-non-alphanumeric");
+    correctedReleaseNamesMap.put("containing)invalid.characters+", "containing-invalid-characters");
+    correctedReleaseNamesMap.put(".starting.with.non.alphanumeric", "starting-with-non-alphanumeric");
+    correctedReleaseNamesMap.put(
+        "!@#starts^^and^^ends^^with^^invalid^^chars&*()", "r-starts-and-ends-with-invalid-chars");
+
+    for (Map.Entry<String, String> kv : correctedReleaseNamesMap.entrySet()) {
+      doReturn(ServiceStepOutcome.builder().release(HarnessRelease.builder().name(kv.getKey()).build()).build())
+          .when(outcomeService)
+          .resolve(any(Ambiance.class), any(RefObject.class));
+      assertThat(cdStepHelper.getReleaseName(ambiance, infrastructureOutcome)).isEqualTo(kv.getValue());
+    }
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testReleaseNamesInService() {
+    List<String> releaseNames = List.of(
+        "alphanumeriname124", "1starting.with.number", "starting.with.alphabet", "containing.dot", "containing-hyphen");
+    for (String releaseName : releaseNames) {
+      doReturn(ServiceStepOutcome.builder().release(HarnessRelease.builder().name(releaseName).build()).build())
+          .when(outcomeService)
+          .resolve(any(Ambiance.class), any(RefObject.class));
+      assertThat(cdStepHelper.getReleaseName(ambiance, infrastructureOutcome)).isEqualTo(releaseName);
+    }
+  }
+
+  @Test
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
   public void testGetAccountConnector() {
@@ -640,10 +697,25 @@ public class CDStepHelperTest extends CategoryTest {
   public void testValidateManifest() {
     when(connectorInfoDTO.getConnectorConfig()).thenReturn(null);
     String[] manifestStoreTypes = {ManifestStoreType.GIT, ManifestStoreType.GITHUB, ManifestStoreType.BITBUCKET,
-        ManifestStoreType.GITLAB, ManifestStoreType.HTTP, ManifestStoreType.S3, ManifestStoreType.GCS,
-        ManifestStoreType.OCI};
+        ManifestStoreType.GITLAB, ManifestStoreType.HTTP, ManifestStoreType.S3, ManifestStoreType.GCS};
     for (String storeType : manifestStoreTypes) {
       assertThatThrownBy(() -> cdStepHelper.validateManifest(storeType, ConnectorInfoDTO.builder().build(), ""))
+          .isInstanceOf(InvalidRequestException.class);
+    }
+    assertThatThrownBy(
+        () -> cdStepHelper.validateManifest(ManifestStoreType.OCI, ConnectorInfoDTO.builder().build(), ""))
+        .isInstanceOf(UnsupportedOperationException.class);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testValidateOciManifest() {
+    when(connectorInfoDTO.getConnectorConfig()).thenReturn(null);
+    OciHelmChartStoreConfigType[] ociHelmChartStoreConfigTypes = {
+        OciHelmChartStoreConfigType.GENERIC, OciHelmChartStoreConfigType.ECR};
+    for (OciHelmChartStoreConfigType storeType : ociHelmChartStoreConfigTypes) {
+      assertThatThrownBy(() -> cdStepHelper.validateOciManifest(storeType, ConnectorInfoDTO.builder().build(), ""))
           .isInstanceOf(InvalidRequestException.class);
     }
   }

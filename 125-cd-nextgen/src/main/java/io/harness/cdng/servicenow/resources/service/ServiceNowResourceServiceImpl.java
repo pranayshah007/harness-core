@@ -8,6 +8,7 @@
 package io.harness.cdng.servicenow.resources.service;
 
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
+import static io.harness.servicenow.ServiceNowUtils.getListOfFieldsFromStringOfFields;
 import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
 
 import static java.util.Objects.isNull;
@@ -20,6 +21,7 @@ import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.servicenow.ServiceNowTemplateTypeEnum;
 import io.harness.cdng.servicenow.utils.ServiceNowFieldNGUtils;
 import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
@@ -61,19 +63,27 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.api.client.util.Joiner;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import io.fabric8.utils.Lists;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @Slf4j
 public class ServiceNowResourceServiceImpl implements ServiceNowResourceService {
   private static final Duration TIMEOUT = Duration.ofSeconds(30);
   private static final String SYS_ID_FIELD_KEY = "sys_id";
+  private static final String CHANGE_REQUEST = "CHANGE_REQUEST";
+
+  private static final List<String> DEFAULT_READ_ONLY_STANDARD_TEMPLATE_FIELDS =
+      Lists.newArrayList("description", "backout_plan", "test_plan", "implementation_plan");
+
   private final ConnectorService connectorService;
   private final SecretManagerClientService secretManagerClientService;
   private final DelegateGrpcClientWrapper delegateGrpcClientWrapper;
@@ -174,10 +184,50 @@ public class ServiceNowResourceServiceImpl implements ServiceNowResourceService 
         .getServiceNowFieldNGList();
   }
 
+  public List<ServiceNowTemplate> getTemplateListForStandardTemplate(IdentifierRef connectorRef, String orgId,
+      String projectId, int limit, int offset, String templateName, String ticketType, String searchTerm) {
+    ServiceNowTaskNGParametersBuilder parametersBuilder = ServiceNowTaskNGParameters.builder()
+                                                              .action(ServiceNowActionNG.GET_STANDARD_TEMPLATE)
+                                                              .ticketType(ticketType)
+                                                              .templateListLimit(limit)
+                                                              .templateListOffset(offset)
+                                                              .templateName(templateName)
+                                                              .searchTerm(searchTerm);
+
+    if (StringUtils.isBlank(templateName)) {
+      return obtainServiceNowTaskNGResponse(connectorRef, orgId, projectId, parametersBuilder)
+          .getServiceNowTemplateList();
+    }
+
+    ServiceNowTaskNGResponse response =
+        obtainServiceNowTaskNGResponse(connectorRef, orgId, projectId, parametersBuilder);
+
+    String serviceNowFieldJsonNGListAsString = response.getServiceNowFieldJsonNGListAsString();
+
+    return Collections.singletonList(ServiceNowTemplate.builder()
+                                         .name(response.getServiceNowTemplateList().get(0).getName())
+                                         .sys_id(response.getServiceNowTemplateList().get(0).getSys_id())
+                                         .fields(getListOfFieldsFromStringOfFields(serviceNowFieldJsonNGListAsString))
+                                         .build());
+  }
   public List<ServiceNowTemplate> getTemplateList(IdentifierRef connectorRef, String orgId, String projectId, int limit,
-      int offset, String templateName, String ticketType, String searchTerm) {
+      int offset, String templateName, String ticketType, String searchTerm, ServiceNowTemplateTypeEnum templateType) {
     // Offset provided from ui is equivalent to page number, So calculating the actual offset value.
     offset = offset * limit;
+
+    if (ServiceNowTemplateTypeEnum.STANDARD == templateType) {
+      if (!(CHANGE_REQUEST.equalsIgnoreCase(ticketType))) {
+        throw new InvalidRequestException(
+            "Get template metadata is supported for ticketType CHANGE_REQUEST and templateType STANDARD");
+      }
+      if (!cdFeatureFlagHelper.isEnabled(
+              connectorRef.getAccountIdentifier(), FeatureName.CDS_GET_SERVICENOW_STANDARD_TEMPLATE)) {
+        throw new InvalidRequestException(
+            "Feature flag CDS_GET_SERVICENOW_STANDARD_TEMPLATE is not enabled for this account");
+      }
+      return getTemplateListForStandardTemplate(
+          connectorRef, orgId, projectId, limit, offset, templateName, ticketType, searchTerm);
+    }
 
     ServiceNowTaskNGParametersBuilder parametersBuilder = ServiceNowTaskNGParameters.builder()
                                                               .action(ServiceNowActionNG.GET_TEMPLATE)
@@ -233,6 +283,30 @@ public class ServiceNowResourceServiceImpl implements ServiceNowResourceService 
                                                               .ticketType(ticketType)
                                                               .ticketNumber(ticketNumber);
     return obtainServiceNowTaskNGResponse(connectorRef, orgId, projectId, parametersBuilder).getTicket();
+  }
+
+  @Override
+  public List<String> getStandardTemplateReadOnlyFields(IdentifierRef connectorRef, String orgId, String projectId) {
+    try {
+      ServiceNowTaskNGParametersBuilder parametersBuilder =
+          ServiceNowTaskNGParameters.builder().action(ServiceNowActionNG.GET_STANDARD_TEMPLATES_READONLY_FIELDS);
+      String serviceNowStandardTemplateReadOnlyFields =
+          obtainServiceNowTaskNGResponse(connectorRef, orgId, projectId, parametersBuilder)
+              .getServiceNowStandardTemplateReadOnlyFields();
+      if (StringUtils.isBlank(serviceNowStandardTemplateReadOnlyFields)) {
+        return Collections.emptyList();
+      }
+      return List.of(serviceNowStandardTemplateReadOnlyFields.split(","));
+    } catch (ServiceNowException e) {
+      if (e.getMessage() != null
+          && e.getMessage().contains("User is unauthorized to access table: std_change_properties")) {
+        log.warn("Acl related error occured while fetching readonly fields:", e);
+        return DEFAULT_READ_ONLY_STANDARD_TEMPLATE_FIELDS;
+      }
+      throw e;
+    } catch (Exception e) {
+      throw e;
+    }
   }
 
   private ServiceNowTaskNGResponse obtainServiceNowTaskNGResponse(IdentifierRef serviceNowConnectorRef, String orgId,

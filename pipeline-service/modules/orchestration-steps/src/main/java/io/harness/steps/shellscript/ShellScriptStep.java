@@ -15,6 +15,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.TaskParameters;
@@ -30,6 +31,7 @@ import io.harness.pms.contracts.execution.TaskExecutableResponse;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
@@ -43,6 +45,7 @@ import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.executables.PipelineTaskExecutable;
 import io.harness.supplier.ThrowingSupplier;
+import io.harness.utils.PmsFeatureFlagHelper;
 
 import software.wings.beans.TaskType;
 
@@ -61,6 +64,7 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
   @Inject private StepHelper stepHelper;
   @Inject private ShellScriptHelperService shellScriptHelperService;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Inject private PmsFeatureFlagHelper pmsFeatureFlagHelper;
 
   @Override
   public Class<StepBaseParameters> getStepParametersClass() {
@@ -153,6 +157,11 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
                                               .name(OutputExpressionConstants.OUTPUT)
                                               .outcome(shellScriptOutcome)
                                               .build());
+          if (pmsFeatureFlagHelper.isEnabled(
+                  AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_SHELL_VARIABLES_EXPORT)) {
+            shellScriptHelperService.exportOutputVariablesUsingAlias(
+                ambiance, shellScriptStepParameters, shellScriptOutcome);
+          }
         }
       }
       return stepResponseBuilder.build();

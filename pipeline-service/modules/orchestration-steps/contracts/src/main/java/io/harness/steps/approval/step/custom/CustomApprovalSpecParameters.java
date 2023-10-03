@@ -50,22 +50,6 @@ public class CustomApprovalSpecParameters implements SpecParameters {
   ParameterField<Timeout> scriptTimeout;
 
   @Override
-  public SpecParameters getViewJsonObject() {
-    // omit secretOutputVars since they should not be visible to users
-    return CustomApprovalSpecParameters.builder()
-        .retryInterval(this.retryInterval)
-        .outputVariables(this.outputVariables)
-        .environmentVariables(this.environmentVariables)
-        .shellType(this.shellType)
-        .source(this.source)
-        .delegateSelectors(this.delegateSelectors)
-        .approvalCriteria(this.approvalCriteria)
-        .rejectionCriteria(this.rejectionCriteria)
-        .scriptTimeout(this.scriptTimeout)
-        .build();
-  }
-
-  @Override
   public List<String> stepInputsKeyExclude() {
     return new LinkedList<>(Arrays.asList("specConfig.secretOutputVariables"));
   }

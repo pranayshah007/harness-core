@@ -89,9 +89,10 @@ public class UserGroupChangeConsumerImplTest extends AggregatorTestBase {
     resourceGroup = buildResourceGroup(scopeIdentifier);
     when(roleService.get(any(), any(), any())).thenReturn(Optional.of(role));
     when(resourceGroupService.get(any(), any(), any())).thenReturn(Optional.of(resourceGroup));
-
+    inMemoryPermissionRepository = mock(InMemoryPermissionRepository.class);
+    when(inMemoryPermissionRepository.isPermissionCompatibleWithResourceSelector(any(), any())).thenReturn(true);
     ACLGeneratorService changeConsumerService = new ACLGeneratorServiceImpl(roleService, userGroupService,
-        resourceGroupService, scopeService, new HashMap<>(), aclRepository, false, inMemoryPermissionRepository);
+        resourceGroupService, scopeService, new HashMap<>(), aclRepository, inMemoryPermissionRepository);
 
     userGroupChangeConsumer =
         new UserGroupChangeConsumerImpl(aclRepository, roleAssignmentRepository, userGroupRepository,

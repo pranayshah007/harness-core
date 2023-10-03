@@ -1,8 +1,8 @@
-name: Count of plan Executions
-identifier: plan_execution_count
-metricGroup: plan_execution_count_metric_group
+name: Core Pipeline Metrics
+identifier: PipelineCoreMetrics
+metricGroup: PipelineAccountIdMetricsGroup
 metrics:
-  - metricName: plan_execution_active_count
-    metricDefinition: Number of active plan executions at a given instant
+  - metricName: pipeline_execution_active_count
+    metricDefinition: Number of active pipeline executions at a given instant
     type: LastValue
     unit: "1"

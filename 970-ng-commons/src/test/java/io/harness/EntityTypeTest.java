@@ -263,6 +263,10 @@ public class EntityTypeTest extends CategoryTest {
     entityTypeOrdinalMapping.put(229, "IDP_CHECK");
     entityTypeOrdinalMapping.put(230, "AWS_CDK_ROLLBACK");
     entityTypeOrdinalMapping.put(231, "SLSA_VERIFICATION");
+    entityTypeOrdinalMapping.put(232, "UPDATE_GITOPS_APP");
+    entityTypeOrdinalMapping.put(233, "ECS_SERVICE_SETUP_STEP");
+    entityTypeOrdinalMapping.put(234, "ECS_UPGRADE_CONTAINER_STEP");
+    entityTypeOrdinalMapping.put(235, "ECS_BASIC_ROLLBACK_STEP");
 
     entityTypeConstantMapping =
         entityTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

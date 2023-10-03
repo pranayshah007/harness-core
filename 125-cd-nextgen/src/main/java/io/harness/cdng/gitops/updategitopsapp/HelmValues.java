@@ -10,6 +10,8 @@ package io.harness.cdng.gitops.updategitopsapp;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
@@ -22,19 +24,20 @@ import lombok.Data;
 
 @Data
 @Builder
+@OwnedBy(HarnessTeam.GITOPS)
 @RecasterAlias("io.harness.cdng.gitops.updategitopsapp.HelmValues")
 public class HelmValues {
-  @YamlSchemaTypes(runtime)
+  @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.GITOPS_HELM_PARAMS_LIST_CLASSPATH)
   @JsonProperty("parameters")
   ParameterField<List<HelmParameters>> parameters;
 
-  @YamlSchemaTypes(runtime)
+  @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.GITOPS_HELM_FILE_PARAMS_LIST_CLASSPATH)
   @JsonProperty("fileParameters")
   ParameterField<List<HelmFileParameters>> fileParameters;
 
-  @YamlSchemaTypes(runtime)
+  @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @JsonProperty("valueFiles")
   ParameterField<List<String>> valueFiles;

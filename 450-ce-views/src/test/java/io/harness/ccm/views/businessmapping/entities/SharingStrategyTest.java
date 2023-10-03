@@ -15,6 +15,7 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -24,7 +25,7 @@ public class SharingStrategyTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testEqualSharingStrategy() {
     final String equal = "EQUAL";
-    assertThat(SharingStrategy.EQUAL.name()).isEqualTo(equal);
+    Assertions.assertThat(SharingStrategy.EQUAL.name()).isEqualTo(equal);
     assertThat(SharingStrategy.valueOf(equal)).isEqualTo(SharingStrategy.EQUAL);
   }
 

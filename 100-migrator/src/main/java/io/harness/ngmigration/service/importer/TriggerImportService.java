@@ -54,6 +54,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.ServiceHttpClientConfig;
 
 import software.wings.beans.Base;
+import software.wings.beans.Environment;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamType;
 import software.wings.beans.trigger.ArtifactSelection;
@@ -61,12 +62,16 @@ import software.wings.beans.trigger.ArtifactTriggerCondition;
 import software.wings.beans.trigger.ScheduledTriggerCondition;
 import software.wings.beans.trigger.Trigger;
 import software.wings.beans.trigger.Trigger.TriggerKeys;
+import software.wings.infra.InfrastructureDefinition;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryResult;
 import software.wings.ngmigration.NGMigrationEntityType;
+import software.wings.service.intfc.EnvironmentService;
+import software.wings.service.intfc.InfrastructureDefinitionService;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Lists;
@@ -78,6 +83,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
@@ -89,12 +96,15 @@ import retrofit2.Response;
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class TriggerImportService implements ImportService {
-  private static final String SERVICE_INPUTS = "serviceInputs";
+  @Inject private EnvironmentService environmentService;
+  @Inject private InfrastructureDefinitionService infrastructureDefinitionService;
   @Inject DiscoveryService discoveryService;
   @Inject HPersistence hPersistence;
   @Inject private MigrationTemplateUtils migrationTemplateUtils;
   @Inject @Named("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceClientConfig;
   @Inject WorkflowImportService workflowImportService;
+
+  private final ObjectMapper objectMapper = new ObjectMapper();
 
   public DiscoveryResult discover(ImportDTO importConnectorDTO) {
     TriggerFilter filter = (TriggerFilter) importConnectorDTO.getFilter();
@@ -224,9 +234,10 @@ public class TriggerImportService implements ImportService {
 
     Map<String, Object> inputDetails = new HashMap<>();
     JsonNode inputNode = getInputDetails(inputDTO, pipelineDetail, inputDetails);
-    ArrayNode stagesNode = (ArrayNode) inputDetails.get("stages");
+    Object jsonStagesNode = inputDetails.get("stages");
 
-    if (stagesNode != null) {
+    if (jsonStagesNode instanceof ArrayNode) {
+      ArrayNode stagesNode = (ArrayNode) jsonStagesNode;
       for (int i = 0; i < stagesNode.size(); i++) {
         JsonNode stageNode = stagesNode.get(i);
         Optional<ArtifactSelection> firstArtifactSelection = trigger.getArtifactSelections().stream().findFirst();
@@ -240,6 +251,49 @@ public class TriggerImportService implements ImportService {
           if (RUNTIME_INPUT.equals(serviceRef) && !RUNTIME_INPUT.equals(triggerServiceRef)) {
             ObjectNode serviceNode = (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/service");
             serviceNode.put("serviceRef", serviceNGId);
+          }
+
+          Map<String, String> workflowVariables = trigger.getWorkflowVariables();
+          if (workflowVariables != null) {
+            String envCGId = workflowVariables.get("Environment");
+            if (envCGId != null) {
+              Environment env = environmentService.get(trigger.getAppId(), envCGId);
+              String envNGId = MigratorUtility.generateIdentifier(env.getName(), inputDTO.getIdentifierCaseFormat());
+
+              String envRef = stageNode.at("/stage/template/templateInputs/spec/environment/environmentRef").asText();
+              if (RUNTIME_INPUT.equals(envRef) && envNGId != null) {
+                ObjectNode envNode = (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/environment");
+                envNode.put("environmentRef", envNGId);
+              }
+            }
+
+            String pattern = ".*InfraDefinition.*";
+            Pattern regexPattern = Pattern.compile(pattern);
+            String infraCGId = null;
+            for (Map.Entry<String, String> entry : workflowVariables.entrySet()) {
+              String key = entry.getKey();
+              String value = entry.getValue();
+              Matcher matcher = regexPattern.matcher(key);
+              if (matcher.matches()) {
+                infraCGId = value;
+              }
+            }
+            if (infraCGId != null) {
+              InfrastructureDefinition infra = infrastructureDefinitionService.get(trigger.getAppId(), infraCGId);
+              if (infra != null) {
+                String infraNGId =
+                    MigratorUtility.generateIdentifier(infra.getName(), inputDTO.getIdentifierCaseFormat());
+                String infraRef =
+                    stageNode.at("/stage/template/templateInputs/spec/environment/infrastructureDefinitions").asText();
+                if (RUNTIME_INPUT.equals(infraRef) && infraNGId != null) {
+                  ObjectNode infraNodeObj =
+                      (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/environment");
+                  JsonNode infraNode = objectMapper.createObjectNode().put("identifier", infraNGId);
+                  ArrayNode infraArrayNode = objectMapper.createArrayNode().add(infraNode);
+                  infraNodeObj.set("infrastructureDefinitions", infraArrayNode);
+                }
+              }
+            }
           }
         }
       }

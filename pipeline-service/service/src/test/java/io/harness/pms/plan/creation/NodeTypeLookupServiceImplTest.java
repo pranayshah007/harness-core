@@ -62,6 +62,14 @@ public class NodeTypeLookupServiceImplTest extends CategoryTest {
     service2SupportedTypes.put("step", Collections.singleton("Service2Step"));
     instances.put("service2", service2SupportedTypes);
 
+    Map<String, Set<String>> service3SupportedTypes = new HashMap<>();
+    service3SupportedTypes.put("stage", Collections.singleton("Custom"));
+    instances.put("service3", service3SupportedTypes);
+
+    Map<String, Set<String>> pmsSupportedTypes = new HashMap<>();
+    pmsSupportedTypes.put("stage", Collections.singleton("Custom"));
+    instances.put("pms", pmsSupportedTypes);
+
     Map<String, Set<String>> cfServiceSupportedTypes = new HashMap<>();
     cfServiceSupportedTypes.put("stage", Collections.singleton("FeatureFlag"));
     instances.put("anyName", cfServiceSupportedTypes);
@@ -77,6 +85,8 @@ public class NodeTypeLookupServiceImplTest extends CategoryTest {
     assertThat(serviceName).isEqualTo("service1");
     serviceName = nodeTypeLookupService.findNodeTypeServiceName("FeatureFlag");
     assertThat(serviceName).isEqualTo("cf");
+    serviceName = nodeTypeLookupService.findNodeTypeServiceName("Custom");
+    assertThat(serviceName).isEqualTo("pms");
 
     assertThatThrownBy(() -> nodeTypeLookupService.findNodeTypeServiceName("eh"))
         .isInstanceOf(InvalidRequestException.class)

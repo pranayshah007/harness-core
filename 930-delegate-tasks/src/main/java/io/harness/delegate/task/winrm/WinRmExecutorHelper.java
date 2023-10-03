@@ -19,6 +19,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.logging.LogCallback;
 import io.harness.ng.core.dto.secrets.WinRmCommandParameter;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -225,6 +226,26 @@ public class WinRmExecutorHelper {
       throw re;
     } catch (Exception e) {
       log.error("Exception while trying to remove file {} {}", file, e);
+    }
+  }
+
+  public static void cleanupFiles(WinRmSession session, String file, String powershell, boolean disableCommandEncoding,
+      List<WinRmCommandParameter> parameters, WinRmSessionConfig config, LogCallback logCallback) {
+    boolean sessionConnected = false;
+    try {
+      // This is to check the session connectivity
+      // If the session is disconnected create a new session to do the cleanup
+      session.checkConnectivity();
+      sessionConnected = true;
+      cleanupFiles(session, file, powershell, disableCommandEncoding, parameters);
+    } catch (Exception ex) {
+      if (!sessionConnected) {
+        try (WinRmSession winRmSession = new WinRmSession(config, logCallback)) {
+          cleanupFiles(winRmSession, file, powershell, disableCommandEncoding, parameters);
+        } catch (Exception e) {
+          log.warn("Failed to create new session while cleaning up files.", e);
+        }
+      }
     }
   }
 

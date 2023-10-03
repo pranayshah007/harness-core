@@ -48,9 +48,14 @@ public class MatrixConfigService implements StrategyConfigService {
       Optional<Integer> maxExpansionLimit, boolean isStepGroup, Class cls, Ambiance ambiance) {
     MatrixConfig matrixConfig = (MatrixConfig) strategyConfig.getMatrixConfig().getValue();
     List<String> keys = getKeys(matrixConfig);
+
+    String nodeName = "";
+    if (!ParameterField.isBlank(matrixConfig.getNodeName())) {
+      nodeName = (String) matrixConfig.getNodeName().fetchFinalValue();
+    }
     return matrixConfigServiceHelper.expandJsonNodeFromClass(keys, matrixConfig.getAxes(),
         matrixConfig.getExpressionAxes(), matrixConfig.getExclude(), matrixConfig.getMaxConcurrency(), jsonNode,
-        maxExpansionLimit, isStepGroup, cls, ambiance);
+        maxExpansionLimit, isStepGroup, cls, ambiance, nodeName);
   }
 
   public StrategyInfo expandJsonNode(

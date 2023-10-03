@@ -7,6 +7,7 @@
 
 package software.wings.delegatetasks.buildsource;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 import static io.harness.mongo.MongoConfig.NO_LIMIT;
@@ -41,6 +42,8 @@ import software.wings.service.intfc.ArtifactService;
 import software.wings.utils.DelegateArtifactCollectionUtils;
 
 import com.google.inject.Inject;
+import com.mongodb.ReadPreference;
+import dev.morphia.query.FindOptions;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -109,7 +112,9 @@ public class BuildSourceCleanupHelper {
         isEmpty(builds) ? new HashSet<>() : builds.stream().map(BuildDetails::getNumber).collect(Collectors.toSet());
     List<Artifact> deletedArtifactsNew = new ArrayList<>();
     try (HIterator<Artifact> artifacts =
-             new HIterator<>(artifactService.prepareCleanupQuery(artifactStream).limit(NO_LIMIT).fetch())) {
+             new HIterator<>(artifactService.prepareCleanupQuery(artifactStream)
+                                 .limit(NO_LIMIT)
+                                 .fetch(createFindOptionsToHitSecondaryNode(artifactStream.getAccountId())))) {
       for (Artifact artifact : artifacts) {
         if (!buildNumbers.contains(artifact.getBuildNo())) {
           deletedArtifactsNew.add(artifact);
@@ -128,7 +133,9 @@ public class BuildSourceCleanupHelper {
     Set<String> revisionNumbers =
         isEmpty(builds) ? new HashSet<>() : builds.stream().map(BuildDetails::getRevision).collect(Collectors.toSet());
     List<Artifact> artifactsToBeDeleted = new ArrayList<>();
-    try (HIterator<Artifact> artifacts = new HIterator<>(artifactService.prepareCleanupQuery(artifactStream).fetch())) {
+    try (HIterator<Artifact> artifacts =
+             new HIterator<>(artifactService.prepareCleanupQuery(artifactStream)
+                                 .fetch(createFindOptionsToHitSecondaryNode(artifactStream.getAccountId())))) {
       for (Artifact artifact : artifacts) {
         if (artifact != null && (artifact.getRevision() != null) && !revisionNumbers.contains(artifact.getRevision())) {
           artifactsToBeDeleted.add(artifact);
@@ -162,7 +169,9 @@ public class BuildSourceCleanupHelper {
     List<Artifact> toBeDeletedArtifacts = new ArrayList<>();
     int deletedCount = 0;
     try (HIterator<Artifact> artifactHIterator =
-             new HIterator<>(artifactService.prepareCleanupQuery(artifactStream).limit(NO_LIMIT).fetch())) {
+             new HIterator<>(artifactService.prepareCleanupQuery(artifactStream)
+                                 .limit(NO_LIMIT)
+                                 .fetch(createFindOptionsToHitSecondaryNode(artifactStream.getAccountId())))) {
       for (Artifact artifact : artifactHIterator) {
         if (!buildDetailsMap.containsKey(artifactKeyFn.apply(artifact))) {
           toBeDeletedArtifacts.add(artifact);
@@ -192,5 +201,15 @@ public class BuildSourceCleanupHelper {
   private void printBuildNumber(ArtifactStream artifactStream, List<Artifact> artifacts) {
     log.info("[{}] artifacts deleted for artifactStreamId {}",
         artifacts.stream().map(Artifact::getBuildNo).collect(Collectors.toList()), artifactStream.getUuid());
+  }
+
+  private FindOptions createFindOptionsToHitSecondaryNode(String accountId) {
+    if (isEmpty(accountId)) {
+      log.info("accountId provided for mongoQery is null");
+    }
+    if (accountId != null && featureFlagService.isEnabled(CDS_QUERY_OPTIMIZATION, accountId)) {
+      return new FindOptions().readPreference(ReadPreference.secondaryPreferred());
+    }
+    return new FindOptions();
   }
 }

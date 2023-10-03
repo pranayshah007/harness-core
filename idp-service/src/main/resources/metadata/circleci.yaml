@@ -6,6 +6,7 @@ category: CI/CD
 source: https://github.com/backstage/backstage/tree/master/plugins/circleci
 iconUrl: https://upload.wikimedia.org/wikipedia/commons/8/82/Circleci-icon-logo.svg
 imageUrl: ''
+documentation: https://developer.harness.io/docs/internal-developer-portal/plugins/available-plugins/circleci/
 config: |-
   proxy:
     '/circleci/api':

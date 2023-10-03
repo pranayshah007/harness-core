@@ -64,6 +64,7 @@ import io.harness.springdata.PersistenceModule;
 import io.harness.springdata.TransactionHelper;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
@@ -211,6 +212,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     }
     return mongoTemplate.find(query, NodeExecution.class);
   }
+
   @Override
   public CloseableIterator<NodeExecution> fetchAllStepNodeExecutions(
       String planExecutionId, Set<String> fieldsToInclude) {
@@ -224,10 +226,15 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public List<Status> fetchNodeExecutionsStatusesWithoutOldRetries(String planExecutionId) {
-    // Uses - planExecutionId_mode_status_oldRetry_idx
+  public List<Status> fetchNodeExecutionsStatusesWithoutOldRetries(
+      String planExecutionId, boolean ignoreIdentityNodes) {
+    // Both Query Uses - planExecutionId_mode_status_oldRetry_idx
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
                       .addCriteria(where(NodeExecutionKeys.oldRetry).is(false));
+    if (ignoreIdentityNodes) {
+      query =
+          query.addCriteria(where(NodeExecutionKeys.nodeType).in(Lists.newArrayList(null, NodeType.PLAN_NODE.name())));
+    }
     // Exclude so that it can use Projection covered from index without scanning documents.
     query.fields().exclude(NodeExecutionKeys.id).include(NodeExecutionKeys.status);
     List<NodeExecution> nodeExecutions = new LinkedList<>();
@@ -313,7 +320,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return nodeExecutionReadHelper.fetchNodeExecutions(query);
   }
 
-  private CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIteratorWithoutProjection(
+  @VisibleForTesting
+  CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIteratorWithoutProjection(
       String planExecutionId, List<String> parentIds) {
     // Uses planExecutionId_parentId_createdAt_idx
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
@@ -728,6 +736,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   /**
    * Deletes all nodeExecutions for given ids
    * This method assumes the nodeExecutions will be in batch thus caller needs to handle it
+   *
    * @param batchNodeExecutionIds
    */
   private void deleteNodeExecutionsInternal(Set<String> batchNodeExecutionIds) {
@@ -1102,9 +1111,13 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public CloseableIterator<NodeExecution> fetchAllWithPlanExecutionId(
+  public CloseableIterator<NodeExecution> fetchAllLeavesUsingPlanExecutionId(
       String planExecutionId, Set<String> fieldsToBeIncluded) {
-    Criteria criteria = Criteria.where(NodeExecutionKeys.planExecutionId).is(planExecutionId);
+    // Uses - planExecutionId_mode_status_oldRetry_idx
+    Criteria criteria = Criteria.where(NodeExecutionKeys.planExecutionId)
+                            .is(planExecutionId)
+                            .and(NodeExecutionKeys.mode)
+                            .in(ExecutionModeUtils.leafModes());
     Query query = query(criteria);
     for (String field : fieldsToBeIncluded) {
       query.fields().include(field);

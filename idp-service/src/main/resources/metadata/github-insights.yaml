@@ -6,6 +6,7 @@ category: Source Control Mgmt
 source: https://roadie.io/backstage/plugins/github-insights/?utm_source=backstage.io&utm_medium=marketplace&utm_campaign=github-insights
 iconUrl: https://roadie.io/images/logos/insights.png
 imageUrl: ''
+documentation: https://developer.harness.io/docs/internal-developer-portal/plugins/available-plugins/github-insights/
 exports:
   defaultEntityTypes:
     - service
@@ -19,3 +20,27 @@ exports:
         title: Code Insights
         contents:
           - component: EntityGithubInsightsContent
+    - type: CARD
+      name: EntityGithubInsightsLanguagesCard
+      addByDefault: true
+      layoutSchemaSpecs:
+        component: EntityGithubInsightsLanguagesCard
+        specs:
+          gridProps:
+            md: 6
+    - type: CARD
+      name: EntityGithubInsightsReadmeCard
+      addByDefault: true
+      layoutSchemaSpecs:
+        component: EntityGithubInsightsReadmeCard
+        specs:
+          gridProps:
+            md: 6
+    - type: CARD
+      name: EntityGithubInsightsReleasesCard
+      addByDefault: true
+      layoutSchemaSpecs:
+        component: EntityGithubInsightsReleasesCard
+        specs:
+          gridProps:
+            md: 6

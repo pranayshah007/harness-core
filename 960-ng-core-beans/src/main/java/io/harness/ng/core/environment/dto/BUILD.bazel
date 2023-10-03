@@ -19,6 +19,7 @@ java_library(
     deps = [
         "//:lombok",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/environment/beans:module",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/template:module",
         "//970-ng-commons:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",

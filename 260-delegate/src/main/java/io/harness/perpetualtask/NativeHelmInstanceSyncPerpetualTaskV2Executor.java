@@ -36,6 +36,7 @@ import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Builder;
@@ -131,6 +132,7 @@ public class NativeHelmInstanceSyncPerpetualTaskV2Executor extends AbstractInsta
                    .releaseName(releaseName)
                    .helmChartInfo(releaseDetails.getHelmChartInfo())
                    .helmVersion(releaseDetails.getHelmVersion())
+                   .workloadLabelSelectors(releaseDetails.getWorkloadLabelSelectors())
                    .build())
         .collect(Collectors.toList());
   }
@@ -148,5 +150,6 @@ public class NativeHelmInstanceSyncPerpetualTaskV2Executor extends AbstractInsta
     @NotNull private String releaseName;
     private HelmChartInfo helmChartInfo;
     String helmVersion;
+    private Map<String, List<String>> workloadLabelSelectors;
   }
 }

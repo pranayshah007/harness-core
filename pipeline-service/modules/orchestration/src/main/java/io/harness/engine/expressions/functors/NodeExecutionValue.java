@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Value;
+import org.apache.commons.jexl3.JexlEngine;
 
 /**
  * NodeExecutionValue implements a LateBindingValue which matches expressions starting from startNodeExecution. If we
@@ -42,6 +43,7 @@ public class NodeExecutionValue implements LateBindingValue {
   Ambiance ambiance;
   NodeExecution startNodeExecution;
   Set<NodeExecutionEntityType> entityTypes;
+  JexlEngine engine;
 
   @Override
   public Object bind() {
@@ -55,6 +57,7 @@ public class NodeExecutionValue implements LateBindingValue {
         .nodeExecution(startNodeExecution)
         .entityTypes(entityTypes)
         .children(map)
+        .engine(engine)
         .build();
   }
 
@@ -84,6 +87,7 @@ public class NodeExecutionValue implements LateBindingValue {
                                         .ambiance(ambiance)
                                         .startNodeExecution(nodeExecution)
                                         .entityTypes(entityTypes)
+                                        .engine(engine)
                                         .build();
     map.compute(key, (k, v) -> {
       if (v == null) {

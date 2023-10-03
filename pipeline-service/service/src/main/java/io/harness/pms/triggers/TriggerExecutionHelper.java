@@ -7,6 +7,7 @@
 
 package io.harness.pms.triggers;
 
+import static io.harness.beans.FeatureName.CDS_RESOLVE_CUSTOM_TRIGGER_EXPRESSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -18,6 +19,7 @@ import static io.harness.ngtriggers.Constants.PR;
 import static io.harness.ngtriggers.Constants.PUSH;
 import static io.harness.ngtriggers.Constants.SOURCE_EVENT_ID;
 import static io.harness.ngtriggers.Constants.SOURCE_EVENT_LINK;
+import static io.harness.ngtriggers.Constants.TRIGGER_BRANCH;
 import static io.harness.ngtriggers.Constants.TRIGGER_EXECUTION_TAG_TAG_VALUE_DELIMITER;
 import static io.harness.ngtriggers.Constants.TRIGGER_PAYLOAD_BRANCH;
 import static io.harness.ngtriggers.Constants.TRIGGER_REF;
@@ -95,6 +97,7 @@ import io.harness.security.dto.ServiceAccountPrincipal;
 import io.harness.security.dto.ServicePrincipal;
 import io.harness.security.dto.UserPrincipal;
 import io.harness.serializer.ProtoUtils;
+import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -117,6 +120,7 @@ public class TriggerExecutionHelper {
   private final ExecutionHelper executionHelper;
   private final WebhookEventPayloadParser webhookEventPayloadParser;
   private final PipelineServiceClient pipelineServiceClient;
+  private final PmsFeatureFlagHelper pmsFeatureFlagHelper;
 
   public PlanExecution resolveRuntimeInputAndSubmitExecutionRequestForArtifactManifestPollingFlow(
       TriggerDetails triggerDetails, TriggerPayload triggerPayload, String runTimeInputYaml) {
@@ -553,8 +557,15 @@ public class TriggerExecutionHelper {
       } else {
         triggerExpressionEvaluator = WebhookTriggerFilterUtils.generatorPMSExpressionEvaluator(
             null, triggerWebhookEvent.getHeaders(), triggerWebhookEvent.getPayload());
+
+        String branchExpression = TRIGGER_PAYLOAD_BRANCH;
+        // For Backward Compatibility Trigger Branch is also handled.
+        if (pmsFeatureFlagHelper.isEnabled(triggerWebhookEvent.getAccountId(), CDS_RESOLVE_CUSTOM_TRIGGER_EXPRESSION)
+            && EmptyPredicate.isNotEmpty(expression) && !TRIGGER_BRANCH.equals(expression)) {
+          branchExpression = expression;
+        }
         return (String) triggerExpressionEvaluator.evaluateExpressionWithExpressionMode(
-            TRIGGER_PAYLOAD_BRANCH, ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
+            branchExpression, ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
       }
     } catch (CriticalExpressionEvaluationException e) {
       throw new TriggerException(

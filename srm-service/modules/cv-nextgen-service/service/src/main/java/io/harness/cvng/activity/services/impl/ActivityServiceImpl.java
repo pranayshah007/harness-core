@@ -44,6 +44,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -77,7 +78,7 @@ public class ActivityServiceImpl implements ActivityService {
     }
     ActivityVerificationSummary summary = verificationJobInstanceService.getActivityVerificationSummary(
         verificationJobInstanceService.get(activity.getVerificationJobInstanceIds()));
-    if (!summary.getAggregatedStatus().equals(ActivityVerificationStatus.IN_PROGRESS)
+    if (Objects.nonNull(summary) && !summary.getAggregatedStatus().equals(ActivityVerificationStatus.IN_PROGRESS)
         && !summary.getAggregatedStatus().equals(ActivityVerificationStatus.NOT_STARTED)) {
       Query<Activity> activityQuery =
           hPersistence.createQuery(Activity.class).filter(ActivityKeys.uuid, activity.getUuid());

@@ -28,7 +28,7 @@ import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.MergePlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
@@ -59,7 +59,7 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
     String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
     YamlField yamlField = YamlUtils.extractPipelineField(YamlUtils.injectUuid(yamlContent));
     Optional<PartialPlanCreator<?>> partialPlanCreatorOptional =
-        PlanCreatorServiceHelper.findPlanCreator(planCreators, yamlField, PipelineVersion.V0);
+        PlanCreatorServiceHelper.findPlanCreator(planCreators, yamlField, HarnessYamlVersion.V0);
     assertThat(partialPlanCreatorOptional.isPresent()).isTrue();
     assertThat(partialPlanCreatorOptional.get().getClass()).isEqualTo(DummyChildrenPlanCreator.class);
   }
@@ -155,7 +155,7 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
     String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
     YamlField yamlField = YamlUtils.extractPipelineField(YamlUtils.injectUuid(yamlContent));
     Optional<PartialPlanCreator<?>> partialPlanCreatorOptional =
-        PlanCreatorServiceHelper.findPlanCreator(planCreators, yamlField, PipelineVersion.V1);
+        PlanCreatorServiceHelper.findPlanCreator(planCreators, yamlField, HarnessYamlVersion.V1);
     assertThat(partialPlanCreatorOptional.isPresent()).isFalse();
   }
 
@@ -238,10 +238,16 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
   public void testDecorateResponseWithParentInfo() {
     Dependency initialDependencies =
         Dependency.newBuilder()
-            .setParentInfo(HarnessStruct.newBuilder()
-                               .putData(PlanCreatorConstants.YAML_VERSION,
-                                   HarnessValue.newBuilder().setStringValue(PipelineVersion.V0).build())
-                               .build())
+            .setParentInfo(
+                HarnessStruct.newBuilder()
+                    .putData(PlanCreatorConstants.YAML_VERSION,
+                        HarnessValue.newBuilder().setStringValue(HarnessYamlVersion.V0).build())
+                    .putData(PlanCreatorConstants.STAGE_ID, HarnessValue.newBuilder().setStringValue("stageId").build())
+                    .putData(PlanCreatorConstants.STEP_GROUP_ID,
+                        HarnessValue.newBuilder().setStringValue("stepGroupId").build())
+                    .putData(PlanCreatorConstants.STRATEGY_ID,
+                        HarnessValue.newBuilder().setStringValue("strategyId").build())
+                    .build())
             .build();
     PlanCreationResponse planCreationResponse = PlanCreationResponse.builder().build();
     PlanCreatorServiceHelper.decorateResponseWithParentInfo(initialDependencies, planCreationResponse);
@@ -255,12 +261,24 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
     newDependencies = newDependencies.toBuilder().putDependencies("dep1", "yamlPath").build();
     planCreationResponse = PlanCreationResponse.builder().dependencies(newDependencies).build();
     PlanCreatorServiceHelper.decorateResponseWithParentInfo(initialDependencies, planCreationResponse);
-    // planCreationResponse does has the yamlVersion parentInfo passed. So it will be taken from the
+    // planCreationResponse does has the parentInfo passed. So entries will be taken from the
     // initialDependencies.
     assertThat(
         planCreationResponse.getDependencies().getDependencyMetadataMap().get("dep1").getParentInfo().getDataMap().get(
             PlanCreatorConstants.YAML_VERSION))
-        .isEqualTo(HarnessValue.newBuilder().setStringValue(PipelineVersion.V0).build());
+        .isEqualTo(HarnessValue.newBuilder().setStringValue(HarnessYamlVersion.V0).build());
+    assertThat(
+        planCreationResponse.getDependencies().getDependencyMetadataMap().get("dep1").getParentInfo().getDataMap().get(
+            PlanCreatorConstants.STAGE_ID))
+        .isEqualTo(HarnessValue.newBuilder().setStringValue("stageId").build());
+    assertThat(
+        planCreationResponse.getDependencies().getDependencyMetadataMap().get("dep1").getParentInfo().getDataMap().get(
+            PlanCreatorConstants.STEP_GROUP_ID))
+        .isEqualTo(HarnessValue.newBuilder().setStringValue("stepGroupId").build());
+    assertThat(
+        planCreationResponse.getDependencies().getDependencyMetadataMap().get("dep1").getParentInfo().getDataMap().get(
+            PlanCreatorConstants.STRATEGY_ID))
+        .isEqualTo(HarnessValue.newBuilder().setStringValue("strategyId").build());
 
     newDependencies =
         newDependencies.toBuilder()
@@ -269,17 +287,35 @@ public class PlanCreatorServiceHelperTest extends PmsSdkCoreTestBase {
                 Dependency.newBuilder()
                     .setParentInfo(HarnessStruct.newBuilder()
                                        .putData(PlanCreatorConstants.YAML_VERSION,
-                                           HarnessValue.newBuilder().setStringValue(PipelineVersion.V1).build())
+                                           HarnessValue.newBuilder().setStringValue(HarnessYamlVersion.V1).build())
+                                       .putData(PlanCreatorConstants.STAGE_ID,
+                                           HarnessValue.newBuilder().setStringValue("otherStageId").build())
+                                       .putData(PlanCreatorConstants.STEP_GROUP_ID,
+                                           HarnessValue.newBuilder().setStringValue("otherStepGroupId").build())
+                                       .putData(PlanCreatorConstants.STRATEGY_ID,
+                                           HarnessValue.newBuilder().setStringValue("otherStrategyId").build())
                                        .build())
                     .build())
             .build();
     planCreationResponse = PlanCreationResponse.builder().dependencies(newDependencies).build();
     PlanCreatorServiceHelper.decorateResponseWithParentInfo(initialDependencies, planCreationResponse);
-    // planCreationResponse has the yamlVersion parentInfo passed. So it will be present in the final decorated
+    // planCreationResponse has the parentInfo parentInfo passed. So they will be present in the final decorated
     // response.
     assertThat(
         planCreationResponse.getDependencies().getDependencyMetadataMap().get("dep1").getParentInfo().getDataMap().get(
             PlanCreatorConstants.YAML_VERSION))
-        .isEqualTo(HarnessValue.newBuilder().setStringValue(PipelineVersion.V1).build());
+        .isEqualTo(HarnessValue.newBuilder().setStringValue(HarnessYamlVersion.V1).build());
+    assertThat(
+        planCreationResponse.getDependencies().getDependencyMetadataMap().get("dep1").getParentInfo().getDataMap().get(
+            PlanCreatorConstants.STAGE_ID))
+        .isEqualTo(HarnessValue.newBuilder().setStringValue("otherStageId").build());
+    assertThat(
+        planCreationResponse.getDependencies().getDependencyMetadataMap().get("dep1").getParentInfo().getDataMap().get(
+            PlanCreatorConstants.STEP_GROUP_ID))
+        .isEqualTo(HarnessValue.newBuilder().setStringValue("otherStepGroupId").build());
+    assertThat(
+        planCreationResponse.getDependencies().getDependencyMetadataMap().get("dep1").getParentInfo().getDataMap().get(
+            PlanCreatorConstants.STRATEGY_ID))
+        .isEqualTo(HarnessValue.newBuilder().setStringValue("otherStrategyId").build());
   }
 }

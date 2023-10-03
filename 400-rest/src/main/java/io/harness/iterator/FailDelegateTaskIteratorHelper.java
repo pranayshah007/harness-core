@@ -90,7 +90,11 @@ public class FailDelegateTaskIteratorHelper {
     if (asList(QUEUED, PARKED, ABORTED).contains(delegateTask.getStatus())
         && (delegateTask.getExpiry() < currentTimeMillis())) {
       log.info("Marking following long queued tasks as failed [{}]", delegateTask.getUuid());
-      endTasks(asList(delegateTask.getUuid()), isDelegateTaskMigrationEnabled, TaskFailureReason.NOT_ASSIGNED);
+      TaskFailureReason taskFailureReason =
+          delegateTask.getStatus().equals(QUEUED) || isEmpty(delegateTask.getDelegateId())
+          ? TaskFailureReason.NOT_ASSIGNED
+          : TaskFailureReason.EXPIRED;
+      endTasks(asList(delegateTask.getUuid()), isDelegateTaskMigrationEnabled, taskFailureReason);
     }
   }
 

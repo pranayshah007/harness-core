@@ -18,6 +18,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJEC
 import static io.harness.lock.DistributedLockImplementation.REDIS;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
+import io.harness.accesscontrol.publicaccess.PublicAccessClientModule;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
@@ -365,6 +366,10 @@ public class PipelineServiceModule extends AbstractModule {
     install(JooqModule.getInstance());
     install(AccessControlClientModule.getInstance(
         configuration.getAccessControlClientConfiguration(), PIPELINE_SERVICE.getServiceId()));
+    install(new PublicAccessClientModule(
+        configuration.getAccessControlClientConfiguration().getAccessControlServiceConfig(),
+        configuration.getAccessControlClientConfiguration().getAccessControlServiceSecret(),
+        PIPELINE_SERVICE.toString()));
     install(new PollResourceClientModule(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getNgManagerServiceSecret(), MANAGER.getServiceId()));
 
@@ -917,5 +922,12 @@ public class PipelineServiceModule extends AbstractModule {
   @Named("useNewNodeEntityConfiguration")
   public Boolean getUseNewNodeEntityConfiguration() {
     return configuration.getUseNewNodeEntityConfiguration();
+  }
+
+  @Provides
+  @Singleton
+  @Named("publishAdviserEventForCustomAdvisers")
+  public Boolean getPublishAdviserEventForCustomAdvisers() {
+    return configuration.getPublishAdviserEventForCustomAdvisers();
   }
 }

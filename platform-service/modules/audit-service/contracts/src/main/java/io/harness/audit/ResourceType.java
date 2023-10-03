@@ -70,7 +70,11 @@ public enum ResourceType {
   CET_CRITICAL_EVENT(ResourceTypeConstants.CET_CRITICAL_EVENT),
   CHAOS_SECURITY_GOVERNANCE(ResourceTypeConstants.CHAOS_SECURITY_GOVERNANCE),
   END_USER_LICENSE_AGREEMENT(ResourceTypeConstants.EULA),
-  WORKSPACE(ResourceTypeConstants.WORKSPACE);
+  WORKSPACE(ResourceTypeConstants.WORKSPACE),
+  SEI_CONFIGURATION_SETTINGS(ResourceTypeConstants.SEI_CONFIGURATION_SETTINGS),
+  SEI_COLLECTIONS(ResourceTypeConstants.SEI_COLLECTIONS),
+  SEI_INSIGHTS(ResourceTypeConstants.SEI_INSIGHTS),
+  CET_SAVED_FILTER(ResourceTypeConstants.CET_SAVED_FILTER);
 
   ResourceType(String resourceType) {
     if (!this.name().equals(resourceType)) {

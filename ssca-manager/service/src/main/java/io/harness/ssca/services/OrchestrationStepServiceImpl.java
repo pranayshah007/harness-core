@@ -7,7 +7,8 @@
 
 package io.harness.ssca.services;
 
-import io.harness.repositories.ArtifactRepository;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
+
 import io.harness.repositories.SBOMComponentRepo;
 import io.harness.spec.server.ssca.v1.model.Artifact;
 import io.harness.spec.server.ssca.v1.model.OrchestrationSummaryResponse;
@@ -33,15 +34,18 @@ import java.util.List;
 import java.util.UUID;
 import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Slf4j
 public class OrchestrationStepServiceImpl implements OrchestrationStepService {
   @Inject ArtifactService artifactService;
-  @Inject ArtifactRepository artifactRepository;
+  @Inject TransactionTemplate transactionTemplate;
   @Inject SBOMComponentRepo SBOMComponentRepo;
   @Inject NormalizerRegistry normalizerRegistry;
-
   @Inject S3StoreService s3StoreService;
+  private static final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
 
   @Override
   public String processSBOM(String accountId, String orgIdentifier, String projectIdentifier,
@@ -64,9 +68,14 @@ public class OrchestrationStepServiceImpl implements OrchestrationStepService {
     artifactEntity = artifactService.getArtifactFromSbomPayload(
         accountId, orgIdentifier, projectIdentifier, sbomProcessRequestBody, sbomDTO);
 
-    artifactEntity = artifactRepository.save(artifactEntity);
-    s3StoreService.uploadSBOM(sbomDumpFile, artifactEntity);
-    sbomDumpFile.delete();
+    try {
+      s3StoreService.uploadSBOM(sbomDumpFile, artifactEntity);
+    } catch (Exception e) {
+      log.error(String.format("Upload SBOM Failed with exception: %s", e));
+      throw new RuntimeException("Upload SBOM Failed");
+    } finally {
+      sbomDumpFile.delete();
+    }
 
     SettingsDTO settingsDTO =
         getSettingsDTO(accountId, orgIdentifier, projectIdentifier, sbomProcessRequestBody, artifactEntity);
@@ -74,6 +83,12 @@ public class OrchestrationStepServiceImpl implements OrchestrationStepService {
     Normalizer normalizer = normalizerRegistry.getNormalizer(settingsDTO.getFormat()).get();
     List<NormalizedSBOMComponentEntity> sbomEntityList = normalizer.normaliseSBOM(sbomDTO, settingsDTO);
 
+    artifactEntity.setComponentsCount(sbomEntityList.stream().count());
+
+    Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      artifactService.saveArtifactAndInvalidateOldArtifact(artifactEntity);
+      return null;
+    }));
     SBOMComponentRepo.saveAll(sbomEntityList);
 
     log.info(String.format("SBOM Processed Successfully, Artifact ID: %s", artifactEntity.getArtifactId()));
@@ -131,6 +146,7 @@ public class OrchestrationStepServiceImpl implements OrchestrationStepService {
         .accountID(accountId)
         .artifactURL(sbomProcessRequestBody.getArtifact().getRegistryUrl())
         .artifactID(artifactEntity.getArtifactId())
+        .artifactTag(artifactEntity.getTag())
         .format(sbomProcessRequestBody.getSbomMetadata().getFormat())
         .tool(
             SettingsDTO.Tool.builder().name(sbomProcessRequestBody.getSbomMetadata().getTool()).version("2.0").build())

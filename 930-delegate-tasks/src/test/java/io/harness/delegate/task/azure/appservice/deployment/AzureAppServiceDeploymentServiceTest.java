@@ -13,6 +13,7 @@ import static io.harness.azure.model.AzureConstants.SLOT_STOPPING_STATUS_CHECK_I
 import static io.harness.azure.model.AzureConstants.SLOT_SWAP;
 import static io.harness.azure.model.AzureConstants.START_DEPLOYMENT_SLOT;
 import static io.harness.azure.model.AzureConstants.STOP_DEPLOYMENT_SLOT;
+import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VLAD;
@@ -40,19 +41,26 @@ import io.harness.azure.model.AzureConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDockerDeploymentContext;
+import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServicePackageDeploymentContext;
 import io.harness.delegate.task.azure.appservice.deployment.verifier.SlotStatusVerifier;
 import io.harness.delegate.task.azure.appservice.deployment.verifier.SwapSlotStatusVerifier;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
+import software.wings.utils.ArtifactType;
+
 import com.azure.core.http.rest.Response;
 import com.azure.core.http.rest.SimpleResponse;
+import com.azure.resourcemanager.appservice.models.DeployOptions;
+import com.azure.resourcemanager.appservice.models.DeployType;
 import com.azure.resourcemanager.appservice.models.DeploymentSlot;
+import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -61,7 +69,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import reactor.core.Disposable;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Scheduler;
 
 @OwnedBy(CDP)
 public class AzureAppServiceDeploymentServiceTest extends CategoryTest {
@@ -329,6 +340,34 @@ public class AzureAppServiceDeploymentServiceTest extends CategoryTest {
     assertThat(separator).isEqualTo(-1);
   }
 
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testDeployPackageWithNewApi() {
+    final AzureWebClientContext clientContext = getAzureWebClientContext();
+    final File artifactFile = mock(File.class);
+    final AzureAppServicePackageDeploymentContext packageContext =
+        AzureAppServicePackageDeploymentContext.builder()
+            .azureWebClientContext(clientContext)
+            .useNewDeployApi(true)
+            .artifactFile(artifactFile)
+            .artifactType(ArtifactType.NUGET)
+            .logCallbackProvider(ignore -> mock(LogCallback.class))
+            .slotName("production")
+            .build();
+
+    mockStreamPackageLogsTask();
+    doReturn(Mono.empty())
+        .when(mockAzureWebClient)
+        .deployAsync(
+            eq(clientContext), eq(DeployType.ZIP), eq("production"), eq(artifactFile), any(DeployOptions.class));
+
+    azureAppServiceDeploymentService.deployPackage(packageContext, AzureAppServicePreDeploymentData.builder().build());
+    verify(mockAzureWebClient)
+        .deployAsync(
+            eq(clientContext), eq(DeployType.ZIP), eq("production"), eq(artifactFile), any(DeployOptions.class));
+  }
+
   private AzureWebClientContext getAzureWebClientContext() {
     return AzureWebClientContext.builder()
         .appName(APP_NAME)
@@ -344,5 +383,14 @@ public class AzureAppServiceDeploymentServiceTest extends CategoryTest {
 
   private AzureAppServiceApplicationSetting getAppSettings(String name) {
     return AzureAppServiceApplicationSetting.builder().name(name).value(name + "value").build();
+  }
+
+  private void mockStreamPackageLogsTask() {
+    final Flux<String> logFlux = mock(Flux.class);
+    doReturn(logFlux).when(mockAzureWebClient).streamDeploymentLogsAsync(any(AzureWebClientContext.class), anyString());
+    doReturn(logFlux).when(logFlux).subscribeOn(any(Scheduler.class));
+    doReturn(mock(Disposable.class))
+        .when(logFlux)
+        .subscribe(any(Consumer.class), any(Consumer.class), any(Runnable.class));
   }
 }

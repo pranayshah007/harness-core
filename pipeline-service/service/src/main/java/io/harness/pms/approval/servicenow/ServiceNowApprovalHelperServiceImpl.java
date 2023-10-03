@@ -10,7 +10,6 @@ package io.harness.pms.approval.servicenow;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
 import static io.harness.steps.approval.ApprovalUtils.SERVICENOW_DELEGATE_TASK_NAME;
-import static io.harness.steps.approval.ApprovalUtils.sendTaskIdProgressUpdate;
 import static io.harness.steps.approval.ApprovalUtils.updateTaskId;
 import static io.harness.steps.approval.step.entities.ApprovalInstance.ASYNC_DELEGATE_TIMEOUT;
 
@@ -187,7 +186,6 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
       String taskId = queueTask(ambiance, instanceId, serviceNowTaskNGParameters, SERVICENOW_DELEGATE_TASK_NAME,
           TaskSelectorYaml.toTaskSelector(instance.getDelegateSelectors()));
 
-      sendTaskIdProgressUpdate(taskId, SERVICENOW_DELEGATE_TASK_NAME, instanceId, waitNotifyEngine);
       updateTaskId(instanceId, taskId, approvalInstanceService);
 
       logCallback.saveExecutionLog(String.format("Created ServiceNow task with id: %s", taskId));

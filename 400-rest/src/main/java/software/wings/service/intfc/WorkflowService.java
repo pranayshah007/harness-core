@@ -68,10 +68,10 @@ import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 public interface WorkflowService extends OwnedByApplication, SettingsServiceManipulationObserver {
   PageResponse<Workflow> listWorkflows(PageRequest<Workflow> pageRequest);
 
-  PageResponse<Workflow> listWorkflowsWithoutOrchestration(PageRequest<Workflow> pageRequest);
+  PageResponse<Workflow> listWorkflowsWithoutOrchestration(PageRequest<Workflow> pageRequest, boolean hitSecondary);
 
-  PageResponse<Workflow> listWorkflows(
-      PageRequest<Workflow> pageRequest, Integer previousExecutionsCount, boolean withTags, String tagFilter);
+  PageResponse<Workflow> listWorkflows(PageRequest<Workflow> pageRequest, Integer previousExecutionsCount,
+      boolean withTags, String tagFilter, boolean hitSecondary);
 
   List<Workflow> listWorkflows(String artifactStreamId, String accountId);
 

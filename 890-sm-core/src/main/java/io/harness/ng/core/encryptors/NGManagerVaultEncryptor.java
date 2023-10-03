@@ -29,7 +29,7 @@ import io.harness.delegatetasks.UpsertSecretTaskResponse;
 import io.harness.delegatetasks.ValidateSecretManagerConfigurationTaskParameters;
 import io.harness.delegatetasks.ValidateSecretReferenceTaskParameters;
 import io.harness.encryptors.DelegateTaskUtils;
-import io.harness.encryptors.VaultEncryptor;
+import io.harness.encryptors.NgCgManagerVaultEncryptor;
 import io.harness.exception.SecretManagementException;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
@@ -40,11 +40,12 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
 import javax.validation.executable.ValidateOnExecution;
+import org.apache.commons.lang3.tuple.Pair;
 
 @ValidateOnExecution
 @OwnedBy(PL)
 @Singleton
-public class NGManagerVaultEncryptor implements VaultEncryptor {
+public class NGManagerVaultEncryptor implements NgCgManagerVaultEncryptor {
   private final DelegateGrpcClientWrapper delegateService;
   private final NGManagerEncryptorHelper managerEncryptorHelper;
 
@@ -189,6 +190,14 @@ public class NGManagerVaultEncryptor implements VaultEncryptor {
     ValidateSecretManagerConfigurationTaskParameters parameters =
         ValidateSecretManagerConfigurationTaskParameters.builder().encryptionConfig(encryptionConfig).build();
     return managerEncryptorHelper.validateConfiguration(accountId, parameters);
+  }
+
+  @Override
+  public Pair<String, Boolean> validateSecretManagerConfigurationWithTaskId(
+      String accountId, EncryptionConfig encryptionConfig) {
+    ValidateSecretManagerConfigurationTaskParameters parameters =
+        ValidateSecretManagerConfigurationTaskParameters.builder().encryptionConfig(encryptionConfig).build();
+    return managerEncryptorHelper.validateConfigurationWithTaskId(accountId, parameters);
   }
 
   @Override

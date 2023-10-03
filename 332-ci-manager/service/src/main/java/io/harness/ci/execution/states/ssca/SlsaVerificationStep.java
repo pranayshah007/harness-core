@@ -34,6 +34,9 @@ import io.harness.slsa.beans.verification.source.SlsaDockerSourceSpec;
 import io.harness.slsa.beans.verification.source.SlsaVerificationSourceType;
 import io.harness.ssca.beans.stepinfo.SlsaVerificationStepInfo;
 
+import java.util.Map;
+import java.util.stream.Collectors;
+
 @OwnedBy(HarnessTeam.SSCA)
 public class SlsaVerificationStep extends AbstractStepExecutable {
   public static final StepType STEP_TYPE = SLSA_VERIFICATION_STEP_TYPE;
@@ -41,9 +44,11 @@ public class SlsaVerificationStep extends AbstractStepExecutable {
   protected boolean shouldPublishArtifact(StepStatus stepStatus) {
     return true;
   }
+
   protected boolean shouldPublishOutcome(StepStatus stepStatus) {
     return true;
   }
+
   @Override
   protected void modifyStepStatus(Ambiance ambiance, StepStatus stepStatus, String stepIdentifier) {
     String stepExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
@@ -57,7 +62,11 @@ public class SlsaVerificationStep extends AbstractStepExecutable {
               .spec(ProvenanceMetaData.builder().provenance(stepOutput.getMap().get(outputKey)).build())
               .build());
 
-      stepOutput.getMap().remove(outputKey);
+      stepOutput.setMap(stepOutput.getMap()
+                            .entrySet()
+                            .stream()
+                            .filter(entry -> !entry.getKey().equals(outputKey))
+                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
     }
   }
 
@@ -78,7 +87,8 @@ public class SlsaVerificationStep extends AbstractStepExecutable {
           PublishedImageArtifact.builder().imageName(imageName).tag(tag).build());
     }
 
-    if (ArtifactMetadataType.PROVENANCE_ARTIFACT_METADATA.equals(artifactMetadata.getType())) {
+    if (artifactMetadata != null
+        && ArtifactMetadataType.PROVENANCE_ARTIFACT_METADATA.equals(artifactMetadata.getType())) {
       ProvenanceMetaData provenanceMetaData = (ProvenanceMetaData) artifactMetadata.getSpec();
       ProvenancePredicate predicate = JsonUtils.asObject(provenanceMetaData.getProvenance(), ProvenancePredicate.class);
       stepArtifactsBuilder.provenanceArtifact(

@@ -15,11 +15,11 @@ import io.harness.exception.SecretManagementException;
 import io.harness.rule.GraphQLWithWingsRule;
 import io.harness.security.encryption.EncryptionType;
 
-import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
 import software.wings.beans.KmsConfig;
 import software.wings.beans.LicenseInfo;
 import software.wings.beans.VaultConfig;
+import software.wings.beans.account.AccountStatus;
 import software.wings.settings.SettingVariableTypes;
 
 import java.io.IOException;

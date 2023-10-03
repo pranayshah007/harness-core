@@ -26,6 +26,8 @@ import io.harness.spec.server.idp.v1.model.EntityScoresResponse;
 import io.harness.spec.server.idp.v1.model.ScorecardFilter;
 import io.harness.spec.server.idp.v1.model.ScorecardGraphSummaryInfo;
 import io.harness.spec.server.idp.v1.model.ScorecardGraphSummaryInfoResponse;
+import io.harness.spec.server.idp.v1.model.ScorecardRecalibrateIdentifiers;
+import io.harness.spec.server.idp.v1.model.ScorecardRecalibrateRequest;
 import io.harness.spec.server.idp.v1.model.ScorecardRecalibrateResponse;
 import io.harness.spec.server.idp.v1.model.ScorecardScore;
 import io.harness.spec.server.idp.v1.model.ScorecardScoreResponse;
@@ -111,8 +113,8 @@ public class ScoresApiImplTest extends CategoryTest {
     when(scoreService.getScorecardRecalibratedScoreInfoForAnEntityAndScorecard(
              TEST_ACCOUNT_IDENTIFIER, TEST_ENTITY_IDENTIFIER, TEST_SCORECARD_IDENTIFIER))
         .thenReturn(getTestScorecardSummaryInfo());
-    Response response = scoreApiImpl.getRecalibratedScoreForScorecard(
-        TEST_ACCOUNT_IDENTIFIER, TEST_SCORECARD_IDENTIFIER, TEST_ENTITY_IDENTIFIER);
+    ScorecardRecalibrateRequest scorecardRecalibrateRequest = getScorecardRecalibrateRequest();
+    Response response = scoreApiImpl.scorecardRecalibrate(scorecardRecalibrateRequest, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
     assertEquals(scorecardSummaryInfo, ((ScorecardRecalibrateResponse) response.getEntity()).getRecalibratedScores());
   }
@@ -124,8 +126,8 @@ public class ScoresApiImplTest extends CategoryTest {
     when(scoreService.getScorecardRecalibratedScoreInfoForAnEntityAndScorecard(
              TEST_ACCOUNT_IDENTIFIER, TEST_ENTITY_IDENTIFIER, TEST_SCORECARD_IDENTIFIER))
         .thenThrow(new InvalidRequestException(ERROR_MESSAGE_FOR_API_CALL));
-    Response response = scoreApiImpl.getRecalibratedScoreForScorecard(
-        TEST_ACCOUNT_IDENTIFIER, TEST_SCORECARD_IDENTIFIER, TEST_ENTITY_IDENTIFIER);
+    ScorecardRecalibrateRequest scorecardRecalibrateRequest = getScorecardRecalibrateRequest();
+    Response response = scoreApiImpl.scorecardRecalibrate(scorecardRecalibrateRequest, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
     assertEquals(ERROR_MESSAGE_FOR_API_CALL, ((ResponseMessage) response.getEntity()).getMessage());
   }
@@ -250,5 +252,14 @@ public class ScoresApiImplTest extends CategoryTest {
     scorecardFilter.setTags(Collections.singletonList(TEST_ENTITY_TAGS));
     scorecardFilter.setOwners(Collections.singletonList(TEST_ENTITY_OWNERS));
     return scorecardFilter;
+  }
+
+  private ScorecardRecalibrateRequest getScorecardRecalibrateRequest() {
+    ScorecardRecalibrateIdentifiers scorecardRecalibrate = new ScorecardRecalibrateIdentifiers();
+    scorecardRecalibrate.setScorecardIdentifier(TEST_SCORECARD_IDENTIFIER);
+    scorecardRecalibrate.setEntityIdentifier(TEST_ENTITY_IDENTIFIER);
+    ScorecardRecalibrateRequest scorecardRecalibrateRequest = new ScorecardRecalibrateRequest();
+    scorecardRecalibrateRequest.setIdentifiers(scorecardRecalibrate);
+    return scorecardRecalibrateRequest;
   }
 }

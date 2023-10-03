@@ -45,6 +45,7 @@ import io.harness.delegate.task.helm.HelmCommandRequestNG;
 import io.harness.delegate.task.helm.HelmInstallCmdResponseNG;
 import io.harness.delegate.task.helm.HelmInstallCommandRequestNG;
 import io.harness.exception.GeneralException;
+import io.harness.k8s.model.K8sPod;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
@@ -57,6 +58,7 @@ import io.harness.tasks.ProgressData;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.junit.Test;
@@ -120,6 +122,8 @@ public class HelmDeployStepTest extends AbstractHelmStepExecutorTestBase {
                                      .containerInfoList(Collections.emptyList())
                                      .helmChartInfo(helmChartInfo)
                                      .releaseName("releaseName")
+                                     .k8sPodList(List.of(K8sPod.builder().podIP("ip1").build(),
+                                         K8sPod.builder().podIP("ip2").build(), K8sPod.builder().podIP("ip3").build()))
                                      .build())
             .commandUnitsProgress(UnitProgressData.builder().build())
             .commandExecutionStatus(SUCCESS)
@@ -129,7 +133,7 @@ public class HelmDeployStepTest extends AbstractHelmStepExecutorTestBase {
                                   .name(OutcomeExpressionConstants.DEPLOYMENT_INFO_OUTCOME)
                                   .outcome(DeploymentInfoOutcome.builder().build())
                                   .build();
-    doReturn(stepOutcome).when(instanceInfoService).saveServerInstancesIntoSweepingOutput(any(), any());
+    doReturn(stepOutcome).when(instanceInfoService).saveDeploymentInfoOutcomeIntoSweepingOutput(any(), any());
     ReleaseHelmChartOutcome releaseHelmChartOutcome =
         ReleaseHelmChartOutcome.builder().name(helmChartInfo.getName()).version(helmChartInfo.getVersion()).build();
     doReturn(releaseHelmChartOutcome).when(nativeHelmStepHelper).getHelmChartOutcome(eq(helmChartInfo));
@@ -147,6 +151,9 @@ public class HelmDeployStepTest extends AbstractHelmStepExecutorTestBase {
     StepOutcome deploymentInfoOutcome = new ArrayList<>(response.getStepOutcomes()).get(1);
     assertThat(deploymentInfoOutcome.getOutcome()).isInstanceOf(NativeHelmDeployOutcome.class);
     assertThat(deploymentInfoOutcome.getName()).isEqualTo(OutcomeExpressionConstants.HELM_DEPLOY_OUTCOME);
+    ((NativeHelmDeployOutcome) deploymentInfoOutcome.getOutcome())
+        .getPodIps()
+        .forEach(ip -> assertThat(List.of("ip1", "ip2", "ip3").contains(ip)).isTrue());
 
     StepOutcome helmChartOutcome = new ArrayList<>(response.getStepOutcomes()).get(2);
     assertThat(helmChartOutcome.getOutcome()).isInstanceOf(ReleaseHelmChartOutcome.class);

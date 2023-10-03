@@ -49,8 +49,9 @@ public class AwsCdkBootstrapPluginInfoProvider extends AbstractPluginInfoProvide
     envVariables.put(PLUGIN_AWS_CDK_ACTION, BOOTSTRAP);
     ImageDetails imageDetails = PluginInfoProviderHelper.getImageDetails(awsCdkBootstrapStepInfo.getConnectorRef(),
         awsCdkBootstrapStepInfo.getImage(), awsCdkBootstrapStepInfo.getImagePullPolicy());
-    PluginDetails pluginDetails = getPluginDetails(usedPorts, awsCdkBootstrapStepInfo.getRunAsUser(),
-        awsCdkBootstrapStepInfo.getResources(), awsCdkBootstrapStepInfo.getPrivileged(), envVariables, imageDetails);
+    PluginDetails pluginDetails =
+        getPluginDetails(usedPorts, awsCdkBootstrapStepInfo.getRunAsUser(), awsCdkBootstrapStepInfo.getResources(),
+            awsCdkBootstrapStepInfo.getPrivileged(), envVariables, imageDetails, false);
     PluginCreationResponse response = PluginCreationResponse.newBuilder().setPluginDetails(pluginDetails).build();
     StepInfoProto stepInfoProto = getStepInfoProto(cdAbstractStepNode);
 

@@ -17,9 +17,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.security.EncryptionUtils;
 
 import software.wings.beans.Account;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
 import software.wings.beans.LicenseInfo;
+import software.wings.beans.account.AccountStatus;
 import software.wings.service.intfc.instance.licensing.InstanceLimitProvider;
 
 import java.nio.charset.StandardCharsets;

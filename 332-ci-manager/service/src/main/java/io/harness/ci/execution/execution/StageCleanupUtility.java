@@ -33,22 +33,22 @@ import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.CIVmCleanupTaskParams;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmCleanupTaskParams;
 import io.harness.exception.ngexception.CIStageExecutionException;
-import io.harness.logstreaming.LogStreamingHelper;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
-import io.harness.steps.StepUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 @Singleton
@@ -63,7 +63,7 @@ public class StageCleanupUtility {
     return connectorUtils.fetchDelegateSelector(ambiance, executionSweepingOutputResolver);
   }
 
-  public CICleanupTaskParams buildAndfetchCleanUpParameters(Ambiance ambiance) {
+  public Pair<CICleanupTaskParams, StageInfraDetails> buildAndfetchCleanUpParameters(Ambiance ambiance) {
     StageInfraDetails stageInfraDetails;
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS));
@@ -86,19 +86,21 @@ public class StageCleanupUtility {
       stageInfraDetails = (StageInfraDetails) optionalSweepingOutput.getOutput();
     }
 
+    CICleanupTaskParams ciCleanupTaskParams;
     StageInfraDetails.Type type = stageInfraDetails.getType();
     if (type == StageInfraDetails.Type.K8) {
       K8StageInfraDetails k8StageInfraDetails = (K8StageInfraDetails) stageInfraDetails;
-      return buildK8CleanupParameters(k8StageInfraDetails, ambiance);
+      ciCleanupTaskParams = buildK8CleanupParameters(k8StageInfraDetails, ambiance);
     } else if (type == StageInfraDetails.Type.VM) {
       VmStageInfraDetails vmStageInfraDetails = (VmStageInfraDetails) stageInfraDetails;
-      return buildVmCleanupParameters(ambiance, vmStageInfraDetails);
+      ciCleanupTaskParams = buildVmCleanupParameters(ambiance, vmStageInfraDetails);
     } else if (stageInfraDetails.getType() == StageInfraDetails.Type.DLITE_VM) {
       DliteVmStageInfraDetails dliteVmStageInfraDetails = (DliteVmStageInfraDetails) stageInfraDetails;
-      return buildHostedVmCleanupParameters(ambiance, dliteVmStageInfraDetails);
+      ciCleanupTaskParams = buildHostedVmCleanupParameters(ambiance, dliteVmStageInfraDetails);
     } else {
       throw new CIStageExecutionException("Unknown infra type");
     }
+    return Pair.of(ciCleanupTaskParams, stageInfraDetails);
   }
 
   public CIK8CleanupTaskParams buildK8CleanupParameters(K8StageInfraDetails k8StageInfraDetails, Ambiance ambiance) {
@@ -125,11 +127,16 @@ public class StageCleanupUtility {
 
     ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, clusterConnectorRef);
 
-    LiteEnginePodDetailsOutcome liteEnginePodDetailsOutcome = (LiteEnginePodDetailsOutcome) outcomeService.resolve(
+    OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME));
+
     String liteEngineIp = null;
-    if (liteEnginePodDetailsOutcome != null) {
-      liteEngineIp = liteEnginePodDetailsOutcome.getIpAddress();
+    if (optionalOutcome.isFound()) {
+      LiteEnginePodDetailsOutcome liteEnginePodDetailsOutcome =
+          (LiteEnginePodDetailsOutcome) optionalOutcome.getOutcome();
+      if (liteEnginePodDetailsOutcome != null) {
+        liteEngineIp = liteEnginePodDetailsOutcome.getIpAddress();
+      }
     }
 
     return CIK8CleanupTaskParams.builder()
@@ -168,8 +175,8 @@ public class StageCleanupUtility {
       throw new CIStageExecutionException("Stage details sweeping output cannot be empty");
     }
 
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance);
-    String baseLogKey = LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    String baseLogKey = LogStreamingStepClientFactory.getLogBaseKey(ambiance);
+
     String liteEngineLogKey = baseLogKey + "/" + CICommonConstants.LITE_ENGINE_LOG_KEY_SUFFIX;
 
     StageDetails stageDetails = (StageDetails) optionalSweepingOutput.getOutput();

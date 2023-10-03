@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ include "access-control.name" . }}
-  namespace: {{ .Release.Namespace }}
+  namespace: '{{ .Release.Namespace }}'
   labels:
     {{- if .Values.global.commonLabels }}
     {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
@@ -11,28 +11,28 @@ metadata:
   annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 data:
-  DEPLOY_MODE: {{ .Values.config.DEPLOY_MODE }}
-  LOGGING_LEVEL: {{ .Values.config.LOGGING_LEVEL}}
-  EVENTS_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
+  DEPLOY_MODE: '{{ .Values.config.DEPLOY_MODE }}'
+  LOGGING_LEVEL: '{{ .Values.config.LOGGING_LEVEL }}'
+  EVENTS_CONFIG_USE_SENTINEL: '{{ .Values.global.database.redis.installed }}'
   EVENTS_CONFIG_SENTINEL_MASTER_NAME: 'harness-redis'
   EVENTS_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   EVENTS_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
-  LOCK_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
+  LOCK_CONFIG_USE_SENTINEL: '{{ .Values.global.database.redis.installed }}'
   LOCK_CONFIG_SENTINEL_MASTER_NAME: 'harness-redis'
   LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
-  RESOURCE_GROUP_ITERATOR_ENABLED: {{ .Values.config.RESOURCE_GROUP_ITERATOR_ENABLED | quote }}
-  RESOURCE_GROUP_ITERATOR_INTERVAL: {{ .Values.config.RESOURCE_GROUP_ITERATOR_INTERVAL | quote }}
-  USER_GROUP_ITERATOR_ENABLED: {{ .Values.config.USER_GROUP_ITERATOR_ENABLED | quote }}
-  USER_GROUP_ITERATOR_INTERVAL: {{ .Values.config.USER_GROUP_ITERATOR_INTERVAL | quote }}
-  USER_ITERATOR_ENABLED: {{ .Values.config.USER_ITERATOR_ENABLED | quote }}
-  USER_ITERATOR_INTERVAL: {{ .Values.config.USER_ITERATOR_INTERVAL | quote }}
-  SERVICEACCOUNT_ITERATOR_ENABLED: {{ .Values.config.SERVICEACCOUNT_ITERATOR_ENABLED | quote }}
-  SERVICEACCOUNT_ITERATOR_INTERVAL: {{ .Values.config.SERVICEACCOUNT_ITERATOR_INTERVAL | quote }}
-  SUPPORTPREFERENCE_ITERATOR_ENABLED: {{ .Values.config.SUPPORTPREFERENCE_ITERATOR_ENABLED | quote }}
-  SUPPORTPREFERENCE_ITERATOR_INTERVAL: {{ .Values.config.SUPPORTPREFERENCE_ITERATOR_INTERVAL | quote }}
-  SCOPE_ITERATOR_ENABLED: {{ .Values.config.SCOPE_ITERATOR_ENABLED | quote }}
-  SCOPE_ITERATOR_INTERVAL: {{ .Values.config.SCOPE_ITERATOR_INTERVAL | quote }}
+  RESOURCE_GROUP_ITERATOR_ENABLED: '{{ .Values.config.RESOURCE_GROUP_ITERATOR_ENABLED }}'
+  RESOURCE_GROUP_ITERATOR_INTERVAL: '{{ .Values.config.RESOURCE_GROUP_ITERATOR_INTERVAL }}'
+  USER_GROUP_ITERATOR_ENABLED: '{{ .Values.config.USER_GROUP_ITERATOR_ENABLED }}'
+  USER_GROUP_ITERATOR_INTERVAL: '{{ .Values.config.USER_GROUP_ITERATOR_INTERVAL }}'
+  USER_ITERATOR_ENABLED: '{{ .Values.config.USER_ITERATOR_ENABLED }}'
+  USER_ITERATOR_INTERVAL: '{{ .Values.config.USER_ITERATOR_INTERVAL }}'
+  SERVICEACCOUNT_ITERATOR_ENABLED: '{{ .Values.config.SERVICEACCOUNT_ITERATOR_ENABLED }}'
+  SERVICEACCOUNT_ITERATOR_INTERVAL: '{{ .Values.config.SERVICEACCOUNT_ITERATOR_INTERVAL }}'
+  SUPPORTPREFERENCE_ITERATOR_ENABLED: '{{ .Values.config.SUPPORTPREFERENCE_ITERATOR_ENABLED }}'
+  SUPPORTPREFERENCE_ITERATOR_INTERVAL: '{{ .Values.config.SUPPORTPREFERENCE_ITERATOR_INTERVAL }}'
+  SCOPE_ITERATOR_ENABLED: '{{ .Values.config.SCOPE_ITERATOR_ENABLED }}'
+  SCOPE_ITERATOR_INTERVAL: '{{ .Values.config.SCOPE_ITERATOR_INTERVAL }}'
   RESOURCE_GROUP_CLIENT_BASE_URL: {{ .Values.config.RESOURCE_GROUP_CLIENT_BASE_URL | default "http://platform-service:9005/api/" }}
   USER_CLIENT_BASE_URL: {{ .Values.config.USER_CLIENT_BASE_URL | default "http://ng-manager:7090/" }}
   USER_GROUP_CLIENT_BASE_URL: {{ .Values.config.USER_GROUP_CLIENT_BASE_URL | default "http://ng-manager:7090/" }}
@@ -41,21 +41,21 @@ data:
   FEATURE_FLAG_CLIENT_BASE_URL: {{ .Values.config.FEATURE_FLAG_CLIENT_BASE_URL | default "http://harness-manager:9090/api/" }}
   PROJECT_CLIENT_BASE_URL: {{ .Values.config.PROJECT_CLIENT_BASE_URL | default "http://ng-manager:7090/" }}
   ORGANIZATION_CLIENT_BASE_URL: {{ .Values.config.ORGANIZATION_CLIENT_BASE_URL | default "http://ng-manager:7090/" }}
-  OFFSET_FLUSH_INTERVAL_MS: {{ .Values.config.OFFSET_FLUSH_INTERVAL_MS | quote }}
-  MONGODB_SSL_ENABLED: {{ .Values.mongoSSL.enabled | quote }}
-  AGGREGATOR_ENABLED: {{ .Values.config.AGGREGATOR_ENABLED | quote }}
-  ENABLE_AUTH: {{ .Values.config.ENABLE_AUTH | quote }}
-  ACCESS_CONTROL_PREFERENCE_ENABLED: {{ .Values.config.ACCESS_CONTROL_PREFERENCE_ENABLED | quote }}
-  NOTIFICATION_SLACK_WEBHOOK_URL: {{ .Values.config.NOTIFICATION_SLACK_WEBHOOK_URL | quote }}
-  NOTIFICATION_ENVIRONMENT: {{ .Values.config.NOTIFICATION_ENVIRONMENT }}
-  ENABLE_ACCESS_CONTROL: {{ .Values.config.ENABLE_ACCESS_CONTROL | quote }}
+  OFFSET_FLUSH_INTERVAL_MS: '{{ .Values.config.OFFSET_FLUSH_INTERVAL_MS }}'
+  MONGODB_SSL_ENABLED: '{{ .Values.mongoSSL.enabled }}'
+  AGGREGATOR_ENABLED: '{{ .Values.config.AGGREGATOR_ENABLED }}'
+  ENABLE_AUTH: '{{ .Values.config.ENABLE_AUTH }}'
+  ACCESS_CONTROL_PREFERENCE_ENABLED: '{{ .Values.config.ACCESS_CONTROL_PREFERENCE_ENABLED }}'
+  NOTIFICATION_SLACK_WEBHOOK_URL: '{{ .Values.config.NOTIFICATION_SLACK_WEBHOOK_URL }}'
+  NOTIFICATION_ENVIRONMENT: '{{ .Values.config.NOTIFICATION_ENVIRONMENT }}'
+  ENABLE_ACCESS_CONTROL: '{{ .Values.config.ENABLE_ACCESS_CONTROL }}'
   ACCESS_CONTROL_SERVICE_BASE_URL: {{ .Values.config.ACCESS_CONTROL_SERVICE_BASE_URL | default "http://access-control:9006/api/" }}
-  ENABLE_AUDIT: {{ .Values.config.ENABLE_AUDIT | quote }}
+  ENABLE_AUDIT: '{{ .Values.config.ENABLE_AUDIT }}'
   AUDIT_CLIENT_BASE_URL: {{ .Values.config.AUDIT_CLIENT_BASE_URL | default "http://platform-service:9005/api/" }}
-  DISTRIBUTED_LOCK_IMPLEMENTATION: {{ .Values.config.DISTRIBUTED_LOCK_IMPLEMENTATION }}
-  GOOGLE_APPLICATION_CREDENTIALS: {{ .Values.config.GOOGLE_APPLICATION_CREDENTIALS }}
+  DISTRIBUTED_LOCK_IMPLEMENTATION: '{{ .Values.config.DISTRIBUTED_LOCK_IMPLEMENTATION }}'
+  GOOGLE_APPLICATION_CREDENTIALS: '{{ .Values.config.GOOGLE_APPLICATION_CREDENTIALS }}'
   MEMORY: {{ .Values.java.memory | default "512m" }}
-  STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
+  STACK_DRIVER_LOGGING_ENABLED: '{{ .Values.global.stackDriverLoggingEnabled }}'
   {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
   # Additional configs
   {{- if .Values.additionalConfigs }}

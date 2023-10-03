@@ -255,6 +255,125 @@ paths:
         description: Enforcement Result DTO
       tags:
         - enforcement
+  '/v1/org/{org}/project/{project}/artifacts':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+    post:
+      summary: List All Artifacts
+      operationId: listArtifacts
+      responses:
+        '200':
+          $ref: '#/components/responses/ArtifactListingResponseBody'
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      tags:
+        - artifact
+      description: List all artifacts
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Order'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Sort'
+      security:
+        - x-api-key: []
+      requestBody:
+        $ref: '#/components/requestBodies/ArtifactListingRequestBody'
+  '/v1/org/{org}/project/{project}/grouped-artifacts':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+    post:
+      summary: List All Artifacts
+      operationId: listLatestArtifacts
+      responses:
+        '200':
+          $ref: '#/components/responses/ArtifactListingResponseBody'
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      tags:
+        - artifact
+      description: List latest version of all artifacts
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Order'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Sort'
+      security:
+        - x-api-key: []
+  '/v1/org/{org}/project/{project}/artifact/{artifact}/tag/{tag}/components':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+      - $ref: '#/components/parameters/Artifact'
+      - $ref: '#/components/parameters/Tag'
+    post:
+      summary: Artifact Detail Component View
+      operationId: getArtifactDetailComponentView
+      responses:
+        '200':
+          $ref: '#/components/responses/ArtifactComponentViewResponseBody'
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      tags:
+        - artifact
+      description: Get artifact detail component view
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Order'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Sort'
+      security:
+        - x-api-key: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtifactComponentViewRequestBody'
+  '/v1/org/{org}/project/{project}/artifact/{artifact}/tag/{tag}/deployments':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+      - $ref: '#/components/parameters/Artifact'
+      - $ref: '#/components/parameters/Tag'
+    post:
+      summary: Artifact Detail Deployment View
+      operationId: getArtifactDetailDeploymentView
+      responses:
+        '200':
+          $ref: '#/components/responses/ArtifactDeploymentViewResponseBody'
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+        '':
+          $ref: '#/components/responses/ArtifactDeploymentViewResponseBody'
+      tags:
+        - artifact
+      description: Get artifact detail deployment view
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Order'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Sort'
+      security:
+        - x-api-key: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtifactDeploymentViewRequestBody'
+        description: ''
 components:
   schemas:
     Artifact:
@@ -312,6 +431,7 @@ components:
           example: 'https://console.google.com/storage'
       required:
         - name
+        - data
         - format
     Attestation:
       title: Attestation
@@ -373,6 +493,14 @@ components:
           type: string
           description: StepExecutionId
           example: betatest1
+      required:
+        - format
+        - tool
+        - pipeline_execution_id
+        - pipeline_identifier
+        - stage_identifier
+        - step_identifier
+        - step_execution_id
     SbomProcessRequestBody:
       title: SbomProcessRequestBody
       x-stoplight:
@@ -422,6 +550,10 @@ components:
           $ref: '#/components/schemas/Artifact'
         policy_file_id:
           type: string
+      required:
+        - enforcement_id
+        - artifact
+        - policy_file_id
     TokenIssueResponseBody:
       title: TokenIssueResponseBody
       x-stoplight:
@@ -735,6 +867,174 @@ components:
         - status
     NormalisedSbomComponentRequestBody:
       $ref: '#/components/schemas/Artifact'
+    ArtifactListingRequestBody:
+      type: object
+      x-examples: {}
+      properties:
+        search_term:
+          type: string
+        component_filter:
+          type: object
+          properties:
+            field_name:
+              type: string
+              enum:
+                - ComponentVersion
+                - ComponentName
+            value:
+              type: string
+            operator:
+              type: string
+              enum:
+                - EQ
+        license_filter:
+          type: object
+          properties:
+            value:
+              type: string
+            operator:
+              type: string
+              enum:
+                - EQ
+        policy_violation:
+          type: string
+          enum:
+            - ALLOW
+            - DENY
+        environment_type:
+          type: string
+          enum:
+            - Prod
+            - NonProd
+            - None
+            - All
+    ArtifactListingResponse:
+      title: ArtifactListingResponse
+      x-stoplight:
+        id: 6cfbwocmwv9a3
+      type: object
+      x-examples: {}
+      properties:
+        artifact_id:
+          type: string
+        artifact_name:
+          type: string
+        tag:
+          type: string
+        sbom_url:
+          type: string
+        components_count:
+          type: integer
+        allow_list_violation_count:
+          type: integer
+        deny_list_violation_count:
+          type: integer
+        activity:
+          type: string
+          enum:
+            - DEPLOYED
+            - GENERATED
+        updated_at:
+          type: string
+        prod_env_count:
+          type: integer
+        non_prod_env_count:
+          type: integer
+      required:
+        - artifact_id
+        - artifact_name
+        - tag
+    ArtifactComponentViewRequestBody:
+      title: ArtifactComponentViewRequestBody
+      x-stoplight:
+        id: s7557zs60cci6
+      type: object
+      properties:
+        component_filter:
+          type: object
+          properties:
+            field_name:
+              type: string
+            operator:
+              type: string
+            value:
+              type: string
+        license_filter:
+          type: object
+          properties:
+            operator:
+              type: string
+            value:
+              type: string
+        supplier:
+          type: string
+        package_manager:
+          type: string
+    ArtifactDeploymentViewRequestBody:
+      title: ArtifactDeploymentViewRequestBody
+      x-stoplight:
+        id: opjgmnievvrlk
+      type: object
+      properties:
+        environment:
+          type: string
+        'environment_type ':
+          type: string
+          enum:
+            - PROD
+            - NONPROD
+            - ALL
+        policy_violation:
+          type: string
+          enum:
+            - ALLOW
+            - DENY
+    ArtifactComponentViewResponse:
+      title: ArtifactComponentViewResponse
+      x-stoplight:
+        id: zawboqxxfhyx9
+      type: object
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+        supplier:
+          type: string
+        package_manager:
+          type: string
+        purl:
+          type: string
+        license:
+          type: string
+    ArtifactDeploymentViewResponse:
+      title: ArtifactDeploymentViewResponse
+      x-stoplight:
+        id: qswwua8jf012s
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum:
+            - PROD
+            - NONPROD
+        pipeline_id:
+          type: string
+        pipeline_execution_id:
+          type: string
+        allow_list_policy_violation:
+          type: integer
+        attested_status:
+          type: string
+          enum:
+            - PASS
+            - FAIL
+        triggered_by:
+          type: string
   parameters:
     OrgParam:
       name: org
@@ -764,6 +1064,7 @@ components:
         type: integer
         default: 30
         maximum: 1000
+        minimum: 1
       description: Number of items to return per page.
     Order:
       name: order
@@ -783,6 +1084,7 @@ components:
       schema:
         type: integer
         default: 0
+        minimum: 0
       description: "Pagination page number strategy: Specify the page number within the paginated collection related to the number of items in each page\t"
     Sort:
       name: sort
@@ -799,6 +1101,20 @@ components:
           - supplier
         default: name
       description: Parameter on the basis of which sorting is done.
+    Artifact:
+      name: artifact
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Harness artifact identifier
+    Tag:
+      name: tag
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Harness artifact tag
   requestBodies:
     SbomProcessRequestBody:
       content:
@@ -816,6 +1132,11 @@ components:
           schema:
             $ref: '#/components/schemas/NormalisedSbomComponentRequestBody'
       description: ''
+    ArtifactListingRequestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ArtifactListingRequestBody'
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -900,6 +1221,69 @@ components:
         X-Page-Size:
           schema:
             type: integer
+          description: Maximum page size in Paginated response.
+    ArtifactListingResponseBody:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ArtifactListingResponse'
+      headers:
+        X-Total-Elements:
+          schema:
+            type: string
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: string
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: string
+          description: Maximum page size in Paginated response.
+    ArtifactComponentViewResponseBody:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ArtifactComponentViewResponse'
+      headers:
+        X-Total-Elements:
+          schema:
+            type: string
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: string
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: string
+          description: Maximum page size in Paginated response.
+    ArtifactDeploymentViewResponseBody:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ArtifactDeploymentViewResponse'
+      headers:
+        X-Total-Elements:
+          schema:
+            type: string
+          description: Total number of elements returned in Paginated response.
+        X-Page-Number:
+          schema:
+            type: string
+          description: Page number in Paginated response.
+        X-Page-Size:
+          schema:
+            type: string
           description: Maximum page size in Paginated response.
 tags:
   - name: sbomProcessor

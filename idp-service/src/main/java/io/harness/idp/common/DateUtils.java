@@ -24,9 +24,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
 public class DateUtils {
-  public long parseTimestamp(String timestamp) {
+  public long parseTimestamp(String timestamp, String format) {
     try {
-      SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+      SimpleDateFormat dateFormat = new SimpleDateFormat(format);
       dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
       Date date = dateFormat.parse(timestamp);
       return date.getTime();
