@@ -5,12 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.repositories;
+package io.harness.ssca.services;
 
-import io.harness.ssca.entities.CdInstanceSummary;
+import io.harness.entities.Instance;
 
-import org.springframework.data.mongodb.core.query.Criteria;
+public interface CdInstanceSummaryService {
+  void upsertInstance(Instance instance);
 
-public interface CdInstanceSummaryRepoCustom {
-  CdInstanceSummary findOne(Criteria criteria);
+  void removeInstance(Instance instance);
 }

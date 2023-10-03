@@ -40,18 +40,13 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("cdInstanceSummary")
 @HarnessEntity(exportable = true)
 public class CdInstanceSummary implements PersistentEntity, CreatedAtAware {
-  @NotNull private String artifactId;
-  @NotNull private String tag;
-  @NotNull private String infrastructureMappingId;
-  @NotNull private String instanceKey;
-  @NotNull private String instanceType;
-
+  @NotNull private String artifactCorrelationId;
   @NotNull private String accountIdentifier;
   @NotNull private String orgIdentifier;
   @NotNull private String projectIdentifier;
 
-  @NotNull private String pipelineExecutionId;
-  @NotNull private String pipelineExecutionName;
+  @NotNull private String lastPipelineExecutionId;
+  @NotNull private String lastPipelineExecutionName;
 
   EnvType envType;
   @NotNull String envIdentifier;

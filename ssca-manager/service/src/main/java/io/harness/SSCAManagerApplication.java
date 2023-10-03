@@ -18,6 +18,7 @@ import io.harness.annotations.SSCAAuthIfHasApiKey;
 import io.harness.annotations.SSCAServiceAuth;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.authorization.AuthorizationServiceHeader;
+import io.harness.changestreams.redisconsumers.InstanceNGRedisEventConsumer;
 import io.harness.govern.ProviderModule;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.ng.core.CorrelationFilter;
@@ -132,6 +133,7 @@ public class SSCAManagerApplication extends Application<SSCAManagerConfiguration
     registerCorrelationFilter(environment, injector);
     registerRequestContextFilter(environment);
     registerCorsFilter(sscaManagerConfiguration, environment);
+    registerSscaEvents(sscaManagerConfiguration, injector);
     MaintenanceController.forceMaintenance(false);
   }
 
@@ -211,6 +213,12 @@ public class SSCAManagerApplication extends Application<SSCAManagerConfiguration
         AuthorizationServiceHeader.DEFAULT.getServiceId(), configuration.getSscaManagerServiceSecret());
     environment.jersey().register(
         new InternalApiAuthFilter(getAuthFilterPredicate(InternalApi.class), null, serviceToSecretMapping));
+  }
+
+  private void registerSscaEvents(SSCAManagerConfiguration appConfig, Injector injector) {
+    SSCAEventConsumerController sscaEventConsumerController = injector.getInstance(SSCAEventConsumerController.class);
+    sscaEventConsumerController.register(injector.getInstance(InstanceNGRedisEventConsumer.class),
+        appConfig.getDebeziumConsumerConfigs().getInstanceNGConsumer().getThreads());
   }
 
   private Predicate<Pair<ResourceInfo, ContainerRequestContext>> getAuthFilterPredicate(

@@ -32,8 +32,11 @@ import io.harness.ssca.api.EnforcementApiImpl;
 import io.harness.ssca.api.OrchestrationApiImpl;
 import io.harness.ssca.api.SbomProcessorApiImpl;
 import io.harness.ssca.api.TokenApiImpl;
+import io.harness.ssca.eventsframework.SSCAEventsFrameworkModule;
 import io.harness.ssca.services.ArtifactService;
 import io.harness.ssca.services.ArtifactServiceImpl;
+import io.harness.ssca.services.CdInstanceSummaryService;
+import io.harness.ssca.services.CdInstanceSummaryServiceImpl;
 import io.harness.ssca.services.EnforcementResultService;
 import io.harness.ssca.services.EnforcementResultServiceImpl;
 import io.harness.ssca.services.EnforcementStepService;
@@ -105,8 +108,11 @@ public class SSCAManagerModule extends AbstractModule {
     bind(S3StoreService.class).to(S3StoreServiceImpl.class);
     bind(NormalisedSbomComponentService.class).to(NormalisedSbomComponentServiceImpl.class);
     bind(ArtifactApi.class).to(ArtifactApiImpl.class);
+    bind(CdInstanceSummaryService.class).to(CdInstanceSummaryServiceImpl.class);
     install(new TokenClientModule(this.configuration.getNgManagerServiceHttpClientConfig(),
         this.configuration.getNgManagerServiceSecret(), SSCA_SERVICE.getServiceId()));
+    install(new SSCAEventsFrameworkModule(
+        this.configuration.getEventsFrameworkConfiguration(), this.configuration.getDebeziumConsumerConfigs()));
   }
 
   @Provides

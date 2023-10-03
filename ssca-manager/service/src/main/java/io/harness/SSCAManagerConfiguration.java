@@ -13,6 +13,8 @@ import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toSet;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.changestreams.DebeziumConsumerConfig;
+import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.mongo.MongoConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
@@ -65,6 +67,8 @@ public class SSCAManagerConfiguration extends Configuration {
   @JsonProperty("jwtAuthSecret") private String jwtAuthSecret;
   @JsonProperty("jwtIdentityServiceSecret") private String jwtIdentityServiceSecret;
   @JsonProperty(value = "enableAuth", defaultValue = "true") private boolean authEnabled;
+  @JsonProperty(value = "eventsFramework") private EventsFrameworkConfiguration eventsFrameworkConfiguration;
+  @JsonProperty("debeziumConsumerConfigs") DebeziumConsumerConfig debeziumConsumerConfigs;
   @JsonProperty("hostname") String hostname = "localhost";
   @JsonProperty("basePathPrefix") String basePathPrefix = "";
 

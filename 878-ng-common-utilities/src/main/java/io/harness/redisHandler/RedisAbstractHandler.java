@@ -11,6 +11,7 @@ import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 
 import io.harness.debezium.DebeziumChangeEvent;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
@@ -45,7 +46,7 @@ public abstract class RedisAbstractHandler {
     return true;
   }
 
-  public abstract boolean handleCreateEvent(String id, String value);
+  public abstract boolean handleCreateEvent(String id, String value) throws JsonProcessingException;
   public abstract boolean handleDeleteEvent(String id);
   public abstract boolean handleUpdateEvent(String id, String value);
 }

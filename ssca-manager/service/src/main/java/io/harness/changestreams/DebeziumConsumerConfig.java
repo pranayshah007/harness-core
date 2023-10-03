@@ -5,12 +5,20 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.repositories;
+package io.harness.changestreams;
 
-import io.harness.ssca.entities.CdInstanceSummary;
+import lombok.Builder;
+import lombok.Data;
 
-import org.springframework.data.mongodb.core.query.Criteria;
-
-public interface CdInstanceSummaryRepoCustom {
-  CdInstanceSummary findOne(Criteria criteria);
+@Data
+@Builder
+public class DebeziumConsumerConfig {
+  DebeziumConsumer instanceNGConsumer;
+  @Data
+  @Builder
+  public class DebeziumConsumer {
+    @Builder.Default int threads = 1;
+    String topic;
+    int batchSize;
+  }
 }

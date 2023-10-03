@@ -60,6 +60,31 @@ s3Config:
   bucket: "sbom_store"
   policyBucket: "policy_store"
 
+eventsFramework:
+  redis:
+    sentinel: false
+    masterName: "test"
+    redisUrl: "redis://localhost:6379"
+    sentinelUrls:
+      - "redis://redis1:26379"
+      - "redis://redis2:26379"
+      - "redis://redis3:26379"
+    envNamespace: ""
+    readMode: MASTER
+    nettyThreads: 16
+    useScriptCache: true
+    userName: ""
+    password: ""
+    sslConfig:
+      enabled: false
+      CATrustStorePath: "/tmp/ca_trust_store"
+      CATrustStorePassword: ""
+
+debeziumConsumerConfigs:
+  instanceNGConsumer:
+    topic: ${DEBEZIUM_CONSUMER_TOPIC_NAME:-DEBEZIUM_sscaMongo.ng-harness.instanceNG}
+    batchSize: ${DEBEZIUM_CONSUMER_BATCH_SIZE:-100}
+
 
 ngManagerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 sscaManagerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
