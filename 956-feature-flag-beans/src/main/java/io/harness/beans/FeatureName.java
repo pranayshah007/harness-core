@@ -925,6 +925,9 @@ public enum FeatureName {
       "This flag enables the basic deployment strategy in ECS Deployment Swimlane", HarnessTeam.CDP),
   CDS_TF_TG_SKIP_ERROR_LOGS_COLORING(
       "Skip coloring execution logs that are coming form standart error output of process executor for terraform and terragrunt steps",
+      HarnessTeam.CDP),
+  CDS_NOT_SUPPORT_SECRETS_BASE64_EXPRESSION(
+      "This flag to not support secrets in files which content will be used in configFile.getAsBase64 and fileStore.getAsBase64 expressions",
       HarnessTeam.CDP);
 
   // keep-sorted end
