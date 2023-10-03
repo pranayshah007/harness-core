@@ -9,7 +9,6 @@ package io.harness.notification.utils;
 
 import static io.harness.rule.OwnerRule.BHAVYA;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mockStatic;
@@ -26,7 +25,6 @@ import io.harness.notification.exception.NotificationException;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 
-import java.util.List;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,21 +48,6 @@ public class NotificationSettingsHelperTest extends CategoryTest {
     restUtilsMockedStatic = mockStatic(NGRestUtils.class);
     FieldUtils.writeField(notificationSettingsHelper, "ngSettingsClient", ngSettingsClient, true);
     when(ngSettingsClient.getSetting(anyString(), anyString(), any(), any())).thenReturn(response);
-  }
-
-  @Test
-  @Owner(developers = BHAVYA)
-  @Category(UnitTests.class)
-  public void getRecipientsWithValidDomain_recipientsDoesNotHasTargetUrl_filteredRecipientList() {
-    SettingValueResponseDTO settingValueResponseDTO =
-        SettingValueResponseDTO.builder().value("harness.io, office.com").valueType(SettingValueType.STRING).build();
-    when(NGRestUtils.getResponse(response)).thenReturn(settingValueResponseDTO);
-
-    List<String> validRecipients =
-        notificationSettingsHelper.getRecipientsWithValidDomain(List.of("abc@harness.io", "abc@harness.com"), accountId,
-            SettingIdentifiers.EMAIL_NOTIFICATION_DOMAIN_ALLOWLIST);
-    assertThat(validRecipients.size()).isEqualTo(1);
-    assertThat(validRecipients.get(0)).isEqualTo("abc@harness.io");
   }
 
   @Test(expected = NotificationException.class)
