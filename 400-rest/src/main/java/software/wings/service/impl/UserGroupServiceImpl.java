@@ -272,7 +272,7 @@ public class UserGroupServiceImpl implements UserGroupService {
       populateAppIdFilter(req, applicationIdsMatchingSearchTerm);
     }
     PageResponse<UserGroup> res;
-    if (hitSecondary && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, accountId)) {
+    if (hitSecondary && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION_V2, accountId)) {
       res = wingsPersistence.querySecondary(UserGroup.class, req);
     } else {
       res = wingsPersistence.query(UserGroup.class, req);
@@ -1440,7 +1440,7 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   private FindOptions createFindOptionsToHitSecondaryNode(String accountId) {
-    if (accountId != null && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, accountId)) {
+    if (accountId != null && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION_V2, accountId)) {
       return new FindOptions().readPreference(ReadPreference.secondaryPreferred());
     }
     return new FindOptions();
