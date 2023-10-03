@@ -90,10 +90,6 @@ spec:
         envFrom:
         - configMapRef:
             name: platform-service
-        {{- if .Values.global.smtpCreateSecret.enabled }}
-        - secretRef:
-            name: smtp-secret
-        {{- end }}
         readinessProbe:
           httpGet:
             path: /api/health
