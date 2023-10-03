@@ -8,6 +8,7 @@
 package io.harness.cvng.cdng.services.impl;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ANSHIKA;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KANHAIYA;
 
@@ -22,6 +23,8 @@ import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO.DeploymentVerificationJobInstanceSummary;
+import io.harness.cvng.analysis.beans.LogAnalysisClusterChartDTO;
+import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.beans.activity.ActivityStatusDTO;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
@@ -30,6 +33,7 @@ import io.harness.cvng.cdng.entities.CVNGStepTask.Status;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
 import io.harness.cvng.cdng.services.impl.CVNGStep.CVNGResponseData;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceDTO;
+import io.harness.cvng.core.beans.params.filterParams.DeploymentLogAnalysisFilter;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
@@ -40,13 +44,15 @@ import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Set;
+import java.util.*;
+
 import org.apache.commons.lang3.reflect.FieldUtils;
+import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -57,6 +63,7 @@ public class CVNGStepTaskServiceImplTest extends CvNextGenTestBase {
   @Inject private CVConfigService cvConfigService;
   @Mock private VerificationJobInstanceService verificationJobInstanceService;
   @Mock private WaitNotifyEngine waitNotifyEngine;
+  @Mock private DeploymentLogAnalysisService deploymentLogAnalysisService;
   BuilderFactory builderFactory;
   @Before
   public void setup() throws IllegalAccessException {
@@ -64,6 +71,7 @@ public class CVNGStepTaskServiceImplTest extends CvNextGenTestBase {
     builderFactory = BuilderFactory.getDefault();
     FieldUtils.writeField(cvngStepTaskService, "waitNotifyEngine", waitNotifyEngine, true);
     FieldUtils.writeField(cvngStepTaskService, "verificationJobInstanceService", verificationJobInstanceService, true);
+    FieldUtils.writeField(cvngStepTaskService, "deploymentLogAnalysisService", deploymentLogAnalysisService, true);
   }
   @Test
   @Owner(developers = KAMAL)
@@ -179,6 +187,30 @@ public class CVNGStepTaskServiceImplTest extends CvNextGenTestBase {
         cvngStepTaskService.healthSources(accountId, cvngStepTask.getCallbackId());
     assertThat(healthSourceDTOSet.size()).isEqualTo(1);
     assertThat(healthSourceDTOSet.iterator().next().getIdentifier()).isEqualTo(cvConfigIdentifier);
+  }
+
+  @Test
+  @Owner(developers = ANSHIKA)
+  @Ignore
+  @Category(UnitTests.class)
+  public void testGetDeploymentActivityLogAnalysisClusters() {
+    String accountId = generateUuid();
+    String callbackId = generateUuid();
+    DeploymentLogAnalysisFilter deploymentLogAnalysisFilter = new DeploymentLogAnalysisFilter();
+    String verificationJobInstanceId = generateUuid();
+    CVNGStepTask cvngStepTask = builderFactory.cvngStepTaskBuilder()
+                                    .accountId(accountId)
+                                    .callbackId(callbackId)
+                                    .verificationJobInstanceId(verificationJobInstanceId)
+                                    .build();
+    cvngStepTaskService.create(cvngStepTask);
+    cvngStepTask.setVerificationJobInstanceId(verificationJobInstanceId);
+    when(cvngStepTaskService.getByCallBackId(callbackId)).thenReturn(cvngStepTask);
+    List<LogAnalysisClusterChartDTO> expectedClusters = new ArrayList<>();
+    when(deploymentLogAnalysisService.getLogAnalysisClusters(eq(accountId), eq(verificationJobInstanceId), eq(deploymentLogAnalysisFilter)))
+            .thenReturn(expectedClusters);
+    List<LogAnalysisClusterChartDTO> result = cvngStepTaskService.getDeploymentActivityLogAnalysisClusters(accountId, callbackId, deploymentLogAnalysisFilter);
+    Assert.assertEquals(expectedClusters, result);
   }
 
   @Test
