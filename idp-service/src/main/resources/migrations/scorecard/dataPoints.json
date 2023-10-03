@@ -8,38 +8,46 @@
     "dataSourceIdentifier": "github",
     "dataSourceLocationIdentifier": "github_mean_time_to_merge_pr",
     "isConditional": true,
-    "conditionalInputValueDescription": "Branch name"
+    "conditionalInputValueDescription": "Branch name",
+    "description": "Short description for the data point",
+    "detailedDescription": "Short Description for data point here \n\n**How it's calculated:** Idea about the calculation of the data point\n\n**Prerequisites:** Prerequisites if any for calculation of data point"
   },
   {
     "id": "64d5c505c94f589f936c04d7",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "pagerdutyAnnotationExists",
-    "name": "Pagerduty is set (boolean)",
+    "name": "Pagerduty is set",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "catalog",
     "outcomeExpression":  "catalog.metadata.annotations.\"pagerduty.com/service-id\"!=null",
-    "dataSourceLocationIdentifier": "catalog"
+    "dataSourceLocationIdentifier": "catalog",
+    "description": "Short description for the data point",
+    "detailedDescription": "Short Description for data point here \n\n**How it's calculated:** Idea about the calculation of the data point\n\n**Prerequisites:** Prerequisites if any for calculation of data point"
   },
   {
     "id": "64d5f2bc387ee61486eed6f6",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "isBranchProtected",
-    "name": "Branch protection is set (boolean)",
+    "name": "Branch protection is set",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "github",
     "dataSourceLocationIdentifier": "github_is_branch_protection_set",
     "isConditional": true,
-    "conditionalInputValueDescription" : "Branch name"
+    "conditionalInputValueDescription" : "Branch name",
+    "description": "Short description for the data point",
+    "detailedDescription": "Short Description for data point here \n\n**How it's calculated:** Idea about the calculation of the data point\n\n**Prerequisites:** Prerequisites if any for calculation of data point"
   },
   {
     "id": "64d5f56280f63a315c9e08b5",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "techDocsAnnotationExists",
-    "name": "Documentation exists (boolean)",
+    "name": "Documentation exists",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "catalog",
     "outcomeExpression":  "catalog.metadata.annotations.\"backstage.io/techdocs-ref\"!=null",
-    "dataSourceLocationIdentifier": "catalog"
+    "dataSourceLocationIdentifier": "catalog",
+    "description": "Short description for the data point",
+    "detailedDescription": "Short Description for data point here \n\n**How it's calculated:** Idea about the calculation of the data point\n\n**Prerequisites:** Prerequisites if any for calculation of data point"
   },
   {
     "id": "64e44efc95107f65e31c51f7",
@@ -49,7 +57,9 @@
     "type": "BOOLEAN",
     "dataSourceIdentifier": "catalog",
     "outcomeExpression":  "catalog.spec.owner!=null && catalog.spec.owner!=\"Unknown\"",
-    "dataSourceLocationIdentifier": "catalog"
+    "dataSourceLocationIdentifier": "catalog",
+    "description": "Short description for the data point",
+    "detailedDescription": "Short Description for data point here \n\n**How it's calculated:** Idea about the calculation of the data point\n\n**Prerequisites:** Prerequisites if any for calculation of data point"
   },
   {
     "id": "64ecede6b5fd454d919d01f0",
@@ -60,7 +70,9 @@
     "dataSourceIdentifier": "github",
     "dataSourceLocationIdentifier": "github_is_file_exists",
     "isConditional": true,
-    "conditionalInputValueDescription": "File path (e.g. src/index.js)"
+    "conditionalInputValueDescription": "File path (e.g. src/index.js)",
+    "description": "Short description for the data point",
+    "detailedDescription": "Short Description for data point here \n\n**How it's calculated:** Idea about the calculation of the data point\n\n**Prerequisites:** Prerequisites if any for calculation of data point"
   },
   {
     "id": "64ef7973f616c89330020df5",
@@ -69,7 +81,9 @@
     "name": "STO stage added in pipeline",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "harness",
-    "dataSourceLocationIdentifier": "harness_sto_scan_dsl"
+    "dataSourceLocationIdentifier": "harness_sto_scan_dsl",
+    "description": "Short description for the data point",
+    "detailedDescription": "Short Description for data point here \n\n**How it's calculated:** Idea about the calculation of the data point\n\n**Prerequisites:** Prerequisites if any for calculation of data point"
   },
   {
     "id": "64ef79bbf616c89330020df6",
@@ -78,7 +92,9 @@
     "name": "Policy evaluation successful",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "harness",
-    "dataSourceLocationIdentifier": "harness_policy_evaluation_dsl"
+    "dataSourceLocationIdentifier": "harness_policy_evaluation_dsl",
+    "description": "Short description for the data point",
+    "detailedDescription": "Short Description for data point here \n\n**How it's calculated:** Idea about the calculation of the data point\n\n**Prerequisites:** Prerequisites if any for calculation of data point"
   },
   {
     "id": "64ef7a5ff616c89330020df7",
@@ -87,34 +103,42 @@
     "name": "CI Pipeline success rate (last 7 days)",
     "type": "NUMBER",
     "dataSourceIdentifier": "harness",
-    "dataSourceLocationIdentifier": "harness_ci_success_percent_in_seven_days"
+    "dataSourceLocationIdentifier": "harness_ci_success_percent_in_seven_days",
+    "description": "Short description for the data point",
+    "detailedDescription": "Short Description for data point here \n\n**How it's calculated:** Idea about the calculation of the data point\n\n**Prerequisites:** Prerequisites if any for calculation of data point"
   },
   {
     "id": "64ef7ac1f616c89330020df8",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "noTestsFailingInCiPipeline",
-    "name": "Tests passing on CI (boolean)",
+    "name": "Tests passing on CI",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "harness",
-    "dataSourceLocationIdentifier": "harness_test_passing_on_ci_is_zero"
+    "dataSourceLocationIdentifier": "harness_test_passing_on_ci_is_zero",
+    "description": "Short description for the data point",
+    "detailedDescription": "Short Description for data point here \n\n**How it's calculated:** Idea about the calculation of the data point\n\n**Prerequisites:** Prerequisites if any for calculation of data point"
   },
   {
     "id": "65006db0c28a1a3f5607e851",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "isOnCallSet",
-    "name": "Is on-call set (boolean)",
+    "name": "Is on-call set",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "pagerduty",
-    "dataSourceLocationIdentifier": "pagerduty_service_directory"
+    "dataSourceLocationIdentifier": "pagerduty_service_directory",
+    "description": "Short description for the data point",
+    "detailedDescription": "Short Description for data point here \n\n**How it's calculated:** Idea about the calculation of the data point\n\n**Prerequisites:** Prerequisites if any for calculation of data point"
   },
   {
     "id": "65009b5dc28a1a3f5607f808",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "isEscalationPolicySet",
-    "name": "Is Escalation Policy call set (boolean)",
+    "name": "Is Escalation Policy call set",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "pagerduty",
-    "dataSourceLocationIdentifier": "pagerduty_service_directory"
+    "dataSourceLocationIdentifier": "pagerduty_service_directory",
+    "description": "Short description for the data point",
+    "detailedDescription": "Short Description for data point here \n\n**How it's calculated:** Idea about the calculation of the data point\n\n**Prerequisites:** Prerequisites if any for calculation of data point"
   },
   {
     "id": "6500ab758ea5a4798502f511",
@@ -123,7 +147,9 @@
     "name": "Number of incidents in the last 30 days",
     "type": "NUMBER",
     "dataSourceIdentifier": "pagerduty",
-    "dataSourceLocationIdentifier": "pagerduty_incidents"
+    "dataSourceLocationIdentifier": "pagerduty_incidents",
+    "description": "Short description for the data point",
+    "detailedDescription": "Short Description for data point here \n\n**How it's calculated:** Idea about the calculation of the data point\n\n**Prerequisites:** Prerequisites if any for calculation of data point"
   },
   {
     "id": "6500c08d8ea5a4798502f513",
@@ -132,7 +158,9 @@
     "name": "Average resolved time of the last 10 resolved incidents (in Minutes)",
     "type": "NUMBER",
     "dataSourceIdentifier": "pagerduty",
-    "dataSourceLocationIdentifier": "pagerduty_resolved_incidents"
+    "dataSourceLocationIdentifier": "pagerduty_resolved_incidents",
+    "description": "Short description for the data point",
+    "detailedDescription": "Short Description for data point here \n\n**How it's calculated:** Idea about the calculation of the data point\n\n**Prerequisites:** Prerequisites if any for calculation of data point"
   },
   {
     "id": "64fec3d52d2a3d15f97b75a6",
@@ -143,7 +171,9 @@
     "dataSourceIdentifier": "kubernetes",
     "dataSourceLocationIdentifier": "kubernetes",
     "outcomeExpression":  "kubernetes.workload.spec.replicas",
-    "isConditional": false
+    "isConditional": false,
+    "description": "Short description for the data point",
+    "detailedDescription": "Short Description for data point here \n\n**How it's calculated:** Idea about the calculation of the data point\n\n**Prerequisites:** Prerequisites if any for calculation of data point"
   },
   {
     "id": "65082c922e570ea8a97f4fec",
@@ -154,7 +184,9 @@
     "dataSourceIdentifier": "kubernetes",
     "dataSourceLocationIdentifier": "kubernetes",
     "outcomeExpression":  "kubernetes.workload.status.conditions",
-    "isConditional": false
+    "isConditional": false,
+    "description": "Short description for the data point",
+    "detailedDescription": "Short Description for data point here \n\n**How it's calculated:** Idea about the calculation of the data point\n\n**Prerequisites:** Prerequisites if any for calculation of data point"
   },
   {
     "id": "650afb9076990ecb89d7d502",
@@ -165,18 +197,22 @@
     "dataSourceIdentifier": "bitbucket",
     "dataSourceLocationIdentifier": "bitbucket_mean_time_to_merge_pr",
     "isConditional": true,
-    "conditionalInputValueDescription": "Branch name"
+    "conditionalInputValueDescription": "Branch name",
+    "description": "Short description for the data point",
+    "detailedDescription": "Short Description for data point here \n\n**How it's calculated:** Idea about the calculation of the data point\n\n**Prerequisites:** Prerequisites if any for calculation of data point"
   },
   {
     "id": "650afc30838d877cd2c8f881",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "isBranchProtected",
-    "name": "Branch protection is set (boolean)",
+    "name": "Branch protection is set",
     "type": "BOOLEAN",
     "dataSourceIdentifier": "bitbucket",
     "dataSourceLocationIdentifier": "bitbucket_is_branch_protection_set",
     "isConditional": true,
-    "conditionalInputValueDescription" : "Branch name"
+    "conditionalInputValueDescription" : "Branch name",
+    "description": "Short description for the data point",
+    "detailedDescription": "Short Description for data point here \n\n**How it's calculated:** Idea about the calculation of the data point\n\n**Prerequisites:** Prerequisites if any for calculation of data point"
   },
   {
     "id": "65143c3d60a49366a99ff670",
@@ -187,7 +223,9 @@
     "dataSourceIdentifier": "jira",
     "dataSourceLocationIdentifier": "jira_mean_time_to_resolve",
     "isConditional": true,
-    "conditionalInputValueDescription" : "JQL (e.g. issuetype = Bug AND priority in (P0,P1) AND resolved >= -90d)"
+    "conditionalInputValueDescription" : "JQL (e.g. issuetype = Bug AND priority in (P0,P1) AND resolved >= -90d)",
+    "description": "Short description for the data point",
+    "detailedDescription": "Short Description for data point here \n\n**How it's calculated:** Idea about the calculation of the data point\n\n**Prerequisites:** Prerequisites if any for calculation of data point"
   },
   {
     "id": "65143c458e971e8c2943a216",
@@ -198,7 +236,9 @@
     "dataSourceIdentifier": "jira",
     "dataSourceLocationIdentifier": "jira_issues_count",
     "isConditional": true,
-    "conditionalInputValueDescription" : "JQL (e.g. issuetype = Bug AND priority in (P0,P1) AND statusCategory != Done)"
+    "conditionalInputValueDescription" : "JQL (e.g. issuetype = Bug AND priority in (P0,P1) AND statusCategory != Done)",
+    "description": "Short description for the data point",
+    "detailedDescription": "Short Description for data point here \n\n**How it's calculated:** Idea about the calculation of the data point\n\n**Prerequisites:** Prerequisites if any for calculation of data point"
   },
   {
     "id": "65155fa9d1b0fbf98d3a190e",
@@ -209,6 +249,8 @@
     "dataSourceIdentifier": "jira",
     "dataSourceLocationIdentifier": "jira_issues_open_close_ratio",
     "isConditional": true,
-    "conditionalInputValueDescription" : "JQL (e.g issuetype = Bug AND priority in (P0,P1) AND created >= -90d)"
+    "conditionalInputValueDescription" : "JQL (e.g issuetype = Bug AND priority in (P0,P1) AND created >= -90d)",
+    "description": "Short description for the data point",
+    "detailedDescription": "Short Description for data point here \n\n**How it's calculated:** Idea about the calculation of the data point\n\n**Prerequisites:** Prerequisites if any for calculation of data point"
   }
 ]
