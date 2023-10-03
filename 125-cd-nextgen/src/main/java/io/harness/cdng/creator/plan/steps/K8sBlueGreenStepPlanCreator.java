@@ -10,16 +10,25 @@ package io.harness.cdng.creator.plan.steps;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.k8s.K8sBlueGreenStep;
 import io.harness.cdng.k8s.K8sBlueGreenStepNode;
+import io.harness.cdng.k8s.asyncsteps.K8sBlueGreenStepV2;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import java.util.Set;
 
 @OwnedBy(CDP)
 public class K8sBlueGreenStepPlanCreator extends CDPMSStepPlanCreatorV2<K8sBlueGreenStepNode> {
+  @Inject private CDFeatureFlagHelper featureFlagService;
+
   @Override
   public Set<String> getSupportedStepTypes() {
     return Sets.newHashSet(StepSpecTypeConstants.K8S_BLUE_GREEN_DEPLOY);
@@ -33,5 +42,25 @@ public class K8sBlueGreenStepPlanCreator extends CDPMSStepPlanCreatorV2<K8sBlueG
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, K8sBlueGreenStepNode stepElement) {
     return super.createPlanForField(ctx, stepElement);
+  }
+
+  @Override
+  public StepType getStepSpecType(PlanCreationContext ctx, K8sBlueGreenStepNode stepElement) {
+    if (featureFlagService.isEnabled(
+            ctx.getMetadata().getAccountIdentifier(), FeatureName.CDS_K8S_ASYNC_STEP_STRATEGY)) {
+      return K8sBlueGreenStepV2.STEP_TYPE;
+    } else {
+      return K8sBlueGreenStep.STEP_TYPE;
+    }
+  }
+
+  @Override
+  public String getFacilitatorType(PlanCreationContext ctx, K8sBlueGreenStepNode stepElement) {
+    if (featureFlagService.isEnabled(
+            ctx.getMetadata().getAccountIdentifier(), FeatureName.CDS_K8S_ASYNC_STEP_STRATEGY)) {
+      return OrchestrationFacilitatorType.ASYNC;
+    } else {
+      return OrchestrationFacilitatorType.TASK_CHAIN;
+    }
   }
 }

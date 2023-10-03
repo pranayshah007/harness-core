@@ -52,6 +52,7 @@ import io.harness.cdng.k8s.K8sCanaryStep;
 import io.harness.cdng.k8s.K8sRollingRollbackStep;
 import io.harness.cdng.k8s.K8sRollingRollbackStepV2;
 import io.harness.cdng.k8s.K8sRollingStep;
+import io.harness.cdng.k8s.asyncsteps.K8sBlueGreenStepV2;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStep;
 import io.harness.cdng.serverless.container.steps.ServerlessAwsLambdaDeployV2Step;
 import io.harness.cdng.ssh.CommandStep;
