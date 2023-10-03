@@ -67,15 +67,15 @@ spec:
         resources:
           {{- toYaml .Values.resources | nindent 12 }}
         env:
-          {{- include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 10 }}
-          {{- include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "LOCK_CONFIG_REDIS_USERNAME" "passwordVariableName" "LOCK_CONFIG_REDIS_PASSWORD") | indent 10 }}
-          {{- include "harnesscommon.dbconnection.mongoEnv" . | indent 10 }}
+          {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 10 }}
+          {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "LOCK_CONFIG_REDIS_USERNAME" "passwordVariableName" "LOCK_CONFIG_REDIS_PASSWORD") | indent 10 }}
+          {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" $) | indent 10 }}
           - name: MONGO_URI
-            value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "notifications" "context" $) }}
+            value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "database" "notifications" "ctx" $) }}
           - name: AUDIT_MONGO_URI
-            value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "audits" "context" $) }}
+            value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "database" "audits" "ctx" $) }}
           - name: RESOURCE_GROUP_MONGO_URI
-            value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "resource-groups" "context" $) }}
+            value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "database" "resource-groups" "ctx" $) }}
           {{- if .Values.extraEnvVars }}
             {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 10 }}
           {{- end }}
@@ -92,12 +92,6 @@ spec:
         {{- if .Values.global.smtpCreateSecret.enabled }}
         - secretRef:
             name: smtp-secret
-        {{- end }}
-        {{- if .Values.global.secrets.app.external.enabled }}
-        {{- if .Values.global.secrets.app.external.kind.externalSecrets }}
-        - secretRef:
-            name: platform-service-external-secret
-        {{- end }}
         {{- end }}
         readinessProbe:
           httpGet:

@@ -5,24 +5,6 @@ global:
   commonAnnotations: {}
   commonLabels: {}
   kubeVersion: ""
-  secrets:
-    app:
-      external:
-        ## if FALSE, Generate all secrets within K8s Namespace
-        ## If TRUE, use one of the followings kids to inject
-        enabled: false 
-        kind:
-          # use ExternalSecrets Operator
-          externalSecrets: false 
-          # Use CSI Driver volume mount
-          csiSecretDriver: false          
-    database:
-      external:
-        enabled: false
-        kind:
-          externalSecrets: false
-          csiSecretDriver: false 
-  useExternalSecrets: false
   loadbalancerURL: "http://test/abc"
   imagePullSecrets: []
   stackDriverLoggingEnabled: false
@@ -33,6 +15,7 @@ global:
     SMTP_USERNAME: ""
     SMTP_USE_SSL: "true"
     SMTP_PORT: "465"
+
   database:
     postgres:
       ## - installed = true if installed within cluster
@@ -59,6 +42,24 @@ global:
       userKey: ""
       passwordKey: ""
       extraArgs: ""
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              MONGO_USER: ""
+              MONGO_PASSWORD": ""
+        secretManagement: 
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                MONGO_USER:
+                  name: ""
+                  property: ""
+                MONGO_PASSWORD":
+                  name: ""
+                  property: ""
     timescaledb:
       installed: true
       protocol: "jdbc:postgresql"
@@ -70,7 +71,7 @@ global:
       passwordKey: ""
       extraArgs: ""
     redis:
-      installed: true
+      installed: false
       protocol: "redis"
       # --  provide default values if redis.installed is set to false
       hosts:
@@ -79,6 +80,32 @@ global:
       userKey: "redis-user"
       passwordKey: "redis-password"
       extraArgs: ""
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              EVENTS_FRAMEWORK_REDIS_USERNAME: ""
+              EVENTS_FRAMEWORK_REDIS_PASSWORD: ""
+              LOCK_CONFIG_REDIS_USERNAME: ""
+              LOCK_CONFIG_REDIS_PASSWORD: ""
+        secretManagement: 
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                EVENTS_FRAMEWORK_REDIS_USERNAME:
+                  name: ""
+                  property: ""
+                EVENTS_FRAMEWORK_REDIS_PASSWORD:
+                  name: ""
+                  property: ""
+                LOCK_CONFIG_REDIS_USERNAME:
+                  name: ""
+                  property: ""
+                LOCK_CONFIG_REDIS_PASSWORD:
+                  name: ""
+                  property: ""
   ingress:
     # -- create ingress objects
     enabled: false
@@ -104,6 +131,68 @@ global:
     virtualService:
       gateways:
       hosts:
+
+redis:
+  protocol: ""
+  hosts: []
+  secretName: ""
+  userKey: ""
+  passwordKey: ""
+  extraArgs: ""
+  secrets:
+    kubernetesSecrets:
+      - secretName: ""
+        keys:
+          EVENTS_FRAMEWORK_REDIS_USERNAME: ""
+          EVENTS_FRAMEWORK_REDIS_PASSWORD: ""
+          LOCK_CONFIG_REDIS_USERNAME: ""
+          LOCK_CONFIG_REDIS_PASSWORD: ""
+    secretManagement: 
+      externalSecretsOperator:
+        - secretStore:
+            name: ""
+            kind: ""
+          remoteKeys:
+            EVENTS_FRAMEWORK_REDIS_USERNAME:
+              name: ""
+              property: ""
+            EVENTS_FRAMEWORK_REDIS_PASSWORD:
+              name: ""
+              property: ""
+            LOCK_CONFIG_REDIS_USERNAME:
+              name: ""
+              property: ""
+            LOCK_CONFIG_REDIS_PASSWORD:
+              name: ""
+              property: ""
+
+mongo:
+  protocol: "mongodb"
+  hosts: []
+  secretName: ""
+  userKey: ""
+  passwordKey: ""
+  extraArgs: ""
+  secrets:
+    kubernetesSecrets:
+      - secretName: ""
+        keys:
+          MONGO_USER: ""
+          MONGO_PASSWORD": ""
+    secretManagement: 
+      externalSecretsOperator:
+        - secretStore:
+            name: ""
+            kind: ""
+          remoteKeys:
+            MONGO_USER:
+              name: ""
+              property: ""
+            MONGO_PASSWORD":
+              name: ""
+              property: ""
+
+
 
 replicaCount: 1
 maxSurge: 1
