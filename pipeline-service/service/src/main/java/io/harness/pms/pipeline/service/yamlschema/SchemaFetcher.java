@@ -76,17 +76,21 @@ public class SchemaFetcher {
 
   private JsonNode getPipelineStaticSchema(String version) throws IOException {
     String env = System.getenv("ENV");
-    if (PREQA.equals(env)) {
-      return fetchSchemaFromRepo(EntityType.PIPELINES, version);
-    }
+    //    if (PREQA.equals(env)) {
+    //      return fetchSchemaFromRepo(EntityType.PIPELINES, version);
+    //    }
     if (version.equals(VERSION_V0)) {
+      log.info("version - " + VERSION_V0);
       if (null == pipelineStaticSchemaV0) {
         pipelineStaticSchemaV0 = fetchFile(PIPELINE_JSON_PATH_V0);
+        log.info(pipelineStaticSchemaV0.toString());
       }
       return pipelineStaticSchemaV0;
     } else if (version.equals(VERSION_V1)) {
+      log.info("version - " + VERSION_V1);
       if (null == pipelineStaticSchemaV1) {
         pipelineStaticSchemaV1 = fetchFile(PIPELINE_JSON_PATH_V1);
+        log.info(pipelineStaticSchemaV1.toString());
       }
       return pipelineStaticSchemaV1;
     } else {
