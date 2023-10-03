@@ -141,6 +141,7 @@ Create the name of the delegate upgrader image to use
 
 {{/*
 Manage Migrator Secrets
+
 USAGE:
 {{- "migrator.generateSecrets" (dict "ctx" $)}}
 */}}

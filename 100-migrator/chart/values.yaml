@@ -53,6 +53,7 @@ global:
     timescaledb:
       installed: true
       protocol: "jdbc:postgresql"
+      sslEnabled: true
       # --  provide default values if mongo.installed is set to false
       hosts:
         - timescaledb-single-chart:5432
@@ -98,8 +99,6 @@ global:
         kubernetesSecrets:
           - secretName: ""
             keys:
-              REDIS_USERNAME: ""
-              REDIS_PASSWORD: ""
               EVENTS_FRAMEWORK_REDIS_USERNAME: ""
               EVENTS_FRAMEWORK_REDIS_PASSWORD: ""
         secretManagement: 
@@ -108,12 +107,6 @@ global:
                 name: ""
                 kind: ""
               remoteKeys:
-                REDIS_USERNAME:
-                  name: ""
-                  property: ""
-                REDIS_PASSWORD:
-                  name: ""
-                  property: ""
                 EVENTS_FRAMEWORK_REDIS_USERNAME:
                   name: ""
                   property: ""
@@ -147,8 +140,22 @@ global:
       hosts:
   mongoSSL: false
   license:
-    cg: ''
+    cg: 'a'
     ng: ''
+    secrets:
+      kubernetesSecrets:
+        - secretName: ""
+          keys:
+            CG_LICENSE: ""
+      secretManagement: 
+        externalSecretsOperator:
+          - secretStore:
+              name: ""
+              kind: ""
+            remoteKeys:
+              CG_LICENSE:
+                name: ""
+                property: ""
   cd:
     enabled: false
   ci:
@@ -198,8 +205,6 @@ redis:
     kubernetesSecrets:
       - secretName: ""
         keys:
-          REDIS_USERNAME: ""
-          REDIS_PASSWORD": ""
           EVENTS_FRAMEWORK_REDIS_USERNAME: ""
           EVENTS_FRAMEWORK_REDIS_PASSWORD: ""
     secretManagement: 
@@ -208,12 +213,6 @@ redis:
             name: ""
             kind: ""
           remoteKeys:
-            REDIS_USERNAME:
-              name: ""
-              property: ""
-            REDIS_PASSWORD":
-              name: ""
-              property: ""
             EVENTS_FRAMEWORK_REDIS_USERNAME:
               name: ""
               property: ""
@@ -779,14 +778,16 @@ java17flags: ""
 secrets:
   default:
     LOG_STREAMING_SERVICE_TOKEN: c76e567a-b341-404d-a8dd-d9738714eb82
+    VERIFICATION_SERVICE_SECRET: 59MR5RlVARcdH7zb7pNx6GzqiglBmXR8
     MONGO_SSL_CA_TRUST_STORE_PATH: /opt/harness/keystore.jks
     MONGO_SSL_CA_TRUST_STORE_PASSWORD: password
-    VERIFICATION_SERVICE_SECRET: 59MR5RlVARcdH7zb7pNx6GzqiglBmXR8
   kubernetesSecrets:
   - secretName: ""
     keys:
       LOG_STREAMING_SERVICE_TOKEN: ""
       VERIFICATION_SERVICE_SECRET: ""
+      MONGO_SSL_CA_TRUST_STORE_PATH: ""
+      MONGO_SSL_CA_TRUST_STORE_PASSWORD: ""
   secretManagement: 
     externalSecretsOperator:
     - secretStore:
@@ -797,5 +798,11 @@ secrets:
           name: ""
           property: ""
         VERIFICATION_SERVICE_SECRET:
+          name: ""
+          property: ""
+        MONGO_SSL_CA_TRUST_STORE_PATH:
+          name: ""
+          property: ""
+        MONGO_SSL_CA_TRUST_STORE_PASSWORD:
           name: ""
           property: ""

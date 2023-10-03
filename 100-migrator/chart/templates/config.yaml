@@ -55,7 +55,6 @@ data:
   MONGO_SSL_CONFIG: '{{ .Values.config.MONGO_SSL_CONFIG }}'
   ENABLE_ITERATORS: '{{ .Values.config.ENABLE_ITERATORS }}'
   ITERATOR_CONFIG_PATH: '{{ .Values.config.ITERATOR_CONFIG_PATH }}'
-  LICENSE_INFO: '{{ .Values.config.LICENSE_INFO | default .Values.global.license.cg }}'
   ENABLE_AUDIT: 'true'
   AUDIT_CLIENT_BASEURL: {{ .Values.config.AUDIT_CLIENT_BASEURL | default "http://platform-service:9005/api/" }}
   TEMPLATE_SERVICE_ENDPOINT: {{ .Values.config.TEMPLATE_SERVICE_ENDPOINT | default "http://template-service:15002/api/" }}
