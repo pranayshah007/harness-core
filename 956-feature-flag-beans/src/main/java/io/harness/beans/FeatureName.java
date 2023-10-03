@@ -451,7 +451,6 @@ public enum FeatureName {
   HELM_MERGE_CAPABILITIES("Add helm merge capabilities", HarnessTeam.CDP),
   HELM_STEADY_STATE_CHECK_1_16,
   HELM_VERSION_3_8_0,
-  HELP_PANEL,
   HIDE_ABORT,
   HONOR_DELEGATE_SCOPING,
   HOSTED_BUILDS("Used to enabled Hosted builds in paid accounts", HarnessTeam.CI),
