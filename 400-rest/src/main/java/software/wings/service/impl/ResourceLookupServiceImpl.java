@@ -360,7 +360,7 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
     pageRequest.addOrder(ResourceLookupKeys.resourceName, ASC);
     resourceLookupFilterHelper.addResourceLookupFiltersToPageRequest(pageRequest, filter);
     PageResponse<ResourceLookup> pageResponse;
-    if (hitSecondary) {
+    if (featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, accountId) && hitSecondary) {
       pageResponse = wingsPersistence.querySecondary(ResourceLookup.class, pageRequest);
     } else {
       pageResponse = wingsPersistence.query(ResourceLookup.class, pageRequest);
@@ -441,7 +441,7 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
       }
     }
 
-    if (accountId != null && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, accountId)
+    if (accountId != null && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION_V2, accountId)
         && hitSecondary) {
       if (addAccountFilterAutomatically && !accountIdPresentInPageRequest(request)) {
         request.addFilter("accountId", EQ, accountId);
