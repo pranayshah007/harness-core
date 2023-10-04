@@ -25,7 +25,9 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.gitops.githubrestraint.services.GithubRestraintInstanceService;
 import io.harness.cdng.gitops.steps.GitOpsStepHelper;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
@@ -112,6 +114,7 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepHelper stepHelper;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   private NGLogCallback getLogCallback(Ambiance ambiance, boolean shouldOpenStream) {
     return new NGLogCallback(logStreamingStepClientFactory, ambiance, null, shouldOpenStream);
@@ -201,6 +204,17 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
       Map<String, Object> constraintContext = populateConstraintContext(constraintUnit, releaseEntityId);
       logCallback.saveExecutionLog(
           String.format("Trying to acquire lock on token for %s operation", CONSTRAINT_OPERATION));
+
+      if (!cdFeatureFlagHelper.isEnabled(
+              AmbianceUtils.getAccountId(ambiance), FeatureName.GITOPS_GITHUB_RESTRAINT_FOR_STEPS)) {
+        String taskId =
+            queueDelegateTask(ambiance, stepParameters, releaseRepoOutcome, gitOpsSpecParams, connectorInfoDTO);
+        return AsyncChainExecutableResponse.newBuilder()
+            .addAllLogKeys(getLogKeys(ambiance))
+            .setCallbackId(taskId)
+            .setChainEnd(true)
+            .build();
+      }
 
       try {
         Consumer.State state = constraint.registerConsumer(

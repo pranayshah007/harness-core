@@ -26,8 +26,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.gitops.githubrestraint.services.GithubRestraintInstanceService;
 import io.harness.cdng.gitops.revertpr.RevertPROutcome;
 import io.harness.cdng.gitops.steps.GitOpsStepHelper;
@@ -126,6 +128,7 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
   @Inject private GithubRestraintInstanceService githubRestraintInstanceService;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepHelper stepHelper;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType(GITOPS_MERGE_PR.getYamlType()).setStepCategory(StepCategory.STEP).build();
@@ -190,6 +193,17 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
     Map<String, Object> constraintContext = populateConstraintContext(constraintUnit, releaseEntityId);
     logCallback.saveExecutionLog(
         String.format("Trying to acquire lock on token for %s operation", CONSTRAINT_OPERATION));
+
+    if (!cdFeatureFlagHelper.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.GITOPS_GITHUB_RESTRAINT_FOR_STEPS)) {
+      String taskId =
+          queueDelegateTask(ambiance, gitOpsSpecParams, releaseRepoOutcome, connectorInfoDTO, stepParameters);
+      return AsyncChainExecutableResponse.newBuilder()
+          .addAllLogKeys(getLogKeys(ambiance))
+          .setCallbackId(taskId)
+          .setChainEnd(true)
+          .build();
+    }
 
     try {
       Consumer.State state = constraint.registerConsumer(

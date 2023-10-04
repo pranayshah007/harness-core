@@ -30,8 +30,10 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.gitops.githubrestraint.services.GithubRestraintInstanceService;
 import io.harness.cdng.gitops.steps.GitOpsStepHelper;
 import io.harness.cdng.gitops.steps.GitopsClustersOutcome;
@@ -84,7 +86,6 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
-import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.security.PmsSecurityContextEventGuard;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
@@ -132,6 +133,7 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
   @Inject private GithubRestraintInstanceService githubRestraintInstanceService;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepHelper stepHelper;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -175,6 +177,17 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
     ConstraintUnit constraintUnit = new ConstraintUnit(constraintUnitIdentifier);
 
     Map<String, Object> constraintContext = populateConstraintContext(constraintUnit, releaseEntityId);
+
+    if (!cdFeatureFlagHelper.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.GITOPS_GITHUB_RESTRAINT_FOR_STEPS)) {
+      String taskId =
+          queueDelegateTask(ambiance, stepParameters, releaseRepoOutcome, gitOpsSpecParams, connectorInfoDTO);
+      return AsyncChainExecutableResponse.newBuilder()
+          .addAllLogKeys(getLogKeys(ambiance))
+          .setCallbackId(taskId)
+          .setChainEnd(true)
+          .build();
+    }
 
     try {
       Consumer.State state = constraint.registerConsumer(
