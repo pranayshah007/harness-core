@@ -59,11 +59,9 @@ public class TemplateRefHelper {
     Map<FQN, Object> fqnObjectMap = FQNMapGenerator.generateFQNMap(jsonNode);
     Set<FQN> fqnSet = new LinkedHashSet<>(fqnObjectMap.keySet());
     for (FQN key : fqnSet) {
-      if (key.getFqnList().size() >= 2) {
-        List<FQNNode> fqnList = new ArrayList<>(key.getFqnList());
-        if (hasTemplateRef(fqnList, fqnObjectMap, key)) {
-          return true;
-        }
+      List<FQNNode> fqnList = new ArrayList<>(key.getFqnList());
+      if (hasTemplateRef(fqnList, fqnObjectMap, key)) {
+        return true;
       }
     }
     return false;
@@ -74,9 +72,12 @@ public class TemplateRefHelper {
         && YAMLFieldNameConstants.TEMPLATE.equals(((JsonNode) fqnObjectMap.get(key)).asText())) {
       return true;
     }
-    FQNNode lastNode = fqnList.get(fqnList.size() - 1);
-    FQNNode secondLastNode = fqnList.get(fqnList.size() - 2);
-    return TEMPLATE_REF.equals(lastNode.getKey()) && TEMPLATE.equals(secondLastNode.getKey());
+    if (fqnList.size() >= 2) {
+      FQNNode lastNode = fqnList.get(fqnList.size() - 1);
+      FQNNode secondLastNode = fqnList.get(fqnList.size() - 2);
+      return TEMPLATE_REF.equals(lastNode.getKey()) && TEMPLATE.equals(secondLastNode.getKey());
+    }
+    return false;
   }
 
   public boolean hasTemplateRefOrCustomDeploymentRef(String yaml) {

@@ -78,17 +78,24 @@ public class FQNMapGenerator {
     HashSet<String> expressions = new HashSet<>();
     Set<String> fieldNames = new LinkedHashSet<>();
     yamlMap.fieldNames().forEachRemaining(fieldNames::add);
-    String topKey = fieldNames.iterator().next();
-
-    if (keepUuidFields && topKey.equals(UUID_FIELD_NAME) && fieldNames.size() > 1) {
-      topKey = fieldNames.stream().filter(o -> !o.equals(UUID_FIELD_NAME)).findAny().get();
-    }
-    FQNNode startNode = FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(topKey).build();
-    FQN currentFQN = FQN.builder().fqnList(Collections.singletonList(startNode)).build();
-
+    String topKey;
     Map<FQN, Object> res = new LinkedHashMap<>();
+    // Generate fqn for each fieldName
+    for (String fieldName : fieldNames) {
+      topKey = fieldName;
+      if (keepUuidFields && topKey.equals(UUID_FIELD_NAME)) {
+        continue;
+      }
+      FQNNode startNode = FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(topKey).build();
+      FQN currentFQN = FQN.builder().fqnList(Collections.singletonList(startNode)).build();
 
-    generateFQNMap(yamlMap.get(topKey), currentFQN, res, expressions, keepUuidFields);
+      JsonNode currentJsonNode = yamlMap.get(topKey);
+      if (!currentJsonNode.isObject() && !currentJsonNode.isArray()) {
+        FQNHelper.validateUniqueFqn(currentFQN, currentJsonNode, res, expressions);
+      } else {
+        generateFQNMap(currentJsonNode, currentFQN, res, expressions, keepUuidFields);
+      }
+    }
     return res;
   }
 

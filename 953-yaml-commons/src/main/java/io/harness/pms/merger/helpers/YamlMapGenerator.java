@@ -8,6 +8,7 @@
 package io.harness.pms.merger.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.pms.yaml.YamlNode.UUID_FIELD_NAME;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -17,7 +18,6 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.fqn.FQNNode;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.pms.yaml.YamlNode;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -53,18 +53,25 @@ public class YamlMapGenerator {
       Map<FQN, Object> fqnMap, JsonNode originalYaml, boolean isSanitiseFlow, boolean keepUuidFields) {
     Set<String> fieldNames = new LinkedHashSet<>();
     originalYaml.fieldNames().forEachRemaining(fieldNames::add);
-    String topKey = fieldNames.iterator().next();
-
-    if (keepUuidFields && topKey.equals(YamlNode.UUID_FIELD_NAME) && fieldNames.size() > 1) {
-      topKey = fieldNames.stream().filter(o -> !o.equals(YamlNode.UUID_FIELD_NAME)).findAny().get();
-    }
-
-    FQNNode startNode = FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(topKey).build();
-    FQN currentFQN = FQN.builder().fqnList(Collections.singletonList(startNode)).build();
-
+    String topKey;
     Map<String, Object> tempMap = new LinkedHashMap<>();
-    generateYamlMap(YamlSubMapExtractor.getFQNToObjectSubMap(fqnMap, currentFQN), currentFQN, originalYaml.get(topKey),
-        tempMap, topKey, isSanitiseFlow);
+    // Generate fqn for each fieldName
+    for (String fieldName : fieldNames) {
+      topKey = fieldName;
+      if (keepUuidFields && topKey.equals(UUID_FIELD_NAME)) {
+        continue;
+      }
+
+      FQNNode startNode = FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(topKey).build();
+      FQN currentFQN = FQN.builder().fqnList(Collections.singletonList(startNode)).build();
+
+      if (fqnMap.containsKey(currentFQN)) {
+        tempMap.put(topKey, fqnMap.get(currentFQN));
+      } else {
+        generateYamlMap(YamlSubMapExtractor.getFQNToObjectSubMap(fqnMap, currentFQN), currentFQN,
+            originalYaml.get(topKey), tempMap, topKey, isSanitiseFlow);
+      }
+    }
     return JsonPipelineUtils.asTreeUsingDefaultObjectMapper(tempMap);
   }
 

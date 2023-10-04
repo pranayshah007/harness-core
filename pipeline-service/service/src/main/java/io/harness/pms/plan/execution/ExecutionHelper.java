@@ -318,7 +318,7 @@ public class ExecutionHelper {
         }
         pipelineYamlWithTemplateRef = pipelineYaml;
         templateMergeResponseDTO = getPipelineYamlAndValidateStaticallyReferredEntities(
-            getStagesNodeWrapperFromPipelineYaml(pipelineYaml), pipelineEntity, System.currentTimeMillis());
+            YamlUtils.readAsJsonNode(pipelineYaml), pipelineEntity, System.currentTimeMillis());
         pipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
         break;
       case HarnessYamlVersion.V0:

@@ -42,6 +42,7 @@ import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitx.GitXTransientBranchGuard;
 import io.harness.logging.AutoLogContext;
+import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.MergeHelper;
@@ -321,14 +322,45 @@ public class TemplateMergeServiceHelper {
       }
     }
     String processedYamlVersion = yamlVersion;
-    if (templateEntity != null && HarnessYamlVersion.isV1(yamlVersion)
-        && !HarnessYamlVersion.isV1(templateEntity.getHarnessVersion())) {
-      return MergeTemplateInputsInObject.builder()
-          .resMap(Map.of(templateEntity.getTemplateEntityType().getRootYamlName(), resMap))
-          .processedYamlVersion(HarnessYamlVersion.V0)
-          .build();
+    if (templateEntity != null && HarnessYamlVersion.isV1(yamlVersion)) {
+      if (!HarnessYamlVersion.isV1(templateEntity.getHarnessVersion())) {
+        if (templateEntity.getTemplateEntityType() != TemplateEntityType.PIPELINE_TEMPLATE) {
+          return MergeTemplateInputsInObject.builder()
+              .resMap(Map.of(templateEntity.getTemplateEntityType().getRootYamlName(), resMap))
+              .processedYamlVersion(HarnessYamlVersion.V0)
+              .build();
+        } else {
+          return MergeTemplateInputsInObject.builder()
+              .resMap(getMergedPipelineYaml(resMap, templateEntity.getTemplateEntityType()))
+              .processedYamlVersion(HarnessYamlVersion.V0)
+              .build();
+        }
+      } else if (templateEntity.getTemplateEntityType() == TemplateEntityType.PIPELINE_TEMPLATE) {
+        return MergeTemplateInputsInObject.builder()
+            .resMap(getMergedPipelineYamlV1(resMap))
+            .processedYamlVersion(HarnessYamlVersion.V1)
+            .build();
+      }
     }
     return MergeTemplateInputsInObject.builder().resMap(resMap).processedYamlVersion(processedYamlVersion).build();
+  }
+
+  private Map<String, Object> getMergedPipelineYaml(Map<String, Object> resMap, TemplateEntityType type) {
+    resMap.remove(YAMLFieldNameConstants.VERSION);
+    resMap.remove(YAMLFieldNameConstants.TYPE);
+    resMap.remove(YAMLFieldNameConstants.KIND);
+    return Map.of(type.getRootYamlName(), resMap);
+  }
+
+  private Map<String, Object> getMergedPipelineYamlV1(Map<String, Object> resMap) {
+    resMap.remove(YAMLFieldNameConstants.TYPE);
+    for (Map.Entry<String, Object> entry : resMap.entrySet()) {
+      if (entry.getKey().equals(YAMLFieldNameConstants.STAGES)) {
+        resMap.put(YAMLFieldNameConstants.SPEC, entry);
+        resMap.remove(YAMLFieldNameConstants.STAGES);
+      }
+    }
+    return resMap;
   }
 
   public Map<String, TemplateEntity> getAllTemplatesFromYaml(String accountIdentifier, String orgIdentifier,
