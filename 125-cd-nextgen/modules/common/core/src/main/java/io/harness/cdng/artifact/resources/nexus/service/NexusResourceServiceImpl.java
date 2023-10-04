@@ -55,6 +55,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import software.wings.helpers.ext.nexus.NexusRepositories;
+import software.wings.utils.RepositoryFormat;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -94,6 +95,33 @@ public class NexusResourceServiceImpl implements NexusResourceService {
       String artifactPath, String repositoryFormat, String artifactRepositoryUrl, String orgIdentifier,
       String projectIdentifier, String groupId, String artifactId, String extension, String classifier,
       String packageName, String group) {
+    ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGArtifactConstants.REPOSITORY, repositoryName));
+    switch (RepositoryFormat.valueOf(repositoryFormat)) {
+      case docker:
+        ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGArtifactConstants.ARTIFACT_PATH, artifactPath));
+        ArtifactUtils.validateIfAnyValueAssigned(
+            MutablePair.of(NGArtifactConstants.REPOSITORY_URL, artifactRepositoryUrl),
+            MutablePair.of(NGArtifactConstants.REPOSITORY_PORT, repositoryPort));
+        break;
+
+      case maven:
+        ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGArtifactConstants.GROUP_ID, groupId),
+            MutablePair.of(NGArtifactConstants.ARTIFACT_ID, artifactId));
+        break;
+
+      case npm:
+      case nuget:
+        ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGArtifactConstants.PACKAGE_NAME, packageName));
+        break;
+
+      case raw:
+        ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGArtifactConstants.GROUP, group));
+        break;
+
+      default:
+        throw new IllegalArgumentException("Invalid repository format: " + repositoryFormat);
+    }
+
     NexusConnectorDTO connector = getConnector(nexusConnectorRef);
     BaseNGAccess baseNGAccess =
         getBaseNGAccess(nexusConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);

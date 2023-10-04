@@ -1,8 +1,0 @@
-name: Count of Node Executions
-identifier: node_execution_count
-metricGroup: node_execution_count_metric_group
-metrics:
-  - metricName: node_execution_active_count
-    metricDefinition: Number of active node executions at a given instant
-    type: LastValue
-    unit: "1"
