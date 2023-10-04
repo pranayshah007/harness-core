@@ -9,6 +9,7 @@ package io.harness.pms.execution.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 import static io.harness.yaml.core.MatrixConstants.MATRIX_IDENTIFIER_POSTFIX_FOR_DUPLICATES;
 
@@ -18,6 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
@@ -38,7 +40,6 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.strategy.StrategyValidationUtils;
 
-import com.cronutils.utils.StringUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
@@ -52,6 +53,7 @@ import javax.validation.constraints.NotNull;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @UtilityClass
@@ -448,6 +450,7 @@ public class AmbianceUtils {
     }
     return String.join(".", fqnList);
   }
+
   public boolean isRollbackModeExecution(Ambiance ambiance) {
     ExecutionMode executionMode = ambiance.getMetadata().getExecutionMode();
     return executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK || executionMode == ExecutionMode.PIPELINE_ROLLBACK;
@@ -530,5 +533,16 @@ public class AmbianceUtils {
 
   public int getTotalIteration(Level level) {
     return level.getStrategyMetadata().getTotalIterations();
+  }
+
+  public void enabledJsonSupportFeatureFlag(Ambiance ambiance, Map<String, String> contextMap) {
+    List<String> enabledJsonSupportFeatureFlag = new ArrayList<>();
+    if (AmbianceUtils.shouldUseExpressionEngineV2(ambiance)) {
+      enabledJsonSupportFeatureFlag.add(EngineExpressionEvaluator.PIE_EXECUTION_JSON_SUPPORT);
+    }
+    if (isNotEmpty(enabledJsonSupportFeatureFlag)) {
+      contextMap.put(
+          EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY, String.join(",", enabledJsonSupportFeatureFlag));
+    }
   }
 }
