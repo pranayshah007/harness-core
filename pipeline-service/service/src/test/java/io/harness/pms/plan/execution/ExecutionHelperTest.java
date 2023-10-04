@@ -319,7 +319,7 @@ public class ExecutionHelperTest extends CategoryTest {
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
             pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), mergedYaml, true, false,
-            BOOLEAN_FALSE_VALUE);
+            BOOLEAN_FALSE_VALUE, HarnessYamlVersion.V0);
     ExecArgs execArgs = executionHelper.buildExecutionArgs(pipelineEntity, moduleType, Collections.emptyList(), null,
         executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false, false, null,
         YamlUtils.readAsJsonNode(runtimeInputYaml));
@@ -355,7 +355,7 @@ public class ExecutionHelperTest extends CategoryTest {
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
             pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), mergedYaml, true, false,
-            BOOLEAN_FALSE_VALUE);
+            BOOLEAN_FALSE_VALUE, HarnessYamlVersion.V0);
     ExecArgs execArgs =
         executionHelper.buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(), null,
             executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false, false);
@@ -392,7 +392,7 @@ public class ExecutionHelperTest extends CategoryTest {
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipelineAndAppendInputSetValidators(inlinePipeline.getAccountId(),
             inlinePipeline.getOrgIdentifier(), inlinePipeline.getProjectIdentifier(), mergedYaml, true, false,
-            BOOLEAN_FALSE_VALUE);
+            BOOLEAN_FALSE_VALUE, HarnessYamlVersion.V0);
     ExecArgs execArgs = executionHelper.buildExecutionArgs(inlinePipeline, moduleType, Collections.emptyList(), null,
         executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false, false, null,
         YamlUtils.readAsJsonNode(runtimeInputYaml));
@@ -428,7 +428,7 @@ public class ExecutionHelperTest extends CategoryTest {
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipelineAndAppendInputSetValidators(remotePipeline.getAccountId(),
             remotePipeline.getOrgIdentifier(), remotePipeline.getProjectIdentifier(), mergedYaml, true, false,
-            BOOLEAN_FALSE_VALUE);
+            BOOLEAN_FALSE_VALUE, HarnessYamlVersion.V0);
     ExecArgs execArgs = executionHelper.buildExecutionArgs(remotePipeline, moduleType, Collections.emptyList(), null,
         executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false, false, null,
         YamlUtils.readAsJsonNode(runtimeInputYaml));
@@ -462,7 +462,7 @@ public class ExecutionHelperTest extends CategoryTest {
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
             pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), mergedYaml, true, false,
-            BOOLEAN_FALSE_VALUE);
+            BOOLEAN_FALSE_VALUE, HarnessYamlVersion.V0);
     ExecArgs execArgs = executionHelper.buildExecutionArgs(pipelineEntity, moduleType, Collections.emptyList(), null,
         executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false, false, null,
         YamlUtils.readAsJsonNode(runtimeInputYaml));
@@ -508,7 +508,7 @@ public class ExecutionHelperTest extends CategoryTest {
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
             pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), mergedYaml, true, false,
-            BOOLEAN_FALSE_VALUE);
+            BOOLEAN_FALSE_VALUE, HarnessYamlVersion.V0);
     ExecArgs execArgs = executionHelper.buildExecutionArgs(pipelineEntity, moduleType, Collections.singletonList("s2"),
         null, executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false, false, null,
         YamlUtils.readAsJsonNode(runtimeInputYaml));
@@ -561,7 +561,7 @@ public class ExecutionHelperTest extends CategoryTest {
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntityWithExpressions.getAccountId(),
             pipelineEntityWithExpressions.getOrgIdentifier(), pipelineEntityWithExpressions.getProjectIdentifier(),
-            pipelineYamlWithExpressions, true, true, BOOLEAN_FALSE_VALUE);
+            pipelineYamlWithExpressions, true, true, BOOLEAN_FALSE_VALUE, HarnessYamlVersion.V0);
     ExecArgs execArgs = executionHelper.buildExecutionArgs(pipelineEntityWithExpressions, moduleType,
         Collections.singletonList("s2"), expressionValues, executionTriggerInfo, null,
         RetryExecutionParameters.builder().isRetry(false).build(), false, false, null, null);
@@ -677,7 +677,7 @@ public class ExecutionHelperTest extends CategoryTest {
     doReturn(TemplateMergeResponseDTO.builder().mergedPipelineYaml(resolvedYaml).build())
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipelineAndAppendInputSetValidators(
-            any(), any(), any(), any(), anyBoolean(), anyBoolean(), any());
+            any(), any(), any(), any(), anyBoolean(), anyBoolean(), any(), anyString());
     PipelineEntity pipelineEntity = PipelineEntity.builder()
                                         .accountId(accountId)
                                         .orgIdentifier(orgId)
@@ -802,7 +802,7 @@ public class ExecutionHelperTest extends CategoryTest {
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
             pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), yamlWithTempRef, true, false,
-            BOOLEAN_FALSE_VALUE);
+            BOOLEAN_FALSE_VALUE, HarnessYamlVersion.V0);
     TemplateMergeResponseDTO templateMergeResponseDTO =
         executionHelper.getPipelineYamlAndValidateStaticallyReferredEntities(null, pipelineEntity);
     assertThat(templateMergeResponseDTO.getMergedPipelineYaml())
