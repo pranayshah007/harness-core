@@ -30,8 +30,8 @@ import lombok.experimental.FieldDefaults;
 @JsonInclude(NON_NULL)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-@Schema(name = "ActiveProjectMetrics", description = "This has details for publishing Metrics for Active Project")
-public class ActiveProjectMetricsDTO {
+@Schema(name = "AccountMetrics", description = "This has details for publishing Metrics for Active Project")
+public class AccountMetricsDTO {
   @NotNull List<String> accountIds;
   @NotNull Map<String, Integer> projectCounts;
   @NotNull long startTime;
