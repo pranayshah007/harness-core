@@ -147,8 +147,9 @@ public abstract class WorkflowHandler {
 
     List<String> serviceIds =
         workflow.checkServiceTemplatized() ? new ArrayList<>() : workflow.getOrchestrationWorkflow().getServiceIds();
-    Optional<String> envId =
-        workflow.checkEnvironmentTemplatized() ? Optional.empty() : Optional.of(workflow.getEnvId());
+    Optional<String> envId = (workflow.checkEnvironmentTemplatized() && isNotEmpty(workflow.getEnvId()))
+        ? Optional.empty()
+        : Optional.of(workflow.getEnvId());
 
     if (EmptyPredicate.isNotEmpty(serviceIds)) {
       referencedEntities.addAll(
