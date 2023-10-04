@@ -35,13 +35,14 @@ public class OrganizationInstrumentationHelper extends InstrumentationHelper {
   String ORGANIZATION_NAME = "organization_name";
   String ORGANIZATION_VERSION = "organization_version";
   String HARNESS_MANAGED = "harness_managed";
+  String UNIQUE_ID = "uniqueId";
 
   public CompletableFuture sendOrganizationCreateEvent(Organization organization, String accountId) {
     try {
       if (EmptyPredicate.isNotEmpty(accountId) || !accountId.equals(GLOBAL_ACCOUNT_ID)) {
         HashMap<String, Object> map = new HashMap<>();
         // Added here
-        map.put("uniqueId",organization.getUniqueId());
+        map.put(UNIQUE_ID,organization.getUniqueId());
         map.put(ACCOUNT_ID, organization.getAccountIdentifier());
         map.put(ORGANIZATION_ID, organization.getIdentifier());
         map.put(ORGANIZATION_CREATION_TIME, organization.getCreatedAt());

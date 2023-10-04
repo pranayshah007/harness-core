@@ -36,12 +36,13 @@ public class ProjectInstrumentationHelper extends InstrumentationHelper {
   String PROJECT_VERSION = "project_version";
   String ACCOUNT_ID = "account_id";
   String PROJECT_COLOR = "project_color";
+  String UNIQUE_ID = "uniqueId";
 
   public CompletableFuture sendProjectCreateEvent(Project project, String accountId) {
     try {
       if (EmptyPredicate.isNotEmpty(accountId) || !accountId.equals(GLOBAL_ACCOUNT_ID)) {
         HashMap<String, Object> map = new HashMap<>();
-        map.put("uniqueId", project.getUniqueId());
+        map.put(UNIQUE_ID, project.getUniqueId());
         map.put(ACCOUNT_ID, project.getAccountIdentifier());
         map.put(PROJECT_ID, project.getIdentifier());
         map.put(PROJECT_CREATION_TIME, project.getCreatedAt());

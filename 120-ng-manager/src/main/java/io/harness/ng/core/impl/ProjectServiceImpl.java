@@ -180,7 +180,6 @@ public class ProjectServiceImpl implements ProjectService {
     project.setModules(ModuleType.getModules());
     project.setOrgIdentifier(orgIdentifier);
     project.setAccountIdentifier(accountIdentifier);
-    project.setUniqueId(UUIDGenerator.generateUuid());
     try {
       validate(project);
       Project createdProject = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {

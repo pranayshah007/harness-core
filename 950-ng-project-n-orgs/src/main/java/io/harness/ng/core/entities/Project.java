@@ -105,7 +105,6 @@ public class Project implements PersistentEntity, NGAccountAccess, UniqueIdAware
   }
 
   @Wither @Id @dev.morphia.annotations.Id String id;
-  String uniqueId;
   String accountIdentifier;
 
   String uniqueId;
