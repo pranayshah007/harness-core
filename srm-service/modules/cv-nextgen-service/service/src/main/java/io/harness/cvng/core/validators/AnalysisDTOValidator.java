@@ -8,11 +8,11 @@
 package io.harness.cvng.core.validators;
 
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AnalysisDTOValidator implements ConstraintValidator<AnalysisDTOCheck, Object> {
   private static final Logger logger = LoggerFactory.getLogger(AnalysisDTOValidator.class);
@@ -31,15 +31,15 @@ public class AnalysisDTOValidator implements ConstraintValidator<AnalysisDTOChec
         return false;
       }
       HealthSourceMetricDefinition.AnalysisDTO analysisDTO = (HealthSourceMetricDefinition.AnalysisDTO) o;
-      if (analysisDTO.getLiveMonitoring() == null){
+      if (analysisDTO.getLiveMonitoring() == null) {
         logger.error("Live Monitoring config object is NULL, analysisDTO: {}", analysisDTO);
         return false;
       }
-      if (analysisDTO.getDeploymentVerification() == null){
+      if (analysisDTO.getDeploymentVerification() == null) {
         logger.error("Continuous Verification config object is NULL, analysisDTO: {}", analysisDTO);
         return false;
       }
-      if (analysisDTO.getRiskProfile() == null){
+      if (analysisDTO.getRiskProfile() == null) {
         logger.error("Risk Profile config object is NULL, analysisDTO: {}", analysisDTO);
         return false;
       }
