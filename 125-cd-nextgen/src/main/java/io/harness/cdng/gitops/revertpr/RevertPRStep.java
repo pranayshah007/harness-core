@@ -172,6 +172,18 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
       ConnectorInfoDTO connectorInfoDTO =
           cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance);
 
+      if (!cdFeatureFlagHelper.isEnabled(
+              AmbianceUtils.getAccountId(ambiance), FeatureName.GITOPS_GITHUB_RESTRAINT_FOR_STEPS)) {
+        String taskId =
+            queueDelegateTask(ambiance, stepParameters, releaseRepoOutcome, gitOpsSpecParams, connectorInfoDTO);
+        return AsyncChainExecutableResponse.newBuilder()
+            .addAllUnits(gitOpsSpecParams.getCommandUnits())
+            .addAllLogKeys(getLogKeys(ambiance))
+            .setCallbackId(taskId)
+            .setChainEnd(true)
+            .build();
+      }
+
       String tokenRefIdentifier = GitOpsStepUtils.extractToken(connectorInfoDTO);
       if (tokenRefIdentifier == null) {
         throw new InvalidRequestException("Failed to get token identifier from connector");
@@ -186,18 +198,6 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
       Map<String, Object> constraintContext = populateConstraintContext(constraintUnit, releaseEntityId);
       logCallback.saveExecutionLog(
           String.format("Trying to acquire lock on token for %s operation", CONSTRAINT_OPERATION));
-
-      if (!cdFeatureFlagHelper.isEnabled(
-              AmbianceUtils.getAccountId(ambiance), FeatureName.GITOPS_GITHUB_RESTRAINT_FOR_STEPS)) {
-        String taskId =
-            queueDelegateTask(ambiance, stepParameters, releaseRepoOutcome, gitOpsSpecParams, connectorInfoDTO);
-        return AsyncChainExecutableResponse.newBuilder()
-            .addAllUnits(gitOpsSpecParams.getCommandUnits())
-            .addAllLogKeys(getLogKeys(ambiance))
-            .setCallbackId(taskId)
-            .setChainEnd(true)
-            .build();
-      }
 
       try {
         Consumer.State state = constraint.registerConsumer(

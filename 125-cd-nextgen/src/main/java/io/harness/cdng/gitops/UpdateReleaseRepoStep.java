@@ -165,6 +165,19 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
     ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
     ConnectorInfoDTO connectorInfoDTO =
         cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance);
+
+    if (!cdFeatureFlagHelper.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.GITOPS_GITHUB_RESTRAINT_FOR_STEPS)) {
+      String taskId =
+          queueDelegateTask(ambiance, stepParameters, releaseRepoOutcome, gitOpsSpecParams, connectorInfoDTO);
+      return AsyncChainExecutableResponse.newBuilder()
+          .addAllLogKeys(getLogKeys(ambiance))
+          .setCallbackId(taskId)
+          .addAllUnits(gitOpsSpecParams.getCommandUnits())
+          .setChainEnd(true)
+          .build();
+    }
+
     logCallback.saveExecutionLog(
         String.format("Trying to acquire lock on token for %s operation", CONSTRAINT_OPERATION));
     String tokenRefIdentifier = GitOpsStepUtils.extractToken(connectorInfoDTO);
@@ -179,18 +192,6 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
     ConstraintUnit constraintUnit = new ConstraintUnit(constraintUnitIdentifier);
 
     Map<String, Object> constraintContext = populateConstraintContext(constraintUnit, releaseEntityId);
-
-    if (!cdFeatureFlagHelper.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.GITOPS_GITHUB_RESTRAINT_FOR_STEPS)) {
-      String taskId =
-          queueDelegateTask(ambiance, stepParameters, releaseRepoOutcome, gitOpsSpecParams, connectorInfoDTO);
-      return AsyncChainExecutableResponse.newBuilder()
-          .addAllLogKeys(getLogKeys(ambiance))
-          .setCallbackId(taskId)
-          .addAllUnits(gitOpsSpecParams.getCommandUnits())
-          .setChainEnd(true)
-          .build();
-    }
 
     try {
       Consumer.State state = constraint.registerConsumer(

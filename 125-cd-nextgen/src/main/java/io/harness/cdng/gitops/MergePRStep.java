@@ -176,6 +176,19 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
     ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
     ConnectorInfoDTO connectorInfoDTO =
         cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance);
+
+    if (!cdFeatureFlagHelper.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.GITOPS_GITHUB_RESTRAINT_FOR_STEPS)) {
+      String taskId =
+          queueDelegateTask(ambiance, gitOpsSpecParams, releaseRepoOutcome, connectorInfoDTO, stepParameters);
+      return AsyncChainExecutableResponse.newBuilder()
+          .addAllLogKeys(getLogKeys(ambiance))
+          .setCallbackId(taskId)
+          .addAllUnits(gitOpsSpecParams.getCommandUnits())
+          .setChainEnd(true)
+          .build();
+    }
+
     String tokenRefIdentifier = GitOpsStepUtils.extractToken(connectorInfoDTO);
     if (tokenRefIdentifier == null) {
       throw new InvalidRequestException("Failed to get token identifier from connector");
@@ -191,18 +204,6 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
     Map<String, Object> constraintContext = populateConstraintContext(constraintUnit, releaseEntityId);
     logCallback.saveExecutionLog(
         String.format("Trying to acquire lock on token for %s operation", CONSTRAINT_OPERATION));
-
-    if (!cdFeatureFlagHelper.isEnabled(
-            AmbianceUtils.getAccountId(ambiance), FeatureName.GITOPS_GITHUB_RESTRAINT_FOR_STEPS)) {
-      String taskId =
-          queueDelegateTask(ambiance, gitOpsSpecParams, releaseRepoOutcome, connectorInfoDTO, stepParameters);
-      return AsyncChainExecutableResponse.newBuilder()
-          .addAllLogKeys(getLogKeys(ambiance))
-          .setCallbackId(taskId)
-          .addAllUnits(gitOpsSpecParams.getCommandUnits())
-          .setChainEnd(true)
-          .build();
-    }
 
     try {
       Consumer.State state = constraint.registerConsumer(
