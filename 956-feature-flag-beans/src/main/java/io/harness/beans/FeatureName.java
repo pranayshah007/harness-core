@@ -147,8 +147,6 @@ public enum FeatureName {
       "Makes authenticated custom webhook calls use service principal instead of the principal inherited from the API key",
       HarnessTeam.CDC),
   CDS_NG_TRIGGER_MULTI_ARTIFACTS("Allows creation of multi-region artifact triggers", HarnessTeam.CDC),
-  CDS_OrgAccountLevelServiceEnvEnvGroup(
-      "Support Creation and Use of Org and Account level Services and Environments", HarnessTeam.CDC),
   CDS_PAUSE_JIRA_APPROVAL_CG("Pause CG Jira Approval", HarnessTeam.CDC),
   CDS_PIPELINE_STUDIO_UPGRADES("Enables upgraded one canvas pipeline studio with usability fixes", HarnessTeam.CDP),
   CDS_PROJECT_SCOPED_RESOURCE_CONSTRAINT_QUEUE(
