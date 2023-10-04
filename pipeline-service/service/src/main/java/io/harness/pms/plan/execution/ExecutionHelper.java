@@ -339,12 +339,6 @@ public class ExecutionHelper {
         .build();
   }
 
-  private JsonNode getStagesNodeWrapperFromPipelineYaml(String pipelineYaml) {
-    JsonNode jsonNode = YamlUtils.readAsJsonNode(pipelineYaml);
-    return ((ObjectNode) JsonUtils.readTree("{}"))
-        .set(YAMLFieldNameConstants.SPEC, jsonNode.get(YAMLFieldNameConstants.SPEC));
-  }
-
   private PlanExecutionMetadata buildPlanExecutionMetadata(PipelineEntity pipelineEntity, String mergedRuntimeInputYaml,
       String originalExecutionId, RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser,
       String notes, String executionId, StagesExecutionInfo stagesExecutionInfo, String pipelineYamlWithTemplateRef,
