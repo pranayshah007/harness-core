@@ -8,7 +8,7 @@
 package io.harness.ng.core.scheduler.projectMetricsJob;
 
 import io.harness.account.AccountClient;
-import io.harness.audit.beans.custom.ActiveProjectMetricsDTO;
+import io.harness.audit.beans.custom.AccountMetricsDTO;
 import io.harness.audit.client.api.AuditClientService;
 import io.harness.beans.PageResponse;
 import io.harness.logging.ResponseTimeRecorder;
@@ -50,13 +50,13 @@ public class ActiveProjectMetricsRunnable implements Runnable {
               pageResponse.getResponse().stream().map(AccountDTO::getIdentifier).collect(Collectors.toList()));
           pageIndex++;
           Map<String, Integer> projectCounts = projectService.getProjectsCountPerAccount(accountIds);
-          ActiveProjectMetricsDTO activeProjectMetricsDTO = ActiveProjectMetricsDTO.builder()
-                                                                .projectCounts(projectCounts)
-                                                                .accountIds(accountIds)
-                                                                .startTime(startTime)
-                                                                .endTime(endTime)
-                                                                .build();
-          auditClientService.publishMetrics(activeProjectMetricsDTO);
+          AccountMetricsDTO accountMetricsDTO = AccountMetricsDTO.builder()
+                                                    .projectCounts(projectCounts)
+                                                    .accountIds(accountIds)
+                                                    .startTime(startTime)
+                                                    .endTime(endTime)
+                                                    .build();
+          auditClientService.publishMetrics(accountMetricsDTO);
           log.info("Published metrics for Accounts pageIndex: {}", pageIndex);
 
         } while (true);
