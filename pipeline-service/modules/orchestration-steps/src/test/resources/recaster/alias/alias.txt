@@ -452,3 +452,4 @@ io.harness.delegate.beans.connector.azureconnector.outcome.AzureConnectorOutcome
 io.harness.slsa.beans.SlsaConfig
 io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata
 io.harness.delegate.beans.instancesync.NativeHelmDeploymentOutcomeMetadata
+io.harness.beans.yaml.extended.cache.CachePolicy
