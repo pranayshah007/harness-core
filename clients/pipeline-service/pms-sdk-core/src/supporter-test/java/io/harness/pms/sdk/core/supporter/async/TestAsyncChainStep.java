@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.sdk.core.supporter.async;
+
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import io.harness.annotations.dev.CodePulse;
@@ -43,8 +44,8 @@ public class TestAsyncChainStep implements AsyncChainExecutable<TestStepParamete
   }
 
   @Override
-  public void handleAbort(
-      Ambiance ambiance, TestStepParameters stepParameters, AsyncChainExecutableResponse executableResponse) {
+  public void handleAbort(Ambiance ambiance, TestStepParameters stepParameters,
+      AsyncChainExecutableResponse executableResponse, boolean userMarked) {
     // Do Nothing
   }
 

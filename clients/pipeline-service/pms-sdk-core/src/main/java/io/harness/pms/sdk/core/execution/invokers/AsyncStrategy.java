@@ -21,9 +21,12 @@ import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.execution.AsyncSdkProgressCallback;
 import io.harness.pms.sdk.core.execution.AsyncSdkResumeCallback;
 import io.harness.pms.sdk.core.execution.AsyncSdkSingleCallback;
+import io.harness.pms.sdk.core.execution.ExecuteStrategy;
+import io.harness.pms.sdk.core.execution.InterruptPackage;
 import io.harness.pms.sdk.core.execution.InvokerPackage;
-import io.harness.pms.sdk.core.execution.ProgressableStrategy;
+import io.harness.pms.sdk.core.execution.ProgressPackage;
 import io.harness.pms.sdk.core.execution.ResumePackage;
+import io.harness.pms.sdk.core.execution.SdkNodeExecutionService;
 import io.harness.pms.sdk.core.registries.StepRegistry;
 import io.harness.pms.sdk.core.steps.executables.AsyncExecutable;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
@@ -31,6 +34,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponseMapper;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
+import io.harness.tasks.ProgressData;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
@@ -43,8 +47,9 @@ import lombok.extern.slf4j.Slf4j;
 @SuppressWarnings({"rawtypes", "unchecked"})
 @OwnedBy(PIPELINE)
 @Slf4j
-public class AsyncStrategy extends ProgressableStrategy {
+public class AsyncStrategy implements ExecuteStrategy {
   @Inject private StepRegistry stepRegistry;
+  @Inject private SdkNodeExecutionService sdkNodeExecutionService;
   @Inject private AsyncWaitEngine asyncWaitEngine;
 
   @Override
@@ -124,6 +129,38 @@ public class AsyncStrategy extends ProgressableStrategy {
                                                     .mode(mode)
                                                     .build();
     asyncWaitEngine.waitForAllOn(callback, progressCallback, response.getCallbackIdsList(), response.getTimeout());
+  }
+
+  @Override
+  public void abort(InterruptPackage interruptPackage) {
+    AsyncExecutable asyncExecutable = extractStep(interruptPackage.getAmbiance());
+    asyncExecutable.handleAbort(interruptPackage.getAmbiance(), interruptPackage.getParameters(),
+        interruptPackage.getAsync(), interruptPackage.isUserMarked());
+  }
+
+  @Override
+  public void expire(InterruptPackage interruptPackage) {
+    AsyncExecutable asyncExecutable = extractStep(interruptPackage.getAmbiance());
+    asyncExecutable.handleExpire(
+        interruptPackage.getAmbiance(), interruptPackage.getParameters(), interruptPackage.getAsync());
+  }
+
+  @Override
+  public void failure(InterruptPackage interruptPackage) {
+    AsyncExecutable asyncExecutable = extractStep(interruptPackage.getAmbiance());
+    asyncExecutable.handleFailure(interruptPackage.getAmbiance(), interruptPackage.getParameters(),
+        interruptPackage.getAsync(), interruptPackage.getMetadata());
+  }
+
+  @Override
+  public void progress(ProgressPackage progressPackage) {
+    Ambiance ambiance = progressPackage.getAmbiance();
+    AsyncExecutable asyncExecutable = extractStep(ambiance);
+    ProgressData resp = asyncExecutable.handleProgressAsync(
+        ambiance, progressPackage.getStepParameters(), progressPackage.getProgressData());
+    if (resp != null) {
+      sdkNodeExecutionService.handleProgressResponse(ambiance, resp);
+    }
   }
 
   @Override

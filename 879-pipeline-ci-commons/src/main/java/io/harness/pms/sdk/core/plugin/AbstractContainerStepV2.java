@@ -93,8 +93,9 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
   }
 
   @Override
-  public void handleAbort(Ambiance ambiance, T stepParameters, AsyncExecutableResponse executableResponse) {
-    // can be overriden by child methods
+  public void handleAbort(
+      Ambiance ambiance, T stepParameters, AsyncExecutableResponse executableResponse, boolean userMarked) {
+    // can be override by child methods
   }
 
   @Override

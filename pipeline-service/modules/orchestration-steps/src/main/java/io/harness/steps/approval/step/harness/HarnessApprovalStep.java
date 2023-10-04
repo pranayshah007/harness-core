@@ -257,8 +257,8 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
   }
 
   @Override
-  public void handleAbort(
-      Ambiance ambiance, StepBaseParameters stepParameters, AsyncExecutableResponse executableResponse) {
+  public void handleAbort(Ambiance ambiance, StepBaseParameters stepParameters,
+      AsyncExecutableResponse executableResponse, boolean userMarked) {
     approvalInstanceService.abortByNodeExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
     closeLogStream(ambiance);
   }

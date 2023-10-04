@@ -112,7 +112,8 @@ public class HelmDeployStep extends CdTaskChainExecutable implements NativeHelmS
   }
 
   @Override
-  public ProgressData handleProgress(Ambiance ambiance, StepBaseParameters stepParameters, ProgressData progressData) {
+  public ProgressData handleProgressTaskChain(
+      Ambiance ambiance, StepBaseParameters stepParameters, ProgressData progressData) {
     if (progressData instanceof HelmDeployProgressData) {
       if (cdFeatureFlagHelper.isEnabled(
               AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_SEND_TASK_PROGRESS_NG)) {
@@ -134,7 +135,7 @@ public class HelmDeployStep extends CdTaskChainExecutable implements NativeHelmS
       return null;
     }
 
-    return super.handleProgress(ambiance, stepParameters, progressData);
+    return super.handleProgressTaskChain(ambiance, stepParameters, progressData);
   }
 
   @Override

@@ -237,8 +237,8 @@ public class ResourceRestraintStepTest extends CategoryTest {
     when(resourceRestraintInstanceService.finishInstance(any(), any()))
         .thenReturn(ResourceRestraintInstance.builder().build());
 
-    resourceRestraintStep.handleAbort(
-        ambiance, stepElementParameters, AsyncExecutableResponse.newBuilder().addCallbackIds(generateUuid()).build());
+    resourceRestraintStep.handleAbort(ambiance, stepElementParameters,
+        AsyncExecutableResponse.newBuilder().addCallbackIds(generateUuid()).build(), false);
 
     verify(resourceRestraintInstanceService).finishInstance(any(), any());
   }
@@ -270,7 +270,7 @@ public class ResourceRestraintStepTest extends CategoryTest {
 
     assertThatThrownBy(()
                            -> resourceRestraintStep.handleAbort(ambiance, stepElementParameters,
-                               AsyncExecutableResponse.newBuilder().addCallbackIds("").build()))
+                               AsyncExecutableResponse.newBuilder().addCallbackIds("").build(), false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageStartingWith("Exception");
 
