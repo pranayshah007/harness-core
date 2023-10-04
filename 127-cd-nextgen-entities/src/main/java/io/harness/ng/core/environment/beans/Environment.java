@@ -20,6 +20,7 @@ import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.persistance.GitSyncableEntity;
 import io.harness.mongo.collation.CollationLocale;
 import io.harness.mongo.collation.CollationStrength;
 import io.harness.mongo.index.Collation;
@@ -31,6 +32,7 @@ import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.persistence.PersistentEntity;
+import io.harness.persistence.gitaware.GitAware;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.common.collect.ImmutableList;
@@ -63,7 +65,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("environmentsNG")
 @ChangeDataCapture(table = "environments", dataStore = "ng-harness", fields = {}, handler = "Environments")
 @TypeAlias("io.harness.ng.core.environment.beans.Environment")
-public class Environment implements PersistentEntity, ScopeAware {
+public class Environment implements PersistentEntity, ScopeAware, GitAware, GitSyncableEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -135,5 +137,30 @@ public class Environment implements PersistentEntity, ScopeAware {
 
   public String fetchRef() {
     return IdentifierRefHelper.getRefFromIdentifierOrRef(accountId, orgIdentifier, projectIdentifier, identifier);
+  }
+
+  @Override
+  public String getUuid() {
+    return id;
+  }
+
+  @Override
+  public String getInvalidYamlString() {
+    return yaml;
+  }
+
+  @Override
+  public String getData() {
+    return this.yaml;
+  }
+
+  @Override
+  public void setData(String data) {
+    this.yaml = data;
+  }
+
+  @Override
+  public String getAccountIdentifier() {
+    return accountId;
   }
 }

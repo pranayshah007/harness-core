@@ -12,9 +12,11 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.ng.core.common.beans.NGTag;
 import io.harness.notification.PipelineEventType;
 import io.harness.notification.TriggerExecutionInfo;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -27,11 +29,14 @@ public class WebhookNotificationEvent {
   String orgIdentifier;
   String projectIdentifier;
   String pipelineIdentifier;
+  String pipelineName;
   String planExecutionId;
   String stageIdentifier;
   String stepIdentifier;
   String executionUrl;
   String pipelineUrl;
+  String stepName;
+  String stageName;
   PipelineEventType eventType;
   String nodeStatus;
   TriggerExecutionInfo triggeredBy;
@@ -39,5 +44,7 @@ public class WebhookNotificationEvent {
   String startTime;
   Long startTs;
   String endTime;
+  String errorMessage;
   Long endTs;
+  List<NGTag> tag;
 }

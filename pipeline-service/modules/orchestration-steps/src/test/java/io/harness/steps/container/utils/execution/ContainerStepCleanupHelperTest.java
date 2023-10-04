@@ -8,6 +8,7 @@
 package io.harness.steps.container.utils.execution;
 
 import static io.harness.rule.OwnerRule.IVAN;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 import static io.harness.steps.plugin.infrastructure.ContainerStepInfra.Type.KUBERNETES_DIRECT;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,6 +32,7 @@ import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -136,6 +138,11 @@ public class ContainerStepCleanupHelperTest extends CategoryTest {
         .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG_ID)
         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT_ID)
         .addLevels(Level.newBuilder().setIdentifier("Identifier").build())
+        .setPlanExecutionId("planExecutionId")
+        .setMetadata(ExecutionMetadata.newBuilder()
+                         .setPipelineIdentifier("pipelineIdentifier")
+                         .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                         .build())
         .build();
   }
 }

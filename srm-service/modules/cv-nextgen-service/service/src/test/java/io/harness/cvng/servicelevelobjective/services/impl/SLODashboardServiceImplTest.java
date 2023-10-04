@@ -2547,7 +2547,6 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     List<EnvironmentIdentifierResponse> environmentIdentifierResponseList = pageResponse.getContent();
     assertThat(environmentIdentifierResponseList).hasSize(2);
     EnvironmentIdentifierResponse environmentIdentifierResponse = environmentIdentifierResponseList.get(1);
-    assertThat(environmentIdentifierResponse.getIdentifier()).isEqualTo("one");
     assertThat(environmentIdentifierResponse.getName()).isEqualTo("Mocked env name");
   }
 

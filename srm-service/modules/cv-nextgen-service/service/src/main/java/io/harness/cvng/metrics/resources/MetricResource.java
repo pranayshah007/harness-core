@@ -46,7 +46,7 @@ public class MetricResource {
   public String get() throws IOException {
     final StringWriter writer = new StringWriter();
     Set<String> metrics = new HashSet<>();
-    CVConstants.LEARNING_ENGINE_TASKS_METRIC_LIST.forEach(metricName -> {
+    CVConstants.CUSTOM_METRIC_LIST.forEach(metricName -> {
       metrics.add(metricName);
       metrics.add(ENVIRONMENT + "_" + metricName);
     });

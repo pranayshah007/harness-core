@@ -1006,8 +1006,13 @@ public class NGVaultServiceImpl implements NGVaultService {
                                             .toInstant()
                                             .toEpochMilli()) {
       log.warn("Stopping renewal iterator for vault- {} with id- {}", vaultConnector.getName(), vaultConnector.getId());
-      vaultConnector.setRenewalPaused(Boolean.TRUE);
-      connectorRepository.save(vaultConnector, ChangeType.NONE);
+
+      Criteria criteria = Criteria.where(ConnectorKeys.id).is(vaultConnector.getId());
+
+      Update update = new Update().set(ConnectorKeys.renewalPaused, true);
+
+      connectorRepository.update(vaultConnector.getAccountIdentifier(), vaultConnector.getOrgIdentifier(),
+          vaultConnector.getProjectIdentifier(), criteria, update);
     }
   }
 }

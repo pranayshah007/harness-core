@@ -20,7 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.environment.SystemEnvironment;
 import io.harness.ff.FeatureFlagService;
-import io.harness.logging.AccessTokenBean;
+import io.harness.logging.common.AccessTokenBean;
 
 import software.wings.app.MainConfiguration;
 import software.wings.utils.CdnStorageUrlGenerator;

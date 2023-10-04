@@ -87,5 +87,8 @@ public final class TerraformExceptionConstants {
     public static final String FAIL_TO_INSTALL_PROVIDER = "Failed to install provider";
 
     public static final String ERROR_ASKING_FOR_STATE_MIGRATION = "error asking for state migration";
+
+    public static final String ERROR_ASKING_FOR_STATE_MIGRATION_2 =
+        "Can't ask approval for state migration when interactive input is disabled";
   }
 }

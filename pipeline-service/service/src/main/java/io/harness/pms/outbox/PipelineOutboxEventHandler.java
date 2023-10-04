@@ -160,14 +160,7 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
     NodeExecutionEventData nodeExecutionEventData =
         NodeExecutionEventUtils.mapPipelineStartEventToNodeExecutionEventData(pipelineStartEvent);
 
-    Principal principal = null;
-    if (nodeExecutionEventData.getTriggeredBy() != null) {
-      principal = new UserPrincipal(nodeExecutionEventData.getTriggeredBy().getIdentifier(),
-          getIdentifierForPrincipal(nodeExecutionEventData), nodeExecutionEventData.getTriggeredBy().getIdentifier(),
-          nodeExecutionEventData.getAccountIdentifier());
-    }
-
-    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.START, principal);
+    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.START, getPrincipal(nodeExecutionEventData));
   }
 
   private boolean handlePipelineTimeoutEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
@@ -184,7 +177,7 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
     NodeExecutionEventData nodeExecutionEventData =
         NodeExecutionEventUtils.mapPipelineEndEventToNodeExecutionEventData(pipelineEndEvent);
 
-    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.END, null);
+    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.END, getPrincipal(nodeExecutionEventData));
   }
 
   private boolean handleStageStartEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
@@ -192,14 +185,17 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
     NodeExecutionEventData nodeExecutionEventData =
         NodeExecutionEventUtils.mapStageStartEventToNodeExecutionEventData(stageStartEvent);
 
-    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.STAGE_START, null);
+    return publishAuditEntry(
+        outboxEvent, nodeExecutionEventData, Action.STAGE_START, getPrincipal(nodeExecutionEventData));
   }
   private boolean handleStageEndEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
     StageEndEvent stageEndEvent = objectMapper.readValue(outboxEvent.getEventData(), StageEndEvent.class);
+
     NodeExecutionEventData nodeExecutionEventData =
         NodeExecutionEventUtils.mapStageEndEventToNodeExecutionEventData(stageEndEvent);
 
-    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.STAGE_END, null);
+    return publishAuditEntry(
+        outboxEvent, nodeExecutionEventData, Action.STAGE_END, getPrincipal(nodeExecutionEventData));
   }
 
   private boolean handlePipelineAbortEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
@@ -208,14 +204,17 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
     NodeExecutionEventData nodeExecutionEventData =
         NodeExecutionEventUtils.mapPipelineAbortEventToNodeExecutionEventData(pipelineAbortEvent);
 
+    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.ABORT, getPrincipal(nodeExecutionEventData));
+  }
+
+  private Principal getPrincipal(NodeExecutionEventData nodeExecutionEventData) {
     Principal principal = null;
     if (nodeExecutionEventData.getTriggeredBy() != null) {
       principal = new UserPrincipal(nodeExecutionEventData.getTriggeredBy().getIdentifier(),
           getIdentifierForPrincipal(nodeExecutionEventData), nodeExecutionEventData.getTriggeredBy().getIdentifier(),
           nodeExecutionEventData.getAccountIdentifier());
     }
-
-    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.ABORT, principal);
+    return principal;
   }
 
   private boolean publishAuditEntry(

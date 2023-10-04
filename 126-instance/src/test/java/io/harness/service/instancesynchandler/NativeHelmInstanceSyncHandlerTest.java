@@ -18,6 +18,7 @@ import io.harness.InstancesTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata;
@@ -52,6 +53,7 @@ import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 
 @OwnedBy(HarnessTeam.CDP)
 public class NativeHelmInstanceSyncHandlerTest extends InstancesTestBase {
@@ -61,6 +63,8 @@ public class NativeHelmInstanceSyncHandlerTest extends InstancesTestBase {
   private static final String RELEASE_NAME = "releaseName";
   private static final HelmChartInfo HELM_CHART_INFO = HelmChartInfo.builder().build();
   private static final HelmVersion HELM_VERSION = HelmVersion.V3;
+
+  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @InjectMocks private NativeHelmInstanceSyncHandler nativeHelmInstanceSyncHandler;
 
   @Test

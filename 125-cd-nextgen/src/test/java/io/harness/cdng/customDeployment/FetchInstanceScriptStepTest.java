@@ -11,6 +11,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.RISHABH;
 import static io.harness.rule.OwnerRule.SOURABH;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static software.wings.beans.TaskType.FETCH_INSTANCE_SCRIPT_TASK_NG;
 
@@ -59,6 +60,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -258,6 +260,7 @@ public class FetchInstanceScriptStepTest extends CDNGTestBase {
     return Ambiance.newBuilder()
         .putAllSetupAbstractions(setupAbstractions)
         .setStageExecutionId("stageExecutionId")
+        .setMetadata(ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
         .build();
   }
 

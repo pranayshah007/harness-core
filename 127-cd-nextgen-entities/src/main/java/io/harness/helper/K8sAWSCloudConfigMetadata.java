@@ -18,4 +18,5 @@ import lombok.Value;
 @OwnedBy(HarnessTeam.CDP)
 public class K8sAWSCloudConfigMetadata implements K8sCloudConfigMetadata {
   String clusterName;
+  String region;
 }

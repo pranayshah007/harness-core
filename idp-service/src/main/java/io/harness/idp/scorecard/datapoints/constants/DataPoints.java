@@ -41,6 +41,8 @@ public class DataPoints {
   public static final String INVALID_BRANCH_NAME_ERROR = "Invalid branch name provided";
   public static final String SOURCE_LOCATION_ANNOTATION_ERROR =
       "Invalid or missing source-location annotation in the catalog info YAML";
+  public static final String PROJECT_KEY_ANNOTATION_ERROR =
+      "Invalid or missing jira/project-key annotation in the catalog info YAML";
   public static final String NO_PULL_REQUESTS_FOUND = "No pull requests found for branch: %s";
   public static final String INVALID_FILE_NAME_ERROR = "Invalid file name provided";
   public static final String GITHUB_ADMIN_PERMISSION_ERROR = "Github Connector does not have Admin permission";
@@ -48,4 +50,10 @@ public class DataPoints {
   // Kubernetes
   public static final String REPLICAS = "replicas";
   public static final String DAYS_SINCE_LAST_DEPLOYED = "daysSinceLastDeployed";
+
+  // Jira
+  public static final String MEAN_TIME_TO_RESOLVE = "meanTimeToResolve";
+  public static final String ISSUES_COUNT = "issuesCount";
+  public static final String ISSUES_OPEN_CLOSE_RATIO = "issuesOpenCloseRatio";
+  public static final String NO_ISSUES_FOUND = "No issues found";
 }

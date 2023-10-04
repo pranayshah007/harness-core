@@ -144,6 +144,10 @@ public class ServiceElementMapper {
         .deleted(serviceEntity.getDeleted())
         .tags(convertToMap(serviceEntity.getTags()))
         .version(serviceEntity.getVersion())
+        .storeType(serviceEntity.getStoreType())
+        .fallbackBranch(serviceEntity.getFallBackBranch())
+        .connectorRef(serviceEntity.getConnectorRef())
+        .entityGitDetails(getEntityGitDetails(serviceEntity))
         .build();
   }
 

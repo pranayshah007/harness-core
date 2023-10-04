@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verify;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.provision.awscdk.beans.AwsCdkConfig;
 import io.harness.cdng.provision.awscdk.beans.AwsCdkConfig.AwsCdkConfigKeys;
 import io.harness.persistence.HPersistence;
@@ -43,6 +44,7 @@ import org.mockito.junit.MockitoRule;
 public class AwsCdkConfigDALTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock private HPersistence persistence;
+  @Mock private CDExpressionResolver cdExpressionResolver;
   @InjectMocks private final AwsCdkConfigDAL awsCdkConfigDAL = new AwsCdkConfigDAL();
 
   @Test
@@ -75,6 +77,30 @@ public class AwsCdkConfigDALTest extends CategoryTest {
     verify(mockQuery, times(1)).filter(eq(AwsCdkConfigKeys.orgId), eq("org"));
     verify(mockQuery, times(1)).filter(eq(AwsCdkConfigKeys.projectId), eq("project"));
     verify(mockQuery, times(1)).filter(eq(AwsCdkConfigKeys.provisionerIdentifier), eq(provisionerIdentifier));
+    verify(cdExpressionResolver).updateExpressions(any(), eq(awsCdkConfig));
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testDeleteAwsCdkConfig() {
+    String provisionerIdentifier = "provisionerIdentifier";
+    Query mockQuery = mock(Query.class);
+    doReturn(mockQuery).when(persistence).createQuery(any());
+    doReturn(mockQuery).when(mockQuery).filter(any(), any());
+    doReturn(true).when(persistence).delete(eq(mockQuery));
+
+    awsCdkConfigDAL.deleteAwsCdkConfig(getAmbiance(), provisionerIdentifier);
+    verify(persistence, times(1)).createQuery(AwsCdkConfig.class);
+    verify(persistence, times(1)).delete(mockQuery);
+
+    verify(mockQuery, times(1)).filter(eq(AwsCdkConfigKeys.accountId), eq("account"));
+    verify(mockQuery, times(1)).filter(eq(AwsCdkConfigKeys.orgId), eq("org"));
+    verify(mockQuery, times(1)).filter(eq(AwsCdkConfigKeys.projectId), eq("project"));
+    verify(mockQuery, times(1)).filter(eq(AwsCdkConfigKeys.provisionerIdentifier), eq(provisionerIdentifier));
+    verify(mockQuery, times(1)).filter(eq(AwsCdkConfigKeys.stageExecutionId), eq("stageExecutionId"));
+    verify(persistence, times(1)).createQuery(AwsCdkConfig.class);
+    verify(persistence, times(1)).delete(mockQuery);
   }
 
   private Ambiance getAmbiance() {

@@ -23,6 +23,9 @@ import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalSta
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.TARGET_DID_NOT_EXECUTE;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.TARGET_EXECUTION_REQUESTED;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.TRIGGER_CONFIRMATION_SUCCESSFUL;
+import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.TRIGGER_DID_NOT_MATCH_ARTIFACT_JEXL_CONDITION;
+import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.TRIGGER_DID_NOT_MATCH_EVENT_CONDITION;
+import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.TRIGGER_DID_NOT_MATCH_METADATA_CONDITION;
 import static io.harness.ngtriggers.beans.target.TargetType.PIPELINE;
 import static io.harness.pms.contracts.execution.Status.RUNNING;
 import static io.harness.rule.OwnerRule.ADWAIT;
@@ -219,6 +222,23 @@ public class WebhookEventResponseHelperTest extends CategoryTest {
         .isEqualTo(TriggerEventStatus.builder()
                        .status(TriggerEventStatus.FinalResponse.FAILED)
                        .message("Unknown status")
+                       .build());
+
+    // skipped response
+    assertThat(TriggerEventStatusHelper.toStatus(TRIGGER_DID_NOT_MATCH_EVENT_CONDITION))
+        .isEqualTo(TriggerEventStatus.builder()
+                       .status(TriggerEventStatus.FinalResponse.SKIPPED)
+                       .message(TRIGGER_DID_NOT_MATCH_EVENT_CONDITION.getMessage())
+                       .build());
+    assertThat(TriggerEventStatusHelper.toStatus(TRIGGER_DID_NOT_MATCH_METADATA_CONDITION))
+        .isEqualTo(TriggerEventStatus.builder()
+                       .status(TriggerEventStatus.FinalResponse.SKIPPED)
+                       .message(TRIGGER_DID_NOT_MATCH_METADATA_CONDITION.getMessage())
+                       .build());
+    assertThat(TriggerEventStatusHelper.toStatus(TRIGGER_DID_NOT_MATCH_ARTIFACT_JEXL_CONDITION))
+        .isEqualTo(TriggerEventStatus.builder()
+                       .status(TriggerEventStatus.FinalResponse.SKIPPED)
+                       .message(TRIGGER_DID_NOT_MATCH_ARTIFACT_JEXL_CONDITION.getMessage())
                        .build());
   }
 }

@@ -25,8 +25,9 @@ public class PipelineStartEvent extends NodeExecutionEvent {
 
   @Builder
   public PipelineStartEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String planExecutionId, TriggeredInfo triggeredInfo, Long startTs) {
-    super(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId);
+      String pipelineIdentifier, String planExecutionId, TriggeredInfo triggeredInfo, Long startTs,
+      Integer runSequence) {
+    super(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId, runSequence);
     this.triggeredInfo = triggeredInfo;
     this.startTs = startTs;
   }

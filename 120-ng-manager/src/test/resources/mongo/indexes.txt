@@ -30,6 +30,7 @@ connectors {"name": "nextTokenLookupIteration", "background": true} {"nextTokenL
 connectors {"name": "nextTokenRenewIteration", "background": true} {"nextTokenRenewIteration": 1}
 connectors {"name": "type_nextTokenLookupIteration", "background": true} {"type": 1, "nextTokenLookupIteration": 1}
 connectors {"name": "type_nextTokenRenewIteration", "background": true} {"type": 1, "nextTokenRenewIteration": 1}
+credits {"name": "accountIdentifier_creditType_creditStatus", "background": true} {"accountIdentifier": 1, "creditType": 1, "creditStatus": 1}
 credits {"name": "creditStatus_creditExpiryCheckIteration_expiryTime", "background": true} {"creditStatus": 1, "creditExpiryCheckIteration": 1, "expiryTime": 1}
 credits {"name": "creditStatus_creditsSendToSegmentIteration", "background": true} {"creditStatus": 1, "creditsSendToSegmentIteration": 1}
 delayQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
@@ -101,6 +102,7 @@ infrastructures {"name": "accountId_organizationIdentifier_projectIdentifier_env
 instanceDeploymentInfo {"name": "stage_execution_instance_deployment_info_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "envIdentifier": 1, "infraIdentifier": 1, "serviceIdentifier": 1, "stageExecutionId": 1}
 instanceDeploymentInfo {"name": "unique_instance_deployment_info_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "envIdentifier": 1, "infraIdentifier": 1, "serviceIdentifier": 1, "instanceInfo.host": 1}
 instanceNG {"name": "accountId_instanceInfo.Namespace_instanceInfoPodName_createdAt_idx", "background": true} {"accountIdentifier": 1, "instanceInfo.namespace": 1, "instanceInfo.podName": 1, "createdAt": 1}
+instanceNG {"name": "accountId_instanceInfoNamespace_instanceInfoReleaseName_isDeleted_createdAt_idx", "background": true} {"accountIdentifier": 1, "instanceInfo.namespace": 1, "instanceInfo.releaseName": 1, "isDeleted": 1, "createdAt": 1}
 instanceNG {"name": "accountId_isDeleted_createdAt_deletedAt_idx", "background": true} {"accountIdentifier": 1, "isDeleted": 1, "createdAt": 1, "deletedAt": 1}
 instanceNG {"name": "accountId_lastDeployedAt_idx", "background": true} {"accountIdentifier": 1, "lastDeployedAt": 1}
 instanceNG {"name": "accountId_organizationId_projectId_infrastructureMappingId_isDeleted_createdAt_deletedAt_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "infrastructureMappingId": 1, "isDeleted": 1, "createdAt": 1, "deletedAt": 1}
@@ -125,7 +127,7 @@ ipAllowlist {"name": "accountId_allowedSourceType_index", "background": true} {"
 ipAllowlist {"name": "accountId_identifier_unique_index", "unique": true} {"accountIdentifier": 1, "identifier": 1}
 mockRoleAssignments {"name": "uniqueMockRoleAssignment", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "roleAssignment.roleIdentifier": 1, "roleAssignment.resourceGroupIdentifier": 1, "roleAssignment.resourceGroupIdentifier.identifier": 1, "roleAssignment.resourceGroupIdentifier.type": 1}
 moduleLicenses {"name": "accountIdentifier_moduleLicense_query_index", "background": true} {"accountIdentifier": 1}
-moduleLicenses {"name": "moduleType_status_nextIterations", "background": true} {"moduleType": 1, "status": 1, "nextIterations": 1}
+moduleLicenses {"name": "moduleType_status_provisionMonthlyCICreditsIteration", "background": true} {"moduleType": 1, "status": 1, "provisionMonthlyCICreditsIteration": 1}
 moduleVersionInfo {"name": "moduleName_1", "unique": true} {"moduleName": 1}
 ngApiKeys {"name": "list_keys_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "parentIdentifier": 1}
 ngApiKeys {"name": "unique_idx", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "parentIdentifier": 1, "apiKeyType": 1}

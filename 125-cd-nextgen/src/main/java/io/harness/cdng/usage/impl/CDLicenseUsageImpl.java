@@ -17,7 +17,8 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.DISPLAY_NAME;
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.NOT_SUPPORTED_LICENSE_TYPE_MESSAGE;
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.SERVICE_INSTANCES_QUERY_PROPERTY;
-import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.TIME_PERIOD_IN_DAYS;
+import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.TIME_PERIOD_15_DAYS;
+import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.TIME_PERIOD_30_DAYS;
 import static io.harness.licensing.usage.params.filter.LicenseDateUsageReportType.MONTHLY;
 
 import static java.lang.String.format;
@@ -72,16 +73,20 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
@@ -349,11 +354,47 @@ public class CDLicenseUsageImpl implements LicenseUsageInterface<CDLicenseUsageD
         .build();
   }
 
+  private List<ServiceInfraInfo> getDistinctActiveServicesInBatches(String accountIdentifier, long timestamp) {
+    // To prevent query timeouts, fetch distinct services in smaller batches,
+    // splitting the data retrieval into 15-day intervals within the last 30 days.
+    long fifteenDaysBack = getEpochMilliNDaysAgo(timestamp, TIME_PERIOD_15_DAYS);
+    long thirtyDaysBack = getEpochMilliNDaysAgo(timestamp, TIME_PERIOD_30_DAYS);
+
+    Set<ServiceInfraInfo> activeServiceSet = new HashSet<>();
+    // Retrieve services within the time range starting from fifteenDaysBack + 1 (inclusive) up to the given timestamp.
+    // We start from fifteenDaysBack + 1 to avoid counting it twice in the query below.
+    activeServiceSet.addAll(
+        timeScaleDAL.getDistinctServiceWithExecutionInTimeRange(accountIdentifier, fifteenDaysBack + 1, timestamp));
+
+    // Retrive services within the time range starting from thirtyDaysBack up to fifteenDaysBack
+    activeServiceSet.addAll(
+        timeScaleDAL.getDistinctServiceWithExecutionInTimeRange(accountIdentifier, thirtyDaysBack, fifteenDaysBack));
+
+    return new ArrayList<>(activeServiceSet);
+  }
+
+  private List<ServiceInfraInfo> getDistinctActiveServices(String accountIdentifier, long timestamp) {
+    long thirtyDaysBack = getEpochMilliNDaysAgo(timestamp, TIME_PERIOD_30_DAYS);
+
+    try {
+      return timeScaleDAL.getDistinctServiceWithExecutionInTimeRange(accountIdentifier, thirtyDaysBack, timestamp);
+    } catch (Exception e) {
+      Throwable innerCause = e;
+      while (innerCause.getCause() != null) {
+        innerCause = innerCause.getCause();
+      }
+
+      if (innerCause instanceof SocketTimeoutException) {
+        return getDistinctActiveServicesInBatches(accountIdentifier, timestamp);
+      } else {
+        throw e;
+      }
+    }
+  }
+
   private CDLicenseUsageDTO getActiveServicesLicenseUsage(
       String accountIdentifier, ModuleType module, long timestamp, CDUsageRequestParams usageRequest) {
-    long startInterval = getEpochMilliNDaysAgo(timestamp, TIME_PERIOD_IN_DAYS);
-    List<ServiceInfraInfo> activeServiceList =
-        timeScaleDAL.getDistinctServiceWithExecutionInTimeRange(accountIdentifier, startInterval, timestamp);
+    List<ServiceInfraInfo> activeServiceList = getDistinctActiveServices(accountIdentifier, timestamp);
 
     if (CollectionUtils.isEmpty(activeServiceList)) {
       return getEmptyUsageData(accountIdentifier, module, usageRequest);

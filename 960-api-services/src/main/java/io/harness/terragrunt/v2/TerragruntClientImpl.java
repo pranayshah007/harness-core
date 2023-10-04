@@ -17,6 +17,7 @@ import static io.harness.provision.TerragruntConstants.VAR_FILE_FORMAT;
 import static io.harness.terragrunt.v2.TerragruntV2Contants.APPLY;
 import static io.harness.terragrunt.v2.TerragruntV2Contants.DESTROY;
 import static io.harness.terragrunt.v2.TerragruntV2Contants.INIT;
+import static io.harness.terragrunt.v2.TerragruntV2Contants.OUTPUT;
 import static io.harness.terragrunt.v2.TerragruntV2Contants.PLAN;
 import static io.harness.terragrunt.v2.TerragruntV2Contants.WORKSPACE;
 
@@ -164,9 +165,10 @@ public class TerragruntClientImpl implements TerragruntClient {
   @Override
   public CliResponse output(@NotNull TerragruntOutputCliRequest request, @NotNull LogCallback logCallback)
       throws InterruptedException, TimeoutException, IOException {
+    String additionalCliOptions = getAdditionalCliOption(request.getArgs().getAdditionalCliArgs(), OUTPUT);
     String command = TerragruntRunType.RUN_ALL == request.getRunType()
-        ? TerragruntCommandUtils.runAllOutput(request.getTerraformOutputsFile())
-        : TerragruntCommandUtils.output(request.getTerraformOutputsFile());
+        ? TerragruntCommandUtils.runAllOutput(request.getTerraformOutputsFile(), additionalCliOptions)
+        : TerragruntCommandUtils.output(request.getTerraformOutputsFile(), additionalCliOptions);
     log.info("Execute terragrunt output: {}", command);
     return executeCliCommand(command, request, logCallback, new LogCallbackOutputStream(logCallback));
   }

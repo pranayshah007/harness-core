@@ -125,7 +125,7 @@ public class SignupServiceImplTest extends CategoryTest {
     UserInfo newUser = UserInfo.builder().email(EMAIL).build();
 
     doNothing().when(signupValidator).validateSignup(any(SignupDTO.class));
-    when(accountService.createAccount(signupDTO)).thenReturn(accountDTO);
+    when(accountService.createAccount(any(AccountDTO.class))).thenReturn(accountDTO);
 
     Call<RestResponse<UserInfo>> createUserCall = mock(Call.class);
     when(createUserCall.execute()).thenReturn(Response.success(new RestResponse<>(newUser)));
@@ -221,7 +221,7 @@ public class SignupServiceImplTest extends CategoryTest {
 
     doNothing().when(signupValidator).validateEmail(eq(EMAIL));
 
-    when(accountService.createAccount(any(SignupDTO.class))).thenReturn(accountDTO);
+    when(accountService.createAccount(any(AccountDTO.class))).thenReturn(accountDTO);
 
     Call<RestResponse<UserInfo>> createUserCall = mock(Call.class);
     when(createUserCall.execute()).thenReturn(Response.success(new RestResponse<>(newUser)));
@@ -359,7 +359,7 @@ public class SignupServiceImplTest extends CategoryTest {
 
     doNothing().when(signupValidator).validateEmail(eq(NON_LOWERCASE_EMAIL));
 
-    when(accountService.createAccount(any(SignupDTO.class))).thenReturn(accountDTO);
+    when(accountService.createAccount(any(AccountDTO.class))).thenReturn(accountDTO);
 
     Call<RestResponse<UserInfo>> createUserCall = mock(Call.class);
     when(createUserCall.execute()).thenReturn(Response.success(new RestResponse<>(newUser)));

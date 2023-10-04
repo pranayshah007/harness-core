@@ -11,7 +11,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.execution.PlanExecutionExpansion;
 import io.harness.execution.PlanExecutionExpansion.PlanExecutionExpansionKeys;
-import io.harness.plancreator.strategy.StrategyUtils;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
@@ -45,6 +45,7 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
   @Inject PlanExecutionExpansionRepository planExecutionExpansionRepository;
 
   @Inject OrchestrationModuleConfig moduleConfig;
+  @Inject NodeExecutionInfoService nodeExecutionInfoService;
 
   @Override
   public void addStepInputs(Ambiance ambiance, PmsStepParameters stepInputs) {
@@ -62,8 +63,8 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
     }
     Level currentLevel = AmbianceUtils.obtainCurrentLevel(ambiance);
     if (currentLevel != null && AmbianceUtils.hasStrategyMetadata(currentLevel)) {
-      Map<String, Object> strategyMap =
-          StrategyUtils.fetchStrategyObjectMap(currentLevel, AmbianceUtils.shouldUseMatrixFieldName(ambiance));
+      Map<String, Object> strategyMap = nodeExecutionInfoService.fetchStrategyObjectMap(
+          currentLevel, AmbianceUtils.shouldUseMatrixFieldName(ambiance));
       for (Map.Entry<String, Object> entry : strategyMap.entrySet()) {
         String strategyKey = String.format("%s.%s", getExpansionPathUsingLevels(ambiance), entry.getKey());
         if (ClassUtils.isPrimitiveOrWrapper(entry.getValue().getClass())) {

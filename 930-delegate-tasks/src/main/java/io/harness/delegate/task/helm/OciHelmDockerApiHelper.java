@@ -54,13 +54,17 @@ public class OciHelmDockerApiHelper {
     }
 
     decryptEncryptedDetails(ociHelmDockerApiListTagsTaskParams);
+    String repoUrl = ociHelmConnector.getHelmRepoUrl();
     String chartNameNormalized =
         ociHelmApiHelperUtils.normalizeFieldData(ociHelmDockerApiListTagsTaskParams.getChartName());
 
     String credentials = null;
     OciHelmDockerApiRestClient ociHelmDockerApiRestClient;
     try {
-      ociHelmDockerApiRestClient = ociHelmApiHelperUtils.getRestClient(ociHelmConnector.getHelmRepoUrl());
+      //  if repo url contains path info extract it and add it to the chartName
+      chartNameNormalized = ociHelmApiHelperUtils.formatChartNameWithUrlPath(repoUrl, chartNameNormalized);
+
+      ociHelmDockerApiRestClient = ociHelmApiHelperUtils.getRestClient(repoUrl);
     } catch (URISyntaxException e) {
       throw new OciHelmDockerApiException(
           format("URL provided in OCI Helm connector is invalid. %s", e.getMessage()), e);

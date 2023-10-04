@@ -42,6 +42,7 @@ import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 import software.wings.helpers.ext.k8s.request.K8sRollingDeployRollbackTaskParameters;
 import software.wings.helpers.ext.k8s.request.K8sTaskParameters;
 import software.wings.helpers.ext.k8s.response.K8sRollingDeployRollbackResponse;
+import software.wings.helpers.ext.k8s.response.K8sRollingDeployRollbackResponse.K8sRollingDeployRollbackResponseBuilder;
 import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -113,12 +114,16 @@ public class K8sRollingDeployRollbackTaskHandler extends K8sTaskHandler {
       List<K8sPod> pods =
           k8sRollingRollbackBaseHandler.getPods(timeoutInMin, rollbackHandlerConfig, request.getReleaseName());
 
-      K8sRollingDeployRollbackResponse rollbackResponse =
-          K8sRollingDeployRollbackResponse.builder().k8sPodList(pods).build();
+      K8sRollingDeployRollbackResponseBuilder rollbackResponse =
+          K8sRollingDeployRollbackResponse.builder().k8sPodList(pods);
+      if (rollbackHandlerConfig.getPreviousRollbackEligibleRelease() != null) {
+        rollbackResponse.releaseNumber(rollbackHandlerConfig.getPreviousRollbackEligibleRelease().getReleaseNumber());
+      }
+
       k8sRollingRollbackBaseHandler.postProcess(rollbackHandlerConfig, request.getReleaseName());
       waitForSteadyStateLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
       return K8sTaskExecutionResponse.builder()
-          .k8sTaskResponse(rollbackResponse)
+          .k8sTaskResponse(rollbackResponse.build())
           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
           .build();
     } catch (Exception e) {

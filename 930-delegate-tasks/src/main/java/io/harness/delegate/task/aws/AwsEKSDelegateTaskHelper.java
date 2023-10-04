@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.aws;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.aws.AwsEksListClustersResponseDTO.ListClustersCommandStatus.FAILURE;
 import static io.harness.delegate.task.aws.AwsEksListClustersResponseDTO.ListClustersCommandStatus.SUCCESS;
 
@@ -17,7 +18,6 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsListClustersTaskResponse;
@@ -59,8 +59,7 @@ public class AwsEKSDelegateTaskHelper {
     AwsConnectorDTO awsConnectorDTO = awsTaskParams.getAwsConnector();
 
     AwsInternalConfig awsInternalConfig = awsUtils.getAwsInternalConfig(awsConnectorDTO, AWS_DEFAULT_REGION);
-    List<String> awsRegions = awsUtils.listAwsRegionsForGivenAccount(awsInternalConfig);
-
+    List<String> awsRegions = getEligibleAwsRegions(awsTaskParams, awsInternalConfig);
     List<AwsEksListClustersResponseDTO> listClusterResponses =
         awsRegions.stream()
             .map(region -> listEKSClustersForGivenRegion(region, awsInternalConfig))
@@ -80,6 +79,15 @@ public class AwsEKSDelegateTaskHelper {
         .clusters(clusters)
         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
         .build();
+  }
+
+  private List<String> getEligibleAwsRegions(AwsTaskParams awsTaskParams, AwsInternalConfig awsInternalConfig) {
+    if (isNotEmpty(awsTaskParams.getRegion())) {
+      // User has provided AWS region, don't use all regions.
+      return List.of(awsTaskParams.getRegion());
+    }
+
+    return awsUtils.listAwsRegionsForGivenAccount(awsInternalConfig);
   }
 
   private void constructErrorMessageAndThrowException(List<AwsEksListClustersResponseDTO> listClusterResponses) {
@@ -146,7 +154,7 @@ public class AwsEKSDelegateTaskHelper {
       String region, List<String> clusterList, String nextToken, ListClustersResult listClustersResult) {
     if (listClustersResult != null) {
       List<String> clusterNames = listClustersResult.getClusters();
-      if (EmptyPredicate.isNotEmpty(clusterNames)) {
+      if (isNotEmpty(clusterNames)) {
         clusterNames.forEach(clusterName -> clusterList.add(format("%s/%s", region, clusterName)));
       }
       nextToken = listClustersResult.getNextToken();

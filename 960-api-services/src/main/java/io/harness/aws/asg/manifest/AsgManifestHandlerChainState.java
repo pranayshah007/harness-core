@@ -24,6 +24,7 @@ import lombok.Data;
 public class AsgManifestHandlerChainState {
   private String asgName;
   private String launchTemplateVersion;
+  private String launchTemplateName;
   private AutoScalingGroup autoScalingGroup;
   private Map<String, List<String>> asgManifestsDataForRollback = new HashMap<>();
   private String newAsgName;

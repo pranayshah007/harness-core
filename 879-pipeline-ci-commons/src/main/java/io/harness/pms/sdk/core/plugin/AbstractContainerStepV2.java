@@ -17,9 +17,10 @@ import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.execution.CIDelegateTaskExecutor;
 import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logstreaming.LogStreamingHelper;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -29,7 +30,6 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.product.ci.engine.proto.UnitStep;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.StepUtils;
 import io.harness.steps.container.execution.ContainerExecutionConfig;
 import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.steps.plugin.ContainerStepConstants;
@@ -43,7 +43,6 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import io.fabric8.utils.Strings;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -94,8 +93,9 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
   }
 
   @Override
-  public void handleAbort(Ambiance ambiance, T stepParameters, AsyncExecutableResponse executableResponse) {
-    // can be overriden by child methods
+  public void handleAbort(
+      Ambiance ambiance, T stepParameters, AsyncExecutableResponse executableResponse, boolean userMarked) {
+    // can be override by child methods
   }
 
   @Override
@@ -124,9 +124,9 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
   }
 
   private String getLogPrefix(Ambiance ambiance) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance, "STEP");
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    return LogStreamingStepClientFactory.getLogBaseKey(ambiance, StepCategory.STEP.name());
   }
+
   private void abortTasks(List<String> allCallbackIds, String callbackId) {
     List<String> callBackIds =
         allCallbackIds.stream().filter(cid -> !cid.equals(callbackId)).collect(Collectors.toList());

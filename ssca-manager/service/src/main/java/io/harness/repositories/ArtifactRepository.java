@@ -21,8 +21,6 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 @OwnedBy(SSCA)
 public interface ArtifactRepository
     extends PagingAndSortingRepository<ArtifactEntity, String>, ArtifactRepositoryCustom {
-  Optional<ArtifactEntity> findFirstByUrlLike(String url, Sort sort);
-
   Optional<ArtifactEntity> findByAccountIdAndOrgIdAndProjectIdAndOrchestrationId(
       String accountId, String orgId, String projectId, String orchestrationId);
 

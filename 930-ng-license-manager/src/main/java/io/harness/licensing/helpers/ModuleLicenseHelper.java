@@ -22,6 +22,7 @@ import io.harness.licensing.entities.modules.CFModuleLicense;
 import io.harness.licensing.entities.modules.CIModuleLicense;
 import io.harness.licensing.entities.modules.ChaosModuleLicense;
 import io.harness.licensing.entities.modules.IACMModuleLicense;
+import io.harness.licensing.entities.modules.IDPModuleLicense;
 import io.harness.licensing.entities.modules.ModuleLicense;
 import io.harness.licensing.entities.modules.SRMModuleLicense;
 import io.harness.licensing.entities.modules.STOModuleLicense;
@@ -328,6 +329,15 @@ public class ModuleLicenseHelper {
         if (cetLicense.getNumberOfAgents() != null
             && !cetLicense.getNumberOfAgents().equals(currentCETLicense.getNumberOfAgents())) {
           currentCETLicense.setNumberOfAgents(cetLicense.getNumberOfAgents());
+        }
+        break;
+      case IDP:
+        IDPModuleLicense updateIdpModuleLicense = (IDPModuleLicense) update;
+        IDPModuleLicense currentIdpModuleLicense = (IDPModuleLicense) current;
+        if (updateIdpModuleLicense.getNumberOfDevelopers() != null
+            && !updateIdpModuleLicense.getNumberOfDevelopers().equals(
+                currentIdpModuleLicense.getNumberOfDevelopers())) {
+          currentIdpModuleLicense.setNumberOfDevelopers(updateIdpModuleLicense.getNumberOfDevelopers());
         }
         break;
       default:

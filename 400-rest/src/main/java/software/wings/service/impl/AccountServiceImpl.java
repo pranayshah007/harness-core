@@ -658,6 +658,15 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
+  public Boolean updateHarnessSupportAccess(String accountId, boolean isHarnessSupportAccessAllowed) {
+    Account account = get(accountId);
+    account.setHarnessSupportAccessAllowed(isHarnessSupportAccessAllowed);
+    update(account);
+    publishAccountChangeEventViaEventFramework(accountId, UPDATE_ACTION);
+    return true;
+  }
+
+  @Override
   public Account updateDefaultExperience(String accountIdentifier, DefaultExperience defaultExperience) {
     Account account = get(accountIdentifier);
     DefaultExperience oldDefaultExperience = account.getDefaultExperience();
@@ -721,6 +730,7 @@ public class AccountServiceImpl implements AccountService {
     Account account = get(accountId);
     account.setPublicAccessEnabled(publicAccessEnabled);
     update(account);
+    publishAccountChangeEventViaEventFramework(accountId, UPDATE_ACTION);
   }
 
   private void ngAuditAccountDetailsCrossGenerationAccess(
@@ -1114,7 +1124,8 @@ public class AccountServiceImpl implements AccountService {
             .set("whitelistedDomains", account.getWhitelistedDomains())
             .set("smpAccount", account.isSmpAccount())
             .set("isProductLed", account.isProductLed())
-            .set(AccountKeys.publicAccessEnabled, account.isPublicAccessEnabled());
+            .set(AccountKeys.publicAccessEnabled, account.isPublicAccessEnabled())
+            .set(AccountKeys.isHarnessSupportAccessAllowed, account.isHarnessSupportAccessAllowed());
 
     if (null != account.getSessionTimeOutInMinutes()) {
       updateOperations.set(AccountKeys.sessionTimeOutInMinutes, account.getSessionTimeOutInMinutes());

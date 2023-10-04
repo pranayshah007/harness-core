@@ -15,6 +15,7 @@ import io.harness.pms.contracts.execution.ChildExecutableResponse;
 import io.harness.pms.contracts.execution.events.SpawnChildRequest;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.execution.ExecuteStrategy;
+import io.harness.pms.sdk.core.execution.InterruptPackage;
 import io.harness.pms.sdk.core.execution.InvokerPackage;
 import io.harness.pms.sdk.core.execution.ResumePackage;
 import io.harness.pms.sdk.core.execution.SdkNodeExecutionService;
@@ -47,6 +48,21 @@ public class ChildStrategy implements ExecuteStrategy {
     StepResponse stepResponse = childExecutable.handleChildResponse(
         ambiance, resumePackage.getStepParameters(), resumePackage.getResponseDataMap());
     sdkNodeExecutionService.handleStepResponse(ambiance, StepResponseMapper.toStepResponseProto(stepResponse));
+  }
+
+  @Override
+  public void abort(InterruptPackage interruptPackage) {
+    throw new UnsupportedOperationException("Abort not supported for Child Chain");
+  }
+
+  @Override
+  public void expire(InterruptPackage interruptPackage) {
+    throw new UnsupportedOperationException("Expire not supported for Child Chain");
+  }
+
+  @Override
+  public void failure(InterruptPackage interruptPackage) {
+    throw new UnsupportedOperationException("Expire not supported for Child Chain");
   }
 
   @Override

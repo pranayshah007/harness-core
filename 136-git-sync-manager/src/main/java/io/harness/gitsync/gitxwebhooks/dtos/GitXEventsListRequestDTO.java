@@ -17,6 +17,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 
@@ -29,7 +30,9 @@ import lombok.experimental.FieldDefaults;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class GitXEventsListRequestDTO {
   String accountIdentifier;
-  String webhookIdentifier;
+  @Setter String webhookIdentifier;
   Long eventStartTime;
   Long eventEndTime;
+  String repoName;
+  String filePath;
 }

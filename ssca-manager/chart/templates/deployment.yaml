@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ssca-manager
+  namespace: {{ .Release.Namespace }}
+  labels:
+    { { - if .Values.global.commonLabels } }
+      { { - include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 } }
+      { { - end } }
+  { { - if .Values.global.commonAnnotations } }
+  annotations: { { - include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 } }
+  { { - end } }
+spec:
+  selector:
+    matchLabels:
+      app: ssca-manager
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ .Values.maxSurge }}
+      maxUnavailable: {{ .Values.maxUnavailable }}
+  template:
+    metadata:
+      labels:
+        app: ssca-manager
+        harness-team: SSCA
+        harness-module: SSCA
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - ssca-manager
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: ssca-manager
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: ssca-manager
+            - secretRef:
+                name: ssca-manager
+          env:
+            - name: MONGO_URI
+              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "ssca" "context" $) }}
+            - name: JWT_IDENTITY_SERVICE_SECRET
+              value: 'HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU='
+            - name: JWT_AUTH_SECRET
+              value: 'dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq'
+            {{- if .Values.extraEnvVars }}
+            {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 300
+            timeoutSeconds: 5
+            periodSeconds: 60
+            failureThreshold: 2
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 60
+            timeoutSeconds: 5
+            periodSeconds: 5
+          resources:
+            limits:
+              memory: {{ .Values.podMemory }}
+            requests:
+              memory: {{ .Values.podMemory }}
+              cpu: {{ .Values.cpu | quote }}

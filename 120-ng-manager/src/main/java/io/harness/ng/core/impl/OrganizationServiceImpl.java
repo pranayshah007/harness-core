@@ -11,7 +11,6 @@ import static io.harness.NGConstants.ALL_RESOURCES_INCLUDING_CHILD_SCOPES_RESOUR
 import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.enforcement.constants.FeatureRestrictionName.MULTIPLE_ORGANIZATIONS;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -35,7 +34,6 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
-import io.harness.data.structure.UUIDGenerator;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.EntityNotFoundException;
@@ -124,7 +122,6 @@ public class OrganizationServiceImpl implements OrganizationService {
   public Organization create(@AccountIdentifier String accountIdentifier, OrganizationDTO organizationDTO) {
     Organization organization = toOrganization(organizationDTO);
     organization.setAccountIdentifier(accountIdentifier);
-    organization.setUniqueId(UUIDGenerator.generateUuid());
     try {
       validate(organization);
       Organization savedOrganization = saveOrganization(organization);
@@ -284,9 +281,7 @@ public class OrganizationServiceImpl implements OrganizationService {
       if (organization.getVersion() == null) {
         organization.setVersion(existingOrganization.getVersion());
       }
-      if (isNotEmpty(existingOrganization.getUniqueId())) {
-        organization.setUniqueId(existingOrganization.getUniqueId());
-      }
+      organization.setUniqueId(existingOrganization.getUniqueId());
       validate(organization);
       return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         Organization updatedOrganization = organizationRepository.save(organization);
