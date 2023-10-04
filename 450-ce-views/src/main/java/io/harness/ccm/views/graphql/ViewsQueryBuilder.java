@@ -209,80 +209,117 @@ public class ViewsQueryBuilder {
     SelectQuery selectQuery = new SelectQuery();
     selectQuery.addCustomFromTable(cloudProviderTableName);
     List<QLCEViewFieldInput> groupByEntity = getGroupByEntity(groupByList);
+    log.info("groupByEntity: {}", groupByEntity);
+
     List<QLCEViewFieldInput> sharedCostGroupByEntity = getGroupByEntity(sharedCostGroupBy);
+
+    log.info("sharedCostGroupByEntity: {}", sharedCostGroupByEntity);
+
     QLCEViewTimeTruncGroupBy groupByTime = getGroupByTime(groupByList);
+
+    log.info("groupByTime: {}", groupByTime);
+
     boolean isClusterTable = isClusterTable(cloudProviderTableName);
+
+    log.info("isClusterTable: {}", isClusterTable);
     String tableIdentifier = getTableIdentifier(cloudProviderTableName);
+
+    log.info("tableIdentifier: {}", tableIdentifier);
 
     ViewLabelsFlattened viewLabelsFlattened =
         getViewLabelsFlattened(labelsKeyAndColumnMapping, queryParams.getAccountId(), cloudProviderTableName);
 
+    log.info("viewLabelsFlattened: {}", viewLabelsFlattened);
+
     List<ViewField> customFields =
         collectFieldListByIdentifier(rules, filters, groupByEntity, ViewFieldIdentifier.CUSTOM);
 
+    log.info("customFields: {}", customFields);
+
     List<ViewField> businessMapping = collectFieldListByIdentifier(rules, filters, groupByEntity, BUSINESS_MAPPING);
+
+    log.info("businessMapping: {}", businessMapping);
 
     if ((!isApplicationQuery(groupByList) || !isClusterTable) && !isInstanceQuery(groupByList)) {
       modifyQueryWithInstanceTypeFilter(rules, filters, groupByEntity, customFields, businessMapping, selectQuery);
+
+      log.info("No Way: ");
     }
 
     // This indicates that the query is to calculate shared cost
     if (sharedCostBusinessMapping != null) {
       rules = removeSharedCostRules(rules, sharedCostBusinessMapping);
+      log.info("rules: {}", rules);
     }
 
     if (!rules.isEmpty()) {
       selectQuery.addCondition(getConsolidatedRuleCondition(rules, tableIdentifier, viewLabelsFlattened));
+
+      log.info("selectQuery1: {}", selectQuery);
     }
 
     if (!filters.isEmpty()) {
       decorateQueryWithFilters(selectQuery, filters, tableIdentifier, viewLabelsFlattened);
+      log.info("selectQuery2: {}", selectQuery);
     }
 
     if (!inExpressionFilters.isEmpty()) {
       decorateQueryWithInExpressionFilters(
           selectQuery, inExpressionFilters, groupByEntity, tableIdentifier, viewLabelsFlattened);
+      log.info("selectQuery3: {}", selectQuery);
     }
 
     if (!Lists.isNullOrEmpty(sharedCostBusinessMappings)) {
       decorateQueryWithNegateSharedCosts(selectQuery, sharedCostBusinessMappings, tableIdentifier, viewLabelsFlattened);
+      log.info("selectQuery4: {}", selectQuery);
     }
 
     if (!timeFilters.isEmpty()) {
       decorateQueryWithTimeFilters(selectQuery, timeFilters, isClusterTable, tableIdentifier);
+      log.info("selectQuery5: {}", selectQuery);
     }
 
     if (!queryParams.isSkipGroupBy()) {
       if (!Lists.isNullOrEmpty(sharedCostGroupByEntity)) {
         decorateQueryWithGroupByAndColumns(selectQuery, sharedCostGroupByEntity, tableIdentifier, viewLabelsFlattened);
+        log.info("selectQuery6: {}", selectQuery);
       } else {
         decorateQueryWithGroupByAndColumns(selectQuery, groupByEntity, tableIdentifier, viewLabelsFlattened);
+        log.info("selectQuery7: {}", selectQuery);
       }
     }
 
     if (groupByTime != null) {
       if (queryParams.getTimeOffsetInDays() == 0) {
         decorateQueryWithGroupByTime(selectQuery, groupByTime, isClusterTable, tableIdentifier, false);
+        log.info("selectQuery8: {}", selectQuery);
       } else {
         decorateQueryWithGroupByTimeWithOffset(
             selectQuery, groupByTime, isClusterTable, queryParams.getTimeOffsetInDays(), tableIdentifier);
+        log.info("selectQuery9: {}", selectQuery);
       }
     }
 
     if (!Lists.isNullOrEmpty(viewPreferenceAggregations)) {
       decorateQueryWithViewPreferenceAggregations(
           selectQuery, viewPreferenceAggregations, tableIdentifier, viewLabelsFlattened);
+      log.info("selectQuery10: {}", selectQuery);
       aggregations = removeCostAggregationColumn(aggregations);
+      log.info("AfterremovingCostAggregationColumn: {}", aggregations);
     }
     if (!aggregations.isEmpty()) {
       decorateQueryWithAggregations(selectQuery, aggregations, tableIdentifier, false);
+      log.info("selectQuery11: {}", selectQuery);
     }
 
     decorateQueryWithSharedCostAggregations(selectQuery, viewPreferenceAggregations, sharedCostGroupByEntity,
         isClusterTable, tableIdentifier, sharedCostBusinessMapping, viewLabelsFlattened);
 
+    log.info("selectQuery12: {}", selectQuery);
+
     if (!sortCriteriaList.isEmpty()) {
       decorateQueryWithSortCriteria(selectQuery, sortCriteriaList);
+      log.info("selectQuery13: {}", selectQuery);
     }
 
     log.info("Query for view {}", selectQuery);

@@ -554,17 +554,21 @@ public class ViewBillingServiceHelper {
       skipDefaultGroupBy = true;
       groupBy = viewsQueryHelper.removeGroupByNone(groupBy);
     }
+    log.info("groupBy: {}", groupBy);
 
     List<QLCEViewGroupBy> modifiedGroupBy = groupBy != null ? new ArrayList<>(groupBy) : new ArrayList<>();
     Optional<QLCEViewFilterWrapper> viewMetadataFilter = viewParametersHelper.getViewMetadataFilter(filters);
 
     List<QLCEViewRule> rules =
         AwsAccountFieldHelper.removeAccountNameFromAWSAccountRuleFilter(viewParametersHelper.getRuleFilters(filters));
+    log.info("rules: {}", rules);
+
     if (!rules.isEmpty()) {
       for (QLCEViewRule rule : rules) {
         viewRuleList.add(viewParametersHelper.convertQLCEViewRuleToViewRule(rule));
       }
     }
+    log.info("viewRuleList: {}", viewRuleList);
 
     List<QLCEViewPreferenceAggregation> viewPreferenceAggregations = null;
 
@@ -575,6 +579,9 @@ public class ViewBillingServiceHelper {
         CEView ceView = viewService.get(viewId);
         viewPreferenceAggregations = ceViewPreferenceService.getViewPreferenceAggregations(
             ceView, firstNonNull(viewPreferences, ceView.getViewPreferences()));
+
+        log.info("viewPreferenceAggregations: {}", viewPreferenceAggregations);
+
         viewRuleList = ceView.getViewRules();
         if (ceView.getViewVisualization() != null) {
           ViewVisualization viewVisualization = ceView.getViewVisualization();
@@ -586,34 +593,48 @@ public class ViewBillingServiceHelper {
           modifiedGroupBy = viewParametersHelper.getModifiedGroupBy(groupBy, defaultGroupByField,
               defaultTimeGranularity, queryParams.isTimeTruncGroupByRequired(), skipDefaultGroupBy);
         }
+
+        log.info("modifiedGroupBy: {}", modifiedGroupBy);
       }
     }
     List<QLCEViewFilter> idFilters =
         AwsAccountFieldHelper.removeAccountNameFromAWSAccountIdFilter(viewParametersHelper.getIdFilters(filters));
+    log.info("idFilters: {}", idFilters);
     List<QLCEViewTimeFilter> timeFilters = viewsQueryHelper.getTimeFilters(filters);
+    log.info("timeFilters: {}", timeFilters);
 
     // account id is not passed in current gen queries
     if (queryParams.getAccountId() != null) {
       boolean isPodQuery = false;
       if (viewParametersHelper.isClusterPerspective(filters, groupBy) || queryParams.isClusterQuery()) {
         isPodQuery = viewParametersHelper.isPodQuery(modifiedGroupBy);
+        log.info("isPodQuery: {}", isPodQuery);
         if (viewParametersHelper.isInstanceDetailsQuery(modifiedGroupBy)) {
           idFilters.add(viewParametersHelper.getFilterForInstanceDetails(modifiedGroupBy));
+          log.info("idFilters: {}", idFilters);
         }
         modifiedGroupBy = viewParametersHelper.addAdditionalRequiredGroupBy(modifiedGroupBy);
+        log.info("modifiedGroupBy: {}", modifiedGroupBy);
         // Changes column name for product to clusterName in case of cluster perspective
         idFilters = viewParametersHelper.getModifiedIdFilters(
             viewParametersHelper.addNotNullFilters(idFilters, modifiedGroupBy), true);
+        log.info("idFilters: {}", idFilters);
+
         viewRuleList = viewParametersHelper.getModifiedRuleFilters(viewRuleList);
+
+        log.info("viewRuleList: {}", viewRuleList);
         // Changes column name for cost to billingAmount
         aggregateFunction = viewParametersHelper.getModifiedAggregations(aggregateFunction);
+        log.info("aggregateFunction: {}", aggregateFunction);
         sort = viewParametersHelper.getModifiedSort(sort);
+        log.info("sort: {}", sort);
         // Perspective preferences are supported only for AWS and GCP
         // For cluster, we will still use the existing aggregateFunction
         viewPreferenceAggregations = null;
       }
       cloudProviderTableName = getUpdatedCloudProviderTableName(filters, modifiedGroupBy, aggregateFunction,
           queryParams.getAccountId(), cloudProviderTableName, queryParams.isClusterQuery(), isPodQuery);
+      log.info("cloudProviderTableName: {}", cloudProviderTableName);
     }
 
     if (queryParams.isTotalCountQuery()) {

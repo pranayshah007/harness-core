@@ -268,15 +268,21 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(queryParams.getAccountId(), UNIFIED_TABLE);
     Map<String, String> labelsKeyAndColumnMapping =
         labelFlattenedService.getLabelsKeyAndColumnMapping(queryParams.getAccountId());
+    log.info("labelsKeyAndColumnMapping: {}", labelsKeyAndColumnMapping);
     boolean isClusterPerspective = viewParametersHelper.isClusterTableQuery(filters, groupBy, queryParams);
     String businessMappingId = viewsQueryHelper.getBusinessMappingIdFromGroupBy(groupBy);
     BusinessMapping businessMapping = businessMappingId != null ? businessMappingService.get(businessMappingId) : null;
+    log.info("businessMapping: {}", businessMapping);
 
     List<ViewRule> viewRules = getViewRules(filters);
+    log.info("viewRules: {}", viewRules);
 
     List<String> businessMappingIds = viewParametersHelper.getBusinessMappingIds(filters, businessMappingId);
+    log.info("businessMappingIds: {}", businessMappingIds);
     List<BusinessMapping> sharedCostBusinessMappings =
         viewParametersHelper.getSharedCostBusinessMappings(businessMappingIds);
+
+    log.info("sharedCostBusinessMappings: {}", sharedCostBusinessMappings);
 
     // Conversion field is not null in case entity id to name conversion is required for a field
     String conversionField = null;
@@ -287,8 +293,10 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     boolean isGroupByBusinessMapping = viewsQueryHelper.isGroupByBusinessMappingPresent(groupBy);
     int modifiedLimit = viewsQueryHelper.getModifiedBusinessMappingLimit(
         limit, isGroupByBusinessMapping, sharedCostBusinessMappings.isEmpty());
+    log.info("modifiedLimit: {}", modifiedLimit);
     int modifiedOffset = viewsQueryHelper.getModifiedBusinessMappingOffset(
         offset, isGroupByBusinessMapping, sharedCostBusinessMappings.isEmpty());
+    log.info("modifiedOffset: {}", modifiedOffset);
 
     Map<String, ViewCostData> costTrendData = new HashMap<>();
     long startTimeForTrendData = 0L;
@@ -297,6 +305,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
           bigQuery, cloudProviderTableName, isClusterPerspective, viewRules, sharedCostBusinessMappings,
           isGroupByBusinessMapping, labelsKeyAndColumnMapping, viewPreferences);
       startTimeForTrendData = viewParametersHelper.getStartTimeForTrendFilters(filters);
+      log.info("costTrendData: {}", costTrendData);
     }
 
     Map<String, Double> sharedCostsFromRulesAndFilters;
@@ -309,6 +318,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       sharedCostsFromRulesAndFilters = getSharedCostFromFilters(bigQuery, filters, groupBy, aggregateFunction, sort,
           cloudProviderTableName, queryParams, sharedCostBusinessMappings, modifiedLimit, modifiedOffset,
           queryParams.isSkipRoundOff(), viewRules, labelsKeyAndColumnMapping, viewPreferences);
+      log.info("sharedCostsFromRulesAndFilters: {}", sharedCostsFromRulesAndFilters);
     }
 
     SelectQuery query = viewBillingServiceHelper.getQuery(filters, groupBy, aggregateFunction, sort,
@@ -329,6 +339,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     }
 
     boolean addSharedCostFromGroupBy = !businessMappingIds.contains(businessMappingId);
+    log.info("addSharedCostFromGroupBy: {}", addSharedCostFromGroupBy);
 
     return viewBusinessMappingResponseHelper.costCategoriesPostFetchResponseUpdate(
         convertToEntityStatsData(result, costTrendData, startTimeForTrendData, isClusterPerspective,

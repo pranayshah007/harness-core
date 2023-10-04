@@ -115,6 +115,7 @@ public class PerspectiveService {
       Integer limit, Integer offset, ViewPreferences viewPreferences, Boolean isClusterQuery, Boolean skipRoundOff,
       String accountId) {
     isClusterQuery = isClusterQuery != null && isClusterQuery;
+    log.info("isClusterQuery: {}", isClusterQuery);
     skipRoundOff = skipRoundOff != null && skipRoundOff;
     final int maxLimit = Objects.isNull(limit) ? MAX_LIMIT_VALUE : Integer.min(limit, MAX_LIMIT_VALUE);
 
