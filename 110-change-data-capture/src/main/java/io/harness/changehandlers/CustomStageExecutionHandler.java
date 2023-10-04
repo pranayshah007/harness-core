@@ -62,9 +62,6 @@ public class CustomStageExecutionHandler extends AbstractChangeDataHandler {
         changeHandlerHelper.addKeyValuePairToMapFromDBObject(
             failureInfo, columnValueMapping, "errorMessage_", "failure_message");
       }
-
-      changeHandlerHelper.addKeyValuePairToMapFromDBObject(
-          dbObject, columnValueMapping, StageExecutionInfoKeys.rollbackDuration, "rollback_duration");
     }
 
     return columnValueMapping;
@@ -131,9 +128,5 @@ public class CustomStageExecutionHandler extends AbstractChangeDataHandler {
         infraExecutionSummary, columnValueMapping, "infrastructureIdentifier", "infra_id");
     changeHandlerHelper.addKeyValuePairToMapFromDBObject(
         infraExecutionSummary, columnValueMapping, "infrastructureName", "infra_name");
-    changeHandlerHelper.addKeyValuePairToMapFromDBObject(
-        infraExecutionSummary, columnValueMapping, "envGroupId", "env_group_id");
-    changeHandlerHelper.addKeyValuePairToMapFromDBObject(
-        infraExecutionSummary, columnValueMapping, "envGroupName", "env_group_name");
   }
 }

@@ -188,13 +188,10 @@ public class StageExecutionInfoServiceImpl implements StageExecutionInfoService 
     stageElementParameters.getTags().forEach((key, value) -> tags.add(key + ":" + value));
     if (stageLevel != null) {
       stageExecutionInfoBuilder.startts(stageLevel.getStartTs());
+      stageExecutionInfoBuilder.stageType(stageLevel.getStepType().getType());
     }
     if (EmptyPredicate.isNotEmpty(tags)) {
       stageExecutionInfoBuilder.tags(tags.toArray(new String[0]));
-    }
-    Level currentLevel = AmbianceUtils.obtainCurrentLevel(ambiance);
-    if (currentLevel != null) {
-      stageExecutionInfoBuilder.stageType(currentLevel.getStepType().getType());
     }
     return save(stageExecutionInfoBuilder.build());
   }
@@ -409,16 +406,15 @@ public class StageExecutionInfoServiceImpl implements StageExecutionInfoService 
             .gitOpsAppSummary(stageExecutionInfoUpdateDTO.getGitOpsAppSummary())
             .build();
 
-    stageExecutionInfoBuilder.stageExecutionId(ambiance.getStageExecutionId())
+    return stageExecutionInfoBuilder.stageExecutionId(ambiance.getStageExecutionId())
         .executionSummaryDetails(executionSummaryDetails)
         .planExecutionId(ambiance.getPlanExecutionId())
         .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
         .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
         .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
         .status(Status.RUNNING)
-        .stageStatus(StageStatus.IN_PROGRESS);
-
-    return stageExecutionInfoBuilder.build();
+        .stageStatus(StageStatus.IN_PROGRESS)
+        .build();
   }
 
   private String[] toTagsList(Map<String, String> tags) {

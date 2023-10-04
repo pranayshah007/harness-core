@@ -19,12 +19,10 @@ import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.pipeline.beans.CustomStageSpecParams;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.executables.ChildExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -60,7 +58,7 @@ public class CustomStageStep implements ChildExecutable<StageElementParameters> 
     String executionNodeId = specParameters.getChildNodeID();
     dashboardExecutorService.submit(()
                                         -> stageExecutionInfoService.upsertStageExecutionInfo(ambiance,
-                                            createStageExecutionInfoUpdateDTOFromStepParameters(stepParameters)));
+                                            createStageExecutionInfoUpsertDTOFromStepParameters(stepParameters)));
     return ChildExecutableResponse.newBuilder().setChildNodeId(executionNodeId).build();
   }
 
@@ -71,11 +69,11 @@ public class CustomStageStep implements ChildExecutable<StageElementParameters> 
     StepResponse stepResponse = createStepResponseFromChildResponse(responseDataMap);
     dashboardExecutorService.submit(()
                                         -> stageExecutionInfoService.upsertStageExecutionInfo(
-                                            ambiance, createStageExecutionInfoUpdateDTO(stepResponse)));
+                                            ambiance, createStageExecutionInfoUpsertDTO(stepResponse)));
     return stepResponse;
   }
 
-  private StageExecutionInfoUpdateDTO createStageExecutionInfoUpdateDTO(StepResponse stepResponse) {
+  private StageExecutionInfoUpdateDTO createStageExecutionInfoUpsertDTO(StepResponse stepResponse) {
     return StageExecutionInfoUpdateDTO.builder()
         .failureInfo(stepResponse.getFailureInfo())
         .status(stepResponse.getStatus())
@@ -83,20 +81,12 @@ public class CustomStageStep implements ChildExecutable<StageElementParameters> 
         .build();
   }
 
-  private StageExecutionInfoUpdateDTO createStageExecutionInfoUpdateDTOFromStepParameters(
+  private StageExecutionInfoUpdateDTO createStageExecutionInfoUpsertDTOFromStepParameters(
       StageElementParameters stepParameters) {
     return StageExecutionInfoUpdateDTO.builder()
         .stageName(stepParameters.getName())
         .stageIdentifier(stepParameters.getIdentifier())
         .tags(stepParameters.getTags())
         .build();
-  }
-
-  private Level getCustomStageStepCurrentLevel(Ambiance ambiance) {
-    Level currentLevel = AmbianceUtils.obtainCurrentLevel(ambiance);
-    if (currentLevel != null && ("CUSTOM_STAGE").equals(currentLevel.getStepType().getType())) {
-      return currentLevel;
-    }
-    return null;
   }
 }

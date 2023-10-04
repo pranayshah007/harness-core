@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.migration;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
@@ -14,6 +15,7 @@ import io.harness.migration.NGMigration;
 import io.harness.migration.beans.MigrationType;
 import io.harness.ng.core.migration.timescale.AddChartVersionToCDStageHelmManifestTable;
 import io.harness.ng.core.migration.timescale.AddColumnsToCDStageTable;
+import io.harness.ng.core.migration.timescale.AddColumnsToCustomStageTable;
 import io.harness.ng.core.migration.timescale.AddDeletedAtColumns;
 import io.harness.ng.core.migration.timescale.AddIndexToServiceInfraInfoTable;
 import io.harness.ng.core.migration.timescale.AddModuleTypeSpecificColumnsToModuleLicensesTable;
@@ -21,6 +23,7 @@ import io.harness.ng.core.migration.timescale.AddRollbackDurationToServiceInfraI
 import io.harness.ng.core.migration.timescale.CreateCDStageHelmManifestTable;
 import io.harness.ng.core.migration.timescale.CreateCDStageTable;
 import io.harness.ng.core.migration.timescale.CreateConnectorsTable;
+import io.harness.ng.core.migration.timescale.CreateCustomStageTable;
 import io.harness.ng.core.migration.timescale.CreateHarnessDateBinNGMgrFunction;
 import io.harness.ng.core.migration.timescale.CreateModuleLicensesTable;
 import io.harness.ng.core.migration.timescale.CreateNgUserTable;
@@ -72,6 +75,8 @@ public class NGCoreTimeScaleMigrationDetails implements MigrationDetails {
         .add(Pair.of(19, AddChartVersionToCDStageHelmManifestTable.class))
         .add(Pair.of(20, CreateTimeBucketListCDStatusFunction.class))
         .add(Pair.of(21, CreateHarnessDateBinNGMgrFunction.class))
+        .add(Pair.of(22, CreateCustomStageTable.class))
+        .add(Pair.of(23, AddColumnsToCustomStageTable.class))
         .build();
   }
 }

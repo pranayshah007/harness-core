@@ -55,8 +55,8 @@ public class StageExecutionHandler extends AbstractChangeDataHandler {
     if (stageType != null) {
       if ("CUSTOM_STAGE".equals(stageType.toString())) {
         columnValueMapping.put("type", "Custom");
+        return columnValueMapping;
       }
-      return columnValueMapping;
     }
 
     BasicDBObject executionSummaryDetails =
