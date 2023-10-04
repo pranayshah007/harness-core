@@ -576,8 +576,6 @@ public class ExecutionHelper {
       PlanCreationBlobResponse resp;
       Plan plan;
       try {
-        // If v1 pipeline has a pipeline template linked to it, the root node of processedYaml will be stages in case of
-        // v1 template and the yaml will have v0 structure in case of v0 template
         String version = executionMetadata.getProcessedYamlVersion();
         resp = planCreatorMergeService.createPlanVersioned(
             accountId, orgIdentifier, projectIdentifier, version, executionMetadata, planExecutionMetadata);
