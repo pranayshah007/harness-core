@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.EntityType;
 import io.harness.category.element.UnitTests;
+import io.harness.encryption.Scope;
 import io.harness.ng.core.NGCoreTestBase;
 import io.harness.ng.core.activityhistory.NGActivityStatus;
 import io.harness.ng.core.activityhistory.NGActivityType;
@@ -169,25 +170,25 @@ public class NGActivitySummaryServiceImplTest extends NGCoreTestBase {
 
       for (long i = 0; i < numberOfSuccessfulEntityUsage; i++) {
         long activityTime = getRandomNumberUsingNextInt(time, time + timeUnit);
-        NGActivityDTO activity =
-            createActivityHistoryDTO(accountIdentifier, orgIdentifier, projectIdentifier, referredEntityIdentifier,
-                null, NGActivityStatus.SUCCESS, activityTime, NGActivityType.ENTITY_USAGE, EntityType.PIPELINES);
+        NGActivityDTO activity = createActivityHistoryDTO(accountIdentifier, orgIdentifier, projectIdentifier,
+            referredEntityIdentifier, null, NGActivityStatus.SUCCESS, activityTime, NGActivityType.ENTITY_USAGE,
+            EntityType.PIPELINES, Scope.of(accountIdentifier, orgIdentifier, projectIdentifier));
         ngActivityService.save(activity);
       }
 
       for (long i = 0; i < numberOfFailedEntityUsage; i++) {
         long activityTime = getRandomNumberUsingNextInt(time, time + timeUnit);
-        NGActivityDTO activity =
-            createActivityHistoryDTO(accountIdentifier, orgIdentifier, projectIdentifier, referredEntityIdentifier,
-                null, NGActivityStatus.FAILED, activityTime, NGActivityType.ENTITY_USAGE, EntityType.PIPELINES);
+        NGActivityDTO activity = createActivityHistoryDTO(accountIdentifier, orgIdentifier, projectIdentifier,
+            referredEntityIdentifier, null, NGActivityStatus.FAILED, activityTime, NGActivityType.ENTITY_USAGE,
+            EntityType.PIPELINES, Scope.of(accountIdentifier, orgIdentifier, projectIdentifier));
         ngActivityService.save(activity);
       }
 
       for (long i = 0; i < numberOfHeartBeatFailures; i++) {
         long activityTime = getRandomNumberUsingNextInt(time, time + timeUnit);
-        NGActivityDTO activity =
-            createActivityHistoryDTO(accountIdentifier, orgIdentifier, projectIdentifier, referredEntityIdentifier,
-                null, NGActivityStatus.FAILED, activityTime, NGActivityType.CONNECTIVITY_CHECK, EntityType.PIPELINES);
+        NGActivityDTO activity = createActivityHistoryDTO(accountIdentifier, orgIdentifier, projectIdentifier,
+            referredEntityIdentifier, null, NGActivityStatus.FAILED, activityTime, NGActivityType.CONNECTIVITY_CHECK,
+            EntityType.PIPELINES, Scope.of(accountIdentifier, orgIdentifier, projectIdentifier));
         ngActivityService.save(activity);
       }
     }

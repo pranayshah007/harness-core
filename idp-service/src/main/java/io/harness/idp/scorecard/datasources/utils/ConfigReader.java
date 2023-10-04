@@ -18,6 +18,7 @@ import io.harness.idp.common.YamlUtils;
 import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.idp.scorecard.expression.IdpExpressionEvaluator;
+import io.harness.spec.server.idp.v1.model.BackstageEnvConfigVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 
@@ -78,6 +79,10 @@ public class ConfigReader {
             secret.getHarnessSecretIdentifier(), envName, accountIdentifier));
       }
       value = ((String) value).replace(env, decryptedValue);
+    } else if (envVariableOpt.isPresent()
+        && envVariableOpt.get().getType().equals(BackstageEnvVariable.TypeEnum.CONFIG)) {
+      BackstageEnvConfigVariable config = (BackstageEnvConfigVariable) envVariableOpt.get();
+      value = ((String) value).replace(env, config.getValue());
     }
     return value;
   }

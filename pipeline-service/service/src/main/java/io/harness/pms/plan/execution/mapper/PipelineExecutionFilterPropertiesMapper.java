@@ -14,26 +14,38 @@ import io.harness.ng.core.mapper.TagMapper;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionFilterPropertiesDTO;
 import io.harness.pms.plan.execution.entity.PipelineExecutionFilterProperties;
 
-import org.modelmapper.ModelMapper;
-
 public class PipelineExecutionFilterPropertiesMapper
     implements FilterPropertiesMapper<PipelineExecutionFilterPropertiesDTO, PipelineExecutionFilterProperties> {
   @Override
   public FilterPropertiesDTO writeDTO(FilterProperties pipelineExecutionFilterProperties) {
-    ModelMapper modelMapper = new ModelMapper();
-    FilterPropertiesDTO filterPropertiesDTO =
-        modelMapper.map(pipelineExecutionFilterProperties, PipelineExecutionFilterPropertiesDTO.class);
-    filterPropertiesDTO.setTags(TagMapper.convertToMap(pipelineExecutionFilterProperties.getTags()));
-    return filterPropertiesDTO;
+    PipelineExecutionFilterProperties executionFilterProperties =
+        (PipelineExecutionFilterProperties) pipelineExecutionFilterProperties;
+    PipelineExecutionFilterPropertiesDTO pipelineExecutionFilterPropertiesDTO =
+        PipelineExecutionFilterPropertiesDTO.builder()
+            .moduleProperties(executionFilterProperties.getModuleProperties())
+            .pipelineName(executionFilterProperties.getPipelineName())
+            .pipelineTags(executionFilterProperties.getPipelineTags())
+            .status(executionFilterProperties.getStatus())
+            .timeRange(executionFilterProperties.getTimeRange())
+            .tags(TagMapper.convertToMap(pipelineExecutionFilterProperties.getTags()))
+            .build();
+    return pipelineExecutionFilterPropertiesDTO;
   }
 
   @Override
   public FilterProperties toEntity(FilterPropertiesDTO pipelineExecutionFilterPropertiesDTO) {
-    ModelMapper modelMapper = new ModelMapper();
-    PipelineExecutionFilterProperties filterProperties =
-        modelMapper.map(pipelineExecutionFilterPropertiesDTO, PipelineExecutionFilterProperties.class);
-    filterProperties.setType(pipelineExecutionFilterPropertiesDTO.getFilterType());
-    filterProperties.setTags(TagMapper.convertToList(pipelineExecutionFilterPropertiesDTO.getTags()));
-    return filterProperties;
+    PipelineExecutionFilterPropertiesDTO executionFilterPropertiesDTO =
+        (PipelineExecutionFilterPropertiesDTO) pipelineExecutionFilterPropertiesDTO;
+    PipelineExecutionFilterProperties pipelineExecutionFilterProperties =
+        PipelineExecutionFilterProperties.builder()
+            .moduleProperties(executionFilterPropertiesDTO.getModuleProperties())
+            .pipelineName(executionFilterPropertiesDTO.getPipelineName())
+            .pipelineTags(executionFilterPropertiesDTO.getPipelineTags())
+            .status(executionFilterPropertiesDTO.getStatus())
+            .timeRange(executionFilterPropertiesDTO.getTimeRange())
+            .tags(TagMapper.convertToList(pipelineExecutionFilterPropertiesDTO.getTags()))
+            .type(pipelineExecutionFilterPropertiesDTO.getFilterType())
+            .build();
+    return pipelineExecutionFilterProperties;
   }
 }

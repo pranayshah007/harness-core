@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.interrupts.helpers;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.eraro.ErrorCode.TIMEOUT_ENGINE_EXCEPTION;
 import static io.harness.logging.UnitStatus.EXPIRED;
@@ -44,6 +45,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -63,6 +65,9 @@ public class ExpiryHelper {
   @Inject private WaitNotifyEngine waitNotifyEngine;
 
   public void expireMarkedInstance(NodeExecution nodeExecution, Interrupt interrupt) {
+    expireMarkedInstance(nodeExecution, interrupt, false);
+  }
+  public void expireMarkedInstance(NodeExecution nodeExecution, Interrupt interrupt, boolean expireAndEndExecution) {
     try {
       boolean taskDiscontinued = interruptHelper.discontinueTaskIfRequired(nodeExecution);
       if (!taskDiscontinued) {
@@ -70,17 +75,21 @@ public class ExpiryHelper {
       }
 
       if (nodeExecution.getMode() == ExecutionMode.SYNC || ExecutionModeUtils.isParentMode(nodeExecution.getMode())) {
-        log.info("Expiring directly because mode is {}", nodeExecution.getMode());
-        expireDiscontinuedInstance(
-            nodeExecution, interrupt.getInterruptConfig(), interrupt.getUuid(), interrupt.getType());
+        expireExecution(nodeExecution, expireAndEndExecution, interrupt);
         return;
       }
 
       String notifyId = interruptEventPublisher.publishEvent(nodeExecution.getUuid(), interrupt, MARK_EXPIRED);
+      /*
+      We had an issue where step node failure strategy is being invoked even after the Stage node is expired.
+      Advisers should not be called if Parent node get expired. To address the issue we have added a boolean
+      expireAndEndExecution, endNodeExecution is called if boolean set to True.
+       */
       ExpiryInterruptCallback expiryInterruptCallback = ExpiryInterruptCallback.builder()
                                                             .nodeExecutionId(nodeExecution.getUuid())
                                                             .interruptId(interrupt.getUuid())
                                                             .interruptType(interrupt.getType())
+                                                            .expireAndEndExecution(expireAndEndExecution)
                                                             .interruptConfig(interrupt.getInterruptConfig())
                                                             .build();
       waitNotifyEngine.waitForAllOnInList(
@@ -123,5 +132,34 @@ public class ExpiryHelper {
             .addAllUnitProgress(unitProgressList)
             .build();
     engine.processStepResponse(nodeExecution.getAmbiance(), expiredStepResponse);
+  }
+
+  public void expireDiscontinuedInstanceAndEndAllNodesExecution(
+      NodeExecution nodeExecution, InterruptConfig interruptConfig, String interruptId, InterruptType interruptType) {
+    List<UnitProgress> unitProgresses = InterruptHelper.evaluateUnitProgresses(nodeExecution, EXPIRED);
+    NodeExecution updatedNodeExecution =
+        nodeExecutionService.updateStatusWithOps(nodeExecution.getUuid(), Status.EXPIRED, ops -> {
+          ops.set(NodeExecutionKeys.endTs, System.currentTimeMillis());
+          ops.set(NodeExecutionKeys.unitProgresses, unitProgresses);
+          ops.addToSet(NodeExecutionKeys.interruptHistories,
+              InterruptEffect.builder()
+                  .interruptId(interruptId)
+                  .tookEffectAt(System.currentTimeMillis())
+                  .interruptType(interruptType)
+                  .interruptConfig(interruptConfig)
+                  .build());
+        }, EnumSet.noneOf(Status.class));
+    log.info("Updated NodeExecution :{} Status to EXPIRED", nodeExecution.getUuid());
+    engine.endNodeExecution(updatedNodeExecution.getAmbiance());
+  }
+
+  public void expireExecution(NodeExecution nodeExecution, boolean expireAndEndExecution, Interrupt interrupt) {
+    log.info("Expiring directly because mode is {}", nodeExecution.getMode());
+    if (expireAndEndExecution) {
+      expireDiscontinuedInstanceAndEndAllNodesExecution(
+          nodeExecution, interrupt.getInterruptConfig(), interrupt.getUuid(), interrupt.getType());
+      return;
+    }
+    expireDiscontinuedInstance(nodeExecution, interrupt.getInterruptConfig(), interrupt.getUuid(), interrupt.getType());
   }
 }

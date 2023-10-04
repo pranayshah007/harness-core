@@ -27,8 +27,8 @@ import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.expression.LateBindingMap;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.plan.Node;
-import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
@@ -66,6 +66,7 @@ public class NodeExecutionMap extends LateBindingMap {
   transient NodeExecutionsCache nodeExecutionsCache;
   transient PmsOutcomeService pmsOutcomeService;
   transient PmsSweepingOutputService pmsSweepingOutputService;
+  transient NodeExecutionInfoService nodeExecutionInfoService;
   transient Ambiance ambiance;
   transient NodeExecution nodeExecution;
   transient Set<NodeExecutionEntityType> entityTypes;
@@ -76,7 +77,8 @@ public class NodeExecutionMap extends LateBindingMap {
   @Builder
   NodeExecutionMap(NodeExecutionsCache nodeExecutionsCache, PmsOutcomeService pmsOutcomeService,
       PmsSweepingOutputService pmsSweepingOutputService, Ambiance ambiance, NodeExecution nodeExecution,
-      Set<NodeExecutionEntityType> entityTypes, Map<String, Object> children, JexlEngine engine) {
+      Set<NodeExecutionEntityType> entityTypes, Map<String, Object> children, JexlEngine engine,
+      NodeExecutionInfoService nodeExecutionInfoService) {
     this.nodeExecutionsCache = nodeExecutionsCache;
     this.pmsOutcomeService = pmsOutcomeService;
     this.pmsSweepingOutputService = pmsSweepingOutputService;
@@ -90,6 +92,7 @@ public class NodeExecutionMap extends LateBindingMap {
       this.children.putAll(children);
     }
     this.engine = engine;
+    this.nodeExecutionInfoService = nodeExecutionInfoService;
   }
 
   @Override
@@ -226,38 +229,39 @@ public class NodeExecutionMap extends LateBindingMap {
       return Optional.empty();
     }
 
-    Ambiance newAmbiance = nodeExecution.getAmbiance();
-    if (newAmbiance == null) {
+    List<String> levelRuntimeIdx = nodeExecution.getLevelRuntimeIdx();
+    if (levelRuntimeIdx == null) {
       return Optional.empty();
     }
 
-    Optional<Object> value = fetchOutcome(newAmbiance, key);
+    Optional<Object> value = fetchOutcome(ambiance.getPlanExecutionId(), levelRuntimeIdx, key);
     if (!value.isPresent()) {
-      value = fetchSweepingOutput(newAmbiance, key);
+      value = fetchSweepingOutput(ambiance.getPlanExecutionId(), levelRuntimeIdx, key);
     }
     return value;
   }
 
-  private Optional<Object> fetchOutcome(Ambiance newAmbiance, String key) {
+  private Optional<Object> fetchOutcome(String planExecutionId, List<String> levelRuntimeIdIdx, String key) {
     if (!entityTypes.contains(NodeExecutionEntityType.OUTCOME)) {
       return Optional.empty();
     }
 
     try {
-      return jsonToObject(pmsOutcomeService.resolve(newAmbiance, RefObjectUtils.getOutcomeRefObject(key)));
+      return jsonToObject(pmsOutcomeService.resolveUsingLevelRuntimeIdx(
+          planExecutionId, levelRuntimeIdIdx, RefObjectUtils.getOutcomeRefObject(key)));
     } catch (OutcomeException ignored) {
       return Optional.empty();
     }
   }
 
-  private Optional<Object> fetchSweepingOutput(Ambiance newAmbiance, String key) {
+  private Optional<Object> fetchSweepingOutput(String planExecutionId, List<String> levelRuntimeIdIdx, String key) {
     if (!entityTypes.contains(NodeExecutionEntityType.SWEEPING_OUTPUT)) {
       return Optional.empty();
     }
 
     try {
-      return jsonToObject(
-          pmsSweepingOutputService.resolve(newAmbiance, RefObjectUtils.getSweepingOutputRefObject(key)));
+      return jsonToObject(pmsSweepingOutputService.resolveUsingLevelRuntimeIdx(
+          planExecutionId, levelRuntimeIdIdx, RefObjectUtils.getSweepingOutputRefObject(key)));
     } catch (SweepingOutputException ignored) {
       return Optional.empty();
     }
@@ -276,11 +280,11 @@ public class NodeExecutionMap extends LateBindingMap {
     return (Map<String, Object>) NodeExecutionUtils.resolveObject(node.getStepParameters());
   }
 
-  private static Map<String, Object> extractStrategyMetadata(NodeExecution nodeExecution) {
+  private Map<String, Object> extractStrategyMetadata(NodeExecution nodeExecution) {
     if (nodeExecution.getAmbiance() != null) {
       Level currentLevel = AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance());
       if (currentLevel != null) {
-        return StrategyUtils.fetchStrategyObjectMap(
+        return nodeExecutionInfoService.fetchStrategyObjectMap(
             currentLevel, AmbianceUtils.shouldUseMatrixFieldName(nodeExecution.getAmbiance()));
       }
     }

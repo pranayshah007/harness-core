@@ -25,6 +25,10 @@ data:
   EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   EVENTS_FRAMEWORK_ENV_NAMESPACE: ""
   EVENTS_FRAMEWORK_REDIS_SSL_ENABLED: "false"
+  LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  LOCK_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
+  LOCK_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
   {{- if not .Values.workloadIdentity.enabled }}
   GOOGLE_CREDENTIALS_PATH: "/opt/harness/svc/ceng_gcp_credentials.json"
   GOOGLE_APPLICATION_CREDENTIALS: "/opt/harness/svc/ceng_gcp_credentials.json"
@@ -53,6 +57,7 @@ data:
   NOTIFICATION_CLIENT_SECRET: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
   ACCESS_CONTROL_SECRET: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
   CLICKHOUSE_ENABLED: {{ .Values.global.database.clickhouse.enabled | quote }}
+  DISTRIBUTED_LOCK_IMPLEMENTATION: {{ .Values.distributedLockImplementation | quote }}
   {{- if .Values.global.database.clickhouse.enabled }}
   CLICKHOUSE_URL: "jdbc:ch://clickhouse.{{ .Release.Namespace }}.svc.cluster.local:8123"
   {{- end }}

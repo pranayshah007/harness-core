@@ -68,7 +68,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @Value
-@Builder
+@Builder(toBuilder = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "PipelineEntityKeys")
 @StoreIn(DbAliases.PMS)
@@ -194,6 +194,7 @@ public class PipelineEntity implements GitAware, GitSyncableEntity, PersistentEn
   @Wither @Setter @NonFinal String repo;
   @Wither @Setter @NonFinal String connectorRef;
   @Wither @Setter @NonFinal String repoURL;
+  @Setter @NonFinal Integer yamlHash;
 
   // to maintain pipeline version
   @Setter @NonFinal String harnessVersion;

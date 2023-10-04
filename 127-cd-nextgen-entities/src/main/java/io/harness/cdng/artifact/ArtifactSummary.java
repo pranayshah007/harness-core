@@ -10,6 +10,7 @@ package io.harness.cdng.artifact;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.bean.ArtifactCorrelationDetails;
 
 import io.swagger.annotations.ApiModel;
 
@@ -22,4 +23,7 @@ import io.swagger.annotations.ApiModel;
 public interface ArtifactSummary {
   String getType();
   String getDisplayName();
+  default ArtifactCorrelationDetails getArtifactIdentity() {
+    return null;
+  }
 }

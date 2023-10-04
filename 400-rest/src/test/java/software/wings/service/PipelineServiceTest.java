@@ -1050,7 +1050,7 @@ public class PipelineServiceTest extends WingsBaseTest {
     when(wingsPersistence.query(Pipeline.class, aPageRequest().build()))
         .thenReturn(aPageResponse().withResponse(asList(pipeline, pipeline2)).build());
 
-    PageResponse pageResponse = pipelineService.listPipelines(aPageRequest().build());
+    PageResponse pageResponse = pipelineService.listPipelines(aPageRequest().build(), false, null);
     List<Pipeline> pipelines = pageResponse.getResponse();
     assertThat(pipelines).isNotEmpty().size().isEqualTo(2);
     assertThat(pipelines.get(0).getName()).isEqualTo("pipeline1");

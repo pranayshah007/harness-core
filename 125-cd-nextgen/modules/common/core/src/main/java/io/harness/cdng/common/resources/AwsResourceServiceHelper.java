@@ -38,6 +38,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -100,6 +101,10 @@ public class AwsResourceServiceHelper {
   }
 
   public DelegateResponseData getResponseData(BaseNGAccess ngAccess, TaskParameters taskParameters, String taskType) {
+    return getResponseData(ngAccess, taskParameters, taskType, Duration.ofSeconds(timeoutInSecs));
+  }
+  public DelegateResponseData getResponseData(
+      BaseNGAccess ngAccess, TaskParameters taskParameters, String taskType, Duration timeout) {
     Map<String, String> taskSetupAbstractions = ArtifactUtils.getTaskSetupAbstractions(ngAccess);
 
     final DelegateTaskRequest delegateTaskRequest =
@@ -107,7 +112,7 @@ public class AwsResourceServiceHelper {
             .accountId(ngAccess.getAccountIdentifier())
             .taskType(taskType)
             .taskParameters(taskParameters)
-            .executionTimeout(java.time.Duration.ofSeconds(timeoutInSecs))
+            .executionTimeout(timeout)
             .taskSetupAbstractions(taskSetupAbstractions)
             .taskSelectors(((AwsTaskParams) taskParameters).getAwsConnector().getDelegateSelectors())
             .build();

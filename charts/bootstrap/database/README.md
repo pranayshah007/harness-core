@@ -1,6 +1,6 @@
 # database
 
-![Version: 0.9.0](https://img.shields.io/badge/Version-0.9.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 0.9.1](https://img.shields.io/badge/Version-0.9.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -43,7 +43,7 @@ A Helm chart for Kubernetes
 | minio.auth.existingSecret | string | `"minio"` |  |
 | minio.defaultBuckets | string | `"logs"` |  |
 | minio.fullnameOverride | string | `"minio"` |  |
-| minio.image.tag | string | `"2023.5.18-debian-11-r2"` |  |
+| minio.image.tag | string | `"2023.7.18-debian-11-r2"` |  |
 | minio.mode | string | `"standalone"` |  |
 | minio.persistence.size | string | `"200Gi"` |  |
 | mongodb | object | `{"arbiter":{"enabled":true},"architecture":"replicaset","auth":{"existingSecret":"mongodb-replicaset-chart","rootUser":"admin"},"fullnameOverride":"mongodb-replicaset-chart","image":{"registry":"docker.io","repository":"harness/mongo","tag":"4.4.22"},"persistence":{"size":"200Gi"},"podLabels":{"app":"mongodb-replicaset"},"replicaCount":3,"resources":{"limits":{"cpu":4,"memory":"8192Mi"},"requests":{"cpu":4,"memory":"8192Mi"}},"service":{"nameOverride":"mongodb-replicaset-chart"}}` | configurations for mongodb |

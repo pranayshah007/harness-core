@@ -35,12 +35,16 @@ import io.harness.metrics.beans.MetricConfiguration;
 import io.harness.metrics.service.api.MetricDefinitionInitializer;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.metrics.service.api.MetricsPublisher;
+import io.harness.mongo.metrics.HarnessConnectionPoolListener;
+import io.harness.mongo.metrics.HarnessConnectionPoolStatistics;
+import io.harness.mongo.metrics.MongoMetricsContext;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.PersistentEntity;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.mongodb.AggregationOptions;
+import com.mongodb.connection.ServerId;
 import dev.morphia.aggregation.AggregationPipeline;
 import dev.morphia.annotations.Id;
 import dev.morphia.query.Query;
@@ -52,21 +56,33 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionInitializer {
+  private static final String METRIC_PREFIX = "io_harness_cvng_mongodb_";
+  private static final Pattern METRIC_NAME_RE = Pattern.compile("[^a-zA-Z0-9_]");
+  private static final String CONNECTION_POOL_SIZE = "connection_pool_size";
+  private static final String CONNECTIONS_CHECKED_OUT = "connections_checked_out";
+  private static final String CONNECTION_POOL_MAX_SIZE = "connection_pool_max_size";
+  private static final String NAMESPACE = System.getenv("NAMESPACE");
+  private static final String CONTAINER_NAME = System.getenv("CONTAINER_NAME");
   private static final Map<Class<? extends PersistentEntity>, QueryParams> TASKS_INFO = new HashMap<>();
   private static final String ENV = isEmpty(System.getenv("ENV")) ? "localhost" : System.getenv("ENV");
 
   @Inject private Clock clock;
   @Inject private HarnessMetricRegistry metricRegistry;
+  @Inject private HarnessConnectionPoolListener harnessConnectionPoolListener;
+
   static {
     TASKS_INFO.put(CVNGStepTask.class,
         QueryParams.builder()
@@ -104,9 +120,43 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
 
   @Override
   public void recordMetrics() {
-    sendTaskStatusMetrics();
-    sendLEAutoscaleMetrics();
+    try {
+      sendTaskStatusMetrics();
+      sendLEAutoscaleMetrics();
+      recordDBMetrics();
+    } catch (Exception ignored) {
+      log.warn("Metric could not be recorded.");
+    }
   }
+
+  public void recordDBMetrics() {
+    ConcurrentMap<ServerId, HarnessConnectionPoolStatistics> map = harnessConnectionPoolListener.getStatistics();
+    map.forEach((serverId, harnessConnectionPoolStatistics) -> {
+      String serverAddress = sanitizeName(serverId.getAddress().toString());
+      String clientDescription = sanitizeName(serverId.getClusterId().getDescription());
+      try (MongoMetricsContext ignore =
+               new MongoMetricsContext(NAMESPACE, CONTAINER_NAME, serverAddress, clientDescription)) {
+        metricRegistry.recordGaugeValue(
+            METRIC_PREFIX + CONNECTION_POOL_MAX_SIZE, null, harnessConnectionPoolStatistics.getMaxSize());
+        metricRegistry.recordGaugeValue(
+            METRIC_PREFIX + CONNECTION_POOL_SIZE, null, harnessConnectionPoolStatistics.getSize());
+        metricRegistry.recordGaugeValue(
+            METRIC_PREFIX + CONNECTIONS_CHECKED_OUT, null, harnessConnectionPoolStatistics.getCheckedOutCount());
+      }
+    });
+  }
+
+  private static String sanitizeName(String labelName) {
+    if (StringUtils.isEmpty(labelName)) {
+      return labelName;
+    }
+    String name = METRIC_NAME_RE.matcher(labelName).replaceAll("_");
+    if (!name.isEmpty() && Character.isDigit(name.charAt(0))) {
+      name = "_" + name;
+    }
+    return name;
+  }
+
   @VisibleForTesting
   void sendTaskStatusMetrics() {
     TASKS_INFO.forEach((clazz, queryParams) -> {

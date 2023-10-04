@@ -7,11 +7,11 @@ freeze:
   status: "Enabled"
   windows:
     - timeZone: "America/Los_Angeles"
-      startTime: "2022-11-03 10:48 PM"
-      endTime: "2022-12-29 08:00 PM"
+      startTime: "2024-11-03 10:48 PM"
+      endTime: "2024-12-29 08:00 PM"
       recurrence:
         spec:
-          until: "2023-09-29 06:00 PM"
+          until: "2026-09-29 06:00 PM"
         type: "Daily"
   entityConfigs:
     - name: "rule1"

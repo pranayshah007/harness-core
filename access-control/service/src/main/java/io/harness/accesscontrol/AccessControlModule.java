@@ -13,9 +13,9 @@ import static io.harness.accesscontrol.AccessControlPermissions.VIEW_PROJECT_PER
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
-import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.ACCOUNT;
-import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.ORGANIZATION;
-import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.PROJECT;
+import static io.harness.accesscontrol.scopes.HarnessScopeLevel.ACCOUNT;
+import static io.harness.accesscontrol.scopes.HarnessScopeLevel.ORGANIZATION;
+import static io.harness.accesscontrol.scopes.HarnessScopeLevel.PROJECT;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.authorization.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.DUMMY_GROUP_NAME;
@@ -118,7 +118,6 @@ import io.harness.lock.PersistentLockModule;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.migration.NGMigrationSdkModule;
 import io.harness.organization.OrganizationClientModule;
-import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.project.ProjectClientModule;
 import io.harness.queue.QueueController;
@@ -321,12 +320,11 @@ public class AccessControlModule extends AbstractModule {
         config.getNgManagerServiceConfiguration().getNgManagerServiceSecret(), ACCESS_CONTROL_SERVICE.getServiceId(),
         ClientMode.PRIVILEGED));
 
-    install(new TransactionOutboxModule(config.getOutboxPollConfig(), ACCESS_CONTROL_SERVICE.getServiceId(),
-        config.getAggregatorConfiguration().isExportMetricsToStackDriver()));
     install(NGMigrationSdkModule.getInstance());
 
     install(AccessControlPersistenceModule.getInstance(config.getMongoConfig()));
-    install(AccessControlCoreModule.getInstance());
+    install(AccessControlCoreModule.getInstance(
+        config.getOutboxPollConfig(), config.getAggregatorConfiguration().isExportMetricsToStackDriver()));
     install(AccessControlPreferenceModule.getInstance());
     install(new AbstractTelemetryModule() {
       @Override
@@ -427,5 +425,8 @@ public class AccessControlModule extends AbstractModule {
     bind(boolean.class)
         .annotatedWith(Names.named("enableParallelProcessingOfUserGroupUpdates"))
         .toInstance(config.isEnableParallelProcessingOfUserGroupUpdates());
+    bind(boolean.class)
+        .annotatedWith(Names.named("enableAclProcessingThroughOutbox"))
+        .toInstance(config.isEnableAclProcessingThroughOutbox());
   }
 }

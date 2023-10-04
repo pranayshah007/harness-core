@@ -8,13 +8,17 @@
 package io.harness.pms.triggers.webhook.helpers;
 
 import static io.harness.beans.FeatureName.SPG_SEND_TRIGGER_PIPELINE_FOR_WEBHOOKS_ASYNC;
+import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
+import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.SRIDHAR;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
+import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -24,6 +28,7 @@ import io.harness.beans.HeaderConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.eventsframework.webhookpayloads.webhookdata.TriggerExecutionDTO;
 import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
+import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecution;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
@@ -32,10 +37,13 @@ import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
 import io.harness.ngtriggers.beans.response.TriggerEventResponse;
+import io.harness.ngtriggers.beans.source.ManifestType;
 import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
 import io.harness.ngtriggers.beans.source.artifact.AMIRegistrySpec;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactTriggerConfig;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactType;
+import io.harness.ngtriggers.beans.source.artifact.DockerRegistrySpec;
 import io.harness.ngtriggers.beans.source.artifact.HelmManifestSpec;
 import io.harness.ngtriggers.beans.source.artifact.ManifestTriggerConfig;
 import io.harness.ngtriggers.helpers.WebhookEventMapperHelper;
@@ -121,6 +129,74 @@ public class TriggerEventExecutionHelperTest extends CategoryTest {
                     .build())
             .build();
   }
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testBuildTriggerPayloadBuilder() {
+    String connectorRef = "connectorRef";
+    String imagePath = "imagePath";
+    // Create test data for TriggerDetails and PollingResponse
+    NGTriggerEntity ngTriggerEntity = NGTriggerEntity.builder().build();
+    ngTriggerEntity.setType(NGTriggerType.ARTIFACT); // Set the trigger type accordingly
+
+    NGTriggerConfigV2 ngTriggerConfig =
+        NGTriggerConfigV2.builder()
+            .source(
+                NGTriggerSourceV2.builder()
+                    .type(ARTIFACT)
+                    .spec(
+                        ArtifactTriggerConfig.builder()
+                            .type(ArtifactType.DOCKER_REGISTRY)
+                            .spec(DockerRegistrySpec.builder().connectorRef(connectorRef).imagePath(imagePath).build())
+                            .build())
+                    .build())
+            .build();
+    TriggerDetails triggerDetails1 =
+        TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).ngTriggerConfigV2(ngTriggerConfig).build();
+    // Create a mock BuildType and Build
+    Type buildType = Type.ARTIFACT; // Adjust as needed
+    String build = "1.0.0"; // Adjust as needed
+    Map<String, String> metadataMap = new HashMap<>();
+    metadataMap.put("key", "value");
+    PollingResponse pollingResponse1 =
+        PollingResponse.newBuilder()
+            .setBuildInfo(
+                BuildInfo.newBuilder()
+                    .addAllMetadata(Collections.singleton(Metadata.newBuilder().putAllMetadata(metadataMap).build()))
+                    .addVersions(build)
+                    .build())
+            .build();
+
+    // Call the method you want to test
+    TriggerPayload.Builder triggerPayloadBuilder =
+        triggerEventExecutionHelper.buildTriggerPayloadBuilder(triggerDetails1, pollingResponse1);
+
+    // Assert the result
+    assertNotNull(triggerPayloadBuilder);
+    assertThat(triggerPayloadBuilder.getConnectorRef()).isEqualTo(connectorRef);
+    assertThat(triggerPayloadBuilder.getImagePath()).isEqualTo(imagePath);
+    assertThat(triggerPayloadBuilder.getArtifactData().getBuild()).isEqualTo(build);
+    assertThat(triggerPayloadBuilder.getArtifactData().getMetadataMap().get("key")).isEqualTo("value");
+
+    ngTriggerEntity.setType(NGTriggerType.MANIFEST); // Set the trigger type accordingly
+
+    ngTriggerConfig = NGTriggerConfigV2.builder()
+                          .source(NGTriggerSourceV2.builder()
+                                      .type(MANIFEST)
+                                      .spec(ManifestTriggerConfig.builder()
+                                                .type(ManifestType.HELM_MANIFEST)
+                                                .spec(HelmManifestSpec.builder().build())
+                                                .build())
+                                      .build())
+                          .build();
+    triggerDetails1 =
+        TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).ngTriggerConfigV2(ngTriggerConfig).build();
+    triggerPayloadBuilder = triggerEventExecutionHelper.buildTriggerPayloadBuilder(triggerDetails1, pollingResponse1);
+
+    // Assert the result
+    assertNotNull(triggerPayloadBuilder);
+    assertThat(triggerPayloadBuilder.getManifestData().getVersion()).isEqualTo(build);
+  }
 
   @Test
   @Owner(developers = MEET)
@@ -186,6 +262,14 @@ public class TriggerEventExecutionHelperTest extends CategoryTest {
     assertThat(triggerEventResponse.getProjectIdentifier()).isEqualTo(projectId);
     assertThat(triggerEventResponse.getPayload()).isEqualTo(triggerPayload.toString());
     assertThat(triggerEventResponse.getPollingDocId()).isEqualTo(pollingDocId);
+
+    // payload should be present even in case of exception
+    doThrow(new InvalidRequestException("message"))
+        .when(triggerExecutionHelper)
+        .resolveRuntimeInputAndSubmitExecutionRequestForArtifactManifestPollingFlow(any(), any(), any());
+    triggerEventResponse =
+        triggerEventExecutionHelper.triggerEventPipelineExecution(manifestTriggerDetails, pollingResponse);
+    assertThat(triggerEventResponse.getPayload()).isEqualTo(triggerPayload.toString());
   }
 
   @Test

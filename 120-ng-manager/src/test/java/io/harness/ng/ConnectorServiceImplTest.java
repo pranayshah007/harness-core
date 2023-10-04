@@ -8,7 +8,6 @@
 package io.harness.ng;
 
 import static io.harness.connector.ConnectorCategory.SECRET_MANAGER;
-import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 
@@ -16,7 +15,6 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.fail;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -34,10 +32,6 @@ import io.harness.connector.services.ConnectorActivityService;
 import io.harness.connector.services.ConnectorHeartbeatService;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
-import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthenticationDTO;
-import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
-import io.harness.delegate.beans.connector.servicenow.ServiceNowRefreshTokenDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.errorhandling.NGErrorHelper;
@@ -132,22 +126,6 @@ public class ConnectorServiceImplTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = NAMANG)
-  @Category(UnitTests.class)
-  public void createUpdateSNowConnector_refreshTokenAuthWithFFDisabled() {
-    ConnectorDTO connectorDTO = getServiceNowConnectorRefreshTokenDTO();
-    String accountIdentifier = randomAlphabetic(10);
-    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(false);
-
-    assertThatThrownBy(() -> connectorService.create(connectorDTO, accountIdentifier))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Unsupported servicenow auth type provided : Refresh Token Grant");
-    assertThatThrownBy(() -> connectorService.update(connectorDTO, accountIdentifier))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Unsupported servicenow auth type provided : Refresh Token Grant");
-  }
-
-  @Test
   @Owner(developers = TEJAS)
   @Category(UnitTests.class)
   public void deleteSecretManagerWhenNoOtherSMPresent() {
@@ -176,30 +154,5 @@ public class ConnectorServiceImplTest extends CategoryTest {
           String.format("Cannot delete the connector: %s as no other secret manager is present in the account.",
               connectorIdentifier));
     }
-  }
-
-  private ConnectorDTO getServiceNowConnectorRefreshTokenDTO() {
-    SecretRefData secretRefData = new SecretRefData(randomAlphabetic(10));
-    secretRefData.setDecryptedValue(randomAlphabetic(5).toCharArray());
-    ConnectorInfoDTO connectorInfo = ConnectorInfoDTO.builder().build();
-    connectorInfo.setConnectorType(ConnectorType.SERVICENOW);
-    connectorInfo.setConnectorConfig(ServiceNowConnectorDTO.builder()
-                                         .auth(ServiceNowAuthenticationDTO.builder()
-                                                   .authType(ServiceNowAuthType.REFRESH_TOKEN)
-                                                   .credentials(ServiceNowRefreshTokenDTO.builder()
-                                                                    .tokenUrl("https://test.token.com")
-                                                                    .refreshTokenRef(secretRefData)
-                                                                    .clientSecretRef(secretRefData)
-                                                                    .clientIdRef(secretRefData)
-                                                                    .scope("openid email")
-                                                                    .build())
-                                                   .build())
-                                         .serviceNowUrl("https://test.service-now.com")
-                                         .build());
-    connectorInfo.setName("name");
-    connectorInfo.setIdentifier("identifier");
-    connectorInfo.setOrgIdentifier("orgIdentifier");
-    connectorInfo.setProjectIdentifier("projectIdentifier");
-    return ConnectorDTO.builder().connectorInfo(connectorInfo).build();
   }
 }

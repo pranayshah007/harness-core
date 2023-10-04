@@ -83,7 +83,7 @@ public class WebhookSenderImplTest extends CategoryTest {
     when(okHttpClient.newCall(any())).thenReturn(call);
 
     NotificationProcessingResponse notificationProcessingResponse =
-        webhookSender.send(wekbhookUrl, message, notificationId, null);
+        webhookSender.send(wekbhookUrl, message, notificationId, null, null);
 
     verify(okHttpClient, times(2)).newCall(any());
 

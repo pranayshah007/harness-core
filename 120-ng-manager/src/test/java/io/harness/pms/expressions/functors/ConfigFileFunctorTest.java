@@ -15,17 +15,21 @@ import static io.harness.rule.OwnerRule.IVAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.configfile.ConfigFileOutcome;
 import io.harness.cdng.configfile.ConfigFilesOutcome;
 import io.harness.cdng.configfile.ConfigGitFile;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.exception.InvalidArgumentsException;
@@ -69,12 +73,15 @@ public class ConfigFileFunctorTest extends CategoryTest {
 
   @Mock private CDStepHelper cdStepHelper;
   @Mock private CDExpressionResolver cdExpressionResolver;
+  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @InjectMocks private ConfigFileFunctor configFileFunctor;
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
+    when(cdFeatureFlagHelper.isEnabled(anyString(), eq(FeatureName.CDS_NOT_SUPPORT_SECRETS_BASE64_EXPRESSION)))
+        .thenReturn(true);
   }
 
   @Test

@@ -8,6 +8,7 @@
 package io.harness.delegate.task.helm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.MLUKIC;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,6 +55,9 @@ public class OciHelmApiHelperUtilsTest extends CategoryTest {
     normalizedData = ociHelmApiHelperUtils.normalizeFieldData("//test///");
     assertThat(normalizedData).isEqualTo("test");
 
+    normalizedData = ociHelmApiHelperUtils.normalizeFieldData("/");
+    assertThat(normalizedData).isEmpty();
+
     normalizedData = ociHelmApiHelperUtils.normalizeFieldData("");
     assertThat(normalizedData).isEqualTo("");
 
@@ -93,7 +97,10 @@ public class OciHelmApiHelperUtilsTest extends CategoryTest {
     assertThat(normalizedUrl).isEqualTo("https://test.registry.io");
 
     normalizedUrl = ociHelmApiHelperUtils.normalizeUrl("test.registry.io/4gdfvs/dcacqwdq");
-    assertThat(normalizedUrl).isEqualTo("https://test.registry.io/4gdfvs/dcacqwdq");
+    assertThat(normalizedUrl).isEqualTo("https://test.registry.io");
+
+    normalizedUrl = ociHelmApiHelperUtils.normalizeUrl("https://test.registry.io/asffa/asfasfa");
+    assertThat(normalizedUrl).isEqualTo("https://test.registry.io");
 
     assertThatThrownBy(() -> ociHelmApiHelperUtils.normalizeUrl(""))
         .isInstanceOf(OciHelmDockerApiException.class)
@@ -113,6 +120,50 @@ public class OciHelmApiHelperUtilsTest extends CategoryTest {
     assertThatThrownBy(() -> ociHelmApiHelperUtils.normalizeUrl("https:")).isInstanceOf(URISyntaxException.class);
 
     normalizedUrl = ociHelmApiHelperUtils.normalizeUrl("test.registry.io/");
-    assertThat(normalizedUrl).isEqualTo("https://test.registry.io/");
+    assertThat(normalizedUrl).isEqualTo("https://test.registry.io");
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testFormatChartNameWithUrlPath() throws URISyntaxException {
+    String chartName = "chartName";
+
+    String url1 = "test.io/path1/path2";
+    assertThat(ociHelmApiHelperUtils.formatChartNameWithUrlPath(url1, chartName)).isEqualTo("path1/path2/chartName");
+
+    String url2 = "https://test.io/path1/path2";
+    assertThat(ociHelmApiHelperUtils.formatChartNameWithUrlPath(url2, chartName)).isEqualTo("path1/path2/chartName");
+
+    String url3 = "oc://test.io/path1/path2";
+    assertThat(ociHelmApiHelperUtils.formatChartNameWithUrlPath(url3, chartName)).isEqualTo("path1/path2/chartName");
+
+    String url4 = "test.io/path1/path2/";
+    assertThat(ociHelmApiHelperUtils.formatChartNameWithUrlPath(url4, chartName)).isEqualTo("path1/path2/chartName");
+
+    String url5 = "https://test.io/path1/path2/";
+    assertThat(ociHelmApiHelperUtils.formatChartNameWithUrlPath(url5, chartName)).isEqualTo("path1/path2/chartName");
+
+    String url6 = "https://test.io";
+    assertThat(ociHelmApiHelperUtils.formatChartNameWithUrlPath(url6, chartName)).isEqualTo("chartName");
+
+    String url7 = "oc://test.io";
+    assertThat(ociHelmApiHelperUtils.formatChartNameWithUrlPath(url7, chartName)).isEqualTo("chartName");
+
+    String url8 = "oc://test.io/";
+    assertThat(ociHelmApiHelperUtils.formatChartNameWithUrlPath(url8, chartName)).isEqualTo("chartName");
+
+    String url9 = "test.io/";
+    assertThat(ociHelmApiHelperUtils.formatChartNameWithUrlPath(url9, chartName)).isEqualTo("chartName");
+
+    String url10 = "invalid_url:";
+    assertThatThrownBy(() -> ociHelmApiHelperUtils.formatChartNameWithUrlPath(url10, chartName))
+        .isInstanceOf(URISyntaxException.class);
+
+    String url11 = "oci://test.registry.io:123/path1/path2";
+    assertThat(ociHelmApiHelperUtils.formatChartNameWithUrlPath(url11, chartName)).isEqualTo("path1/path2/chartName");
+
+    String url12 = "oci://test.registry.io:123//path1/path2";
+    assertThat(ociHelmApiHelperUtils.formatChartNameWithUrlPath(url12, chartName)).isEqualTo("path1/path2/chartName");
   }
 }

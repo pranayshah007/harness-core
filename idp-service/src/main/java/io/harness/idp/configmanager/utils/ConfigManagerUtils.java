@@ -73,6 +73,7 @@ public class ConfigManagerUtils {
   private static final String GITHUB_CATALOG_DISCOVERY_JSON_SCHEMA_PATH =
       "configs/json-schemas/github-catalog-discovery-schema.json";
   private static final String GRAFANA_JSON_SCHEMA_PATH = "configs/json-schemas/grafana-schema.json";
+  private static final String SONARQUBE_JSON_SCHEMA_PATH = "configs/json-schemas/sonarqube-schema.json";
   private static final String HARNESS_CI_CD_CONFIG_PATH = "configs/plugins/harness-ci-cd.yaml";
   private static final String HARNESS_CI_CD_CONFIG_PATH_COMPLIANCE = "configs/plugins/harness-ci-cd-compliance.yaml";
   private static final String HARNESS_CI_CD_CONFIG_PATH_PRE_QA = "configs/plugins/harness-ci-cd-preqa.yaml";
@@ -210,6 +211,8 @@ public class ConfigManagerUtils {
         return readFileFromClassPath(GITHUB_CATALOG_DISCOVERY_JSON_SCHEMA_PATH);
       case "grafana":
         return readFileFromClassPath(GRAFANA_JSON_SCHEMA_PATH);
+      case "sonarqube":
+        return readFileFromClassPath(SONARQUBE_JSON_SCHEMA_PATH);
       default:
         return null;
     }

@@ -29,6 +29,7 @@ import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.interrupts.helpers.AbortHelper;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
+import io.harness.execution.PlanExecution.PlanExecutionKeys;
 import io.harness.interrupts.Interrupt;
 import io.harness.plan.NodeType;
 import io.harness.pms.contracts.execution.ExecutionMode;
@@ -40,6 +41,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.rule.Owner;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -170,7 +172,8 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
 
             .build();
 
-    when(planExecutionService.getPlanExecutionMetadata(planExecutionId)).thenReturn(planExecution);
+    when(planExecutionService.getWithFieldsIncluded(planExecutionId, Sets.newHashSet(PlanExecutionKeys.status)))
+        .thenReturn(planExecution);
 
     List<NodeExecution> nodeExecutionList = Arrays.asList(pipeline, stages, stage, execution, step);
     CloseableIterator<NodeExecution> iterator =
@@ -368,7 +371,8 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
 
             .build();
 
-    when(planExecutionService.getPlanExecutionMetadata(eq(planExecutionId))).thenReturn(planExecution);
+    when(planExecutionService.getWithFieldsIncluded(planExecutionId, Sets.newHashSet(PlanExecutionKeys.status)))
+        .thenReturn(planExecution);
     List<NodeExecution> nodeExecutionList =
         Arrays.asList(pipeline, stages, stage, execution, fork, sg1, sg2, stepSg1, stepSg2);
     CloseableIterator<NodeExecution> iterator =
@@ -583,7 +587,8 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
 
             .build();
 
-    when(planExecutionService.getPlanExecutionMetadata(eq(planExecutionId))).thenReturn(planExecution);
+    when(planExecutionService.getWithFieldsIncluded(eq(planExecutionId), eq(Sets.newHashSet(PlanExecutionKeys.status))))
+        .thenReturn(planExecution);
 
     List<NodeExecution> nodeExecutionList =
         Arrays.asList(pipeline, stages, stage, execution, fork, sg1, sg2, stepSg1, stepSg2);
@@ -778,7 +783,8 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .nodeType(NodeType.PLAN_NODE.name())
             .build();
 
-    when(planExecutionService.getPlanExecutionMetadata(eq(planExecutionId))).thenReturn(planExecution);
+    when(planExecutionService.getWithFieldsIncluded(eq(planExecutionId), eq(Sets.newHashSet(PlanExecutionKeys.status))))
+        .thenReturn(planExecution);
 
     List<NodeExecution> nodeExecutionList =
         Arrays.asList(pipeline, stages, stage, execution, fork, sg1, sg2, stepSg1, stepSg2);
@@ -963,7 +969,8 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .nodeType(NodeType.PLAN_NODE.name())
             .build();
 
-    when(planExecutionService.getPlanExecutionMetadata(eq(planExecutionId))).thenReturn(planExecution);
+    when(planExecutionService.getWithFieldsIncluded(eq(planExecutionId), eq(Sets.newHashSet(PlanExecutionKeys.status))))
+        .thenReturn(planExecution);
 
     List<NodeExecution> nodeExecutionList =
         Arrays.asList(pipeline, stages, stage, execution, fork, sg1, sg2, stepSg1, stepSg2);
@@ -1150,7 +1157,8 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .nodeType(NodeType.PLAN_NODE.name())
             .build();
 
-    when(planExecutionService.getPlanExecutionMetadata(eq(planExecutionId))).thenReturn(planExecution);
+    when(planExecutionService.getWithFieldsIncluded(eq(planExecutionId), eq(Sets.newHashSet(PlanExecutionKeys.status))))
+        .thenReturn(planExecution);
 
     List<NodeExecution> nodeExecutionList =
         Arrays.asList(pipeline, stages, stage, execution, fork, sg1, sg2, stepSg1, stepSg2);

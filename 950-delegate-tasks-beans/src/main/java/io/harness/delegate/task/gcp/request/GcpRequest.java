@@ -22,6 +22,7 @@ import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
+import java.time.Duration;
 import java.util.List;
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
@@ -35,6 +36,9 @@ public abstract class GcpRequest extends ConnectorTaskParams implements Executio
   private List<EncryptedDataDetail> encryptionDetails;
   private GcpManualDetailsDTO gcpManualDetailsDTO;
 
+  public Duration getExecutionTimeout() {
+    return Duration.ofSeconds(30);
+  }
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     if (isNotEmpty(delegateSelectors)) {

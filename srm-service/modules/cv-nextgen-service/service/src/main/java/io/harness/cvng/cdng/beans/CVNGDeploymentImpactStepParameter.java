@@ -7,6 +7,7 @@
 
 package io.harness.cvng.cdng.beans;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
 
@@ -20,6 +21,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @AllArgsConstructor
 @TypeAlias("deploymentImpactStepParameter")
+@RecasterAlias("io.harness.cvng.cdng.beans.CVNGDeploymentImpactStepParameter")
 public class CVNGDeploymentImpactStepParameter implements SpecParameters {
   ParameterField<String> serviceIdentifier;
   ParameterField<String> envIdentifier;

@@ -31,6 +31,7 @@ import io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStepInfo;
 import io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStepInfo;
 import io.harness.cdng.bamboo.BambooBuildStepInfo;
 import io.harness.cdng.customDeployment.FetchInstanceScriptStepInfo;
+import io.harness.cdng.ecs.EcsBasicRollbackStepInfo;
 import io.harness.cdng.ecs.EcsBlueGreenCreateServiceStepInfo;
 import io.harness.cdng.ecs.EcsBlueGreenRollbackStepInfo;
 import io.harness.cdng.ecs.EcsBlueGreenSwapTargetGroupsStepInfo;
@@ -39,6 +40,8 @@ import io.harness.cdng.ecs.EcsCanaryDeployStepInfo;
 import io.harness.cdng.ecs.EcsRollingDeployStepInfo;
 import io.harness.cdng.ecs.EcsRollingRollbackStepInfo;
 import io.harness.cdng.ecs.EcsRunTaskStepInfo;
+import io.harness.cdng.ecs.EcsServiceSetupStepInfo;
+import io.harness.cdng.ecs.EcsUpgradeContainerStepInfo;
 import io.harness.cdng.elastigroup.ElastigroupBGStageSetupStepInfo;
 import io.harness.cdng.elastigroup.ElastigroupSetupStepInfo;
 import io.harness.cdng.elastigroup.ElastigroupSwapRouteStepInfo;
@@ -159,7 +162,8 @@ import io.swagger.annotations.ApiModel;
         ServerlessAwsLambdaPrepareRollbackV2StepInfo.class, ServerlessAwsLambdaDeployV2StepInfo.class,
         ServerlessAwsLambdaPackageV2StepInfo.class, ServerlessAwsLambdaRollbackV2StepInfo.class,
         AwsCdkBootstrapStepInfo.class, AwsCdkSynthStepInfo.class, AwsCdkDiffStepInfo.class, AwsCdkDeployStepInfo.class,
-        AwsCdkDestroyStepInfo.class, AwsCdkRollbackStepInfo.class})
+        AwsCdkDestroyStepInfo.class, AwsCdkRollbackStepInfo.class, EcsServiceSetupStepInfo.class,
+        EcsUpgradeContainerStepInfo.class, EcsBasicRollbackStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 // keeping this class because of the swagger annotation and UI dependency on it

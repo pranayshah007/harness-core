@@ -425,8 +425,10 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
             .build();
 
     final AzureAppServicePreDeploymentData preDeploymentData = AzureAppServicePreDeploymentData.builder().build();
-    final AzureSlotDeploymentPassThroughData passThroughData =
-        AzureSlotDeploymentPassThroughData.builder().preDeploymentData(preDeploymentData).build();
+    final AzureSlotDeploymentPassThroughData passThroughData = AzureSlotDeploymentPassThroughData.builder()
+                                                                   .preDeploymentData(preDeploymentData)
+                                                                   .cleanDeploymentEnabled(true)
+                                                                   .build();
     final ArgumentCaptor<AzureWebAppSlotDeploymentDataOutput> slotDeploymentDataOutputArgumentCaptor =
         ArgumentCaptor.forClass(AzureWebAppSlotDeploymentDataOutput.class);
     doReturn(AzureContainerArtifactConfig.builder().build())
@@ -461,7 +463,10 @@ public class AzureWebAppSlotDeploymentStepTest extends CDNGTestBase {
             userAddedAppSettings,
             String.format("%s.%s", StageExecutionInfoKeys.executionDetails,
                 AzureWebAppsStageExecutionDetailsKeys.userAddedConnStringNames),
-            userAddedConnStrings));
+            userAddedConnStrings,
+            String.format("%s.%s", StageExecutionInfoKeys.executionDetails,
+                AzureWebAppsStageExecutionDetailsKeys.cleanDeployment),
+            true));
   }
 
   @Test

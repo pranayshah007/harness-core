@@ -35,6 +35,9 @@ public class NGResourceFilterConstants {
   public static final String IDENTIFIERS = "identifiers";
   public static final String DESCRIPTION = "description";
   public static final String FILTER_KEY = "filterIdentifier";
+
+  public static final String SHOW_ALL_EXECUTONS = "showAllExecutions";
+
   public static final String SCOPE_KEY = "scope";
   public static final String SCOPE = "scope";
   public static final String TIME_GROUP_BY_TYPE = "timeGroupByType";

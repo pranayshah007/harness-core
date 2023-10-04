@@ -14,13 +14,17 @@ import static io.harness.rule.OwnerRule.IVAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
@@ -40,12 +44,15 @@ public class FileStoreFunctorTest extends CategoryTest {
   private static final String BASE64_FILE_CONTENT = "ZmlsZSBjb250ZW50";
 
   @Mock private CDStepHelper cdStepHelper;
+  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @InjectMocks private FileStoreFunctor fileStoreFunctor;
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
+    when(cdFeatureFlagHelper.isEnabled(anyString(), eq(FeatureName.CDS_NOT_SUPPORT_SECRETS_BASE64_EXPRESSION)))
+        .thenReturn(true);
   }
 
   @Test

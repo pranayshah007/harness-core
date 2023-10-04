@@ -17,7 +17,6 @@ import io.harness.encryption.Scope;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.rule.Owner;
 import io.harness.template.services.NGTemplateSchemaService;
-import io.harness.template.utils.TemplateSchemaFetcher;
 
 import java.io.IOException;
 import org.junit.After;
@@ -32,7 +31,6 @@ import org.mockito.MockitoAnnotations;
 public class NGTemplateSchemaResourceImplTest extends CategoryTest {
   @InjectMocks NGTemplateSchemaResourceImpl ngTemplateSchemaResource;
   @Mock NGTemplateSchemaService ngTemplateSchemaService;
-  @Mock TemplateSchemaFetcher templateSchemaFetcher;
   private AutoCloseable mocks;
 
   private final String ACCOUNT_ID = "account_id";
@@ -57,13 +55,5 @@ public class NGTemplateSchemaResourceImplTest extends CategoryTest {
   public void testGetTemplateSchema() {
     ngTemplateSchemaResource.getTemplateSchema(
         TemplateEntityType.STEP_TEMPLATE, PROJ_IDENTIFIER, ORG_IDENTIFIER, Scope.PROJECT, ACCOUNT_ID, "ShellScript");
-  }
-
-  @Test
-  @Owner(developers = UTKARSH_CHOUBEY)
-  @Category(UnitTests.class)
-  public void testGetStaticYamlSchema() {
-    ngTemplateSchemaResource.getStaticYamlSchema(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "ShellScript",
-        TemplateEntityType.STEP_TEMPLATE, Scope.PROJECT, "ShellScript");
   }
 }

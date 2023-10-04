@@ -106,8 +106,12 @@ public class IdpConfiguration extends Configuration {
   private IteratorConfig scorecardScoreComputationIteratorConfig;
   @JsonProperty("cpu") private String cpu;
   @JsonProperty("scoreComputerThreadsPerCore") private String scoreComputerThreadsPerCore;
+  @JsonProperty("auditClientConfig") private ServiceHttpClientConfig auditClientConfig;
+  @JsonProperty("enableAudit") private boolean enableAudit;
   private String managerTarget;
   private String managerAuthority;
+  @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;
+
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
   public static final String IDP_SPEC_PACKAGE = "io.harness.spec.server.idp.v1";
   public static final String SERVICES_PROXY_PACKAGE = "io.harness.idp.proxy.services";

@@ -1,0 +1,8 @@
+name: HeartBeat Connection Metrics
+identifier: heartbeat_metrics
+metricGroup: heartbeat_entry
+metrics:
+  - metricName: heartbeat_received
+    metricDefinition: HeartBeat is received to manager
+    type: LastValue
+    unit: count

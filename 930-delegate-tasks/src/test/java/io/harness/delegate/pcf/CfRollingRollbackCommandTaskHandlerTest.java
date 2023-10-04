@@ -49,14 +49,12 @@ import io.harness.logging.LogCallback;
 import io.harness.pcf.CfCommandUnitConstants;
 import io.harness.pcf.CfDeploymentManager;
 import io.harness.pcf.PivotalClientApiException;
-import io.harness.pcf.model.CfRequestConfig;
 import io.harness.pcf.model.CloudFoundryConfig;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.List;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
@@ -138,7 +136,7 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
     TasManifestsPackage tasManifestsPackage = TasManifestsPackage.builder()
                                                   .manifestYml(manifestsYaml)
                                                   .autoscalarManifestYml(autoscalarYaml)
-                                                  .variableYmls(Arrays.asList(variableYamls))
+                                                  .variableYmls(List.of(variableYamls))
                                                   .build();
 
     CfRollingDeployRequestNG cfRollingDeployRequestNG = CfRollingDeployRequestNG.builder()
@@ -164,25 +162,8 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
         .when(pcfCommandTaskHelper)
         .getCfCliPathOnDelegate(true, cfRollingRollbackRequestNG.getCfCliVersion());
 
-    CfRequestConfig cfRequestConfig =
-        CfRequestConfig.builder()
-            .userName(String.valueOf(cfConfig.getUserName()))
-            .endpointUrl(cfConfig.getEndpointUrl())
-            .password(String.valueOf(cfConfig.getPassword()))
-            .orgName(tasInfraConfig.getOrganization())
-            .spaceName(tasInfraConfig.getSpace())
-            .timeOutIntervalInMins(cfRollingRollbackRequestNG.getTimeoutIntervalInMin())
-            .cfHomeDirPath(file.getAbsolutePath())
-            .cfCliPath(pcfCommandTaskHelper.getCfCliPathOnDelegate(true, cfRollingRollbackRequestNG.getCfCliVersion()))
-            .cfCliVersion(cfRollingRollbackRequestNG.getCfCliVersion())
-            .useCFCLI(true)
-            .applicationName(cfRollingRollbackRequestNG.getApplicationName())
-            .desiredCount(cfRollingRollbackRequestNG.getDesiredCount())
-            .build();
-
     String name = "name";
     String id = "id";
-    String url = "url";
     ApplicationSummary applicationSummary = ApplicationSummary.builder()
                                                 .id(id)
                                                 .diskQuota(1)
@@ -192,7 +173,7 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
                                                 .requestedState(STOPPED)
                                                 .runningInstances(0)
                                                 .build();
-    doReturn(Arrays.asList(applicationSummary)).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
+    doReturn(List.of(applicationSummary)).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
 
     int instances = 1;
     ApplicationDetail applicationDetail = ApplicationDetail.builder()
@@ -218,6 +199,23 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
 
     CfCommandResponseNG cfCommandExecutionResponse = cfRollingRollbackCommandTaskHandlerNG.executeTaskInternal(
         cfRollingDeployRequestNG, logStreamingTaskClient, commandUnitsProgress);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getDeployedServiceInstances().size())
+        .isEqualTo(1);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo()
+                   .getDeployedServiceInstances()
+                   .get(0)
+                   .getInstanceName())
+        .isEqualTo(id);
   }
 
   @Test
@@ -273,7 +271,7 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
     TasManifestsPackage tasManifestsPackage = TasManifestsPackage.builder()
                                                   .manifestYml(manifestsYaml)
                                                   .autoscalarManifestYml(autoscalarYaml)
-                                                  .variableYmls(Arrays.asList(variableYamls))
+                                                  .variableYmls(List.of(variableYamls))
                                                   .build();
 
     CfRollingRollbackRequestNG cfRollingRollbackRequestNG = CfRollingRollbackRequestNG.builder()
@@ -292,25 +290,8 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
         .when(pcfCommandTaskHelper)
         .getCfCliPathOnDelegate(true, cfRollingRollbackRequestNG.getCfCliVersion());
 
-    CfRequestConfig cfRequestConfig =
-        CfRequestConfig.builder()
-            .userName(String.valueOf(cfConfig.getUserName()))
-            .endpointUrl(cfConfig.getEndpointUrl())
-            .password(String.valueOf(cfConfig.getPassword()))
-            .orgName(tasInfraConfig.getOrganization())
-            .spaceName(tasInfraConfig.getSpace())
-            .timeOutIntervalInMins(cfRollingRollbackRequestNG.getTimeoutIntervalInMin())
-            .cfHomeDirPath(file.getAbsolutePath())
-            .cfCliPath(pcfCommandTaskHelper.getCfCliPathOnDelegate(true, cfRollingRollbackRequestNG.getCfCliVersion()))
-            .cfCliVersion(cfRollingRollbackRequestNG.getCfCliVersion())
-            .useCFCLI(true)
-            .applicationName(cfRollingRollbackRequestNG.getApplicationName())
-            .desiredCount(cfRollingRollbackRequestNG.getDesiredCount())
-            .build();
-
     String name = "name";
     String id = "id";
-    String url = "url";
     ApplicationSummary applicationSummary = ApplicationSummary.builder()
                                                 .id(id)
                                                 .diskQuota(1)
@@ -320,7 +301,7 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
                                                 .requestedState(STOPPED)
                                                 .runningInstances(0)
                                                 .build();
-    doReturn(Arrays.asList(applicationSummary)).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
+    doReturn(List.of(applicationSummary)).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
 
     int instances = 1;
     ApplicationDetail applicationDetail = ApplicationDetail.builder()
@@ -349,6 +330,17 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
 
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     verify(cfDeploymentManager, times(1)).createRollingApplicationWithSteadyStateCheck(any(), any());
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getDeployedServiceInstances().size()).isZero();
   }
 
   @Test
@@ -409,7 +401,7 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
     TasManifestsPackage tasManifestsPackage = TasManifestsPackage.builder()
                                                   .manifestYml(manifestsYaml)
                                                   .autoscalarManifestYml(autoscalarYaml)
-                                                  .variableYmls(Arrays.asList(variableYamls))
+                                                  .variableYmls(List.of(variableYamls))
                                                   .build();
 
     CfRollingRollbackRequestNG cfRollingRollbackRequestNG = CfRollingRollbackRequestNG.builder()
@@ -427,25 +419,8 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
         .when(pcfCommandTaskHelper)
         .getCfCliPathOnDelegate(true, cfRollingRollbackRequestNG.getCfCliVersion());
 
-    CfRequestConfig cfRequestConfig =
-        CfRequestConfig.builder()
-            .userName(String.valueOf(cfConfig.getUserName()))
-            .endpointUrl(cfConfig.getEndpointUrl())
-            .password(String.valueOf(cfConfig.getPassword()))
-            .orgName(tasInfraConfig.getOrganization())
-            .spaceName(tasInfraConfig.getSpace())
-            .timeOutIntervalInMins(cfRollingRollbackRequestNG.getTimeoutIntervalInMin())
-            .cfHomeDirPath(file.getAbsolutePath())
-            .cfCliPath(pcfCommandTaskHelper.getCfCliPathOnDelegate(true, cfRollingRollbackRequestNG.getCfCliVersion()))
-            .cfCliVersion(cfRollingRollbackRequestNG.getCfCliVersion())
-            .useCFCLI(true)
-            .applicationName(cfRollingRollbackRequestNG.getApplicationName())
-            .desiredCount(cfRollingRollbackRequestNG.getDesiredCount())
-            .build();
-
     String name = "name";
     String id = "id";
-    String url = "url";
     ApplicationSummary applicationSummary = ApplicationSummary.builder()
                                                 .id(id)
                                                 .diskQuota(1)
@@ -455,7 +430,7 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
                                                 .requestedState(STOPPED)
                                                 .runningInstances(0)
                                                 .build();
-    doReturn(Arrays.asList(applicationSummary)).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
+    doReturn(List.of(applicationSummary)).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
 
     int instances = 1;
     ApplicationDetail applicationDetail = ApplicationDetail.builder()
@@ -483,6 +458,17 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
         cfRollingRollbackRequestNG, logStreamingTaskClient, commandUnitsProgress);
 
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getDeployedServiceInstances().size()).isZero();
   }
 
   @Test
@@ -538,7 +524,7 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
     TasManifestsPackage tasManifestsPackage = TasManifestsPackage.builder()
                                                   .manifestYml(manifestsYaml)
                                                   .autoscalarManifestYml(autoscalarYaml)
-                                                  .variableYmls(Arrays.asList(variableYamls))
+                                                  .variableYmls(List.of(variableYamls))
                                                   .build();
 
     CfRollingRollbackRequestNG cfRollingRollbackRequestNG = CfRollingRollbackRequestNG.builder()
@@ -556,34 +542,8 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
         .when(pcfCommandTaskHelper)
         .getCfCliPathOnDelegate(true, cfRollingRollbackRequestNG.getCfCliVersion());
 
-    CfRequestConfig cfRequestConfig =
-        CfRequestConfig.builder()
-            .userName(String.valueOf(cfConfig.getUserName()))
-            .endpointUrl(cfConfig.getEndpointUrl())
-            .password(String.valueOf(cfConfig.getPassword()))
-            .orgName(tasInfraConfig.getOrganization())
-            .spaceName(tasInfraConfig.getSpace())
-            .timeOutIntervalInMins(cfRollingRollbackRequestNG.getTimeoutIntervalInMin())
-            .cfHomeDirPath(file.getAbsolutePath())
-            .cfCliPath(pcfCommandTaskHelper.getCfCliPathOnDelegate(true, cfRollingRollbackRequestNG.getCfCliVersion()))
-            .cfCliVersion(cfRollingRollbackRequestNG.getCfCliVersion())
-            .useCFCLI(true)
-            .applicationName(cfRollingRollbackRequestNG.getApplicationName())
-            .desiredCount(cfRollingRollbackRequestNG.getDesiredCount())
-            .build();
-
     String name = "name";
     String id = "id";
-    String url = "url";
-    ApplicationSummary applicationSummary = ApplicationSummary.builder()
-                                                .id(id)
-                                                .diskQuota(1)
-                                                .instances(0)
-                                                .memoryLimit(1)
-                                                .name(name)
-                                                .requestedState(STOPPED)
-                                                .runningInstances(0)
-                                                .build();
     doThrow(PivotalClientApiException.class).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
 
     int instances = 1;
@@ -612,6 +572,9 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
         cfRollingRollbackRequestNG, logStreamingTaskClient, commandUnitsProgress);
 
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().size()).isZero();
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().size()).isZero();
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getDeployedServiceInstances().size()).isZero();
   }
 
   @Test
@@ -640,11 +603,6 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
         .mapTasConfigWithDecryption(tasInfraConfig.getTasConnectorDTO(), tasInfraConfig.getEncryptionDataDetails());
 
     TasArtifactConfig tasArtifactConfig = TasPackageArtifactConfig.builder().build();
-    String variableYamls = "\n"
-        + "\n"
-        + "APP_MEMORY: 350M\n"
-        + "INSTANCES: 1\n"
-        + "APP_NAME: rolling_rollback_locallyyyyw_rediessre";
     String manifestsYaml = "applications:\n"
         + "- name: ((APP_NAME))\n"
         + "  instances: ((INSTANCES))\n"
@@ -685,34 +643,8 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
         .when(pcfCommandTaskHelper)
         .getCfCliPathOnDelegate(true, cfRollingRollbackRequestNG.getCfCliVersion());
 
-    CfRequestConfig cfRequestConfig =
-        CfRequestConfig.builder()
-            .userName(String.valueOf(cfConfig.getUserName()))
-            .endpointUrl(cfConfig.getEndpointUrl())
-            .password(String.valueOf(cfConfig.getPassword()))
-            .orgName(tasInfraConfig.getOrganization())
-            .spaceName(tasInfraConfig.getSpace())
-            .timeOutIntervalInMins(cfRollingRollbackRequestNG.getTimeoutIntervalInMin())
-            .cfHomeDirPath(file.getAbsolutePath())
-            .cfCliPath(pcfCommandTaskHelper.getCfCliPathOnDelegate(true, cfRollingRollbackRequestNG.getCfCliVersion()))
-            .cfCliVersion(cfRollingRollbackRequestNG.getCfCliVersion())
-            .useCFCLI(true)
-            .applicationName(cfRollingRollbackRequestNG.getApplicationName())
-            .desiredCount(cfRollingRollbackRequestNG.getDesiredCount())
-            .build();
-
     String name = "name";
     String id = "id";
-    String url = "url";
-    ApplicationSummary applicationSummary = ApplicationSummary.builder()
-                                                .id(id)
-                                                .diskQuota(1)
-                                                .instances(0)
-                                                .memoryLimit(1)
-                                                .name(name)
-                                                .requestedState(STOPPED)
-                                                .runningInstances(0)
-                                                .build();
     doReturn(emptyList()).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
 
     int instances = 1;
@@ -741,6 +673,19 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
         cfRollingRollbackRequestNG, logStreamingTaskClient, commandUnitsProgress);
 
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().size()).isZero();
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getDeployedServiceInstances().size())
+        .isEqualTo(1);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo()
+                   .getDeployedServiceInstances()
+                   .get(0)
+                   .getInstanceName())
+        .isEqualTo(id);
   }
 
   @Test
@@ -769,11 +714,6 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
         .mapTasConfigWithDecryption(tasInfraConfig.getTasConnectorDTO(), tasInfraConfig.getEncryptionDataDetails());
 
     TasArtifactConfig tasArtifactConfig = TasPackageArtifactConfig.builder().build();
-    String variableYamls = "\n"
-        + "\n"
-        + "APP_MEMORY: 350M\n"
-        + "INSTANCES: 1\n"
-        + "APP_NAME: rolling_rollback_locallyyyyw_rediessre";
     String manifestsYaml = "applications:\n"
         + "- name: ((APP_NAME))\n"
         + "  instances: ((INSTANCES))\n"
@@ -814,25 +754,8 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
         .when(pcfCommandTaskHelper)
         .getCfCliPathOnDelegate(true, cfRollingRollbackRequestNG.getCfCliVersion());
 
-    CfRequestConfig cfRequestConfig =
-        CfRequestConfig.builder()
-            .userName(String.valueOf(cfConfig.getUserName()))
-            .endpointUrl(cfConfig.getEndpointUrl())
-            .password(String.valueOf(cfConfig.getPassword()))
-            .orgName(tasInfraConfig.getOrganization())
-            .spaceName(tasInfraConfig.getSpace())
-            .timeOutIntervalInMins(cfRollingRollbackRequestNG.getTimeoutIntervalInMin())
-            .cfHomeDirPath(file.getAbsolutePath())
-            .cfCliPath(pcfCommandTaskHelper.getCfCliPathOnDelegate(true, cfRollingRollbackRequestNG.getCfCliVersion()))
-            .cfCliVersion(cfRollingRollbackRequestNG.getCfCliVersion())
-            .useCFCLI(true)
-            .applicationName(cfRollingRollbackRequestNG.getApplicationName())
-            .desiredCount(cfRollingRollbackRequestNG.getDesiredCount())
-            .build();
-
     String name = "name";
     String id = "id";
-    String url = "url";
     ApplicationSummary applicationSummary = ApplicationSummary.builder()
                                                 .id(id)
                                                 .diskQuota(1)
@@ -842,7 +765,7 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
                                                 .requestedState(STOPPED)
                                                 .runningInstances(0)
                                                 .build();
-    doReturn(Arrays.asList(applicationSummary)).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
+    doReturn(List.of(applicationSummary)).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
 
     int instances = 1;
     ApplicationDetail applicationDetail = ApplicationDetail.builder()
@@ -870,6 +793,17 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
         cfRollingRollbackRequestNG, logStreamingTaskClient, commandUnitsProgress);
 
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getDeployedServiceInstances().size()).isZero();
   }
 
   @Test
@@ -899,11 +833,6 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
         .mapTasConfigWithDecryption(tasInfraConfig.getTasConnectorDTO(), tasInfraConfig.getEncryptionDataDetails());
 
     TasArtifactConfig tasArtifactConfig = TasPackageArtifactConfig.builder().build();
-    String variableYamls = "\n"
-        + "\n"
-        + "APP_MEMORY: 350M\n"
-        + "INSTANCES: 1\n"
-        + "APP_NAME: rolling_rollback_locallyyyyw_rediessre";
     String manifestsYaml = "applications:\n"
         + "- name: ((APP_NAME))\n"
         + "  instances: ((INSTANCES))\n"
@@ -944,25 +873,8 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
         .when(pcfCommandTaskHelper)
         .getCfCliPathOnDelegate(true, cfRollingRollbackRequestNG.getCfCliVersion());
 
-    CfRequestConfig cfRequestConfig =
-        CfRequestConfig.builder()
-            .userName(String.valueOf(cfConfig.getUserName()))
-            .endpointUrl(cfConfig.getEndpointUrl())
-            .password(String.valueOf(cfConfig.getPassword()))
-            .orgName(tasInfraConfig.getOrganization())
-            .spaceName(tasInfraConfig.getSpace())
-            .timeOutIntervalInMins(cfRollingRollbackRequestNG.getTimeoutIntervalInMin())
-            .cfHomeDirPath(file.getAbsolutePath())
-            .cfCliPath(pcfCommandTaskHelper.getCfCliPathOnDelegate(true, cfRollingRollbackRequestNG.getCfCliVersion()))
-            .cfCliVersion(cfRollingRollbackRequestNG.getCfCliVersion())
-            .useCFCLI(true)
-            .applicationName(cfRollingRollbackRequestNG.getApplicationName())
-            .desiredCount(cfRollingRollbackRequestNG.getDesiredCount())
-            .build();
-
     String name = "name";
     String id = "id";
-    String url = "url";
     ApplicationSummary applicationSummary = ApplicationSummary.builder()
                                                 .id(id)
                                                 .diskQuota(1)
@@ -972,7 +884,7 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
                                                 .requestedState(STOPPED)
                                                 .runningInstances(0)
                                                 .build();
-    doReturn(Arrays.asList(applicationSummary)).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
+    doReturn(List.of(applicationSummary)).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
 
     int instances = 1;
     ApplicationDetail applicationDetail = ApplicationDetail.builder()
@@ -1000,6 +912,17 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
         cfRollingRollbackRequestNG, logStreamingTaskClient, commandUnitsProgress);
 
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getDeployedServiceInstances().size()).isZero();
   }
 
   @Test
@@ -1028,11 +951,6 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
         .mapTasConfigWithDecryption(tasInfraConfig.getTasConnectorDTO(), tasInfraConfig.getEncryptionDataDetails());
 
     TasArtifactConfig tasArtifactConfig = TasPackageArtifactConfig.builder().build();
-    String variableYamls = "\n"
-        + "\n"
-        + "APP_MEMORY: 350M\n"
-        + "INSTANCES: 1\n"
-        + "APP_NAME: rolling_rollback_locallyyyyw_rediessre";
     String manifestsYaml = "applications:\n"
         + "- name: ((APP_NAME))\n"
         + "  instances: ((INSTANCES))\n"
@@ -1074,25 +992,8 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
         .when(pcfCommandTaskHelper)
         .getCfCliPathOnDelegate(true, cfRollingRollbackRequestNG.getCfCliVersion());
 
-    CfRequestConfig cfRequestConfig =
-        CfRequestConfig.builder()
-            .userName(String.valueOf(cfConfig.getUserName()))
-            .endpointUrl(cfConfig.getEndpointUrl())
-            .password(String.valueOf(cfConfig.getPassword()))
-            .orgName(tasInfraConfig.getOrganization())
-            .spaceName(tasInfraConfig.getSpace())
-            .timeOutIntervalInMins(cfRollingRollbackRequestNG.getTimeoutIntervalInMin())
-            .cfHomeDirPath(file.getAbsolutePath())
-            .cfCliPath(pcfCommandTaskHelper.getCfCliPathOnDelegate(true, cfRollingRollbackRequestNG.getCfCliVersion()))
-            .cfCliVersion(cfRollingRollbackRequestNG.getCfCliVersion())
-            .useCFCLI(true)
-            .applicationName(cfRollingRollbackRequestNG.getApplicationName())
-            .desiredCount(cfRollingRollbackRequestNG.getDesiredCount())
-            .build();
-
     String name = "name";
     String id = "id";
-    String url = "url";
     ApplicationSummary applicationSummary = ApplicationSummary.builder()
                                                 .id(id)
                                                 .diskQuota(1)
@@ -1102,7 +1003,7 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
                                                 .requestedState(STOPPED)
                                                 .runningInstances(0)
                                                 .build();
-    doReturn(Arrays.asList(applicationSummary)).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
+    doReturn(List.of(applicationSummary)).when(cfDeploymentManager).getPreviousReleasesForRolling(any(), any());
 
     int instances = 1;
     ApplicationDetail applicationDetail = ApplicationDetail.builder()
@@ -1130,6 +1031,17 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
         cfRollingRollbackRequestNG, logStreamingTaskClient, commandUnitsProgress);
 
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getDeployedServiceInstances().size()).isZero();
   }
 
   @Test
@@ -1255,5 +1167,16 @@ public class CfRollingRollbackCommandTaskHandlerTest extends CategoryTest {
     assertThat(allValues.get(0)).contains("This is first rolling deployment hence skipping rollback");
     assertThat(allValues.get(1)).contains("PCF Rolling Rollback completed successfully");
     verify(cfDeploymentManager, times(0)).createRollingApplicationWithSteadyStateCheck(any(), any());
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesBefore().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().size())
+        .isEqualTo(1);
+    assertThat(
+        cfCommandExecutionResponse.getStepExecutionInstanceInfo().getServiceInstancesAfter().get(0).getInstanceName())
+        .isEqualTo(id);
+    assertThat(cfCommandExecutionResponse.getStepExecutionInstanceInfo().getDeployedServiceInstances().size()).isZero();
   }
 }

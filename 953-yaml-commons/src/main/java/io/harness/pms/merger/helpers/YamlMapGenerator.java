@@ -8,7 +8,6 @@
 package io.harness.pms.merger.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.pms.yaml.YamlNode.UUID_FIELD_NAME;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -132,12 +131,8 @@ public class YamlMapGenerator {
       Map<String, Object> res, String topKey, boolean isSanitiseFlow) {
     List<Object> topKeyList = new ArrayList<>();
     list.forEach(element -> {
-      int noOfKeys = element.size();
-      // UUID_FIELD_NAME is a generated Key. it should not be included in counting the number of keys in original field.
-      if (noOfKeys > 1 && element.get(UUID_FIELD_NAME) != null) {
-        noOfKeys -= 1;
-      }
-      if (noOfKeys == 1 && EmptyPredicate.isEmpty(FQNHelper.getUuidKey(element))) {
+      String wrapperKey = FQNHelper.getWrapperKeyForArrayElement(element);
+      if (EmptyPredicate.isNotEmpty(wrapperKey) && EmptyPredicate.isEmpty(FQNHelper.getUuidKey(element))) {
         handleSingleKeyListElement(element, baseFQN, fqnMap, topKeyList, isSanitiseFlow);
       } else {
         handleMultipleKeyListElement(element, baseFQN, fqnMap, topKey, topKeyList, isSanitiseFlow);
@@ -168,9 +163,7 @@ public class YamlMapGenerator {
         topKeyList.add(tempMap);
       }
     } else {
-      Set<String> fieldNames = new LinkedHashSet<>();
-      element.fieldNames().forEachRemaining(fieldNames::add);
-      String topKeyOfInnerMap = fieldNames.iterator().next();
+      String topKeyOfInnerMap = FQNHelper.getWrapperKeyForArrayElement(element);
       JsonNode innerMap = element.get(topKeyOfInnerMap);
       String identifierValue = innerMap.get(identifierKey).asText();
 

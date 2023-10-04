@@ -305,6 +305,10 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
             .get();
     assertThat(filteredEnvYaml1.getInfrastructureDefinitions().getValue()).isNotNull();
     assertThat(filteredEnvYaml1.getInfrastructureDefinitions().getValue().size()).isEqualTo(2);
+    assertThat(filteredEnvYaml1.getInfrastructureDefinitions().getValue().get(0).getIdentifier().getValue())
+        .isEqualTo("infra1");
+    assertThat(filteredEnvYaml1.getInfrastructureDefinitions().getValue().get(1).getIdentifier().getValue())
+        .isEqualTo("infra2");
 
     EnvironmentYamlV2 filteredEnvYaml2 =
         environmentsYaml.getValues()

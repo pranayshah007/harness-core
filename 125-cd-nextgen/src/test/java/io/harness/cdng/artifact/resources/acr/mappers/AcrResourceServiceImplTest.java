@@ -8,6 +8,7 @@
 package io.harness.cdng.artifact.resources.acr.mappers;
 
 import static io.harness.rule.OwnerRule.ABHISHEK;
+import static io.harness.rule.OwnerRule.RAKSHIT_AGARWAL;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -143,6 +144,87 @@ public class AcrResourceServiceImplTest extends CategoryTest {
         identifierRef, SUBSCRIPTION, "registry", "repository", ORG_IDENTIFIER, PROJECT_IDENTIFIER);
 
     assertThat(acrResponseDTO).isEqualTo(acrResponseDTOres);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_Subscription_Null() {
+    assertThatThrownBy(()
+                           -> acrResourceService.getBuildDetails(
+                               IDENTIFIER_REF, null, REGISTRY, REPOSITORY, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .hasMessage(SUBSCRIPTION_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_Subscription_Empty() {
+    assertThatThrownBy(()
+                           -> acrResourceService.getBuildDetails(
+                               IDENTIFIER_REF, "", REGISTRY, REPOSITORY, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .hasMessage(SUBSCRIPTION_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_Subscription_Input() {
+    assertThatThrownBy(()
+                           -> acrResourceService.getBuildDetails(
+                               IDENTIFIER_REF, INPUT, REGISTRY, REPOSITORY, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .hasMessage(SUBSCRIPTION_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_Registry_NULL() {
+    assertThatThrownBy(()
+                           -> acrResourceService.getBuildDetails(
+                               IDENTIFIER_REF, SUBSCRIPTION, null, REPOSITORY, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .hasMessage(REGISTRY_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_Registry_Empty() {
+    assertThatThrownBy(()
+                           -> acrResourceService.getBuildDetails(
+                               IDENTIFIER_REF, SUBSCRIPTION, "", REPOSITORY, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .hasMessage(REGISTRY_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_Registry_Input() {
+    assertThatThrownBy(()
+                           -> acrResourceService.getBuildDetails(
+                               IDENTIFIER_REF, SUBSCRIPTION, INPUT, REPOSITORY, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .hasMessage(REGISTRY_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_Repository_NULL() {
+    assertThatThrownBy(()
+                           -> acrResourceService.getBuildDetails(
+                               IDENTIFIER_REF, SUBSCRIPTION, REGISTRY, null, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .hasMessage(REPOSITORY_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_Repository_Empty() {
+    assertThatThrownBy(()
+                           -> acrResourceService.getBuildDetails(
+                               IDENTIFIER_REF, SUBSCRIPTION, REGISTRY, "", ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .hasMessage(REPOSITORY_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_Repository_Input() {
+    assertThatThrownBy(()
+                           -> acrResourceService.getBuildDetails(
+                               IDENTIFIER_REF, SUBSCRIPTION, REGISTRY, INPUT, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .hasMessage(REPOSITORY_MESSAGE);
   }
 
   @Test

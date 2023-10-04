@@ -8,11 +8,11 @@
 package io.harness.idp.scorecard.datasourcelocations.locations;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.idp.common.Constants.DEFAULT_BRANCH_KEY_ESCAPED;
 import static io.harness.idp.common.Constants.DSL_RESPONSE;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
-import static io.harness.idp.common.Constants.GITHUB_DEFAULT_BRANCH_KEY_ESCAPED;
 import static io.harness.idp.common.Constants.MESSAGE_KEY;
-import static io.harness.idp.scorecard.datapoints.constants.DataPoints.GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.PULL_REQUEST_MEAN_TIME_TO_MERGE;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.SOURCE_LOCATION_ANNOTATION_ERROR;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPOSITORY_NAME;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPOSITORY_OWNER;
@@ -60,7 +60,7 @@ public class GithubMeanTimeToMergePRDsl implements DataSourceLocation {
     Optional<Map.Entry<DataPointEntity, Set<String>>> dataPointAndInputValuesOpt =
         dataPointsAndInputValues.entrySet()
             .stream()
-            .filter(entry -> entry.getKey().getIdentifier().equals(GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE))
+            .filter(entry -> entry.getKey().getIdentifier().equals(PULL_REQUEST_MEAN_TIME_TO_MERGE))
             .findFirst();
 
     if (dataPointAndInputValuesOpt.isEmpty()) {
@@ -78,9 +78,7 @@ public class GithubMeanTimeToMergePRDsl implements DataSourceLocation {
         continue;
       }
       apiRequestDetails.setRequestBody(tempRequestBody);
-      Map<DataPointEntity, String> dataPointAndInputValueToFetch = new HashMap<>() {
-        { put(dataPoint, inputValue); }
-      };
+      Map<DataPointEntity, String> dataPointAndInputValueToFetch = Map.of(dataPoint, inputValue);
       String requestBody =
           constructRequestBody(apiRequestDetails, possibleReplaceableRequestBodyPairs, dataPointAndInputValueToFetch);
       apiRequestDetails.setRequestBody(requestBody);
@@ -94,7 +92,7 @@ public class GithubMeanTimeToMergePRDsl implements DataSourceLocation {
       } else if (response.getStatus() == 500) {
         inputValueData.put(ERROR_MESSAGE_KEY, ((ResponseMessage) response.getEntity()).getMessage());
       } else {
-        inputValueData.put(DSL_RESPONSE,
+        inputValueData.put(ERROR_MESSAGE_KEY,
             GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class).get(MESSAGE_KEY));
       }
       data.put(inputValue, inputValueData);
@@ -103,11 +101,10 @@ public class GithubMeanTimeToMergePRDsl implements DataSourceLocation {
   }
 
   @Override
-  public String replaceRequestBodyInputValuePlaceholdersIfAny(
-      Map<String, String> dataPointsAndInputValue, String requestBody) {
-    if (!isEmpty(dataPointsAndInputValue.get(GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE))) {
-      String inputValue = dataPointsAndInputValue.get(GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE);
-      if (!inputValue.equals(GITHUB_DEFAULT_BRANCH_KEY_ESCAPED)) {
+  public String replaceInputValuePlaceholdersIfAny(Map<String, String> dataPointsAndInputValue, String requestBody) {
+    if (!isEmpty(dataPointsAndInputValue.get(PULL_REQUEST_MEAN_TIME_TO_MERGE))) {
+      String inputValue = dataPointsAndInputValue.get(PULL_REQUEST_MEAN_TIME_TO_MERGE);
+      if (!inputValue.equals(DEFAULT_BRANCH_KEY_ESCAPED)) {
         requestBody = requestBody.replace(REPOSITORY_BRANCH_NAME_REPLACER,
             ",baseRefName:"
                 + "\\"

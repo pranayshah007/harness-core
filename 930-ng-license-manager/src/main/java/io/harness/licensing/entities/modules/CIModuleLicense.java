@@ -7,20 +7,16 @@
 
 package io.harness.licensing.entities.modules;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.data.structure.EmptyPredicate;
-import io.harness.iterator.PersistentCronIterable;
+import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
-import java.util.ArrayList;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -38,11 +34,12 @@ import org.springframework.data.annotation.TypeAlias;
 @Entity(value = "moduleLicenses", noClassnameStored = true)
 @Persistent
 @TypeAlias("io.harness.license.entities.module.CIModuleLicense")
-public class CIModuleLicense extends ModuleLicense implements PersistentCronIterable {
+public class CIModuleLicense extends ModuleLicense implements PersistentRegularIterable {
   private Integer numberOfCommitters;
   private Long cacheAllowance;
   private Integer hostingCredits;
   List<Long> nextIterations;
+  Long provisionMonthlyCICreditsIteration;
 
   @Override
   public String getUuid() {
@@ -50,24 +47,29 @@ public class CIModuleLicense extends ModuleLicense implements PersistentCronIter
   }
 
   @Override
-  public List<Long> recalculateNextIterations(String fieldName, boolean skipMissed, long throttled) {
-    nextIterations = isEmpty(nextIterations) ? new ArrayList<>() : nextIterations;
-    expandNextIterations(skipMissed, throttled, "0 0 0 1 * ? *", nextIterations);
-    return nextIterations;
+  public Long obtainNextIteration(String fieldName) {
+    if (CIModuleLicenseKeys.provisionMonthlyCICreditsIteration.equals(fieldName)) {
+      return provisionMonthlyCICreditsIteration;
+    }
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 
   @Override
-  public Long obtainNextIteration(String fieldName) {
-    return EmptyPredicate.isEmpty(nextIterations) ? System.currentTimeMillis() : nextIterations.get(0);
+  public void updateNextIteration(String fieldName, long nextIteration) {
+    if (CIModuleLicenseKeys.provisionMonthlyCICreditsIteration.equals(fieldName)) {
+      this.provisionMonthlyCICreditsIteration = nextIteration;
+      return;
+    }
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("moduleType_status_nextIterations")
+                 .name("moduleType_status_provisionMonthlyCICreditsIteration")
                  .field(ModuleLicenseKeys.moduleType)
                  .field(ModuleLicenseKeys.status)
-                 .field(CIModuleLicenseKeys.nextIterations)
+                 .field(CIModuleLicenseKeys.provisionMonthlyCICreditsIteration)
                  .build())
         .build();
   }

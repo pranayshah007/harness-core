@@ -1268,6 +1268,17 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  public User getUserByEmailForScim(String email, String accountId) {
+    User user = getUserByEmail(email, accountId);
+    Account account = accountService.get(accountId);
+    if (user != null && isNotEmpty(user.getPendingAccounts()) && user.getPendingAccounts().contains(account)) {
+      removeRelatedUserInvite(accountId, email);
+      user.getPendingAccounts().remove(account);
+      wingsPersistence.save(user);
+    }
+    return getUserByEmail(email, accountId);
+  }
+  @Override
   public List<User> getUsersEmails(String accountId) {
     Query<User> query = wingsPersistence.createQuery(User.class);
     query.project(UserKeys.email, true).limit(NO_LIMIT).criteria(UserKeys.accounts).hasThisOne(accountId);
@@ -1602,6 +1613,7 @@ public class UserServiceImpl implements UserService {
 
     List<UserGroup> userGroups = userGroupService.getUserGroupsFromUserInvite(userInvite);
     boolean isPLNoEmailForSamlAccountInvitesEnabled = accountService.isPLNoEmailForSamlAccountInvitesEnabled(accountId);
+
     if (isUserAssignedToAccountInGeneration(user, accountId, CG)) {
       updateUserGroupsOfUser(user.getUuid(), userGroups, accountId, true);
       return USER_ALREADY_ADDED;
@@ -1783,7 +1795,7 @@ public class UserServiceImpl implements UserService {
                                              .addFilter(UserGroupKeys.accountId, EQ, accountId)
                                              .addFilter(UserGroupKeys.memberIds, EQ, userId)
                                              .build();
-    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, loadUsers, null, null);
+    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, loadUsers, null, null, false);
     return pageResponse.getResponse();
   }
 
@@ -1801,7 +1813,7 @@ public class UserServiceImpl implements UserService {
                                              .addFilter("_id", IN, userGroupIds.toArray())
                                              .addFilter(UserGroupKeys.accountId, EQ, accountId)
                                              .build();
-    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, true, null, null);
+    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, true, null, null, false);
     return pageResponse.getResponse();
   }
 
@@ -2840,7 +2852,7 @@ public class UserServiceImpl implements UserService {
 
   private void sendResetPasswordEmail(User user, String token, boolean isNGRequest) {
     try {
-      String resetPasswordUrl = getResetPasswordUrl(token, user, isNGRequest);
+      String resetPasswordUrl = getResetPasswordUrl(token, user, true);
       Map<String, String> templateModel = getTemplateModel(user.getName(), resetPasswordUrl);
       List<String> toList = new ArrayList<>();
       toList.add(user.getEmail());
@@ -3136,12 +3148,13 @@ public class UserServiceImpl implements UserService {
     }
     return pageResponse;
   }
+
   private List<UserGroup> getUserGroupsOfAccount(String accountId) {
     PageRequest<UserGroup> req = aPageRequest()
                                      .withLimit(Long.toString(userGroupService.getCountOfUserGroups(accountId)))
                                      .addFilter(UserGroupKeys.accountId, EQ, accountId)
                                      .build();
-    PageResponse<UserGroup> res = userGroupService.list(accountId, req, false, null, null);
+    PageResponse<UserGroup> res = userGroupService.list(accountId, req, false, null, null, true);
     return res.getResponse();
   }
 
@@ -3815,7 +3828,7 @@ public class UserServiceImpl implements UserService {
             .addFilter(UserGroup.ACCOUNT_ID_KEY, EQ, accountId)
             .addFilter(UserGroupKeys.name, EQ, UserGroup.DEFAULT_ACCOUNT_ADMIN_USER_GROUP_NAME)
             .build();
-    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, true, null, null);
+    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, true, null, null, false);
     return pageResponse.getResponse();
   }
 
@@ -4691,7 +4704,7 @@ public class UserServiceImpl implements UserService {
             .withLimit(Long.toString(userGroupService.getCountOfUserGroups(accountId)))
             .addFilter(UserGroupKeys.memberIds, HAS, user.getUuid())
             .build(),
-        true, null, null);
+        true, null, null, false);
     List<UserGroup> userGroupList = pageResponse.getResponse();
     removeUserFromUserGroups(user, userGroupList, false);
   }

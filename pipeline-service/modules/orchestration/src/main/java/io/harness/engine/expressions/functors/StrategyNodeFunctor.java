@@ -16,7 +16,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.expressions.NodeExecutionsCache;
 import io.harness.engine.expressions.OrchestrationConstants;
 import io.harness.expression.LateBindingMap;
-import io.harness.plancreator.strategy.StrategyUtils;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
@@ -38,6 +38,7 @@ import lombok.Value;
 public class StrategyNodeFunctor extends LateBindingMap {
   private Ambiance ambiance;
   private NodeExecutionsCache nodeExecutionsCache;
+  private NodeExecutionInfoService nodeExecutionInfoService;
 
   @Override
   public synchronized Object get(Object key) {
@@ -98,7 +99,7 @@ public class StrategyNodeFunctor extends LateBindingMap {
         // getLevel(index+1).
         if (level.getIdentifier().equals(identifier)) {
           Level tempLevel = ambiance.getLevels(index + 1);
-          childLevel = tempLevel.hasStrategyMetadata() ? tempLevel : null;
+          childLevel = AmbianceUtils.hasStrategyMetadata(tempLevel) ? tempLevel : null;
           break;
         }
       }
@@ -107,7 +108,7 @@ public class StrategyNodeFunctor extends LateBindingMap {
     if (childLevel == null) {
       return Collections.emptyMap();
     }
-    return StrategyUtils.fetchStrategyObjectMap(
+    return nodeExecutionInfoService.fetchStrategyObjectMap(
         Collections.singletonList(childLevel), AmbianceUtils.shouldUseMatrixFieldName(ambiance));
   }
 }

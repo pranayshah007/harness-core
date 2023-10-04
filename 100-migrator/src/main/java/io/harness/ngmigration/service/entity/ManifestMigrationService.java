@@ -289,7 +289,8 @@ public class ManifestMigrationService extends NgMigrationService {
   @Override
   protected boolean isNGEntityExists(MigrationContext migrationContext) {
     NGMigrationEntityType rootType = migrationContext.getRoot();
-    return NGMigrationEntityType.APPLICATION == rootType;
+    return NGMigrationEntityType.APPLICATION == rootType || NGMigrationEntityType.WORKFLOW == rootType
+        || NGMigrationEntityType.PIPELINE == rootType;
   }
 
   public List<ManifestConfigWrapper> getManifests(MigrationContext migrationContext, Set<CgEntityId> manifestEntityIds,

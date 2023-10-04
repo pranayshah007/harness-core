@@ -706,7 +706,7 @@ public class WorkflowExecutionUpdate implements StateMachineExecutionCallback {
   @VisibleForTesting
   public List<NameValuePair> resolveDeploymentTags(ExecutionContext context, String workflowId) {
     String accountId = appService.getAccountIdByAppId(appId);
-    List<HarnessTagLink> harnessTagLinks = harnessTagService.getTagLinksWithEntityId(accountId, workflowId);
+    List<HarnessTagLink> harnessTagLinks = harnessTagService.getTagLinksWithEntityId(accountId, workflowId, false);
     List<NameValuePair> resolvedTags = new ArrayList<>();
     if (isNotEmpty(harnessTagLinks)) {
       for (HarnessTagLink harnessTagLink : harnessTagLinks) {

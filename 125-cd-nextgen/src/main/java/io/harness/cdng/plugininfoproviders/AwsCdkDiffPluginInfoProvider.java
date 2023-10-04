@@ -47,7 +47,7 @@ public class AwsCdkDiffPluginInfoProvider extends AbstractPluginInfoProvider {
         awsCdkDiffStepInfo.getConnectorRef(), awsCdkDiffStepInfo.getImage(), awsCdkDiffStepInfo.getImagePullPolicy());
     PluginDetails pluginDetails =
         getPluginDetails(usedPorts, awsCdkDiffStepInfo.getRunAsUser(), awsCdkDiffStepInfo.getResources(),
-            awsCdkDiffStepInfo.getPrivileged(), getEnvironmentVariables(awsCdkDiffStepInfo), imageDetails);
+            awsCdkDiffStepInfo.getPrivileged(), getEnvironmentVariables(awsCdkDiffStepInfo), imageDetails, false);
     PluginCreationResponse response = PluginCreationResponse.newBuilder().setPluginDetails(pluginDetails).build();
     StepInfoProto stepInfoProto = getStepInfoProto(cdAbstractStepNode);
 

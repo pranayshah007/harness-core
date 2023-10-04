@@ -19,11 +19,13 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class DataSourceDataPointParserFactory {
   GithubDataPointParserFactory githubDataPointParserFactory;
+  BitbucketDataPointParserFactory bitbucketDataPointParserFactory;
   HarnessDataPointParserFactory harnessDataPointParserFactory;
   CatalogDataPointParserFactory catalogDataPointParserFactory;
   KubernetesDataPointParserFactory kubernetesDataPointParserFactory;
   CustomDataPointParserFactory customDataPointParserFactory;
   PagerDutyDataPointParserFactory pagerDutyDataPointParserFactory;
+  JiraDataPointParserFactory jiraDataPointParserFactory;
 
   public DataPointParserFactory getDataPointParserFactory(String identifier) {
     switch (identifier) {
@@ -31,6 +33,8 @@ public class DataSourceDataPointParserFactory {
         return harnessDataPointParserFactory;
       case GITHUB_IDENTIFIER:
         return githubDataPointParserFactory;
+      case BITBUCKET_IDENTIFIER:
+        return bitbucketDataPointParserFactory;
       case CATALOG_IDENTIFIER:
         return catalogDataPointParserFactory;
       case KUBERNETES_IDENTIFIER:
@@ -39,6 +43,8 @@ public class DataSourceDataPointParserFactory {
         return customDataPointParserFactory;
       case PAGERDUTY_IDENTIFIER:
         return pagerDutyDataPointParserFactory;
+      case JIRA_IDENTIFIER:
+        return jiraDataPointParserFactory;
       default:
         throw new UnsupportedOperationException(String.format("Could not find Datasource for %s", identifier));
     }

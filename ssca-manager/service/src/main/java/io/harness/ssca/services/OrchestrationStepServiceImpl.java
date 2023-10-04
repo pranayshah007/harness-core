@@ -146,6 +146,7 @@ public class OrchestrationStepServiceImpl implements OrchestrationStepService {
         .accountID(accountId)
         .artifactURL(sbomProcessRequestBody.getArtifact().getRegistryUrl())
         .artifactID(artifactEntity.getArtifactId())
+        .artifactTag(artifactEntity.getTag())
         .format(sbomProcessRequestBody.getSbomMetadata().getFormat())
         .tool(
             SettingsDTO.Tool.builder().name(sbomProcessRequestBody.getSbomMetadata().getTool()).version("2.0").build())

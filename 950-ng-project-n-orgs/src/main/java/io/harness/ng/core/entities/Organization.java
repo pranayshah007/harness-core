@@ -25,6 +25,7 @@ import io.harness.ng.DbAliases;
 import io.harness.ng.core.NGAccountAccess;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.persistence.PersistentEntity;
+import io.harness.persistence.UniqueIdAware;
 
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
@@ -53,7 +54,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("organizations")
 @ChangeDataCapture(table = "organizations", dataStore = "ng-harness", fields = {}, handler = "Organizations")
 @ChangeDataCapture(table = "tags_info_ng", dataStore = "ng-harness", fields = {}, handler = "TagsInfoNGCD")
-public class Organization implements PersistentEntity, NGAccountAccess {
+public class Organization implements PersistentEntity, NGAccountAccess, UniqueIdAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -97,6 +98,8 @@ public class Organization implements PersistentEntity, NGAccountAccess {
 
   @Wither @Id @dev.morphia.annotations.Id String id;
   String accountIdentifier;
+
+  String uniqueId;
   @EntityIdentifier(allowBlank = false) @FdIndex String identifier;
 
   @NGEntityName String name;

@@ -454,6 +454,7 @@ io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig
 io.harness.git.model.CommitResult
 io.harness.delegate.beans.connector.gcpkmsconnector.outcome.GcpKmsConnectorOutcomeDTO
 io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO
+io.harness.delegate.beans.connector.gcpconnector.GcpOidcDetailsDTO
 io.harness.container.ContainerInfo
 io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO
 io.harness.delegate.task.k8s.EksK8sInfraDelegateConfig
@@ -539,3 +540,4 @@ io.harness.slsa.beans.SlsaConfig
 io.harness.app.beans.entities.StepExecutionParameters
 io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata
 io.harness.delegate.beans.instancesync.NativeHelmDeploymentOutcomeMetadata
+io.harness.beans.yaml.extended.cache.CachePolicy

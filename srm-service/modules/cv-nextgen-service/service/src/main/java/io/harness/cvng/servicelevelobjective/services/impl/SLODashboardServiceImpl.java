@@ -143,7 +143,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
                 -> getSLOListView(projectParams, sloResponse, scopedMonitoredServiceIdentifierToDTOMap,
                     scopedSloIdentifierToHealthIndicatorMap, userJourneyIdentifierToNameMap,
                     monitoredServiceIdentifierToUnavailabilityStatusesDTOMap, scopedIdentifierToSLOErrorMap))
-            .filter(sloHealthListView -> sloHealthListView != null)
+            .filter(Objects::nonNull)
             .collect(Collectors.toList());
 
     return PageResponse.<SLOHealthListView>builder()
@@ -648,6 +648,8 @@ public class SLODashboardServiceImpl implements SLODashboardService {
         monitoredServiceResponseList.stream()
             .map(monitoredServiceResponse
                 -> getEnvironmentIdentifierResponse(projectParams, monitoredServiceResponse.getMonitoredServiceDTO()))
+            .collect(Collectors.toSet())
+            .stream()
             .collect(Collectors.toList());
 
     return PageUtils.offsetAndLimit(environmentIdentifierResponseList, pageParams.getPage(), pageParams.getSize());

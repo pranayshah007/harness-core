@@ -20,7 +20,8 @@ public enum TerragruntCommandFlagType {
   WORKSPACE(TerragruntStepWithAllowedCommand.WORKSPACE),
   PLAN(TerragruntStepWithAllowedCommand.PLAN),
   APPLY(TerragruntStepWithAllowedCommand.APPLY),
-  DESTROY(TerragruntStepWithAllowedCommand.DESTROY);
+  DESTROY(TerragruntStepWithAllowedCommand.DESTROY),
+  OUTPUT(TerragruntStepWithAllowedCommand.OUTPUT);
 
   private final TerragruntStepWithAllowedCommand terragruntCommandAllowedStep;
 

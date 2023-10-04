@@ -9,6 +9,7 @@ package io.harness.cvng.cdng.beans;
 
 import static io.harness.cvng.core.utils.ErrorMessageUtils.generateErrorMessageFromParam;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
@@ -29,6 +30,7 @@ import lombok.experimental.SuperBuilder;
 @OwnedBy(HarnessTeam.CV)
 @SuperBuilder
 @NoArgsConstructor
+@RecasterAlias("io.harness.cvng.cdng.beans.TestVerificationJobSpec")
 public class TestVerificationJobSpec extends VerificationJobSpec {
   @Override
   public String getType() {

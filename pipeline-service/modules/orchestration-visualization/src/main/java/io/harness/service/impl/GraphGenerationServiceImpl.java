@@ -38,7 +38,6 @@ import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
-import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
@@ -199,9 +198,6 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
           }
           nodeExecutionIds.add(nodeExecutionId);
           NodeExecution nodeExecution = nodeExecutionService.get(nodeExecutionId);
-          if (nodeExecution.getStepType().getStepCategory() == StepCategory.STRATEGY) {
-            log.info("Status" + nodeExecution.getStatus());
-          }
 
           updateRequired = pmsExecutionSummaryService.handleNodeExecutionUpdateFromGraphUpdate(
                                planExecutionId, nodeExecution, executionSummaryUpdate)

@@ -7,9 +7,9 @@
 
 package io.harness.idp.scorecard.datapoints.parser;
 
-import static io.harness.idp.scorecard.datapoints.constants.DataPoints.GITHUB_IS_BRANCH_PROTECTED;
-import static io.harness.idp.scorecard.datapoints.constants.DataPoints.GITHUB_IS_FILE_EXISTS;
-import static io.harness.idp.scorecard.datapoints.constants.DataPoints.GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.IS_BRANCH_PROTECTED;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.IS_FILE_EXISTS;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.PULL_REQUEST_MEAN_TIME_TO_MERGE;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -26,11 +26,11 @@ public class GithubDataPointParserFactory implements DataPointParserFactory {
 
   public DataPointParser getParser(String identifier) {
     switch (identifier) {
-      case GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE:
+      case PULL_REQUEST_MEAN_TIME_TO_MERGE:
         return githubMeanTimeToMergeParser;
-      case GITHUB_IS_BRANCH_PROTECTED:
+      case IS_BRANCH_PROTECTED:
         return githubIsBranchProtectedParser;
-      case GITHUB_IS_FILE_EXISTS:
+      case IS_FILE_EXISTS:
         return githubFileExistsParser;
       // Add more cases for other parsers
       default:

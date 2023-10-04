@@ -23,4 +23,5 @@ public class ProvenanceBuilderData {
   private String pipelineIdentifier;
   private long startTime;
   private String pluginInfo;
+  private BuildMetadata buildMetadata;
 }

@@ -14,7 +14,7 @@ import io.harness.engine.expressions.NodeExecutionsCache;
 import io.harness.engine.expressions.OrchestrationConstants;
 import io.harness.engine.utils.FunctorUtils;
 import io.harness.expression.LateBindingMap;
-import io.harness.plancreator.strategy.StrategyUtils;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -29,11 +29,14 @@ import java.util.stream.Collectors;
 public class StrategyFunctor extends LateBindingMap {
   Ambiance ambiance;
   NodeExecutionsCache nodeExecutionsCache;
+  NodeExecutionInfoService nodeExecutionInfoService;
   public static final String NODE_KEY = "node";
 
-  public StrategyFunctor(Ambiance ambiance, NodeExecutionsCache nodeExecutionsCache) {
+  public StrategyFunctor(
+      Ambiance ambiance, NodeExecutionsCache nodeExecutionsCache, NodeExecutionInfoService nodeExecutionInfoService) {
     this.ambiance = ambiance;
     this.nodeExecutionsCache = nodeExecutionsCache;
+    this.nodeExecutionInfoService = nodeExecutionInfoService;
   }
 
   @Override
@@ -45,8 +48,8 @@ public class StrategyFunctor extends LateBindingMap {
 
   public Optional<Object> getStrategyParams(String key) {
     List<Level> levelsWithStrategyMetadata =
-        ambiance.getLevelsList().stream().filter(Level::hasStrategyMetadata).collect(Collectors.toList());
-    Map<String, Object> map = StrategyUtils.fetchStrategyObjectMap(
+        ambiance.getLevelsList().stream().filter(AmbianceUtils::hasStrategyMetadata).collect(Collectors.toList());
+    Map<String, Object> map = nodeExecutionInfoService.fetchStrategyObjectMap(
         levelsWithStrategyMetadata, AmbianceUtils.shouldUseMatrixFieldName(ambiance));
     return Optional.of(map.get(key));
   }

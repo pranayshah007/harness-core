@@ -8,6 +8,8 @@
 package io.harness.notification.senders;
 
 import io.harness.delegate.beans.NotificationProcessingResponse;
+import io.harness.ngsettings.SettingIdentifiers;
+import io.harness.notification.helper.NotificationSettingsHelper;
 
 import com.github.dikhan.pagerduty.client.events.PagerDutyEventsClient;
 import com.github.dikhan.pagerduty.client.events.domain.EventResult;
@@ -23,7 +25,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PagerDutySenderImpl {
   public NotificationProcessingResponse send(
-      List<String> pagerDutyKeys, Payload payload, List<LinkContext> links, String notificationId) {
+      List<String> pagerDutyKeys, Payload payload, List<LinkContext> links, String notificationId, String accountId) {
+    pagerDutyKeys = NotificationSettingsHelper.getRecipientsWithValidDomain(
+        pagerDutyKeys, accountId, SettingIdentifiers.PAGERDUTY_NOTIFICATION_INTEGRATION_KEYS_ALLOWLIST);
     List<Boolean> results = new ArrayList<>();
     PagerDutyEventsClient pagerDutyEventsClient = PagerDutyEventsClient.create();
     for (String pagerDutyKey : pagerDutyKeys) {

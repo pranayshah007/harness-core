@@ -39,7 +39,7 @@ import io.harness.hsqs.client.model.AckRequest;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.logging.AutoLogContext;
-import io.harness.logstreaming.LogStreamingHelper;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
@@ -58,7 +58,6 @@ import io.harness.repositories.CIStepStatusRepository;
 import io.harness.repositories.CITaskDetailsRepository;
 import io.harness.repositories.StepExecutionParametersRepository;
 import io.harness.service.DelegateGrpcClientWrapper;
-import io.harness.steps.StepUtils;
 
 import software.wings.beans.SerializationFormat;
 import software.wings.beans.TaskType;
@@ -69,7 +68,6 @@ import io.fabric8.utils.Strings;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -213,8 +211,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
   }
 
   private String getLogKey(Ambiance ambiance) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance);
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    return LogStreamingStepClientFactory.getLogBaseKey(ambiance);
   }
 
   private void sendGitStatus(

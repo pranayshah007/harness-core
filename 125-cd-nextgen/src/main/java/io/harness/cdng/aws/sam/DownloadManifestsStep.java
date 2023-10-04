@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.aws.sam;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
@@ -61,12 +62,6 @@ public class DownloadManifestsStep implements AsyncExecutableWithRbac<StepElemen
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return StepElementParameters.class;
-  }
-
-  @Override
-  public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {
-    // nothing to handle
   }
 
   @Override

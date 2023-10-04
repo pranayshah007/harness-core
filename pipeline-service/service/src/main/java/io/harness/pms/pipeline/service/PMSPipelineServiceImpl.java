@@ -22,6 +22,12 @@ import static java.lang.String.format;
 import io.harness.EntityType;
 import io.harness.ModuleType;
 import io.harness.PipelineSettingsService;
+import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
+import io.harness.accesscontrol.acl.api.AccessControlDTO;
+import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -92,9 +98,10 @@ import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.helper.PipelineAsyncValidationHelper;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
+import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.sdk.PmsSdkInstanceService;
-import io.harness.pms.utils.PipelineYamlHelper;
 import io.harness.pms.yaml.HarnessYamlVersion;
+import io.harness.pms.yaml.NGYamlHelper;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.NGRestUtils;
@@ -102,12 +109,14 @@ import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.utils.PipelineGitXHelper;
 import io.harness.utils.PmsFeatureFlagHelper;
 import io.harness.utils.PmsFeatureFlagService;
+import io.harness.yaml.schema.inputs.beans.YamlInputDetails;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -164,6 +173,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final AccountClient accountClient;
   @Inject NGSettingsClient settingsClient;
   @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
+  @Inject private final AccessControlClient accessControlClient;
+  @Inject private final PMSYamlSchemaService pmsYamlSchemaService;
 
   public static final String CREATING_PIPELINE = "creating new pipeline";
   public static final String UPDATING_PIPELINE = "updating existing pipeline";
@@ -199,8 +210,13 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         }
         // TODO: As part of this ticket https://harness.atlassian.net/browse/CDS-70970, we should publish the setup
         // usages after the entity has been created
-        PipelineEntity entityWithUpdatedInfo =
-            pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
+        PipelineEntity entityWithUpdatedInfo = pipelineEntity;
+        // If PIE_ASYNC_FILTER_CREATION is ON, then we do filter creation async
+        if (!pmsFeatureFlagHelper.isEnabled(pipelineEntity.getAccountId(), FeatureName.PIE_ASYNC_FILTER_CREATION)) {
+          entityWithUpdatedInfo =
+              pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
+        }
+
         PipelineEntity createdEntity;
         PipelineCRUDResult pipelineCRUDResult = createPipeline(entityWithUpdatedInfo);
         createdEntity = pipelineCRUDResult.getPipelineEntity();
@@ -401,6 +417,11 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   @Override
+  public Optional<PipelineEntity> getPipelineByUUID(String uuid) {
+    return pmsPipelineRepository.find(uuid);
+  }
+
+  @Override
   public Optional<PipelineEntity> getPipeline(String accountId, String orgIdentifier, String projectIdentifier,
       String identifier, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
       boolean loadFromCache) {
@@ -588,13 +609,14 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   private PipelineEntity makePipelineUpdateCall(
       PipelineEntity pipelineEntity, PipelineEntity oldEntity, ChangeType changeType, boolean isOldFlow) {
     try {
-      PipelineEntity entityWithUpdatedInfo;
-      if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
-        entityWithUpdatedInfo = pipelineEntity;
-      } else {
+      // TODO - Confirm if we need to do filter creation for draft pipelines
+      PipelineEntity entityWithUpdatedInfo = pipelineEntity;
+      // If PIE_ASYNC_FILTER_CREATION is ON, then we do filter creation async
+      if (!pmsFeatureFlagHelper.isEnabled(pipelineEntity.getAccountId(), FeatureName.PIE_ASYNC_FILTER_CREATION)) {
         entityWithUpdatedInfo =
             pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
       }
+
       PipelineEntity updatedResult;
       if (isOldFlow) {
         updatedResult =
@@ -912,7 +934,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public String pipelineVersion(String accountId, String yaml) {
     boolean isYamlSimplificationEnabled = pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CI_YAML_VERSIONING);
-    return PipelineYamlHelper.getVersion(yaml, isYamlSimplificationEnabled);
+    return NGYamlHelper.getVersion(yaml, isYamlSimplificationEnabled);
   }
 
   @Override
@@ -957,6 +979,60 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
 
     return pipelineAfterUpdate.getIdentifier();
+  }
+
+  @Override
+  public List<String> getPermittedPipelineIdentifier(
+      String accountId, String orgId, String projectId, List<String> pipelineIdentifierList) {
+    AccessCheckResponseDTO accessCheckResponseDTO =
+        getAccessCheckResponseDTO(accountId, orgId, projectId, pipelineIdentifierList);
+    List<String> permittedPipelineIdentifier = new ArrayList<>();
+    for (AccessControlDTO accessControlDTO : accessCheckResponseDTO.getAccessControlList()) {
+      if (accessControlDTO.isPermitted()) {
+        permittedPipelineIdentifier.add(accessControlDTO.getResourceIdentifier());
+      }
+    }
+    return permittedPipelineIdentifier;
+  }
+
+  /*
+ getAccessCheckResponseDTO return the access response for pipeline view permission on the pipeline identifier list
+  */
+  private AccessCheckResponseDTO getAccessCheckResponseDTO(
+      String accountId, String orgId, String projectId, List<String> entityIdentifierList) {
+    List<PermissionCheckDTO> permissionChecks =
+        entityIdentifierList.stream()
+            .map(identifier
+                -> PermissionCheckDTO.builder()
+                       .permission(PipelineRbacPermissions.PIPELINE_VIEW)
+                       .resourceIdentifier(identifier)
+                       .resourceScope(ResourceScope.of(accountId, orgId, projectId))
+                       .resourceType("PIPELINE")
+                       .build())
+            .collect(Collectors.toList());
+    return accessControlClient.checkForAccessOrThrow(permissionChecks);
+  }
+
+  @Override
+  public List<String> listAllIdentifiers(Criteria criteria) {
+    return pmsPipelineRepository.findAllPipelineIdentifiers(criteria);
+  }
+
+  @Override
+  public boolean validateViewPermission(String accountId, String orgId, String projectId) {
+    return accessControlClient.hasAccess(ResourceScope.of(accountId, orgId, projectId), Resource.of("PIPELINE", null),
+        PipelineRbacPermissions.PIPELINE_VIEW);
+  }
+
+  public List<YamlInputDetails> getInputSchemaDetails(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
+    Optional<PipelineEntity> optionalPipelineEntity =
+        getPipeline(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
+    if (optionalPipelineEntity.isEmpty()) {
+      throw new EntityNotFoundException(PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(
+          orgIdentifier, projectIdentifier, pipelineIdentifier));
+    }
+    return pmsYamlSchemaService.getInputSchemaDetails(optionalPipelineEntity.get().getYaml());
   }
 
   private void validateRepo(String accountIdentifier, String orgIdentifier, String projectIdentifier,

@@ -177,6 +177,7 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("expandedJsonConfig") private ExpandedJsonLockConfig expandedJsonLockConfig;
   @JsonProperty("pipelineSetupUsageCreationExecutorServiceConfig")
   private ThreadPoolConfig pipelineSetupUsageCreationPoolConfig;
+  @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;
 
   @JsonProperty("podCleanUpThreadPoolConfig") private ThreadPoolConfig podCleanUpThreadPoolConfig;
 
@@ -185,6 +186,8 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("webhookEventHsqsDequeueConfig") private HsqsDequeueConfig webhookEventHsqsDequeueConfig;
   @JsonProperty("useNewNodeEntityConfiguration") private Boolean useNewNodeEntityConfiguration;
   @JsonProperty("graphConsumerSleepIntervalMs") private Integer graphConsumerSleepIntervalMs;
+  @JsonProperty("asyncFilterCreationConsumerSleepIntervalMs")
+  private Integer asyncFilterCreationConsumerSleepIntervalMs;
   @JsonProperty("publishAdviserEventForCustomAdvisers") private Boolean publishAdviserEventForCustomAdvisers;
   private boolean useQueueServiceForWebhookTriggers;
 

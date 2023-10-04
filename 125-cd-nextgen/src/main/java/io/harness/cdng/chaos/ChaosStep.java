@@ -138,12 +138,6 @@ public class ChaosStep extends AsyncExecutableWithCapabilities {
     return responseBuilder.status(Status.SUCCEEDED).build();
   }
 
-  @Override
-  public void handleAbort(
-      Ambiance ambiance, StepBaseParameters stepParameters, AsyncExecutableResponse executableResponse) {
-    log.info("Abort Called for chaos Step");
-  }
-
   private ChaosQuery buildPayload(Ambiance ambiance, String experimentRef) {
     String query = String.format(BODY, experimentRef, AmbianceUtils.getOrgIdentifier(ambiance),
         AmbianceUtils.getProjectIdentifier(ambiance), AmbianceUtils.getAccountId(ambiance));

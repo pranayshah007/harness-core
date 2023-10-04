@@ -414,10 +414,11 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
   }
 
   @Override
-  public <T> PageResponse<T> listWithTagFilters(
-      PageRequest<T> request, String filter, EntityType entityType, boolean withTags, boolean hitSecondary) {
+  public <T> PageResponse<T> listWithTagFilters(PageRequest<T> request, String filter, EntityType entityType,
+      boolean withTags, boolean hitSecondary, boolean addAccountFilterAutomatically) {
+    String accountId = null;
     if (isNotBlank(filter)) {
-      String accountId = getAccountIdFromPageRequest(request);
+      accountId = getAccountIdFromPageRequest(request);
 
       if (isNotBlank(accountId)) {
         PageResponse<ResourceLookup> resourceLookupPageResponse = listResourceLookupRecordsWithTagsInternal(
@@ -434,42 +435,96 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
     }
 
     if (isBlank(request.getLimit())) {
-      String accountId = getAccountIdFromPageRequest(request);
+      accountId = getAccountIdFromPageRequest(request);
       if (isNotBlank(accountId) && featureFlagService.isEnabled(FeatureName.SPG_2K_DEFAULT_PAGE_SIZE, accountId)) {
         request.setLimit(PageRequest.LIMIT_2K_PAGE_SIZE);
       }
     }
 
+    if (accountId != null && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION_V2, accountId)
+        && hitSecondary) {
+      if (addAccountFilterAutomatically && !accountIdPresentInPageRequest(request)) {
+        request.addFilter("accountId", EQ, accountId);
+      }
+      return getPageResponseViaSecondaryNode(request, entityType, withTags);
+    } else {
+      return getPageResponse(request, entityType, withTags);
+    }
+  }
+
+  private <T> PageResponse<T> getPageResponse(PageRequest<T> request, EntityType entityType, boolean withTags) {
     PageResponse<T> pageResponse;
 
     switch (entityType) {
       case SERVICE:
         pageResponse = (PageResponse<T>) wingsPersistence.query(Service.class, (PageRequest<Service>) request);
         break;
-
       case ENVIRONMENT:
         pageResponse = (PageResponse<T>) wingsPersistence.query(Environment.class, (PageRequest<Environment>) request);
         break;
-
       case WORKFLOW:
         pageResponse = (PageResponse<T>) wingsPersistence.query(Workflow.class, (PageRequest<Workflow>) request);
         break;
-
       case PIPELINE:
         pageResponse = (PageResponse<T>) wingsPersistence.query(Pipeline.class, (PageRequest<Pipeline>) request);
         break;
-
       case TRIGGER:
         pageResponse = (PageResponse<T>) wingsPersistence.query(Trigger.class, (PageRequest<Trigger>) request);
         break;
-
       case PROVISIONER:
         pageResponse = (PageResponse<T>) wingsPersistence.query(
             InfrastructureProvisioner.class, (PageRequest<InfrastructureProvisioner>) request);
         break;
-
       case APPLICATION:
         pageResponse = (PageResponse<T>) wingsPersistence.query(Application.class, (PageRequest<Application>) request);
+        break;
+      default:
+        throw new InvalidRequestException(format("Unhandled entity type %s while getting list", entityType));
+    }
+
+    if (withTags) {
+      setTagLinks(request, pageResponse, entityType, false);
+    }
+
+    return pageResponse;
+  }
+
+  private <T> PageResponse<T> getPageResponseViaSecondaryNode(
+      PageRequest<T> request, EntityType entityType, boolean withTags) {
+    PageResponse<T> pageResponse;
+
+    switch (entityType) {
+      case SERVICE:
+        pageResponse = (PageResponse<T>) wingsPersistence.querySecondary(Service.class, (PageRequest<Service>) request);
+        break;
+
+      case ENVIRONMENT:
+        pageResponse =
+            (PageResponse<T>) wingsPersistence.querySecondary(Environment.class, (PageRequest<Environment>) request);
+        break;
+
+      case WORKFLOW:
+        pageResponse =
+            (PageResponse<T>) wingsPersistence.querySecondary(Workflow.class, (PageRequest<Workflow>) request);
+        break;
+
+      case PIPELINE:
+        pageResponse =
+            (PageResponse<T>) wingsPersistence.querySecondary(Pipeline.class, (PageRequest<Pipeline>) request);
+        break;
+
+      case TRIGGER:
+        pageResponse = (PageResponse<T>) wingsPersistence.querySecondary(Trigger.class, (PageRequest<Trigger>) request);
+        break;
+
+      case PROVISIONER:
+        pageResponse = (PageResponse<T>) wingsPersistence.querySecondary(
+            InfrastructureProvisioner.class, (PageRequest<InfrastructureProvisioner>) request);
+        break;
+
+      case APPLICATION:
+        pageResponse =
+            (PageResponse<T>) wingsPersistence.querySecondary(Application.class, (PageRequest<Application>) request);
         break;
 
       default:
@@ -477,7 +532,7 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
     }
 
     if (withTags) {
-      setTagLinks(request, pageResponse, entityType);
+      setTagLinks(request, pageResponse, entityType, true);
     }
 
     return pageResponse;
@@ -512,12 +567,29 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
     return appService.getAccountIdByAppId(appId);
   }
 
-  private <T> void setTagLinks(PageRequest<T> request, PageResponse<T> response, EntityType entityType) {
+  private boolean accountIdPresentInPageRequest(PageRequest request) {
+    List<SearchFilter> filters = request.getFilters();
+
+    if (isEmpty(filters)) {
+      return false;
+    }
+
+    for (SearchFilter searchFilter : filters) {
+      if (isNotEmpty(searchFilter.getFieldValues())) {
+        if ("accountId".equals(searchFilter.getFieldName())) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  private <T> void setTagLinks(
+      PageRequest<T> request, PageResponse<T> response, EntityType entityType, boolean hitSecondary) {
     String accountId = getAccountIdFromPageRequest(request);
     if (isBlank(accountId)) {
       return;
     }
-
     switch (entityType) {
       case SERVICE:
       case ENVIRONMENT:
@@ -527,11 +599,12 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
       case PROVISIONER:
       case APPLICATION:
         for (T t : response.getResponse()) {
-          ((TagAware) t).setTagLinks(harnessTagService.getTagLinksWithEntityId(accountId, ((UuidAware) t).getUuid()));
+          ((TagAware) t)
+              .setTagLinks(
+                  harnessTagService.getTagLinksWithEntityId(accountId, ((UuidAware) t).getUuid(), hitSecondary));
         }
 
         break;
-
       default:
         throw new InvalidRequestException(format("Unhandled entity type %s while setting tags links", entityType));
     }

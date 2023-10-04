@@ -283,9 +283,10 @@ public class PluginSettingUtils extends PluginServiceImpl {
         return map;
       case SSCA_ORCHESTRATION:
       case SSCA_ENFORCEMENT:
-      case PROVENANCE:
       case SLSA_VERIFICATION:
         return SscaOrchestrationStepPluginUtils.getConnectorSecretEnvMap();
+      case PROVENANCE:
+        return ProvenancePluginHelper.getConnectorSecretEnvMap();
       case UPLOAD_ARTIFACTORY:
         map.put(EnvVariableEnum.ARTIFACTORY_ENDPOINT, PLUGIN_URL);
         map.put(EnvVariableEnum.ARTIFACTORY_USERNAME, PLUGIN_USERNAME);

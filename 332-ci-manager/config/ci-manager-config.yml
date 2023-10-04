@@ -160,20 +160,20 @@ ciExecutionServiceConfig:
     freeBasicUser:
       dailyMaxBuildsCount: 25
     free:
-      defaultTotalExecutionCount: 20
-      defaultMacExecutionCount: 5
+      defaultTotalExecutionCount: 21
+      defaultMacExecutionCount: 1
     team:
-      defaultTotalExecutionCount: 50
-      defaultMacExecutionCount: 10
+      defaultTotalExecutionCount: 45
+      defaultMacExecutionCount: 5
     enterprise:
-      defaultTotalExecutionCount: 100
-      defaultMacExecutionCount: 10
+      defaultTotalExecutionCount: 65
+      defaultMacExecutionCount: 5
     overrideConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.24
-  liteEngineImage: harness/ci-lite-engine:1.16.24
+  addonImage: harness/ci-addon:1.16.26
+  liteEngineImage: harness/ci-lite-engine:1.16.26
   isLocal: false
   remoteDebugTimeout: 3600
   tmateEndpoint: ${TMATE_ENDPOINT:-"ssh.harness.io"}
@@ -356,6 +356,10 @@ ciExecutionServiceConfig:
       image: harness/slsa-plugin:latest
       entrypoint:
         - /bin/slsa-plugin
+    provenanceGcrConfig:
+      image: harness/slsa-plugin:latest
+      entrypoint:
+        - /bin/slsa-plugin
     slsaVerificationConfig:
       image: harness/slsa-plugin:latest
       entrypoint:
@@ -385,7 +389,7 @@ ciExecutionServiceConfig:
       cacheGCSConfig:
         name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.6.0
       gitCloneConfig:
-        name: github.com/wings-software/drone-git@refs/tags/v1.3.9
+        name: github.com/wings-software/drone-git@refs/tags/v1.4.0
       dockerBuildxConfig:
         name: github.com/drone-plugins/drone-buildx@refs/tags/v1.0.2
       dockerBuildxEcrConfig:
@@ -512,3 +516,5 @@ featureFlagConfig:
   syncFeaturesToCF: false
 
 enableQueue: ${ENABLE_QUEUE:-false}
+
+streamPerServiceConfiguration: ${PIE_STREAM_PER_SERVICE:- false}

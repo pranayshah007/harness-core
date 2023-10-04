@@ -9,6 +9,7 @@ package io.harness.ci.execution.integrationstage;
 
 import static io.harness.rule.OwnerRule.SHUBHAM;
 import static io.harness.rule.OwnerRule.VISTAAR;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -42,6 +43,7 @@ import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseType;
 import io.harness.licensing.beans.summary.CILicenseSummaryDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -88,7 +90,14 @@ public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
   public void setUp() {
     Map<String, String> setupAbstractions = new HashMap<>();
     setupAbstractions.put("accountId", accountId);
-    ambiance = Ambiance.newBuilder().putAllSetupAbstractions(setupAbstractions).build();
+
+    ambiance =
+        Ambiance.newBuilder()
+            .putSetupAbstractions("accountId", accountId)
+            .setMetadata(
+                ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
+            .build();
+
     MockitoAnnotations.initMocks(this);
   }
 

@@ -59,6 +59,8 @@ import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
 import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.rule.Owner;
 
+import com.google.common.hash.Hashing;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -75,6 +77,10 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
   String yaml = "yaml";
   String identifier = "identifier";
 
+  Integer getYamlHash(String yaml) {
+    return Hashing.murmur3_32_fixed().hashString(yaml, StandardCharsets.UTF_8).asInt();
+  }
+
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
@@ -89,6 +95,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
         + "  orgIdentifier: org1\n"
         + "  projectIdentifier: proj1\n";
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(acc, org, proj, yaml);
+    assertThat(pipelineEntity.getYamlHash()).isEqualTo(getYamlHash(yaml));
     assertThat(pipelineEntity.getIdentifier()).isEqualTo("p1");
     assertThat(pipelineEntity.getName()).isEqualTo("p1");
     assertThat(pipelineEntity.getAccountId()).isEqualTo("acc");
@@ -759,6 +766,7 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
         accountId, orgId, projectId, identifier, "pipelineName", "yaml");
 
     assertThat(pipelineEntity.getIdentifier()).isEqualTo(identifier);
+    assertThat(pipelineEntity.getYamlHash()).isEqualTo(getYamlHash("yaml"));
     assertThat(pipelineEntity.getName()).isEqualTo("pipelineName");
 
     assertThat(pipelineEntity.getAccountIdentifier()).isEqualTo(accountId);

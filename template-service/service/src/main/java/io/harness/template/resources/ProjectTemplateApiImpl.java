@@ -39,10 +39,11 @@ public class ProjectTemplateApiImpl implements ProjectTemplateApi {
   public Response createTemplatesProject(@OrgIdentifier String org, @ProjectIdentifier String project,
       TemplateCreateRequestBody templateCreateRequestBody, @AccountIdentifier String account) {
     GitCreateDetails gitCreateDetails = templateCreateRequestBody.getGitDetails();
-    String templateYaml = templateCreateRequestBody.getTemplateYaml();
+    TemplateRequestInfoDTO requestInfoDTO =
+        templateResourceApiUtils.mapCreateToRequestInfoDTO(templateCreateRequestBody);
     Boolean isStable = Boolean.TRUE.equals(templateCreateRequestBody.isIsStable());
     return templateResourceApiUtils.createTemplate(
-        account, org, project, gitCreateDetails, templateYaml, isStable, templateCreateRequestBody.getComments());
+        account, org, project, gitCreateDetails, requestInfoDTO, isStable, templateCreateRequestBody.getComments());
   }
 
   @Override
@@ -93,9 +94,10 @@ public class ProjectTemplateApiImpl implements ProjectTemplateApi {
       @ResourceIdentifier String templateIdentifier, @OrgIdentifier String org, String versionLabel,
       TemplateUpdateRequestBody templateUpdateRequestBody, @AccountIdentifier String account) {
     GitUpdateDetails gitUpdateDetails = templateUpdateRequestBody.getGitDetails();
-    String templateYaml = templateUpdateRequestBody.getTemplateYaml();
+    TemplateRequestInfoDTO requestInfoDTO =
+        templateResourceApiUtils.mapUpdateToRequestInfoDTO(templateUpdateRequestBody);
     return templateResourceApiUtils.updateTemplate(account, org, project, templateIdentifier, versionLabel,
-        gitUpdateDetails, templateYaml, false, templateUpdateRequestBody.getComments());
+        gitUpdateDetails, requestInfoDTO, false, templateUpdateRequestBody.getComments());
   }
 
   @Override

@@ -117,6 +117,7 @@ public class PMSPipelineServiceHelper {
   @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
   @Inject private final PMSPipelineRepository pmsPipelineRepository;
   @Inject private final PipelineSetupUsageCreationHelper pipelineSetupUsageCreationHelper;
+  @Inject private final PMSPipelineService pmsPipelineService;
   @Inject @Named("PipelineExecutorService") ExecutorService executorService;
 
   public static String PIPELINE_SAVE = "pipeline_save";
@@ -261,6 +262,10 @@ public class PMSPipelineServiceHelper {
           "Pipeline does not follow the Policies in these Policy Sets: " + denyingRuleSetIds.toString(),
           governanceMetadata, pipelineEntity.getYaml());
     }
+  }
+
+  public PipelineEntity updatePipelineFilters(PipelineEntity pipelineToUpdate, String uuid, Integer yamlHash) {
+    return pmsPipelineRepository.updatePipelineFilters(pipelineToUpdate, uuid, yamlHash);
   }
 
   @VisibleForTesting
@@ -686,5 +691,20 @@ public class PMSPipelineServiceHelper {
                                            .isGitDefaultBranch(true)
                                            .build())
             .build());
+  }
+
+  public void setPermittedPipelines(
+      String accountId, String orgId, String projectId, Criteria criteria, String pipelineIdentifierKey) {
+    /*
+    If user is having all pipeline view permission, we do not need to check for individual pipeline view permission
+     */
+    if (!pmsPipelineService.validateViewPermission(accountId, orgId, projectId)) {
+      List<String> allPipelineIdentifiers = pmsPipelineService.listAllIdentifiers(criteria);
+
+      List<String> permittedPipelineIdentifiers =
+          pmsPipelineService.getPermittedPipelineIdentifier(accountId, orgId, projectId, allPipelineIdentifiers);
+
+      criteria.and(pipelineIdentifierKey).in(permittedPipelineIdentifiers);
+    }
   }
 }

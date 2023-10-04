@@ -756,7 +756,7 @@ debeziumConsumersConfigs:
 
 dataReconciliation:
   enabled: true
-  duration: 900
+  duration: ${DATA_RECONCILIATION_CRON_DURATION:-900}
 
 disableDelegateMgmtInManager: false
 

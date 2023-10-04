@@ -3,8 +3,8 @@
     "id": "64d4f1a9b308cf71096284be",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "__HARNESS__bfeece93-8892-4459-be93-b7a647df7e5f",
-    "name": "Mean time to merge PR is less than 2 days",
-    "description": "Mean time to merge PR is less than 2 days",
+    "name": "GitHub Mean time to merge PR is less than 2 days",
+    "description": "GitHub Mean time to merge PR is less than 2 days",
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
@@ -44,8 +44,8 @@
     "id": "64d5f23eb90d6686d2a9a007",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "__HARNESS__a9b98e87-d9c1-4c5e-9ba6-4485f171dbc4",
-    "name": "Branch protection is set",
-    "description": "Branch protection is set",
+    "name": "GitHub Branch protection is set",
+    "description": "GitHub Branch protection is set",
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
@@ -105,8 +105,8 @@
     "id": "64ede62a8b4004661f8e59aa",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "__HARNESS__b9a99e87-d9c1-4c5e-9ba6-4605a771dbc4",
-    "name": "Gitleaks file exists",
-    "description": "Gitleaks file exists",
+    "name": "GitHub Gitleaks file exists",
+    "description": "GitHub Gitleaks file exists",
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
@@ -266,21 +266,21 @@
     "id": "6500ce178ea5a4798502f516",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "__HARNESS__565c5545-2b7f-4400-95e2-6b8ac470f40e",
-    "name": "Average acknowledgement time for the last 10 incidents is less than 30 minutes",
-    "description": "Checks if the average acknowledgement time for last 10 incidents is less than 30 minutes on PagerDuty",
+    "name": "Average resolved time for the last 10 resolved incidents is less than 50 minutes",
+    "description": "Checks if the average resolved time for last 10 resolved incidents is less than 50 minutes on PagerDuty",
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
         "data_source_identifier": "pagerduty",
-        "data_point_identifier": "avgAcknowledgementTimeForLastTenIncidentsInMinutes",
+        "data_point_identifier": "avgResolvedTimeForLastTenResolvedIncidentsInMinutes",
         "operator": "<",
-        "value": "30"
+        "value": "50"
       }
     ],
-    "expression": "pagerduty.avgAcknowledgementTimeForLastTenIncidentsInMinutes < 30",
+    "expression": "pagerduty.avgResolvedTimeForLastTenResolvedIncidentsInMinutes < 50",
     "tags": ["DevOps maturity"],
     "defaultBehaviour": "FAIL",
-    "failMessage": "Average acknowledgement time for last 10 incidents is more than 30 minutes."
+    "failMessage": "Average resolved time for last 10 resolved incidents is more than 50 minutes."
   },
   {
     "id": "64fec4369a5dcde88b2137c7",
@@ -321,5 +321,110 @@
     "tags": ["DevOps maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Application should be deployed within a week"
+  },
+  {
+    "id": "650c3ff3b0979ea005707417",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__beefce94-8892-5590-be93-b7a247ef7e5e",
+    "name": "Bitbucket Mean time to merge PR is less than 2 days",
+    "description": "Bitbucket Mean time to merge PR is less than 2 days",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "bitbucket",
+        "data_point_identifier": "meanTimeToMerge",
+        "conditional_input_value": "\"refs/\"",
+        "operator": "<",
+        "value": "48"
+      }
+    ],
+    "expression": "bitbucket.meanTimeToMerge < 48",
+    "tags": ["Development maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Mean time to merge PR is more than 2 days"
+  },
+  {
+    "id": "65155fe3bc2fee7d40edbd10",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__d3823a2b-390a-f44b-d351-214ab64d37456",
+    "name": "Mean time to resolve P0/P1 bugs in last 90 days is less than 2 days",
+    "description": "Mean time to resolve P0/P1 bugs in last 90 days is less than 2 days",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "jira",
+        "data_point_identifier": "meanTimeToResolve",
+        "conditional_input_value": "\"issuetype = Bug AND priority in (P0,P1) AND resolved >= -90d\"",
+        "operator": "<",
+        "value": "48"
+      }
+    ],
+    "expression": "jira.meanTimeToResolve < 48",
+    "tags": ["Quality"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Mean time to resolve P0/P1 bugs is more than 2 days"
+  },
+  {
+    "id": "65155fe8e7060235c286443e",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__a05fdb1e-c709-2a45-7b06-528ee4c26f01",
+    "name": "Number of open P0/P1 bugs is less than 5",
+    "description": "Number of open P0/P1 bugs is less than 5",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "jira",
+        "data_point_identifier": "issuesCount",
+        "conditional_input_value": "\"issuetype = Bug AND priority in (P0,P1) AND statusCategory != Done\"",
+        "operator": "<",
+        "value": "5"
+      }
+    ],
+    "expression": "jira.issuesCount < 5",
+    "tags": ["Quality"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Number of open P0/P1 bugs is more than 5"
+  },
+  {
+    "id": "65155ff0c0d13e55a1949910",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__f60d48a5-ca8e-38ca-5031-95cab6ede5b1",
+    "name": "Features delivered in last 90 days is more than 5",
+    "description": "Features delivered in last 90 days is more than 5",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "jira",
+        "data_point_identifier": "issuesCount",
+        "conditional_input_value": "\"issuetype in (Epic, 'New Feature') AND resolved >= -90d\"",
+        "operator": "<",
+        "value": "5"
+      }
+    ],
+    "expression": "jira.issuesCount < 5",
+    "tags": ["Development maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Features delivered in last 90 days is less than 5"
+  },
+  {
+    "id": "65157ea246474b8c022d26c5",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__a4818149-8eb2-fb94-673a-70c9f4ec65e6",
+    "name": "P0/P1 bugs Open/Close ratio is less than 3 (last 90 days)",
+    "description": "P0/P1 bugs Open/Close ratio is less than 3 (last 90 days)",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "jira",
+        "data_point_identifier": "issuesOpenCloseRatio",
+        "conditional_input_value": "\"issuetype = Bug AND priority in (P0,P1) AND created >= -90d\"",
+        "operator": "<",
+        "value": "3"
+      }
+    ],
+    "expression": "jira.issuesOpenCloseRatio < 3",
+    "tags": ["Quality"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "P0/P1 bugs Open/Close ratio is more than 3"
   }
 ]

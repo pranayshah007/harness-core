@@ -651,6 +651,7 @@ public class NGVaultServiceImpl implements NGVaultService {
     Optional.ofNullable(specDTO.getUseManagedIdentity()).ifPresent(azureVaultConfig::setUseManagedIdentity);
     Optional.ofNullable(specDTO.getManagedClientId()).ifPresent(azureVaultConfig::setManagedClientId);
     Optional.ofNullable(specDTO.getAzureManagedIdentityType()).ifPresent(azureVaultConfig::setAzureManagedIdentityType);
+    Optional.ofNullable(specDTO.getEnablePurge()).ifPresent(azureVaultConfig::setEnablePurge);
     List<String> vaultNames;
     try {
       vaultNames = listVaultsInternal(accountIdentifier, azureVaultConfig);
@@ -682,6 +683,7 @@ public class NGVaultServiceImpl implements NGVaultService {
             .useManagedIdentity(azureVaultConfig.getUseManagedIdentity())
             .azureManagedIdentityType(azureVaultConfig.getAzureManagedIdentityType())
             .managedClientId(azureVaultConfig.getManagedClientId())
+            .enablePurge(azureVaultConfig.getEnablePurge())
             .build();
     int failedAttempts = 0;
     while (true) {
@@ -1006,8 +1008,13 @@ public class NGVaultServiceImpl implements NGVaultService {
                                             .toInstant()
                                             .toEpochMilli()) {
       log.warn("Stopping renewal iterator for vault- {} with id- {}", vaultConnector.getName(), vaultConnector.getId());
-      vaultConnector.setRenewalPaused(Boolean.TRUE);
-      connectorRepository.save(vaultConnector, ChangeType.NONE);
+
+      Criteria criteria = Criteria.where(ConnectorKeys.id).is(vaultConnector.getId());
+
+      Update update = new Update().set(ConnectorKeys.renewalPaused, true);
+
+      connectorRepository.update(vaultConnector.getAccountIdentifier(), vaultConnector.getOrgIdentifier(),
+          vaultConnector.getProjectIdentifier(), criteria, update);
     }
   }
 }

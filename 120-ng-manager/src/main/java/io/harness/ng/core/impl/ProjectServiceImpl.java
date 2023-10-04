@@ -438,6 +438,7 @@ public class ProjectServiceImpl implements ProjectService {
       project.setIdentifier(existingProject.getIdentifier());
       project.setCreatedAt(existingProject.getCreatedAt() == null ? existingProject.getLastModifiedAt()
                                                                   : existingProject.getCreatedAt());
+      project.setUniqueId(existingProject.getUniqueId());
       if (project.getVersion() == null) {
         project.setVersion(existingProject.getVersion());
       }

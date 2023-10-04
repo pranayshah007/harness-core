@@ -24,6 +24,7 @@ import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -166,6 +167,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.refobjects.RefType;
 import io.harness.pms.data.OrchestrationRefType;
@@ -240,11 +242,16 @@ public class NativeHelmStepHelperTest extends CategoryTest {
   @Spy @InjectMocks private CDStepHelper cdStepHelper;
 
   @Mock private LogCallback mockLogCallback;
-  private final Ambiance ambiance = Ambiance.newBuilder()
-                                        .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
-                                        .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
-                                        .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
-                                        .build();
+
+  private final Ambiance ambiance =
+      Ambiance.newBuilder()
+          .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
+          .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
+          .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
+          .setMetadata(
+              ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
+          .build();
+
   private static final String SOME_URL = "https://url.com/owner/repo.git";
   private static final String INFRA_KEY = "svcId_envId";
   private static final String ENCODED_INFRA_KEY = "c26979e4-1d8c-344e-8181-45f484c57fe5";

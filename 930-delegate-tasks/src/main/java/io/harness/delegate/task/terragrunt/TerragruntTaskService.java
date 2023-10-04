@@ -238,7 +238,7 @@ public class TerragruntTaskService {
 
     TerragruntClient terragruntClient = terragruntClientFactory.getClient(scriptDirectory,
         parameters.getTimeoutInMillis(), terragruntCommandLogCallback,
-        parameters.getRunConfiguration().getRunType().name(), parameters.getEnvVars());
+        parameters.getRunConfiguration().getRunType().name(), parameters.getEnvVars(), parameters.isSkipColorLogs());
     String terragruntWorkingDirectory = null;
     if (TerragruntTaskRunType.RUN_MODULE == parameters.getRunConfiguration().getRunType()) {
       terragruntWorkingDirectory = terragruntClient.terragruntWorkingDirectory();
@@ -383,7 +383,8 @@ public class TerragruntTaskService {
                   .build())
         .runType(getCliRunType(taskParameters))
         .envVars(taskParameters.getEnvVars())
-        .workingDirectory(filesContext.getScriptDirectory());
+        .workingDirectory(filesContext.getScriptDirectory())
+        .skipColorLogs(taskParameters.isSkipColorLogs());
 
     return baseBuilder;
   }

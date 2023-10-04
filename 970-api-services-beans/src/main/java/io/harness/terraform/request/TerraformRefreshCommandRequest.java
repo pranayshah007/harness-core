@@ -25,4 +25,5 @@ public class TerraformRefreshCommandRequest {
   String varParams; // Needed to send inline variable values in CG
   String uiLogs; // Needed in CG to prevent printing secrets
   Map<String, String> additionalCliFlags;
+  boolean skipColorLogs;
 }

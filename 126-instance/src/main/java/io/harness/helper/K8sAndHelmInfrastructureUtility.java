@@ -72,7 +72,8 @@ public class K8sAndHelmInfrastructureUtility {
         .build();
   }
 
-  public NativeHelmDeploymentReleaseDetails getNativeHelmDeploymentReleaseDetails(DeploymentInfoDTO deploymentInfoDTO) {
+  public NativeHelmDeploymentReleaseDetails getNativeHelmDeploymentReleaseDetails(
+      DeploymentInfoDTO deploymentInfoDTO, boolean isAddRegionalParam) {
     NativeHelmDeploymentInfoDTO nativeHelmDeploymentInfoDTO = (NativeHelmDeploymentInfoDTO) deploymentInfoDTO;
     String subscriptionId = null;
     String resourceGroup = null;
@@ -96,6 +97,7 @@ public class K8sAndHelmInfrastructureUtility {
                                    .subscriptionId(subscriptionId)
                                    .resourceGroup(resourceGroup)
                                    .useClusterAdminCredentials(useClusterAdminCredentials)
+                                   .addRegionalParam(isAddRegionalParam)
                                    .build())
         .helmVersion(nativeHelmDeploymentInfoDTO.getHelmVersion().toString())
         .helmChartInfo(nativeHelmDeploymentInfoDTO.getHelmChartInfo())

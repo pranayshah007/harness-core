@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -216,7 +217,7 @@ public class ServerlessAwsLambdaPackageV2PluginInfoProviderTest extends Category
     Mockito.mockStatic(PluginInfoProviderHelper.class);
     ImageDetails imageDetails = mock(ImageDetails.class);
     Builder builder = mock(Builder.class);
-    when(PluginInfoProviderHelper.buildPluginDetails(any(), any(), any())).thenReturn(builder);
+    when(PluginInfoProviderHelper.buildPluginDetails(any(), any(), any(), anyBoolean())).thenReturn(builder);
     Set<Integer> usedPorts = new HashSet<>();
     usedPorts.add(1);
     assertThat(serverlessAwsLambdaPackageV2PluginInfoProvider.getPluginDetailsBuilder(

@@ -23,6 +23,7 @@ import io.harness.repositories.CIAccountDataStatusRepository;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.InvalidProtocolBufferException;
+import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
@@ -69,7 +70,19 @@ public class AccountEntityListener implements MessageListener {
 
   private void processDeleteEvent(AccountEntityChangeDTO entityChangeDTO) {
     String accountId = entityChangeDTO.getAccountId();
+    if (checkIfAlreadyExists(accountId)) {
+      log.info("Deletion of ci data request already exists for account - " + entityChangeDTO.getAccountId());
+      return;
+    }
     CIAccountDataStatus ciAccountDataStatus = CIAccountDataStatus.builder().accountId(accountId).deleted(false).build();
     ciAccountDataStatusRepository.save(ciAccountDataStatus);
+  }
+
+  private boolean checkIfAlreadyExists(String accountId) {
+    List<CIAccountDataStatus> entries = ciAccountDataStatusRepository.findAllByAccountId(accountId);
+    if (entries.isEmpty()) {
+      return false;
+    }
+    return true;
   }
 }

@@ -142,11 +142,11 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
   @Override
   public Optional<GitXWebhook> getGitXWebhook(String accountIdentifier, String webhookIdentifier, String repoName) {
     List<GitXWebhook> gitXWebhookList;
-    if (isEmpty(webhookIdentifier)) {
+    if (isNotEmpty(webhookIdentifier)) {
       gitXWebhookList =
           gitXWebhookRepository.findByAccountIdentifierAndIdentifier(accountIdentifier, webhookIdentifier);
     } else {
-      gitXWebhookList = gitXWebhookRepository.findByAccountIdentifierAndIdentifier(accountIdentifier, repoName);
+      gitXWebhookList = gitXWebhookRepository.findByAccountIdentifierAndRepoName(accountIdentifier, repoName);
     }
     if (isEmpty(gitXWebhookList)) {
       log.info(String.format(
@@ -254,6 +254,7 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
                    .folderPaths(gitXWebhookResponseDTO.getFolderPaths())
                    .isEnabled(gitXWebhookResponseDTO.getIsEnabled())
                    .repoName(gitXWebhookResponseDTO.getRepoName())
+                   .eventTriggerTime(gitXWebhookResponseDTO.getLastEventTriggerTime())
                    .build())
         .collect(Collectors.toList());
   }
@@ -286,6 +287,9 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
     }
     if (updateGitXWebhookRequestDTO.getIsEnabled() != null) {
       update.set(GitXWebhookKeys.isEnabled, Boolean.TRUE.equals(updateGitXWebhookRequestDTO.getIsEnabled()));
+    }
+    if (updateGitXWebhookRequestDTO.getLastEventTriggerTime() != null) {
+      update.set(GitXWebhookKeys.lastEventTriggerTime, updateGitXWebhookRequestDTO.getLastEventTriggerTime());
     }
     update.set(GitXWebhookKeys.lastUpdatedAt, currentTimeInMilliseconds);
     return update;

@@ -20,41 +20,28 @@ import org.apache.commons.lang3.ClassUtils;
 @UtilityClass
 @Slf4j
 public class ParameterFieldUtils {
-  // Handling primitive types, wrappers, and Timeout when value class of document field doesn't match the class of
+  // Handling primitive types, wrappers, enum, and Timeout when value class of document field doesn't match the class of
   // finalValue
+  // This handling is for cases like when an integer field is assigned an expression of string pipeline var with integer
+  // value
   Object getCastedFinalValueForPrimitiveTypesAndWrappers(Object finalValue, ParameterDocumentField field) {
     if (field.getValueClass() == null || finalValue == null) {
       return finalValue;
     }
     try {
       Class<?> fieldClass = Class.forName(field.getValueClass());
-      if ((ClassUtils.isPrimitiveOrWrapper(fieldClass) || fieldClass.equals(Timeout.class))
+      if ((ClassUtils.isPrimitiveOrWrapper(fieldClass) || fieldClass.equals(Timeout.class) || fieldClass.isEnum())
           && !fieldClass.isAssignableFrom(finalValue.getClass())) {
         if (fieldClass.equals(Integer.class)) {
-          if (finalValue.getClass().equals(String.class)) {
-            finalValue = Integer.parseInt(finalValue.toString());
-          } else if (finalValue.getClass().equals(Double.class)) {
-            finalValue = ((Double) finalValue).intValue();
-          } else if (finalValue.getClass().equals(Long.class)) {
-            finalValue = ((Long) finalValue).intValue();
-          }
+          finalValue = getIntegerValue(finalValue);
         } else if (fieldClass.equals(Double.class)) {
-          if (finalValue.getClass().equals(String.class)) {
-            finalValue = Double.valueOf((String) finalValue);
-          } else if (finalValue.getClass().equals(Integer.class)) {
-            finalValue = new Double((Integer) finalValue);
-          } else if (finalValue.getClass().equals(Long.class)) {
-            finalValue = new Double((Long) finalValue);
-          }
+          finalValue = getDoubleValue(finalValue);
         } else if (fieldClass.equals(Boolean.class)) {
-          if (finalValue.getClass().equals(String.class)) {
-            Object booleanValue = BooleanUtils.toBooleanObject((String) finalValue);
-            finalValue = booleanValue == null ? finalValue : booleanValue;
-          }
+          finalValue = getBooleanValue(finalValue);
         } else if (fieldClass.equals(Timeout.class)) {
-          if (finalValue.getClass().equals(String.class)) {
-            finalValue = Timeout.fromString((String) finalValue);
-          }
+          finalValue = getTimeoutValue(finalValue);
+        } else if (fieldClass.isEnum()) {
+          finalValue = getEnumValue(finalValue, fieldClass);
         }
       }
     } catch (Exception ex) {
@@ -63,6 +50,55 @@ public class ParameterFieldUtils {
               "[ParameterDocumentFieldProcessor] Exception in casting newValue of type %s into parameter field of type %s",
               finalValue.getClass().toString(), field.getValueClass()),
           ex);
+    }
+    return finalValue;
+  }
+
+  private Object getIntegerValue(Object finalValue) {
+    if (finalValue.getClass().equals(String.class)) {
+      finalValue = Integer.parseInt(finalValue.toString());
+    } else if (finalValue.getClass().equals(Double.class)) {
+      finalValue = ((Double) finalValue).intValue();
+    } else if (finalValue.getClass().equals(Long.class)) {
+      finalValue = ((Long) finalValue).intValue();
+    }
+    return finalValue;
+  }
+
+  private Object getDoubleValue(Object finalValue) {
+    if (finalValue.getClass().equals(String.class)) {
+      finalValue = Double.valueOf((String) finalValue);
+    } else if (finalValue.getClass().equals(Integer.class)) {
+      finalValue = new Double((Integer) finalValue);
+    } else if (finalValue.getClass().equals(Long.class)) {
+      finalValue = new Double((Long) finalValue);
+    }
+    return finalValue;
+  }
+
+  private Object getBooleanValue(Object finalValue) {
+    if (finalValue.getClass().equals(String.class)) {
+      Object booleanValue = BooleanUtils.toBooleanObject((String) finalValue);
+      finalValue = booleanValue == null ? finalValue : booleanValue;
+    }
+    return finalValue;
+  }
+
+  private Object getTimeoutValue(Object finalValue) {
+    if (finalValue.getClass().equals(String.class)) {
+      finalValue = Timeout.fromString((String) finalValue);
+    }
+    return finalValue;
+  }
+
+  private Object getEnumValue(Object finalValue, Class<?> fieldClass) {
+    if (finalValue.getClass().equals(String.class)) {
+      for (Object object : fieldClass.getEnumConstants()) {
+        if (((Enum) object).name().equalsIgnoreCase((String) finalValue)
+            || object.toString().equalsIgnoreCase((String) finalValue)) {
+          return object;
+        }
+      }
     }
     return finalValue;
   }
