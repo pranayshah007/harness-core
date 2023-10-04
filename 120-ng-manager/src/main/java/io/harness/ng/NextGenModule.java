@@ -272,6 +272,8 @@ import io.harness.ng.opa.entities.secret.OpaSecretService;
 import io.harness.ng.opa.entities.secret.OpaSecretServiceImpl;
 import io.harness.ng.overview.service.CDLandingDashboardService;
 import io.harness.ng.overview.service.CDLandingDashboardServiceImpl;
+import io.harness.ng.overview.service.CDLandingPageService;
+import io.harness.ng.overview.service.CDLandingPageServiceImpl;
 import io.harness.ng.overview.service.CDOverviewDashboardService;
 import io.harness.ng.overview.service.CDOverviewDashboardServiceImpl;
 import io.harness.ng.rollback.PostProdRollbackService;
@@ -688,6 +690,7 @@ public class NextGenModule extends AbstractModule {
 
     bind(CDOverviewDashboardService.class).to(CDOverviewDashboardServiceImpl.class);
     bind(CDLandingDashboardService.class).to(CDLandingDashboardServiceImpl.class);
+    bind(CDLandingPageService.class).to(CDLandingPageServiceImpl.class);
 
     try {
       bind(TimeScaleDBService.class)
