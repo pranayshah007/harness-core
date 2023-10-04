@@ -71,11 +71,11 @@ spec:
           - configMapRef:
               name: verification-svc
           env:
-            {{- include "harnesscommon.dbconnection.mongoEnv" . | indent 12 }}
+            {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" $) | indent 12 }}
             - name: MONGO_URI
-              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "harness" "context" $) }}
+              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "harness" ) }}
             - name: DMS_MONGO_URI
-              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "dms-harness" "context" $) }}
+              value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "ctx" $ "database" "dms-harness" ) }}
           readinessProbe:
             failureThreshold: 3
             httpGet:
