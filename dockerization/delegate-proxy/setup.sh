@@ -7,25 +7,124 @@
 set -x
 set -e
 
-ls -la destination/dist/
-
+mkdir -p destination
 cd destination
+rm -rf *
 
-echo $PURPOSE
-echo $VERSION
+JDK=openjdk-8u242
+
+echo "installing gsutil"
+tee -a /etc/yum.repos.d/google-cloud-sdk.repo << EOM
+[google-cloud-cli]
+name=Google Cloud CLI
+baseurl=https://packages.cloud.google.com/yum/repos/cloud-sdk-el8-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=0
+gpgkey=https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOM
+echo "here2"
+microdnf install google-cloud-cli
+echo "here3"
+
+
+DELEGATE_VERSION=$DELEGATE_BUILD
+WATCHER_VERSION=$WATCHER_BUILD
+DELEGATE_PATCH_VERSION=$DELEGATE_PATCH
+
+DELEGATE_BUCKET_PATH="delegate-jars/artifacts/saas/${JDK}/delegate-${DELEGATE_VERSION}-${DELEGATE_PATCH_VERSION}.jar"
+WATCHER_BUCKET_PATH="watcher-jars/artifacts/saas/${JDK}/watcher-${WATCHER_VERSION}.jar"
+DELEGATE_HELM_CHART_PATH="delegate-helm-chart"
+
+echo
+echo DELEGATE_BUCKET_PATH=$DELEGATE_BUCKET_PATH
+echo
+
+status=1
+for i in {1..20}
+do
+  gsutil cp gs://$DELEGATE_BUCKET_PATH ./delegate.jar
+  status=$?
+  if [ $status -eq 0 ]; then
+  	echo "delegate jar copied";
+  	break;
+  fi
+  echo "not able to copy, sleeping for 15 seconds"
+  sleep 15
+done
+
+if [ $status != 0 ]; then
+  echo "delegate jar copy failed";
+  exit 1
+fi
+
+echo
+echo WATCHER_BUCKET_PATH=$WATCHER_BUCKET_PATH
+echo
+
+status=1
+for i in {1..20}
+do
+  gsutil cp gs://$WATCHER_BUCKET_PATH ./watcher.jar
+  status=$?
+  if [ $status -eq 0 ]; then
+  	echo "watcher jar copied";
+  	break;
+  fi
+  echo "not able to copy, sleeping for 15 seconds"
+  sleep 15
+done
+
+if [ $status != 0 ]; then
+  echo "watcher jar copy failed";
+  exit 1
+fi
+
+echo
+echo DELEGATE_HELM_CHART_PATH=$DELEGATE_HELM_CHART_PATH
+echo
+
+mkdir -p helm_charts
+
+
+status=1
+for i in {1..20}
+do
+  gsutil -m cp -r gs://$DELEGATE_HELM_CHART_PATH ./helm_charts
+  status=$?
+  if [ $status -eq 0 ]; then
+  	echo "helm chart copied";
+  	break;
+  fi
+  echo "not able to copy, sleeping for 15 seconds"
+  sleep 15
+done
+
+if [ $status != 0 ]; then
+  echo "helm chart copy failed";
+  exit 1
+fi
+
+ls -la /destination
 
 IMAGES_DIR="images"
 STORAGE_DIR_LOCATION="storage"
 
-JRE_SOURCE_URL_1=https://app.harness.io/storage/wingsdelegates/jre/openjdk-8u242
-JRE_SOLARIS_1=jre_x64_solaris_8u242b08.tar.gz
-JRE_MACOSX_1=jre_x64_macosx_8u242b08.tar.gz
-JRE_LINUX_1=jre_x64_linux_8u242b08.tar.gz
+JRE_SOURCE_URL_1=https://app.harness.io/public/shared/jre/openjdk-11.0.19_7
+JRE_SOLARIS_1=OpenJDK11U-jre_x64_solaris_hotspot_11.0.19_7.tar.gz
+JRE_MACOSX_1=OpenJDK11U-jre_x64_macosx_hotspot_11.0.19_7.tar.gz
+JRE_LINUX_1=OpenJDK11U-jre_x64_linux_hotspot_11.0.19_7.tar.gz
 
-JRE_SOURCE_URL_2=https://app.harness.io/storage/wingsdelegates/jre/8u191
-JRE_SOLARIS_2=jre-8u191-solaris-x64.tar.gz
-JRE_MACOSX_2=jre-8u191-macosx-x64.tar.gz
-JRE_LINUX_2=jre-8u191-linux-x64.tar.gz
+JRE_SOURCE_URL_2=https://app.harness.io/public/shared/jre/openjdk-11.0.14_9
+JRE_SOLARIS_2=OpenJDK11U-jre_x64_solaris_hotspot_11.0.14_9.tar.gz
+JRE_MACOSX_2=OpenJDK11U-jre_x64_macosx_hotspot_11.0.14_9.tar.gz
+JRE_LINUX_2=OpenJDK11U-jre_x64_linux_hotspot_11.0.14_9.tar.gz
+
+JRE_SOURCE_URL_3=https://app.harness.io/public/shared/jre/openjdk-11.0.19+7
+JRE_SOLARIS_3=OpenJDK11U-jre_x64_solaris_hotspot_11.0.19+7.tar.gz
+JRE_MACOSX_3=OpenJDK11U-jre_x64_macosx_hotspot_11.0.19+7.tar.gz
+JRE_LINUX_3=OpenJDK11U-jre_x64_linux_hotspot_11.0.19+7.tar.gz
+
 
 ALPN_BOOT_JAR_URL=https://app.harness.io/public/shared/tools/alpn/release/8.1.13.v20181017
 ALPN_BOOT_JAR=alpn-boot-8.1.13.v20181017.jar
@@ -39,8 +138,8 @@ OC_MAC_DIR="${IMAGES_DIR}/oc/darwin/$OC_VERSION/"
 
 mkdir -p $IMAGES_DIR
 
-cp -f dist/delegate/delegate-capsule.jar ${IMAGES_DIR}/delegate.jar
-cp -f dist/watcher/watcher-capsule.jar ${IMAGES_DIR}/watcher.jar
+cp -f /destination/delegate.jar ${IMAGES_DIR}/delegate.jar
+cp -f /destination/watcher.jar ${IMAGES_DIR}/watcher.jar
 
 curl "${JRE_SOURCE_URL_1}/${JRE_SOLARIS_1}" >"${JRE_SOLARIS_1}"
 curl "${JRE_SOURCE_URL_1}/${JRE_MACOSX_1}" >"${JRE_MACOSX_1}"
@@ -49,6 +148,10 @@ curl "${JRE_SOURCE_URL_1}/${JRE_LINUX_1}" >"${JRE_LINUX_1}"
 curl "${JRE_SOURCE_URL_2}/${JRE_SOLARIS_2}" >"${JRE_SOLARIS_2}"
 curl "${JRE_SOURCE_URL_2}/${JRE_MACOSX_2}" >"${JRE_MACOSX_2}"
 curl "${JRE_SOURCE_URL_2}/${JRE_LINUX_2}" >"${JRE_LINUX_2}"
+
+curl "${JRE_SOURCE_URL_3}/${JRE_SOLARIS_3}" >"${JRE_SOLARIS_3}"
+curl "${JRE_SOURCE_URL_3}/${JRE_MACOSX_3}" >"${JRE_MACOSX_3}"
+curl "${JRE_SOURCE_URL_3}/${JRE_LINUX_3}" >"${JRE_LINUX_3}"
 
 curl "${ALPN_BOOT_JAR_URL}/${ALPN_BOOT_JAR}" >"${ALPN_BOOT_JAR}"
 
@@ -65,6 +168,10 @@ mv "${JRE_LINUX_1}" "${IMAGES_DIR}/"
 mv "${JRE_SOLARIS_2}" "${IMAGES_DIR}/"
 mv "${JRE_MACOSX_2}" "${IMAGES_DIR}/"
 mv "${JRE_LINUX_2}" "${IMAGES_DIR}/"
+
+mv "${JRE_SOLARIS_3}" "${IMAGES_DIR}/"
+mv "${JRE_MACOSX_3}" "${IMAGES_DIR}/"
+mv "${JRE_LINUX_3}" "${IMAGES_DIR}/"
 
 mv "${ALPN_BOOT_JAR}" "${IMAGES_DIR}/"
 
@@ -88,7 +195,7 @@ for kubectlVersion in v1.13.2 v1.19.2; do
 
 done
 
-for goversion in v0.4.4; do
+for goversion in v0.2 v0.3 v0.4 v0.4.2 v0.4.4; do
   echo "Adding goversion $goversion"
   GOTEMPLATE_LINUX_DIR="${IMAGES_DIR}/go-template/linux/$goversion/"
   GOTEMPLATE_MAC_DIR="${IMAGES_DIR}/go-template/darwin/$goversion/"
@@ -179,7 +286,7 @@ for kustomizeVersion in v3.5.4 v4.0.0; do
 done
 
 
-for tfConfigInspectVersion in v1.0 v1.1 v1.2; do
+for tfConfigInspectVersion in v1.0 v1.1 v1.2 ; do
   echo "Adding terraform-config-inspect" $tfConfigInspectVersion
 
   TF_CONFIG_INSPECT_LINUX_DIR="${IMAGES_DIR}/tf-config-inspect/linux/$tfConfigInspectVersion/"
@@ -222,16 +329,21 @@ done
 function setupDelegateJars() {
   echo "################################ Setting up Delegate Jars ################################"
 
-  DELEGATE_VERSION=$VERSION
-  WATCHER_VERSION=$VERSION
 
-  mkdir -p $STORAGE_DIR_LOCATION/wingsdelegates/jre/openjdk-8u242/
-  mkdir -p $STORAGE_DIR_LOCATION/wingsdelegates/jre/8u191/
-  cp images/jre*8u242b08.tar.gz $STORAGE_DIR_LOCATION/wingsdelegates/jre/openjdk-8u242/
-  cp images/jre-8u191-*.gz $STORAGE_DIR_LOCATION/wingsdelegates/jre/8u191/
+  mkdir -p $STORAGE_DIR_LOCATION/wingsdelegates/jre/openjdk-11.0.14_9/
+  cp images/OpenJDK11U-jre*11.0.14_9.tar.gz $STORAGE_DIR_LOCATION/wingsdelegates/jre/openjdk-11.0.14_9/
+
+  mkdir -p $STORAGE_DIR_LOCATION/wingsdelegates/jre/openjdk-11.0.19_7/
+  cp images/OpenJDK11U-jre*11.0.19_7.tar.gz $STORAGE_DIR_LOCATION/wingsdelegates/jre/openjdk-11.0.19_7/
+
+  mkdir -p $STORAGE_DIR_LOCATION/wingsdelegates/jre/openjdk-11.0.19+7/
+  cp images/OpenJDK11U-jre*11.0.19+7.tar.gz $STORAGE_DIR_LOCATION/wingsdelegates/jre/openjdk-11.0.19+7/
 
   mkdir -p $STORAGE_DIR_LOCATION/wingsdelegates/tools/alpn/release/8.1.13.v20181017/
   cp images/alpn-boot-8.1.13.v20181017.jar $STORAGE_DIR_LOCATION/wingsdelegates/tools/alpn/release/8.1.13.v20181017/
+
+  mkdir -p $STORAGE_DIR_LOCATION/harness-download
+  cp -r /destination/helm_charts/delegate-helm-chart $STORAGE_DIR_LOCATION/harness-download
 
   rm -rf ${STORAGE_DIR_LOCATION}/wingsdelegates/jobs/deploy-prod-delegate/*
   mkdir -p ${STORAGE_DIR_LOCATION}/wingsdelegates/jobs/deploy-prod-delegate/${DELEGATE_VERSION}
@@ -265,7 +377,7 @@ function setupClientUtils() {
       cp images/kustomize/${platform}/$kustomizeversion/kustomize ${STORAGE_DIR_LOCATION}/harness-download/harness-kustomize/release/$kustomizeversion/bin/${platform}/amd64/
     done
 
-    for gotemplateversion in v0.4.4; do
+    for gotemplateversion in v0.2 v0.3 v0.4 v0.4.2 v0.4.4; do
       mkdir -p ${STORAGE_DIR_LOCATION}/harness-download/snapshot-go-template/release/$gotemplateversion/bin/${platform}/amd64/
       cp images/go-template/${platform}/$gotemplateversion/go-template ${STORAGE_DIR_LOCATION}/harness-download/snapshot-go-template/release/$gotemplateversion/bin/${platform}/amd64/
     done
@@ -295,7 +407,7 @@ function setupClientUtils() {
       cp images/oc/${platform}/$ocversion/oc ${STORAGE_DIR_LOCATION}/harness-download/harness-oc/release/$ocversion/bin/${platform}/amd64/
     done
 
-    for scmVersion in 93b3c9f1; do
+    for scmVersion in <+execution.steps.GetScmVersion.output.outputVariables.scmVersion>; do
       mkdir -p ${STORAGE_DIR_LOCATION}/harness-download/harness-scm/release/$scmVersion/bin/${platform}/amd64/
       cp images/scm/${platform}/$scmVersion/scm ${STORAGE_DIR_LOCATION}/harness-download/harness-scm/release/$scmVersion/bin/${platform}/amd64/
     done
@@ -308,3 +420,6 @@ setupClientUtils
 ls -ltr
 
 ls -la $STORAGE_DIR_LOCATION
+
+echo "uninstalling gsutil"
+microdnf remove google-cloud-cli
