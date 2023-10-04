@@ -168,7 +168,10 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
         cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance);
     logCallback.saveExecutionLog(
         String.format("Trying to acquire lock on token for %s operation", CONSTRAINT_OPERATION));
-    String tokenRefIdentifier = extractToken(connectorInfoDTO);
+    String tokenRefIdentifier = GitOpsStepUtils.extractToken(connectorInfoDTO);
+    if (tokenRefIdentifier == null) {
+      throw new InvalidRequestException("Failed to get token identifier from connector");
+    }
     String constraintUnitIdentifier = CONSTRAINT_OPERATION + AmbianceUtils.getAccountId(ambiance) + tokenRefIdentifier;
 
     Constraint constraint = githubRestraintInstanceService.createAbstraction(constraintUnitIdentifier);
@@ -340,7 +343,7 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
     // TODO: implement this
   }
 
-  private String extractToken(ConnectorInfoDTO connectorInfoDTO) {
+  private String extractTokenOld(ConnectorInfoDTO connectorInfoDTO) {
     String tokenRefIdentifier = null;
 
     GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorInfoDTO.getConnectorConfig();

@@ -42,10 +42,6 @@ import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubCredentialsDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubSshCredentialsDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.gitapi.GitApiRequestType;
 import io.harness.delegate.beans.gitapi.GitApiTaskParams;
@@ -181,7 +177,10 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
     ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
     ConnectorInfoDTO connectorInfoDTO =
         cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance);
-    String tokenRefIdentifier = extractToken(connectorInfoDTO);
+    String tokenRefIdentifier = GitOpsStepUtils.extractToken(connectorInfoDTO);
+    if (tokenRefIdentifier == null) {
+      throw new InvalidRequestException("Failed to get token identifier from connector");
+    }
     String constraintUnitIdentifier =
         GITOPS_MERGE_PR.getName() + AmbianceUtils.getAccountId(ambiance) + tokenRefIdentifier;
 
@@ -429,22 +428,6 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
         cdStepHelper.mapTaskRequestToDelegateTaskRequest(taskRequest, taskData, emptySet(), "", true);
 
     return delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
-  }
-
-  private String extractToken(ConnectorInfoDTO connectorInfoDTO) {
-    String tokenRefIdentifier = null;
-
-    GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorInfoDTO.getConnectorConfig();
-    GithubCredentialsDTO githubCredentialsDTO = githubConnectorDTO.getAuthentication().getCredentials();
-
-    if (githubCredentialsDTO instanceof GithubHttpCredentialsDTO) {
-      GithubUsernameTokenDTO githubUsernameTokenDTO =
-          (GithubUsernameTokenDTO) ((GithubHttpCredentialsDTO) githubCredentialsDTO).getHttpCredentialsSpec();
-      tokenRefIdentifier = githubUsernameTokenDTO.getTokenRef().getIdentifier();
-    } else if (githubCredentialsDTO instanceof GithubSshCredentialsDTO) {
-      tokenRefIdentifier = ((GithubSshCredentialsDTO) githubCredentialsDTO).getSshKeyRef().getIdentifier();
-    }
-    return tokenRefIdentifier;
   }
 
   private Map<String, Object> populateConstraintContext(ConstraintUnit constraintUnit, String releaseEntityId) {

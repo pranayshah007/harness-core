@@ -28,6 +28,7 @@ import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.gitops.GitOpsStepUtils;
 import io.harness.cdng.gitops.githubrestraint.services.GithubRestraintInstanceService;
 import io.harness.cdng.gitops.steps.GitOpsStepHelper;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
@@ -36,11 +37,6 @@ import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
-import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubCredentialsDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubSshCredentialsDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitOpsTaskType;
@@ -164,22 +160,6 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
         .build();
   }
 
-  private String extractToken(ConnectorInfoDTO connectorInfoDTO) {
-    String tokenRefIdentifier = null;
-
-    GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorInfoDTO.getConnectorConfig();
-    GithubCredentialsDTO githubCredentialsDTO = githubConnectorDTO.getAuthentication().getCredentials();
-
-    if (githubCredentialsDTO instanceof GithubHttpCredentialsDTO) {
-      GithubUsernameTokenDTO githubUsernameTokenDTO =
-          (GithubUsernameTokenDTO) ((GithubHttpCredentialsDTO) githubCredentialsDTO).getHttpCredentialsSpec();
-      tokenRefIdentifier = githubUsernameTokenDTO.getTokenRef().getIdentifier();
-    } else if (githubCredentialsDTO instanceof GithubSshCredentialsDTO) {
-      tokenRefIdentifier = ((GithubSshCredentialsDTO) githubCredentialsDTO).getSshKeyRef().getIdentifier();
-    }
-    return tokenRefIdentifier;
-  }
-
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
 
@@ -193,7 +173,10 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
       ConnectorInfoDTO connectorInfoDTO =
           cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance);
 
-      String tokenRefIdentifier = extractToken(connectorInfoDTO);
+      String tokenRefIdentifier = GitOpsStepUtils.extractToken(connectorInfoDTO);
+      if (tokenRefIdentifier == null) {
+        throw new InvalidRequestException("Failed to get token identifier from connector");
+      }
       String constraintUnitIdentifier =
           CONSTRAINT_OPERATION + AmbianceUtils.getAccountId(ambiance) + tokenRefIdentifier;
       Constraint constraint = githubRestraintInstanceService.createAbstraction(constraintUnitIdentifier);
