@@ -7,16 +7,13 @@
 
 package io.harness.engine.pms.execution.strategy.identity;
 
-import io.harness.annotations.dev.CodePulse;
-import io.harness.annotations.dev.HarnessModuleComponent;
-import io.harness.annotations.dev.HarnessTeam;
-import io.harness.annotations.dev.OwnedBy;
-import io.harness.annotations.dev.ProductModule;
+import io.harness.annotations.dev.*;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.steps.identity.IdentityStepParameters;
+import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.plan.IdentityPlanNode;
@@ -90,8 +87,12 @@ public class IdentityStrategyInternalStep
         }
       }
     }
-
-    return getChildFromNodeExecutions(childNodeExecution, originalNodeExecution, ambiance.getPlanId());
+    if (childNodeExecution == null) {
+      throw new InvalidRequestException(
+          String.format("No child found for node with Id %s", originalNodeExecution.getNodeId()));
+    } else {
+      return getChildFromNodeExecutions(childNodeExecution, originalNodeExecution, ambiance.getPlanId());
+    }
   }
 
   @Override
