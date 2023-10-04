@@ -78,9 +78,15 @@ public class PipelineServiceEventsFrameworkModule extends AbstractModule {
       bind(Producer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.PLAN_NOTIFY_EVENT_PRODUCER))
           .toInstance(NoOpProducer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME));
-
+      bind(Producer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.ASYNC_FILTER_CREATION))
+          .toInstance(NoOpProducer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME));
       bind(Consumer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.PMS_ORCHESTRATION_NOTIFY_EVENT))
+          .toInstance(
+              NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
+      bind(Consumer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.ASYNC_FILTER_CREATION))
           .toInstance(
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
     } else {
@@ -115,6 +121,11 @@ public class PipelineServiceEventsFrameworkModule extends AbstractModule {
           .toInstance(RedisProducer.of(EventsFrameworkConstants.TRIGGER_EXECUTION_EVENTS_STREAM, redissonClient,
               EventsFrameworkConstants.TRIGGER_EXECUTION_EVENTS_STREAM_MAX_TOPIC_SIZE, PIPELINE_SERVICE.getServiceId(),
               redisConfig.getEnvNamespace()));
+      bind(Producer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.ASYNC_FILTER_CREATION))
+          .toInstance(RedisProducer.of(EventsFrameworkConstants.ASYNC_FILTER_CREATION, redissonClient,
+              EventsFrameworkConstants.ASYNC_FILTER_CREATION_EVENTS_STREAM_MAX_TOPIC_SIZE,
+              PIPELINE_SERVICE.getServiceId(), redisConfig.getEnvNamespace()));
       bind(Consumer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.ENTITY_CRUD))
           .toInstance(RedisConsumer.of(EventsFrameworkConstants.ENTITY_CRUD, PIPELINE_SERVICE.getServiceId(),
@@ -152,6 +163,11 @@ public class PipelineServiceEventsFrameworkModule extends AbstractModule {
               PIPELINE_SERVICE.getServiceId(), redissonClient,
               EventsFrameworkConstants.TRIGGER_EXECUTION_EVENTS_STREAM_MAX_PROCESSING_TIME,
               EventsFrameworkConstants.TRIGGER_EXECUTION_EVENTS_STREAM_BATCH_SIZE, redisConfig.getEnvNamespace()));
+      bind(Consumer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.ASYNC_FILTER_CREATION))
+          .toInstance(RedisConsumer.of(EventsFrameworkConstants.ASYNC_FILTER_CREATION, PIPELINE_SERVICE.getServiceId(),
+              redissonClient, EventsFrameworkConstants.ASYNC_FILTER_CREATION_EVENTS_STREAM_MAX_PROCESSING_TIME,
+              EventsFrameworkConstants.FILTER_CREATION_EVENTS_STREAM_BATCH_SIZE, redisConfig.getEnvNamespace()));
       if (shouldUseEventsFrameworkSnapshotDebezium) {
         RedisConfig redisConfigSnapshot = this.eventsFrameworkSnapshotConfiguration.getRedisConfig();
         RedissonClient redissonClientSnapshot = RedissonClientFactory.getClient(redisConfigSnapshot);

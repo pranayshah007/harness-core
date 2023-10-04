@@ -4888,7 +4888,7 @@ plain_artifacts = [
     "com.squareup.okhttp3:okhttp-urlconnection:4.9.2",
     "com.squareup.okhttp3:okhttp:4.9.2",
     "com.squareup.okhttp3:mockwebserver:4.9.2",
-    "com.squareup.okio:okio:2.8.0",
+    "com.squareup.okio:okio:3.4.0",
     "com.squareup.retrofit2:converter-protobuf:2.9.0",
     "com.squareup.retrofit2:adapter-rxjava:2.7.2",
     "com.squareup.retrofit2:converter-gson:2.3.0",
