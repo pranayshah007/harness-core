@@ -15,7 +15,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.distribution.constraint.Consumer;
 import io.harness.logging.AutoLogContext;
 import io.harness.mongo.index.CompoundMongoIndex;
-import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
@@ -31,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
-import lombok.With;
 import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -43,12 +41,12 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @OwnedBy(CDC)
 @Data
 @Builder
-@FieldNameConstants(innerTypeName = "GithubRestraintInstanceKeys")
+@FieldNameConstants(innerTypeName = "GitRestraintInstanceKeys")
 @StoreIn(DbAliases.NG_MANAGER)
-@Entity(value = "githubRestraintInstances")
-@Document("githubRestraintInstances")
-@TypeAlias("githubRestraintInstance")
-public class GithubRestraintInstance implements PersistentEntity, UuidAccess {
+@Entity(value = "gitRestraintInstances")
+@Document("gitRestraintInstances")
+@TypeAlias("gitRestraintInstance")
+public class GitRestraintInstance implements PersistentEntity, UuidAccess {
   public static final long TTL = 6;
 
   @Id @dev.morphia.annotations.Id String uuid;
@@ -74,10 +72,10 @@ public class GithubRestraintInstance implements PersistentEntity, UuidAccess {
   public AutoLogContext autoLogContext() {
     Map<String, String> logContext = new HashMap<>();
     logContext.put("restraintInstanceId", uuid);
-    logContext.put(GithubRestraintInstanceKeys.resourceUnit, resourceUnit);
-    logContext.put(GithubRestraintInstanceKeys.releaseEntityId, releaseEntityId);
-    logContext.put(GithubRestraintInstanceKeys.permits, String.valueOf(permits));
-    logContext.put(GithubRestraintInstanceKeys.order, String.valueOf(order));
+    logContext.put(GitRestraintInstanceKeys.resourceUnit, resourceUnit);
+    logContext.put(GitRestraintInstanceKeys.releaseEntityId, releaseEntityId);
+    logContext.put(GitRestraintInstanceKeys.permits, String.valueOf(permits));
+    logContext.put(GitRestraintInstanceKeys.order, String.valueOf(order));
     logContext.put("restraintType", "github");
     return new AutoLogContext(logContext, OVERRIDE_NESTS);
   }
@@ -87,18 +85,18 @@ public class GithubRestraintInstance implements PersistentEntity, UuidAccess {
         .add(CompoundMongoIndex.builder()
                  .name("resourceUnit_order_idx")
                  .unique(true)
-                 .field(GithubRestraintInstanceKeys.resourceUnit)
-                 .field(GithubRestraintInstanceKeys.order)
+                 .field(GitRestraintInstanceKeys.resourceUnit)
+                 .field(GitRestraintInstanceKeys.order)
                  .build())
         .add(CompoundMongoIndex.builder()
                  .name("resourceUnit_state_idx")
-                 .field(GithubRestraintInstanceKeys.resourceUnit)
-                 .field(GithubRestraintInstanceKeys.state)
+                 .field(GitRestraintInstanceKeys.resourceUnit)
+                 .field(GitRestraintInstanceKeys.state)
                  .build())
         .add(CompoundMongoIndex.builder()
                  .name("releaseEntityId_state_idx")
-                 .field(GithubRestraintInstanceKeys.releaseEntityId)
-                 .field(GithubRestraintInstanceKeys.state)
+                 .field(GitRestraintInstanceKeys.releaseEntityId)
+                 .field(GitRestraintInstanceKeys.state)
                  .build())
         .build();
   }

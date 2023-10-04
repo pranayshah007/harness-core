@@ -10,9 +10,9 @@ package io.harness.cdng.gitops.resume;
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.gitops.githubrestraint.services.GithubRestraintInstanceService;
+import io.harness.cdng.gitops.gitrestraint.services.GitRestraintInstanceService;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.gitopsprovider.entity.GithubRestraintInstance;
+import io.harness.gitopsprovider.entity.GitRestraintInstance;
 import io.harness.springdata.TransactionHelper;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.OldNotifyCallback;
@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GitopsStepFinishCallback implements OldNotifyCallback {
   @Inject private ExecutorService executorService;
-  @Inject private GithubRestraintInstanceService githubRestraintInstanceService;
+  @Inject private GitRestraintInstanceService gitRestraintInstanceService;
   @Inject private TransactionHelper transactionHelper;
 
   @NonNull private final String releaseEntityId;
@@ -44,15 +44,15 @@ public class GitopsStepFinishCallback implements OldNotifyCallback {
     executorService.submit(() -> {
       log.info("Update Active Github Resource constraints");
 
-      final List<GithubRestraintInstance> githubRestraintInstances =
-          githubRestraintInstanceService.findAllActiveAndBlockedByReleaseEntityId(releaseEntityId);
-      log.info("Found {} active resource restraint instances", githubRestraintInstances.size());
+      final List<GitRestraintInstance> gitRestraintInstances =
+          gitRestraintInstanceService.findAllActiveAndBlockedByReleaseEntityId(releaseEntityId);
+      log.info("Found {} active resource restraint instances", gitRestraintInstances.size());
 
-      if (EmptyPredicate.isNotEmpty(githubRestraintInstances)) {
-        for (GithubRestraintInstance ri : githubRestraintInstances) {
+      if (EmptyPredicate.isNotEmpty(gitRestraintInstances)) {
+        for (GitRestraintInstance ri : gitRestraintInstances) {
           transactionHelper.performTransaction(() -> {
-            githubRestraintInstanceService.finishInstance(ri.getUuid());
-            githubRestraintInstanceService.updateBlockedConstraints(ri.getResourceUnit());
+            gitRestraintInstanceService.finishInstance(ri.getUuid());
+            gitRestraintInstanceService.updateBlockedConstraints(ri.getResourceUnit());
             return null;
           });
         }

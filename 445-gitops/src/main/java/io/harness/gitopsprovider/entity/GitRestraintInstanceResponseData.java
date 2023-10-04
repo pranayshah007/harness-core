@@ -18,6 +18,6 @@ import lombok.Value;
 @OwnedBy(GITOPS)
 @Value
 @Builder
-public class GithubRestraintInstanceResponseData implements ResponseData {
+public class GitRestraintInstanceResponseData implements ResponseData {
   String resourceUnit;
 }

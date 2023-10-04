@@ -17,7 +17,6 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 
 import io.harness.annotations.dev.CodePulse;
@@ -30,7 +29,7 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
-import io.harness.cdng.gitops.githubrestraint.services.GithubRestraintInstanceService;
+import io.harness.cdng.gitops.gitrestraint.services.GitRestraintInstanceService;
 import io.harness.cdng.gitops.revertpr.RevertPROutcome;
 import io.harness.cdng.gitops.steps.GitOpsStepHelper;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
@@ -60,7 +59,7 @@ import io.harness.distribution.constraint.PermanentlyBlockedConsumerException;
 import io.harness.distribution.constraint.UnableToRegisterConsumerException;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintInstanceKeys;
+import io.harness.gitopsprovider.entity.GitRestraintInstance.GitRestraintInstanceKeys;
 import io.harness.impl.scm.ScmGitProviderHelper;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
@@ -121,7 +120,7 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
   @Inject private ConnectorUtils connectorUtils;
   @Inject private ScmGitProviderHelper scmGitProviderHelper;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
-  @Inject private GithubRestraintInstanceService githubRestraintInstanceService;
+  @Inject private GitRestraintInstanceService gitRestraintInstanceService;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepHelper stepHelper;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
@@ -184,7 +183,7 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
     String constraintUnitIdentifier =
         GITOPS_MERGE_PR.getName() + AmbianceUtils.getAccountId(ambiance) + tokenRefIdentifier;
 
-    Constraint constraint = githubRestraintInstanceService.createAbstraction(constraintUnitIdentifier);
+    Constraint constraint = gitRestraintInstanceService.createAbstraction(constraintUnitIdentifier);
     String releaseEntityId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     String consumerId = generateUuid();
     ConstraintUnit constraintUnit = new ConstraintUnit(constraintUnitIdentifier);
@@ -200,17 +199,19 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
       return AsyncChainExecutableResponse.newBuilder()
           .addAllLogKeys(getLogKeys(ambiance))
           .setCallbackId(taskId)
+          .addAllUnits(gitOpsSpecParams.getCommandUnits())
           .setChainEnd(true)
           .build();
     }
 
     try {
       Consumer.State state = constraint.registerConsumer(
-          constraintUnit, new ConsumerId(consumerId), 1, constraintContext, githubRestraintInstanceService);
+          constraintUnit, new ConsumerId(consumerId), 1, constraintContext, gitRestraintInstanceService);
       switch (state) {
         case BLOCKED:
           logCallback.saveExecutionLog("Running instances were found, step queued.");
           return AsyncChainExecutableResponse.newBuilder()
+              .addAllUnits(gitOpsSpecParams.getCommandUnits())
               .addAllLogKeys(getLogKeys(ambiance))
               .setCallbackId(consumerId)
               .build();
@@ -220,6 +221,7 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
             String taskId =
                 queueDelegateTask(ambiance, gitOpsSpecParams, releaseRepoOutcome, connectorInfoDTO, stepParameters);
             return AsyncChainExecutableResponse.newBuilder()
+                .addAllUnits(gitOpsSpecParams.getCommandUnits())
                 .addAllLogKeys(getLogKeys(ambiance))
                 .setCallbackId(taskId)
                 .setChainEnd(true)
@@ -262,6 +264,7 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
       String taskId =
           queueDelegateTask(ambiance, gitOpsSpecParams, releaseRepoOutcome, connectorInfoDTO, stepParameters);
       return AsyncChainExecutableResponse.newBuilder()
+          .addAllUnits(gitOpsSpecParams.getCommandUnits())
           .addAllLogKeys(getLogKeys(ambiance))
           .setCallbackId(taskId)
           .setChainEnd(true)
@@ -420,9 +423,10 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
                                   .parameters(new Object[] {ngGitOpsTaskParams})
                                   .build();
 
-    TaskRequest taskRequest =
-        TaskRequestsUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData, referenceFalseKryoSerializer,
-            TaskCategory.DELEGATE_TASK_V2, emptyList(), false, taskData.getTaskType(), emptyList());
+    TaskRequest taskRequest = TaskRequestsUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData,
+        referenceFalseKryoSerializer, TaskCategory.DELEGATE_TASK_V2, gitOpsSpecParams.getCommandUnits(), true,
+        taskData.getTaskType(),
+        TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(gitOpsSpecParams.getDelegateSelectors()))));
 
     DelegateTaskRequest delegateTaskRequest =
         cdStepHelper.mapTaskRequestToDelegateTaskRequest(taskRequest, taskData, emptySet(), "", true);
@@ -432,9 +436,9 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
 
   private Map<String, Object> populateConstraintContext(ConstraintUnit constraintUnit, String releaseEntityId) {
     Map<String, Object> constraintContext = new HashMap<>();
-    constraintContext.put(GithubRestraintInstanceKeys.releaseEntityId, releaseEntityId);
+    constraintContext.put(GitRestraintInstanceKeys.releaseEntityId, releaseEntityId);
     constraintContext.put(
-        GithubRestraintInstanceKeys.order, githubRestraintInstanceService.getMaxOrder(constraintUnit.getValue()) + 1);
+        GitRestraintInstanceKeys.order, gitRestraintInstanceService.getMaxOrder(constraintUnit.getValue()) + 1);
 
     return constraintContext;
   }

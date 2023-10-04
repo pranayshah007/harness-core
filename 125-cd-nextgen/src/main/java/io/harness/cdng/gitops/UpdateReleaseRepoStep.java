@@ -20,7 +20,6 @@ import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
 import static java.lang.String.format;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.trim;
@@ -34,7 +33,7 @@ import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
-import io.harness.cdng.gitops.githubrestraint.services.GithubRestraintInstanceService;
+import io.harness.cdng.gitops.gitrestraint.services.GitRestraintInstanceService;
 import io.harness.cdng.gitops.steps.GitOpsStepHelper;
 import io.harness.cdng.gitops.steps.GitopsClustersOutcome;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
@@ -64,7 +63,7 @@ import io.harness.distribution.constraint.UnableToRegisterConsumerException;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.common.ExpressionMode;
-import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintInstanceKeys;
+import io.harness.gitopsprovider.entity.GitRestraintInstance.GitRestraintInstanceKeys;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -130,7 +129,7 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
   @Inject protected OutcomeService outcomeService;
   @Inject private GitOpsStepHelper gitOpsStepHelper;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
-  @Inject private GithubRestraintInstanceService githubRestraintInstanceService;
+  @Inject private GitRestraintInstanceService gitRestraintInstanceService;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepHelper stepHelper;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
@@ -145,9 +144,9 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
 
   private Map<String, Object> populateConstraintContext(ConstraintUnit constraintUnit, String releaseEntityId) {
     Map<String, Object> constraintContext = new HashMap<>();
-    constraintContext.put(GithubRestraintInstanceKeys.releaseEntityId, releaseEntityId);
+    constraintContext.put(GitRestraintInstanceKeys.releaseEntityId, releaseEntityId);
     constraintContext.put(
-        GithubRestraintInstanceKeys.order, githubRestraintInstanceService.getMaxOrder(constraintUnit.getValue()) + 1);
+        GitRestraintInstanceKeys.order, gitRestraintInstanceService.getMaxOrder(constraintUnit.getValue()) + 1);
 
     return constraintContext;
   }
@@ -174,7 +173,7 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
     }
     String constraintUnitIdentifier = CONSTRAINT_OPERATION + AmbianceUtils.getAccountId(ambiance) + tokenRefIdentifier;
 
-    Constraint constraint = githubRestraintInstanceService.createAbstraction(constraintUnitIdentifier);
+    Constraint constraint = gitRestraintInstanceService.createAbstraction(constraintUnitIdentifier);
     String releaseEntityId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     String consumerId = generateUuid();
     ConstraintUnit constraintUnit = new ConstraintUnit(constraintUnitIdentifier);
@@ -188,19 +187,21 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
       return AsyncChainExecutableResponse.newBuilder()
           .addAllLogKeys(getLogKeys(ambiance))
           .setCallbackId(taskId)
+          .addAllUnits(gitOpsSpecParams.getCommandUnits())
           .setChainEnd(true)
           .build();
     }
 
     try {
       Consumer.State state = constraint.registerConsumer(
-          constraintUnit, new ConsumerId(consumerId), 1, constraintContext, githubRestraintInstanceService);
+          constraintUnit, new ConsumerId(consumerId), 1, constraintContext, gitRestraintInstanceService);
       switch (state) {
         case BLOCKED:
           logCallback.saveExecutionLog("Running instances were found, step queued.", INFO, SUCCESS);
           return AsyncChainExecutableResponse.newBuilder()
               .addAllLogKeys(getLogKeys(ambiance))
               .setCallbackId(consumerId)
+              .addAllUnits(gitOpsSpecParams.getCommandUnits())
               .build();
         case ACTIVE:
           try {
@@ -211,6 +212,7 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
             return AsyncChainExecutableResponse.newBuilder()
                 .addAllLogKeys(getLogKeys(ambiance))
                 .setCallbackId(taskId)
+                .addAllUnits(gitOpsSpecParams.getCommandUnits())
                 .setChainEnd(true)
                 .build();
 
@@ -255,6 +257,7 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
           .addAllLogKeys(getLogKeys(ambiance))
           .setCallbackId(taskId)
           .setChainEnd(true)
+          .addAllUnits(gitOpsSpecParams.getCommandUnits())
           .build();
 
     } catch (Exception e) {
@@ -327,9 +330,10 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
                                   .taskType(TaskType.GITOPS_TASK_NG.name())
                                   .parameters(new Object[] {ngGitOpsTaskParams})
                                   .build();
-    TaskRequest taskRequest =
-        TaskRequestsUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData, referenceFalseKryoSerializer,
-            TaskCategory.DELEGATE_TASK_V2, emptyList(), false, taskData.getTaskType(), emptyList());
+    TaskRequest taskRequest = TaskRequestsUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData,
+        referenceFalseKryoSerializer, TaskCategory.DELEGATE_TASK_V2, gitOpsSpecParams.getCommandUnits(), true,
+        taskData.getTaskType(),
+        TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(gitOpsSpecParams.getDelegateSelectors()))));
 
     DelegateTaskRequest delegateTaskRequest =
         cdStepHelper.mapTaskRequestToDelegateTaskRequest(taskRequest, taskData, emptySet(), "", true);

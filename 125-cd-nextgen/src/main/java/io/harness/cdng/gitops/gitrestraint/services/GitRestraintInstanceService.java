@@ -5,27 +5,26 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.gitops.githubrestraint.services;
+package io.harness.cdng.gitops.gitrestraint.services;
 
 import io.harness.distribution.constraint.Constraint;
 import io.harness.distribution.constraint.ConstraintRegistry;
-import io.harness.gitopsprovider.entity.GithubRestraintInstance;
+import io.harness.gitopsprovider.entity.GitRestraintInstance;
 
 import java.util.List;
 
-public interface GithubRestraintInstanceService extends ConstraintRegistry {
+public interface GitRestraintInstanceService extends ConstraintRegistry {
   Constraint createAbstraction(String tokenRef);
-  List<GithubRestraintInstance> getAllActiveAndBlockedByResourceUnit(String resourceUnit);
+  List<GitRestraintInstance> getAllActiveAndBlockedByResourceUnit(String resourceUnit);
 
   int getMaxOrder(String resourceUnit);
 
-  List<GithubRestraintInstance> findAllActiveAndBlockedByReleaseEntityId(String releaseEntityId);
+  List<GitRestraintInstance> findAllActiveAndBlockedByReleaseEntityId(String releaseEntityId);
 
-  GithubRestraintInstance finishInstance(String uuid);
+  GitRestraintInstance finishInstance(String uuid);
 
   void updateBlockedConstraints(String constraintUnit);
 
-  GithubRestraintInstance save(GithubRestraintInstance resourceRestraintInstance);
-  GithubRestraintInstance activateBlockedInstance(String uuid, String resourceUnit);
-
+  GitRestraintInstance save(GitRestraintInstance resourceRestraintInstance);
+  void activateBlockedInstance(String uuid, String resourceUnit);
 }
