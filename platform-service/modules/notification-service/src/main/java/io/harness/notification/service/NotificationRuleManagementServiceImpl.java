@@ -82,8 +82,8 @@ public class NotificationRuleManagementServiceImpl implements NotificationRuleMa
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     Criteria criteria = new Criteria();
     criteria.and(NotificationRuleKeys.accountIdentifier).is(accountIdentifier);
-    criteria.and(NotificationRuleKeys.orgIdentifier).is(orgIdentifier);
-    criteria.and(NotificationRuleKeys.projectIdentifier).is(projectIdentifier);
+    // criteria.and(NotificationRuleKeys.orgIdentifier).is(orgIdentifier);
+    // criteria.and(NotificationRuleKeys.projectIdentifier).is(projectIdentifier);
     return criteria;
   }
 }

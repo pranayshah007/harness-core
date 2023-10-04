@@ -1,0 +1,2 @@
+subject: Delegate disconnected
+body: Delegate ${delegateId} is disconnected or not reachable

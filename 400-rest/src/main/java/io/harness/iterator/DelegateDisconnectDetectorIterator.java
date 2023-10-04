@@ -51,7 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
 public class DelegateDisconnectDetectorIterator
     extends IteratorPumpAndRedisModeHandler implements MongoPersistenceIterator.Handler<Delegate> {
-  private static final long DELEGATE_DISCONNECT_TIMEOUT = 5L;
+  private static final long DELEGATE_DISCONNECT_TIMEOUT = 1L;
   private static final long DELEGATE_EXPIRY_CHECK_MINUTES = 1L;
 
   @Inject private io.harness.iterator.PersistenceIteratorFactory persistenceIteratorFactory;
@@ -143,9 +143,11 @@ public class DelegateDisconnectDetectorIterator
     String projectId = delegate.getOwner() != null
         ? DelegateEntityOwnerHelper.extractProjectIdFromOwnerIdentifier(delegate.getOwner().getIdentifier())
         : "";
+
     Map<String, String> templateData = new HashMap<>();
     templateData.put("DELEGATE_HOST", delegate.getDelegateGroupName());
     templateData.put("DELEGATE_NAME", delegate.getHostName());
+    templateData.put("TEMPLATE_IDENTIFIER", "email_test");
     NotificationTriggerRequest.Builder notificationTriggerRequestBuilder =
         NotificationTriggerRequest.newBuilder()
             .setId(notificationTriggerRequestId)

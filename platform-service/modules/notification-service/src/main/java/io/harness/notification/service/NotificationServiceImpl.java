@@ -12,11 +12,13 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.ng.beans.PageRequest;
+import io.harness.notification.NotificationEvent;
 import io.harness.notification.NotificationRequest;
 import io.harness.notification.NotificationTriggerRequest;
 import io.harness.notification.Team;
 import io.harness.notification.entities.Notification;
 import io.harness.notification.entities.Notification.NotificationKeys;
+import io.harness.notification.entities.NotificationChannel;
 import io.harness.notification.entities.NotificationRule;
 import io.harness.notification.exception.NotificationException;
 import io.harness.notification.remote.mappers.NotificationMapper;
@@ -27,6 +29,8 @@ import io.harness.notification.service.api.NotificationService;
 import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
@@ -126,7 +130,14 @@ public class NotificationServiceImpl implements NotificationService {
   public boolean processNewMessage(NotificationTriggerRequest notificationTriggerRequest) {
     NotificationRule notificationRule = notificationManagementService.get(notificationTriggerRequest.getAccountId(),
         notificationTriggerRequest.getOrgId(), notificationTriggerRequest.getProjectId());
-    Notification notification = NotificationMapper.toNotification(notificationRule);
+    List<NotificationChannel> notificationChannels = notificationRule.getNotificationChannelForEvent(
+        NotificationEvent.valueOf(notificationTriggerRequest.getEvent()));
+    notificationChannels.forEach(notificationChannel -> sendNotification(notificationRule, notificationChannel, notificationTriggerRequest.getTemplateDataMap()));
+    return true;
+  }
+
+  private boolean sendNotification(NotificationRule notificationRule, NotificationChannel notificationChannel, Map<String, String> templateData) {
+    Notification notification = NotificationMapper.toNotification(notificationRule, notificationChannel);
 
     if (Objects.isNull(notification)) {
       log.error("Ignoring notification request for processing {}", notificationRule.getUuid());
@@ -137,7 +148,7 @@ public class NotificationServiceImpl implements NotificationService {
     NotificationProcessingResponse processingResponse = null;
     try {
       // construct notification request from notification rule
-      processingResponse = channelService.send(NotificationMapper.constructNotificationRequest(notificationRule));
+      processingResponse = channelService.send(NotificationMapper.constructNotificationRequest(notificationRule, notificationChannel, templateData));
     } catch (NotificationException e) {
       log.error("Could not send notification.", e);
     }

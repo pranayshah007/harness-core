@@ -1,0 +1,2 @@
+subject: Delegate about to expire
+body: Delegate ${delegateId} is getting expired in ${timeframe}

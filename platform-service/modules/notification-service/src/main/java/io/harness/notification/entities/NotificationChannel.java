@@ -11,10 +11,12 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EmbeddedUser;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.FdIndex;
 import io.harness.ng.DbAliases;
 import io.harness.notification.NotificationChannelType;
+import io.harness.notification.NotificationRequest;
 import io.harness.persistence.PersistentEntity;
 
 import dev.morphia.annotations.Entity;
@@ -24,7 +26,11 @@ import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -58,6 +64,11 @@ public class NotificationChannel implements PersistentEntity, PersistentRegularI
   private Status status;
   @FdIndex private long nextIteration;
 
+  @CreatedBy private EmbeddedUser createdBy;
+  @LastModifiedBy private EmbeddedUser lastUpdatedBy;
+  @CreatedDate Long createdAt;
+  @LastModifiedDate Long lastModifiedAt;
+
   @Override
   public Long obtainNextIteration(String fieldName) {
     return nextIteration;
@@ -77,7 +88,7 @@ public class NotificationChannel implements PersistentEntity, PersistentRegularI
   public Object toObjectofProtoSchema() {
     switch (notificationChannelType) {
       case EMAIL:
-        // return
+        return NotificationRequest.Email.newBuilder().addAllEmailIds(emailChannel.emailIds).build();
       case SLACK:
         // return
       case PAGERDUTY:

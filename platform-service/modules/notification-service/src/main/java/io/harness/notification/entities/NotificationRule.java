@@ -11,19 +11,31 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EmbeddedUser;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.FdIndex;
 import io.harness.ng.DbAliases;
 import io.harness.notification.NotificationEntity;
+import io.harness.notification.NotificationEvent;
 import io.harness.persistence.PersistentEntity;
 
 import dev.morphia.annotations.Entity;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
+import lombok.experimental.UtilityClass;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -46,11 +58,17 @@ public class NotificationRule implements PersistentEntity, PersistentRegularIter
   String orgIdentifier;
   String projectIdentifier;
 
-  NotificationChannel notificationChannel;
   NotificationEntity notificationEntity;
+
+  List<NotificationCondition> notificationConditions;
 
   private Status status;
   @FdIndex private long nextIteration;
+
+  @CreatedBy private EmbeddedUser createdBy;
+  @LastModifiedBy private EmbeddedUser lastUpdatedBy;
+  @CreatedDate Long createdAt;
+  @LastModifiedDate Long lastModifiedAt;
 
   @Override
   public Long obtainNextIteration(String fieldName) {
@@ -70,5 +88,33 @@ public class NotificationRule implements PersistentEntity, PersistentRegularIter
   public enum Status {
     ENABLED,
     DISABLED;
+  }
+
+  @UtilityClass
+  public static final class NotificationRuleKeys {}
+
+  public List<NotificationEventConfig> getNotificationEventConfigs() {
+    return new ArrayList<>(notificationConditions.get(0).notificationEventConfigs);
+  }
+
+  public List<NotificationEvent> getNotificationEvents() {
+    return getNotificationEventConfigs()
+        .stream()
+        .map(NotificationEventConfig::getNotificationEvent)
+        .collect(Collectors.toList());
+  }
+
+  public List<NotificationEventConfig> getNotificationEventConfigs(NotificationEvent notificationEvent) {
+    return getNotificationEventConfigs()
+        .stream()
+        .filter(notificationEventConfig -> notificationEventConfig.getNotificationEvent().equals(notificationEvent))
+        .collect(Collectors.toList());
+  }
+
+  public List<NotificationChannel> getNotificationChannelForEvent(NotificationEvent notificationEvent) {
+    Optional<NotificationEventConfig> notificationEventConfigOptional =
+        getNotificationEventConfigs(notificationEvent).stream().findFirst();
+    return notificationEventConfigOptional.isPresent() ? notificationEventConfigOptional.get().notificationChannels
+                                                       : Collections.emptyList();
   }
 }

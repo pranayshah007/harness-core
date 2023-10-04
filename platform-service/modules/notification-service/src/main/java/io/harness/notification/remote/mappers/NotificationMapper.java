@@ -19,6 +19,7 @@ import io.harness.notification.entities.SlackChannel;
 import io.harness.notification.entities.WebhookChannel;
 import io.harness.notification.remote.dto.NotificationDTO;
 
+import java.util.Map;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -42,12 +43,13 @@ public class NotificationMapper {
     }
   }
 
-  public static Notification toNotification(NotificationRule notificationRule) {
+  public static Notification toNotification(
+      NotificationRule notificationRule, NotificationChannel notificationChannel) {
     try {
       return Notification.builder()
           .id(notificationRule.getUuid())
           .accountIdentifier(notificationRule.getAccountIdentifier())
-          .channel(notificationRule.getNotificationChannel())
+          .channel(notificationChannel)
           .build();
     } catch (Exception e) {
       log.error("Error converting notification rule to notification for persistence, {}", notificationRule, e);
@@ -55,21 +57,34 @@ public class NotificationMapper {
     }
   }
 
-  public static NotificationRequest constructNotificationRequest(NotificationRule notificationRule) {
+  public static NotificationRequest constructNotificationRequest(
+      NotificationRule notificationRule, NotificationChannel notificationChannel, Map<String, String> templateData) {
     NotificationRequest.Builder notificationRequestBuilder =
         NotificationRequest.newBuilder().setAccountId(notificationRule.getAccountIdentifier());
-
-    Object channelDetails = notificationRule.getNotificationChannel().toObjectofProtoSchema();
-    if (channelDetails instanceof NotificationRequest.Email) {
-      notificationRequestBuilder.setEmail((NotificationRequest.Email) channelDetails);
-    } else if (channelDetails instanceof NotificationRequest.Slack) {
-      notificationRequestBuilder.setSlack((NotificationRequest.Slack) channelDetails);
-    } else if (channelDetails instanceof NotificationRequest.PagerDuty) {
-      notificationRequestBuilder.setPagerDuty((NotificationRequest.PagerDuty) channelDetails);
-    } else if (channelDetails instanceof NotificationRequest.MSTeam) {
-      notificationRequestBuilder.setMsTeam((NotificationRequest.MSTeam) channelDetails);
-    } else if (channelDetails instanceof NotificationRequest.Webhook) {
-      notificationRequestBuilder.setWebhook((NotificationRequest.Webhook) channelDetails);
+    String templateId = templateData.get("TEMPLATE_IDENTIFIER");
+    switch (notificationChannel.getNotificationChannelType()) {
+      case EMAIL:
+        EmailChannel emailChannel = notificationChannel.getEmailChannel();
+        notificationRequestBuilder.setEmail(NotificationRequest.Email.newBuilder()
+                                                .addAllEmailIds(emailChannel.getEmailIds())
+                                                .putAllTemplateData(templateData)
+                                                .setTemplateId(templateId));
+        break;
+      case SLACK:
+        notificationRequestBuilder.setSlack(NotificationRequest.Slack.newBuilder().build());
+        break;
+      case PAGERDUTY:
+        notificationRequestBuilder.setPagerDuty(NotificationRequest.PagerDuty.newBuilder().build());
+        break;
+      case MSTEAMS:
+        notificationRequestBuilder.setMsTeam(NotificationRequest.MSTeam.newBuilder().build());
+        break;
+      case WEBHOOK:
+        notificationRequestBuilder.setWebhook(NotificationRequest.Webhook.newBuilder().build());
+        break;
+      default:
+        log.error("Channel type of the notification trigger request unidentified {}",
+            notificationChannel.getNotificationChannelType());
     }
     return notificationRequestBuilder.build();
   }
