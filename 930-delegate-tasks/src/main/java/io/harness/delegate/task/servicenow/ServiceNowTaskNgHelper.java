@@ -27,6 +27,7 @@ import static io.harness.delegate.task.servicenow.ServiceNowUtils.isUnauthorized
 import static io.harness.eraro.ErrorCode.SERVICENOW_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.network.Http.getOkHttpClientBuilder;
+import static io.harness.servicenow.ServiceNowUtils.getTicketUrlFromTicketIdOrNumber;
 
 import static java.util.Objects.isNull;
 
@@ -213,8 +214,10 @@ public class ServiceNowTaskNgHelper {
       ServiceNowTicketNGBuilder serviceNowTicketNGBuilder = parseFromServiceNowTicketResponse(responseObj);
       ServiceNowTicketNG ticketNg = serviceNowTicketNGBuilder.build();
       log.info("ticketNumber created for ServiceNow: {}", ticketNg.getNumber());
-      String ticketUrlFromTicketId = ServiceNowUtils.prepareTicketUrlFromTicketNumber(
-          serviceNowConnectorDTO.getServiceNowUrl(), ticketNg.getNumber(), serviceNowTaskNGParameters.getTicketType());
+
+      String ticketUrlFromTicketId = "";
+      ticketUrlFromTicketId = getTicketUrlFromTicketIdOrNumber(
+          serviceNowTaskNGParameters.getTicketType(), serviceNowConnectorDTO.getServiceNowUrl(), ticketNg);
       ticketNg.setUrl(ticketUrlFromTicketId);
       return ServiceNowTaskNGResponse.builder().ticket(ticketNg).build();
     } catch (ServiceNowException e) {
@@ -527,7 +530,11 @@ public class ServiceNowTaskNgHelper {
       }
     }
 
-    return ServiceNowTicketNG.builder().number(fields.get("number").getDisplayValue()).fields(fields);
+    if (fields.get("number") != null) {
+      return ServiceNowTicketNG.builder().number(fields.get("number").getDisplayValue()).fields(fields);
+    }
+
+    return ServiceNowTicketNG.builder().fields(fields);
   }
 
   private ServiceNowTaskNGResponse updateTicketWithoutTemplate(
