@@ -20,7 +20,6 @@ import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
 import static java.lang.String.format;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.trim;
@@ -185,6 +184,7 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
       return AsyncChainExecutableResponse.newBuilder()
           .addAllLogKeys(getLogKeys(ambiance))
           .setCallbackId(taskId)
+          .addAllUnits(gitOpsSpecParams.getCommandUnits())
           .setChainEnd(true)
           .build();
     }
@@ -198,6 +198,7 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
           return AsyncChainExecutableResponse.newBuilder()
               .addAllLogKeys(getLogKeys(ambiance))
               .setCallbackId(consumerId)
+              .addAllUnits(gitOpsSpecParams.getCommandUnits())
               .build();
         case ACTIVE:
           try {
@@ -208,6 +209,7 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
             return AsyncChainExecutableResponse.newBuilder()
                 .addAllLogKeys(getLogKeys(ambiance))
                 .setCallbackId(taskId)
+                .addAllUnits(gitOpsSpecParams.getCommandUnits())
                 .setChainEnd(true)
                 .build();
 
@@ -252,6 +254,7 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
           .addAllLogKeys(getLogKeys(ambiance))
           .setCallbackId(taskId)
           .setChainEnd(true)
+          .addAllUnits(gitOpsSpecParams.getCommandUnits())
           .build();
 
     } catch (Exception e) {
@@ -324,9 +327,10 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
                                   .taskType(TaskType.GITOPS_TASK_NG.name())
                                   .parameters(new Object[] {ngGitOpsTaskParams})
                                   .build();
-    TaskRequest taskRequest =
-        TaskRequestsUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData, referenceFalseKryoSerializer,
-            TaskCategory.DELEGATE_TASK_V2, emptyList(), false, taskData.getTaskType(), emptyList());
+    TaskRequest taskRequest = TaskRequestsUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData,
+        referenceFalseKryoSerializer, TaskCategory.DELEGATE_TASK_V2, gitOpsSpecParams.getCommandUnits(), true,
+        taskData.getTaskType(),
+        TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(gitOpsSpecParams.getDelegateSelectors()))));
 
     DelegateTaskRequest delegateTaskRequest =
         cdStepHelper.mapTaskRequestToDelegateTaskRequest(taskRequest, taskData, emptySet(), "", true);

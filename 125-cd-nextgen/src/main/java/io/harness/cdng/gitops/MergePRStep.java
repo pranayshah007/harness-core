@@ -17,7 +17,6 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 
 import io.harness.annotations.dev.CodePulse;
@@ -201,6 +200,7 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
       return AsyncChainExecutableResponse.newBuilder()
           .addAllLogKeys(getLogKeys(ambiance))
           .setCallbackId(taskId)
+          .addAllUnits(gitOpsSpecParams.getCommandUnits())
           .setChainEnd(true)
           .build();
     }
@@ -212,6 +212,7 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
         case BLOCKED:
           logCallback.saveExecutionLog("Running instances were found, step queued.");
           return AsyncChainExecutableResponse.newBuilder()
+              .addAllUnits(gitOpsSpecParams.getCommandUnits())
               .addAllLogKeys(getLogKeys(ambiance))
               .setCallbackId(consumerId)
               .build();
@@ -221,6 +222,7 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
             String taskId =
                 queueDelegateTask(ambiance, gitOpsSpecParams, releaseRepoOutcome, connectorInfoDTO, stepParameters);
             return AsyncChainExecutableResponse.newBuilder()
+                .addAllUnits(gitOpsSpecParams.getCommandUnits())
                 .addAllLogKeys(getLogKeys(ambiance))
                 .setCallbackId(taskId)
                 .setChainEnd(true)
@@ -263,6 +265,7 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
       String taskId =
           queueDelegateTask(ambiance, gitOpsSpecParams, releaseRepoOutcome, connectorInfoDTO, stepParameters);
       return AsyncChainExecutableResponse.newBuilder()
+          .addAllUnits(gitOpsSpecParams.getCommandUnits())
           .addAllLogKeys(getLogKeys(ambiance))
           .setCallbackId(taskId)
           .setChainEnd(true)
@@ -421,9 +424,10 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
                                   .parameters(new Object[] {ngGitOpsTaskParams})
                                   .build();
 
-    TaskRequest taskRequest =
-        TaskRequestsUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData, referenceFalseKryoSerializer,
-            TaskCategory.DELEGATE_TASK_V2, emptyList(), false, taskData.getTaskType(), emptyList());
+    TaskRequest taskRequest = TaskRequestsUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData,
+        referenceFalseKryoSerializer, TaskCategory.DELEGATE_TASK_V2, gitOpsSpecParams.getCommandUnits(), true,
+        taskData.getTaskType(),
+        TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(gitOpsSpecParams.getDelegateSelectors()))));
 
     DelegateTaskRequest delegateTaskRequest =
         cdStepHelper.mapTaskRequestToDelegateTaskRequest(taskRequest, taskData, emptySet(), "", true);

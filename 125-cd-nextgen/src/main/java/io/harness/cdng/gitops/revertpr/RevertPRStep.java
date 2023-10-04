@@ -16,7 +16,6 @@ import static io.harness.executions.steps.ExecutionNodeType.GITOPS_REVERT_PR;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.INFO;
 
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static org.apache.commons.lang3.StringUtils.trim;
 
@@ -210,6 +209,7 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
         String taskId =
             queueDelegateTask(ambiance, stepParameters, releaseRepoOutcome, gitOpsSpecParams, connectorInfoDTO);
         return AsyncChainExecutableResponse.newBuilder()
+            .addAllUnits(gitOpsSpecParams.getCommandUnits())
             .addAllLogKeys(getLogKeys(ambiance))
             .setCallbackId(taskId)
             .setChainEnd(true)
@@ -223,6 +223,7 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
           case BLOCKED:
             logCallback.saveExecutionLog("Running instances were found, step queued.", INFO, SUCCESS);
             return AsyncChainExecutableResponse.newBuilder()
+                .addAllUnits(gitOpsSpecParams.getCommandUnits())
                 .addAllLogKeys(getLogKeys(ambiance))
                 .setCallbackId(consumerId)
                 .build();
@@ -232,6 +233,7 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
               String taskId =
                   queueDelegateTask(ambiance, stepParameters, releaseRepoOutcome, gitOpsSpecParams, connectorInfoDTO);
               return AsyncChainExecutableResponse.newBuilder()
+                  .addAllUnits(gitOpsSpecParams.getCommandUnits())
                   .addAllLogKeys(getLogKeys(ambiance))
                   .setCallbackId(taskId)
                   .setChainEnd(true)
@@ -274,6 +276,7 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
       String taskId =
           queueDelegateTask(ambiance, stepParameters, releaseRepoOutcome, gitOpsSpecParams, connectorInfoDTO);
       return AsyncChainExecutableResponse.newBuilder()
+          .addAllUnits(gitOpsSpecParams.getCommandUnits())
           .addAllLogKeys(getLogKeys(ambiance))
           .setCallbackId(taskId)
           .setChainEnd(true)
@@ -357,9 +360,10 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
                                   .parameters(new Object[] {ngGitOpsTaskParams})
                                   .build();
 
-    TaskRequest taskRequest =
-        TaskRequestsUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData, referenceFalseKryoSerializer,
-            TaskCategory.DELEGATE_TASK_V2, emptyList(), false, taskData.getTaskType(), emptyList());
+    TaskRequest taskRequest = TaskRequestsUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData,
+        referenceFalseKryoSerializer, TaskCategory.DELEGATE_TASK_V2, gitOpsSpecParams.getCommandUnits(), true,
+        taskData.getTaskType(),
+        TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(gitOpsSpecParams.getDelegateSelectors()))));
 
     DelegateTaskRequest delegateTaskRequest =
         cdStepHelper.mapTaskRequestToDelegateTaskRequest(taskRequest, taskData, emptySet(), "", true);
