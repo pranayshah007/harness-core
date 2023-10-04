@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.beans.AuditEntry;
 import io.harness.audit.beans.AuditEventDTO;
 import io.harness.audit.beans.AuthenticationInfoDTO;
-import io.harness.audit.beans.custom.ActiveProjectMetricsDTO;
+import io.harness.audit.beans.custom.AccountMetricsDTO;
 import io.harness.audit.client.api.AuditClientService;
 import io.harness.context.GlobalContext;
 
@@ -36,5 +36,5 @@ public class NoopAuditClientServiceImpl implements AuditClientService {
   }
 
   @Override
-  public void publishMetrics(ActiveProjectMetricsDTO activeProjectMetricsDTO) {}
+  public void publishMetrics(AccountMetricsDTO accountMetricsDTO) {}
 }

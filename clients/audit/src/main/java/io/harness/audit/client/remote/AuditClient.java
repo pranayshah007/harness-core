@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.beans.AuditEventDTO;
-import io.harness.audit.beans.custom.ActiveProjectMetricsDTO;
+import io.harness.audit.beans.custom.AccountMetricsDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 
 import retrofit2.Call;
@@ -26,5 +26,5 @@ public interface AuditClient {
   @POST(AUDITS_API) Call<ResponseDTO<Boolean>> createAudit(@Body AuditEventDTO auditEventDTO);
 
   @POST(PUBLISH_METRICS_API)
-  Call<ResponseDTO<Void>> publishMetrics(@Body ActiveProjectMetricsDTO activeProjectMetricsDTO);
+  Call<ResponseDTO<Void>> publishMetrics(@Body AccountMetricsDTO accountMetricsDTO);
 }
