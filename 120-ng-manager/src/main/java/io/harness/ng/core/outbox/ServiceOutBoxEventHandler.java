@@ -98,6 +98,11 @@ public class ServiceOutBoxEventHandler implements OutboxEventHandler {
     } else if (globalContext.get(PRINCIPAL_CONTEXT) != null) {
       principal = ((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal();
     }
+
+    log.info(String.format(
+        "Handing service upsert flow for audits with outbox event id: [%s], resource type: [%s], resource id: [%s]}",
+        outboxEvent.getId(), outboxEvent.getResource().getType(), outboxEvent.getResource().getIdentifier()));
+
     return auditClientService.publishAudit(auditEntry, fromSecurityPrincipal(principal), globalContext);
   }
   private boolean handlerServiceUpdated(OutboxEvent outboxEvent) throws IOException {
@@ -175,6 +180,9 @@ public class ServiceOutBoxEventHandler implements OutboxEventHandler {
 
   @Override
   public boolean handle(OutboxEvent outboxEvent) {
+    log.info(String.format(
+        "starting service outbox flow for audits with outbox event id: [%s], resource type: [%s], resource id: [%s]}",
+        outboxEvent.getId(), outboxEvent.getResource().getType(), outboxEvent.getResource().getIdentifier()));
     try {
       switch (outboxEvent.getEventType()) {
         case OutboxEventConstants.SERVICE_CREATED:
@@ -192,7 +200,15 @@ public class ServiceOutBoxEventHandler implements OutboxEventHandler {
       }
 
     } catch (IOException ex) {
+      log.info(String.format(
+          "Exception while handling service outbox flow for audits with outbox event id: [%s], resource type: [%s], resource id: [%s]}",
+          outboxEvent.getId(), outboxEvent.getResource().getType(), outboxEvent.getResource().getIdentifier()));
       return false;
+    } catch (Exception e) {
+      log.info(String.format(
+          "Exception while handling service outbox flow for audits with outbox event id: [%s], resource type: [%s], resource id: [%s]}",
+          outboxEvent.getId(), outboxEvent.getResource().getType(), outboxEvent.getResource().getIdentifier()));
+      throw e;
     }
   }
 }
