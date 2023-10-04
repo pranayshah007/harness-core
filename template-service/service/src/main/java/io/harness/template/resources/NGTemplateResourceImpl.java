@@ -8,7 +8,6 @@ package io.harness.template.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.Long.parseLong;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
@@ -416,7 +415,7 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
     if (templateApplyRequestDTO.isGetOnlyFileContent()) {
       TemplateUtils.setUserFlowContext(USER_FLOW.EXECUTION);
     }
-    String yamlVersion = getYamlVersion(templateApplyRequestDTO);
+    String yamlVersion = templateApplyRequestDTO.getYamlVersion();
     long start = System.currentTimeMillis();
     TemplateMergeResponseDTO templateMergeResponseDTO =
         templateMergeService.applyTemplatesToYaml(accountId, orgId, projectId,
@@ -436,7 +435,7 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
     if (templateApplyRequestDTO.isGetOnlyFileContent()) {
       TemplateUtils.setUserFlowContext(USER_FLOW.EXECUTION);
     }
-    String yamlVersion = getYamlVersion(templateApplyRequestDTO);
+    String yamlVersion = templateApplyRequestDTO.getYamlVersion();
     TemplateMergeResponseDTO templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(accountId, orgId,
         projectId, YamlUtils.readAsJsonNode(templateApplyRequestDTO.getOriginalEntityYaml()),
         templateApplyRequestDTO.isGetMergedYamlWithTemplateField(),
@@ -451,13 +450,6 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
     if (templateApplyRequestDTO.isCheckForAccess()) {
       templateService.checkLinkedTemplateAccess(accountId, orgId, projectId, templateMergeResponseDTO);
     }
-  }
-
-  private String getYamlVersion(TemplateApplyRequestDTO templateApplyRequestDTO) {
-    if (isNotEmpty(templateApplyRequestDTO.getYamlVersion())) {
-      return templateApplyRequestDTO.getYamlVersion();
-    }
-    return HarnessYamlVersion.V0;
   }
 
   @Override

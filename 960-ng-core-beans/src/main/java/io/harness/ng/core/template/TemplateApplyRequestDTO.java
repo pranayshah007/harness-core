@@ -8,8 +8,10 @@
 package io.harness.ng.core.template;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.yaml.HarnessYamlVersion;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -31,4 +33,11 @@ public class TemplateApplyRequestDTO {
   boolean getMergedYamlWithTemplateField;
   boolean getOnlyFileContent;
   String yamlVersion;
+
+  public String getYamlVersion() {
+    if (isNotEmpty(yamlVersion)) {
+      return yamlVersion;
+    }
+    return HarnessYamlVersion.V0;
+  }
 }
