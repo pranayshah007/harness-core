@@ -71,7 +71,7 @@ public class GitAwareEntityHelper {
     }
     validateFilePathHasCorrectExtension(filePath);
     String connectorRef = gitContextRequestParams.getConnectorRef();
-    boolean loadFromCache = gitContextRequestParams.isLoadFromCache();
+    boolean loadFromCache = true;
     EntityType entityType = gitContextRequestParams.getEntityType();
     boolean getFileContentOnly = gitContextRequestParams.isGetOnlyFileContent();
 
@@ -120,7 +120,7 @@ public class GitAwareEntityHelper {
     if (isNullOrDefault(connectorRef)) {
       throw new InvalidRequestException("No Connector reference provided.");
     }
-    boolean loadFromCache = gitContextRequestParams.isLoadFromCache();
+    boolean loadFromCache = true;
     EntityType entityType = gitContextRequestParams.getEntityType();
     ScmGetFileResponse scmGetFileResponse =
         scmGitSyncHelper.getFileByBranch(Scope.builder()
@@ -264,7 +264,7 @@ public class GitAwareEntityHelper {
       }
       validateFilePathHasCorrectExtension(filePath);
       String connectorRef = getFileGitContextRequestParams.getConnectorRef();
-      boolean loadFromCache = getFileGitContextRequestParams.isLoadFromCache();
+      boolean loadFromCache = true;
       EntityType entityType = getFileGitContextRequestParams.getEntityType();
       boolean getOnlyFileContent = getFileGitContextRequestParams.isGetOnlyFileContent();
       contextMap = GitSyncLogContextHelper.setContextMap(
