@@ -14,7 +14,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.beans.AuditEventDTO;
 import io.harness.audit.beans.AuditFilterPropertiesDTO;
-import io.harness.audit.beans.custom.ActiveProjectMetricsDTO;
+import io.harness.audit.beans.custom.AccountMetricsDTO;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -111,5 +111,5 @@ public interface AuditResource {
   @InternalApi
   ResponseDTO<Void>
   publishMetrics(@RequestBody(description = "This has the information to publish Metrics for Active Project",
-      required = true) @NotNull @Valid ActiveProjectMetricsDTO activeProjectMetricsDTO);
+      required = true) @NotNull @Valid AccountMetricsDTO accountMetricsDTO);
 }

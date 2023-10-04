@@ -19,7 +19,7 @@ import io.harness.audit.api.impl.AuditPermissionValidator;
 import io.harness.audit.beans.AuditEventDTO;
 import io.harness.audit.beans.AuditFilterPropertiesDTO;
 import io.harness.audit.beans.ResourceScopeDTO;
-import io.harness.audit.beans.custom.ActiveProjectMetricsDTO;
+import io.harness.audit.beans.custom.AccountMetricsDTO;
 import io.harness.audit.entities.AuditEvent.AuditEventKeys;
 import io.harness.audit.mapper.AuditEventMapper;
 import io.harness.beans.SortOrder;
@@ -79,10 +79,13 @@ public class AuditResourceImpl implements AuditResource {
   }
 
   @InternalApi
-  public ResponseDTO<Void> publishMetrics(ActiveProjectMetricsDTO activeProjectMetricsDTO) {
-    auditService.computeMetricsForActiveProject(activeProjectMetricsDTO.getAccountIds(),
-        activeProjectMetricsDTO.getProjectCounts(), activeProjectMetricsDTO.getStartTime(),
-        activeProjectMetricsDTO.getEndTime());
+  public ResponseDTO<Void> publishMetrics(AccountMetricsDTO accountMetricsDTO) {
+    auditService.computeMetricsForActiveProject(accountMetricsDTO.getAccountIds(), accountMetricsDTO.getProjectCounts(),
+        accountMetricsDTO.getStartTime(), accountMetricsDTO.getEndTime());
+
+    auditService.computeMetricsForUniqueLogins(
+        accountMetricsDTO.getAccountIds(), accountMetricsDTO.getStartTime(), accountMetricsDTO.getEndTime());
+
     return ResponseDTO.newResponse();
   }
 }

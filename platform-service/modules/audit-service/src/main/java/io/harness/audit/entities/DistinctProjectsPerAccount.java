@@ -26,7 +26,6 @@ import lombok.experimental.FieldNameConstants;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @FieldNameConstants(innerTypeName = "DistinctProjectsPerAccountKeys")
-
 public class DistinctProjectsPerAccount {
   int distinctProjectCount;
   String accountIdentifier;

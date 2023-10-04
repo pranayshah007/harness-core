@@ -376,30 +376,46 @@ public class AuditServiceImpl implements AuditService {
         auditRepository.getUniqueProjectCountPerAccountId(accountIds, startTime, endTime);
 
     try (ResponseTimeRecorder ignore1 =
-             new ResponseTimeRecorder("Successfully Published metrics to Segment & Prometheus")) {
+             new ResponseTimeRecorder("Successfully Published metrics to Segment & Prometheus for active project")) {
       for (String accountIdentifier : accountIds) {
-        int projectCount = projectCounts.containsKey(accountIdentifier) ? projectCounts.get(accountIdentifier) : 0;
-        int uniqueProjectCount = uniqueProjectCountPerAccountId.containsKey(accountIdenifier)
-            ? uniqueProjectCountPerAccountId.get(accountIdenifier)
-            : 0;
-        sendSegmentMetricsForActiveProject(accountIdentifier, projectCount, uniqueProjectCount);
+        int projectCount = projectCounts.getOrDefault(accountIdentifier, 0);
+        int uniqueProjectCount = uniqueProjectCountPerAccountId.getOrDefault(accountIdentifier, 0);
+
+        sendSegmentEventsForActiveProjects(accountIdentifier, projectCount, uniqueProjectCount);
         sendPrometheusEvents(accountIdentifier, projectCount, uniqueProjectCount);
       }
     }
   }
 
-  private void sendSegmentMetricsForActiveProject(String accountIdentifier, int totalProjects, int activeProjects) {
+  @Override
+  public void computeMetricsForUniqueLogins(List<String> accountIds, long startTime, long endTime) {
+    Map<String, Integer> uniqueLoginCountPerAccountId =
+        auditRepository.getUniqueLoginCountPerAccountId(accountIds, startTime, endTime);
+
+    try (ResponseTimeRecorder ignore1 =
+             new ResponseTimeRecorder("Successfully Published metrics to Segment & Prometheus for unique logins")) {
+      for (String accountIdentifier : accountIds) {
+        sendSegmentMetricsForUniqueAccountLogins(
+            accountIdentifier, uniqueLoginCountPerAccountId.getOrDefault(accountIdentifier, 0));
+      }
+    }
+  }
+
+  private void sendSegmentEventsForActiveProjects(String accountIdentifier, int totalProjects, int activeProjects) {
     HashMap<String, Object> identifyEventProperties = new HashMap<>();
     identifyEventProperties.put("accountId", accountIdentifier);
     identifyEventProperties.put("totalProjects", totalProjects);
     identifyEventProperties.put("activeProjects", activeProjects);
-    float activeProjectPercentage = totalProjects != 0 ? ((activeProjects / totalProjects) * 100) : 0;
+
+    float activeProjectPercentage = calculateActiveProjectPercentage(activeProjects, totalProjects);
     telemetryReporter.sendIdentifyEvent(
         accountIdentifier, identifyEventProperties, Collections.singletonMap(AMPLITUDE, true));
+
     HashMap<String, Object> properties = new HashMap<>();
     properties.put("activeProjectPercentage", activeProjectPercentage);
     properties.put("totalProjects", totalProjects);
     properties.put("activeProjects", activeProjects);
+
     telemetryReporter.sendTrackEvent("project_activity",
         TelemetryConstants.SEGMENT_DUMMY_ACCOUNT_PREFIX + accountIdentifier, accountIdentifier, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
@@ -407,5 +423,29 @@ public class AuditServiceImpl implements AuditService {
 
   private void sendPrometheusEvents(String accountIdentifier, int totalProjects, int activeProjects) {
     projectAuditMetricsService.recordAuditMetricForActiveProject(accountIdentifier, totalProjects, activeProjects);
+  }
+
+  private void sendSegmentMetricsForUniqueAccountLogins(String accountIdentifier, int uniqueLogins) {
+    HashMap<String, Object> identifyEventProperties = new HashMap<>();
+    identifyEventProperties.put("accountId", accountIdentifier);
+
+    telemetryReporter.sendIdentifyEvent(
+        accountIdentifier, identifyEventProperties, Collections.singletonMap(AMPLITUDE, true));
+
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put("accountIdentifier", accountIdentifier);
+    properties.put("uniqueLogins", uniqueLogins);
+
+    telemetryReporter.sendTrackEvent("unique_account_login",
+        TelemetryConstants.SEGMENT_DUMMY_ACCOUNT_PREFIX + accountIdentifier, accountIdentifier, properties,
+        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+  }
+
+  float calculateActiveProjectPercentage(int activeProjects, int totalProjects) {
+    if (totalProjects > 0) {
+      return (activeProjects / totalProjects) * 100;
+    } else {
+      return 0;
+    }
   }
 }

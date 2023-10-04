@@ -26,4 +26,6 @@ public interface AuditRepositoryCustom {
   List<String> fetchDistinctAccountIdentifiers();
 
   public Map<String, Integer> getUniqueProjectCountPerAccountId(List<String> accountIds, long startTime, long endTime);
+
+  public Map<String, Integer> getUniqueLoginCountPerAccountId(List<String> accountIds, long startTime, long endTime);
 }
