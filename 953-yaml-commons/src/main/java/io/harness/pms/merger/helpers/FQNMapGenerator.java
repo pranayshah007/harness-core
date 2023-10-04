@@ -73,6 +73,7 @@ public class FQNMapGenerator {
     }
   }
 
+  // TODO: In v1 pipeline, type and spec both fields need to be present in FQN map to handle the case of pipeline temp
   public Map<FQN, Object> generateFQNMap(JsonNode yamlMap, boolean keepUuidFields) {
     HashSet<String> expressions = new HashSet<>();
     Set<String> fieldNames = new LinkedHashSet<>();

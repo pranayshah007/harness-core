@@ -42,7 +42,6 @@ import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitx.GitXTransientBranchGuard;
 import io.harness.logging.AutoLogContext;
-import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.MergeHelper;
@@ -264,13 +263,21 @@ public class TemplateMergeServiceHelper {
     }
   }
 
+  public Map<String, Object> mergeTemplateInputsInObject(String accountId, String orgId, String projectId,
+      YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, int depth, boolean loadFromCache,
+      boolean appendInputSetValidator, String yamlVersion) {
+    return mergeTemplateInputsInObjectWithVersion(accountId, orgId, projectId, yamlNode, templateCacheMap, depth,
+        loadFromCache, appendInputSetValidator, yamlVersion)
+        .getResMap();
+  }
+
   /**
    * This method iterates recursively on pipeline yaml. Whenever we find a key with "template" we call
    * replaceTemplateOccurrenceWithTemplateSpecYaml() to get the actual template.spec in template yaml.
    */
-  public MergeTemplateInputsInObject mergeTemplateInputsInObject(String accountId, String orgId, String projectId,
-      YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, int depth, boolean loadFromCache,
-      boolean appendInputSetValidator, String yamlVersion) {
+  public MergeTemplateInputsInObject mergeTemplateInputsInObjectWithVersion(String accountId, String orgId,
+      String projectId, YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, int depth,
+      boolean loadFromCache, boolean appendInputSetValidator, String yamlVersion) {
     Map<String, Object> resMap = new LinkedHashMap<>();
     TemplateEntity templateEntity = null;
     for (YamlField childYamlField : yamlNode.fields()) {
@@ -301,7 +308,7 @@ public class TemplateMergeServiceHelper {
           if (depth >= MAX_DEPTH) {
             throw new InvalidRequestException("Exponentially growing template nesting. Aborting");
           }
-          Map<String, Object> temp = mergeTemplateInputsInObject(accountId, orgId, projectId,
+          Map<String, Object> temp = mergeTemplateInputsInObjectWithVersion(accountId, orgId, projectId,
               new YamlNode(fieldName, value, childYamlField.getNode().getParentNode()), templateCacheMap, depth,
               loadFromCache, appendInputSetValidator, templateEntity.getHarnessVersion())
                                          .getResMap();
@@ -309,27 +316,19 @@ public class TemplateMergeServiceHelper {
           depth--;
         } else {
           resMap.put(fieldName,
-              mergeTemplateInputsInObject(accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap,
-                  depth, loadFromCache, appendInputSetValidator, yamlVersion)
+              mergeTemplateInputsInObjectWithVersion(accountId, orgId, projectId, childYamlField.getNode(),
+                  templateCacheMap, depth, loadFromCache, appendInputSetValidator, yamlVersion)
                   .getResMap());
         }
       }
     }
     String processedYamlVersion = yamlVersion;
-    if (templateEntity != null && HarnessYamlVersion.isV1(yamlVersion)) {
-      if (!HarnessYamlVersion.isV1(templateEntity.getHarnessVersion())) {
-        return MergeTemplateInputsInObject.builder()
-            .resMap(Map.of(templateEntity.getTemplateEntityType().getRootYamlName(), resMap))
-            .processedYamlVersion(HarnessYamlVersion.V0)
-            .build();
-      } else {
-        if (templateEntity.getTemplateEntityType() == TemplateEntityType.PIPELINE_TEMPLATE) {
-          return MergeTemplateInputsInObject.builder()
-              .resMap(Map.of(YAMLFieldNameConstants.SPEC, resMap))
-              .processedYamlVersion(HarnessYamlVersion.V1)
-              .build();
-        }
-      }
+    if (templateEntity != null && HarnessYamlVersion.isV1(yamlVersion)
+        && !HarnessYamlVersion.isV1(templateEntity.getHarnessVersion())) {
+      return MergeTemplateInputsInObject.builder()
+          .resMap(Map.of(templateEntity.getTemplateEntityType().getRootYamlName(), resMap))
+          .processedYamlVersion(HarnessYamlVersion.V0)
+          .build();
     }
     return MergeTemplateInputsInObject.builder().resMap(resMap).processedYamlVersion(processedYamlVersion).build();
   }
@@ -556,8 +555,7 @@ public class TemplateMergeServiceHelper {
             loadFromCache, appendInputSetValidator, yamlVersion));
       } else {
         arrayList.add(mergeTemplateInputsInObject(accountId, orgId, projectId, arrayElement, templateCacheMap, depth,
-            loadFromCache, appendInputSetValidator, yamlVersion)
-                          .getResMap());
+            loadFromCache, appendInputSetValidator, yamlVersion));
       }
     }
     return arrayList;
