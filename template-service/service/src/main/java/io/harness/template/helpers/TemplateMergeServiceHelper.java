@@ -418,7 +418,7 @@ public class TemplateMergeServiceHelper {
 
     for (Map.Entry<String, GetTemplateEntityRequest> getTemplateEntityRequestEntry : getBatchRequest.entrySet()) {
       Scope scope = getTemplateEntityRequestEntry.getValue().getScope();
-      boolean loadFromCache = getTemplateEntityRequestEntry.getValue().isLoadFromCache();
+      boolean loadFromCache = true;
       String branch = getTemplateEntityRequestEntry.getValue().getBranch();
       Optional<TemplateEntity> templateEntity = templateServiceHelper.getMetadataOrThrowExceptionIfInvalid(
           scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(),
