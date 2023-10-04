@@ -81,6 +81,10 @@
         "type": "string"
       }
     },
+    "timeout": {
+      "type": "string",
+      "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(.*<\\+.*>(?!.*\\.executionInput\\(\\)).*)|(^$))$"
+    },
     "type": {
       "type": "string",
       "enum": [
@@ -2025,6 +2029,18 @@
             }
           ]
         },
+        "override": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
         "paths": {
           "oneOf": [
             {
@@ -2039,6 +2055,16 @@
               "minLength": 1
             }
           ]
+        },
+        "policy" : {
+          "oneOf" : [ {
+            "type" : "string",
+            "enum" : [ "pull", "push", "pull-push" ]
+          }, {
+            "type" : "string",
+            "pattern" : "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+            "minLength" : 1
+          } ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -4485,6 +4511,51 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "GcrSourceSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ProvenanceSourceSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connector",
+            "host",
+            "imageName",
+            "projectID",
+            "tags"
+          ],
+          "properties": {
+            "connector": {
+              "type": "string"
+            },
+            "host": {
+              "type": "string"
+            },
+            "imageName": {
+              "type": "string"
+            },
+            "projectID": {
+              "type": "string"
+            },
+            "tags": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "GitCloneStepInfo": {
       "allOf": [
         {
@@ -5496,6 +5567,10 @@
           "additionalProperties": {
             "type": "string"
           }
+        },
+        "timeout": {
+          "type": "string",
+          "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(.*<\\+.*>(?!.*\\.executionInput\\(\\)).*)|(^$))$"
         },
         "type": {
           "type": "string",
@@ -8385,7 +8460,8 @@
         "type": {
           "type": "string",
           "enum": [
-            "docker"
+            "docker",
+            "gcr"
           ]
         }
       },
@@ -8403,6 +8479,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/DockerSourceSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "gcr"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GcrSourceSpec"
               }
             }
           }

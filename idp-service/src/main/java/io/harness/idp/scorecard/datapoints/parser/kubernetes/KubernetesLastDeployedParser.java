@@ -31,7 +31,8 @@ public class KubernetesLastDeployedParser extends KubernetesExpressionParser imp
     List<Map<String, String>> conditions = (List<Map<String, String>>) value;
     long maxDaysSince = Long.MIN_VALUE;
     for (Map<String, String> condition : conditions) {
-      if (condition.get("type").equals("Available")) {
+      if (condition.get("type").equals("Progressing") && condition.get("status").equals("True")
+          && condition.get("reason").equals("NewReplicaSetAvailable")) {
         try {
           String lastUpdateTime = condition.get("lastUpdateTime");
           Instant instant = Instant.from(formatter.parse(lastUpdateTime));

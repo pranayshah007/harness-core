@@ -83,12 +83,15 @@ public class K8sAwsInfrastructure
   @Wither
   ParameterField<String> cluster;
 
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> region;
+
   @Override
   public InfraMapping getInfraMapping() {
     return K8sAwsInfraMapping.builder()
         .awsConnector(connectorRef.getValue())
         .namespace(namespace.getValue())
         .cluster(cluster.getValue())
+        .region(region.getValue())
         .build();
   }
 
@@ -99,6 +102,9 @@ public class K8sAwsInfrastructure
 
   @Override
   public String[] getInfrastructureKeyValues() {
+    if (ParameterField.isNotNull(region)) {
+      return new String[] {connectorRef.getValue(), cluster.getValue(), region.getValue(), namespace.getValue()};
+    }
     return new String[] {connectorRef.getValue(), cluster.getValue(), namespace.getValue()};
   }
 
@@ -125,6 +131,9 @@ public class K8sAwsInfrastructure
     }
     if (!ParameterField.isNull(config.getProvisioner())) {
       resultantInfra.setProvisioner(config.getProvisioner());
+    }
+    if (!ParameterField.isNull(config.getRegion())) {
+      resultantInfra = resultantInfra.withRegion(config.getRegion());
     }
 
     return resultantInfra;

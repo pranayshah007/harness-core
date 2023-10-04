@@ -16,7 +16,6 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.gitsync.gitxwebhooks.entity.GitXWebhookEvent;
 
 import java.util.List;
-import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -26,7 +25,7 @@ import org.springframework.data.mongodb.core.query.Update;
 public interface GitXWebhookEventsRepositoryCustom {
   GitXWebhookEvent create(GitXWebhookEvent gitXWebhookEvent);
 
-  List<GitXWebhookEvent> list(Criteria criteria);
+  List<GitXWebhookEvent> list(Query query);
 
   GitXWebhookEvent update(Query query, Update update);
 }

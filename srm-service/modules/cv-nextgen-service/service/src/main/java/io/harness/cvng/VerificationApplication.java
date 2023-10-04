@@ -7,6 +7,8 @@
 
 package io.harness.cvng;
 
+import static io.harness.CVNGPrometheusExporterUtils.registerJVMMetrics;
+import static io.harness.CVNGPrometheusExporterUtils.registerPrometheusExporter;
 import static io.harness.NGConstants.X_API_KEY;
 import static io.harness.authorization.AuthorizationServiceHeader.BEARER;
 import static io.harness.authorization.AuthorizationServiceHeader.CV_NEXT_GEN;
@@ -186,12 +188,18 @@ import io.harness.pms.sdk.PmsSdkModule;
 import io.harness.pms.sdk.core.SdkDeployMode;
 import io.harness.pms.sdk.core.governance.JsonExpansionHandlerInfo;
 import io.harness.pms.sdk.execution.events.facilitators.FacilitatorEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.facilitators.FacilitatorEventRedisConsumerV2;
 import io.harness.pms.sdk.execution.events.interrupts.InterruptEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.interrupts.InterruptEventRedisConsumerV2;
 import io.harness.pms.sdk.execution.events.node.advise.NodeAdviseEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.node.advise.NodeAdviseRedisConsumerV2;
+import io.harness.pms.sdk.execution.events.node.resume.NodeResumeEventConsumerV2;
 import io.harness.pms.sdk.execution.events.node.resume.NodeResumeEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsumerV2;
 import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
+import io.harness.pms.sdk.execution.events.progress.NodeProgressEventRedisConsumerV2;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.queue.QueueListenerController;
@@ -527,7 +535,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     scheduleSidekickProcessing(injector);
     scheduleMaintenanceActivities(injector, configuration);
     initializeEnforcementSdk(injector);
-    initAutoscalingMetrics();
+    initCustomMetrics();
     registerOasResource(configuration, environment, injector);
     initializeSrmMonitoring(configuration, injector);
     registerAPIAuthTelemetryFilters(configuration, environment, injector);
@@ -637,6 +645,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     boolean remote = config.getShouldConfigureWithPMS() != null && config.getShouldConfigureWithPMS();
 
     return PmsSdkConfiguration.builder()
+        .streamPerServiceConfiguration(config.isStreamPerServiceConfiguration())
         .deploymentMode(remote ? SdkDeployMode.REMOTE : SdkDeployMode.LOCAL)
         .moduleType(ModuleType.CV)
         .pipelineServiceInfoProviderClass(CVNGPipelineServiceInfoProvider.class)
@@ -1343,14 +1352,22 @@ public class VerificationApplication extends Application<VerificationConfigurati
     log.info("Initializing sdk event redis abstract consumers...");
     PipelineEventConsumerController pipelineEventConsumerController =
         injector.getInstance(PipelineEventConsumerController.class);
-    pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(OrchestrationEventRedisConsumer.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class), 1);
+
+    pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(ProgressEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(NodeAdviseEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventRedisConsumer.class), 1);
-    pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class), 1);
+
+    pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumerV2.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumerV2.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumerV2.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeProgressEventRedisConsumerV2.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeAdviseRedisConsumerV2.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventConsumerV2.class), 1);
   }
 
   private void registerResources(Environment environment, Injector injector) {
@@ -1431,8 +1448,12 @@ public class VerificationApplication extends Application<VerificationConfigurati
         .collect(Collectors.toSet());
   }
 
-  private void initAutoscalingMetrics() {
-    CVConstants.LEARNING_ENGINE_TASKS_METRIC_LIST.forEach(metricName -> registerGaugeMetric(metricName, null));
+  private void initCustomMetrics() {
+    CVConstants.CUSTOM_METRIC_LIST.forEach(metricName -> registerGaugeMetric(metricName, null));
+    registerJVMMetrics(metricRegistry);
+    registerPrometheusExporter("io.harness.cvng.core.resources", "MonitoredServiceResource", metricRegistry);
+    registerPrometheusExporter(
+        "io.harness.cvng.servicelevelobjective.resources", "ServiceLevelObjectiveV2Resource", metricRegistry);
   }
 
   private void registerGaugeMetric(String metricName, String[] labels) {

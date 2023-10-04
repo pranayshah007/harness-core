@@ -8,7 +8,6 @@ package io.harness.beans.provenance;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.pms.yaml.ParameterField;
 
 import java.util.Map;
 import lombok.Value;
@@ -16,9 +15,9 @@ import lombok.Value;
 @Value
 @OwnedBy(HarnessTeam.SSCA)
 public class BuildMetadata {
-  private ParameterField<String> image;
-  private ParameterField<Map<String, String>> buildArgs;
-  private ParameterField<String> context;
-  private ParameterField<String> dockerFile;
-  private ParameterField<Map<String, String>> labels;
+  private String image;
+  private Map<String, String> buildArgs;
+  private String context;
+  private String dockerFile;
+  private Map<String, String> labels;
 }

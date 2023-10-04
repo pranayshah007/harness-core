@@ -73,8 +73,7 @@ public class KubernetesProxyThroughDsl implements DataSourceLocation {
   }
 
   @Override
-  public String replaceRequestBodyInputValuePlaceholdersIfAny(
-      Map<String, String> dataPointIdsAndInputValue, String requestBody) {
+  public String replaceInputValuePlaceholdersIfAny(Map<String, String> dataPointIdsAndInputValue, String requestBody) {
     return null;
   }
 }

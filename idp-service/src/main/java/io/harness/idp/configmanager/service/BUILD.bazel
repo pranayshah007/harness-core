@@ -16,6 +16,7 @@ java_library(
         "//idp-service/src/main/java/io/harness/idp/common:module",
         "//idp-service/src/main/java/io/harness/idp/common/delegateselectors/cache:module",
         "//idp-service/src/main/java/io/harness/idp/configmanager/beans/entity:module",
+        "//idp-service/src/main/java/io/harness/idp/configmanager/events:module",
         "//idp-service/src/main/java/io/harness/idp/configmanager/mappers:module",
         "//idp-service/src/main/java/io/harness/idp/configmanager/repositories:module",
         "//idp-service/src/main/java/io/harness/idp/configmanager/utils:module",

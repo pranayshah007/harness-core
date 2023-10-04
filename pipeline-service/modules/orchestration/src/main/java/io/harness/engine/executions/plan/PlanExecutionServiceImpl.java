@@ -33,6 +33,7 @@ import io.harness.execution.PlanExecution.ExecutionMetadataKeys;
 import io.harness.execution.PlanExecution.PlanExecutionKeys;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
+import io.harness.monitoring.ExecutionCountWithAccountResult;
 import io.harness.observer.Subject;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -432,5 +433,10 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
       planExecutionRepository.multiUpdatePlanExecution(query, ops);
       return true;
     });
+  }
+
+  @Override
+  public List<ExecutionCountWithAccountResult> aggregateRunningExecutionCountPerAccount() {
+    return planExecutionRepository.aggregateRunningExecutionCountPerAccount();
   }
 }

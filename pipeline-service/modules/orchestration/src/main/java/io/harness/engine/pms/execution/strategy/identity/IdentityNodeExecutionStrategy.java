@@ -85,7 +85,7 @@ public class IdentityNodeExecutionStrategy
   private final String SERVICE_NAME_IDENTITY = ModuleType.PMS.name().toLowerCase();
 
   @Override
-  public NodeExecution createNodeExecution(@NotNull Ambiance ambiance, @NotNull IdentityPlanNode node,
+  public NodeExecution createNodeExecutionInternal(@NotNull Ambiance ambiance, @NotNull IdentityPlanNode node,
       IdentityNodeExecutionMetadata metadata, String notifyId, String parentId, String previousId) {
     return identityNodeExecutionStrategyHelper.createNodeExecution(ambiance, node, notifyId, parentId, previousId);
   }

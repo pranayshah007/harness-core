@@ -65,6 +65,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -394,7 +395,7 @@ public class AuthHandlerTest extends WingsBaseTest {
       pipelines.add(pipeline0);
     }
     PageResponse<Pipeline> pipelineResponse = aPageResponse().withResponse(pipelines).build();
-    when(pipelineService.listPipelines(any(PageRequest.class))).thenReturn(pipelineResponse);
+    when(pipelineService.listPipelines(any(PageRequest.class), anyBoolean(), anyString())).thenReturn(pipelineResponse);
   }
 
   private void setupForNoEnvs() {
@@ -425,7 +426,7 @@ public class AuthHandlerTest extends WingsBaseTest {
                                                   .withResponse(asList(pipeline1, pipeline2, pipeline3, pipeline4,
                                                       pipeline5, buildPipeline, approvalPipeline))
                                                   .build();
-    when(pipelineService.listPipelines(any(PageRequest.class))).thenReturn(pipelineResponse);
+    when(pipelineService.listPipelines(any(PageRequest.class), anyBoolean(), anyString())).thenReturn(pipelineResponse);
   }
 
   private void verifyAllAppPermissions(UserPermissionInfo userPermissionInfo) {

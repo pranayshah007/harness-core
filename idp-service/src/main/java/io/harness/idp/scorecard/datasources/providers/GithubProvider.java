@@ -95,7 +95,9 @@ public class GithubProvider extends DataSourceProvider {
       possibleReplaceableRequestBodyPairs.put(REPO_SCM, catalogLocationParts[2]);
       possibleReplaceableRequestBodyPairs.put(REPOSITORY_OWNER, catalogLocationParts[3]);
       possibleReplaceableRequestBodyPairs.put(REPOSITORY_NAME, catalogLocationParts[4]);
-      possibleReplaceableRequestBodyPairs.put(REPOSITORY_BRANCH, catalogLocationParts[6]);
+      if (catalogLocationParts.length > 6) {
+        possibleReplaceableRequestBodyPairs.put(REPOSITORY_BRANCH, catalogLocationParts[6]);
+      }
     } catch (ArrayIndexOutOfBoundsException e) {
       log.error("Error occurred while reading source location annotation ", e);
     }

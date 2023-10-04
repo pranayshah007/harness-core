@@ -7,4 +7,16 @@
 
 package io.harness.ssca.beans;
 
-public enum Activity { DEPLOYED, NON_DEPLOYED }
+import io.harness.spec.server.ssca.v1.model.ArtifactListingResponse.ActivityEnum;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@Getter
+@AllArgsConstructor
+public enum Activity {
+  DEPLOYED(ActivityEnum.DEPLOYED),
+  NON_DEPLOYED(ActivityEnum.GENERATED);
+
+  ActivityEnum activityEnum;
+}

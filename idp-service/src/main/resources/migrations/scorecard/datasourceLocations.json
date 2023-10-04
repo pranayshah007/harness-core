@@ -175,6 +175,100 @@
       },
       "requestBody": "{BODY}"
     }
+  },
+  {
+    "id": "650ae5f5047ed6bddfdeee81",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "bitbucket_mean_time_to_merge_pr",
+    "dataSourceIdentifier": "bitbucket",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "https://api.bitbucket.org/2.0/repositories/{WORKSPACE}/{REPOSITORY_NAME}/pullrequests?q=state=\"MERGED\"",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "{BASIC_AUTH}"
+      }
+    }
+  },
+  {
+    "id": "650ae614f618a0c0a125440d",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "bitbucket_is_branch_protection_set",
+    "dataSourceIdentifier": "bitbucket",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "https://api.bitbucket.org/2.0/repositories/{WORKSPACE}/{REPOSITORY_NAME}/branch-restrictions?pattern={BRANCH_NAME_REPLACER}",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "{BASIC_AUTH}"
+      }
+    }
+  },
+  {
+    "id": "650c086a9fc07a1b94f76e1a",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "pagerduty_resolved_incidents",
+    "dataSourceIdentifier": "pagerduty",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "{TARGET_URL}/incidents?service_ids[]={SERVICE_ID}&statuses[]=resolved&limit=10&sort_by=created_at:desc",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "{TOKEN_AUTH}"
+      }
+    }
+  },
+  {
+    "id": "65143c9d1c555805963ef470",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "jira_mean_time_to_resolve",
+    "dataSourceIdentifier": "jira",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "POST",
+      "url": "{API_BASE_URL}/rest/api/2/search",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "{BEARER_AUTH}"
+      },
+      "requestBody": "{\"jql\" : \"project = {PROJECT_COMPONENT_REPLACER} AND {JQL_EXPRESSION}\",\n    \"fields\": [\"created\", \"resolutiondate\"],\n    \"maxResults\": 100}"
+    }
+  },
+  {
+    "id": "65143d88580ef9b417b6484b",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "jira_issues_count",
+    "dataSourceIdentifier": "jira",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "POST",
+      "url": "{API_BASE_URL}/rest/api/2/search",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "{BEARER_AUTH}"
+      },
+      "requestBody": "{\"jql\" : \"project = {PROJECT_COMPONENT_REPLACER} AND {JQL_EXPRESSION}\",\n    \"fields\": [\"created\", \"resolutiondate\"],\n    \"maxResults\": 100}"
+    }
+  },
+  {
+    "id": "65155f9a60b2ca23e5123fd5",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "jira_issues_open_close_ratio",
+    "dataSourceIdentifier": "jira",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "POST",
+      "url": "{API_BASE_URL}/rest/api/2/search",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "{BEARER_AUTH}"
+      },
+      "requestBody": "{\"jql\" : \"project = {PROJECT_COMPONENT_REPLACER} AND {JQL_EXPRESSION}\",\n    \"fields\": [\"status\"],\n    \"maxResults\": 100}"
+    }
   }
 ]
 

@@ -104,6 +104,8 @@ import org.junit.rules.ExpectedException;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Update;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -767,7 +769,8 @@ public class NGVaultServiceImplTest extends CategoryTest {
     when(ngEncryptedDataService.updateSecretText(any(), any())).thenReturn(NGEncryptedData.builder().build());
     ngVaultService.renewToken(vaultConnector);
     ArgumentCaptor<VaultConnector> vaultConnectorArgumentCaptor = ArgumentCaptor.forClass(VaultConnector.class);
-    verify(connectorRepository, times(1)).save(vaultConnectorArgumentCaptor.capture(), ChangeType.NONE);
+    verify(connectorRepository, times(1))
+        .update(any(String.class), any(String.class), any(String.class), any(Criteria.class), any(Update.class));
   }
 
   @Test(expected = SecretManagementDelegateException.class)
@@ -790,7 +793,8 @@ public class NGVaultServiceImplTest extends CategoryTest {
         .thenThrow(new SecretManagementDelegateException(ErrorCode.SECRET_MANAGEMENT_ERROR, "Error", null));
     when(ngEncryptedDataService.updateSecretText(any(), any())).thenReturn(NGEncryptedData.builder().build());
     ngVaultService.renewToken(vaultConnector);
-    verify(connectorRepository, times(0)).save(any(), ChangeType.NONE);
+    verify(connectorRepository, times(0))
+        .update(any(String.class), any(String.class), any(String.class), any(Criteria.class), any(Update.class));
   }
 
   private VaultConnector buildAppRoleVaultConnector() {

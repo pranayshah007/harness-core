@@ -228,7 +228,8 @@ public abstract class FileBasedAbstractWinRmExecutor {
       saveExecutionLog(format("%nCommand completed with ExitCode (%d)", exitCode), INFO);
       return commandExecutionStatus;
     } finally {
-      cleanupFiles(session, psScriptFile, getPowershell(), disableCommandEncoding, config.getCommandParameters());
+      cleanupFiles(session, psScriptFile, getPowershell(), disableCommandEncoding, config.getCommandParameters(),
+          config, logCallback);
     }
   }
 

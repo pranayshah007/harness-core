@@ -139,8 +139,13 @@ public class ArtifactCollectionHandler extends IteratorPumpAndRedisModeHandler i
                                                         .accountId(artifactStream.getAccountId())
                                                         .build());
       if (isNotEmpty(permitId)) {
-        log.info("Permit [{}] acquired for artifactStream [failedCount: {}] for [{}] minutes", permitId,
-            artifactStream.getFailedCronAttempts(), TimeUnit.MILLISECONDS.toMinutes(leaseDuration));
+        if (artifactStream.getFailedCronAttempts() > 30) {
+          log.info("Permit [{}] acquired for artifactStream [failedCount: {}] for [{}] minutes", permitId,
+              artifactStream.getFailedCronAttempts(), TimeUnit.MILLISECONDS.toMinutes(leaseDuration));
+        } else {
+          log.debug("Permit [{}] acquired for artifactStream [failedCount: {}] for [{}] minutes", permitId,
+              artifactStream.getFailedCronAttempts(), TimeUnit.MILLISECONDS.toMinutes(leaseDuration));
+        }
         artifactCollectionServiceAsync.collectNewArtifactsAsync(artifactStream, permitId);
       }
     } catch (FunctorException exception) {

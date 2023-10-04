@@ -34,7 +34,6 @@ import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.StringUtils;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
@@ -45,9 +44,7 @@ public class ValuesManifestCustomStoreService implements NgManifestService {
   public List<ManifestConfigWrapper> getManifestConfigWrapper(ApplicationManifest applicationManifest,
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
       ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList, CaseFormat identifierCaseFormat) {
-    String name = StringUtils.isBlank(applicationManifest.getName()) ? applicationManifest.getUuid()
-                                                                     : applicationManifest.getName();
-    String identifier = MigratorUtility.generateIdentifier(name, identifierCaseFormat);
+    String identifier = MigratorUtility.generateIdentifier(applicationManifest.getUuid(), identifierCaseFormat);
     CustomSourceConfig customSourceConfig = applicationManifest.getCustomSourceConfig();
     ValuesManifest valuesManifest =
         ValuesManifest.builder()

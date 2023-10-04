@@ -115,7 +115,7 @@ public class SLIMetricAnalysisStateExecutor extends AnalysisStateExecutor<SLIMet
       // TODO (this end time won't always be the creation time, i.e in case of recalculation, we need to re-think this.
       try (SLOMetricContext sloMetricContext = new SLOMetricContext(serviceLevelIndicator)) {
         metricService.recordDuration(
-            CVNGMetricsUtils.SLO_DATA_ANALYSIS_METRIC, Duration.between(clock.instant(), endTime));
+            CVNGMetricsUtils.SLO_DATA_ANALYSIS_METRIC, Duration.between(endTime, clock.instant()));
       }
     } catch (Exception exception) {
       log.warn(

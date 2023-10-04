@@ -94,10 +94,6 @@ public class UpdateGitOpsAppStep implements AsyncExecutableWithRbac<StepElementP
   }
 
   @Override
-  public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {}
-
-  @Override
   public StepResponse handleAsyncResponse(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     log.info("Handling Update GitOps App step response");

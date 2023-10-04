@@ -167,7 +167,9 @@ public class ApiKeyServiceTest extends WingsBaseTest {
     doReturn(account).when(accountService).get(ACCOUNT_ID);
     UserGroup userGroup = UserGroup.builder().uuid(USER_GROUP_ID).name(name).build();
     PageResponse pageResponse = aPageResponse().withResponse(asList(userGroup)).build();
-    doReturn(pageResponse).when(userGroupService).list(anyString(), any(PageRequest.class), anyBoolean(), any(), any());
+    doReturn(pageResponse)
+        .when(userGroupService)
+        .list(anyString(), any(PageRequest.class), anyBoolean(), any(), any(), anyBoolean());
     ApiKeyEntry apiKeyEntry =
         ApiKeyEntry.builder().name("name1").accountId(ACCOUNT_ID).userGroupIds(asList(USER_GROUP_ID)).build();
     return apiKeyService.generate(ACCOUNT_ID, apiKeyEntry);

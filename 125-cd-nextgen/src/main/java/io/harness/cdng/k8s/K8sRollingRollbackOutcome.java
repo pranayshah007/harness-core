@@ -16,6 +16,7 @@ import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.List;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Value;
@@ -29,4 +30,5 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.k8s.K8sRollingRollbackOutcome")
 public class K8sRollingRollbackOutcome implements Outcome, ExecutionSweepingOutput {
   Set<KubernetesResourceId> recreatedResourceIds;
+  List<String> podIps;
 }

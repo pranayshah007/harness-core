@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.instance.util;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import static java.util.Objects.nonNull;
@@ -27,11 +28,13 @@ import io.harness.cdng.aws.sam.AwsSamDeployStep;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStep;
 import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStep;
 import io.harness.cdng.customDeployment.FetchInstanceScriptStep;
+import io.harness.cdng.ecs.EcsBasicRollbackStep;
 import io.harness.cdng.ecs.EcsBlueGreenRollbackStep;
 import io.harness.cdng.ecs.EcsBlueGreenSwapTargetGroupsStep;
 import io.harness.cdng.ecs.EcsCanaryDeployStep;
 import io.harness.cdng.ecs.EcsRollingDeployStep;
 import io.harness.cdng.ecs.EcsRollingRollbackStep;
+import io.harness.cdng.ecs.EcsUpgradeContainerStep;
 import io.harness.cdng.elastigroup.ElastigroupBGStageSetupStep;
 import io.harness.cdng.elastigroup.ElastigroupSwapRouteStep;
 import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStep;
@@ -89,7 +92,8 @@ public class InstanceSyncStepResolver {
       GoogleFunctionsTrafficShiftStep.STEP_TYPE.getType(), AwsLambdaDeployStep.STEP_TYPE.getType(),
       AwsLambdaRollbackStep.STEP_TYPE.getType(), GoogleFunctionsGenOneDeployStep.STEP_TYPE.getType(),
       GoogleFunctionsGenOneRollbackStep.STEP_TYPE.getType(), AwsSamDeployStep.STEP_TYPE.getType(),
-      ServerlessAwsLambdaDeployV2Step.STEP_TYPE.getType()));
+      ServerlessAwsLambdaDeployV2Step.STEP_TYPE.getType(), EcsUpgradeContainerStep.STEP_TYPE.getType(),
+      EcsBasicRollbackStep.STEP_TYPE.getType()));
 
   public boolean shouldRunInstanceSync(StepType stepType) {
     return nonNull(stepType) && INSTANCE_SYN_STEP_TYPES.contains(stepType.getType());

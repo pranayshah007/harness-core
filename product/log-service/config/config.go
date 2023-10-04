@@ -59,6 +59,8 @@ type Config struct {
 		UseSentinel          bool     `envconfig:"LOG_SERVICE_REDIS_USE_SENTINEL"`
 		MasterName           string   `envconfig:"LOG_SERVICE_REDIS_MASTER_NAME"`
 		SentinelAddrs        []string `envconfig:"LOG_SERVICE_REDIS_SENTINEL_ADDRS"`
+		MaxLineLimit         int64    `envconfig:"LOG_SERVICE_REDIS_MAX_LINE_LIMIT" default:"2196"`
+		MaxStreamSize        int64    `envconfig:"LOG_SERVICE_REDIS_MAX_STREAM_SIZE" default:"5000"`
 		ScanBatch            int64    `envconfig:"LOG_SERVICE_REDIS_SCAN_BATCH" default:"1000"`
 	}
 

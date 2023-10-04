@@ -11,12 +11,15 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stepDetail.NodeExecutionsInfo;
 import io.harness.concurrency.ConcurrentChildInstance;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.data.stepdetails.PmsStepDetails;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -58,4 +61,13 @@ public interface NodeExecutionInfoService {
    * @param planExecutionId
    */
   void updateTTLForNodesForGivenPlanExecutionId(String planExecutionId, Date ttlDate);
+
+  Map<String, Object> fetchStrategyObjectMap(Level level, boolean useMatrixFieldName);
+
+  Map<String, Object> fetchStrategyObjectMap(List<Level> levelsWithStrategyMetadata, boolean useMatrixFieldName);
+
+  Map<String, StrategyMetadata> fetchStrategyMetadata(List<String> nodeExecutionIds);
+
+  StrategyMetadata getStrategyMetadata(Ambiance ambiance);
+  StrategyMetadata getStrategyMetadata(Level level);
 }

@@ -7,7 +7,7 @@
 
 package io.harness.idp.scorecard.datapoints.parser;
 
-import static io.harness.idp.common.Constants.GITHUB_DEFAULT_BRANCH_KEY_ESCAPED;
+import static io.harness.idp.common.Constants.DEFAULT_BRANCH_KEY_ESCAPED;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.GITHUB_ADMIN_PERMISSION_ERROR;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.INVALID_BRANCH_NAME_ERROR;
 
@@ -38,7 +38,7 @@ public class GithubIsBranchProtectedParser implements DataPointParser {
           && CommonUtils.findObjectByName(inputValueData, "ref") == null) {
         dataPointData.putAll(constructDataPointInfo(inputValue, false, INVALID_BRANCH_NAME_ERROR));
       } else {
-        if (inputValue.equals(GITHUB_DEFAULT_BRANCH_KEY_ESCAPED)) {
+        if (inputValue.equals(DEFAULT_BRANCH_KEY_ESCAPED)) {
           ref = (Map<String, Object>) CommonUtils.findObjectByName(inputValueData, "defaultBranchRef");
         } else {
           ref = (Map<String, Object>) CommonUtils.findObjectByName(inputValueData, "ref");

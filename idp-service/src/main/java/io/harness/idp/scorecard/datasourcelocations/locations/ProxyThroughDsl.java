@@ -61,8 +61,7 @@ public class ProxyThroughDsl implements DataSourceLocation {
   }
 
   @Override
-  public String replaceRequestBodyInputValuePlaceholdersIfAny(
-      Map<String, String> dataPointIdsAndInputValues, String requestBody) {
+  public String replaceInputValuePlaceholdersIfAny(Map<String, String> dataPointIdsAndInputValues, String requestBody) {
     return null;
   }
 }

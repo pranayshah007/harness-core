@@ -20,6 +20,8 @@ import io.harness.engine.execution.ExecutionInputService;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.pms.data.ResolverUtils;
+import io.harness.engine.pms.execution.modifier.ambiance.AmbianceModifier;
+import io.harness.engine.pms.execution.modifier.ambiance.AmbianceModifierFactory;
 import io.harness.engine.pms.resume.EngineWaitRetryCallbackV2;
 import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.execution.ExecutionInputInstance;
@@ -62,6 +64,7 @@ public class RetryHelper {
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject @Named(OrchestrationPublisherName.PUBLISHER_NAME) String publisherName;
   @Inject private NodeExecutionInfoService pmsGraphStepDetailsService;
+  @Inject private AmbianceModifierFactory ambianceModifierFactory;
   public void retryNodeExecution(String nodeExecutionId, String interruptId, InterruptConfig interruptConfig) {
     NodeExecution nodeExecution = Preconditions.checkNotNull(nodeExecutionService.get(nodeExecutionId));
     Node node = planService.fetchNode(nodeExecution.getPlanId(), nodeExecution.getNodeId());
@@ -78,6 +81,8 @@ public class RetryHelper {
             .addLevels(PmsLevelUtils.buildLevelFromNode(newUuid, newRetryIndex, node,
                 currentLevel.getStrategyMetadata(), AmbianceUtils.shouldUseMatrixFieldName(ambiance)))
             .build();
+    // TODO: Move nodeExecution creation to AbstractNodeExecutionStrategy
+    // ambiance could be modified by this clone method
     NodeExecution newNodeExecution =
         cloneForRetry(updatedRetriedNode, newUuid, finalAmbiance, interruptConfig, interruptId);
     NodeExecution savedNodeExecution = nodeExecutionService.save(newNodeExecution);
@@ -91,11 +96,12 @@ public class RetryHelper {
       log.info("Retry Wait Interval : {}", interruptConfig.getRetryInterruptConfig().getWaitInterval());
       String resumeId =
           delayEventHelper.delay(interruptConfig.getRetryInterruptConfig().getWaitInterval(), Collections.emptyMap());
-      waitNotifyEngine.waitForAllOn(publisherName, new EngineWaitRetryCallbackV2(finalAmbiance), resumeId);
+      waitNotifyEngine.waitForAllOn(
+          publisherName, new EngineWaitRetryCallbackV2(newNodeExecution.getAmbiance()), resumeId);
       return;
     }
     // Todo: Check with product if we want to stop again for execution time input
-    executorService.submit(() -> engine.startNodeExecution(finalAmbiance));
+    executorService.submit(() -> engine.startNodeExecution(newNodeExecution.getAmbiance()));
   }
 
   private NodeExecution updateRetriedNodeMetadata(NodeExecution nodeExecution) {
@@ -128,6 +134,12 @@ public class RetryHelper {
   @VisibleForTesting
   NodeExecution cloneForRetry(NodeExecution nodeExecution, String newUuid, Ambiance ambiance,
       InterruptConfig interruptConfig, String interruptId) {
+    AmbianceModifier ambianceModifier = ambianceModifierFactory.obtainModifier(
+        AmbianceUtils.obtainCurrentLevel(ambiance).getStepType().getStepCategory());
+    if (ambianceModifier != null) {
+      ambiance = ambianceModifier.modify(ambiance);
+    }
+
     List<String> retryIds = isEmpty(nodeExecution.getRetryIds()) ? new LinkedList<>() : nodeExecution.getRetryIds();
     retryIds.add(nodeExecution.getUuid());
     InterruptConfig newInterruptConfig =

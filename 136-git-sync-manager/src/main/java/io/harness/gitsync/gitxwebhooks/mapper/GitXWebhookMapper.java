@@ -128,6 +128,7 @@ public class GitXWebhookMapper {
               gitXWebhookResponse.setConnectorRef(gitXWebhook.getConnectorRef());
               gitXWebhookResponse.setFolderPaths(gitXWebhook.getFolderPaths());
               gitXWebhookResponse.setIsEnabled(gitXWebhook.getIsEnabled());
+              gitXWebhookResponse.setEventTriggerTime(gitXWebhook.getEventTriggerTime());
               return gitXWebhookResponse;
             })
             .collect(Collectors.toList());
@@ -142,11 +143,12 @@ public class GitXWebhookMapper {
     responseBody.setConnectorRef(gitXWebhook.getConnectorRef());
     responseBody.setFolderPaths(gitXWebhook.getFolderPaths());
     responseBody.setIsEnabled(gitXWebhook.isIsEnabled());
+    responseBody.setEventTriggerTime(gitXWebhook.getEventTriggerTime());
     return responseBody;
   }
 
-  public GitXEventsListRequestDTO buildEventsListGitXWebhookRequestDTO(
-      String accountIdentifier, String webhookIdentifier, Long eventStartTime, Long eventEndTime) {
+  public GitXEventsListRequestDTO buildEventsListGitXWebhookRequestDTO(String accountIdentifier,
+      String webhookIdentifier, Long eventStartTime, Long eventEndTime, String repoName, String filePath) {
     if ((eventStartTime == null && eventEndTime != null) || (eventStartTime != null && eventEndTime == null)) {
       throw new InvalidRequestException(String.format(
           "Either the Event start time [%d] or the Event end time [%d] not provided.", eventStartTime, eventEndTime));
@@ -156,6 +158,8 @@ public class GitXWebhookMapper {
         .webhookIdentifier(webhookIdentifier)
         .eventStartTime(eventStartTime)
         .eventEndTime(eventEndTime)
+        .repoName(repoName)
+        .filePath(filePath)
         .build();
   }
 

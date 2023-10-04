@@ -32,4 +32,5 @@ public class GetGitXWebhookResponseDTO {
   String webhookName;
   List<String> folderPaths;
   Boolean isEnabled;
+  Long eventTriggerTime;
 }

@@ -220,10 +220,6 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       logCallback.saveExecutionLog(
           "List all existing deployed releases for release name: " + commandRequest.getReleaseName());
 
-      if (HelmVersion.V380.equals(commandRequest.getHelmVersion())) {
-        helmTaskHelperBase.revokeReadPermission(commandRequest.getKubeConfigLocation());
-      }
-
       HelmCliResponse helmCliResponse =
           helmClient.releaseHistory(HelmCommandDataMapperNG.getHelmCmdDataNG(commandRequest), true);
 

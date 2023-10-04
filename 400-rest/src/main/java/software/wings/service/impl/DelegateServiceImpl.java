@@ -38,6 +38,13 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_DISCON
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_REGISTRATION;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_REGISTRATION_FAILED;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_RESTARTED;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_CONNECTED;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_DISCONNECTED;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_RECEIVED;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_RECONNECTED;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_REGISTER_EVENT;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_RESTART_EVENT;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_UNREGISTER_EVENT;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.obfuscate.Obfuscator.obfuscate;
 import static io.harness.persistence.HQuery.excludeAuthority;
@@ -128,6 +135,7 @@ import io.harness.delegate.events.DelegateDeleteEvent;
 import io.harness.delegate.events.DelegateRegisterEvent;
 import io.harness.delegate.events.DelegateUnregisterEvent;
 import io.harness.delegate.events.DelegateUpsertEvent;
+import io.harness.delegate.heartbeat.DelegateHeartBeatMetricsHelper;
 import io.harness.delegate.service.DelegateVersionService;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.task.DelegateLogContext;
@@ -336,6 +344,8 @@ public class DelegateServiceImpl implements DelegateService {
   private static final String deployVersion = System.getenv(DEPLOY_VERSION);
   private static final String DELEGATES_UPDATED_RESPONSE = "Following delegates have been updated";
   private static final String NO_DELEGATES_UPDATED_RESPONSE = "No delegate is waiting for approval/rejection";
+  // TODO: remove after resolving PL-40073
+  private static final String ACCOUNTID_FOR_DEBUG = "pitvBmtSMKNZU3gANq01Q";
 
   private static final long MAX_GRPC_HB_TIMEOUT = TimeUnit.MINUTES.toMillis(15);
 
@@ -404,6 +414,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Inject private DelegateVersionService delegateVersionService;
   @Inject private AgentMtlsEndpointService agentMtlsEndpointService;
   @Inject private DelegateJreVersionHelper jreVersionHelper;
+  @Inject private DelegateHeartBeatMetricsHelper delegateHeartBeatMetricsHelper;
 
   @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
@@ -700,14 +711,15 @@ public class DelegateServiceImpl implements DelegateService {
       throw new InvalidRequestException("Delegate Name must be provided.", USER);
     }
     if (delegateSetupDetails.getSize() == null) {
-      throw new InvalidRequestException("Delegate Size must be provided.", USER);
+      delegateSetupDetails.setSize(DelegateSize.LAPTOP);
     }
 
     K8sConfigDetails k8sConfigDetails = delegateSetupDetails.getK8sConfigDetails();
     if (k8sConfigDetails == null || k8sConfigDetails.getK8sPermissionType() == null) {
-      throw new InvalidRequestException("K8s permission type must be provided.", USER);
+      delegateSetupDetails.setK8sConfigDetails(
+          K8sConfigDetails.builder().k8sPermissionType(K8sPermissionType.CLUSTER_ADMIN).build());
     } else if (k8sConfigDetails.getK8sPermissionType() == NAMESPACE_ADMIN && isBlank(k8sConfigDetails.getNamespace())) {
-      throw new InvalidRequestException("K8s namespace must be provided for this type of permission.", USER);
+      delegateSetupDetails.setK8sConfigDetails(K8sConfigDetails.builder().namespace("harness-delegate-ng").build());
     }
 
     if (!(KUBERNETES.equals(delegateSetupDetails.getDelegateType())
@@ -2570,6 +2582,12 @@ public class DelegateServiceImpl implements DelegateService {
       if (isNotEmpty(existingDelegate.getVersion()) && existingDelegate.getVersion().equals(delegateParams.getVersion())
           && !ECS.equals(existingDelegate.getDelegateType())) {
         delegateMetricsService.recordDelegateMetrics(existingDelegate, DELEGATE_RESTARTED);
+        // delegate restarted heartbeat metric
+        delegateHeartBeatMetricsHelper.addDelegateHeartBeatMetric(clock.millis(), existingDelegate.getAccountId(),
+            delegateParams.getOrgIdentifier(), delegateParams.getProjectIdentifier(),
+            existingDelegate.getDelegateName(), existingDelegate.getUuid(), existingDelegate.getVersion(),
+            HEARTBEAT_RECONNECTED, HEARTBEAT_RESTART_EVENT, existingDelegate.isNg(), existingDelegate.isImmutable(),
+            existingDelegate.getLastHeartBeat(), HEARTBEAT_RECEIVED);
       }
 
       // if its immutable delegate then mark all the tasks failed
@@ -2634,6 +2652,10 @@ public class DelegateServiceImpl implements DelegateService {
     }
 
     if (isNotBlank(delegateGroupId) && isNotEmpty(delegateParams.getTags())) {
+      // TODO: remove after resolving PL-40073
+      if (ACCOUNTID_FOR_DEBUG.equals(delegateParams.getAccountId())) {
+        log.info("Following tags registering for delegate group {} : {} ", delegateGroupId, delegateParams.getTags());
+      }
       persistence.update(persistence.createQuery(DelegateGroup.class).filter(DelegateGroupKeys.uuid, delegateGroupId),
           persistence.createUpdateOperations(DelegateGroup.class)
               .set(DelegateGroupKeys.tags, new HashSet<>(delegateParams.getTags())));
@@ -2690,12 +2712,22 @@ public class DelegateServiceImpl implements DelegateService {
       if (delegateRegisterResponse != null) {
         delegateTelemetryPublisher.sendTelemetryTrackEvents(
             delegate.getAccountId(), ECS, delegate.isNg(), DELEGATE_REGISTERED_EVENT);
+        delegateHeartBeatMetricsHelper.addDelegateHeartBeatMetric(clock.millis(), delegateParams.getAccountId(),
+            delegateParams.getOrgIdentifier(), delegateParams.getProjectIdentifier(), delegateParams.getDelegateName(),
+            delegateRegisterResponse.getDelegateId(), delegateParams.getVersion(), HEARTBEAT_CONNECTED,
+            HEARTBEAT_REGISTER_EVENT, delegateParams.isNg(), delegate.isImmutable(), delegateParams.getLastHeartBeat(),
+            HEARTBEAT_RECEIVED);
       }
       return delegateRegisterResponse;
     } else {
       Delegate registeredDelegate = upsertDelegateOperation(existingDelegate, delegate, delegateSetupDetails);
       updateDelegateYamlTagsAfterReRegistering(
           registeredDelegate.getAccountId(), registeredDelegate.getUuid(), delegate.getTagsFromYaml());
+      delegateHeartBeatMetricsHelper.addDelegateHeartBeatMetric(clock.millis(), delegateParams.getAccountId(),
+          delegateParams.getOrgIdentifier(), delegateParams.getProjectIdentifier(), delegateParams.getDelegateName(),
+          registeredDelegate.getUuid(), delegateParams.getVersion(), HEARTBEAT_CONNECTED, HEARTBEAT_REGISTER_EVENT,
+          delegateParams.isNg(), registeredDelegate.isImmutable(), delegateParams.getLastHeartBeat(),
+          HEARTBEAT_RECEIVED);
       return registerResponseFromDelegate(registeredDelegate);
     }
   }
@@ -2743,6 +2775,17 @@ public class DelegateServiceImpl implements DelegateService {
     sendUnregisterDelegateAuditEvent(existingDelegate, accountId);
     delegateDao.delegateDisconnected(accountId, request.getDelegateId());
     onDelegateDisconnected(accountId, delegateId);
+    // delegate de-registered heartbeat event
+    String orgId = (null != existingDelegate.getOwner())
+        ? DelegateEntityOwnerHelper.extractOrgIdFromOwnerIdentifier(existingDelegate.getOwner().getIdentifier())
+        : null;
+    String projectId = (null != existingDelegate.getOwner())
+        ? DelegateEntityOwnerHelper.extractProjectIdFromOwnerIdentifier(existingDelegate.getOwner().getIdentifier())
+        : null;
+    delegateHeartBeatMetricsHelper.addDelegateHeartBeatMetric(clock.millis(), existingDelegate.getAccountId(), orgId,
+        projectId, existingDelegate.getDelegateName(), existingDelegate.getUuid(), existingDelegate.getVersion(),
+        HEARTBEAT_DISCONNECTED, HEARTBEAT_UNREGISTER_EVENT, existingDelegate.isNg(), existingDelegate.isImmutable(),
+        existingDelegate.getLastHeartBeat(), HEARTBEAT_RECEIVED);
   }
 
   @VisibleForTesting
@@ -3210,6 +3253,11 @@ public class DelegateServiceImpl implements DelegateService {
     }
 
     setUnset(updateOperations, DelegateGroupKeys.description, description);
+    // TODO: remove after resolving PL-40073
+    if (ACCOUNTID_FOR_DEBUG.equals(accountId) && isNotEmpty(tags) && isNotEmpty(name)) {
+      log.info("upsertDelegateGroup: Following tags registering for delegate group {} : {} ", name, tags);
+    }
+
     setUnset(updateOperations, DelegateGroupKeys.tags, tags);
 
     if (sizeDetails != null) {

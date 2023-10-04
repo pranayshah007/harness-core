@@ -11,7 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.idp.common.Constants.DSL_RESPONSE;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 import static io.harness.idp.common.Constants.MESSAGE_KEY;
-import static io.harness.idp.scorecard.datapoints.constants.DataPoints.GITHUB_IS_FILE_EXISTS;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.IS_FILE_EXISTS;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.SOURCE_LOCATION_ANNOTATION_ERROR;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPOSITORY_NAME;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPOSITORY_OWNER;
@@ -56,7 +56,7 @@ public class GithubFileExistsDsl implements DataSourceLocation {
     Optional<Map.Entry<DataPointEntity, Set<String>>> dataPointAndInputValuesOpt =
         dataPointsAndInputValues.entrySet()
             .stream()
-            .filter(entry -> entry.getKey().getIdentifier().equals(GITHUB_IS_FILE_EXISTS))
+            .filter(entry -> entry.getKey().getIdentifier().equals(IS_FILE_EXISTS))
             .findFirst();
 
     if (dataPointAndInputValuesOpt.isEmpty()) {
@@ -74,9 +74,7 @@ public class GithubFileExistsDsl implements DataSourceLocation {
         continue;
       }
       apiRequestDetails.setRequestBody(tempRequestBody);
-      Map<DataPointEntity, String> dataPointAndInputValueToFetch = new HashMap<>() {
-        { put(dataPoint, inputValue); }
-      };
+      Map<DataPointEntity, String> dataPointAndInputValueToFetch = Map.of(dataPoint, inputValue);
       String requestBody =
           constructRequestBody(apiRequestDetails, possibleReplaceableRequestBodyPairs, dataPointAndInputValueToFetch);
       apiRequestDetails.setRequestBody(requestBody);
@@ -90,7 +88,7 @@ public class GithubFileExistsDsl implements DataSourceLocation {
       } else if (response.getStatus() == 500) {
         inputValueData.put(ERROR_MESSAGE_KEY, ((ResponseMessage) response.getEntity()).getMessage());
       } else {
-        inputValueData.put(DSL_RESPONSE,
+        inputValueData.put(ERROR_MESSAGE_KEY,
             GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class).get(MESSAGE_KEY));
       }
       data.put(inputValue, inputValueData);
@@ -99,10 +97,9 @@ public class GithubFileExistsDsl implements DataSourceLocation {
   }
 
   @Override
-  public String replaceRequestBodyInputValuePlaceholdersIfAny(
-      Map<String, String> dataPointsAndInputValue, String requestBody) {
-    if (!isEmpty(dataPointsAndInputValue.get(GITHUB_IS_FILE_EXISTS))) {
-      String inputValue = dataPointsAndInputValue.get(GITHUB_IS_FILE_EXISTS);
+  public String replaceInputValuePlaceholdersIfAny(Map<String, String> dataPointsAndInputValue, String requestBody) {
+    if (!isEmpty(dataPointsAndInputValue.get(IS_FILE_EXISTS))) {
+      String inputValue = dataPointsAndInputValue.get(IS_FILE_EXISTS);
       inputValue = inputValue.replace("\"", "");
       int lastSlash = inputValue.lastIndexOf("/");
       if (lastSlash != -1) {

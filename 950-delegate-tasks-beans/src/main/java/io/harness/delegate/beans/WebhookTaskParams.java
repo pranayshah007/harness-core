@@ -34,6 +34,7 @@ public class WebhookTaskParams implements TaskParameters, ExecutionCapabilityDem
   String message;
   String notificationId;
   @Expression(ALLOW_SECRETS) Map<String, String> headers;
+  String accountId;
   private static final Pattern SECRET_EXPRESSION =
       Pattern.compile("\\$\\{ngSecretManager\\.obtain\\(\\\"\\w*[\\.]?\\w*\\\"\\, ([+-]?\\d*|0)\\)\\}");
 

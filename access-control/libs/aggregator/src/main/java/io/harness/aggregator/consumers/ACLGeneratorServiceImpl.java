@@ -90,6 +90,13 @@ public class ACLGeneratorServiceImpl implements ACLGeneratorService {
   }
 
   @Override
+  public long createACLsFromPermissions(RoleAssignmentDBO roleAssignmentDBO, Set<String> permissions) {
+    Set<String> principals = getPrincipalsFromRoleAssignment(roleAssignmentDBO);
+    Set<ResourceSelector> resourceSelectors = getResourceSelectorsFromRoleAssignment(roleAssignmentDBO);
+    return createACLs(roleAssignmentDBO, principals, permissions, resourceSelectors);
+  }
+
+  @Override
   public long createImplicitACLsForRoleAssignment(
       RoleAssignmentDBO roleAssignment, Set<String> addedUsers, Set<String> addedPermissions) {
     List<ACL> acls = getImplicitACLsForRoleAssignment(roleAssignment);
@@ -104,6 +111,13 @@ public class ACLGeneratorServiceImpl implements ACLGeneratorService {
                      -> addedUsers.contains(acl.getPrincipalIdentifier()) && USER.name().equals(acl.getPrincipalType()))
                  .collect(Collectors.toList());
     }
+    return aclRepository.insertAllIgnoringDuplicates(acls);
+  }
+
+  @Override
+  public long createImplicitACLsFromPermissions(RoleAssignmentDBO roleAssignment, Set<String> permissions) {
+    Set<String> principals = getPrincipalsFromRoleAssignment(roleAssignment);
+    List<ACL> acls = getImplicitACLsForRoleAssignment(roleAssignment, principals, permissions);
     return aclRepository.insertAllIgnoringDuplicates(acls);
   }
 

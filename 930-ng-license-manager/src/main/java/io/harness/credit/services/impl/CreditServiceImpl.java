@@ -9,6 +9,7 @@ package io.harness.credit.services.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.GTM;
 
+import io.harness.CreditType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.credit.beans.credits.CreditDTO;
 import io.harness.credit.entities.Credit;
@@ -18,6 +19,7 @@ import io.harness.credit.utils.CreditStatus;
 import io.harness.repositories.CreditRepository;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,8 +40,32 @@ public class CreditServiceImpl implements CreditService {
   }
 
   private List<CreditDTO> getCreditsByAccountId(String accountIdentifier) {
-    List<Credit> credits = creditRepository.findByAccountIdentifier(accountIdentifier);
-    credits.sort(Comparator.comparingLong(Credit::getExpiryTime));
+    List<Credit> totalCredits = creditRepository.findByAccountIdentifier(accountIdentifier);
+    List<Credit> activeCredits = new ArrayList<>();
+    List<Credit> inactiveCredits = new ArrayList<>();
+
+    totalCredits.forEach(credit -> {
+      if (CreditStatus.ACTIVE.equals(credit.getCreditStatus())) {
+        activeCredits.add(credit);
+      } else {
+        inactiveCredits.add(credit);
+      }
+    });
+    activeCredits.sort(Comparator.comparingLong(Credit::getExpiryTime));
+    inactiveCredits.sort(Comparator.comparingLong(Credit::getExpiryTime));
+
+    totalCredits = activeCredits;
+    totalCredits.addAll(inactiveCredits);
+
+    return totalCredits.stream().map(creditObjectConverter::<CreditDTO>toDTO).collect(Collectors.toList());
+  }
+
+  @Override
+  public List<CreditDTO> getCredits(String accountIdentifier, CreditType creditType, CreditStatus creditStatus) {
+    List<Credit> credits = creditRepository.findByAccountIdentifierAndCreditTypeAndCreditStatus(
+        accountIdentifier, CreditType.FREE, CreditStatus.ACTIVE);
+    credits.sort(Comparator.comparingLong(Credit::getPurchaseTime).reversed());
+
     return credits.stream().map(creditObjectConverter::<CreditDTO>toDTO).collect(Collectors.toList());
   }
 

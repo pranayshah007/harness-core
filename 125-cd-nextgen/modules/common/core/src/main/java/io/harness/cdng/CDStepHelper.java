@@ -28,6 +28,7 @@ import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AZ
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_GCP;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_RANCHER;
+import static io.harness.utils.SecretUtils.containsSecret;
 import static io.harness.validation.Validator.notEmptyCheck;
 
 import static software.wings.beans.LogHelper.color;
@@ -86,6 +87,7 @@ import io.harness.connector.helper.GithubAppDTOToGithubAppSpecDTOMapper;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.task.git.GitAuthenticationDecryptionHelper;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
+import io.harness.data.encoding.EncodingUtils;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.SubmitTaskRequest;
 import io.harness.delegate.TaskSelector;
@@ -719,6 +721,23 @@ public class CDStepHelper {
 
   public String getFileContentAsBase64(Ambiance ambiance, String scopedFilePath, long allowedBytesFileSize) {
     String content = getFileContentAsString(ambiance, scopedFilePath, allowedBytesFileSize);
+    if (isEmpty(content)) {
+      return null;
+    }
+
+    boolean fileContentContainSecret = containsSecret(content);
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    if (fileContentContainSecret) {
+      log.warn("File content to be encoded as base64 contains secret, accountId: {}, scopedFilePath: {}", accountId,
+          scopedFilePath);
+    }
+
+    if (notSupportSecretsInBase64Expressions(accountId)) {
+      // We still need to support "${ngBase64Manager.encode(\"" + content + "\")}" because of backward compatibility.
+      return fileContentContainSecret ? "${ngBase64Manager.encode(\"" + content + "\")}"
+                                      : EncodingUtils.encodeBase64(content);
+    }
+
     return "${ngBase64Manager.encode(\"" + content + "\")}";
   }
 
@@ -897,6 +916,10 @@ public class CDStepHelper {
 
   public boolean isStoreReleaseHash(String accountId) {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_SUPPORT_SKIPPING_BG_DEPLOYMENT_NG);
+  }
+
+  public boolean notSupportSecretsInBase64Expressions(String accountId) {
+    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_NOT_SUPPORT_SECRETS_BASE64_EXPRESSION);
   }
 
   public LogCallback getLogCallback(String commandUnitName, Ambiance ambiance, boolean shouldOpenStream) {

@@ -215,7 +215,7 @@ func (r *runTask) getScript(ctx context.Context, outputVarFile string) (string, 
 	if r.detach {
 		command = fmt.Sprintf("%s%s", earlyExitCmd, resolvedCmd)
 	} else {
-		command = fmt.Sprintf("%s%s %s", earlyExitCmd, resolvedCmd, outputVarCmd)
+		command = fmt.Sprintf("%s%s%s", earlyExitCmd, resolvedCmd, outputVarCmd)
 	}
 	return command, nil
 }

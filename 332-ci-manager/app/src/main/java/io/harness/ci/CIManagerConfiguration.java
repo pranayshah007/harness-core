@@ -108,6 +108,7 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
   @JsonProperty("pmsSdkExecutionPoolConfig") private ThreadPoolConfig pmsSdkExecutionPoolConfig;
   @JsonProperty("cfClientConfig") @ConfigSecret private CfClientConfig cfClientConfig;
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
+  @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;
 
   private String ngManagerServiceSecret;
   private LogServiceConfig logServiceConfig;

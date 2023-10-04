@@ -59,6 +59,7 @@ public class NGActivity implements PersistentEntity, NGAccountAccess {
   @UtilityClass
   public static final class ActivityHistoryEntityKeys {
     public static final String referredByEntityType = "referredByEntityType";
+    public static final String referredByEntityScope = "referredByEntity.entityRef.scope";
     public static final String usageType = "usageDetail.usageType";
 
     public static final String referredByEntityName = "referredByEntity.name";
@@ -68,11 +69,12 @@ public class NGActivity implements PersistentEntity, NGAccountAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("referredFqn_type_time_referredByType")
+                 .name("referredFqn_type_time_referredByType_scope")
                  .field(ActivityHistoryEntityKeys.referredEntityFQN)
                  .field(ActivityHistoryEntityKeys.referredEntityType)
                  .field(ActivityHistoryEntityKeys.activityTime)
                  .field(ActivityHistoryEntityKeys.referredByEntityType)
+                 .field(ActivityHistoryEntityKeys.referredByEntityScope)
                  .build())
         .add(CompoundMongoIndex.builder()
                  .name("referredFqn_type_referredByType")

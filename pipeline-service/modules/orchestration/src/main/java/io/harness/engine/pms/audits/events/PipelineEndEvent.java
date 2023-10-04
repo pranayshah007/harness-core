@@ -28,8 +28,8 @@ public class PipelineEndEvent extends NodeExecutionEvent {
   @Builder
   public PipelineEndEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String planExecutionId, TriggeredInfo triggeredInfo, String status, Long startTs,
-      Long endTs) {
-    super(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId);
+      Long endTs, Integer runSequence) {
+    super(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId, runSequence);
     this.triggeredInfo = triggeredInfo;
     this.status = status;
     this.startTs = startTs;

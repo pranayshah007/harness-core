@@ -15,6 +15,7 @@ import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODE_BASE_C
 import static io.harness.beans.sweepingoutputs.ContainerPortDetails.PORT_DETAILS;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -109,17 +110,21 @@ public class BackgroundStepTest extends CIExecutionTestBase {
     setupAbstractions.put(SetupAbstractionKeys.accountId, "accountId");
     setupAbstractions.put(SetupAbstractionKeys.projectIdentifier, "projectId");
     setupAbstractions.put(SetupAbstractionKeys.orgIdentifier, "orgId");
-    ambiance =
-        Ambiance.newBuilder()
-            .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("pipelineId").setRunSequence(1).build())
-            .putAllSetupAbstractions(setupAbstractions)
-            .addLevels(Level.newBuilder()
-                           .setRuntimeId("runtimeId")
-                           .setIdentifier(STEP_ID)
-                           .setOriginalIdentifier(STEP_ID)
-                           .setRetryIndex(1)
-                           .build())
-            .build();
+
+    ambiance = Ambiance.newBuilder()
+                   .setMetadata(ExecutionMetadata.newBuilder()
+                                    .setPipelineIdentifier("pipelineId")
+                                    .setRunSequence(1)
+                                    .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                    .build())
+                   .putAllSetupAbstractions(setupAbstractions)
+                   .addLevels(Level.newBuilder()
+                                  .setRuntimeId("runtimeId")
+                                  .setIdentifier(STEP_ID)
+                                  .setOriginalIdentifier(STEP_ID)
+                                  .setRetryIndex(1)
+                                  .build())
+                   .build();
 
     stepInfo = BackgroundStepInfo.builder()
                    .identifier(STEP_ID)

@@ -18,12 +18,13 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ScmCacheDetailsMapper {
-  public ScmCacheDetails getScmCacheDetails(CacheDetails cacheDetails) {
+  public ScmCacheDetails getScmCacheDetails(CacheDetails cacheDetails, boolean isSyncEnabled) {
     return ScmCacheDetails.builder()
         .cacheExpiryTTL(cacheDetails.getCacheExpiryTTL())
         .lastUpdatedAt(cacheDetails.getLastUpdatedAt())
         .validUntilTTL(cacheDetails.getValidUntilTTL())
         .scmCacheState(ScmCacheStateHelper.getScmCacheState(cacheDetails.isStale()))
+        .isSyncEnabled(isSyncEnabled)
         .build();
   }
 }

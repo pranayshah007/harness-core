@@ -64,6 +64,9 @@ public interface InstanceService {
   List<InstanceDTO> getActiveInstancesByInstanceInfo(
       String accountIdentifier, String instanceInfoNamespace, String instanceInfoPodName);
 
+  List<InstanceDTO> getActiveInstancesByInstanceInfoAndReleaseName(
+      String accountIdentifier, String instanceInfoNamespace, String releaseName);
+
   AggregationResults<EnvBuildInstanceCount> getEnvBuildInstanceCountByServiceId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs);
 

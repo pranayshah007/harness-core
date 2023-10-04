@@ -284,7 +284,7 @@ public class EventPublishHelper {
               .addOrder(UserGroup.CREATED_AT_KEY, OrderType.ASC)
               .build();
       pageRequest.setOptions(Arrays.asList(PageRequest.Option.SKIPCOUNT));
-      PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, false, null, null);
+      PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, false, null, null, false);
       List<UserGroup> userGroups = pageResponse.getResponse();
       if (isEmpty(userGroups)) {
         return false;

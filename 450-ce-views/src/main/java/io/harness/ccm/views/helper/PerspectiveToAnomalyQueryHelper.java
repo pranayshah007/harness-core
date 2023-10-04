@@ -25,6 +25,9 @@ import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.SERVI
 import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.WORKLOAD_NAME_FIELD_ID;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.BUSINESS_MAPPING;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ccm.commons.entities.CCMField;
 import io.harness.ccm.commons.entities.CCMFilter;
 import io.harness.ccm.commons.entities.CCMGroupBy;
@@ -59,6 +62,8 @@ import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CCM, unitCoverageRequired = true, components = {HarnessModuleComponent.CCM_PERSPECTIVE})
 @Slf4j
 public class PerspectiveToAnomalyQueryHelper {
   @Inject ViewsQueryBuilder viewsQueryBuilder;

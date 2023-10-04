@@ -197,5 +197,6 @@ public interface AwsResourceService {
    * @param projectIdentifier is the project id
    * @return list of AWS elastic kubernetes service clusters
    */
-  List<String> getEKSClusterNames(IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier);
+  List<String> getEKSClusterNames(
+      IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier, String region);
 }

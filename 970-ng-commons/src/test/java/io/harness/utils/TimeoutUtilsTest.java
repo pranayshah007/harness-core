@@ -9,6 +9,7 @@ package io.harness.utils;
 
 import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -156,5 +157,19 @@ public class TimeoutUtilsTest extends CategoryTest {
     ParameterField<String> result =
         TimeoutUtils.getTimeoutParameterFieldStringWithDefaultValue(timeoutParameterField, TIME);
     assertThat(result.getExpressionValue()).isEqualTo(EXPRESSION);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetStageTimeout() {
+    ParameterField<Timeout> timeoutParameterField =
+        ParameterField.createExpressionField(true, "<+input>.test", null, true);
+    ParameterField<Timeout> result = TimeoutUtils.getStageTimeout(timeoutParameterField);
+    assertThat(result.getValue().getTimeoutInMillis()).isEqualTo(9072000000L);
+    assertThat(result.getValue().getTimeoutString()).isEqualTo("15w");
+    result = TimeoutUtils.getStageTimeout(null);
+    assertThat(result.getValue().getTimeoutInMillis()).isEqualTo(9072000000L);
+    assertThat(result.getValue().getTimeoutString()).isEqualTo("15w");
   }
 }

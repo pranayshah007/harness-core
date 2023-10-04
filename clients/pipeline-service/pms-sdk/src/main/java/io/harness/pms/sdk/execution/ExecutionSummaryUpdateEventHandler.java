@@ -59,7 +59,7 @@ public class ExecutionSummaryUpdateEventHandler implements OrchestrationEventHan
     Optional<Level> stageLevel = AmbianceUtils.getStageLevelFromAmbiance(ambiance);
     stageLevel.ifPresent(value -> {
       // If stage is inside strategy then nodeExecutionUuid is the key which we want to update
-      if (value.hasStrategyMetadata()) {
+      if (AmbianceUtils.hasStrategyMetadata(value)) {
         executionSummaryUpdateRequest.setNodeUuid(value.getRuntimeId());
       } else {
         executionSummaryUpdateRequest.setNodeUuid(value.getSetupId());

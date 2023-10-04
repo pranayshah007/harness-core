@@ -22,6 +22,7 @@ import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.expressions.YamlExpressionEvaluator;
 import io.harness.pms.merger.fqn.FQN;
@@ -179,7 +180,7 @@ public class ExpressionEvaluatorServiceImpl implements ExpressionEvaluatorServic
     }
     return levelsList.stream()
         .limit(lastGroupIndex + 1)
-        .filter(level -> !level.hasStrategyMetadata())
+        .filter(level -> !AmbianceUtils.hasStrategyMetadata(level))
         .map(Level::getIdentifier)
         .collect(Collectors.joining("."));
   }

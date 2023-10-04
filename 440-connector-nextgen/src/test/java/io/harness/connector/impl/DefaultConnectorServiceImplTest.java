@@ -58,6 +58,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
+import io.harness.exception.WingsException;
 import io.harness.favorites.ResourceType;
 import io.harness.favorites.services.FavoritesService;
 import io.harness.gitsync.clients.YamlGitConfigClient;
@@ -891,5 +892,19 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
             .map(connectorSummaryDTO -> connectorSummaryDTO.getConnector().getIdentifier())
             .collect(toList());
     assertThat(connectorIdentifierList).contains(connectorIdentifier2);
+  }
+
+  @Test(expected = WingsException.class)
+  @Owner(developers = DEEPAK)
+  @Category(UnitTests.class)
+  public void testConnection_SecretUsageWithException() {
+    createConnector(identifier, name);
+    when(connectionValidatorMap.get(any())).thenReturn(kubernetesConnectionValidator);
+    when(kubernetesConnectionValidator.validate((ConnectorConfigDTO) any(), anyString(), any(), any(), anyString()))
+        .thenThrow(WingsException.class);
+    connectorService.testConnection(accountIdentifier, null, null, identifier);
+    verify(kubernetesConnectionValidator, times(1))
+        .validate((ConnectorConfigDTO) any(), anyString(), any(), any(), anyString());
+    verify(connectorEntityReferenceHelper, times(1)).sendSecretUsageEventForConnectorTest(any(), any(), any());
   }
 }

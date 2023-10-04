@@ -24,4 +24,5 @@ import lombok.Data;
 @TargetModule(HarnessModule._950_DELEGATE_TASKS_BEANS)
 public class K8sRollingDeployRollbackResponse implements K8sTaskResponse {
   List<K8sPod> k8sPodList;
+  Integer releaseNumber;
 }

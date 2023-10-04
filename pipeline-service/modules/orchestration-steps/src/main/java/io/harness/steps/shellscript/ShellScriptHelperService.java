@@ -59,6 +59,9 @@ public interface ShellScriptHelperService {
   ShellScriptOutcome prepareShellScriptOutcome(
       Map<String, String> sweepingOutputEnvVariables, Map<String, Object> outputVariables);
 
+  void exportOutputVariablesUsingAlias(@Nonnull Ambiance ambiance,
+      @Nonnull ShellScriptStepParameters shellScriptStepParameters, @Nonnull ShellScriptOutcome shellScriptOutcome);
+
   static ShellScriptOutcome prepareShellScriptOutcome(Map<String, String> sweepingOutputEnvVariables,
       Map<String, Object> outputVariables, Set<String> secretOutputVariables) {
     SimpleEncryption encryption = new SimpleEncryption();

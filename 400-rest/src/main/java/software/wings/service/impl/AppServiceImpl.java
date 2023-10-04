@@ -281,7 +281,7 @@ public class AppServiceImpl implements AppService {
   public PageResponse<Application> list(
       PageRequest<Application> req, boolean details, boolean withTags, String tagFilter, boolean hitSecondary) {
     PageResponse<Application> response =
-        resourceLookupService.listWithTagFilters(req, tagFilter, EntityType.APPLICATION, withTags, hitSecondary);
+        resourceLookupService.listWithTagFilters(req, tagFilter, EntityType.APPLICATION, withTags, hitSecondary, false);
 
     List<Application> applicationList = response.getResponse();
     if (isEmpty(applicationList)) {

@@ -37,7 +37,7 @@ public class PlanExecutionMetadataRepositoryCustomImpl implements PlanExecutionM
     this.secondaryMongoTemplate = secondaryMongoTemplateHolder.getSecondaryMongoTemplate();
   }
 
-  public PlanExecutionMetadata getWithFieldsIncluded(String planExecutionId, Set<String> fieldsToInclude) {
+  public PlanExecutionMetadata getWithFieldsIncludedFromSecondary(String planExecutionId, Set<String> fieldsToInclude) {
     Query query = new Query(Criteria.where(PlanExecutionMetadataKeys.planExecutionId).is(planExecutionId));
     for (String field : fieldsToInclude) {
       query.fields().include(field);

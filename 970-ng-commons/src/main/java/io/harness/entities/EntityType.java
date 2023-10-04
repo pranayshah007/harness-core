@@ -653,7 +653,16 @@ public enum EntityType {
   SLSA_VERIFICATION(ModuleType.CI, EntityTypeConstants.SLSA_VERIFICATION, IdentifierRef.class),
   @JsonProperty(EntityTypeConstants.UPDATE_GITOPS_APP)
   UPDATE_GITOPS_APP(
-      ModuleType.CD, EntityTypeConstants.UPDATE_GITOPS_APP, IdentifierRef.class, EntityYamlRootNames.UPDATE_GITOPS_APP);
+      ModuleType.CD, EntityTypeConstants.UPDATE_GITOPS_APP, IdentifierRef.class, EntityYamlRootNames.UPDATE_GITOPS_APP),
+  @JsonProperty(EntityTypeConstants.ECS_SERVICE_SETUP)
+  ECS_SERVICE_SETUP_STEP(
+      ModuleType.CD, EntityTypeConstants.ECS_SERVICE_SETUP, IdentifierRef.class, EntityYamlRootNames.ECS_SERVICE_SETUP),
+  @JsonProperty(EntityTypeConstants.ECS_UPGRADE_CONTAINER)
+  ECS_UPGRADE_CONTAINER_STEP(ModuleType.CD, EntityTypeConstants.ECS_UPGRADE_CONTAINER, IdentifierRef.class,
+      EntityYamlRootNames.ECS_UPGRADE_CONTAINER),
+  @JsonProperty(EntityTypeConstants.ECS_BASIC_ROLLBACK)
+  ECS_BASIC_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.ECS_BASIC_ROLLBACK, IdentifierRef.class,
+      EntityYamlRootNames.ECS_BASIC_ROLLBACK);
 
   private final ModuleType moduleType;
   String yamlName;

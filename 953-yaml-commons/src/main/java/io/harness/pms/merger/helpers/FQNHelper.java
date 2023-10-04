@@ -28,15 +28,16 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class FQNHelper {
-  List<String> possibleUUIDs = Arrays.asList(YAMLFieldNameConstants.IDENTIFIER, YAMLFieldNameConstants.NAME,
-      YAMLFieldNameConstants.KEY, YAMLFieldNameConstants.COMMAND_TYPE, YAMLFieldNameConstants.SERVICE_REF,
-      YAMLFieldNameConstants.ENVIRONMENT_REF, YAMLFieldNameConstants.ID);
+  List<String> possibleUUIDs = Arrays.asList(YAMLFieldNameConstants.IDENTIFIER, YAMLFieldNameConstants.ID,
+      YAMLFieldNameConstants.NAME, YAMLFieldNameConstants.KEY, YAMLFieldNameConstants.COMMAND_TYPE,
+      YAMLFieldNameConstants.SERVICE_REF, YAMLFieldNameConstants.ENVIRONMENT_REF);
   // TODO: come-up with better approach. Take values from Services in
   // SDK.(https://harness.atlassian.net/browse/PIE-5305)
   List<String> UUIDsToIdentityElementInList = Arrays.asList(YAMLFieldNameConstants.IDENTIFIER,
-      YAMLFieldNameConstants.SERVICE_REF, YAMLFieldNameConstants.ENVIRONMENT_REF, YAMLFieldNameConstants.ID);
+      YAMLFieldNameConstants.ID, YAMLFieldNameConstants.SERVICE_REF, YAMLFieldNameConstants.ENVIRONMENT_REF);
 
   List<String> identifiersKeysList = Arrays.asList(YAMLFieldNameConstants.IDENTIFIER, YAMLFieldNameConstants.ID);
+
   public void validateUniqueFqn(FQN fqn, Object value, Map<FQN, Object> res, HashSet<String> expressions) {
     String expressionFqn = fqn.displayWithoutParallel();
     if (expressions.contains(expressionFqn)) {
@@ -52,7 +53,7 @@ public class FQNHelper {
   public String getIdentifierKeyIfPresent(JsonNode jsonNode) {
     Set<String> fieldNames = new LinkedHashSet<>();
     jsonNode.fieldNames().forEachRemaining(fieldNames::add);
-    String topKey = fieldNames.iterator().next();
+    String topKey = getWrapperKeyForArrayElement(jsonNode);
     if (topKey.equals(YAMLFieldNameConstants.PARALLEL)) {
       return YAMLFieldNameConstants.PARALLEL;
     }
@@ -61,6 +62,22 @@ public class FQNHelper {
       if (innerMap.has(id)) {
         return id;
       }
+    }
+    return null;
+  }
+
+  public String getWrapperKeyForArrayElement(JsonNode jsonNode) {
+    if (jsonNode.isObject()) {
+      Set<String> fieldNames = new HashSet<>();
+      jsonNode.fieldNames().forEachRemaining(fieldNames::add);
+      for (String field : fieldNames) {
+        if (EmptyPredicate.isNotEmpty(getUuidKey(jsonNode.get(field)))) {
+          return field;
+        }
+      }
+    }
+    if (jsonNode.has(YAMLFieldNameConstants.PARALLEL)) {
+      return YAMLFieldNameConstants.PARALLEL;
     }
     return null;
   }

@@ -10,6 +10,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.EnvironmentType.NON_PROD;
 import static io.harness.beans.EnvironmentType.PROD;
 import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION;
+import static io.harness.beans.FeatureName.CDS_QUERY_OPTIMIZATION_GLOBAL;
 import static io.harness.beans.FeatureName.HARNESS_TAGS;
 import static io.harness.beans.FeatureName.PURGE_DANGLING_APP_ENV_REFS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
@@ -56,7 +57,6 @@ import io.harness.beans.EnvironmentType;
 import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
-import io.harness.beans.SearchFilter.Operator;
 import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
@@ -193,7 +193,8 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   @Override
   public PageResponse<Environment> list(
       PageRequest<Environment> request, boolean withTags, String tagFilter, boolean hitSecondary) {
-    return resourceLookupService.listWithTagFilters(request, tagFilter, EntityType.ENVIRONMENT, withTags, hitSecondary);
+    return resourceLookupService.listWithTagFilters(
+        request, tagFilter, EntityType.ENVIRONMENT, withTags, hitSecondary, false);
   }
 
   @Override
@@ -256,7 +257,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   public Environment getWithTags(String appId, String envId) {
     Environment environment = get(appId, envId);
     if (environment != null) {
-      environment.setTagLinks(harnessTagService.getTagLinksWithEntityId(environment.getAccountId(), envId));
+      environment.setTagLinks(harnessTagService.getTagLinksWithEntityId(environment.getAccountId(), envId, false));
     }
     return environment;
   }
@@ -627,8 +628,9 @@ public class EnvironmentServiceImpl implements EnvironmentService {
 
   @Override
   public void pruneByApplication(String appId) {
-    List<Environment> environments =
-        wingsPersistence.createQuery(Environment.class).filter(EnvironmentKeys.appId, appId).asList();
+    List<Environment> environments = wingsPersistence.createQuery(Environment.class)
+                                         .filter(EnvironmentKeys.appId, appId)
+                                         .asList(createFindOptionsToHitSecondaryNode());
     environments.forEach(environment -> {
       wingsPersistence.delete(environment);
       auditServiceHelper.reportDeleteForAuditing(appId, environment);
@@ -647,6 +649,9 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   @Override
   public List<Environment> getEnvByApp(String appId) {
     PageRequest<Environment> pageRequest = aPageRequest().addFilter(EnvironmentKeys.appId, EQ, appId).build();
+    if (featureFlagService.isGlobalEnabled(CDS_QUERY_OPTIMIZATION_GLOBAL)) {
+      return wingsPersistence.querySecondary(Environment.class, pageRequest).getResponse();
+    }
     return wingsPersistence.query(Environment.class, pageRequest).getResponse();
   }
 
@@ -663,8 +668,9 @@ public class EnvironmentServiceImpl implements EnvironmentService {
 
   @Override
   public List<String> getEnvIdsByApp(String appId) {
-    List<Key<Environment>> environmentKeyList =
-        wingsPersistence.createQuery(Environment.class).filter(EnvironmentKeys.appId, appId).asKeyList();
+    List<Key<Environment>> environmentKeyList = wingsPersistence.createQuery(Environment.class)
+                                                    .filter(EnvironmentKeys.appId, appId)
+                                                    .asKeyList(createFindOptionsToHitSecondaryNode());
     return environmentKeyList.stream().map(key -> (String) key.getId()).collect(Collectors.toList());
   }
 
@@ -688,7 +694,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     } else {
       PageRequest<Environment> pageRequest = aPageRequest()
                                                  .addFilter(EnvironmentKeys.accountId, EQ, accountId)
-                                                 .addFilter(EnvironmentKeys.appId, Operator.IN, appIds.toArray())
+                                                 .addFilter(EnvironmentKeys.appId, IN, appIds.toArray())
                                                  .addFieldsIncluded("_id", "appId", "environmentType")
                                                  .build();
 
@@ -1276,5 +1282,12 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                                          .filter(EnvironmentKeys.environmentType, environmentType)
                                          .asList();
     return environments.stream().map(Environment::getUuid).collect(Collectors.toList());
+  }
+
+  private FindOptions createFindOptionsToHitSecondaryNode() {
+    if (featureFlagService.isGlobalEnabled(CDS_QUERY_OPTIMIZATION_GLOBAL)) {
+      return new FindOptions().readPreference(ReadPreference.secondaryPreferred());
+    }
+    return new FindOptions();
   }
 }

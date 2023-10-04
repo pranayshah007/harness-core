@@ -18,6 +18,7 @@ import io.harness.pms.yaml.SkipAutoEvaluation;
 import io.harness.when.beans.StageWhenCondition;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import lombok.AccessLevel;
@@ -45,11 +46,15 @@ public class StageElementParameters implements StepParameters {
   Map<String, String> tags;
   String type;
   SpecParameters specConfig;
+  ParameterField<String> timeout;
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @Override
   public List<String> excludeKeysFromStepInputs() {
-    return specConfig.stepInputsKeyExclude();
+    if (specConfig != null) {
+      return specConfig.stepInputsKeyExclude();
+    }
+    return new LinkedList<>();
   }
 
   public StageElementParameters cloneParameters() {

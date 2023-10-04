@@ -28,7 +28,7 @@ import io.harness.subscription.responses.CreditCardResponse;
 import io.harness.subscription.services.CreditCardService;
 
 import com.google.inject.Inject;
-import java.time.LocalDate;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Optional;
 import javax.ws.rs.BadRequestException;
@@ -76,7 +76,7 @@ public class CreditCardServiceImpl implements CreditCardService {
             .filter((CardDTO cardDTO) -> cardDTO.getId().equals(creditCardRequest.getCreditCardIdentifier()))
             .findFirst();
 
-    if (newDefaultPaymentMethod.isEmpty()) {
+    if (newDefaultPaymentMethod.isEmpty() || isCreditCardExpired(newDefaultPaymentMethod.get())) {
       log.error(SAVE_CARD_FAILED);
       throw new InvalidArgumentsException(SAVE_CARD_FAILED);
     }
@@ -136,16 +136,19 @@ public class CreditCardServiceImpl implements CreditCardService {
   }
 
   @Override
-  public boolean hasValidCard(String accountIdentifier) {
-    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
-    if (stripeCustomer == null) {
-      String errorMessage = String.format(CUSTOMER_DOES_NOT_EXIST, accountIdentifier);
-      log.error(errorMessage);
-      throw new InvalidRequestException(errorMessage);
-    }
-    List<CardDTO> creditCards = stripeHelper.listPaymentMethods(stripeCustomer.getCustomerId()).getPaymentMethods();
+  public boolean hasAtleastOneValidCreditCard(String accountIdentifier) {
+    List<CardDTO> creditCards = getCreditCards(accountIdentifier);
 
-    return !creditCards.isEmpty() && hasAtLeastOneUnexpiredCard(creditCards);
+    return creditCards.stream().anyMatch(creditCard -> !isCreditCardExpired(creditCard));
+  }
+
+  @Override
+  public boolean isValid(String accountIdentifier, String creditCardIdentifier) {
+    List<CardDTO> creditCards = getCreditCards(accountIdentifier);
+    Optional<CardDTO> optionalCreditCard =
+        creditCards.stream().filter(creditCard -> creditCard.getId().equals(creditCardIdentifier)).findFirst();
+
+    return optionalCreditCard.isPresent() && !isCreditCardExpired(optionalCreditCard.get());
   }
 
   @Override
@@ -203,10 +206,22 @@ public class CreditCardServiceImpl implements CreditCardService {
         .build();
   }
 
-  private boolean hasAtLeastOneUnexpiredCard(List<CardDTO> creditCards) {
-    return creditCards.stream().anyMatch((CardDTO cardDTO)
-                                             -> cardDTO.getExpireYear() > LocalDate.now().getYear()
-            || (cardDTO.getExpireYear() == LocalDate.now().getYear()
-                && cardDTO.getExpireMonth() >= LocalDate.now().getMonth().getValue()));
+  private List<CardDTO> getCreditCards(String accountIdentifier) {
+    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
+    if (stripeCustomer == null) {
+      String errorMessage = String.format(CUSTOMER_DOES_NOT_EXIST, accountIdentifier);
+      log.error(errorMessage);
+      throw new InvalidRequestException(errorMessage);
+    }
+
+    return stripeHelper.listPaymentMethods(stripeCustomer.getCustomerId()).getPaymentMethods();
+  }
+
+  private boolean isCreditCardExpired(CardDTO cardDTO) {
+    int currentYear = Calendar.getInstance().get(Calendar.YEAR);
+    int currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1;
+
+    return currentYear > cardDTO.getExpireYear()
+        || (currentYear == cardDTO.getExpireYear() && currentMonth > cardDTO.getExpireMonth());
   }
 }

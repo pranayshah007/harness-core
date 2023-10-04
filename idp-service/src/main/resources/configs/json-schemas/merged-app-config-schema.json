@@ -17,7 +17,8 @@
     "jenkins",
     "confluence",
     "catalog",
-    "grafana"
+    "grafana",
+    "sonarqube"
   ],
   "properties": {
     "app": {
@@ -67,6 +68,10 @@
     "grafana": {
       "$id": "#root/grafana",
       "title": "Grafana"
+    },
+    "sonarqube": {
+      "$id": "#root/sonarqube",
+      "title": "Sonarqube"
     }
   }
 }

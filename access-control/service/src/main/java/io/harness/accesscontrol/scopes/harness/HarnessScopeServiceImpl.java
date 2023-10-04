@@ -14,6 +14,7 @@ import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentService;
 import io.harness.accesscontrol.roles.RoleService;
 import io.harness.accesscontrol.roles.filter.RoleFilter;
+import io.harness.accesscontrol.scopes.HarnessScopeLevel;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.account.AccountClient;

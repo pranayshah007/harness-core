@@ -21,10 +21,12 @@ import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.plan.PlanNode;
+import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
+import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
@@ -84,6 +86,14 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
     StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getIdentifier(),
         field.getName(), dependenciesNodeMap, metadataMap,
         StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false));
+  }
+
+  public PlanNodeBuilder setStageTimeoutObtainment(
+      SdkTimeoutObtainment sdkTimeoutObtainment, PlanNodeBuilder planNodeBuilder) {
+    if (null != sdkTimeoutObtainment) {
+      return planNodeBuilder.timeoutObtainment(sdkTimeoutObtainment);
+    }
+    return planNodeBuilder;
   }
 
   @Override

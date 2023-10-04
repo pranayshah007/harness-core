@@ -47,7 +47,7 @@ public class AwsCdkDestroyPluginInfoProvider extends AbstractPluginInfoProvider 
         awsCdkDestroyStepInfo.getImage(), awsCdkDestroyStepInfo.getImagePullPolicy());
     PluginDetails pluginDetails =
         getPluginDetails(usedPorts, awsCdkDestroyStepInfo.getRunAsUser(), awsCdkDestroyStepInfo.getResources(),
-            awsCdkDestroyStepInfo.getPrivileged(), getEnvironmentVariables(awsCdkDestroyStepInfo), imageDetails);
+            awsCdkDestroyStepInfo.getPrivileged(), getEnvironmentVariables(awsCdkDestroyStepInfo), imageDetails, false);
     PluginCreationResponse response = PluginCreationResponse.newBuilder().setPluginDetails(pluginDetails).build();
     StepInfoProto stepInfoProto = getStepInfoProto(cdAbstractStepNode);
 

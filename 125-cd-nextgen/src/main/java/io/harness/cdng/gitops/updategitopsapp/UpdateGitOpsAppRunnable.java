@@ -20,6 +20,7 @@ import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitops.models.Application;
 import io.harness.gitops.models.ApplicationResource;
+import io.harness.gitops.models.ApplicationResource.App;
 import io.harness.gitops.models.ApplicationResource.ApplicationSpec;
 import io.harness.gitops.models.ApplicationResource.HelmSource;
 import io.harness.gitops.models.ApplicationResource.HelmSourceFileParameters;
@@ -28,7 +29,6 @@ import io.harness.gitops.models.ApplicationResource.KustomizeSource;
 import io.harness.gitops.models.ApplicationResource.Replicas;
 import io.harness.gitops.models.ApplicationResource.Source;
 import io.harness.gitops.models.ApplicationUpdateRequest;
-import io.harness.gitops.models.ApplicationUpdateRequest.Application.ApplicationBuilder;
 import io.harness.gitops.remote.GitopsResourceClient;
 import io.harness.logging.LogCallback;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
@@ -68,6 +68,7 @@ public class UpdateGitOpsAppRunnable implements Runnable {
       "Failed to update application, name: %s, agent id %s. Error is %s";
   private static final String FAILED_TO_GET_APPLICATION = "Failed to get application";
   private static final String FAILED_TO_UPDATE_APPLICATION = "Failed to update application";
+  private static final String UPDATE_APP_STEP_FAILED = "Failed to execute Update GitOps Apps step. Error: %s";
 
   public UpdateGitOpsAppRunnable(String taskId, Ambiance ambiance, StepElementParameters stepParameters) {
     this.taskId = taskId;
@@ -87,10 +88,10 @@ public class UpdateGitOpsAppRunnable implements Runnable {
       // fetch application to be updated from pipeline inputs
       UpdateGitOpsAppStepParameters updateGitOpsAppsStepParameters =
           (UpdateGitOpsAppStepParameters) stepParameters.getSpec();
-      Application applicationToBeUpdated = getApplicationToBeUpdated(updateGitOpsAppsStepParameters);
+      Application applicationToBeUpdated = getApplicationToBeUpdated(updateGitOpsAppsStepParameters, logger);
 
       if (applicationToBeUpdated == null) {
-        GitOpsStepUtils.logExecutionInfo("No application found to be updated", logger);
+        GitOpsStepUtils.logExecutionInfo("No application found to be updated in pipeline input", logger);
 
         waitNotifyEngine.doneWith(taskId, UpdateGitOpsAppResponse.builder().build());
         GitOpsStepUtils.closeLogStream(ambiance, logStreamingStepClientFactory);
@@ -112,12 +113,13 @@ public class UpdateGitOpsAppRunnable implements Runnable {
       // validate application with pipeline config
       ApplicationResource fetchedApplicationFromGitOps =
           getApplication(applicationToBeUpdated, accountId, orgId, projectId, logger);
-      if (fetchedApplicationFromGitOps == null
-          || !isApplicationValidForUpdate(fetchedApplicationFromGitOps, serviceIdsInPipelineExecution,
-              envIdsInPipelineExecution, clusterIdsInPipelineExecution, logger)) {
-        notifyResponse(applicationToBeUpdated, false, logger);
-        waitNotifyEngine.doneWith(taskId, UpdateGitOpsAppResponse.builder().build());
-        GitOpsStepUtils.closeLogStream(ambiance, logStreamingStepClientFactory);
+      if (fetchedApplicationFromGitOps == null) {
+        notifyFailedResponse(applicationToBeUpdated, logger,
+            format("No applications found with name %s on agent %s. Please check if the agent and application exist.",
+                applicationToBeUpdated.getName(), applicationToBeUpdated.getAgentIdentifier()));
+        return;
+      } else if (!isApplicationValidForUpdate(fetchedApplicationFromGitOps, serviceIdsInPipelineExecution,
+                     envIdsInPipelineExecution, clusterIdsInPipelineExecution, applicationToBeUpdated, logger)) {
         return;
       }
 
@@ -125,19 +127,27 @@ public class UpdateGitOpsAppRunnable implements Runnable {
       updateApplication(
           fetchedApplicationFromGitOps, accountId, orgId, projectId, updateGitOpsAppsStepParameters, logger);
 
-      notifyResponse(applicationToBeUpdated, true, logger);
+      notifySuccessfulResponse(applicationToBeUpdated, logger);
     } catch (Exception ex) {
-      waitNotifyEngine.doneWith(taskId,
-          ErrorNotifyResponseData.builder()
-              .errorMessage(format("Failed to execute Update GitOps Apps step. Error:%s", ex))
-              .build());
+      waitNotifyEngine.doneWith(
+          taskId, ErrorNotifyResponseData.builder().errorMessage(format(UPDATE_APP_STEP_FAILED, ex)).build());
       throw new RuntimeException("Failed to execute Update GitOps Apps step ", ex);
     } finally {
       GitOpsStepUtils.closeLogStream(ambiance, logStreamingStepClientFactory);
     }
   }
 
-  private Application getApplicationToBeUpdated(UpdateGitOpsAppStepParameters updateGitOpsAppsStepParameters) {
+  private Application getApplicationToBeUpdated(
+      UpdateGitOpsAppStepParameters updateGitOpsAppsStepParameters, LogCallback logger) {
+    if (updateGitOpsAppsStepParameters.getApplicationName() == null
+        || updateGitOpsAppsStepParameters.getApplicationName().getValue() == null) {
+      GitOpsStepUtils.logExecutionError("No Application Name was passed in Pipeline input.", logger);
+      return null;
+    } else if (updateGitOpsAppsStepParameters.getAgentId() == null
+        || updateGitOpsAppsStepParameters.getAgentId().getValue() == null) {
+      GitOpsStepUtils.logExecutionError("No Agent Identifier was passed in Pipeline input.", logger);
+      return null;
+    }
     return Application.builder()
         .agentIdentifier(updateGitOpsAppsStepParameters.getAgentId().getValue())
         .name(updateGitOpsAppsStepParameters.getApplicationName().getValue())
@@ -167,27 +177,23 @@ public class UpdateGitOpsAppRunnable implements Runnable {
 
   private boolean isApplicationValidForUpdate(ApplicationResource fetchedApplication,
       Set<String> serviceIdsInPipelineExecution, Set<String> envIdsInPipelineExecution,
-      Map<String, Set<String>> clusterIdsInPipelineExecution, LogCallback logger) {
+      Map<String, Set<String>> clusterIdsInPipelineExecution, Application applicationToBeUpdated, LogCallback logger) {
+    String logMessage;
     if (!serviceIdsInPipelineExecution.contains(fetchedApplication.getServiceRef())) {
-      GitOpsStepUtils.logExecutionError(
-          "Application does not correspond to the service(s) selected in the pipeline execution.", logger);
-      return false;
+      logMessage = "Application does not correspond to the service(s) selected in the pipeline execution.";
+    } else if (!envIdsInPipelineExecution.contains(fetchedApplication.getEnvironmentRef())) {
+      logMessage = "Application does not correspond to the environment(s) selected in the pipeline execution.";
+    } else if (!GitOpsStepUtils.isApplicationCorrespondsToClusterInExecution(
+                   fetchedApplication, clusterIdsInPipelineExecution)) {
+      logMessage = "Application does not correspond to the cluster(s) selected in the pipeline execution.";
+    } else {
+      return true;
     }
 
-    if (!envIdsInPipelineExecution.contains(fetchedApplication.getEnvironmentRef())) {
-      GitOpsStepUtils.logExecutionError(
-          "Application does not correspond to the environment(s) selected in the pipeline execution.", logger);
-      return false;
-    }
+    GitOpsStepUtils.logExecutionError(logMessage, logger);
+    notifyFailedResponse(applicationToBeUpdated, logger, logMessage);
 
-    if (!GitOpsStepUtils.isApplicationCorrespondsToClusterInExecution(
-            fetchedApplication, clusterIdsInPipelineExecution)) {
-      GitOpsStepUtils.logExecutionError(
-          "Application does not correspond to the cluster(s) selected in the pipeline execution.", logger);
-      return false;
-    }
-
-    return true;
+    return false;
   }
 
   private void updateApplication(ApplicationResource fetchedApplicationFromGitOps, String accountId, String orgId,
@@ -209,8 +215,10 @@ public class UpdateGitOpsAppRunnable implements Runnable {
                                   clusterIdentifier, repoIdentifier, updateRequest)
                               .execute());
       if (!response.isSuccessful() || response.body() == null) {
-        logErrorWithApplicationResource(
+        String errorMsg = logErrorWithApplicationResource(
             agentId, applicationName, response, FAILED_TO_UPDATE_APPLICATION_WITH_ERR, logger);
+        waitNotifyEngine.doneWith(
+            taskId, ErrorNotifyResponseData.builder().errorMessage(format(UPDATE_APP_STEP_FAILED, errorMsg)).build());
       }
     } catch (Exception e) {
       log.error(format(FAILED_TO_UPDATE_APPLICATION_WITH_ERR, applicationName, agentId, e));
@@ -220,17 +228,19 @@ public class UpdateGitOpsAppRunnable implements Runnable {
 
   public static ApplicationUpdateRequest getUpdateRequest(
       ApplicationResource application, UpdateGitOpsAppStepParameters updateGitOpsAppsStepParameters) {
-    ApplicationSpec applicationSpec = application.getApp().getSpec();
+    App applicationEntity = application.getApp();
+    ApplicationSpec applicationSpec = applicationEntity.getSpec();
     if (applicationSpec == null) {
       applicationSpec = ApplicationSpec.builder().build();
     }
 
     populateUpdateValues(applicationSpec, updateGitOpsAppsStepParameters);
 
-    ApplicationBuilder applicationBuilder =
-        ApplicationUpdateRequest.Application.builder().applicationSpec(applicationSpec);
+    applicationEntity.setSpec(applicationSpec);
+    applicationEntity.setStatus(null); // We do not update the sync status of an application. Also, if we remove this
+                                       // null then we encounter a marshalling error from GitOps Service.
 
-    return ApplicationUpdateRequest.builder().application(applicationBuilder.build()).build();
+    return ApplicationUpdateRequest.builder().application(applicationEntity).build();
   }
 
   private static void populateUpdateValues(
@@ -388,16 +398,21 @@ public class UpdateGitOpsAppRunnable implements Runnable {
     source.setKustomize(kustomizeSource);
   }
 
-  private void notifyResponse(Application application, boolean pass, LogCallback logger) {
-    String status = pass ? "successful" : "failed";
-    GitOpsStepUtils.logExecutionInfo(format("Update %s for application %s", status, application), logger);
-
+  private void notifySuccessfulResponse(Application application, LogCallback logger) {
+    GitOpsStepUtils.logExecutionInfo(format("Update successful for application %s", application), logger);
     waitNotifyEngine.doneWith(taskId, UpdateGitOpsAppResponse.builder().updatedApplication(application).build());
   }
 
-  private void logErrorWithApplicationResource(String agentId, String applicationName,
+  private void notifyFailedResponse(Application application, LogCallback logger, String errorMsg) {
+    GitOpsStepUtils.logExecutionInfo(format("Update failed for application %s", application), logger);
+    waitNotifyEngine.doneWith(
+        taskId, ErrorNotifyResponseData.builder().errorMessage(format(UPDATE_APP_STEP_FAILED, errorMsg)).build());
+  }
+
+  private String logErrorWithApplicationResource(String agentId, String applicationName,
       Response<ApplicationResource> response, String applicationErr, LogCallback logger) throws IOException {
     String errorMessage = response.errorBody() != null ? response.errorBody().string() : "";
     GitOpsStepUtils.logExecutionError(format(applicationErr, applicationName, agentId, errorMessage), logger);
+    return errorMessage;
   }
 }

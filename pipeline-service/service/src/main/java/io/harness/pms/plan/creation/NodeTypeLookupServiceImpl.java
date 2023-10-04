@@ -39,6 +39,9 @@ public class NodeTypeLookupServiceImpl implements NodeTypeLookupService {
           if (nodeType.equals(FEATURE_FLAG_SUPPORTED_TYPE)) {
             return "cf";
           }
+          if (nodeType.equals("Custom")) {
+            return "pms";
+          }
           return entry.getKey();
         }
       }

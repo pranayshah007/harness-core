@@ -12,12 +12,16 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ExecutionErrorInfo;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.dto.converter.FailureInfoDTOConverter;
 import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.PlanExecutionMetadata;
 import io.harness.plan.NodeType;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.plan.PostExecutionRollbackInfo;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
@@ -60,19 +64,22 @@ public class ExecutionSummaryUpdateUtils {
    * 1. Updates barrier related information on a stage node
    * 2. Updates strategy node with status and step parameters
    * 3. Updates stage node with generic updates and strategy information.
+   *
    * @param update
    * @param nodeExecution
+   * @param planExecutionMetadata
    * @return
    */
-  public static boolean addStageUpdateCriteria(Update update, NodeExecution nodeExecution) {
+  public static boolean addStageUpdateCriteria(
+      Update update, NodeExecution nodeExecution, PlanExecutionMetadata planExecutionMetadata) {
     Level level = Objects.requireNonNull(AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()));
     boolean updated = false;
     if (isBarrierNode(level)) {
       updated = performUpdatesOnBarrierNode(update, nodeExecution);
     }
     if (ExecutionModeUtils.isPostExecutionRollbackMode(nodeExecution.getAmbiance().getMetadata().getExecutionMode())) {
-      String startingNodeId =
-          nodeExecution.getAmbiance().getMetadata().getPostExecutionRollbackInfo(0).getPostExecutionRollbackStageId();
+      String startingNodeId = getPostExecutionRollbackInfo(planExecutionMetadata, nodeExecution.getAmbiance())
+                                  .getPostExecutionRollbackStageId();
       if (OrchestrationUtils.isStageNode(nodeExecution)) {
         for (Level nodeLevel : nodeExecution.getAmbiance().getLevelsList()) {
           if (Objects.equals(nodeLevel.getSetupId(), startingNodeId)) {
@@ -89,6 +96,15 @@ public class ExecutionSummaryUpdateUtils {
     }
 
     return updated;
+  }
+
+  private PostExecutionRollbackInfo getPostExecutionRollbackInfo(
+      PlanExecutionMetadata planExecutionMetadata, Ambiance ambiance) {
+    // TODO(archit): Remove get from execution_metadata from next release
+    if (EmptyPredicate.isEmpty(planExecutionMetadata.getPostExecutionRollbackInfos())) {
+      return ambiance.getMetadata().getPostExecutionRollbackInfo(0);
+    }
+    return planExecutionMetadata.getPostExecutionRollbackInfos().get(0);
   }
 
   private boolean updateStageNode(Update update, NodeExecution nodeExecution, ExecutionStatus status, Level level) {

@@ -83,6 +83,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.extensions.DaemonSet;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -112,7 +113,8 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
 
   @Spy @InjectMocks ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
   private static final String WORK_DIR = "./repository/k8s";
-
+  final Path workingDir = Path.of("dir");
+  final Path configFilePath = Path.of(workingDir.toString(), "configFile");
   @Before
   public void setup() {
     doNothing().when(logCallback).saveExecutionLog(anyString());

@@ -153,7 +153,6 @@ public class ExecutionDetailsResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns all the Executions of pipelines for given filter")
       })
-  @NGAccessControlCheck(resourceType = PIPELINE_RESOURCE_TYPE, permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<Page<PipelineExecutionSummaryDTO>>
   getListOfExecutions(@Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true)
                       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -171,6 +170,7 @@ public class ExecutionDetailsResource {
           NGCommonEntityConstants.SIZE) @DefaultValue("10") int size,
       @Parameter(description = NGCommonEntityConstants.SORT_PARAM_MESSAGE) @QueryParam("sort") List<String> sort,
       @QueryParam(NGResourceFilterConstants.FILTER_KEY) String filterIdentifier,
+      @DefaultValue("false") @QueryParam(NGResourceFilterConstants.SHOW_ALL_EXECUTONS) boolean showAllExecutions,
       @QueryParam("module") String moduleName,
       @RequestBody(description = "Returns a List of Pipeline Executions with Specific Filters",
           content =
@@ -185,7 +185,7 @@ public class ExecutionDetailsResource {
     log.info("Get List of executions");
     Criteria criteria = pmsExecutionService.formCriteria(accountId, orgId, projectId, pipelineIdentifier,
         filterIdentifier, (PipelineExecutionFilterPropertiesDTO) filterProperties, moduleName, searchTerm, statusesList,
-        myDeployments, false, true);
+        myDeployments, false, showAllExecutions);
     Pageable pageRequest;
     if (page < 0 || !(size > 0 && size <= 1000)) {
       throw new InvalidRequestException(INVALID_PAGE_REQUEST_EXCEPTION_MESSAGE);
@@ -664,8 +664,7 @@ public class ExecutionDetailsResource {
   @PUT
   @Path("/{planExecutionId}/notes")
   @ApiOperation(value = "Updates Notes of a pipelineExecution", nickname = "updateNotesForExecution")
-  @NGAccessControlCheck(
-      resourceType = PIPELINE_RESOURCE_TYPE, permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
+  @NGAccessControlCheck(resourceType = PIPELINE_RESOURCE_TYPE, permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   @Operation(operationId = "updateNotesForExecution", summary = "Updates Notes for a pipelineExecution",
       responses =
       {

@@ -65,6 +65,7 @@ public class GitXWebhook implements PersistentEntity, UuidAccess {
   String repoName;
   List<String> folderPaths;
   Boolean isEnabled;
+  Long lastEventTriggerTime;
   @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate @Builder.Default Long createdAt = 0L;
   @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate @Builder.Default Long lastUpdatedAt = 0L;
 

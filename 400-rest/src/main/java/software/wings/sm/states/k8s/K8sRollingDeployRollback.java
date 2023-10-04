@@ -215,6 +215,9 @@ public class K8sRollingDeployRollback extends AbstractK8sState {
       List<K8sPod> pods = Collections.emptyList();
       if (k8sRollingRollbackResponse != null) {
         pods = k8sRollingRollbackResponse.getK8sPodList();
+        if (k8sRollingRollbackResponse.getReleaseNumber() != null) {
+          stateExecutionData.setReleaseNumber(k8sRollingRollbackResponse.getReleaseNumber());
+        }
       }
 
       InstanceElementListParam instanceElementListParam =

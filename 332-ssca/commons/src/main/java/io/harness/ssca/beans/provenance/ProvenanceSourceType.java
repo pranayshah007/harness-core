@@ -15,7 +15,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 @OwnedBy(HarnessTeam.SSCA)
 public enum ProvenanceSourceType {
-  @JsonProperty(ProvenanceSourceConstants.DOCKER) DOCKER(ProvenanceSourceConstants.DOCKER);
+  @JsonProperty(ProvenanceSourceConstants.DOCKER) DOCKER(ProvenanceSourceConstants.DOCKER),
+  @JsonProperty(ProvenanceSourceConstants.GCR) GCR(ProvenanceSourceConstants.GCR);
 
   private final String name;
 
