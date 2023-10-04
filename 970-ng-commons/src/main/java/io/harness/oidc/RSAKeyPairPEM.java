@@ -7,12 +7,10 @@
 
 package io.harness.oidc;
 
-import static io.harness.annotations.dev.HarnessTeam.PL;
+import lombok.Builder;
 
-import io.harness.annotations.dev.OwnedBy;
-
-@OwnedBy(PL)
-public class RsaKeyPair {
-  String publicKey;
-  String privateKeyRef;
+@Builder
+public class RSAKeyPairPEM {
+  String publicKeyPem;
+  String privateKeyPem;
 }

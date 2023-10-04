@@ -72,6 +72,7 @@ java_library(
         "//970-ng-commons/src/main/java/io/harness/ng/core/utils:module",
         "//970-ng-commons/src/main/java/io/harness/ngtriggers/conditionchecker:module",
         "//970-ng-commons/src/main/java/io/harness/notification:module",
+        "//970-ng-commons/src/main/java/io/harness/oidc:module",
         "//970-ng-commons/src/main/java/io/harness/pms/dashboards:module",
         "//970-ng-commons/src/main/java/io/harness/pms/utils:module",
         "//970-ng-commons/src/main/java/io/harness/pms/yaml:module",
