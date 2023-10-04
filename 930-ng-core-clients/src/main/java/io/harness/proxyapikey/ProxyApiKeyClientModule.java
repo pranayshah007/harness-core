@@ -7,7 +7,7 @@
 
 package io.harness.proxyapikey;
 
-import static io.harness.annotations.dev.HarnessTeam.FF;
+import static io.harness.annotations.dev.HarnessTeam.CF;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.ClientMode;
@@ -21,7 +21,7 @@ import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 
-@OwnedBy(FF)
+@OwnedBy(CF)
 public class ProxyApiKeyClientModule extends AbstractModule {
   private final ServiceHttpClientConfig httpClientConfig;
   private final String serviceSecret;

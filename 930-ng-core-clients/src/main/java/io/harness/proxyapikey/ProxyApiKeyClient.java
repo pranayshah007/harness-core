@@ -7,7 +7,7 @@
 
 package io.harness.proxyapikey;
 
-import static io.harness.annotations.dev.HarnessTeam.FF;
+import static io.harness.annotations.dev.HarnessTeam.CF;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
@@ -19,7 +19,7 @@ import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Query;
 
-@OwnedBy(FF)
+@OwnedBy(CF)
 public interface ProxyApiKeyClient {
   @GET("proxyApiKeys")
   Call<ResponseDTO<List<ProxyApiKeyResponseDTO>>> getApiKeys(

@@ -7,7 +7,7 @@
 
 package io.harness.proxyapikey;
 
-import static io.harness.annotations.dev.HarnessTeam.FF;
+import static io.harness.annotations.dev.HarnessTeam.CF;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.AbstractHttpClientFactory;
@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Singleton
 @Slf4j
-@OwnedBy(FF)
+@OwnedBy(CF)
 public class ProxyApiKeyHttpClientFactory extends AbstractHttpClientFactory implements Provider<ProxyApiKeyClient> {
   public ProxyApiKeyHttpClientFactory(ServiceHttpClientConfig httpClientConfig, String serviceSecret,
       ServiceTokenGenerator tokenGenerator, KryoConverterFactory kryoConverterFactory, String clientId,

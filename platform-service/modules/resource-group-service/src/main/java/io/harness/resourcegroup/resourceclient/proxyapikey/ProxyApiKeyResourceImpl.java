@@ -7,7 +7,7 @@
 
 package io.harness.resourcegroup.resourceclient.proxyapikey;
 
-import static io.harness.annotations.dev.HarnessTeam.FF;
+import static io.harness.annotations.dev.HarnessTeam.CF;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_IDENTIFIER;
 import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_TYPE;
@@ -49,13 +49,13 @@ import lombok.extern.slf4j.Slf4j;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @AllArgsConstructor(access = AccessLevel.PUBLIC, onConstructor = @__({ @Inject }))
 @Slf4j
-@OwnedBy(FF) 
+@OwnedBy(CF)
 public class ProxyApiKeyResourceImpl implements Resource {
   ProxyApiKeyClient proxyApiKeyClient;
 
   @Override
   public String getType() {
-    return "PROXY_APIKEY";
+    return "PROXYAPIKEY";
   }
 
   @Override
@@ -65,7 +65,7 @@ public class ProxyApiKeyResourceImpl implements Resource {
 
   @Override
   public Optional<String> getEventFrameworkEntityType() {
-    return Optional.of(EventsFrameworkMetadataConstants.PROXY_APIKEY);
+    return Optional.of(EventsFrameworkMetadataConstants.PROXYAPIKEY);
   }
 
   @Override

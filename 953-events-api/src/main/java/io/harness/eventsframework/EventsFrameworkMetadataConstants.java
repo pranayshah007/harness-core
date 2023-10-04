@@ -127,5 +127,5 @@ public final class EventsFrameworkMetadataConstants {
   public static final String SEI_INSIGHTS = "seiinsights";
 
   // FF
-  public static final String PROXY_APIKEY = "proxyApiKey";
+  public static final String PROXYAPIKEY = "proxyApiKey";
 }
