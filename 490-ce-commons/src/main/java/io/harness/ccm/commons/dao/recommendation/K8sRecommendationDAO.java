@@ -97,6 +97,7 @@ import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.Select;
 import org.jooq.SelectFinalStep;
+import org.jooq.SelectOrderByStep;
 import org.jooq.SelectSelectStep;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -126,6 +127,9 @@ public class K8sRecommendationDAO {
   public static final String NODE_INFO_TABLE = "node_info";
   public static final String POD_INFO_TABLE = "pod_info";
   public static final String KUBERNETES_UTILIZATION_DATA_TABLE = "kubernetes_utilization_data";
+  public static final String POD_INFO_REF = "podInfoRef";
+  public static final String POD_INFO_REF_STARTTIME_FIELD = "\"podInfoRef\".\"starttime\"";
+  public static final String STARTTIME = "starttime";
 
   @Inject private HPersistence hPersistence;
   @Inject private DSLContext dslContext;
@@ -281,12 +285,14 @@ public class K8sRecommendationDAO {
                                        .and(NODE_INFO.STARTTIME.gt(
                                            DSL.offsetDateTime(OffsetDateTime.parse(HARDCODED_MINIMUM_START_TIME)))));
 
-    Select<?> ctePod = dslContext.select(DSL.min(POD_INFO.STARTTIME).as(MIN_STARTTIME))
-                           .from(POD_INFO)
-                           .where(POD_INFO.ACCOUNTID.eq(jobConstants.getAccountId())
-                                      .and(POD_INFO.CLUSTERID.eq(nodePoolId.getClusterid()))
-                                      .and(POD_INFO.STARTTIME.gt(
-                                          DSL.offsetDateTime(OffsetDateTime.parse(HARDCODED_MINIMUM_START_TIME)))));
+    Select<?> ctePod = dslContext.select(DSL.min(field(STARTTIME)).as(MIN_STARTTIME))
+                           .from(select(POD_INFO.STARTTIME)
+                                     .from(POD_INFO)
+                                     .where(POD_INFO.ACCOUNTID.eq(jobConstants.getAccountId())
+                                                .and(POD_INFO.CLUSTERID.eq(nodePoolId.getClusterid())))
+                                     .asTable(POD_INFO_REF))
+                           .where(field(POD_INFO_REF_STARTTIME_FIELD)
+                                      .gt(DSL.offsetDateTime(OffsetDateTime.parse(HARDCODED_MINIMUM_START_TIME))));
 
     Select<?> cteKube = dslContext.select(DSL.min(KUBERNETES_UTILIZATION_DATA.STARTTIME).as(MIN_STARTTIME))
                             .from(KUBERNETES_UTILIZATION_DATA)
@@ -295,7 +301,7 @@ public class K8sRecommendationDAO {
                                        .and(KUBERNETES_UTILIZATION_DATA.STARTTIME.gt(
                                            DSL.offsetDateTime(OffsetDateTime.parse(HARDCODED_MINIMUM_START_TIME)))));
 
-    Result<?> result =
+    SelectOrderByStep<?> unionQuery =
         dslContext.with(CTE_NODE)
             .as(cteNode)
             .with(CTE_POD)
@@ -309,8 +315,9 @@ public class K8sRecommendationDAO {
             .union(
                 dslContext
                     .select(val(KUBERNETES_UTILIZATION_DATA_TABLE).as(TABLE_NAME), field(name(CTE_KUBE, MIN_STARTTIME)))
-                    .from(table(name(CTE_KUBE))))
-            .fetch();
+                    .from(table(name(CTE_KUBE))));
+    log.info("minStartTime query: {}", unionQuery.toString());
+    Result<?> result = unionQuery.fetch();
 
     Timestamp minStartTime = result.stream()
                                  .filter(Objects::nonNull)
