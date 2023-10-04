@@ -344,6 +344,12 @@ public class AzureBlueprintDeploymentServiceTest extends CategoryTest {
       public String condition() {
         return null;
       }
+
+      @Override
+      public String description() {
+        return null;
+      }
+
       public String id() {
         return id;
       }
