@@ -12,7 +12,7 @@ import static io.harness.pms.contracts.execution.events.OrchestrationEventType.O
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.gitops.githubrestraint.services.GitopsStepFinishHandler;
+import io.harness.cdng.gitops.gitrestraint.services.GitopsStepFinishHandler;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
 import io.harness.pms.sdk.core.events.OrchestrationEventHandler;
 

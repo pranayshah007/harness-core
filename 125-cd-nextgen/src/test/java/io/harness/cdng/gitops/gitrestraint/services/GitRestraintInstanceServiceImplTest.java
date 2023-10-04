@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.gitops.githubrestraint.services;
+package io.harness.cdng.gitops.gitrestraint.services;
 
 import static io.harness.distribution.constraint.Consumer.State.ACTIVE;
 import static io.harness.distribution.constraint.Consumer.State.BLOCKED;
@@ -23,8 +23,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.gitopsprovider.entity.GithubRestraintInstance;
-import io.harness.repositories.GithubRestraintInstanceRepository;
+import io.harness.gitopsprovider.entity.GitRestraintInstance;
+import io.harness.repositories.GitRestraintInstanceRepository;
 import io.harness.rule.Owner;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -41,16 +41,16 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 
 @RunWith(MockitoJUnitRunner.class)
 @OwnedBy(HarnessTeam.GITOPS)
-public class GithubRestraintInstanceServiceImplTest extends CDNGTestBase {
-  @InjectMocks private GithubRestraintInstanceServiceImpl service;
+public class GitRestraintInstanceServiceImplTest extends CDNGTestBase {
+  @InjectMocks private GitRestraintInstanceServiceImpl service;
   @Mock private WaitNotifyEngine waitNotifyEngine;
-  @Inject private GithubRestraintInstanceRepository repository;
+  @Inject private GitRestraintInstanceRepository repository;
   @Inject private MongoTemplate mongoTemplate;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    on(service).set("githubRestraintInstanceRepository", repository);
+    on(service).set("gitRestraintInstanceRepository", repository);
     on(service).set("mongoTemplate", mongoTemplate);
   }
 
@@ -61,26 +61,26 @@ public class GithubRestraintInstanceServiceImplTest extends CDNGTestBase {
     doReturn("resumeId").when(waitNotifyEngine).doneWith(any(), any());
     String restraint1 = UUIDGenerator.generateUuid();
     String restraint2 = UUIDGenerator.generateUuid();
-    GithubRestraintInstance restraintForAccount1 = GithubRestraintInstance.builder()
-                                                       .state(ACTIVE)
-                                                       .uuid(restraint1)
-                                                       .releaseEntityId("releaseEntity1")
-                                                       .resourceUnit("accountIdToken1")
-                                                       .build();
-    GithubRestraintInstance restraintForAccount2 = GithubRestraintInstance.builder()
-                                                       .state(BLOCKED)
-                                                       .uuid(restraint2)
-                                                       .releaseEntityId("releaseEntity2")
-                                                       .resourceUnit("accountIdToken1")
-                                                       .build();
+    GitRestraintInstance restraintForAccount1 = GitRestraintInstance.builder()
+                                                    .state(ACTIVE)
+                                                    .uuid(restraint1)
+                                                    .releaseEntityId("releaseEntity1")
+                                                    .resourceUnit("accountIdToken1")
+                                                    .build();
+    GitRestraintInstance restraintForAccount2 = GitRestraintInstance.builder()
+                                                    .state(BLOCKED)
+                                                    .uuid(restraint2)
+                                                    .releaseEntityId("releaseEntity2")
+                                                    .resourceUnit("accountIdToken1")
+                                                    .build();
     repository.save(restraintForAccount1);
     repository.save(restraintForAccount2);
 
     service.finishInstance(restraint1);
     service.updateBlockedConstraints("accountIdToken1");
 
-    GithubRestraintInstance updated1 = repository.findById(restraint1).get();
-    GithubRestraintInstance updated2 = repository.findById(restraint2).get();
+    GitRestraintInstance updated1 = repository.findById(restraint1).get();
+    GitRestraintInstance updated2 = repository.findById(restraint2).get();
     verify(waitNotifyEngine).doneWith(any(), any());
     assertThat(updated1.getState()).isEqualTo(FINISHED);
     assertThat(updated2.getState()).isEqualTo(ACTIVE);

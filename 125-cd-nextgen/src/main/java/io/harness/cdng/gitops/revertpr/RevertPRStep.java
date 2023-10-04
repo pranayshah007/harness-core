@@ -27,7 +27,7 @@ import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
-import io.harness.cdng.gitops.githubrestraint.services.GithubRestraintInstanceService;
+import io.harness.cdng.gitops.gitrestraint.services.GitRestraintInstanceService;
 import io.harness.cdng.gitops.steps.GitOpsStepHelper;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
@@ -55,7 +55,7 @@ import io.harness.distribution.constraint.PermanentlyBlockedConsumerException;
 import io.harness.distribution.constraint.UnableToRegisterConsumerException;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintInstanceKeys;
+import io.harness.gitopsprovider.entity.GitRestraintInstance.GitRestraintInstanceKeys;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -109,7 +109,7 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
   @Inject private GitOpsStepHelper gitOpsStepHelper;
   @Inject private CDStepHelper cdStepHelper;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
-  @Inject private GithubRestraintInstanceService githubRestraintInstanceService;
+  @Inject private GitRestraintInstanceService gitRestraintInstanceService;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepHelper stepHelper;
@@ -195,7 +195,7 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
       String tokenRefIdentifier = extractToken(connectorInfoDTO);
       String constraintUnitIdentifier =
           CONSTRAINT_OPERATION + AmbianceUtils.getAccountId(ambiance) + tokenRefIdentifier;
-      Constraint constraint = githubRestraintInstanceService.createAbstraction(constraintUnitIdentifier);
+      Constraint constraint = gitRestraintInstanceService.createAbstraction(constraintUnitIdentifier);
       String releaseEntityId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
       String consumerId = generateUuid();
       ConstraintUnit constraintUnit = new ConstraintUnit(constraintUnitIdentifier);
@@ -218,7 +218,7 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
 
       try {
         Consumer.State state = constraint.registerConsumer(
-            constraintUnit, new ConsumerId(consumerId), 1, constraintContext, githubRestraintInstanceService);
+            constraintUnit, new ConsumerId(consumerId), 1, constraintContext, gitRestraintInstanceService);
         switch (state) {
           case BLOCKED:
             logCallback.saveExecutionLog("Running instances were found, step queued.", INFO, SUCCESS);
@@ -332,9 +332,9 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
 
   private Map<String, Object> populateConstraintContext(ConstraintUnit constraintUnit, String releaseEntityId) {
     Map<String, Object> constraintContext = new HashMap<>();
-    constraintContext.put(GithubRestraintInstanceKeys.releaseEntityId, releaseEntityId);
+    constraintContext.put(GitRestraintInstanceKeys.releaseEntityId, releaseEntityId);
     constraintContext.put(
-        GithubRestraintInstanceKeys.order, githubRestraintInstanceService.getMaxOrder(constraintUnit.getValue()) + 1);
+        GitRestraintInstanceKeys.order, gitRestraintInstanceService.getMaxOrder(constraintUnit.getValue()) + 1);
 
     return constraintContext;
   }

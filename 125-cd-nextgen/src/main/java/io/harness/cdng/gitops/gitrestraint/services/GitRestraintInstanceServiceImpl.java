@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.gitops.githubrestraint.services;
+package io.harness.cdng.gitops.gitrestraint.services;
 
 import static io.harness.distribution.constraint.Consumer.State.ACTIVE;
 import static io.harness.distribution.constraint.Consumer.State.BLOCKED;
@@ -24,12 +24,12 @@ import io.harness.distribution.constraint.RunnableConsumers;
 import io.harness.distribution.constraint.UnableToLoadConstraintException;
 import io.harness.distribution.constraint.UnableToSaveConstraintException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.gitopsprovider.entity.GithubRestraintInstance;
-import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintInstanceBuilder;
-import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintInstanceKeys;
-import io.harness.gitopsprovider.entity.GithubRestraintInstanceResponseData;
+import io.harness.gitopsprovider.entity.GitRestraintInstance;
+import io.harness.gitopsprovider.entity.GitRestraintInstance.GitRestraintInstanceBuilder;
+import io.harness.gitopsprovider.entity.GitRestraintInstance.GitRestraintInstanceKeys;
+import io.harness.gitopsprovider.entity.GitRestraintInstanceResponseData;
 import io.harness.persistence.HPersistence;
-import io.harness.repositories.GithubRestraintInstanceRepository;
+import io.harness.repositories.GitRestraintInstanceRepository;
 import io.harness.springdata.SpringDataMongoUtils;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.WaitNotifyEngine;
@@ -50,9 +50,9 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 @Slf4j
-public class GithubRestraintInstanceServiceImpl implements GithubRestraintInstanceService {
+public class GitRestraintInstanceServiceImpl implements GitRestraintInstanceService {
   @Inject private MongoTemplate mongoTemplate;
-  @Inject private GithubRestraintInstanceRepository githubRestraintInstanceRepository;
+  @Inject private GitRestraintInstanceRepository gitRestraintInstanceRepository;
 
   @Inject private WaitNotifyEngine waitNotifyEngine;
 
@@ -65,33 +65,33 @@ public class GithubRestraintInstanceServiceImpl implements GithubRestraintInstan
   }
 
   @Override
-  public List<GithubRestraintInstance> getAllActiveAndBlockedByResourceUnit(String resourceUnit) {
-    Query query = query(new Criteria().andOperator(where(GithubRestraintInstanceKeys.resourceUnit).is(resourceUnit),
-        where(GithubRestraintInstanceKeys.state).in(BLOCKED, ACTIVE)));
-    return mongoTemplate.find(query, GithubRestraintInstance.class);
+  public List<GitRestraintInstance> getAllActiveAndBlockedByResourceUnit(String resourceUnit) {
+    Query query = query(new Criteria().andOperator(where(GitRestraintInstanceKeys.resourceUnit).is(resourceUnit),
+        where(GitRestraintInstanceKeys.state).in(BLOCKED, ACTIVE)));
+    return mongoTemplate.find(query, GitRestraintInstance.class);
   }
 
   @Override
   public int getMaxOrder(String resourceUnit) {
-    Optional<GithubRestraintInstance> instance =
-        githubRestraintInstanceRepository.findFirstByResourceUnitOrderByOrderDesc(resourceUnit);
+    Optional<GitRestraintInstance> instance =
+        gitRestraintInstanceRepository.findFirstByResourceUnitOrderByOrderDesc(resourceUnit);
 
-    return instance.map(GithubRestraintInstance::getOrder).orElse(0);
+    return instance.map(GitRestraintInstance::getOrder).orElse(0);
   }
 
   @Override
-  public List<GithubRestraintInstance> findAllActiveAndBlockedByReleaseEntityId(String releaseEntityId) {
-    return githubRestraintInstanceRepository.findAllByReleaseEntityIdAndStateIn(
+  public List<GitRestraintInstance> findAllActiveAndBlockedByReleaseEntityId(String releaseEntityId) {
+    return gitRestraintInstanceRepository.findAllByReleaseEntityIdAndStateIn(
         releaseEntityId, EnumSet.of(ACTIVE, BLOCKED));
   }
 
   @Override
-  public GithubRestraintInstance finishInstance(String uuid) {
-    Query query = query(where(GithubRestraintInstanceKeys.uuid).is(uuid))
-                      .addCriteria(where(GithubRestraintInstanceKeys.state).in(EnumSet.of(ACTIVE, BLOCKED)));
-    Update update = new Update().set(GithubRestraintInstanceKeys.state, FINISHED);
-    GithubRestraintInstance modified = mongoTemplate.findAndModify(
-        query, update, SpringDataMongoUtils.returnNewOptions, GithubRestraintInstance.class);
+  public GitRestraintInstance finishInstance(String uuid) {
+    Query query = query(where(GitRestraintInstanceKeys.uuid).is(uuid))
+                      .addCriteria(where(GitRestraintInstanceKeys.state).in(EnumSet.of(ACTIVE, BLOCKED)));
+    Update update = new Update().set(GitRestraintInstanceKeys.state, FINISHED);
+    GitRestraintInstance modified =
+        mongoTemplate.findAndModify(query, update, SpringDataMongoUtils.returnNewOptions, GitRestraintInstance.class);
     if (modified == null || modified.getState() != FINISHED) {
       log.error("Cannot unblock constraint" + uuid);
       return null;
@@ -116,22 +116,21 @@ public class GithubRestraintInstanceServiceImpl implements GithubRestraintInstan
   }
 
   @Override
-  public GithubRestraintInstance save(GithubRestraintInstance githubRestraintInstance) {
-    return HPersistence.retry(() -> githubRestraintInstanceRepository.save(githubRestraintInstance));
+  public GitRestraintInstance save(GitRestraintInstance gitRestraintInstance) {
+    return HPersistence.retry(() -> gitRestraintInstanceRepository.save(gitRestraintInstance));
   }
 
   @Override
-  public GithubRestraintInstance activateBlockedInstance(String uuid, String resourceUnit) {
-    GithubRestraintInstance instance =
-        githubRestraintInstanceRepository
+  public void activateBlockedInstance(String uuid, String resourceUnit) {
+    GitRestraintInstance instance =
+        gitRestraintInstanceRepository
             .findByUuidAndResourceUnitAndStateIn(uuid, resourceUnit, Collections.singletonList(BLOCKED))
-            .orElseThrow(
-                () -> new InvalidRequestException("Cannot find GithubRestraintInstance with id [" + uuid + "]."));
+            .orElseThrow(() -> new InvalidRequestException("Cannot find GitRestraintInstance with id [" + uuid + "]."));
 
     instance.setState(ACTIVE);
     instance.setAcquireAt(System.currentTimeMillis());
 
-    return save(instance);
+    save(instance);
   }
 
   @Override
@@ -146,7 +145,7 @@ public class GithubRestraintInstanceServiceImpl implements GithubRestraintInstan
   public List<Consumer> loadConsumers(ConstraintId id, ConstraintUnit unit, boolean hitSecondaryNode) {
     List<Consumer> consumers = new ArrayList<>();
 
-    List<GithubRestraintInstance> instances = getAllActiveAndBlockedByResourceUnit(unit.getValue());
+    List<GitRestraintInstance> instances = getAllActiveAndBlockedByResourceUnit(unit.getValue());
 
     instances.forEach(instance
         -> consumers.add(
@@ -154,21 +153,21 @@ public class GithubRestraintInstanceServiceImpl implements GithubRestraintInstan
                 .id(new ConsumerId(instance.getUuid()))
                 .state(instance.getState())
                 .permits(instance.getPermits())
-                .context(ImmutableMap.of(GithubRestraintInstanceKeys.releaseEntityId, instance.getReleaseEntityId()))
+                .context(ImmutableMap.of(GitRestraintInstanceKeys.releaseEntityId, instance.getReleaseEntityId()))
                 .build()));
     return consumers;
   }
 
   @Override
   public boolean registerConsumer(ConstraintId id, ConstraintUnit unit, Consumer consumer, int currentlyRunning) {
-    final GithubRestraintInstanceBuilder builder =
-        GithubRestraintInstance.builder()
+    final GitRestraintInstanceBuilder builder =
+        GitRestraintInstance.builder()
             .uuid(consumer.getId().getValue())
             .resourceUnit(unit.getValue())
-            .releaseEntityId((String) consumer.getContext().get(GithubRestraintInstanceKeys.releaseEntityId))
+            .releaseEntityId((String) consumer.getContext().get(GitRestraintInstanceKeys.releaseEntityId))
             .permits(consumer.getPermits())
             .state(consumer.getState())
-            .order((int) consumer.getContext().get(GithubRestraintInstanceKeys.order));
+            .order((int) consumer.getContext().get(GitRestraintInstanceKeys.order));
 
     if (ACTIVE == consumer.getState()) {
       builder.acquireAt(System.currentTimeMillis());
@@ -177,7 +176,7 @@ public class GithubRestraintInstanceServiceImpl implements GithubRestraintInstan
     try {
       save(builder.build());
     } catch (DuplicateKeyException e) {
-      log.error("Failed to add GithubRestraintInstance", e);
+      log.error("Failed to add GitRestraintInstance", e);
       return false;
     }
 
@@ -187,10 +186,10 @@ public class GithubRestraintInstanceServiceImpl implements GithubRestraintInstan
   @Override
   public boolean adjustRegisterConsumerContext(ConstraintId id, Map<String, Object> context) {
     final int order = getMaxOrder(id.getValue()) + 1;
-    if (order == (int) context.get(GithubRestraintInstanceKeys.order)) {
+    if (order == (int) context.get(GitRestraintInstanceKeys.order)) {
       return false;
     }
-    context.put(GithubRestraintInstanceKeys.order, order);
+    context.put(GitRestraintInstanceKeys.order, order);
     return true;
   }
 
@@ -198,7 +197,7 @@ public class GithubRestraintInstanceServiceImpl implements GithubRestraintInstan
   public boolean consumerUnblocked(
       ConstraintId id, ConstraintUnit unit, ConsumerId consumerId, Map<String, Object> context) {
     activateBlockedInstance(consumerId.getValue(), unit.getValue());
-    ResponseData responseData = GithubRestraintInstanceResponseData.builder().resourceUnit(unit.getValue()).build();
+    ResponseData responseData = GitRestraintInstanceResponseData.builder().resourceUnit(unit.getValue()).build();
     waitNotifyEngine.doneWith(consumerId.getValue(), responseData);
     return true;
   }

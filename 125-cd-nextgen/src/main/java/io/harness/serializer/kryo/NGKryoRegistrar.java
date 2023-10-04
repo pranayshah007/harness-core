@@ -150,7 +150,7 @@ import io.harness.cdng.tas.TasSwapRoutesStepParameters;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchOutcome;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchParameters;
 import io.harness.gitops.models.Application;
-import io.harness.gitopsprovider.entity.GithubRestraintInstanceResponseData;
+import io.harness.gitopsprovider.entity.GitRestraintInstanceResponseData;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.telemetry.beans.CdTelemetrySentStatus;
 
@@ -169,7 +169,7 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(UpdateGitOpsAppStepParameters.class, 13014);
     kryo.register(UpdateGitOpsAppResponse.class, 13015);
     kryo.register(GitopsStepFinishCallback.class, 13016);
-    kryo.register(GithubRestraintInstanceResponseData.class, 13017);
+    kryo.register(GitRestraintInstanceResponseData.class, 13017);
 
     kryo.register(ArtifactStepParameters.class, 8001);
     kryo.register(ServiceStepParameters.class, 8008);
