@@ -50,8 +50,10 @@ import software.wings.sm.State;
 import software.wings.sm.states.ShellScriptState;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -258,7 +260,10 @@ public class ShellScriptStepMapperImpl extends StepMapper {
   @Override
   public void overrideTemplateInputs(MigrationContext migrationContext, WorkflowMigrationContext context,
       WorkflowPhase phase, GraphNode graphNode, NGYamlFile templateFile, JsonNode templateInputs) {
+    ShellScriptState state = (ShellScriptState) getState(graphNode);
+
     JsonNode envVars = templateInputs.at("/spec/environmentVariables");
+    JsonNode executionTarget = templateInputs.at("/spec/onDelegate");
     CgEntityNode entityNode = context.getEntities().get(
         CgEntityId.builder().type(NGMigrationEntityType.TEMPLATE).id(templateFile.getCgBasicInfo().getId()).build());
     Template template = (Template) entityNode.getEntity();
@@ -304,9 +309,22 @@ public class ShellScriptStepMapperImpl extends StepMapper {
         }
       }
     }
+    if (executionTarget instanceof TextNode) {
+      ObjectNode spec = (ObjectNode) templateInputs.get("spec");
+      spec.put("onDelegate", state.isExecuteOnDelegate());
+      if (!state.isExecuteOnDelegate()) {
+        ParameterField<String> connectorRef = MigratorUtility.getIdentifierWithScopeDefaultsRuntime(
+            migrationContext.getMigratedEntities(), state.getSshKeyRef(), NGMigrationEntityType.CONNECTOR);
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode hostNode = mapper.createObjectNode();
+        hostNode.put("host", state.getHost());
+        hostNode.put("connectorRef", connectorRef.getValue());
+        hostNode.put("workingDirectory", state.getCommandPath());
+        spec.put("executionTarget", hostNode);
+      }
+    }
 
     // Fix delegate selectors in the workflow
-    ShellScriptState state = (ShellScriptState) getState(graphNode);
     overrideTemplateDelegateSelectorInputs(templateInputs, state.getDelegateSelectors());
   }
 }

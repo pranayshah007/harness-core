@@ -55,7 +55,7 @@ public class MongoInterpreter implements IRuleInterpreter {
                          .licenses(((AllowListItem) item).getLicenses())
                          .allowLicenses(new ArrayList<>())
                          .ignorePackages(new ArrayList<>())
-                         .filters(new HashMap<>())
+                         .filters(filter)
                          .build();
     } else if (type == AllowListRuleType.ALLOW_SUPPLIER_ITEM) {
       queryBuilder = SupplierQueryBuilder.builder()
@@ -63,13 +63,13 @@ public class MongoInterpreter implements IRuleInterpreter {
                          .suppliers(((AllowListItem) item).getSuppliers())
                          .allowSuppliers(new ArrayList<>())
                          .ignorePackages(new ArrayList<>())
-                         .filters(new HashMap<>())
+                         .filters(filter)
                          .build();
     } else if (type == AllowListRuleType.ALLOW_PURL_ITEM) {
       queryBuilder = PurlQueryBuilder.builder()
                          .orchestrationId(orchestrationId)
                          .purls(((AllowListItem) item).getPurls())
-                         .filters(new HashMap<>())
+                         .filters(filter)
                          .build();
     } else {
       throw new InvalidArgumentsException(String.format("Invalid value of type: %s", type.name()));

@@ -100,8 +100,6 @@ public class TemplateServiceConfiguration extends Configuration {
   @JsonProperty("basePathPrefix") String basePathPrefix = "";
   @JsonProperty("enforcementClientConfiguration") EnforcementClientConfiguration enforcementClientConfiguration;
   @JsonProperty("pmsGrpcClientConfig") GrpcClientConfig pmsGrpcClientConfig;
-  @JsonProperty("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceClientConfig;
-  @JsonProperty("pipelineServiceSecret") private String pipelineServiceSecret;
   @JsonProperty("allowedParallelStages") private int allowedParallelStages;
   @JsonProperty("cfClientConfig") @ConfigSecret private CfClientConfig cfClientConfig;
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;

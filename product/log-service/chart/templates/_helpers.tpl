@@ -64,3 +64,25 @@ Create the name of the service account to use
 {{- define "log-service.pullSecrets" -}}
 {{ include "common.images.pullSecrets" (dict "images" (list .Values.image) "global" .Values.global ) }}
 {{- end -}}
+
+{{/*
+Manage Log Service Secrets
+USAGE:
+{{- "log-service.generateSecrets" (dict "ctx" $)}}
+*/}}
+{{- define "log-service.generateSecrets" }}
+    {{- $ := .ctx }}
+    {{- $hasAtleastOneSecret := false }}
+    {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
+    {{- if eq (include "harnesscommon.secrets.isDefault" (dict "ctx" $ "variableName" "LOG_SERVICE_GLOBAL_TOKEN" "extKubernetesSecretCtxs" (list $.Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict $localESOSecretCtxIdentifier $.Values.secrets.secretManagement.externalSecretsOperator)))) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+LOG_SERVICE_GLOBAL_TOKEN: {{ .ctx.Values.secrets.default.LOG_SERVICE_GLOBAL_TOKEN | b64enc }}
+    {{- end }}
+    {{- if eq (include "harnesscommon.secrets.isDefault" (dict "ctx" $ "variableName" "LOG_SERVICE_SECRET" "extKubernetesSecretCtxs" (list $.Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict $localESOSecretCtxIdentifier $.Values.secrets.secretManagement.externalSecretsOperator)))) "true" }}
+    {{- $hasAtleastOneSecret = true }}
+LOG_SERVICE_SECRET: {{ .ctx.Values.secrets.default.LOG_SERVICE_SECRET | b64enc }}
+    {{- end }}
+    {{- if not $hasAtleastOneSecret }}
+{}
+    {{- end }}
+{{- end }}

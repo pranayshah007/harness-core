@@ -11,6 +11,8 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.apache.http.entity.mime.MIME.CONTENT_TYPE;
 
 import io.harness.delegate.beans.NotificationProcessingResponse;
+import io.harness.ngsettings.SettingIdentifiers;
+import io.harness.notification.helper.NotificationSettingsHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +48,9 @@ public class MSTeamsSenderImpl {
   }
 
   public NotificationProcessingResponse send(
-      List<String> microsoftTeamsWebhookUrls, String message, String notificationId) {
+      List<String> microsoftTeamsWebhookUrls, String message, String notificationId, String accountId) {
+    microsoftTeamsWebhookUrls = NotificationSettingsHelper.getRecipientsWithValidDomain(
+        microsoftTeamsWebhookUrls, accountId, SettingIdentifiers.MSTEAM_NOTIFICATION_ENDPOINTS_ALLOWLIST);
     List<Boolean> results = new ArrayList<>();
     for (String microsoftTeamsWebhookUrl : microsoftTeamsWebhookUrls) {
       int responseCode = sendMessage(message, microsoftTeamsWebhookUrl);

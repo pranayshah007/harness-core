@@ -20,18 +20,17 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import java.util.Map;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.bson.Document;
 
 @Data
-@Builder
 @NoArgsConstructor
-@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -51,6 +50,19 @@ public class PipelineFilterPropertiesDto extends FilterPropertiesDTO {
   private org.bson.Document moduleProperties;
   @Schema(description = "This is the Pipeline repo filter on which the filter will be applied.")
   private String repoName;
+
+  @Builder
+  public PipelineFilterPropertiesDto(List<NGTag> pipelineTags, List<String> pipelineIdentifiers, String name,
+      String description, Document moduleProperties, String repoName, Map<String, String> tags,
+      Map<String, String> labels, FilterType filterType) {
+    super(tags, labels, filterType);
+    this.pipelineTags = pipelineTags;
+    this.pipelineIdentifiers = pipelineIdentifiers;
+    this.name = name;
+    this.description = description;
+    this.moduleProperties = moduleProperties;
+    this.repoName = repoName;
+  }
 
   @Override
   public FilterType getFilterType() {

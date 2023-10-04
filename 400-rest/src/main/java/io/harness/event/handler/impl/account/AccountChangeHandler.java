@@ -240,7 +240,7 @@ public class AccountChangeHandler implements EventHandler {
   }
 
   private CountOptions createCountOptionsToHitSecondaryNode(String accountId) {
-    if (accountId != null && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, accountId)) {
+    if (accountId != null && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION_V2, accountId)) {
       return new CountOptions().readPreference(ReadPreference.secondaryPreferred());
     }
     return new CountOptions();

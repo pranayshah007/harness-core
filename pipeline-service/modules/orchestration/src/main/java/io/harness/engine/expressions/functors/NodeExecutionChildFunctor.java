@@ -15,6 +15,7 @@ import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.LateBindingValue;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 
@@ -30,6 +31,7 @@ public class NodeExecutionChildFunctor implements LateBindingValue {
   NodeExecutionsCache nodeExecutionsCache;
   PmsOutcomeService pmsOutcomeService;
   PmsSweepingOutputService pmsSweepingOutputService;
+  NodeExecutionInfoService nodeExecutionInfoService;
   Ambiance ambiance;
   Set<NodeExecutionEntityType> entityTypes;
   JexlEngine engine;
@@ -50,6 +52,7 @@ public class NodeExecutionChildFunctor implements LateBindingValue {
         .nodeExecutionsCache(nodeExecutionsCache)
         .pmsOutcomeService(pmsOutcomeService)
         .pmsSweepingOutputService(pmsSweepingOutputService)
+        .nodeExecutionInfoService(nodeExecutionInfoService)
         .ambiance(ambiance)
         .startNodeExecution(nodeExecution)
         .entityTypes(entityTypes)

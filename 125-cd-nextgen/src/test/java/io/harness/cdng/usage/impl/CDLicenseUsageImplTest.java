@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.filesystem.FileIo.deleteFileIfExists;
 import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.DISPLAY_NAME;
 import static io.harness.rule.OwnerRule.IVAN;
+import static io.harness.rule.OwnerRule.MANISH;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,6 +58,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.io.UncheckedIOException;
+import java.net.SocketTimeoutException;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -98,6 +101,7 @@ public class CDLicenseUsageImplTest extends CategoryTest {
   public static final String orgName = "ORG_NAME";
   public static final String projectName = "PROJECT_NAME";
   private static final long DAYS_30_IN_MILLIS = 2592000000L;
+  private static final long DAYS_15_IN_MILLIS = DAYS_30_IN_MILLIS / 2;
 
   @Before
   public void setup() {
@@ -492,6 +496,7 @@ public class CDLicenseUsageImplTest extends CategoryTest {
     when(timeScaleDAL.getDistinctServiceWithExecutionInTimeRange(
              accountIdentifier, timeInMillis - DAYS_30_IN_MILLIS, timeInMillis))
         .thenReturn(emptyList());
+
     ServiceUsageDTO licenseUsage = (ServiceUsageDTO) cdLicenseUsage.getLicenseUsage(accountIdentifier, ModuleType.CD,
         timeInMillis, CDUsageRequestParams.builder().cdLicenseType(CDLicenseType.SERVICES).build());
 
@@ -816,6 +821,45 @@ public class CDLicenseUsageImplTest extends CategoryTest {
                                CDLicenseType.SERVICE_INSTANCES))
         .hasMessage("Invalid date format, pattern: yyyy-MM-dd, date: 2022-14-08")
         .isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = MANISH)
+  @Category(UnitTests.class)
+  public void testGetDistinctServiceWithExecutionInTimeRangeOnTimeout() {
+    long timeInMillis = 1234123412345L;
+    List<ServiceInfraInfo> activeServiceList = new ArrayList<>();
+    activeServiceList.add(new ServiceInfraInfo(null, serviceName, serviceIdentifier, null, null, null, null, null, null,
+        null, null, null, accountIdentifier, orgIdentifier, projectIdentifier, null));
+    when(timeScaleDAL.getDistinctServiceWithExecutionInTimeRange(
+             accountIdentifier, timeInMillis - DAYS_30_IN_MILLIS, timeInMillis))
+        .thenThrow(new UncheckedIOException(new SocketTimeoutException()));
+
+    when(timeScaleDAL.getDistinctServiceWithExecutionInTimeRange(
+             accountIdentifier, timeInMillis - DAYS_15_IN_MILLIS + 1, timeInMillis))
+        .thenReturn(activeServiceList);
+    when(timeScaleDAL.getDistinctServiceWithExecutionInTimeRange(
+             accountIdentifier, timeInMillis - DAYS_30_IN_MILLIS, timeInMillis - DAYS_15_IN_MILLIS))
+        .thenReturn(emptyList());
+
+    List<Services> servicesList = new ArrayList<>();
+    servicesList.add(new Services(
+        null, accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, serviceName, false, null, null));
+    when(timeScaleDAL.getNamesForServiceIds(
+             accountIdentifier, NgServiceInfraInfoUtils.getOrgProjectServiceTable(activeServiceList)))
+        .thenReturn(servicesList);
+
+    ServiceUsageDTO licenseUsage = (ServiceUsageDTO) cdLicenseUsage.getLicenseUsage(accountIdentifier, ModuleType.CD,
+        timeInMillis, CDUsageRequestParams.builder().cdLicenseType(CDLicenseType.SERVICES).build());
+    assertThat(licenseUsage.getActiveServices().getCount()).isEqualTo(1);
+    assertThat(licenseUsage.getActiveServices().getReferences().size()).isEqualTo(1);
+    assertThat(licenseUsage.getActiveServices().getReferences().get(0).getName()).isEqualTo(serviceName);
+    assertThat(licenseUsage.getActiveServices().getReferences().get(0).getIdentifier()).isEqualTo(serviceIdentifier);
+    assertThat(licenseUsage.getActiveServices().getReferences().get(0).getAccountIdentifier())
+        .isEqualTo(accountIdentifier);
+    assertThat(licenseUsage.getActiveServices().getReferences().get(0).getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(licenseUsage.getActiveServices().getReferences().get(0).getProjectIdentifier())
+        .isEqualTo(projectIdentifier);
   }
 
   @Test

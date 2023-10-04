@@ -9,8 +9,8 @@ package io.harness.delegate.app.modules;
 
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.managerclient.DelegateAgentManagerClientFactory;
-import io.harness.managerclient.DelegateAuthInterceptor;
 import io.harness.security.TokenGenerator;
+import io.harness.security.delegate.DelegateAuthInterceptor;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;

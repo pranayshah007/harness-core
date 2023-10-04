@@ -216,12 +216,6 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
   }
 
   @Override
-  public void handleAbort(
-      Ambiance ambiance, EmptyStepParameters stepParameters, AsyncExecutableResponse executableResponse) {
-    // nothing to do
-  }
-
-  @Override
   @Deprecated // Can be removed with next releases
   public StepResponse executeSync(Ambiance ambiance, EmptyStepParameters stepParameters, StepInputPackage inputPackage,
       PassThroughData passThroughData) {
@@ -564,13 +558,14 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
     }
     if (isNotEmpty(connectorsNotFound)) {
       throw new InvalidRequestException(
-          String.format("Connectors with identifier(s) [%s] not found", String.join(",", connectorsNotFound)));
+          String.format("Could not fetch manifests. Connectors with identifier(s) [%s] not found",
+              String.join(",", connectorsNotFound)));
     }
 
     if (isNotEmpty(connectorsNotValid)) {
-      throw new InvalidRequestException(
-          format("Connectors with identifiers [%s] is(are) invalid. Please fix the connector YAMLs.",
-              String.join(",", connectorsNotValid)));
+      throw new InvalidRequestException(format(
+          "Could not fetch manifests. Connectors with identifiers [%s] is(are) invalid. Please fix the connector YAMLs.",
+          String.join(",", connectorsNotValid)));
     }
   }
 

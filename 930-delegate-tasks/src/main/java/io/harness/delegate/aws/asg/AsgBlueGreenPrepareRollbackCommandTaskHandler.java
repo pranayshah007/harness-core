@@ -8,7 +8,6 @@
 package io.harness.delegate.aws.asg;
 
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgConfiguration;
-import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScheduledUpdateGroupAction;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -32,7 +31,6 @@ import io.harness.aws.asg.AsgSdkManager;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainFactory;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainState;
 import io.harness.aws.asg.manifest.request.AsgConfigurationManifestRequest;
-import io.harness.aws.asg.manifest.request.AsgLaunchTemplateManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScalingPolicyManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScheduledActionManifestRequest;
 import io.harness.aws.beans.AsgLoadBalancerConfig;
@@ -216,7 +214,6 @@ public class AsgBlueGreenPrepareRollbackCommandTaskHandler extends AsgCommandTas
             .initialChainState(AsgManifestHandlerChainState.builder().asgName(asgName).build())
             .asgSdkManager(asgSdkManager)
             .build()
-            .addHandler(AsgLaunchTemplate, AsgLaunchTemplateManifestRequest.builder().build())
             .addHandler(AsgConfiguration, AsgConfigurationManifestRequest.builder().build())
             .addHandler(AsgScalingPolicy, AsgScalingPolicyManifestRequest.builder().build())
             .addHandler(AsgScheduledUpdateGroupAction, AsgScheduledActionManifestRequest.builder().build())

@@ -92,7 +92,7 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
             pmsExecutionService, pipelineExpressionHelper, planExecutionMetadataService, ambiance));
     addToContext("executionInput", new ExecutionInputExpressionFunctor(executionInputService, ambiance));
 
-    addToContext("strategy", new StrategyFunctor(ambiance, nodeExecutionsCache));
+    addToContext("strategy", new StrategyFunctor(ambiance, nodeExecutionsCache, getNodeExecutionInfoService()));
     addToContext("inputSet", new InputSetFunctor(pmsExecutionSummaryService, ambiance));
 
     // Trigger functors
