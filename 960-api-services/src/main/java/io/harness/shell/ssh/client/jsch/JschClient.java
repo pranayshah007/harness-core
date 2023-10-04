@@ -9,6 +9,7 @@ package io.harness.shell.ssh.client.jsch;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.ERROR_IN_GETTING_CHANNEL_STREAMS;
+import static io.harness.eraro.ErrorCode.REQUEST_PROCESSING_INTERRUPTED;
 import static io.harness.eraro.ErrorCode.SSH_CONNECTION_ERROR;
 import static io.harness.eraro.ErrorCode.SSH_RETRY;
 import static io.harness.eraro.ErrorCode.UNKNOWN_ERROR;
@@ -552,17 +553,21 @@ public class JschClient extends SshClient {
     int retryCount = 0;
     while (retryCount <= 6 && session == null) {
       try {
-        TimeUnit.SECONDS.sleep(1);
         retryCount++;
+        TimeUnit.SECONDS.sleep(1);
         session = fetchSSHSession(config, getLogCallback());
       } catch (InterruptedException ie) {
-        log.error("exception while fetching ssh session", ie);
+        log.warn("InterruptedException while fetching ssh session with retry count {}, cause: {}", retryCount,
+            ie.getMessage());
         Thread.currentThread().interrupt();
+        // no need to retry interrupted exception
+        throw new JschClientException(
+            REQUEST_PROCESSING_INTERRUPTED, new Throwable("Task interrupted: " + ie.getMessage(), ie.getCause()));
       } catch (JSchException jse) {
         if (retryCount == 6) {
           return fetchSSHSession(config, getLogCallback());
         }
-        log.error("Jschexception while SSH connection with retry count {}, cause: {}", retryCount, jse.getMessage());
+        log.warn("Jschexception while SSH connection with retry count {}, cause: {}", retryCount, jse.getMessage());
       }
     }
 
