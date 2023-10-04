@@ -68,8 +68,10 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.sdk.core.steps.executables.TaskExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.security.PmsSecurityContextEventGuard;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.StepUtils;
@@ -92,7 +94,8 @@ import lombok.extern.slf4j.Slf4j;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @OwnedBy(GITOPS)
 @Slf4j
-public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementParameters> {
+public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementParameters>,
+                                     TaskExecutable<StepElementParameters, NGGitOpsResponse> {
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType(GITOPS_REVERT_PR.getYamlType()).setStepCategory(StepCategory.STEP).build();
 
@@ -169,10 +172,6 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
     }
     return tokenRefIdentifier;
   }
-
-  @Override
-  public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepParameters, AsyncChainExecutableResponse executableResponse) {}
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
@@ -274,8 +273,11 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
   @Override
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
-    ResponseData responseData = responseDataSupplier.get();
-    NGGitOpsResponse ngGitOpsResponse = (NGGitOpsResponse) responseData;
+    NGGitOpsResponse ngGitOpsResponse = (NGGitOpsResponse) responseDataSupplier.get();
+    return calculateStepResponse(ambiance, ngGitOpsResponse);
+  }
+
+  private StepResponse calculateStepResponse(Ambiance ambiance, NGGitOpsResponse ngGitOpsResponse) {
     NGLogCallback logCallback = getLogCallback(ambiance, false);
 
     if (TaskStatus.SUCCESS.equals(ngGitOpsResponse.getTaskStatus())) {
@@ -345,5 +347,20 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
         cdStepHelper.mapTaskRequestToDelegateTaskRequest(taskRequest, taskData, emptySet(), "", true);
 
     return delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
+  }
+
+  @Override
+  public TaskRequest obtainTask(
+      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+    return null;
+  }
+
+  @Override
+  public StepResponse handleTaskResult(Ambiance ambiance, StepElementParameters stepParameters,
+      ThrowingSupplier<NGGitOpsResponse> responseDataSupplier) throws Exception {
+    try (PmsSecurityContextEventGuard securityContextEventGuard = new PmsSecurityContextEventGuard(ambiance)) {
+      NGGitOpsResponse response = responseDataSupplier.get();
+      return calculateStepResponse(ambiance, response);
+    }
   }
 }

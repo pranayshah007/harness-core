@@ -79,8 +79,10 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.sdk.core.steps.executables.TaskExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.security.PmsSecurityContextEventGuard;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
@@ -107,7 +109,8 @@ import lombok.extern.slf4j.Slf4j;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(GITOPS)
 @Slf4j
-public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepElementParameters> {
+public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepElementParameters>,
+                                              TaskExecutable<StepElementParameters, NGGitOpsResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(GITOPS_UPDATE_RELEASE_REPO.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -244,6 +247,10 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     NGGitOpsResponse ngGitOpsResponse = (NGGitOpsResponse) responseDataSupplier.get();
+    return calculateStepResponse(ambiance, ngGitOpsResponse);
+  }
+
+  private StepResponse calculateStepResponse(Ambiance ambiance, NGGitOpsResponse ngGitOpsResponse) {
     NGLogCallback logCallback = getLogCallback(ambiance, false);
 
     if (TaskStatus.SUCCESS.equals(ngGitOpsResponse.getTaskStatus())) {
@@ -310,8 +317,8 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
   }
 
   @Override
-  public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepParameters, AsyncChainExecutableResponse executableResponse) {
+  public void handleAbort(Ambiance ambiance, StepElementParameters stepParameters,
+      AsyncChainExecutableResponse executableResponse, boolean userMarked) {
     // TODO: implement this
   }
 
@@ -486,5 +493,21 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
         .succeedIfFileNotFound(true)
         .gitStoreDelegateConfig(rebuiltGitStoreDelegateConfig)
         .build();
+  }
+
+  @Override
+  public TaskRequest obtainTask(
+      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+    // This should never happen
+    return null;
+  }
+
+  @Override
+  public StepResponse handleTaskResult(Ambiance ambiance, StepElementParameters stepParameters,
+      ThrowingSupplier<NGGitOpsResponse> responseDataSupplier) throws Exception {
+    try (PmsSecurityContextEventGuard securityContextEventGuard = new PmsSecurityContextEventGuard(ambiance)) {
+      NGGitOpsResponse response = responseDataSupplier.get();
+      return calculateStepResponse(ambiance, response);
+    }
   }
 }

@@ -79,9 +79,11 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.sdk.core.steps.executables.TaskExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
+import io.harness.pms.security.PmsSecurityContextEventGuard;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
@@ -108,7 +110,8 @@ import lombok.extern.slf4j.Slf4j;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @OwnedBy(HarnessTeam.GITOPS)
 @Slf4j
-public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementParameters> {
+public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementParameters>,
+                                    TaskExecutable<StepElementParameters, NGGitOpsResponse> {
   private static final String CONSTRAINT_OPERATION = "MERGE_PR";
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
@@ -157,10 +160,6 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
             deleteSourceBranch, MergePRStepInfo.MergePRBaseStepInfoKeys.deleteSourceBranch, stepParameters))
         .build();
   }
-
-  @Override
-  public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepParameters, AsyncChainExecutableResponse executableResponse) {}
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
@@ -259,8 +258,11 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
   @Override
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
-    ResponseData responseData = responseDataSupplier.get();
-    NGGitOpsResponse ngGitOpsResponse = (NGGitOpsResponse) responseData;
+    NGGitOpsResponse ngGitOpsResponse = (NGGitOpsResponse) responseDataSupplier.get();
+    return calculateStepResponse(ambiance, ngGitOpsResponse);
+  }
+
+  private StepResponse calculateStepResponse(Ambiance ambiance, NGGitOpsResponse ngGitOpsResponse) {
     NGLogCallback logCallback = getLogCallback(ambiance, false);
 
     if (TaskStatus.SUCCESS.equals(ngGitOpsResponse.getTaskStatus())) {
@@ -434,5 +436,20 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
         GithubRestraintInstanceKeys.order, githubRestraintInstanceService.getMaxOrder(constraintUnit.getValue()) + 1);
 
     return constraintContext;
+  }
+
+  @Override
+  public TaskRequest obtainTask(
+      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+    return null;
+  }
+
+  @Override
+  public StepResponse handleTaskResult(Ambiance ambiance, StepElementParameters stepParameters,
+      ThrowingSupplier<NGGitOpsResponse> responseDataSupplier) throws Exception {
+    try (PmsSecurityContextEventGuard securityContextEventGuard = new PmsSecurityContextEventGuard(ambiance)) {
+      NGGitOpsResponse response = responseDataSupplier.get();
+      return calculateStepResponse(ambiance, response);
+    }
   }
 }
