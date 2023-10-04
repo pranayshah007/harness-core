@@ -84,19 +84,23 @@ public class CannyClient {
       String authorId = getPostCreationAuthorId(emailId, name);
 
       Response response = createCannyPost(authorId, boardId, title, details);
+
       if (!response.isSuccessful()) {
-        String responseBody = response.body().string();
-        log.error("Request to canny failed trying to create post. Response body: {}", responseBody);
-        throw new UnexpectedException("Request to canny failed trying to create post. Response body: " + responseBody);
+        JsonNode jsonResponse = objectMapper.readTree(response.body().byteStream());
+        log.error("Request to canny failed trying to create post. Response body: {}",
+            jsonResponse.get(CannyClientConstants.ERROR_NODE).asText());
+        throw new UnexpectedException("Request to canny failed trying to create post. Response body: "
+            + jsonResponse.get(CannyClientConstants.ERROR_NODE).asText());
       }
 
       String postId = objectMapper.readTree(response.body().byteStream()).get(CannyClientConstants.ID_NODE).asText();
       Response postDetailsResponse = retrieveCannyPostDetails(postId);
       if (!postDetailsResponse.isSuccessful()) {
-        String responseBody = postDetailsResponse.body().string();
-        log.error("Request to canny failed trying to retrieve post details. Response body: {}", responseBody);
-        throw new UnexpectedException(
-            "Request to canny failed trying to retrieve post details. Response body: " + responseBody);
+        JsonNode jsonResponse = objectMapper.readTree(response.body().byteStream());
+        log.error("Request to canny failed trying to retrieve post details. Response body: {}",
+            jsonResponse.get(CannyClientConstants.ERROR_NODE).asText());
+        throw new UnexpectedException("Request to canny failed trying to retrieve post details. Response body: "
+            + jsonResponse.get(CannyClientConstants.ERROR_NODE).asText());
       }
       String postUrl = objectMapper.readTree(postDetailsResponse.body().byteStream()).get("url").asText();
       return CannyPostResponseDTO.builder().postURL(postUrl).message("Post created successfully").build();
@@ -119,15 +123,14 @@ public class CannyClient {
         // use harness emailId as unique Identifier for canny
         Response createUserResponse = createCannyUser(emailId, emailId, name);
 
+        JsonNode createUserResponseJson = objectMapper.readTree(createUserResponse.body().byteStream());
         if (!createUserResponse.isSuccessful()) {
-          String responseBody = createUserResponse.body().string();
           log.error("Request to canny failed trying to create user during getPostCreationAuthorId. Response body: {}",
-              responseBody);
-          throw new UnexpectedException(
-              "Request to canny failed trying to create user during getPostCreationAuthorId." + responseBody);
+              createUserResponseJson.get(CannyClientConstants.ERROR_NODE).asText());
+          throw new UnexpectedException("Request to canny failed trying to create user during getPostCreationAuthorId."
+              + createUserResponseJson.get(CannyClientConstants.ERROR_NODE).asText());
         }
 
-        JsonNode createUserResponseJson = objectMapper.readTree(createUserResponse.body().byteStream());
         JsonNode id = createUserResponseJson.get(CannyClientConstants.ID_NODE);
 
         return id.asText();
