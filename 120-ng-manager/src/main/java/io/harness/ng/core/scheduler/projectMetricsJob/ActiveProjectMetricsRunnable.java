@@ -36,26 +36,33 @@ public class ActiveProjectMetricsRunnable implements Runnable {
     int pageSize = 100;
     long endTime = System.currentTimeMillis();
     long startTime = endTime - (24 * 60 * 60 * 1000);
+
     log.info("Starting ActiveProjectMetricsRunnable Job");
+
     try (ResponseTimeRecorder ignore1 = new ResponseTimeRecorder("Send project activity metrics for accounts")) {
       try {
         do {
           List<String> accountIds = new ArrayList<>();
           PageResponse<AccountDTO> pageResponse =
               CGRestUtils.getResponse(accountClient.listAccounts(pageIndex, pageSize));
+
           if (pageResponse.size() == 0) {
             break;
           }
+
           accountIds.addAll(
               pageResponse.getResponse().stream().map(AccountDTO::getIdentifier).collect(Collectors.toList()));
           pageIndex++;
+
           Map<String, Integer> projectCounts = projectService.getProjectsCountPerAccount(accountIds);
+
           AccountMetricsDTO accountMetricsDTO = AccountMetricsDTO.builder()
                                                     .projectCounts(projectCounts)
                                                     .accountIds(accountIds)
                                                     .startTime(startTime)
                                                     .endTime(endTime)
                                                     .build();
+
           auditClientService.publishMetrics(accountMetricsDTO);
           log.info("Published metrics for Accounts pageIndex: {}", pageIndex);
 

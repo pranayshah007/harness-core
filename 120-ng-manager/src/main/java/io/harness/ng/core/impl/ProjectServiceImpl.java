@@ -690,14 +690,18 @@ public class ProjectServiceImpl implements ProjectService {
     Criteria criteria =
         Criteria.where(ProjectKeys.accountIdentifier).in(accountIdentifier).and(ProjectKeys.deleted).ne(Boolean.TRUE);
     MatchOperation matchStage = Aggregation.match(criteria);
+
     GroupOperation groupBy = group(ProjectKeys.accountIdentifier).count().as(ProjectsPerAccountCountKeys.count);
+
     ProjectionOperation projectionStage =
         project().and(MONGODB_ID).as(ProjectKeys.accountIdentifier).andInclude(ProjectsPerAccountCountKeys.count);
+
     Map<String, Integer> result = new HashMap<>();
     projectRepository.aggregate(newAggregation(matchStage, groupBy, projectionStage), ProjectsPerAccountCount.class)
         .getMappedResults()
         .forEach(projectsPerAccountCount
             -> result.put(projectsPerAccountCount.getAccountIdentifier(), projectsPerAccountCount.getCount()));
+
     return result;
   }
 
