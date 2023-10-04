@@ -233,6 +233,8 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.SECURITY)
   SECURITY(ModuleType.CI, EntityTypeConstants.SECURITY, IdentifierRef.class, EntityYamlRootNames.SECURITY),
 
+  @JsonProperty(EntityTypeConstants.ANCHORE)
+  ANCHORE(ModuleType.STO, EntityTypeConstants.ANCHORE, IdentifierRef.class, EntityYamlRootNames.ANCHORE),
   @JsonProperty(EntityTypeConstants.AQUA_TRIVY)
   AQUA_TRIVY(ModuleType.STO, EntityTypeConstants.AQUA_TRIVY, IdentifierRef.class, EntityYamlRootNames.AQUA_TRIVY),
   @JsonProperty(EntityTypeConstants.AWS_ECR)
