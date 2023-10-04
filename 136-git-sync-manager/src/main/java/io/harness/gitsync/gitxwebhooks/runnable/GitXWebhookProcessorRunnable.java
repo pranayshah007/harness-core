@@ -54,8 +54,9 @@ public class GitXWebhookProcessorRunnable implements Runnable {
   @Override
   public void run() {
     try {
+      log.info("Fetching the Queued items");
       List<GitXWebhookEvent> queuedEvents = getQueuedGitXWebhookEvents();
-
+      log.info(String.format("Events fetched in the queue state %d", queuedEvents.size()));
       if (!queuedEvents.isEmpty()) {
         queuedEvents.forEach(this::processQueuedEvent);
       }
