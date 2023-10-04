@@ -119,7 +119,8 @@ public class SCMGitSyncHelper {
 
   public ScmGetFileResponse getFileByBranch(Scope scope, String repoName, String branchName, String commitId,
       String filePath, String connectorRef, boolean loadFromCache, EntityType entityType,
-      Map<String, String> contextMap, boolean getOnlyFileContent, boolean applyRepoAllowListFilter) {
+      Map<String, String> contextMap, boolean getOnlyFileContent, boolean applyRepoAllowListFilter,
+      boolean isGetFileFlow) {
     contextMap = GitSyncLogContextHelper.setContextMap(
         scope, repoName, branchName, commitId, filePath, GitOperation.GET_FILE, contextMap);
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
@@ -131,7 +132,7 @@ public class SCMGitSyncHelper {
               .setBranchName(Strings.nullToEmpty(branchName))
               .setCommitId(Strings.nullToEmpty(commitId))
               .setFilePath(filePath)
-              .setCacheRequestParams(CacheRequestMapper.getCacheRequest(loadFromCache))
+              .setCacheRequestParams(CacheRequestMapper.getCacheRequest(loadFromCache, isGetFileFlow))
               .putAllContextMap(contextMap)
               .setEntityType(EntityTypeMapper.getEntityType(entityType))
               .setScopeIdentifiers(ScopeIdentifierMapper.getScopeIdentifiersFromScope(scope))
@@ -304,7 +305,7 @@ public class SCMGitSyncHelper {
               .setConnectorRef(scmGetFileRequest.getConnectorRef())
               .setBranchName(Strings.nullToEmpty(scmGetFileRequest.getBranchName()))
               .setFilePath(scmGetFileRequest.getFilePath())
-              .setCacheRequestParams(CacheRequestMapper.getCacheRequest(scmGetFileRequest.isLoadFromCache()))
+              .setCacheRequestParams(CacheRequestMapper.getCacheRequest(scmGetFileRequest.isLoadFromCache(), false))
               .putAllContextMap(scmGetFileRequest.getContextMap())
               .setEntityType(EntityTypeMapper.getEntityType(scmGetFileRequest.getEntityType()))
               .setScopeIdentifiers(ScopeIdentifierMapper.getScopeIdentifiersFromScope(scmGetFileRequest.getScope()))

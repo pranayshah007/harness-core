@@ -1062,7 +1062,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   private Optional<ScmGetFileResponseDTO> getFileCacheResponseIfApplicable(
       ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO, ScmConnector scmConnector, String workingBranch) {
     boolean isSyncEnabled = isBiDirectionalSyncEnabled(scmGetFileByBranchRequestDTO);
-    if (isSyncEnabled || scmGetFileByBranchRequestDTO.isUseCache()) {
+    if (useCache(scmGetFileByBranchRequestDTO, isSyncEnabled)) {
       GitFileCacheKey cacheKey = getCacheKey(scmGetFileByBranchRequestDTO, scmConnector, workingBranch);
       GitFileCacheResponse gitFileCacheResponse = getFileFromCache(cacheKey);
       if (gitFileCacheResponse != null) {
@@ -1075,6 +1075,14 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
       }
     }
     return Optional.empty();
+  }
+
+  private boolean useCache(ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO, boolean isSyncEnabled) {
+    if (scmGetFileByBranchRequestDTO.isGetFileFlow() && !scmGetFileByBranchRequestDTO.isUseCache()) {
+      return false;
+    } else {
+      return isSyncEnabled || scmGetFileByBranchRequestDTO.isUseCache();
+    }
   }
 
   //  TODO: Move this to GitXWebhookService to make it centralised when more use cases arises

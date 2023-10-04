@@ -353,6 +353,7 @@ message FileGitDetails {
 
 message CacheRequestParams {
   bool useCache = 1;
+  bool isGetFileFlow = 2;
 }
 
 message CacheResponseParams {

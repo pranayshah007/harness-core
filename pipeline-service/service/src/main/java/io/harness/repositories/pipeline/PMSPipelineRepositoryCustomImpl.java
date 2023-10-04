@@ -294,6 +294,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
             .loadFromCache(loadFromCache)
             .entityType(EntityType.PIPELINES)
             .getOnlyFileContent(PipelineGitXHelper.isExecutionFlow())
+            .isGetFileFlow(PipelineGitXHelper.isGetFileFlow())
             .build(),
         Collections.emptyMap());
   }

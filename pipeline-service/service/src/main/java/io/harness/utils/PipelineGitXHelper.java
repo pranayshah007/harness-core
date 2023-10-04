@@ -88,6 +88,14 @@ public class PipelineGitXHelper {
     return false;
   }
 
+  public boolean isGetFileFlow() {
+    USER_FLOW user_flow = ThreadOperationContextHelper.getThreadOperationContextUserFlow();
+    if (user_flow != null) {
+      return user_flow.equals(USER_FLOW.GET_FILE);
+    }
+    return false;
+  }
+
   public boolean shouldPublishSetupUsages(boolean loadFromCache, StoreType storeType) {
     return StoreType.REMOTE.equals(storeType) && isFetchedFromGit(loadFromCache)
         && GitAwareContextHelper.isGitDefaultBranch();

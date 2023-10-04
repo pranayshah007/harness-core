@@ -268,8 +268,8 @@ public class SCMGitSyncHelperTest extends GitSdkTestBase {
              harnessToGitPushInfoServiceBlockingStub::getFile, any(GetFileRequest.class)))
         .thenReturn(successfulGetFileResponse);
 
-    ScmGetFileResponse scmGetFileResponse = scmGitSyncHelper.getFileByBranch(
-        getDefaultScope(), repo, branch, commitId, filePath, connectorRef, false, entityType, contextMap, false, false);
+    ScmGetFileResponse scmGetFileResponse = scmGitSyncHelper.getFileByBranch(getDefaultScope(), repo, branch, commitId,
+        filePath, connectorRef, false, entityType, contextMap, false, false, false);
     assertThat(scmGetFileResponse).isNotNull();
     assertThat(scmGetFileResponse.getFileContent()).isEqualTo(fileContent);
     assertThat(scmGetFileResponse.getGitMetaData().getRepoName()).isEqualTo(repo);
@@ -290,7 +290,7 @@ public class SCMGitSyncHelperTest extends GitSdkTestBase {
 
     assertThatThrownBy(()
                            -> scmGitSyncHelper.getFileByBranch(getDefaultScope(), repo, branch, commitId, filePath,
-                               connectorRef, false, entityType, contextMap, false, false))
+                               connectorRef, false, entityType, contextMap, false, false, false))
         .isInstanceOf(ScmInternalServerErrorException.class)
         .hasMessage(error);
   }

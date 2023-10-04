@@ -67,6 +67,7 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.gitx.GitXSettingsHelper;
+import io.harness.gitx.USER_FLOW;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.ngsettings.SettingIdentifiers;
@@ -109,6 +110,7 @@ import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.utils.PipelineGitXHelper;
 import io.harness.utils.PmsFeatureFlagHelper;
 import io.harness.utils.PmsFeatureFlagService;
+import io.harness.utils.ThreadOperationContextHelper;
 import io.harness.yaml.schema.inputs.beans.YamlInputDetails;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -343,6 +345,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       String pipelineId, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
       boolean loadFromCache, boolean validateAsync) {
     Optional<PipelineEntity> pipelineEntity;
+    ThreadOperationContextHelper.setUserFlow(USER_FLOW.GET_FILE);
     // if validateAsync is true, then this ID wil be of the event started for the async validation process, which can be
     // queried on using another API to get the result of the async validation. If validateAsync is false, then this ID
     // is not needed and will be null

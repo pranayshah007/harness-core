@@ -135,6 +135,7 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
     // if label is not given, return stable template
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
+    TemplateUtils.setUserFlowContext(USER_FLOW.GET_FILE);
     log.info(
         String.format("Retrieving Template with identifier %s and versionLabel %s in project %s, org %s, account %s",
             templateIdentifier, versionLabel, projectId, orgId, accountId));
@@ -414,6 +415,8 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
     log.info("Applying templates to pipeline yaml in project {}, org {}, account {}", projectId, orgId, accountId);
     if (templateApplyRequestDTO.isGetOnlyFileContent()) {
       TemplateUtils.setUserFlowContext(USER_FLOW.EXECUTION);
+    } else if (templateApplyRequestDTO.isGetFileFlow()) {
+      TemplateUtils.setUserFlowContext(USER_FLOW.GET_FILE);
     }
     String yamlVersion = templateApplyRequestDTO.getYamlVersion();
     long start = System.currentTimeMillis();
@@ -434,6 +437,8 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
     long start = System.currentTimeMillis();
     if (templateApplyRequestDTO.isGetOnlyFileContent()) {
       TemplateUtils.setUserFlowContext(USER_FLOW.EXECUTION);
+    } else if (templateApplyRequestDTO.isGetFileFlow()) {
+      TemplateUtils.setUserFlowContext(USER_FLOW.GET_FILE);
     }
     String yamlVersion = templateApplyRequestDTO.getYamlVersion();
     TemplateMergeResponseDTO templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(accountId, orgId,

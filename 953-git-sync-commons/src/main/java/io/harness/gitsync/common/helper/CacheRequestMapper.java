@@ -16,7 +16,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.PL)
 @UtilityClass
 public class CacheRequestMapper {
-  public CacheRequestParams getCacheRequest(boolean loadFromCache) {
-    return CacheRequestParams.newBuilder().setUseCache(loadFromCache).build();
+  public CacheRequestParams getCacheRequest(boolean loadFromCache, boolean isGetFileFlow) {
+    return CacheRequestParams.newBuilder().setUseCache(loadFromCache).setIsGetFileFlow(isGetFileFlow).build();
   }
 }

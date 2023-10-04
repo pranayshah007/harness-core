@@ -37,4 +37,5 @@ public class ScmGetFileByBranchRequestDTO {
   // If ScmConnector is not null, then we use it instead of processing connectorRef
   ScmConnector scmConnector;
   GitXSettingsParams gitXSettingsParams;
+  boolean isGetFileFlow;
 }

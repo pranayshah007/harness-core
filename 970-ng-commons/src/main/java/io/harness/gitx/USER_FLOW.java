@@ -9,4 +9,4 @@ package io.harness.gitx;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-@OwnedBy(HarnessTeam.PIPELINE) public enum USER_FLOW { EXECUTION }
+@OwnedBy(HarnessTeam.PIPELINE) public enum USER_FLOW { EXECUTION, GET_FILE }
