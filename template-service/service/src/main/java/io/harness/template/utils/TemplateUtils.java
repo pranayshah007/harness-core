@@ -202,14 +202,6 @@ public class TemplateUtils {
     return false;
   }
 
-  public boolean isGetFileFlow() {
-    USER_FLOW user_flow = ThreadOperationContextHelper.getThreadOperationContextUserFlow();
-    if (user_flow != null) {
-      return user_flow.equals(USER_FLOW.GET_FILE);
-    }
-    return false;
-  }
-
   public void setUserFlowContext(USER_FLOW userFlow) {
     if (!GlobalContextManager.isAvailable()) {
       GlobalContextManager.set(new GlobalContext());

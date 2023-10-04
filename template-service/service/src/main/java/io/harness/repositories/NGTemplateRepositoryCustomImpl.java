@@ -286,7 +286,6 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
             .entityType(EntityType.TEMPLATE)
             .loadFromCache(loadFromCache)
             .getOnlyFileContent(TemplateUtils.isExecutionFlow())
-            .isGetFileFlow(TemplateUtils.isGetFileFlow())
             .build(),
         Collections.emptyMap());
   }
