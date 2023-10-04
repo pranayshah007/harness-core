@@ -193,7 +193,6 @@ public class CVNGStepTaskServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = ANSHIKA)
   @Ignore
   @Category(UnitTests.class)
-  // Working on it.
   public void testGetDeploymentActivityLogAnalysisClusters() {
     String accountId = generateUuid();
     String callbackId = generateUuid();
