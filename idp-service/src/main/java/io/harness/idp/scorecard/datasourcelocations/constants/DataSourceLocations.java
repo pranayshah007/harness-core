@@ -51,6 +51,11 @@ public class DataSourceLocations {
       "Unable to get the PagerDuty data, probably target url provided in plugin is invalid";
   public static final String PAGERDUTY_UNABLE_TO_FETCH_DATA_ERROR_MESSAGE = "Unable to fetch the data from PagerDuty";
 
+  // Jira
+  public static final String PROJECT_COMPONENT_REPLACER = "{PROJECT_COMPONENT_REPLACER}";
+  public static final String JIRA_MEAN_TIME_TO_RESOLVE = "jira_mean_time_to_resolve";
+  public static final String JIRA_ISSUES_COUNT = "jira_issues_count";
+  public static final String JIRA_ISSUES_OPEN_CLOSE_RATIO = "jira_issues_open_close_ratio";
   // Kubernetes
   public static final String KUBERNETES = "kubernetes";
 }

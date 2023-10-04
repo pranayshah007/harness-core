@@ -30,6 +30,7 @@ import com.google.inject.Inject;
 import java.util.Arrays;
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.AccessLevel;
@@ -60,13 +61,13 @@ public class EnforcementApiImpl implements EnforcementApi {
 
   @Override
   public Response getNormalisedSbomComponent(String org, String project, @Valid Artifact body, String harnessAccount,
-      @Max(1000L) Integer limit, Integer page) {
+      @Min(1L) @Max(1000L) Integer limit, @Min(0L) Integer page) {
     return normalisedSbomComponentService.listNormalizedSbomComponent(org, project, page, limit, body, harnessAccount);
   }
 
   @Override
   public Response getPolicyViolations(String org, String project, String enforcementId, String harnessAccount,
-      @Max(1000L) Integer limit, String order, Integer page, String sort, String searchText) {
+      @Min(1L) @Max(1000L) Integer limit, String order, @Min(0L) Integer page, String sort, String searchText) {
     SortOrder sortOrder = new SortOrder();
     sortOrder.setFieldName(sort);
     sortOrder.setOrderType(OrderType.valueOf(order));

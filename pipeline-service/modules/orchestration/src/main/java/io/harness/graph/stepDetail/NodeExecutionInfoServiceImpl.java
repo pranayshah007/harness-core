@@ -7,6 +7,13 @@
 
 package io.harness.graph.stepDetail;
 
+import static io.harness.plancreator.strategy.StrategyConstants.ITEM;
+import static io.harness.plancreator.strategy.StrategyConstants.ITERATION;
+import static io.harness.plancreator.strategy.StrategyConstants.ITERATIONS;
+import static io.harness.plancreator.strategy.StrategyConstants.MATRIX;
+import static io.harness.plancreator.strategy.StrategyConstants.PARTITION;
+import static io.harness.plancreator.strategy.StrategyConstants.REPEAT;
+import static io.harness.plancreator.strategy.StrategyConstants.TOTAL_ITERATIONS;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -21,19 +28,28 @@ import io.harness.engine.observers.StepDetailsUpdateInfo;
 import io.harness.engine.observers.StepDetailsUpdateObserver;
 import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.observer.Subject;
+import io.harness.plancreator.strategy.IterationVariables;
+import io.harness.plancreator.strategy.StrategyUtils;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.data.stepdetails.PmsStepDetails;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
+import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.execution.utils.LevelUtils;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.repositories.stepDetail.NodeExecutionsInfoRepository;
 import io.harness.serializer.KryoSerializer;
 
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.client.result.UpdateResult;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -206,5 +222,106 @@ public class NodeExecutionInfoServiceImpl implements NodeExecutionInfoService {
       }
       return true;
     });
+  }
+
+  @Override
+  public Map<String, Object> fetchStrategyObjectMap(Level level, boolean useMatrixFieldName) {
+    Map<String, Object> strategyObjectMap = new HashMap<>();
+    if (AmbianceUtils.hasStrategyMetadata(level)) {
+      return fetchStrategyObjectMap(Lists.newArrayList(level), useMatrixFieldName);
+    }
+    strategyObjectMap.put(ITERATION, 0);
+    strategyObjectMap.put(ITERATIONS, 1);
+    strategyObjectMap.put(TOTAL_ITERATIONS, 1);
+    return strategyObjectMap;
+  }
+
+  @Override
+  public Map<String, Object> fetchStrategyObjectMap(
+      List<Level> levelsWithStrategyMetadata, boolean useMatrixFieldName) {
+    Map<String, Object> strategyObjectMap = new HashMap<>();
+    Map<String, Object> matrixValuesMap = new HashMap<>();
+    Map<String, Object> repeatValuesMap = new HashMap<>();
+
+    List<String> nodeExecutionIds =
+        levelsWithStrategyMetadata.stream().map(Level::getRuntimeId).collect(Collectors.toList());
+    Map<String, StrategyMetadata> strategyMetadataMap = fetchStrategyMetadata(nodeExecutionIds);
+
+    List<IterationVariables> levels = new ArrayList<>();
+    for (Level level : levelsWithStrategyMetadata) {
+      StrategyMetadata strategyMetadata;
+      // This is to ensure backward compatibility
+      strategyMetadata = getCorrespondingStrategyMetadata(strategyMetadataMap, level);
+
+      levels.add(IterationVariables.builder()
+                     .currentIteration(strategyMetadata.getCurrentIteration())
+                     .totalIterations(strategyMetadata.getTotalIterations())
+                     .build());
+
+      if (strategyMetadata.hasMatrixMetadata()) {
+        // MatrixMapLocal can contain either a string as value or a json as value.
+        Map<String, String> matrixMapLocal = strategyMetadata.getMatrixMetadata().getMatrixValuesMap();
+        matrixValuesMap.putAll(StrategyUtils.getMatrixMapFromCombinations(matrixMapLocal));
+      }
+      if (strategyMetadata.hasForMetadata()) {
+        repeatValuesMap.put(ITEM, strategyMetadata.getForMetadata().getValue());
+        repeatValuesMap.put(PARTITION, strategyMetadata.getForMetadata().getPartitionList());
+      }
+
+      if (LevelUtils.isStepLevel(level)) {
+        StrategyUtils.fetchGlobalIterationsVariablesForStrategyObjectMap(strategyObjectMap, levels);
+      }
+
+      strategyObjectMap.put(ITERATION, strategyMetadata.getCurrentIteration());
+      strategyObjectMap.put(ITERATIONS, strategyMetadata.getTotalIterations());
+      strategyObjectMap.put(TOTAL_ITERATIONS, strategyMetadata.getTotalIterations());
+      strategyObjectMap.put(
+          "identifierPostFix", AmbianceUtils.getStrategyPostFixUsingMetadata(strategyMetadata, useMatrixFieldName));
+    }
+    strategyObjectMap.put(MATRIX, matrixValuesMap);
+    strategyObjectMap.put(REPEAT, repeatValuesMap);
+
+    return strategyObjectMap;
+  }
+
+  private StrategyMetadata getCorrespondingStrategyMetadata(
+      Map<String, StrategyMetadata> strategyMetadataMap, Level level) {
+    StrategyMetadata strategyMetadata;
+    if (strategyMetadataMap.containsKey(level.getRuntimeId())) {
+      strategyMetadata = strategyMetadataMap.get(level.getRuntimeId());
+    } else {
+      // This should be removed in November release.
+      strategyMetadata = level.getStrategyMetadata();
+    }
+    return strategyMetadata;
+  }
+
+  @Override
+  public Map<String, StrategyMetadata> fetchStrategyMetadata(List<String> nodeExecutionIds) {
+    Criteria criteria = Criteria.where(NodeExecutionsInfoKeys.nodeExecutionId).in(nodeExecutionIds);
+    Query query = new Query(criteria);
+    query.fields().include(NodeExecutionsInfoKeys.strategyMetadata);
+    query.fields().include(NodeExecutionsInfoKeys.nodeExecutionId);
+
+    List<NodeExecutionsInfo> nodeExecutionsInfo = mongoTemplate.find(query, NodeExecutionsInfo.class);
+    if (EmptyPredicate.isEmpty(nodeExecutionsInfo)) {
+      return new HashMap<>();
+    }
+    return nodeExecutionsInfo.stream().collect(
+        Collectors.toMap(NodeExecutionsInfo::getNodeExecutionId, NodeExecutionsInfo::getStrategyMetadata));
+  }
+
+  @Override
+  public StrategyMetadata getStrategyMetadata(Ambiance ambiance) {
+    return getStrategyMetadata(AmbianceUtils.obtainCurrentLevel(ambiance));
+  }
+
+  @Override
+  public StrategyMetadata getStrategyMetadata(Level level) {
+    Map<String, StrategyMetadata> strategyMetadataMap = fetchStrategyMetadata(Lists.newArrayList(level.getRuntimeId()));
+    if (strategyMetadataMap.isEmpty()) {
+      return level.getStrategyMetadata();
+    }
+    return strategyMetadataMap.get(level.getRuntimeId());
   }
 }

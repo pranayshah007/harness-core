@@ -102,7 +102,7 @@ public class K8sAndHelmInfrastructureUtilityTest extends InstancesTestBase {
             .build();
 
     NativeHelmDeploymentReleaseDetails helmDeploymentReleaseDetails =
-        K8sAndHelmInfrastructureUtility.getNativeHelmDeploymentReleaseDetails(deploymentInfoDTO);
+        K8sAndHelmInfrastructureUtility.getNativeHelmDeploymentReleaseDetails(deploymentInfoDTO, false);
     assertThat(helmDeploymentReleaseDetails).isNotNull();
     assertThat(helmDeploymentReleaseDetails.getReleaseName()).isEqualTo(RELEASE_NAME);
     assertThat(helmDeploymentReleaseDetails.getNamespaces()).contains(NAMESPACE);

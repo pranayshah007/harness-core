@@ -8,6 +8,7 @@
 package io.harness.delegate.task.helm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
@@ -16,7 +17,6 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.OciHelmDockerApiException;
 import io.harness.network.Http;
 
@@ -33,9 +33,14 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @Singleton
 @OwnedBy(CDP)
 public class OciHelmApiHelperUtils {
+  private static final String PATH_FORMAT = "%s/%s";
   protected String normalizeFieldData(final String fieldData) {
-    if (EmptyPredicate.isEmpty(fieldData)) {
+    if (isEmpty(fieldData)) {
       return fieldData;
+    }
+
+    if ("/".equals(fieldData)) {
+      return "";
     }
 
     StringBuffer result = new StringBuffer(fieldData);
@@ -51,11 +56,16 @@ public class OciHelmApiHelperUtils {
 
   protected String normalizeUrl(String url) throws URISyntaxException {
     URI uriObject = new URI(url);
-    if (EmptyPredicate.isEmpty(uriObject.getHost())) {
-      if (EmptyPredicate.isEmpty(uriObject.getPath())) {
+    String path = uriObject.getPath();
+
+    if (isEmpty(uriObject.getHost())) {
+      if (isEmpty(path)) {
         throw new OciHelmDockerApiException("Hostname provided in URL field of OCI Helm connector is invalid");
       }
-      return format("https://%s", uriObject.getPath());
+      if (!path.equals("/") && path.contains("/")) {
+        path = path.substring(0, path.indexOf('/'));
+      }
+      return format("https://%s", path);
     }
     if (isNotEmpty(uriObject.getScheme()) && uriObject.getScheme().startsWith("http")) {
       return format("%s://%s%s", uriObject.getScheme(), uriObject.getHost(),
@@ -75,5 +85,23 @@ public class OciHelmApiHelperUtils {
         .addConverterFactory(converterFactory)
         .client(Http.getOkHttpClient(baseUrl, false))
         .build();
+  }
+
+  String formatChartNameWithUrlPath(String repoUrl, String chartNameNormalized) throws URISyntaxException {
+    URI uriObject = new URI(repoUrl);
+    String path = normalizeFieldData(uriObject.getPath());
+
+    if (isEmpty(path)) {
+      return chartNameNormalized;
+    }
+
+    if (isNotEmpty(uriObject.getHost())) {
+      return format(PATH_FORMAT, path, chartNameNormalized);
+    } else {
+      if (path.contains("/")) {
+        return format(PATH_FORMAT, path.substring(path.indexOf('/') + 1), chartNameNormalized);
+      }
+    }
+    return chartNameNormalized;
   }
 }

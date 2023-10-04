@@ -373,8 +373,7 @@ public class MailServiceImpl implements ChannelService {
           emailDetails.getUserGroupList(), NotificationChannelType.EMAIL, notificationRequest.getAccountId(), 0L);
       recipients.addAll(resolvedRecipients);
     }
-    return notificationSettingsHelper.getRecipientsWithValidDomain(
-        recipients, notificationRequest.getAccountId(), SettingIdentifiers.EMAIL_NOTIFICATION_DOMAIN_ALLOWLIST);
+    return recipients.stream().distinct().filter(str -> !str.isEmpty()).collect(Collectors.toList());
   }
 
   private Set<String> getDelegateSelectors(SmtpConfig smtpConfig) {

@@ -177,6 +177,7 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("expandedJsonConfig") private ExpandedJsonLockConfig expandedJsonLockConfig;
   @JsonProperty("pipelineSetupUsageCreationExecutorServiceConfig")
   private ThreadPoolConfig pipelineSetupUsageCreationPoolConfig;
+  @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;
 
   @JsonProperty("podCleanUpThreadPoolConfig") private ThreadPoolConfig podCleanUpThreadPoolConfig;
 

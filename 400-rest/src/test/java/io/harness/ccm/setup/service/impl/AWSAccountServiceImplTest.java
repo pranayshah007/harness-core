@@ -85,8 +85,22 @@ public class AWSAccountServiceImplTest extends CategoryTest {
     doReturn(CESetUpConfig.builder().awsRoleName("harnessCERole").build()).when(configuration).getCeSetUpConfig();
 
     List<CECloudAccount> awsAccounts = awsAccountService.getAWSAccounts(ACCOUNT_ID, SETTING_ID, ceAwsConfig);
-    assertThat(awsAccounts).hasSize(1);
+    assertThat(awsAccounts).hasSize(2);
     assertThat(awsAccounts.get(0))
+        .isEqualTo(CECloudAccount.builder()
+                       .accountId(ACCOUNT_ID)
+                       .accountArn("arn:aws:organizations::424324243:account/o-tbm3caqef8/424324243")
+                       .accountName("account_name_1")
+                       .infraAccountId("424324243")
+                       .infraMasterAccountId(AWS_MASTER_ACCOUNT_ID)
+                       .accountStatus(AccountStatus.NOT_VERIFIED)
+                       .masterAccountSettingId(SETTING_ID)
+                       .awsCrossAccountAttributes(AwsCrossAccountAttributes.builder()
+                                                      .crossAccountRoleArn("arn:aws:iam::424324243:role/harnessCERole")
+                                                      .externalId("externalId")
+                                                      .build())
+                       .build());
+    assertThat(awsAccounts.get(1))
         .isEqualTo(CECloudAccount.builder()
                        .accountId(ACCOUNT_ID)
                        .accountArn("arn:aws:organizations::424324243:account/o-tbm3caqef8/454324242")

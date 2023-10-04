@@ -61,7 +61,7 @@ public class PmsSdkConfiguration {
   @Builder.Default ThreadPoolConfig orchestrationEventPoolConfig = ThreadPoolConfig.builder().build();
   @Builder.Default ThreadPoolConfig planCreatorServiceInternalConfig = ThreadPoolConfig.builder().build();
   @Default List<JsonExpansionHandlerInfo> jsonExpansionHandlers = new ArrayList<>();
-
+  boolean streamPerServiceConfiguration;
   @Default
   EventsFrameworkConfiguration eventsFrameworkConfiguration =
       EventsFrameworkConfiguration.builder()

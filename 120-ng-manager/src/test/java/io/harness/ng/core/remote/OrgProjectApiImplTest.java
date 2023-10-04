@@ -105,6 +105,7 @@ public class OrgProjectApiImplTest extends CategoryTest {
     Project project = toProject(projectDTO);
     project.setOrgIdentifier(org);
     project.setVersion(0L);
+    project.setUniqueId(randomAlphabetic(10));
 
     when(projectService.create(account, org, projectDTO)).thenReturn(project);
 

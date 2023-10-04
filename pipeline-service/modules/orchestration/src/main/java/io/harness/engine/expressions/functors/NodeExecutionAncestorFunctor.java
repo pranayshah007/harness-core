@@ -15,6 +15,7 @@ import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.LateBindingMap;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 
@@ -33,6 +34,7 @@ public class NodeExecutionAncestorFunctor extends LateBindingMap {
   transient NodeExecutionsCache nodeExecutionsCache;
   transient PmsOutcomeService pmsOutcomeService;
   transient PmsSweepingOutputService pmsSweepingOutputService;
+  transient NodeExecutionInfoService nodeExecutionInfoService;
   transient Ambiance ambiance;
   transient Set<NodeExecutionEntityType> entityTypes;
   transient Map<String, String> groupAliases;
@@ -50,6 +52,7 @@ public class NodeExecutionAncestorFunctor extends LateBindingMap {
                                             .nodeExecutionsCache(nodeExecutionsCache)
                                             .pmsOutcomeService(pmsOutcomeService)
                                             .pmsSweepingOutputService(pmsSweepingOutputService)
+                                            .nodeExecutionInfoService(nodeExecutionInfoService)
                                             .ambiance(ambiance)
                                             .startNodeExecution(startNodeExecution)
                                             .entityTypes(entityTypes)

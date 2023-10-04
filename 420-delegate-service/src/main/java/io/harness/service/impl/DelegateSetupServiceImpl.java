@@ -111,6 +111,9 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
 
   private static final long AUTO_UPGRADE_CHECK_TIME_IN_MINUTES = 90;
 
+  // TODO: remove after resolving PL-40073
+  private static final String ACCOUNTID_FOR_DEBUG = "pitvBmtSMKNZU3gANq01Q";
+
   @Override
   public long getDelegateGroupCount(
       final String accountId, @Nullable final String orgId, @Nullable final String projectId) {
@@ -339,6 +342,11 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
                                            .filter(DelegateKeys.uuid, delegateGroupId);
 
     UpdateOperations<DelegateGroup> updateOperations = persistence.createUpdateOperations(DelegateGroup.class);
+    // TODO: remove after resolving PL-40073
+    if (ACCOUNTID_FOR_DEBUG.equals(accountId) && isNotEmpty(delegateGroupDetails.getGroupCustomSelectors())) {
+      log.info("Following tags registering for delegate group id {} ,with custom selectors as {}", delegateGroupId,
+          delegateGroupDetails.getGroupCustomSelectors());
+    }
     setUnset(updateOperations, DelegateGroupKeys.tags, delegateGroupDetails.getGroupCustomSelectors());
 
     DelegateGroup updatedDelegateGroup =
@@ -358,6 +366,13 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
                                            .filter(DelegateGroupKeys.identifier, identifier);
 
     UpdateOperations<DelegateGroup> updateOperations = persistence.createUpdateOperations(DelegateGroup.class);
+
+    // TODO: remove after resolving PL-40073
+    if (ACCOUNTID_FOR_DEBUG.equals(accountId) && isNotEmpty(delegateGroupDetails.getGroupCustomSelectors())) {
+      log.info(
+          "updateDelegateGroup: Following tags registering for delegate group identifier {} ,with custom selectors as {}",
+          identifier, delegateGroupDetails.getGroupCustomSelectors());
+    }
     setUnset(updateOperations, DelegateGroupKeys.tags, delegateGroupDetails.getGroupCustomSelectors());
 
     DelegateGroup updatedDelegateGroup =
@@ -808,6 +823,14 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
                                            .filter(DelegateGroupKeys.ng, true);
 
     final UpdateOperations<DelegateGroup> updateOperations = persistence.createUpdateOperations(DelegateGroup.class);
+
+    // TODO: remove after resolving PL-40073
+    if (ACCOUNTID_FOR_DEBUG.equals(accountId) && isNotEmpty(tags)) {
+      log.info(
+          "updateDelegateGroupTags_old: Following tags registering for delegate group name {} ,with selectors as {}",
+          delegateGroupName, tags);
+    }
+
     setUnset(updateOperations, DelegateGroupKeys.tags, tags);
 
     DelegateGroup updatedDelegateGroup =
@@ -874,6 +897,12 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
                                              .filter(DelegateGroupKeys.ng, true);
 
       final UpdateOperations<DelegateGroup> updateOperations = persistence.createUpdateOperations(DelegateGroup.class);
+      // TODO: remove after resolving PL-40073
+      if (ACCOUNTID_FOR_DEBUG.equals(accountIdentifier) && isNotEmpty(delegateGroupTags.getTags())) {
+        log.info("updateDelegateGroupTags: Following tags registering for delegate group id {} ,with selectors as {}",
+            groupIdentifier, delegateGroupTags.getTags());
+      }
+
       setUnset(updateOperations, DelegateGroupKeys.tags, delegateGroupTags.getTags());
 
       DelegateGroup updatedDelegateGroup =

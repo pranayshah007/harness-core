@@ -81,7 +81,9 @@ public class WinRmSession implements AutoCloseable {
   private final AuthenticationScheme authenticationScheme;
 
   public void checkConnectivity() {
-    client.createShell();
+    if (client != null) {
+      client.createShell();
+    }
   }
 
   public WinRmSession(WinRmSessionConfig config, LogCallback logCallback) throws JSchException {

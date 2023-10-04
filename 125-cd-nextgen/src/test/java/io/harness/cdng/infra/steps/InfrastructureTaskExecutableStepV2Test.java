@@ -8,6 +8,7 @@
 package io.harness.cdng.infra.steps;
 
 import static io.harness.ng.core.environment.beans.EnvironmentType.PreProduction;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -383,7 +384,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
     assertThat(asyncExecutableResponse.getLogKeysCount()).isEqualTo(1);
     assertThat(asyncExecutableResponse.getLogKeys(0))
         .isEqualTo(
-            "accountId:ACCOUNT_ID/orgId:ORG_ID/projectId:PROJECT_ID/pipelineId:/runSequence:0/level0:infrastructure-commandUnit:Execute");
+            "accountId:ACCOUNT_ID/orgId:ORG_ID/projectId:PROJECT_ID/pipelineId:pipelineIdentifier/runSequence:0/level0:infrastructure-commandUnit:Execute");
 
     verify(resolver, times(1)).updateExpressions(any(Ambiance.class), any(Infrastructure.class));
   }
@@ -843,8 +844,8 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
                    .stream()
                    .map(e -> e.getKey() + ":" + e.getValue())
                    .collect(Collectors.toSet()))
-        .containsExactlyInAnyOrder("orgId:ORG_ID", "pipelineId:", "runSequence:0", "level0:infrastructure",
-            "accountId:ACCOUNT_ID", "projectId:PROJECT_ID");
+        .containsExactlyInAnyOrder("orgId:ORG_ID", "pipelineId:pipelineIdentifier", "runSequence:0",
+            "level0:infrastructure", "accountId:ACCOUNT_ID", "projectId:PROJECT_ID");
     assertThat(request.getTaskSetupAbstractions()
                    .entrySet()
                    .stream()
@@ -874,6 +875,8 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
                                                .setPrincipalType(PrincipalType.USER)
                                                .setShouldValidateRbac(true)
                                                .build())
+                         .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                         .setPipelineIdentifier("pipelineIdentifier")
                          .build())
         .build();
   }

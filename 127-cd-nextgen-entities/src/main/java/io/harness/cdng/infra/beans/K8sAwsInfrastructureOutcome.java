@@ -39,6 +39,7 @@ public class K8sAwsInfrastructureOutcome extends InfrastructureOutcomeAbstract {
   @VariableExpression(skipVariableExpression = true) EnvironmentOutcome environment;
   String infrastructureKey;
   String infrastructureKeyShort;
+  String region;
 
   @Override
   public String getKind() {
@@ -47,6 +48,6 @@ public class K8sAwsInfrastructureOutcome extends InfrastructureOutcomeAbstract {
 
   @Override
   public K8sCloudConfigMetadata getInfraOutcomeMetadata() {
-    return K8sAWSCloudConfigMetadata.builder().clusterName(cluster).build();
+    return K8sAWSCloudConfigMetadata.builder().clusterName(cluster).region(region).build();
   }
 }

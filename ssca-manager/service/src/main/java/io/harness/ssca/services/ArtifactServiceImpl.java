@@ -15,6 +15,7 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.newA
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.skip;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.sort;
 
+import io.harness.network.Http;
 import io.harness.repositories.ArtifactRepository;
 import io.harness.repositories.EnforcementSummaryRepo;
 import io.harness.spec.server.ssca.v1.model.ArtifactComponentViewRequestBody;
@@ -31,6 +32,7 @@ import io.harness.ssca.entities.EnforcementSummaryEntity.EnforcementSummaryEntit
 import io.harness.ssca.utils.SBOMUtils;
 
 import com.google.inject.Inject;
+import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +41,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.ws.rs.core.UriBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -62,6 +65,8 @@ public class ArtifactServiceImpl implements ArtifactService {
   @Inject EnforcementSummaryRepo enforcementSummaryRepo;
   @Inject NormalisedSbomComponentService normalisedSbomComponentService;
 
+  private final String GCP_REGISTRY_HOST = "grc.io";
+
   @Override
   public ArtifactEntity getArtifactFromSbomPayload(
       String accountId, String orgIdentifier, String projectIdentifier, SbomProcessRequestBody body, SbomDTO sbomDTO) {
@@ -71,6 +76,8 @@ public class ArtifactServiceImpl implements ArtifactService {
         .artifactId(artifactId)
         .orchestrationId(body.getSbomMetadata().getStepExecutionId())
         .pipelineExecutionId(body.getSbomMetadata().getPipelineExecutionId())
+        .artifactCorrelationId(getCDImagePath(
+            body.getArtifact().getRegistryUrl(), body.getArtifact().getName(), body.getArtifact().getTag()))
         .name(body.getArtifact().getName())
         .orgId(orgIdentifier)
         .projectId(projectIdentifier)
@@ -248,5 +255,15 @@ public class ArtifactServiceImpl implements ArtifactService {
                         .nonProdEnvCount(0));
     }
     return responses;
+  }
+
+  private String getCDImagePath(String url, String image, String tag) {
+    URI uri = UriBuilder.fromUri(url).build();
+    String registryUrl = UriBuilder.fromUri(url).path(uri.getPath().endsWith("/") ? "" : "/").build().toString();
+    String domainName = Http.getDomainWithPort(registryUrl);
+    if (domainName.contains(GCP_REGISTRY_HOST)) {
+      return image + ":" + tag;
+    }
+    return domainName + "/" + image + ":" + tag;
   }
 }

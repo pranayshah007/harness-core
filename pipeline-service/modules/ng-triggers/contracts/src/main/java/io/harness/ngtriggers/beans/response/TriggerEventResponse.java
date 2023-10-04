@@ -11,6 +11,10 @@ import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalSta
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.NEW_MANIFEST_EVENT_PROCESSED;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.TARGET_EXECUTION_REQUESTED;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.TRIGGER_CONFIRMATION_SUCCESSFUL;
+import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.TRIGGER_DID_NOT_MATCH_ARTIFACT_JEXL_CONDITION;
+import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.TRIGGER_DID_NOT_MATCH_EVENT_CONDITION;
+import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.TRIGGER_DID_NOT_MATCH_METADATA_CONDITION;
+import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.VALIDATION_FAILED_FOR_TRIGGER;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -98,6 +102,11 @@ public class TriggerEventResponse {
   public static boolean isSuccessResponse(FinalStatus status) {
     Set<FinalStatus> finalStatuses = new HashSet<>(Arrays.asList(NEW_ARTIFACT_EVENT_PROCESSED,
         NEW_MANIFEST_EVENT_PROCESSED, TRIGGER_CONFIRMATION_SUCCESSFUL, TARGET_EXECUTION_REQUESTED));
+    return finalStatuses.contains(status);
+  }
+  public static boolean isSkippedResponse(FinalStatus status) {
+    Set<FinalStatus> finalStatuses = new HashSet<>(Arrays.asList(TRIGGER_DID_NOT_MATCH_EVENT_CONDITION,
+        TRIGGER_DID_NOT_MATCH_METADATA_CONDITION, TRIGGER_DID_NOT_MATCH_ARTIFACT_JEXL_CONDITION));
     return finalStatuses.contains(status);
   }
 }

@@ -114,7 +114,8 @@ public class PipelineStageStepTest extends CategoryTest {
                                 .build()));
 
     pipelineStageStep.handleAbort(ambiance, PipelineStageStepParameters.builder().build(),
-        AsyncExecutableResponse.newBuilder().addCallbackIds(firstCallBackId).addCallbackIds(secondCallBackId).build());
+        AsyncExecutableResponse.newBuilder().addCallbackIds(firstCallBackId).addCallbackIds(secondCallBackId).build(),
+        false);
     verify(pmsExecutionService, times(1))
         .registerInterrupt(PlanExecutionInterruptType.ABORTALL, firstCallBackId, null, interruptConfig);
     Principal principal = SecurityContextBuilder.getPrincipal();

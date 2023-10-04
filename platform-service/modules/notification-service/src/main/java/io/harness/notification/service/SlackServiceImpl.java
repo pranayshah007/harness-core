@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
@@ -135,6 +136,7 @@ public class SlackServiceImpl implements ChannelService {
                                                                         .notificationId(notificationId)
                                                                         .message(message)
                                                                         .slackWebhookUrls(slackWebhookUrls)
+                                                                        .accountId(accountId)
                                                                         .build())
                                                     .taskSetupAbstractions(abstractionMap)
                                                     .expressionFunctorToken(expressionFunctorToken)
@@ -144,7 +146,7 @@ public class SlackServiceImpl implements ChannelService {
       log.info("Async delegate task created with taskID {}", taskId);
       processingResponse = NotificationProcessingResponse.allSent(slackWebhookUrls.size());
     } else {
-      processingResponse = slackSender.send(slackWebhookUrls, message, notificationId);
+      processingResponse = slackSender.send(slackWebhookUrls, message, notificationId, accountId);
     }
     log.info(NotificationProcessingResponse.isNotificationRequestFailed(processingResponse)
             ? "Failed to send notification for request {}"
@@ -162,7 +164,6 @@ public class SlackServiceImpl implements ChannelService {
           notificationRequest.getSlack().getExpressionFunctorToken());
       recipients.addAll(resolvedRecipients);
     }
-    return notificationSettingsHelper.getRecipientsWithValidDomain(
-        recipients, notificationRequest.getAccountId(), SettingIdentifiers.SLACK_NOTIFICATION_ENDPOINTS_ALLOWLIST);
+    return recipients.stream().distinct().filter(str -> !str.isEmpty()).collect(Collectors.toList());
   }
 }

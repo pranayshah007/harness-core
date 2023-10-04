@@ -29,6 +29,7 @@ import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.MatrixMetadata;
@@ -45,6 +46,7 @@ import io.harness.utils.steps.TestStepParameters;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -66,6 +68,8 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
   @Mock NodeExecutionService nodeExecutionService;
   @Mock PmsOutcomeService pmsOutcomeService;
   @Mock PmsSweepingOutputService pmsSweepingOutputService;
+
+  @Inject NodeExecutionInfoService nodeExecutionInfoService;
 
   @Mock PlanService planService;
 
@@ -384,6 +388,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
         NodeExecutionAncestorFunctor.builder()
             .nodeExecutionsCache(new NodeExecutionsCache(nodeExecutionService, planService, newAmbiance))
             .pmsOutcomeService(pmsOutcomeService)
+            .nodeExecutionInfoService(nodeExecutionInfoService)
             .pmsSweepingOutputService(pmsSweepingOutputService)
             .ambiance(newAmbiance)
             .engine(engine)

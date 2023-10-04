@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.pipelinestage.step;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -88,8 +89,8 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
   }
 
   @Override
-  public void handleAbort(
-      Ambiance ambiance, PipelineStageStepParameters stepParameters, AsyncExecutableResponse executableResponse) {
+  public void handleAbort(Ambiance ambiance, PipelineStageStepParameters stepParameters,
+      AsyncExecutableResponse executableResponse, boolean userMarked) {
     setSourcePrincipal(ambiance);
     // Setting interrupt config of parent pipeline while registering interrupt for child pipeline
     List<Interrupt> interrupts = interruptService.fetchAbortAllPlanLevelInterrupt(ambiance.getPlanExecutionId());

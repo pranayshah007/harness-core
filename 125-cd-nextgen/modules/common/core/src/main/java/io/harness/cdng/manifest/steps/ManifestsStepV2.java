@@ -216,12 +216,6 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
   }
 
   @Override
-  public void handleAbort(
-      Ambiance ambiance, EmptyStepParameters stepParameters, AsyncExecutableResponse executableResponse) {
-    // nothing to do
-  }
-
-  @Override
   @Deprecated // Can be removed with next releases
   public StepResponse executeSync(Ambiance ambiance, EmptyStepParameters stepParameters, StepInputPackage inputPackage,
       PassThroughData passThroughData) {

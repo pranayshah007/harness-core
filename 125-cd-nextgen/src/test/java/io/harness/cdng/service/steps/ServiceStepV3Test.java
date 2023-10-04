@@ -7,6 +7,8 @@
 
 package io.harness.cdng.service.steps;
 
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
@@ -1415,6 +1417,7 @@ public class ServiceStepV3Test extends CategoryTest {
                                                .setPrincipal("prinicipal")
                                                .setPrincipalType(io.harness.pms.contracts.plan.PrincipalType.USER)
                                                .build())
+                         .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
                          .build())
         .build();
   }

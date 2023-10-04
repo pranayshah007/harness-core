@@ -33,7 +33,7 @@ import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.CIVmCleanupTaskParams;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmCleanupTaskParams;
 import io.harness.exception.ngexception.CIStageExecutionException;
-import io.harness.logstreaming.LogStreamingHelper;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -42,12 +42,10 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
-import io.harness.steps.StepUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -177,8 +175,8 @@ public class StageCleanupUtility {
       throw new CIStageExecutionException("Stage details sweeping output cannot be empty");
     }
 
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance);
-    String baseLogKey = LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    String baseLogKey = LogStreamingStepClientFactory.getLogBaseKey(ambiance);
+
     String liteEngineLogKey = baseLogKey + "/" + CICommonConstants.LITE_ENGINE_LOG_KEY_SUFFIX;
 
     StageDetails stageDetails = (StageDetails) optionalSweepingOutput.getOutput();

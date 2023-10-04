@@ -57,6 +57,7 @@ data:
   NOTIFICATION_CLIENT_SECRET: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
   ACCESS_CONTROL_SECRET: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
   CLICKHOUSE_ENABLED: {{ .Values.global.database.clickhouse.enabled | quote }}
+  DISTRIBUTED_LOCK_IMPLEMENTATION: {{ .Values.distributedLockImplementation | quote }}
   {{- if .Values.global.database.clickhouse.enabled }}
   CLICKHOUSE_URL: "jdbc:ch://clickhouse.{{ .Release.Namespace }}.svc.cluster.local:8123"
   {{- end }}

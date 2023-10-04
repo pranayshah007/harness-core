@@ -9,9 +9,20 @@ package io.harness.ngmigration.expressions;
 
 import io.harness.expression.LateBindingMap;
 
+import java.util.HashMap;
+
 public class ArtifactLabelMigratorFunctor extends LateBindingMap {
   @Override
   public synchronized Object get(Object key) {
+    if ("artifactStream".equals(key)) {
+      return new HashMap<>() {
+        {
+          put("dockerRepositoryServer", "<+artifacts.metadata.registryHostname>");
+          put("imageName", "<+artifacts.imagePath>");
+        }
+      };
+    }
+
     return "<+artifact.label.get(\"" + key + "\")>";
   }
 }

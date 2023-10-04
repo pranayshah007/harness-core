@@ -25,7 +25,7 @@ message ExecutionMetadata {
   string moduleType = 11;
 
   // Not used anymore so please don't use it.
-  RetryExecutionInfo retryInfo = 12;
+  RetryExecutionInfo retryInfo = 12 [deprecated = true];
 
   bool isNotificationConfigured = 13;
   PipelineStoreType pipelineStoreType = 14;
@@ -34,7 +34,7 @@ message ExecutionMetadata {
   string harnessVersion = 17;
   bool isDebug = 18;
   ExecutionMode executionMode = 19;
-  repeated PostExecutionRollbackInfo postExecutionRollbackInfo = 21;
+  repeated PostExecutionRollbackInfo postExecutionRollbackInfo = 21 [deprecated = true];
   string originalPlanExecutionIdForRollbackMode = 22;
   // storing details for all the PMS settings used as per need in execution flow
   map<string, string> settingToValueMap = 23;

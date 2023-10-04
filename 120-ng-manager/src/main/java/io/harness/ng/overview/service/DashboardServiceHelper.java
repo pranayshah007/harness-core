@@ -962,7 +962,6 @@ public class DashboardServiceHelper {
                   currentArtifactDeploymentDetail =
                       ArtifactDeploymentDetail.builder().envName(envIdToEnvNameMap.get(envId)).envId(envId).build();
                 }
-                currentArtifactDeploymentDetail.setChartVersion("");
               }
               allArtifactDeploymentDetailList.add(currentArtifactDeploymentDetail);
             }
@@ -976,7 +975,6 @@ public class DashboardServiceHelper {
               artifactDeploymentDetail =
                   ArtifactDeploymentDetail.builder().envName(envIdToEnvNameMap.get(envId)).envId(envId).build();
             }
-            artifactDeploymentDetail.setChartVersion("");
           }
 
           chartVersions.add(artifactDeploymentDetail.getChartVersion());
@@ -1037,7 +1035,6 @@ public class DashboardServiceHelper {
             artifactDeploymentDetail =
                 ArtifactDeploymentDetail.builder().envName(envIdToEnvNameMap.get(envId)).envId(envId).build();
           }
-          artifactDeploymentDetail.setChartVersion("");
         }
 
         for (ArtifactDeploymentDetail allArtifactDeploymentDetail : envToArtifactMap.get(envId)) {

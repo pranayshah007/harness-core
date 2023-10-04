@@ -77,9 +77,6 @@ public class SrmTelemetryPublisher {
 
         telemetryReporter.sendGroupEvent(accountId, null, map, Collections.singletonMap(ALL, true),
             TelemetryOption.builder().sendForCommunity(true).build());
-        log.info("Scheduled SrmTelemetryPublisher event sent for account [{}], with values: [{}]", accountId, map);
-      } else {
-        log.info("Skipping already sent account {} in past 24 hours", accountId);
       }
     }
   }

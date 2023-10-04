@@ -32,4 +32,5 @@ public class K8sRollingOutcome implements Outcome, ExecutionSweepingOutput {
   int releaseNumber;
   K8sGitFetchInfo manifest;
   List<KubernetesResourceId> prunedResourceIds;
+  List<String> podIps;
 }

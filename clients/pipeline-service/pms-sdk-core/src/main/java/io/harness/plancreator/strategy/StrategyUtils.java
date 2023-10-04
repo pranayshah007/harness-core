@@ -333,6 +333,7 @@ public class StrategyUtils {
    * @param level
    * @return
    */
+  @Deprecated
   public Map<String, Object> fetchStrategyObjectMap(Level level, boolean useMatrixFieldName) {
     Map<String, Object> strategyObjectMap = new HashMap<>();
     if (AmbianceUtils.hasStrategyMetadata(level)) {
@@ -350,7 +351,7 @@ public class StrategyUtils {
    * @param levelsWithStrategyMetadata
    * @return
    */
-
+  @Deprecated
   // pass flag
   public Map<String, Object> fetchStrategyObjectMap(
       List<Level> levelsWithStrategyMetadata, boolean useMatrixFieldName) {
@@ -382,7 +383,8 @@ public class StrategyUtils {
       strategyObjectMap.put(ITERATION, level.getStrategyMetadata().getCurrentIteration());
       strategyObjectMap.put(ITERATIONS, level.getStrategyMetadata().getTotalIterations());
       strategyObjectMap.put(TOTAL_ITERATIONS, level.getStrategyMetadata().getTotalIterations());
-      strategyObjectMap.put("identifierPostFix", AmbianceUtils.getStrategyPostfix(level, useMatrixFieldName));
+      strategyObjectMap.put("identifierPostFix",
+          AmbianceUtils.getStrategyPostFixUsingMetadata(level.getStrategyMetadata(), useMatrixFieldName));
     }
     strategyObjectMap.put(MATRIX, matrixValuesMap);
     strategyObjectMap.put(REPEAT, repeatValuesMap);

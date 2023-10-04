@@ -24,17 +24,17 @@ import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.execution.CIDelegateTaskExecutor;
 import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logstreaming.LogStreamingHelper;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.plugin.ContainerStepExecutionResponseHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.StepUtils;
 import io.harness.steps.container.utils.ConnectorUtils;
 import io.harness.steps.container.utils.ContainerSpecUtils;
 import io.harness.steps.executable.AsyncExecutableWithRbac;
@@ -51,7 +51,6 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -125,12 +124,6 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
   }
 
   @Override
-  public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {
-    // Do Nothing
-  }
-
-  @Override
   public void handleForCallbackId(Ambiance ambiance, StepElementParameters containerStepInfo,
       List<String> allCallbackIds, String callbackId, ResponseData responseData) {
     responseData = serializedResponseDataHelper.deserialize(responseData);
@@ -160,9 +153,9 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
   }
 
   private String getLogPrefix(Ambiance ambiance) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance, "STEP");
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    return LogStreamingStepClientFactory.getLogBaseKey(ambiance, StepCategory.STEP.name());
   }
+
   private void abortTasks(List<String> allCallbackIds, String callbackId) {
     List<String> callBackIds =
         allCallbackIds.stream().filter(cid -> !cid.equals(callbackId)).collect(Collectors.toList());

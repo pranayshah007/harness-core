@@ -15,6 +15,7 @@ import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -32,4 +33,5 @@ public class K8sCanaryOutcome implements Outcome, ExecutionSweepingOutput {
   String canaryWorkload;
   K8sGitFetchInfo manifest;
   boolean canaryWorkloadDeployed;
+  List<String> podIps;
 }

@@ -15,12 +15,8 @@ import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.beans.DataSourceType;
@@ -34,13 +30,10 @@ import io.harness.cvng.core.entities.NextGenMetricCVConfig;
 import io.harness.cvng.core.entities.NextGenMetricInfo;
 import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.entities.QueryParams;
-import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
-import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ThresholdServiceLevelIndicator;
-import io.harness.cvng.utils.PrometheusQueryUtils;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthKeyAndValue;
 import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnectorDTO;
 import io.harness.delegate.beans.cvng.prometheus.PrometheusUtils;
@@ -55,7 +48,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.groovy.util.Maps;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -65,8 +57,6 @@ public class PrometheusDataCollectionInfoMapperTest extends CvNextGenTestBase {
   BuilderFactory builderFactory = BuilderFactory.getDefault();
 
   @Inject private MetricPackService metricPackService;
-
-  FeatureFlagService featureFlagService;
 
   @Test
   @Owner(developers = PRAVEEN)
@@ -292,51 +282,6 @@ public class PrometheusDataCollectionInfoMapperTest extends CvNextGenTestBase {
             .build();
     assertThat(PrometheusUtils.getHeaders(prometheusConnectorDTO))
         .isEqualTo(Maps.of("Authorization", "Basic dGVzdDpwYXNzd29yZA==", "key", "value"));
-  }
-
-  @Test
-  @Owner(developers = ANSUMAN)
-  @Category(UnitTests.class)
-  public void testDSLVersioningWithFeatureFlag() throws IllegalAccessException, IOException {
-    featureFlagService = mock(FeatureFlagService.class);
-    when(featureFlagService.isFeatureFlagEnabled(eq(builderFactory.getContext().getAccountId()),
-             eq(FeatureName.SRM_ENABLE_AGGREGATION_USING_BY_IN_PROMETHEUS.name())))
-        .thenReturn(true);
-    FieldUtils.writeField(mapper, "featureFlagService", featureFlagService, true);
-    List<MetricPack> metricPacks = metricPackService.getMetricPacks(builderFactory.getContext().getAccountId(),
-        builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
-        DataSourceType.APP_DYNAMICS);
-
-    String query = "sum(avg(prometheus_http_requests_total{}) by (code))";
-    String serviceInstanceFieldName = "handler";
-    PrometheusCVConfig prometheusCVConfig =
-        builderFactory.prometheusCVConfigBuilder()
-            .groupName("my_txn")
-            .metricInfoList(Collections.singletonList(PrometheusCVConfig.MetricInfo.builder()
-                                                          .query(query)
-                                                          .metricType(TimeSeriesMetricType.RESP_TIME)
-                                                          .identifier("createpayment")
-                                                          .metricName("createpayment")
-                                                          .serviceInstanceFieldName(serviceInstanceFieldName)
-                                                          .isManualQuery(true)
-                                                          .build()))
-            .build();
-    prometheusCVConfig.setMetricPack(metricPacks.get(0));
-    PrometheusDataCollectionInfo prometheusDataCollectionInfo =
-        mapper.toDataCollectionInfo(prometheusCVConfig, VerificationTask.TaskType.DEPLOYMENT);
-    prometheusDataCollectionInfo.setCollectHostData(true);
-    mapper.postProcessDataCollectionInfo(
-        prometheusDataCollectionInfo, prometheusCVConfig, VerificationTask.TaskType.DEPLOYMENT);
-    assertThat(prometheusDataCollectionInfo.getDataCollectionDsl())
-        .isEqualTo(readDSL("prometheus-v2-dsl-metric.datacollection"));
-    assertThat(prometheusDataCollectionInfo.getMetricCollectionInfoList().get(0).getQuery())
-        .isEqualTo(PrometheusQueryUtils.formGroupByQuery(query, serviceInstanceFieldName));
-    when(featureFlagService.isFeatureFlagEnabled(eq(builderFactory.getContext().getAccountId()),
-             eq(FeatureName.SRM_ENABLE_AGGREGATION_USING_BY_IN_PROMETHEUS.name())))
-        .thenReturn(false);
-    prometheusDataCollectionInfo =
-        mapper.toDataCollectionInfo(prometheusCVConfig, VerificationTask.TaskType.DEPLOYMENT);
-    assertThat(prometheusDataCollectionInfo.getMetricCollectionInfoList().get(0).getQuery()).isEqualTo(query);
   }
 
   private String readDSL(String name) throws IOException {

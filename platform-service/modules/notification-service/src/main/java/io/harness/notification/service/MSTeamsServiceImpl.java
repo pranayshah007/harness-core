@@ -58,6 +58,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -174,6 +175,7 @@ public class MSTeamsServiceImpl implements ChannelService {
                                   .notificationId(notificationId)
                                   .message(message)
                                   .microsoftTeamsWebhookUrls(microsoftTeamsWebhookUrls)
+                                  .accountId(accountId)
                                   .build())
               .taskSetupAbstractions(abstractionMap)
               .expressionFunctorToken(expressionFunctorToken)
@@ -183,7 +185,7 @@ public class MSTeamsServiceImpl implements ChannelService {
       log.info("Async delegate task created with taskID {}", taskId);
       processingResponse = NotificationProcessingResponse.allSent(microsoftTeamsWebhookUrls.size());
     } else {
-      processingResponse = microsoftTeamsSender.send(microsoftTeamsWebhookUrls, message, notificationId);
+      processingResponse = microsoftTeamsSender.send(microsoftTeamsWebhookUrls, message, notificationId, accountId);
     }
     log.info(NotificationProcessingResponse.isNotificationRequestFailed(processingResponse)
             ? "Failed to send notification for request {}"
@@ -209,8 +211,7 @@ public class MSTeamsServiceImpl implements ChannelService {
           notificationRequest.getMsTeam().getExpressionFunctorToken());
       recipients.addAll(resolvedRecipients);
     }
-    return notificationSettingsHelper.getRecipientsWithValidDomain(
-        recipients, notificationRequest.getAccountId(), SettingIdentifiers.MSTEAM_NOTIFICATION_ENDPOINTS_ALLOWLIST);
+    return recipients.stream().distinct().filter(str -> !str.isEmpty()).collect(Collectors.toList());
   }
 
   Map<String, String> processTemplateVariables(Map<String, String> templateVariables) {

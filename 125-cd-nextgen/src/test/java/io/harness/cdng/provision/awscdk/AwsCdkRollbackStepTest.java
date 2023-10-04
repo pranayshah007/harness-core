@@ -187,33 +187,18 @@ public class AwsCdkRollbackStepTest extends CategoryTest {
     doReturn(stepStatusTaskResponseData).when(containerStepExecutionResponseHelper).filterK8StepResponse(any());
     doReturn(processedOutput).when(awsCdkStepHelper).processOutput(any());
     doReturn(savedAwsCdkConfig).when(awsCdkConfigDAL).getRollbackAwsCdkConfig(any(), any());
-    ArgumentCaptor<AwsCdkConfig> configCaptor = ArgumentCaptor.forClass(AwsCdkConfig.class);
 
     awsCdkRollbackStep.handleAsyncResponse(ambiance, stepElementParameters, responseDataMap);
 
     verify(containerStepExecutionResponseHelper).handleAsyncResponseInternal(any(), captor.capture(), any());
-    verify(awsCdkConfigDAL).saveAwsCdkConfig(configCaptor.capture());
+    verify(awsCdkConfigDAL).deleteAwsCdkConfig(eq(ambiance), eq("provisionerIdentifier"));
     StepMapOutput stepMapOutput =
         (StepMapOutput) ((StepStatusTaskResponseData) captor.getValue().get("test")).getStepStatus().getOutput();
     assertThat(stepMapOutput.getMap().get("GIT_COMMIT_ID")).isEqualTo("testvaluee");
     assertThat(stepMapOutput.getMap().get("CDK_OUTPUT")).isEqualTo("testvaluee");
-    AwsCdkConfig awsCdkConfig = configCaptor.getValue();
-    assertThat(awsCdkConfig.getAccountId()).isEqualTo("test-account");
-    assertThat(awsCdkConfig.getOrgId()).isEqualTo("org");
-    assertThat(awsCdkConfig.getProjectId()).isEqualTo("project");
-    assertThat(awsCdkConfig.getStageExecutionId()).isEqualTo("stageExecutionId");
-    assertThat(awsCdkConfig.getProvisionerIdentifier()).isEqualTo("provisionerIdentifier");
-    assertThat(awsCdkConfig.getResources()).isEqualTo(containerResourceConfig);
-    assertThat(awsCdkConfig.getRunAsUser()).isEqualTo(1);
-    assertThat(awsCdkConfig.getConnectorRef()).isEqualTo("connectorRef");
-    assertThat(awsCdkConfig.getImage()).isEqualTo("image");
-    assertThat(awsCdkConfig.getImagePullPolicy()).isEqualTo(ImagePullPolicy.ALWAYS);
-    assertThat(awsCdkConfig.getPrivileged()).isEqualTo(true);
-    assertThat(awsCdkConfig.getEnvVariables().get("key1")).isEqualTo("value1");
-    assertThat(awsCdkConfig.getEnvVariables().get(PLUGIN_AWS_CDK_STACK_NAMES)).isEqualTo("stack1 stack2");
-    assertThat(awsCdkConfig.getCommitId()).isEqualTo("testvaluee");
     verify(awsCdkStepHelper).processOutput(any());
-    verify(awsCdkConfigDAL, times(2)).getRollbackAwsCdkConfig(any(), any());
+    verify(awsCdkConfigDAL, times(1)).getRollbackAwsCdkConfig(any(), any());
+    verify(awsCdkConfigDAL, times(1)).deleteAwsCdkConfig(any(), any());
   }
 
   @Test

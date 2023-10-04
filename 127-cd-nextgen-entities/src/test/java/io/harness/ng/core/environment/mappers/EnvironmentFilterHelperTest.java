@@ -99,7 +99,8 @@ public class EnvironmentFilterHelperTest extends CategoryTest {
         EnvironmentKeys.version, EnvironmentKeys.yaml, EnvironmentKeys.branch, EnvironmentKeys.filePath,
         EnvironmentKeys.isFromDefaultBranch, EnvironmentKeys.objectIdOfYaml, EnvironmentKeys.yamlGitConfigRef,
         EnvironmentKeys.rootFolder, "class", EnvironmentKeys.isMigratedToOverride, EnvironmentKeys.storeType,
-        EnvironmentKeys.repo, EnvironmentKeys.connectorRef, EnvironmentKeys.repoURL, EnvironmentKeys.fallBackBranch));
+        EnvironmentKeys.repo, EnvironmentKeys.connectorRef, EnvironmentKeys.repoURL, EnvironmentKeys.fallBackBranch,
+        "accountIdentifier", "invalidYamlString", "uuid", "entityInvalid", "data"));
 
     for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
       boolean shouldExist =

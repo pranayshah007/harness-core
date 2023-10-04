@@ -11,6 +11,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.logging.UnitStatus.EXPIRED;
 import static io.harness.pms.contracts.interrupts.InterruptType.MARK_EXPIRED;
 import static io.harness.rule.OwnerRule.PRASHANT;
+import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -183,5 +184,134 @@ public class ExpiryHelperTest extends OrchestrationTestBase {
     InterruptConfig interruptConfig = InterruptConfig.newBuilder().build();
     expiryHelper.expireDiscontinuedInstance(nodeExecution, interruptConfig, interruptId, MARK_EXPIRED);
     verify(engine, times(1)).processStepResponse(any(), any());
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void shouldTestExpireDiscontinuedInstanceAndEndAllNodesExecution() {
+    NodeExecution nodeExecution =
+        NodeExecution.builder()
+            .uuid(generateUuid())
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(generateUuid()).build())
+            .status(Status.RUNNING)
+            .mode(ExecutionMode.TASK)
+            .executableResponse(ExecutableResponse.newBuilder()
+                                    .setTask(TaskExecutableResponse.newBuilder()
+                                                 .setTaskId(generateUuid())
+                                                 .setTaskCategory(TaskCategory.UNKNOWN_CATEGORY)
+                                                 .build())
+                                    .build())
+            .unitProgress(UnitProgress.newBuilder()
+                              .setUnitName("Fetch Files")
+                              .setStatus(UnitStatus.SUCCESS)
+                              .setEndTime(System.currentTimeMillis())
+                              .build())
+            .unitProgress(UnitProgress.newBuilder().setUnitName("Apply").setStatus(UnitStatus.RUNNING).build())
+            .startTs(123L)
+            .build();
+    String interruptId = "interruptId";
+    when(nodeExecutionService.updateStatusWithOps(any(), any(), any(), any())).thenReturn(nodeExecution);
+
+    InterruptConfig interruptConfig = InterruptConfig.newBuilder().build();
+    expiryHelper.expireDiscontinuedInstanceAndEndAllNodesExecution(
+        nodeExecution, interruptConfig, interruptId, MARK_EXPIRED);
+    verify(engine, times(1)).endNodeExecution(any());
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void shouldExpireNodeExecutionInstanceAndEndExecution() {
+    String notifyId = generateUuid();
+    String planExecutionId = generateUuid();
+    String nodeExecutionId = generateUuid();
+
+    Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId(planExecutionId).build();
+    NodeExecutionBuilder nodeExecutionBuilder =
+        NodeExecution.builder()
+            .uuid(nodeExecutionId)
+            .ambiance(ambiance)
+            .status(Status.RUNNING)
+            .mode(ExecutionMode.TASK)
+            .executableResponse(ExecutableResponse.newBuilder()
+                                    .setTask(TaskExecutableResponse.newBuilder()
+                                                 .setTaskId(generateUuid())
+                                                 .setTaskCategory(TaskCategory.UNKNOWN_CATEGORY)
+                                                 .build())
+                                    .build())
+            .startTs(123L);
+
+    Interrupt interrupt =
+        Interrupt.builder().uuid(generateUuid()).planExecutionId(planExecutionId).type(MARK_EXPIRED).build();
+    when(interruptHelper.discontinueTaskIfRequired(any())).thenReturn(true);
+    when(nodeExecutionService.update(eq(nodeExecutionId), any()))
+        .thenReturn(nodeExecutionBuilder
+                        .interruptHistory(InterruptEffect.builder()
+                                              .interruptType(interrupt.getType())
+                                              .tookEffectAt(System.currentTimeMillis())
+                                              .interruptId(interrupt.getUuid())
+                                              .interruptConfig(interrupt.getInterruptConfig())
+                                              .build())
+                        .build());
+    when(interruptEventPublisher.publishEvent(nodeExecutionId, interrupt, MARK_EXPIRED)).thenReturn(notifyId);
+    expiryHelper.expireMarkedInstance(nodeExecutionBuilder.build(), interrupt, true);
+
+    ArgumentCaptor<String> pName = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<OldNotifyCallback> callbackCaptor = ArgumentCaptor.forClass(OldNotifyCallback.class);
+    ArgumentCaptor<List> correlationIdCaptor = ArgumentCaptor.forClass(List.class);
+
+    verify(waitNotifyEngine, times(1))
+        .waitForAllOnInList(
+            pName.capture(), callbackCaptor.capture(), correlationIdCaptor.capture(), eq(Duration.ofMinutes(1)));
+
+    assertThat(callbackCaptor.getValue()).isInstanceOf(ExpiryInterruptCallback.class);
+    List<String> corrIds = correlationIdCaptor.getValue();
+    assertThat(corrIds).hasSize(1);
+    assertThat(corrIds.get(0)).isEqualTo(notifyId);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void shouldExpireNodeExecutionInstanceAndEndExecutionSyncTask() {
+    String notifyId = generateUuid();
+    String planExecutionId = generateUuid();
+    String nodeExecutionId = generateUuid();
+
+    Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId(planExecutionId).build();
+    NodeExecutionBuilder nodeExecutionBuilder =
+        NodeExecution.builder()
+            .uuid(nodeExecutionId)
+            .ambiance(ambiance)
+            .status(Status.RUNNING)
+            .mode(ExecutionMode.SYNC)
+            .executableResponse(ExecutableResponse.newBuilder()
+                                    .setTask(TaskExecutableResponse.newBuilder()
+                                                 .setTaskId(generateUuid())
+                                                 .setTaskCategory(TaskCategory.UNKNOWN_CATEGORY)
+                                                 .build())
+                                    .build())
+            .startTs(123L);
+
+    Interrupt interrupt =
+        Interrupt.builder().uuid(generateUuid()).planExecutionId(planExecutionId).type(MARK_EXPIRED).build();
+    when(interruptHelper.discontinueTaskIfRequired(any())).thenReturn(true);
+    when(nodeExecutionService.update(eq(nodeExecutionId), any()))
+        .thenReturn(nodeExecutionBuilder
+                        .interruptHistory(InterruptEffect.builder()
+                                              .interruptType(interrupt.getType())
+                                              .tookEffectAt(System.currentTimeMillis())
+                                              .interruptId(interrupt.getUuid())
+                                              .interruptConfig(interrupt.getInterruptConfig())
+                                              .build())
+                        .build());
+    when(nodeExecutionService.updateStatusWithOps(any(), any(), any(), any())).thenReturn(nodeExecutionBuilder.build());
+    expiryHelper.expireMarkedInstance(nodeExecutionBuilder.build(), interrupt, true);
+
+    ArgumentCaptor<String> pName = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<OldNotifyCallback> callbackCaptor = ArgumentCaptor.forClass(OldNotifyCallback.class);
+    ArgumentCaptor<List> correlationIdCaptor = ArgumentCaptor.forClass(List.class);
+    verify(engine, times(1)).endNodeExecution(any());
   }
 }
