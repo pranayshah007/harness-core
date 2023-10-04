@@ -9,6 +9,7 @@ package io.harness.cdng.gitops.revertpr;
 
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.ListUtils.trimStrings;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.executions.steps.ExecutionNodeType.GITOPS_REVERT_PR;
@@ -56,6 +57,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintInstanceKeys;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncChainExecutableResponse;
@@ -74,6 +76,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.security.PmsSecurityContextEventGuard;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.executable.AsyncChainExecutableWithRbac;
@@ -108,6 +111,7 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
   @Inject private GithubRestraintInstanceService githubRestraintInstanceService;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Inject private StepHelper stepHelper;
 
   private NGLogCallback getLogCallback(Ambiance ambiance, boolean shouldOpenStream) {
     return new NGLogCallback(logStreamingStepClientFactory, ambiance, null, shouldOpenStream);
@@ -352,7 +356,42 @@ public class RevertPRStep implements AsyncChainExecutableWithRbac<StepElementPar
   @Override
   public TaskRequest obtainTask(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    return null;
+    try (PmsSecurityContextEventGuard securityContextEventGuard = new PmsSecurityContextEventGuard(ambiance)) {
+      validateResources(ambiance, stepParameters);
+      RevertPRStepParameters gitOpsSpecParams = (RevertPRStepParameters) stepParameters.getSpec();
+      ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
+
+      List<GitFetchFilesConfig> gitFetchFilesConfig = new ArrayList<>();
+      gitFetchFilesConfig.add(getGitFetchFilesConfig(
+          ambiance, releaseRepoOutcome, trim(getParameterFieldValue(gitOpsSpecParams.getCommitId()))));
+
+      NGGitOpsTaskParams ngGitOpsTaskParams =
+          NGGitOpsTaskParams.builder()
+              .gitOpsTaskType(GitOpsTaskType.REVERT_PR)
+              .gitFetchFilesConfig(gitFetchFilesConfig.get(0))
+              .accountId(AmbianceUtils.getAccountId(ambiance))
+              .connectorInfoDTO(
+                  cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance))
+              .prTitle(trim(getParameterFieldValue(gitOpsSpecParams.getPrTitle())))
+              .build();
+
+      final TaskData taskData = TaskData.builder()
+                                    .async(true)
+                                    .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
+                                    .taskType(TaskType.GITOPS_TASK_NG.name())
+                                    .parameters(new Object[] {ngGitOpsTaskParams})
+                                    .build();
+
+      return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
+          gitOpsSpecParams.getCommandUnits(), TaskType.GITOPS_TASK_NG.getDisplayName(),
+          TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(gitOpsSpecParams.getDelegateSelectors()))),
+          stepHelper.getEnvironmentType(ambiance));
+
+    } catch (Exception e) {
+      log.error("Failed to execute Update Release Repo step", e);
+      throw new InvalidRequestException(
+          String.format("Failed to execute Update Release Repo step. %s", e.getMessage()));
+    }
   }
 
   @Override

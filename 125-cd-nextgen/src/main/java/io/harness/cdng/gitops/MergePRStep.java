@@ -7,6 +7,7 @@
 
 package io.harness.cdng.gitops;
 
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.exception.WingsException.USER;
@@ -65,6 +66,7 @@ import io.harness.gitopsprovider.entity.GithubRestraintInstance.GithubRestraintI
 import io.harness.impl.scm.ScmGitProviderHelper;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncChainExecutableResponse;
@@ -87,6 +89,7 @@ import io.harness.pms.security.PmsSecurityContextEventGuard;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.executable.AsyncChainExecutableWithRbac;
@@ -122,6 +125,7 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject private GithubRestraintInstanceService githubRestraintInstanceService;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Inject private StepHelper stepHelper;
 
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType(GITOPS_MERGE_PR.getYamlType()).setStepCategory(StepCategory.STEP).build();
@@ -441,7 +445,142 @@ public class MergePRStep implements AsyncChainExecutableWithRbac<StepElementPara
   @Override
   public TaskRequest obtainTask(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    return null;
+    try (PmsSecurityContextEventGuard securityContextEventGuard = new PmsSecurityContextEventGuard(ambiance)) {
+      validateResources(ambiance, stepParameters);
+      MergePRStepParams gitOpsSpecParams = (MergePRStepParams) stepParameters.getSpec();
+
+      ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
+
+      OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
+          ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.UPDATE_RELEASE_REPO_OUTCOME));
+      OptionalSweepingOutput optionalSweepingOutputRevertPR = executionSweepingOutputService.resolveOptional(
+          ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.REVERT_PR_OUTCOME));
+
+      int prNumber;
+      String prLink;
+      String sha;
+      String ref;
+      boolean isRevertPR = false;
+      if (optionalSweepingOutputRevertPR != null && optionalSweepingOutputRevertPR.isFound()) {
+        RevertPROutcome revertPROutcome = (RevertPROutcome) optionalSweepingOutputRevertPR.getOutput();
+        prNumber = revertPROutcome.getPrNumber();
+        prLink = revertPROutcome.getPrlink();
+        sha = revertPROutcome.getCommitId();
+        ref = revertPROutcome.getRef();
+        isRevertPR = true;
+      } else if (optionalSweepingOutput != null && optionalSweepingOutput.isFound()) {
+        UpdateReleaseRepoOutcome updateReleaseRepoOutcome =
+            (UpdateReleaseRepoOutcome) optionalSweepingOutput.getOutput();
+        prNumber = updateReleaseRepoOutcome.getPrNumber();
+        prLink = updateReleaseRepoOutcome.getPrlink();
+        sha = updateReleaseRepoOutcome.getCommitId();
+        ref = updateReleaseRepoOutcome.getRef();
+      } else {
+        throw new InvalidRequestException("Pull Request Details are missing", USER);
+      }
+
+      ConnectorInfoDTO connectorInfoDTO =
+          cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance);
+
+      String accountId = AmbianceUtils.getAccountId(ambiance);
+
+      Map<String, Object> apiParamOptions = null;
+
+      apiParamOptions = gitOpsSpecParams.getVariables();
+
+      IdentifierRef identifierRef =
+          IdentifierRefHelper.getIdentifierRefFromEntityIdentifiers(connectorInfoDTO.getIdentifier(), accountId,
+              connectorInfoDTO.getOrgIdentifier(), connectorInfoDTO.getProjectIdentifier());
+
+      ConnectorDetails connectorDetails =
+          connectorUtils.getConnectorDetails(identifierRef, identifierRef.buildScopedIdentifier());
+
+      GitStoreDelegateConfig gitStoreDelegateConfig = getGitStoreDelegateConfig(ambiance, releaseRepoOutcome);
+      GitApiTaskParams gitApiTaskParams;
+      switch (gitStoreDelegateConfig.getGitConfigDTO().getConnectorType()) {
+        case GITHUB:
+          GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
+          gitApiTaskParams = GitApiTaskParams.builder()
+                                 .gitRepoType(GitRepoType.GITHUB)
+                                 .requestType(GitApiRequestType.MERGE_PR)
+                                 .connectorDetails(connectorDetails)
+                                 .prNumber(String.valueOf(prNumber))
+                                 .owner(githubConnectorDTO.getGitRepositoryDetails().getOrg())
+                                 .repo(githubConnectorDTO.getGitRepositoryDetails().getName())
+                                 .sha(sha)
+                                 .deleteSourceBranch(CDStepHelper.getParameterFieldBooleanValue(
+                                     gitOpsSpecParams.getDeleteSourceBranch(),
+                                     MergePRStepInfo.MergePRBaseStepInfoKeys.deleteSourceBranch, stepParameters))
+                                 .ref(ref)
+                                 .build();
+          break;
+        case AZURE_REPO:
+          AzureRepoConnectorDTO azureRepoConnectorDTO =
+              (AzureRepoConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
+          gitApiTaskParams = GitApiTaskParams.builder()
+                                 .gitRepoType(GitRepoType.AZURE_REPO)
+                                 .requestType(GitApiRequestType.MERGE_PR)
+                                 .connectorDetails(connectorDetails)
+                                 .prNumber(String.valueOf(prNumber))
+                                 .owner(azureRepoConnectorDTO.getGitRepositoryDetails().getOrg())
+                                 .repo(azureRepoConnectorDTO.getGitRepositoryDetails().getName())
+                                 .sha(sha)
+                                 .deleteSourceBranch(CDStepHelper.getParameterFieldBooleanValue(
+                                     gitOpsSpecParams.getDeleteSourceBranch(),
+                                     MergePRStepInfo.MergePRBaseStepInfoKeys.deleteSourceBranch, stepParameters))
+                                 .apiParamOptions(emptyIfNull(apiParamOptions))
+                                 .build();
+          break;
+        case GITLAB:
+          GitlabConnectorDTO gitlabConnectorDTO = (GitlabConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
+          String slug = scmGitProviderHelper.getSlug(gitlabConnectorDTO);
+          gitApiTaskParams = GitApiTaskParams.builder()
+                                 .gitRepoType(GitRepoType.GITLAB)
+                                 .requestType(GitApiRequestType.MERGE_PR)
+                                 .connectorDetails(connectorDetails)
+                                 .prNumber(String.valueOf(prNumber))
+                                 .slug(slug)
+                                 .sha(sha)
+                                 .deleteSourceBranch(CDStepHelper.getParameterFieldBooleanValue(
+                                     gitOpsSpecParams.getDeleteSourceBranch(),
+                                     MergePRStepInfo.MergePRBaseStepInfoKeys.deleteSourceBranch, stepParameters))
+                                 .build();
+          break;
+        case BITBUCKET:
+          gitApiTaskParams = getTaskParamsForBitbucket((BitbucketConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO(),
+              connectorDetails, prNumber, sha, ref, gitOpsSpecParams.getDeleteSourceBranch(), stepParameters);
+          break;
+        default:
+          throw new InvalidRequestException("Failed to run MergePR Step. Connector not supported", USER);
+      }
+
+      NGGitOpsTaskParams ngGitOpsTaskParams = NGGitOpsTaskParams.builder()
+                                                  .gitOpsTaskType(GitOpsTaskType.MERGE_PR)
+                                                  .accountId(accountId)
+                                                  .connectorInfoDTO(connectorInfoDTO)
+                                                  .gitApiTaskParams(gitApiTaskParams)
+                                                  .prLink(prLink)
+                                                  .isRevertPR(isRevertPR)
+                                                  .build();
+
+      final TaskData taskData = TaskData.builder()
+                                    .async(true)
+                                    .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
+                                    .taskType(TaskType.GITOPS_TASK_NG.name())
+                                    .parameters(new Object[] {ngGitOpsTaskParams})
+                                    .build();
+
+      String taskName = TaskType.GITOPS_TASK_NG.getDisplayName();
+
+      return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
+          gitOpsSpecParams.getCommandUnits(), taskName,
+          TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(gitOpsSpecParams.getDelegateSelectors()))),
+          stepHelper.getEnvironmentType(ambiance));
+    } catch (Exception e) {
+      log.error("Failed to execute Update Release Repo step", e);
+      throw new InvalidRequestException(
+          String.format("Failed to execute Update Release Repo step. %s", e.getMessage()));
+    }
   }
 
   @Override
