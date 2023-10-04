@@ -7167,6 +7167,10 @@
             },
             "template": {
               "$ref": "#/definitions/TemplateLinkConfig"
+            },
+            "timeout": {
+              "type": "string",
+              "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(.*<\\+.*>(?!.*\\.executionInput\\(\\)).*)|(^$))$"
             }
           },
           "additionalProperties": false
@@ -7248,6 +7252,10 @@
               "additionalProperties": {
                 "type": "string"
               }
+            },
+            "timeout": {
+              "type": "string",
+              "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(.*<\\+.*>(?!.*\\.executionInput\\(\\)).*)|(^$))$"
             },
             "type": {
               "type": "string"
