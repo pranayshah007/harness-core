@@ -185,10 +185,8 @@ public class TemplateMergeServiceHelper {
 
   // checks if current json node is template with type set as template or spec and ref fields (pipeline template)
   public boolean isV1TemplatePresent(JsonNode jsonNode) {
-    return (jsonNode.has(YAMLFieldNameConstants.TYPE)
-               && YAMLFieldNameConstants.TEMPLATE.equals(jsonNode.get(YAMLFieldNameConstants.TYPE).asText()))
-        || (jsonNode.has(YAMLFieldNameConstants.SPEC)
-            && jsonNode.get(YAMLFieldNameConstants.SPEC).has(YAMLFieldNameConstants.REF));
+    return jsonNode.has(YAMLFieldNameConstants.TYPE)
+        && YAMLFieldNameConstants.TEMPLATE.equals(jsonNode.get(YAMLFieldNameConstants.TYPE).asText());
   }
   // Generates a unique Template Identifier
   private String generateUniqueTemplateIdentifier(
