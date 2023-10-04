@@ -23,7 +23,6 @@ import io.harness.metrics.service.api.MetricService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.text.SimpleDateFormat;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -143,14 +142,13 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   }
 
   @Override
-  public void recordDelegateHeartBeatMetricsPerAccount(long time, String accountId, String accountName,
-      String companyName, DelegateRing delegateRing, String orgId, String projectId, String delegateName,
-      String delegateId, String delegateVersion, String delegateConnectionStatus, String delegateEventType,
-      boolean isNg, boolean isImmutable, long lastHB, String metricName) {
-    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    try (HeartbeatMetricContext ignore = new HeartbeatMetricContext(dateFormat.format(time), accountId, accountName,
-             companyName, delegateRing.getRingName(), delegateRing.getDelegateImageTag(),
-             delegateRing.getUpgraderImageTag(), delegateRing.getWatcherVersions(), delegateRing.getWatcherJREVersion(),
+  public void recordDelegateHeartBeatMetricsPerAccount(String accountId, String accountName, String companyName,
+      DelegateRing delegateRing, String orgId, String projectId, String delegateName, String delegateId,
+      String delegateVersion, String delegateConnectionStatus, String delegateEventType, boolean isNg,
+      boolean isImmutable, long lastHB, String metricName) {
+    try (HeartbeatMetricContext ignore = new HeartbeatMetricContext(accountId, accountName, companyName,
+             delegateRing.getRingName(), delegateRing.getDelegateImageTag(), delegateRing.getUpgraderImageTag(),
+             delegateRing.getWatcherVersions(), delegateRing.getWatcherJREVersion(),
              delegateRing.getDelegateJREVersion(), orgId, projectId, delegateName, delegateId, delegateVersion,
              delegateConnectionStatus, delegateEventType, isNg, isImmutable)) {
       metricService.recordMetric(metricName, lastHB);
