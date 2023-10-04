@@ -343,22 +343,6 @@ public class UpdateReleaseRepoStep implements AsyncChainExecutableWithRbac<StepE
     // TODO: implement this
   }
 
-  private String extractTokenOld(ConnectorInfoDTO connectorInfoDTO) {
-    String tokenRefIdentifier = null;
-
-    GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorInfoDTO.getConnectorConfig();
-    GithubCredentialsDTO githubCredentialsDTO = githubConnectorDTO.getAuthentication().getCredentials();
-
-    if (githubCredentialsDTO instanceof GithubHttpCredentialsDTO) {
-      GithubUsernameTokenDTO githubUsernameTokenDTO =
-          (GithubUsernameTokenDTO) ((GithubHttpCredentialsDTO) githubCredentialsDTO).getHttpCredentialsSpec();
-      tokenRefIdentifier = githubUsernameTokenDTO.getTokenRef().getIdentifier();
-    } else if (githubCredentialsDTO instanceof GithubSshCredentialsDTO) {
-      tokenRefIdentifier = ((GithubSshCredentialsDTO) githubCredentialsDTO).getSshKeyRef().getIdentifier();
-    }
-    return tokenRefIdentifier;
-  }
-
   @VisibleForTesting
   public Map<String, Map<String, String>> buildFilePathsToVariablesMap(
       ManifestOutcome releaseRepoOutcome, Ambiance ambiance, Map<String, Object> variables) {
