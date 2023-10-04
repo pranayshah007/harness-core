@@ -102,7 +102,6 @@ import io.harness.pms.rbac.validator.PipelineRbacService;
 import io.harness.pms.stages.StagesExpressionExtractor;
 import io.harness.pms.utils.NGPipelineSettingsConstant;
 import io.harness.pms.yaml.HarnessYamlVersion;
-import io.harness.pms.yaml.NGYamlHelper;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
@@ -284,8 +283,9 @@ public class ExecutionHelper {
             pipelineYamlWithTemplateRef, retryExecutionInfo);
       }
 
-      ExecutionMetadata executionMetadata = buildExecutionMetadata(pipelineEntity.getIdentifier(), moduleType,
-          triggerInfo, pipelineEntity, executionId, notificationRules, isDebug);
+      ExecutionMetadata executionMetadata =
+          buildExecutionMetadata(pipelineEntity.getIdentifier(), moduleType, triggerInfo, pipelineEntity, executionId,
+              notificationRules, isDebug, pipelineMetadataInternalDTO.getProcessedYamlVersion());
       return ExecArgs.builder().metadata(executionMetadata).planExecutionMetadata(planExecutionMetadata).build();
     } catch (WingsException e) {
       throw e;
@@ -335,6 +335,7 @@ public class ExecutionHelper {
         .pipelineYaml(pipelineYaml)
         .basicPipeline(basicPipeline)
         .pipelineYamlWithTemplateRef(pipelineYamlWithTemplateRef)
+        .processedYamlVersion(templateMergeResponseDTO.getProcessedYamlVersion())
         .build();
   }
 
@@ -392,7 +393,7 @@ public class ExecutionHelper {
 
   private ExecutionMetadata buildExecutionMetadata(@NotNull String pipelineIdentifier, String moduleType,
       ExecutionTriggerInfo triggerInfo, PipelineEntity pipelineEntity, String executionId,
-      List<NotificationRules> notificationRules, boolean isDebug) {
+      List<NotificationRules> notificationRules, boolean isDebug, String processedYamlVersion) {
     ExecutionMetadata.Builder builder = ExecutionMetadata.newBuilder()
                                             .setExecutionUuid(executionId)
                                             .setTriggerInfo(triggerInfo)
@@ -402,6 +403,7 @@ public class ExecutionHelper {
                                             .setIsNotificationConfigured(isNotEmpty(notificationRules))
                                             .setHarnessVersion(pipelineEntity.getHarnessVersion())
                                             .setIsDebug(isDebug)
+                                            .setProcessedYamlVersion(processedYamlVersion)
                                             .setExecutionMode(ExecutionMode.NORMAL);
     ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(
         pipelineEntity, pipelineEntity.getStoreType(), pipelineEntity.getRepo(), pipelineEntity.getConnectorRef());
@@ -464,6 +466,7 @@ public class ExecutionHelper {
     log.info("[PMS_EXECUTE] Pipeline input set merge total time took {}ms", System.currentTimeMillis() - start);
 
     String pipelineYamlWithTemplateRef = pipelineYaml;
+    String processedYamlVersion = pipelineEntity.getHarnessVersion();
     if (Boolean.TRUE.equals(TemplateRefHelper.hasTemplateRef(pipelineJsonNode))) {
       TemplateMergeResponseDTO templateMergeResponseDTO =
           pipelineTemplateHelper.resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
@@ -475,6 +478,7 @@ public class ExecutionHelper {
           EmptyPredicate.isEmpty(templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef())
           ? pipelineYaml
           : templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
+      processedYamlVersion = templateMergeResponseDTO.getProcessedYamlVersion();
     }
     if (pipelineEntity.getStoreType() == null || pipelineEntity.getStoreType() == StoreType.INLINE) {
       // For REMOTE Pipelines, entity setup usage framework cannot be relied upon. That is because the setup usages can
@@ -487,6 +491,7 @@ public class ExecutionHelper {
     return TemplateMergeResponseDTO.builder()
         .mergedPipelineYaml(pipelineYaml)
         .mergedPipelineYamlWithTemplateRef(pipelineYamlWithTemplateRef)
+        .processedYamlVersion(processedYamlVersion)
         .build();
   }
 
@@ -573,7 +578,7 @@ public class ExecutionHelper {
       try {
         // If v1 pipeline has a pipeline template linked to it, the root node of processedYaml will be stages in case of
         // v1 template and the yaml will have v0 structure in case of v0 template
-        String version = NGYamlHelper.getVersionFromProcessedYaml(planExecutionMetadata.getProcessedYaml());
+        String version = executionMetadata.getProcessedYamlVersion();
         resp = planCreatorMergeService.createPlanVersioned(
             accountId, orgIdentifier, projectIdentifier, version, executionMetadata, planExecutionMetadata);
         plan = PlanExecutionUtils.extractPlan(resp);

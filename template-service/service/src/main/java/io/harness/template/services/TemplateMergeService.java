@@ -24,7 +24,8 @@ public interface TemplateMergeService {
       String versionLabel, boolean loadFromCache);
 
   TemplateMergeResponseDTO applyTemplatesToYaml(String accountId, String orgId, String projectId, String yaml,
-      boolean getMergedYamlWithTemplateField, boolean loadFromCache, boolean appendInputSetValidator);
+      boolean getMergedYamlWithTemplateField, boolean loadFromCache, boolean appendInputSetValidator,
+      String yamlVersion);
 
   TemplateMergeResponseDTO applyTemplatesToYamlV2(String accountId, String orgId, String projectId,
       JsonNode entityJsonNode, boolean getMergedYamlWithTemplateField, boolean loadFromCache,

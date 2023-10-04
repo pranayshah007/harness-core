@@ -118,8 +118,11 @@ public class InputsValidator {
         validateTemplateInputs(accountId, orgId, projectId, yamlNode, templateCacheMap, depth, loadFromCache);
     String resolvedTemplatesYaml = yaml;
     if (TemplateRefHelper.hasTemplateRef(yaml)) {
-      Map<String, Object> resolvedTemplatesMap = templateMergeServiceHelper.mergeTemplateInputsInObject(
-          accountId, orgId, projectId, yamlNode, templateCacheMap, 0, loadFromCache, false, HarnessYamlVersion.V0);
+      Map<String, Object> resolvedTemplatesMap =
+          templateMergeServiceHelper
+              .mergeTemplateInputsInObject(accountId, orgId, projectId, yamlNode, templateCacheMap, 0, loadFromCache,
+                  false, HarnessYamlVersion.V0)
+              .getResMap();
       resolvedTemplatesYaml = YamlUtils.writeYamlString(resolvedTemplatesMap);
     }
     InputsValidationResponse ngManagerInputsValidationResponse =
