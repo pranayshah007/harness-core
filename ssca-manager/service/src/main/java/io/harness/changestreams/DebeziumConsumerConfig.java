@@ -16,7 +16,7 @@ public class DebeziumConsumerConfig {
   DebeziumConsumer instanceNGConsumer;
   @Data
   @Builder
-  public class DebeziumConsumer {
+  public static class DebeziumConsumer {
     @Builder.Default int threads = 1;
     String topic;
     int batchSize;

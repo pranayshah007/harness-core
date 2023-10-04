@@ -9,8 +9,12 @@ package io.harness;
 
 import static io.harness.annotations.dev.HarnessTeam.SSCA;
 import static io.harness.authorization.AuthorizationServiceHeader.SSCA_SERVICE;
+import static io.harness.lock.DistributedLockImplementation.REDIS;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.app.PrimaryVersionManagerModule;
+import io.harness.lock.DistributedLockImplementation;
+import io.harness.lock.PersistentLockModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
@@ -18,6 +22,7 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
+import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.SSCAManagerModuleRegistrars;
@@ -53,6 +58,7 @@ import io.harness.ssca.services.RuleEngineService;
 import io.harness.ssca.services.RuleEngineServiceImpl;
 import io.harness.ssca.services.S3StoreService;
 import io.harness.ssca.services.S3StoreServiceImpl;
+import io.harness.time.TimeModule;
 import io.harness.token.TokenClientModule;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -113,6 +119,9 @@ public class SSCAManagerModule extends AbstractModule {
         this.configuration.getNgManagerServiceSecret(), SSCA_SERVICE.getServiceId()));
     install(new SSCAEventsFrameworkModule(
         this.configuration.getEventsFrameworkConfiguration(), this.configuration.getDebeziumConsumerConfigs()));
+    install(PrimaryVersionManagerModule.getInstance());
+    install(PersistentLockModule.getInstance());
+    install(TimeModule.getInstance());
   }
 
   @Provides
@@ -159,6 +168,20 @@ public class SSCAManagerModule extends AbstractModule {
             new AwsClientBuilder.EndpointConfiguration(configuration.getS3Config().getEndpoint(), "auto"))
         .withCredentials(new AWSStaticCredentialsProvider(googleCreds))
         .build();
+  }
+
+  @Provides
+  @Named("lock")
+  @Singleton
+  RedisConfig redisConfig() {
+    return configuration.getRedisLockConfig();
+  }
+
+  @Provides
+  @Singleton
+  DistributedLockImplementation distributedLockImplementation() {
+    return configuration.getDistributedLockImplementation() == null ? REDIS
+                                                                    : configuration.getDistributedLockImplementation();
   }
 
   @Provides

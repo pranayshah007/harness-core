@@ -29,7 +29,7 @@ server:
 # explanation about fields is mentioned in DebeziumConfig class.
 # Please follow the naming convention for override variables for the configs
 debeziumConfigs:
-  - isEnabled: ${IS_ENABLED_PIPELINE:-true}
+  - isEnabled: ${IS_ENABLED_PIPELINE:-false}
     name: ${DEBEZIUM_NAME_PIPELINE:-pipeline} # unique for each debezium config
     mongodb.name: ${MONGODB_NAME_PIPELINE:-pmsMongo} # unique for each debezium config
     mongodb.ssl.enabled: ${MONGO_DB_SSL_ENABLED_PIPELINE:-false}
@@ -107,7 +107,7 @@ debeziumConfigs:
     field.exclude.list: ${FIELD_EXCLUDE_LIST_APPLICATIONS:-harness.applications.keywords}
     heartbeat.interval.ms: ${HEARTBEAT_INTERVAL_APPLICATIONS:-10000}
     mongodb.connection.string: ${MONGODB_CONNECTION_STRING_APPLICATIONS:-mongodb://localhost:27017}
-  - isEnabled: ${IS_ENABLED_SSCA:-false}
+  - isEnabled: ${IS_ENABLED_SSCA:-true}
     name: ${DEBEZIUM_NAME_SSCA:-ssca} # unique for each debezium config
     mongodb.name: ${MONGODB_NAME_SSCA:-sscaMongo} # unique for each debezium config
     mongodb.ssl.enabled: ${MONGO_DB_SSL_ENABLED_SSCA:-false}
@@ -160,7 +160,7 @@ redisLockConfig:
 distributedLockImplementation: REDIS
 
 cfClientConfig:
-  apiKey: ""
+  apiKey: "24e0cab8-a5ff-42ca-aa7b-dda7700935c3"
   configUrl: "https://config.feature-flags.uat.harness.io/api/1.0"
   eventUrl: "https://event.feature-flags.uat.harness.io/api/1.0"
   analyticsEnabled: true
