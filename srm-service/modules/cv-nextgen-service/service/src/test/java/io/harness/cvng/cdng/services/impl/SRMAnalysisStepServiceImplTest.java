@@ -265,8 +265,11 @@ public class SRMAnalysisStepServiceImplTest extends CvNextGenTestBase {
             .getInstanceByUuids(List.of(analysisExecutionDetailsId), SecondaryEventsType.SRM_ANALYSIS_IMPACT);
     assertThat(eventDetailsResponse.getType()).isEqualTo(SecondaryEventsType.SRM_ANALYSIS_IMPACT);
     assertThat(eventDetailsResponse.getStartTime()).isEqualTo(clock.instant().getEpochSecond());
+    SRMAnalysisStepExecutionDetail stepExecutionDetail =
+        srmAnalysisStepService.getSRMAnalysisStepExecutionDetail(analysisExecutionDetailsId);
     SRMAnalysisStepInstanceDetails stepInstanceDetails =
         (SRMAnalysisStepInstanceDetails) eventDetailsResponse.getDetails();
+    assertThat(stepInstanceDetails.getStepName()).isEqualTo(stepExecutionDetail.getStepName());
     assertThat(stepInstanceDetails.getAnalysisDuration()).isEqualTo(Duration.ofDays(1));
     assertThat(stepInstanceDetails.getAnalysisStatus()).isEqualTo(SRMAnalysisStatus.RUNNING);
   }

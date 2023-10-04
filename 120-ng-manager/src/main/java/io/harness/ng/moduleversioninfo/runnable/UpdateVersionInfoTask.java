@@ -18,7 +18,6 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.moduleversioninfo.entity.ModuleVersionInfo;
 import io.harness.cdng.moduleversioninfo.entity.ModuleVersionInfo.ModuleVersionInfoKeys;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.UnexpectedException;
 import io.harness.ng.NextGenConfiguration;
 
 import com.amazonaws.util.StringUtils;
@@ -55,7 +54,8 @@ import org.springframework.data.mongodb.core.query.Update;
 public class UpdateVersionInfoTask {
   private static final String COMING_SOON = "Coming Soon";
 
-  private static final String JOB_INTERRUPTED = "UpdateVersionInfoTask Sync job was interrupted due to: ";
+  private static final String JOB_INTERRUPTED =
+      "UpdateVersionInfoTask Sync job was interrupted for the moduleName= %s, due to= %s";
   public static final String CHAOS_MANAGER_API = "manager/api/";
   private static final String PLATFORM = "Platform";
   private static final String RESOURCE = "resource";
@@ -86,19 +86,20 @@ public class UpdateVersionInfoTask {
           String baseUrl = getBaseUrl(moduleVersionInfo.getModuleName());
           String latestVersion = getLatestVersion(moduleVersionInfo, baseUrl);
           moduleVersionInfo.setVersion(latestVersion);
+          updateModuleVersionInfoCollection(moduleVersionInfo);
         } catch (Exception e) {
           String errorMsg =
-              String.format("Encountered an exception while trying to retrieve latest version of module: {}",
-                  moduleVersionInfo.getDisplayName());
-          log.error(errorMsg, e.getMessage(), e.getStackTrace());
-          throw new UnexpectedException("Update VersionInfo Task Sync job interrupted due to:" + e.getMessage());
+              String.format("Encountered an exception while trying to retrieve latest version of module=%s",
+                  moduleVersionInfo.getModuleName());
+          log.error(errorMsg, e);
         }
       }
-      updateModuleVersionInfoCollection(moduleVersionInfo);
     });
   }
 
   private String getBaseUrl(String moduleName) throws InvalidRequestException {
+    String baseUrlInfoMsg = String.format("Getting baseUrl for moduleName=%s", moduleName);
+    log.info(baseUrlInfoMsg);
     if (PLATFORM.equals(moduleName)) {
       return nextGenConfiguration.getNgManagerClientConfig().getBaseUrl();
     }
@@ -122,7 +123,7 @@ public class UpdateVersionInfoTask {
       case STO:
         return nextGenConfiguration.getStoCoreClientConfig().getBaseUrl();
       default:
-        String errorMsg = String.format("getBaseUrl() not supported for provided moduleType={}.", moduleType);
+        String errorMsg = String.format("getBaseUrl() not supported for provided moduleType=%s.", moduleType);
         log.error(errorMsg);
         throw new InvalidRequestException(errorMsg);
     }
@@ -181,16 +182,19 @@ public class UpdateVersionInfoTask {
     try {
       response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
     } catch (IOException e) {
-      log.error(JOB_INTERRUPTED, e);
-      throw new IOException(JOB_INTERRUPTED, e);
+      String errorMsg = String.format(JOB_INTERRUPTED, serviceName, e.getMessage());
+      log.error(errorMsg);
+      throw new IOException(errorMsg, e);
     } catch (InterruptedException e) {
-      log.error(JOB_INTERRUPTED, e);
-      throw new InterruptedException(JOB_INTERRUPTED + e);
+      String errorMsg = String.format(JOB_INTERRUPTED, serviceName, e.getMessage());
+      log.error(errorMsg);
+      throw new InterruptedException(errorMsg);
     }
     if (response == null) {
       return "";
     }
-    log.info("Request: {} and Response Body: {}", request, response.body());
+    log.info("Getting version for ModuleName={}, with Request={} and Response_Body={}", serviceName, request,
+        response.body());
     String responseString = response.body().toString().trim();
     JSONObject jsonObject = new JSONObject(responseString);
 
@@ -211,7 +215,7 @@ public class UpdateVersionInfoTask {
             return jsonObject.get(VERSION).toString();
           } else {
             String errorMsg = String.format(
-                "Response from STO version endpoint doesn't have field 'version'. response={}", jsonObject);
+                "Response from STO version endpoint doesn't have field 'version'. response=%s", jsonObject);
             log.error(errorMsg);
             throw new JSONException(errorMsg);
           }

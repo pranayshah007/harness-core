@@ -17,6 +17,7 @@ import io.harness.gitsync.common.dtos.ScmUpdateGitCacheRequestDTO;
 import io.harness.gitsync.common.service.ScmFacilitatorService;
 import io.harness.gitsync.gitxwebhooks.dtos.GitXCacheUpdateRunnableRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.GitXEventUpdateRequestDTO;
+import io.harness.gitsync.gitxwebhooks.loggers.GitXWebhookCacheUpdateLogContext;
 import io.harness.gitsync.gitxwebhooks.service.GitXWebhookEventService;
 import io.harness.logging.ResponseTimeRecorder;
 
@@ -41,10 +42,18 @@ public class GitXWebhookCacheUpdateRunnable implements Runnable {
 
   @Override
   public void run() {
-    try (ResponseTimeRecorder ignore2 = new ResponseTimeRecorder("GitXWebhookCacheUpdateRunnable BG Task")) {
+    try (ResponseTimeRecorder ignore2 = new ResponseTimeRecorder("GitXWebhookCacheUpdateRunnable BG Task");
+         GitXWebhookCacheUpdateLogContext context =
+             new GitXWebhookCacheUpdateLogContext(gitXCacheUpdateRunnableRequestDTO)) {
+      log.info(String.format("In the account %s, updating the git cache for the event %s.",
+          gitXCacheUpdateRunnableRequestDTO.getAccountIdentifier(),
+          gitXCacheUpdateRunnableRequestDTO.getEventIdentifier()));
       scmFacilitatorService.updateGitCache(buildScmUpdateGitCacheRequestDTO(gitXCacheUpdateRunnableRequestDTO));
       gitXWebhookEventService.updateEvent(gitXCacheUpdateRunnableRequestDTO.getAccountIdentifier(), eventIdentifier,
           GitXEventUpdateRequestDTO.builder().gitXWebhookEventStatus(GitXWebhookEventStatus.SUCCESSFUL).build());
+      log.info(String.format("In the account %s, successfully updated the git cache for the event %s",
+          gitXCacheUpdateRunnableRequestDTO.getAccountIdentifier(),
+          gitXCacheUpdateRunnableRequestDTO.getEventIdentifier()));
     } catch (Exception exception) {
       gitXWebhookEventService.updateEvent(gitXCacheUpdateRunnableRequestDTO.getAccountIdentifier(), eventIdentifier,
           GitXEventUpdateRequestDTO.builder().gitXWebhookEventStatus(GitXWebhookEventStatus.FAILED).build());

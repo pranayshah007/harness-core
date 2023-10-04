@@ -43,6 +43,7 @@ public class AzureKeyVaultConfigDTO extends SecretManagerConfigDTO {
   private Boolean useManagedIdentity;
   private AzureManagedIdentityType azureManagedIdentityType;
   private String managedClientId;
+  private Boolean enablePurge;
 
   @Builder.Default AzureEnvironmentType azureEnvironmentType = AZURE;
 }

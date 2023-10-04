@@ -7,6 +7,7 @@
 
 package io.harness.steps.http;
 
+import static io.harness.expression.EngineExpressionEvaluator.PIE_EXECUTION_JSON_SUPPORT;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
@@ -49,6 +50,7 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.utils.NGPipelineSettingsConstant;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.StepHelper;
@@ -77,6 +79,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -99,6 +103,7 @@ public class HttpStepTest extends CategoryTest {
   @Mock private NGLogCallback ngLogCallback;
   @InjectMocks HttpStep httpStep;
   @Mock private StepHelper stepHelper;
+  @Captor private ArgumentCaptor<Map<String, String>> argCaptor;
   private MockedStatic<TaskRequestsUtils> aStatic;
 
   private String TEST_URL = "https://www.google.com";
@@ -145,14 +150,26 @@ public class HttpStepTest extends CategoryTest {
     variables.put("name1", var1);
     variables.put("name4", var4);
 
-    // mocked pms evaluator
+    Ambiance ambianceBuilder =
+        Ambiance.newBuilder()
+            .setMetadata(
+                ExecutionMetadata.newBuilder()
+                    .putSettingToValueMap(NGPipelineSettingsConstant.ENABLE_EXPRESSION_ENGINE_V2.getName(), "true")
+                    .build())
+            .build();
+
     doReturn("metadataValue")
         .when(engineExpressionService)
         .evaluateExpression(any(), eq("<+json.object(httpResponseBody).metaData>"), any(), any());
 
-    Map<String, String> evaluatedVariables = httpStep.evaluateOutputVariables(variables, response1, ambiance);
+    Map<String, String> evaluatedVariables = httpStep.evaluateOutputVariables(variables, response1, ambianceBuilder);
+    verify(engineExpressionService).evaluateExpression(eq(ambianceBuilder), anyString(), any(), argCaptor.capture());
+    Map<String, String> output = argCaptor.getValue();
+    assertThat(output).isNotEmpty();
+    assertThat(output.get("ENABLED_FEATURE_FLAGS")).isEqualTo(PIE_EXECUTION_JSON_SUPPORT);
     assertThat(evaluatedVariables).isNotEmpty();
     assertThat(evaluatedVariables.get("name1")).isEqualTo("metadataValue");
+    assertThat(evaluatedVariables.get("name4")).isEqualTo("directValue");
     assertThat(evaluatedVariables.get("name4")).isEqualTo("directValue");
 
     variables.put("name2", var2);

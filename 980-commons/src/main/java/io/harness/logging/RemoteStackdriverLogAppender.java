@@ -19,6 +19,8 @@ import static org.apache.commons.lang3.StringUtils.substringAfter;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.logging.common.AccessTokenBean;
+import io.harness.logging.common.CustomJsonLayout;
 import io.harness.version.VersionInfoManager;
 
 import ch.qos.logback.classic.Level;

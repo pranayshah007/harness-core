@@ -71,6 +71,10 @@ public class AzureKeyVaultConnectorDTO extends ConnectorConfigDTO implements Del
   @Schema(description = "Managed Identity Type") private AzureManagedIdentityType azureManagedIdentityType;
   @Schema(description = "Client Id of the ManagedIdentity resource") String managedClientId;
 
+  @Builder.Default
+  @Schema(description = "Boolean value to indicate if purge is enabled")
+  private Boolean enablePurge = false;
+
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
     return Collections.singletonList(this);
@@ -91,6 +95,7 @@ public class AzureKeyVaultConnectorDTO extends ConnectorConfigDTO implements Del
         .useManagedIdentity(useManagedIdentity)
         .azureManagedIdentityType(azureManagedIdentityType)
         .managedClientId(managedClientId)
+        .enablePurge(enablePurge)
         .build();
   }
 

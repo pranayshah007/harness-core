@@ -6,6 +6,7 @@
  */
 
 package io.harness.managerclient;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -20,6 +21,7 @@ import io.harness.security.TokenGenerator;
 import io.harness.security.X509KeyManagerBuilder;
 import io.harness.security.X509SslContextBuilder;
 import io.harness.security.X509TrustManagerBuilder;
+import io.harness.security.delegate.DelegateAuthInterceptor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;

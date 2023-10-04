@@ -77,7 +77,7 @@ public class SlackSenderImplTest extends CategoryTest {
     when(okHttpClient.newCall(any())).thenReturn(call);
 
     NotificationProcessingResponse notificationProcessingResponse =
-        slackSender.send(slackWekbhookUrl, message, notificationId);
+        slackSender.send(slackWekbhookUrl, message, notificationId, null);
 
     verify(okHttpClient, times(2)).newCall(any());
 

@@ -66,6 +66,7 @@ shared_dependencies = [
     "//942-enforcement-sdk:module",
     "//947-scim-core:module",
     "//950-ng-core:module",
+    "//950-oidc-core:module",
     "//950-opa-client:module",
     "//950-telemetry:module",
     "//955-filters-sdk:module",

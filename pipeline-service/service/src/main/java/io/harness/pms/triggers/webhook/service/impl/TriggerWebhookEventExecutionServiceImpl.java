@@ -8,6 +8,7 @@
 package io.harness.pms.triggers.webhook.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.util.stream.Collectors.toList;
@@ -34,6 +35,8 @@ import io.harness.pms.triggers.webhook.helpers.TriggerEventExecutionHelper;
 import io.harness.pms.triggers.webhook.service.TriggerWebhookEventExecutionService;
 import io.harness.repositories.spring.NGTriggerRepository;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.ServicePrincipal;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -122,6 +125,7 @@ public class TriggerWebhookEventExecutionServiceImpl implements TriggerWebhookEv
   @Override
   public void handleEvent(
       TriggerExecutionDTO triggerExecutionDTO, Map<String, String> metadataMap, long messageTimeStamp, long readTs) {
+    SecurityContextBuilder.setContext(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
     if (triggerExecutionDTO == null) {
       return;
     }

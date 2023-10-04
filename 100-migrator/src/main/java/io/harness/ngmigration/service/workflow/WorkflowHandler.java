@@ -43,6 +43,7 @@ import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
+import io.harness.ngmigration.service.MigrationHelperService;
 import io.harness.ngmigration.service.servicev2.ServiceV2Factory;
 import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.service.step.StepMapperFactory;
@@ -119,6 +120,7 @@ public abstract class WorkflowHandler {
       CUSTOM_DEPLOYMENT_FETCH_INSTANCES.getName(), AWS_NODE_SELECT.name(), AZURE_NODE_SELECT.getName());
 
   @Inject private StepMapperFactory stepMapperFactory;
+  @Inject private MigrationHelperService migrationHelperService;
 
   public Set<String> getBarriers(Workflow workflow) {
     List<GraphNode> steps = MigratorUtility.getSteps(workflow);
@@ -143,7 +145,12 @@ public abstract class WorkflowHandler {
           CgEntityId.builder().id(workflow.getServiceId()).type(NGMigrationEntityType.SERVICE).build());
     }
 
-    List<String> serviceIds = workflow.getOrchestrationWorkflow().getServiceIds();
+    List<String> serviceIds =
+        workflow.checkServiceTemplatized() ? new ArrayList<>() : workflow.getOrchestrationWorkflow().getServiceIds();
+    Optional<String> envId = (workflow.checkEnvironmentTemplatized() && isNotEmpty(workflow.getEnvId()))
+        ? Optional.empty()
+        : Optional.of(workflow.getEnvId());
+
     if (EmptyPredicate.isNotEmpty(serviceIds)) {
       referencedEntities.addAll(
           serviceIds.stream()
@@ -151,10 +158,11 @@ public abstract class WorkflowHandler {
               .collect(Collectors.toList()));
     }
 
-    if (StringUtils.isNotBlank(workflow.getEnvId())) {
-      referencedEntities.add(
-          CgEntityId.builder().id(workflow.getEnvId()).type(NGMigrationEntityType.ENVIRONMENT).build());
-    }
+    envId.ifPresent(
+        s -> referencedEntities.add(CgEntityId.builder().id(s).type(NGMigrationEntityType.ENVIRONMENT).build()));
+
+    migrationHelperService.addOverrideRefs(
+        workflow.getAppId(), workflow.getAccountId(), envId.orElse(null), serviceIds, referencedEntities);
 
     if (EmptyPredicate.isEmpty(steps)) {
       return referencedEntities;
@@ -512,6 +520,12 @@ public abstract class WorkflowHandler {
         }
       }
     }
+    MigratorExpressionUtils.render(migrationContext, stepWrappers,
+        MigExpressionOverrides.builder()
+            .workflowVarsAsPipeline(context.isWorkflowVarsAsPipeline())
+            .customExpressions(MigratorUtility.getExpressions(
+                phase, context.getStepExpressionFunctors(), context.getIdentifierCaseFormat()))
+            .build());
     return stepWrappers;
   }
 

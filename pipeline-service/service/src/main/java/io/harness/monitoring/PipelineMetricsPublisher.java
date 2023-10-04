@@ -14,14 +14,16 @@ import io.harness.engine.executions.plan.PlanExecutionMonitorService;
 import io.harness.metrics.service.api.MetricsPublisher;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 
 @OwnedBy(HarnessTeam.PIPELINE)
+@Singleton
 public class PipelineMetricsPublisher implements MetricsPublisher {
   @Inject PlanExecutionMonitorService planExecutionMonitorService;
   @Inject NodeExecutionMonitorService nodeExecutionMonitorService;
   @Override
   public void recordMetrics() {
     planExecutionMonitorService.registerActiveExecutionMetrics();
-    //    nodeExecutionMonitorService.registerActiveExecutionMetrics();
+    nodeExecutionMonitorService.registerActiveExecutionMetrics();
   }
 }
