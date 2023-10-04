@@ -237,6 +237,7 @@ public class NGTemplateDtoMapper {
           .cacheState(cacheResponse.getCacheState())
           .ttlLeft(cacheResponse.getTtlLeft())
           .lastUpdatedAt(cacheResponse.getLastUpdatedAt())
+          .isSyncEnabled(cacheResponse.isSyncEnabled())
           .build();
     }
     return null;
