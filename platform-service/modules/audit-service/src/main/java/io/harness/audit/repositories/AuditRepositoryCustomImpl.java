@@ -14,10 +14,13 @@ import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.audit.Action;
 import io.harness.audit.entities.AuditEvent;
 import io.harness.audit.entities.AuditEvent.AuditEventKeys;
 import io.harness.audit.entities.DistinctProjectsPerAccount;
 import io.harness.audit.entities.DistinctProjectsPerAccount.DistinctProjectsPerAccountKeys;
+import io.harness.audit.entities.UniqueLoginsPerAccount;
+import io.harness.audit.entities.UniqueLoginsPerAccount.UniqueLoginsPerAccountKeys;
 import io.harness.mongo.helper.AnalyticsMongoTemplateHolder;
 import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
 
@@ -105,6 +108,37 @@ public class AuditRepositoryCustomImpl implements AuditRepositoryCustom {
         .forEach(uniqueProjectCountPerAccountId
             -> result.put(uniqueProjectCountPerAccountId.getAccountIdentifier(),
                 uniqueProjectCountPerAccountId.getDistinctProjectCount()));
+
+    return result;
+  }
+
+  @Override
+  public Map<String, Integer> getUniqueLoginCountPerAccountId(List<String> accountIds, long startTime, long endTime) {
+    List<Criteria> criteriaList = new ArrayList<>();
+
+    criteriaList.add(Criteria.where(AuditEventKeys.ACCOUNT_IDENTIFIER_KEY).in(accountIds));
+    criteriaList.add(Criteria.where(AuditEventKeys.action).is(Action.LOGIN));
+    criteriaList.add(Criteria.where(AuditEventKeys.timestamp).gte(Instant.ofEpochMilli(startTime)));
+    criteriaList.add(Criteria.where(AuditEventKeys.timestamp).lte(Instant.ofEpochMilli(endTime)));
+
+    MatchOperation matchStage = Aggregation.match(new Criteria().andOperator(criteriaList.toArray(new Criteria[0])));
+
+    GroupOperation groupBy = group(AuditEventKeys.ACCOUNT_IDENTIFIER_KEY)
+                                 .addToSet(AuditEventKeys.PRINCIPAL_IDENTIFIER_KEY)
+                                 .as("uniqueLogins");
+
+    ProjectionOperation projectionStage = project()
+                                              .and(MONGODB_ID)
+                                              .as(UniqueLoginsPerAccountKeys.accountIdentifier)
+                                              .andExpression("{ $size: '$uniqueLogins' }")
+                                              .as(UniqueLoginsPerAccountKeys.uniqueLoginCount);
+
+    Map<String, Integer> result = new HashMap<>();
+
+    aggregate(newAggregation(matchStage, groupBy, projectionStage), UniqueLoginsPerAccount.class)
+        .getMappedResults()
+        .forEach(uniqueLoginsPerAccount
+            -> result.put(uniqueLoginsPerAccount.getAccountIdentifier(), uniqueLoginsPerAccount.getUniqueLoginCount()));
 
     return result;
   }

@@ -39,4 +39,6 @@ public interface AuditService {
 
   void computeMetricsForActiveProject(
       List<String> accountIds, Map<String, Integer> projectCounts, long startTime, long endTime);
+
+  void computeMetricsForUniqueLogins(List<String> accountIds, long startTime, long endTime);
 }
