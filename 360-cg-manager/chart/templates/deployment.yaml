@@ -74,11 +74,8 @@ spec:
         - envFrom:
             - configMapRef:
                 name: harness-manager-config
-            {{- if .Values.global.smtpCreateSecret.enabled }}
-            - secretRef:
-                name: smtp-secret
-            {{- end }}
           env:
+            {{- include "harnesscommon.secrets.manageSMTPEnv" (dict "ctx" $) | indent 12 }}
             {{- $globalLicenseESOSecretIdentifier := include "harnesscommon.secrets.globalESOSecretCtxIdentifier" (dict "ctx" $  "ctxIdentifier" "license") }}
             {{- include "harnesscommon.secrets.manageEnv" (dict "ctx" $ "variableName" "CG_LICENSE" "overrideEnvName" "LICENSE_INFO" "providedSecretValues" (list "global.license.cg") "extKubernetesSecretCtxs" (list .Values.global.license.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict "secretCtxIdentifier" $globalLicenseESOSecretIdentifier "secretCtx" .Values.global.license.secrets.secretManagement.externalSecretsOperator))) | indent 12 }}
             {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "LOG_STREAMING_SERVICE_TOKEN" "defaultKubernetesSecretName" "harness-manager" "defaultKubernetesSecretKey" "LOG_STREAMING_SERVICE_TOKEN") | indent 12 }}
