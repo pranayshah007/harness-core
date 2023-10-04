@@ -58,7 +58,7 @@ public class K8sBlueGreenStepPlanCreator extends CDPMSStepPlanCreatorV2<K8sBlueG
   public String getFacilitatorType(PlanCreationContext ctx, K8sBlueGreenStepNode stepElement) {
     if (featureFlagService.isEnabled(
             ctx.getMetadata().getAccountIdentifier(), FeatureName.CDS_K8S_ASYNC_STEP_STRATEGY)) {
-      return OrchestrationFacilitatorType.ASYNC;
+      return OrchestrationFacilitatorType.ASYNC_CHAIN;
     } else {
       return OrchestrationFacilitatorType.TASK_CHAIN;
     }
