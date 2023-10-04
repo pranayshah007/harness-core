@@ -317,18 +317,6 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
 
     String authHeader = getAuthHeader(azureArtifactsInternalConfig);
 
-    List<AzureArtifactsFeed> feeds = listFeeds(azureArtifactsInternalConfig, project);
-
-    String feedId = null;
-
-    for (AzureArtifactsFeed azureArtifactsFeed : feeds) {
-      if (azureArtifactsFeed.getName().equals(feed)) {
-        feedId = azureArtifactsFeed.getId();
-
-        break;
-      }
-    }
-
     AzureArtifactsPackages ngAzureArtifactsPackages =
         executeRestCall(azureArtifactsRegistryRestClient.listPackages(authHeader, feed, packageType),
             new HintException("Failed to get the Azure Packages list."));
