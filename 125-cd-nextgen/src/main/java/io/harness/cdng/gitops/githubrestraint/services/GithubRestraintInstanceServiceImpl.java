@@ -68,7 +68,6 @@ public class GithubRestraintInstanceServiceImpl implements GithubRestraintInstan
   public List<GithubRestraintInstance> getAllActiveAndBlockedByResourceUnit(String resourceUnit) {
     Query query = query(new Criteria().andOperator(where(GithubRestraintInstanceKeys.resourceUnit).is(resourceUnit),
         where(GithubRestraintInstanceKeys.state).in(BLOCKED, ACTIVE)));
-
     return mongoTemplate.find(query, GithubRestraintInstance.class);
   }
 
@@ -133,14 +132,6 @@ public class GithubRestraintInstanceServiceImpl implements GithubRestraintInstan
     instance.setAcquireAt(System.currentTimeMillis());
 
     return save(instance);
-  }
-
-  @Override
-  public boolean updateActiveConstraintsForInstance(GithubRestraintInstance instance) {
-    // we cant check if nodeExecution finished because we are on ng-manager here.
-
-    return consumerFinished(new ConstraintId(instance.getResourceUnit()),
-        new ConstraintUnit(instance.getResourceUnit()), new ConsumerId(instance.getUuid()), ImmutableMap.of());
   }
 
   @Override

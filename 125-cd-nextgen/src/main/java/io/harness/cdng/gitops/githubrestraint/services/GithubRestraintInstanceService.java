@@ -28,5 +28,4 @@ public interface GithubRestraintInstanceService extends ConstraintRegistry {
   GithubRestraintInstance save(GithubRestraintInstance resourceRestraintInstance);
   GithubRestraintInstance activateBlockedInstance(String uuid, String resourceUnit);
 
-  boolean updateActiveConstraintsForInstance(GithubRestraintInstance instance);
 }

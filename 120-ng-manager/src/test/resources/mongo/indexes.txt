@@ -93,6 +93,10 @@ gitXWebhook {"name": "accountIdentifier_repoName_unique_idx", "unique": true} {"
 gitXWebhook {"name": "createdAt_1", "background": true} {"createdAt": 1}
 gitXWebhookEvent {"name": "accountIdentifier_eventIdentifier_unique_idx", "unique": true} {"accountIdentifier": 1, "eventIdentifier": 1}
 gitXWebhookEvent {"name": "createdAt_1", "background": true} {"createdAt": 1}
+githubRestraintInstances {"name": "releaseEntityId_state_idx", "background": true} {"releaseEntityId": 1, "state": 1}
+githubRestraintInstances {"name": "resourceUnit_order_idx", "unique": true} {"resourceUnit": 1, "order": 1}
+githubRestraintInstances {"name": "resourceUnit_state_idx", "background": true} {"resourceUnit": 1, "state": 1}
+githubRestraintInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 gitopsClusters {"name": "accountId_orgId_projId_envRef_createdAt", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "agentIdentifier": 1, "envRef": 1, "createdAt": 1}
 gitopsClusters {"name": "unique_accountId_orgId_projId_envRef_id", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "agentIdentifier": 1, "envRef": 1, "clusterRef": 1}
 gitopsproviders {"name": "unique_accIdentifier_orgIdentifier_projectIdentifier_gitOpsProvider_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
