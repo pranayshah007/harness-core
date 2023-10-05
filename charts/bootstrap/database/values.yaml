@@ -5,8 +5,30 @@ global:
   database:
     minio:
       installed: true
-    mongodb:
+    mongo:
       installed: true
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              MONGO_USER: ""
+              MONGO_PASSWORD: ""
+              MONGO_REPLICA_SET_KEY: ""
+        secretManagement: 
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                MONGO_USER:
+                  name: ""
+                  property: ""
+                MONGO_PASSWORD:
+                  name: ""
+                  property: ""
+                MONGO_REPLICA_SET_KEY:
+                  name: ""
+                  property: ""
     postgres:
       installed: true
     timescaledb:
@@ -40,7 +62,7 @@ mongodb:
     nameOverride: "mongodb-replicaset-chart"
   auth:
     rootUser: "admin"
-    existingSecret: "mongodb-replicaset-chart"
+    existingSecret: '{{ include "harnesscommon.secrets.InstalledMongoDBSecret" (dict "ctx" $) }}'
   podLabels: { app: mongodb-replicaset }
   resources:
     limits:

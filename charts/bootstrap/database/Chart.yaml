@@ -48,5 +48,8 @@ dependencies:
     condition: global.database.clickhouse.enabled
     version: 2.1.0
     repository: https://charts.bitnami.com/bitnami
+  - name: harness-common
+    version: 1.x.x
+    repository: https://harness.github.io/helm-common
 
 
