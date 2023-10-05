@@ -36,6 +36,7 @@ public class Scope {
   @NotEmpty String accountIdentifier;
   String orgIdentifier;
   String projectIdentifier;
+  String folderId;
 
   public static Scope of(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     return Scope.builder()

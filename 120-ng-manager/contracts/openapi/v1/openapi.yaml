@@ -692,6 +692,34 @@ paths:
         - IP Allowlist
       x-internal: false
     parameters: []
+  /v1/scope/unique-id:
+    get:
+      summary: Get global Unique ID
+      operationId: get-global-unique-id
+      description: Get global Unique ID for a given scope
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - schema:
+            type: string
+          in: query
+          name: org
+          description: Organization Identifier
+        - schema:
+            type: string
+          in: query
+          name: project
+          description: Project Identifier
+      security:
+        - x-api-key: []
+      x-internal: true
+      responses:
+        '200':
+          $ref: '#/components/responses/ScopeUniqueIdResponse'
+        '':
+          description: ''
+      tags:
+        - ScopeUniqueID
+    parameters: []
   /v1/secrets:
     post:
       summary: Create a secret
@@ -1648,6 +1676,9 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/BatchReleaseDetailsRequest'
     parameters: []
+  '/v1/ip-allowlist/validate-unique-identifier/{ip-config-identifier} - copy':
+    get:
+      x-internal: true
 components:
   schemas:
     Service:
@@ -2958,6 +2989,18 @@ components:
           type: string
         release_name:
           type: string
+    ScopeUniqueIdResponse:
+      title: ScopeUniqueIdResponse
+      x-stoplight:
+        id: 8w4nibx4kbdw2
+      type: object
+      properties:
+        uniqueId:
+          type: string
+        scopeType:
+          type: string
+      description: Scope Unique ID details
+      x-internal: true
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -3653,6 +3696,12 @@ components:
           schema:
             type: integer
           description: Maximum page size in Paginated response.
+    ScopeUniqueIdResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ScopeUniqueIdResponse'
   requestBodies:
     ServiceRequest:
       content:

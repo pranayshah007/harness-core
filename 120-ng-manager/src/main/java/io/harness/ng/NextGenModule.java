@@ -80,6 +80,8 @@ import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.audit.ResourceTypeConstants;
 import io.harness.audit.client.remote.AuditClientModule;
 import io.harness.authorization.AuthorizationServiceHeader;
+import io.harness.beans.Scope;
+import io.harness.beans.ScopeCacheValue;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
@@ -417,6 +419,7 @@ public class NextGenModule extends AbstractModule {
   public static final String SECRET_MANAGER_CONNECTOR_SERVICE = "secretManagerConnectorService";
   public static final String CONNECTOR_DECORATOR_SERVICE = "connectorDecoratorService";
   private static final String RETENTION_PERIOD_FORMAT = "%s months";
+  private static final String SCOPE_CACHE = "scopeCache";
   private final NextGenConfiguration appConfig;
   public NextGenModule(NextGenConfiguration appConfig) {
     this.appConfig = appConfig;
@@ -611,6 +614,16 @@ public class NextGenModule extends AbstractModule {
       HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
     return harnessCacheManager.getCache(JWT_TOKEN_SCIM_SETTINGS_DATA_CACHE_KEY, String.class,
         JwtTokenScimAccountSettingsData.class, CreatedExpiryPolicy.factoryOf(new Duration(TimeUnit.MINUTES, 2)),
+        versionInfoManager.getVersionInfo().getBuildNo());
+  }
+
+  @Provides
+  @Singleton
+  @Named(SCOPE_CACHE)
+  Cache<Scope, ScopeCacheValue> getScopeCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache(SCOPE_CACHE, Scope.class, ScopeCacheValue.class,
+        AccessedExpiryPolicy.factoryOf(new Duration(TimeUnit.DAYS, 5)),
         versionInfoManager.getVersionInfo().getBuildNo());
   }
 
