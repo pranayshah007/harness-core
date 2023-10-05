@@ -96,15 +96,18 @@ public class AsyncChainStrategy extends ProgressableStrategy {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     String stepParamString = RecastOrchestrationUtils.toJson(stepParameters);
 
-    sdkNodeExecutionService.addExecutableResponse(
-        ambiance, ExecutableResponse.newBuilder().setAsyncChain(asyncChainExecutableResponse).build());
-
     if (isEmpty(asyncChainExecutableResponse.getCallbackId())) {
       log.warn("StepResponse has no callbackIds - currentState : " + AmbianceUtils.obtainStepIdentifier(ambiance)
           + ", nodeExecutionId: " + nodeExecutionId);
-      sdkNodeExecutionService.resumeNodeExecution(ambiance, Collections.emptyMap(), false);
+      sdkNodeExecutionService.resumeNodeExecution(ambiance, Collections.emptyMap(), false,
+          ExecutableResponse.newBuilder().setAsyncChain(asyncChainExecutableResponse).build());
       return;
     }
+
+    // Send Executable response only if there are callbacks Ids, to avoid race condition
+    sdkNodeExecutionService.addExecutableResponse(
+        ambiance, ExecutableResponse.newBuilder().setAsyncChain(asyncChainExecutableResponse).build());
+
     log.info("Processing Async Chain Step for {} with CallbackId {}", nodeExecutionId,
         asyncChainExecutableResponse.getCallbackId());
     queueCallbacks(ambiance, mode, asyncChainExecutableResponse, stepParamString);
