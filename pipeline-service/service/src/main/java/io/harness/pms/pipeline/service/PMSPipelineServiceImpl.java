@@ -609,7 +609,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   private PipelineEntity makePipelineUpdateCall(
       PipelineEntity pipelineEntity, PipelineEntity oldEntity, ChangeType changeType, boolean isOldFlow) {
     try {
-      // TODO - Confirm if we need to do filter creation for draft pipelines
       PipelineEntity entityWithUpdatedInfo = pipelineEntity;
       // If PIE_ASYNC_FILTER_CREATION is ON, then we do filter creation async
       if (!pmsFeatureFlagHelper.isEnabled(pipelineEntity.getAccountId(), FeatureName.PIE_ASYNC_FILTER_CREATION)) {
