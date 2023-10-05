@@ -473,7 +473,7 @@ public class NgUserServiceImplTest extends CategoryTest {
     verify(userMetadataRepository, times(userIds.size())).findDistinctByUserId(any());
     verify(ngUserService, times(userIds.size() * getRank(scope)))
         .addUserToScopeInternal(any(), any(), any());
-    verify(ngUserService, times(userIds.size() * 2)).createRoleAssignments(any(), any(), any(), anyBoolean());
+    verify(ngUserService, times(userIds.size() * 1)).createRoleAssignments(any(), any(), any(), anyBoolean());
     verify(userGroupService, times(isEmpty(userGroups) ? 0 : userIds.size())).list(any(UserGroupFilterDTO.class));
     verify(userGroupService, times(userIds.size())).addUserToUserGroups(any(Scope.class), any(), any());
   }
