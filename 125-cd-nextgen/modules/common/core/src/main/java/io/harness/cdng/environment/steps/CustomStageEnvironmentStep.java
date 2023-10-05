@@ -237,7 +237,8 @@ public class CustomStageEnvironmentStep implements ChildrenExecutable<CustomStag
     serviceStepV3Helper.addConfigFilesOutputToStepOutcome(ambiance, stepOutcomes);
 
     stepResponse = stepResponse.withStepOutcomes(stepOutcomes);
-    serviceStepsHelper.saveServiceExecutionDataToStageInfo(ambiance, stepResponse);
+
+    serviceStepsHelper.saveEnvironmentExecutionDataToStageInfo(ambiance, stepResponse);
 
     UnitProgress overridesUnit = UnitProgress.newBuilder()
                                      .setStatus(UnitStatus.SUCCESS)

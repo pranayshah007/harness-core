@@ -21,6 +21,7 @@ import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.executables.ChildExecutable;
@@ -74,8 +75,16 @@ public class CustomStageStep implements ChildExecutable<StageElementParameters> 
   }
 
   private StageExecutionInfoUpdateDTO createStageExecutionInfoUpsertDTO(StepResponse stepResponse) {
+    FailureInfo failureInfo = stepResponse.getFailureInfo();
+
+    FailureInfo deserializedFailureInfo = FailureInfo.newBuilder()
+                                              .addAllFailureTypes(failureInfo.getFailureTypesList())
+                                              .setErrorMessage(failureInfo.getErrorMessage())
+                                              .addAllFailureData(failureInfo.getFailureDataList())
+                                              .build();
+
     return StageExecutionInfoUpdateDTO.builder()
-        .failureInfo(stepResponse.getFailureInfo())
+        .failureInfo(deserializedFailureInfo)
         .status(stepResponse.getStatus())
         .stageStatus(Status.SUCCEEDED.equals(stepResponse.getStatus()) ? StageStatus.SUCCEEDED : StageStatus.FAILED)
         .build();

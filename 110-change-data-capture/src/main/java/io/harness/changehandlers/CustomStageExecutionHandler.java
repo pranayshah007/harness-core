@@ -58,8 +58,6 @@ public class CustomStageExecutionHandler extends AbstractChangeDataHandler {
       }
 
       BasicDBObject failureInfo = (BasicDBObject) executionSummaryDetails.get("failureInfo");
-      changeHandlerHelper.parseFailureMessageFromFailureInfo(failureInfo, columnValueMapping, "failure_message");
-
       changeHandlerHelper.addKeyValuePairToMapFromDBObject(
           failureInfo, columnValueMapping, "errorMessage_", "failure_message");
     }
