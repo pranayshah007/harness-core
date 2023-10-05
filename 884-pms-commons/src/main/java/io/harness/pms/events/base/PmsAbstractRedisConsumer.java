@@ -139,7 +139,6 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
     AtomicBoolean success = new AtomicBoolean(true);
     if (messageListener.isProcessable(message) && !isAlreadyProcessed(message)) {
       log.info("Read message with message id {} from redis", message.getId());
-      insertMessageInCache(message);
       long readTs = System.currentTimeMillis();
       executorService.submit(() -> {
         try (AutoLogContext ignore = new MessageLogContext(message)) {
@@ -155,18 +154,10 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
     return success.get();
   }
 
-  private void insertMessageInCache(Message message) {
-    try {
-      eventsCache.put(String.format(CACHE_KEY, this.getClass().getSimpleName(), message.getId()), 1);
-    } catch (Exception ex) {
-      log.error("Exception occurred while storing message id in cache", ex);
-    }
-  }
-
   private boolean isAlreadyProcessed(Message message) {
     try {
       String key = String.format(CACHE_KEY, this.getClass().getSimpleName(), message.getId());
-      boolean isProcessed = eventsCache.containsKey(key);
+      boolean isProcessed = !eventsCache.putIfAbsent(key, 1);
       if (isProcessed) {
         log.warn(String.format("Duplicate redis notification received to consumer [%s] with messageId [%s]",
             this.getClass().getSimpleName(), message.getId()));

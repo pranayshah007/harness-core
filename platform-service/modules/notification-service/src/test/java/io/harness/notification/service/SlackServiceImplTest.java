@@ -32,6 +32,7 @@ import io.harness.notification.remote.dto.SlackSettingDTO;
 import io.harness.notification.senders.SlackSenderImpl;
 import io.harness.notification.service.api.NotificationSettingsService;
 import io.harness.notification.service.api.NotificationTemplateService;
+import io.harness.notification.utils.NotificationSettingsHelper;
 import io.harness.rule.Owner;
 import io.harness.service.DelegateGrpcClientWrapper;
 
@@ -51,6 +52,7 @@ public class SlackServiceImplTest extends CategoryTest {
   @Mock private NotificationTemplateService notificationTemplateService;
   @Mock private SlackSenderImpl slackSender;
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Mock private NotificationSettingsHelper notificationSettingsHelper;
   private SlackServiceImpl slackService;
   private String accountId = "accountId";
   private String slackTemplateName = "slack_test";
@@ -61,8 +63,8 @@ public class SlackServiceImplTest extends CategoryTest {
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
-    slackService = new SlackServiceImpl(
-        notificationSettingsService, notificationTemplateService, slackSender, delegateGrpcClientWrapper);
+    slackService = new SlackServiceImpl(notificationSettingsService, notificationTemplateService, slackSender,
+        delegateGrpcClientWrapper, notificationSettingsHelper);
   }
 
   @Test
@@ -139,7 +141,7 @@ public class SlackServiceImplTest extends CategoryTest {
     when(notificationTemplateService.getTemplateAsString(eq(slackTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
-    when(slackSender.send(any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(slackSender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
 
     NotificationProcessingResponse notificationProcessingResponse = slackService.send(notificationRequest);
     assertEquals(notificationProcessingResponse, NotificationProcessingResponse.trivialResponseWithNoRetries);
@@ -193,7 +195,7 @@ public class SlackServiceImplTest extends CategoryTest {
     when(notificationTemplateService.getTemplateAsString(eq(slackTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
-    when(slackSender.send(any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(slackSender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
 
     NotificationProcessingResponse notificationProcessingResponse = slackService.send(notificationRequest);
     assertEquals(notificationProcessingResponse, NotificationProcessingResponse.trivialResponseWithNoRetries);
@@ -242,7 +244,7 @@ public class SlackServiceImplTest extends CategoryTest {
     when(notificationTemplateService.getTemplateAsString(eq(slackTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
-    when(slackSender.send(any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(slackSender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
 
     NotificationProcessingResponse notificationProcessingResponse = slackService.send(notificationRequest);
     assertTrue(notificationProcessingResponse.equals(NotificationProcessingResponse.trivialResponseWithNoRetries));
@@ -296,7 +298,7 @@ public class SlackServiceImplTest extends CategoryTest {
         SlackSettingDTO.builder().accountId(accountId).recipient(slackWebhookurl).build();
     NotificationProcessingResponse notificationExpectedResponse =
         NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
-    when(slackSender.send(any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(slackSender.send(any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(notificationTemplateService.getTemplateAsString(any(), any()))
         .thenReturn(Optional.of("This is a test notification"));
     boolean response = slackService.sendTestNotification(notificationSettingDTO4);

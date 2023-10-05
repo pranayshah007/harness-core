@@ -172,11 +172,11 @@ public class WorkflowResource {
     }
 
     if (!details) {
-      return new RestResponse<>(workflowService.listWorkflowsWithoutOrchestration(pageRequest));
+      return new RestResponse<>(workflowService.listWorkflowsWithoutOrchestration(pageRequest, true));
     }
 
     PageResponse<Workflow> pageResponse =
-        workflowService.listWorkflows(pageRequest, previousExecutionsCount, withTags, tagFilter);
+        workflowService.listWorkflows(pageRequest, previousExecutionsCount, withTags, tagFilter, true);
     if (withArtifactStreamSummary) {
       if (pageResponse != null && isNotEmpty(pageResponse.getResponse())) {
         for (Workflow workflow : pageResponse.getResponse()) {

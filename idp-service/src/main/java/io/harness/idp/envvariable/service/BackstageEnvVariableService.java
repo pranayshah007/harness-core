@@ -14,6 +14,7 @@ import io.harness.spec.server.idp.v1.model.ResolvedEnvVariableResponse;
 
 import java.util.List;
 import java.util.Optional;
+import org.apache.commons.math3.util.Pair;
 
 public interface BackstageEnvVariableService {
   Optional<BackstageEnvVariable> findByIdAndAccountIdentifier(String identifier, String accountIdentifier);
@@ -32,4 +33,7 @@ public interface BackstageEnvVariableService {
   void deleteMultiUsingEnvNames(List<String> envNames, String accountIdentifier);
   List<BackstageEnvVariable> findByEnvNamesAndAccountIdentifier(List<String> envNames, String accountIdentifier);
   ResolvedEnvVariableResponse resolveSecrets(String accountIdentifier, String namespace);
+  Pair<String, Long> getDecryptedValueAndLastModifiedTime(
+      String envName, String secretIdentifier, String accountIdentifier);
+  void reloadSecrets(String harnessAccount, String namespace);
 }

@@ -151,7 +151,9 @@ public class DeploymentServiceImpl implements DeploymentService {
     } else if (deploymentSummary.getK8sDeploymentKey() != null) {
       K8sDeploymentKey k8sDeploymentKey = deploymentSummary.getK8sDeploymentKey();
       query.filter("k8sDeploymentKey.releaseName", k8sDeploymentKey.getReleaseName());
-      query.filter("k8sDeploymentKey.releaseNumber", k8sDeploymentKey.getReleaseNumber());
+      if (k8sDeploymentKey.getReleaseNumber() != null) {
+        query.filter("k8sDeploymentKey.releaseNumber", k8sDeploymentKey.getReleaseNumber());
+      }
       return k8sDeploymentKey;
     } else if (deploymentSummary.getContainerDeploymentKey() != null) {
       return AddDeploymentKeyFilterForContainer(query, deploymentSummary);

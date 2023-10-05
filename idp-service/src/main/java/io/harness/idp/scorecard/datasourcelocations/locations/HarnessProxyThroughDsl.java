@@ -7,6 +7,8 @@
 
 package io.harness.idp.scorecard.datasourcelocations.locations;
 
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.BODY;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
@@ -20,6 +22,8 @@ import io.harness.idp.scorecard.datasourcelocations.entity.DataSourceLocationEnt
 import io.harness.idp.scorecard.datasourcelocations.entity.HttpDataSourceLocationEntity;
 
 import com.google.inject.Inject;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,12 +40,11 @@ import org.json.JSONObject;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class HarnessProxyThroughDsl implements DataSourceLocation {
   DslClientFactory dslClientFactory;
-  private static String BODY = "{BODY}";
   @Override
   public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
       DataSourceLocationEntity dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues,
       Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
-      Map<String, String> possibleReplaceableUrlPairs) {
+      Map<String, String> possibleReplaceableUrlPairs) throws NoSuchAlgorithmException, KeyManagementException {
     ApiRequestDetails apiRequestDetails =
         ((HttpDataSourceLocationEntity) dataSourceLocationEntity).getApiRequestDetails();
     String apiUrl = apiRequestDetails.getUrl();
@@ -93,8 +96,7 @@ public class HarnessProxyThroughDsl implements DataSourceLocation {
   }
 
   @Override
-  public String replaceRequestBodyInputValuePlaceholdersIfAny(
-      Map<String, String> dataPointIdsAndInputValues, String requestBody) {
+  public String replaceInputValuePlaceholdersIfAny(Map<String, String> dataPointIdsAndInputValues, String requestBody) {
     return null;
   }
 }

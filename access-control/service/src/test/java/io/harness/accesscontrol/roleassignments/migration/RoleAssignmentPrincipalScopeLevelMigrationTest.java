@@ -7,6 +7,7 @@
 
 package io.harness.accesscontrol.roleassignments.migration;
 
+import static io.harness.accesscontrol.scopes.harness.ScopeMapper.fromDTO;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.KARAN;
 
@@ -25,7 +26,6 @@ import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAss
 import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
-import io.harness.accesscontrol.scopes.harness.ScopeMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
@@ -50,13 +50,13 @@ public class RoleAssignmentPrincipalScopeLevelMigrationTest extends AccessContro
   private static final String PROJECT_IDENTIFIER = randomAlphabetic(10);
   private static final String SERVICE_ACCOUNT_IDENTIFIER = randomAlphabetic(10);
   private static final String USER_GROUP_IDENTIFIER = randomAlphabetic(10);
-  private static final Scope ORG_SCOPE = ScopeMapper.fromDTO(
-      ScopeDTO.builder().accountIdentifier(ACCOUNT_IDENTIFIER).orgIdentifier(ORG_IDENTIFIER).build());
-  private static final Scope PROJECT_SCOPE = ScopeMapper.fromDTO(ScopeDTO.builder()
-                                                                     .accountIdentifier(ACCOUNT_IDENTIFIER)
-                                                                     .orgIdentifier(ORG_IDENTIFIER)
-                                                                     .projectIdentifier(PROJECT_IDENTIFIER)
-                                                                     .build());
+  private static final Scope ORG_SCOPE =
+      fromDTO(ScopeDTO.builder().accountIdentifier(ACCOUNT_IDENTIFIER).orgIdentifier(ORG_IDENTIFIER).build());
+  private static final Scope PROJECT_SCOPE = fromDTO(ScopeDTO.builder()
+                                                         .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                                         .orgIdentifier(ORG_IDENTIFIER)
+                                                         .projectIdentifier(PROJECT_IDENTIFIER)
+                                                         .build());
 
   @Before
   public void setup() {

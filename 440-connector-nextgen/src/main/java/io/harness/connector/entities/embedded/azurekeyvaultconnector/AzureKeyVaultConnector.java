@@ -50,6 +50,7 @@ public class AzureKeyVaultConnector extends Connector {
   Boolean useManagedIdentity;
   AzureManagedIdentityType azureManagedIdentityType;
   String managedClientId;
+  @Builder.Default Boolean enablePurge = false;
   @Getter(AccessLevel.NONE) Boolean vaultConfiguredManually;
   @Builder.Default AzureEnvironmentType azureEnvironmentType = AZURE;
   public boolean isVaultConfiguredManually() {

@@ -571,6 +571,18 @@ public class KubernetesResourceTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testRedactSecretValuesCustomMask() throws Exception {
+    URL url = this.getClass().getResource("/secret.yaml");
+    String fileContents = Resources.toString(url, Charsets.UTF_8);
+    KubernetesResource resource = processYaml(fileContents).get(0);
+    resource = processYaml(resource.redactSecretValues(resource.getSpec(), "masked+secret", "xxx")).get(0);
+    assertThat(resource.getField("stringData.cred")).isEqualTo("xxx");
+    assertThat(resource.getField("data.username")).isEqualTo("masked+secret");
+  }
+
+  @Test
   @Owner(developers = ANSHUL)
   @Category(UnitTests.class)
   public void testUpdateConfigMapAndSecretRef() throws Exception {

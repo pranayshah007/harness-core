@@ -1,0 +1,36 @@
+pipeline:
+  identifier: test_1
+  stages:
+    - stage:
+        identifier: stg1
+        description: ""
+        type: Custom
+    - stage:
+        name: stg2
+        identifier: stg2
+        description: ""
+        type: Custom
+        variables:
+          - name: var3
+            type: String
+            description: ""
+            required: false
+            value: <+pipeline.variables.log_level>
+          - name: var4
+            type: String
+            description: ""
+            required: false
+            value: " <+pipeline.variables.aws_resources>"
+  variables:
+    - name: log_level
+      type: String
+      description: ""
+      required: false
+      default: "2"
+      value: <+input>.allowedValues(0,1,2,3)
+    - name: aws_resources
+      type: String
+      description: ""
+      required: false
+      value: <+input>.allowedValues(true,false)
+  allowStageExecutions: true

@@ -61,24 +61,15 @@ public class ServiceFilterHelper {
   public Criteria createCriteriaForGetList(String accountId, String orgIdentifier, String projectIdentifier,
       List<String> scopedServiceRefs, boolean deleted, String searchTerm, ServiceDefinitionType type,
       Boolean gitOpsEnabled, boolean includeAllServicesAccessibleAtScope, String repoName) {
-    Criteria criteria = createCriteriaForGetList(
-        accountId, orgIdentifier, projectIdentifier, scopedServiceRefs, deleted, includeAllServicesAccessibleAtScope);
-    final List<Criteria> andCriterias = new ArrayList<>();
+    Criteria criteria = createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, scopedServiceRefs,
+        deleted, includeAllServicesAccessibleAtScope, searchTerm);
 
     if (isNotEmpty(repoName)) {
       criteria.and(ServiceEntityKeys.repo).is(repoName);
     }
-    if (isNotEmpty(searchTerm)) {
-      Criteria searchCriteria = createSearchTermCriteria(searchTerm);
-      andCriterias.add(searchCriteria);
-    }
 
     if (type != null) {
       criteria.and(ServiceEntityKeys.type).is(type.name());
-    }
-
-    if (isNotEmpty(andCriterias)) {
-      criteria = criteria.andOperator(andCriterias.toArray(Criteria[] ::new));
     }
 
     return applyBooleanFilter(criteria, gitOpsEnabled, ServiceEntityKeys.gitOpsEnabled);
@@ -153,7 +144,7 @@ public class ServiceFilterHelper {
   }
 
   public Criteria createCriteriaForGetList(String accountId, String orgIdentifier, String projectIdentifier,
-      List<String> scopedServiceRefs, boolean deleted, boolean includeAllServicesAccessibleAtScope) {
+      List<String> scopedServiceRefs, boolean deleted, boolean includeAllServicesAccessibleAtScope, String searchTerm) {
     Criteria criteria = new Criteria();
     if (isNotEmpty(accountId)) {
       // accountId
@@ -181,6 +172,12 @@ public class ServiceFilterHelper {
       if (scopedServicesCriteria != null) {
         criteriaList.add(scopedServicesCriteria);
       }
+
+      if (isNotEmpty(searchTerm)) {
+        Criteria searchCriteria = createSearchTermCriteria(searchTerm);
+        criteriaList.add(searchCriteria);
+      }
+
       if (criteriaList.size() != 0) {
         criteria.andOperator(criteriaList.toArray(new Criteria[0]));
       }

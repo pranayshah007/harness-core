@@ -80,6 +80,9 @@ public interface YamlTypes {
   String ECS_BLUE_GREEN_CREATE_SERVICE = StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE;
   String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS;
   String ECS_BLUE_GREEN_ROLLBACK = StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK;
+  String ECS_SERVICE_SETUP = StepSpecTypeConstants.ECS_SERVICE_SETUP;
+  String ECS_UPGRADE_CONTAINER = StepSpecTypeConstants.ECS_UPGRADE_CONTAINER;
+  String ECS_BASIC_ROLLBACK = StepSpecTypeConstants.ECS_BASIC_ROLLBACK;
 
   String AZURE_SLOT_DEPLOYMENT = StepSpecTypeConstants.AZURE_SLOT_DEPLOYMENT;
   String AZURE_TRAFFIC_SHIFT = StepSpecTypeConstants.AZURE_TRAFFIC_SHIFT;
@@ -188,6 +191,7 @@ public interface YamlTypes {
 
   String ELASTIGROUP_SERVICE_SETTINGS_STEP = "Elastigroup_Service_Settings";
   String AZURE_SERVICE_SETTINGS_STEP = "Azure_Service_Settings";
+  String ASG_SERVICE_SETTINGS_STEP = "Asg_Service_Settings";
 
   String APPLICATION_SETTINGS = "applicationSettings";
   String CONNECTION_STRINGS = "connectionStrings";

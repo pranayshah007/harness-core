@@ -7,8 +7,6 @@
 
 package io.harness.engine.pms.execution.strategy.identity;
 
-import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
-
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -37,7 +35,6 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.tasks.ResponseData;
 
-import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -101,9 +98,9 @@ public class IdentityStrategyInternalStep
   public StepResponse handleChildResponse(
       Ambiance ambiance, IdentityStepParameters identityParams, Map<String, ResponseData> responseDataMap) {
     NodeExecution originalNodeExecution = nodeExecutionService.getWithFieldsIncluded(
-        identityParams.getOriginalNodeExecutionId(), Sets.newHashSet(NodeExecutionKeys.uuid, NodeExecutionKeys.status));
+        identityParams.getOriginalNodeExecutionId(), Collections.singleton(NodeExecutionKeys.status));
     // Copying the outcomes
-    pmsOutcomeService.cloneForRetryExecution(ambiance, originalNodeExecution.getUuid());
+    pmsOutcomeService.cloneForRetryExecution(ambiance, identityParams.getOriginalNodeExecutionId());
     return StepResponse.builder().status(originalNodeExecution.getStatus()).build();
   }
 
@@ -140,7 +137,11 @@ public class IdentityStrategyInternalStep
   @Override
   public StepResponse handleChildrenResponse(
       Ambiance ambiance, IdentityStepParameters identityParams, Map<String, ResponseData> responseDataMap) {
-    return createStepResponseFromChildResponse(responseDataMap);
+    NodeExecution originalNodeExecution = nodeExecutionService.getWithFieldsIncluded(
+        identityParams.getOriginalNodeExecutionId(), NodeProjectionUtils.withStatus);
+    // copying the outcomes
+    pmsOutcomeService.cloneForRetryExecution(ambiance, identityParams.getOriginalNodeExecutionId());
+    return StepResponse.builder().status(originalNodeExecution.getStatus()).build();
   }
 
   @Override

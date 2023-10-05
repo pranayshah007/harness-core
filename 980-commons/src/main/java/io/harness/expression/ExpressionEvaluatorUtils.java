@@ -178,12 +178,23 @@ public class ExpressionEvaluatorUtils {
    * @return value wrapped in optional if field is found, else Optional.none()
    */
   public static Optional<Object> fetchField(Object obj, String field) {
+    return fetchField(engine, obj, field);
+  }
+
+  /**
+   * Fetch field from inside the object using jexl conventions. POJSs, Maps, Classes having get method are supported.
+   *
+   * @param obj the object whose field we have to find
+   * @param field the field name
+   * @return value wrapped in optional if field is found, else Optional.none()
+   */
+  public static Optional<Object> fetchField(JexlEngine jexlEngine, Object obj, String field) {
     if (obj == null || field == null) {
       return Optional.empty();
     }
 
     try {
-      Object retObj = engine.getProperty(obj, field);
+      Object retObj = jexlEngine.getProperty(obj, field);
       return Optional.ofNullable(retObj);
     } catch (JexlException ex) {
       log.debug(format("Could not fetch field '%s'", field), ex);

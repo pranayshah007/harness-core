@@ -20,6 +20,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import lombok.Builder;
 import lombok.Value;
@@ -32,6 +33,8 @@ public class WebhookTaskParams implements TaskParameters, ExecutionCapabilityDem
   @Expression(ALLOW_SECRETS) List<String> webhookUrls;
   String message;
   String notificationId;
+  @Expression(ALLOW_SECRETS) Map<String, String> headers;
+  String accountId;
   private static final Pattern SECRET_EXPRESSION =
       Pattern.compile("\\$\\{ngSecretManager\\.obtain\\(\\\"\\w*[\\.]?\\w*\\\"\\, ([+-]?\\d*|0)\\)\\}");
 

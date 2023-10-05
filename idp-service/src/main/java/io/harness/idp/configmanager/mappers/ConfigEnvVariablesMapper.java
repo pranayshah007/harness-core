@@ -20,9 +20,8 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class ConfigEnvVariablesMapper {
   public List<PluginConfigEnvVariablesEntity> getEntitiesForEnvVariables(
-      AppConfig appConfig, String accountIdentifier) {
+      AppConfig appConfig, List<BackstageEnvSecretVariable> envVariables, String accountIdentifier) {
     List<PluginConfigEnvVariablesEntity> resultList = new ArrayList<>();
-    List<BackstageEnvSecretVariable> envVariables = appConfig.getEnvVariables();
     for (BackstageEnvSecretVariable backstageEnvSecretVariable : envVariables) {
       resultList.add(PluginConfigEnvVariablesEntity.builder()
                          .envName(backstageEnvSecretVariable.getEnvName())

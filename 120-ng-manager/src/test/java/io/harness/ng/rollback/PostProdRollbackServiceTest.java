@@ -82,6 +82,7 @@ public class PostProdRollbackServiceTest extends CategoryTest {
                  .stageStatus(Status.FAILED)
                  .rollbackStatus(RollbackStatus.STARTED)
                  .infrastructureMappingId(infraMappingId)
+                 .instanceType(InstanceType.K8S_INSTANCE)
                  .id(instanceKey)
                  .build())
         .when(instanceRepository)

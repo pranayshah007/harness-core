@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -182,10 +183,10 @@ public class EnvironmentInfraFilterUtilsTest extends CategoryTest {
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void testProcessTagsFilterYamlForInfraForMatchAny() {
-    Set<InfrastructureEntity> listOfInfra = getInfrastructureListForAnyTagMatch();
+    List<InfrastructureEntity> listOfInfra = getInfrastructureListForAnyTagMatch();
     final FilterYaml filterYaml = getTagFilterYamlMatchTypeAny();
 
-    Set<InfrastructureEntity> filteredEnv =
+    List<InfrastructureEntity> filteredEnv =
         EnvironmentInfraFilterUtils.processFilterYamlForInfraStructures(filterYaml, listOfInfra);
     assertThat(listOfInfra.size()).isEqualTo(filteredEnv.size());
   }
@@ -194,10 +195,10 @@ public class EnvironmentInfraFilterUtilsTest extends CategoryTest {
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void testProcessTagsFilterYamlForInfraForMatchAll() {
-    Set<InfrastructureEntity> listOfInfra = getInfrastructureListForAllTagMatch();
+    List<InfrastructureEntity> listOfInfra = getInfrastructureListForAllTagMatch();
 
     final FilterYaml filterYaml = getTagFilterYamlMatchTypeAll();
-    Set<InfrastructureEntity> filteredEnv =
+    List<InfrastructureEntity> filteredEnv =
         EnvironmentInfraFilterUtils.processFilterYamlForInfraStructures(filterYaml, listOfInfra);
     assertThat(filteredEnv.size()).isEqualTo(2);
   }
@@ -417,23 +418,23 @@ public class EnvironmentInfraFilterUtilsTest extends CategoryTest {
   }
 
   @NotNull
-  private static Set<InfrastructureEntity> getInfrastructureListForAnyTagMatch() {
+  private static List<InfrastructureEntity> getInfrastructureListForAnyTagMatch() {
     List<NGTag> infra1Tags = Arrays.asList(NGTag.builder().key("infra").value("dev").build());
     List<NGTag> infra2Tags = Arrays.asList(
         NGTag.builder().key("infra").value("dev").build(), NGTag.builder().key("infra1").value("dev2").build());
-    final Set<InfrastructureEntity> listOfInfra =
-        new HashSet<>(Arrays.asList(InfrastructureEntity.builder().tags(infra1Tags).build(),
+    final List<InfrastructureEntity> listOfInfra =
+        new LinkedList<>(Arrays.asList(InfrastructureEntity.builder().tags(infra1Tags).build(),
             InfrastructureEntity.builder().tags(infra2Tags).build()));
     return listOfInfra;
   }
 
   @NotNull
-  private static Set<InfrastructureEntity> getInfrastructureListForAllTagMatch() {
+  private static List<InfrastructureEntity> getInfrastructureListForAllTagMatch() {
     List<NGTag> infra1Tags = Arrays.asList(NGTag.builder().key("env").value("dev").build());
     List<NGTag> infra2Tags = Arrays.asList(
         NGTag.builder().key("env").value("dev").build(), NGTag.builder().key("env1").value("dev2").build());
-    final Set<InfrastructureEntity> listOfInfra =
-        new HashSet<>(Arrays.asList(InfrastructureEntity.builder().tags(infra1Tags).build(),
+    final List<InfrastructureEntity> listOfInfra =
+        new LinkedList<>(Arrays.asList(InfrastructureEntity.builder().tags(infra1Tags).build(),
             InfrastructureEntity.builder().tags(infra2Tags).build()));
     return listOfInfra;
   }

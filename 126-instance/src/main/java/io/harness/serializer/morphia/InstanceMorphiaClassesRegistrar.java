@@ -15,6 +15,7 @@ import io.harness.entities.DeploymentSummary;
 import io.harness.entities.InfrastructureMapping;
 import io.harness.entities.Instance;
 import io.harness.entities.InstanceSyncPerpetualTaskMapping;
+import io.harness.entities.ReleaseDetailsMapping;
 import io.harness.entities.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfo;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
@@ -31,6 +32,7 @@ public class InstanceMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(DeploymentSummary.class);
     set.add(DeploymentAccounts.class);
     set.add(InstanceSyncPerpetualTaskMapping.class);
+    set.add(ReleaseDetailsMapping.class);
   }
 
   @Override

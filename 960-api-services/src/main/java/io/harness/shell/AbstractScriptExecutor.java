@@ -233,4 +233,12 @@ public abstract class AbstractScriptExecutor implements BaseScriptExecutor {
   public LogCallback getLogCallback() {
     return this.logCallback;
   }
+
+  public boolean getShouldSaveExecutionLogs() {
+    return this.shouldSaveExecutionLogs;
+  }
+
+  public void setShouldSaveExecutionLogs(boolean shouldSaveExecutionLogs) {
+    this.shouldSaveExecutionLogs = shouldSaveExecutionLogs;
+  }
 }

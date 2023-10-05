@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.observers.NodeStatusUpdateObserver;
 import io.harness.execution.PlanExecution;
+import io.harness.monitoring.ExecutionCountWithAccountResult;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 
@@ -58,6 +59,8 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
 
   Status calculateStatus(String planExecutionId);
 
+  Status calculateStatus(String planExecutionId, boolean shouldSkipIdentityNodes);
+
   PlanExecution updateCalculatedStatus(String planExecutionId);
 
   /**
@@ -79,6 +82,7 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
   CloseableIterator<PlanExecution> fetchPlanExecutionsByStatusFromAnalytics(
       Set<Status> statuses, Set<String> fieldNames);
 
+  // Todo: Remove
   List<PlanExecution> findAllByAccountIdAndOrgIdAndProjectIdAndLastUpdatedAtInBetweenTimestamps(
       String accountId, String orgId, String projectId, long startTS, long endTS);
 
@@ -90,11 +94,18 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
    * Deletes the planExecution and its related metadata
    * @param planExecutionIds Ids of to be deleted planExecutions
    */
-  void deleteAllPlanExecutionAndMetadata(Set<String> planExecutionIds);
+  void deleteAllPlanExecutionAndMetadata(
+      Set<String> planExecutionIds, boolean retainPipelineExecutionDetailsAfterDelete);
 
   /**
    * Updates TTL all planExecution and its related metadata
    * @param planExecutionId Ids of to be updated TTL planExecutions
    */
   void updateTTL(String planExecutionId, Date ttlDate);
+
+  /**
+   * Fetches aggregated running execution count per account from analytics node
+   * @return
+   */
+  List<ExecutionCountWithAccountResult> aggregateRunningExecutionCountPerAccount();
 }

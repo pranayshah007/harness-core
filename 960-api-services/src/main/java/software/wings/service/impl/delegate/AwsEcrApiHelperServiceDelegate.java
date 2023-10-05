@@ -92,8 +92,8 @@ public class AwsEcrApiHelperServiceDelegate extends AwsEcrApiHelperServiceDelega
     return new DescribeRepositoriesResult();
   }
 
-  private Repository getRepository(
-      AwsInternalConfig awsConfig, String registryId, String region, String repositoryName) {
+  private Repository getRepository(AwsInternalConfig awsConfig, String registryId, String region, String repositoryName,
+      boolean throwFormattedException) {
     try {
       DescribeRepositoriesRequest describeRepositoriesRequest = new DescribeRepositoriesRequest();
       if (StringUtils.isNotBlank(registryId)) {
@@ -110,15 +110,24 @@ public class AwsEcrApiHelperServiceDelegate extends AwsEcrApiHelperServiceDelega
     } catch (AmazonECRException e) {
       handleExceptionWhileFetchingRepositories(e.getStatusCode(), e.getErrorMessage());
     } catch (Exception e) {
-      throw new InvalidRequestException(
-          "Please input a valid AWS Connector and corresponding region. Check if permissions are scoped for the authenticated user",
-          new ArtifactServerException(ExceptionUtils.getMessage(e), e, WingsException.USER));
+      if (throwFormattedException) {
+        throw new InvalidRequestException(
+            "Please input a valid AWS Connector and corresponding region. Check if permissions are scoped for the authenticated user",
+            new ArtifactServerException(ExceptionUtils.getMessage(e), e, WingsException.USER));
+      } else {
+        throw e;
+      }
     }
     return null;
   }
 
   public String getEcrImageUrl(AwsInternalConfig awsConfig, String registryId, String region, String imageName) {
-    Repository repository = getRepository(awsConfig, registryId, region, imageName);
+    Repository repository = getRepository(awsConfig, registryId, region, imageName, true);
+    return repository != null ? repository.getRepositoryUri() : null;
+  }
+
+  public String getEcrImageUrlForCG(AwsInternalConfig awsConfig, String registryId, String region, String imageName) {
+    Repository repository = getRepository(awsConfig, registryId, region, imageName, false);
     return repository != null ? repository.getRepositoryUri() : null;
   }
 

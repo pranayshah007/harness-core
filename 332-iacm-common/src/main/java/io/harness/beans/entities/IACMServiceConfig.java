@@ -19,4 +19,6 @@ public class IACMServiceConfig {
   String baseUrl;
   String globalToken;
   String externalUrl;
+  String costEstimationToken;
+  String costEstimationAPIIUrl;
 }

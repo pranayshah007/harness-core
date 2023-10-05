@@ -28,6 +28,8 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(PIPELINE)
 public class LogStreamingHelper {
+  public static String IS_SIMPLIFY = "isSimplified";
+
   public void colorLog(LogLine logLine) {
     String message = logLine.getMessage();
     if (logLine.getLevel() == LogLevel.ERROR) {
@@ -41,14 +43,39 @@ public class LogStreamingHelper {
 
   @Nonnull
   public String generateLogBaseKey(LinkedHashMap<String, String> logStreamingAbstractions) {
+    if (logStreamingAbstractions.containsKey(IS_SIMPLIFY) && logStreamingAbstractions.get(IS_SIMPLIFY).equals("true")) {
+      return generateSimplifiedLogBaseKey(logStreamingAbstractions);
+    }
+
     // Generate base log key that will be used for writing logs to log streaming service
     StringBuilder logBaseKey = new StringBuilder();
     for (Map.Entry<String, String> entry : logStreamingAbstractions.entrySet()) {
       if (logBaseKey.length() != 0) {
         logBaseKey.append('/');
       }
+
       logBaseKey.append(entry.getKey()).append(':').append(entry.getValue());
     }
+
+    return logBaseKey.toString();
+  }
+
+  @Nonnull
+  public String generateSimplifiedLogBaseKey(LinkedHashMap<String, String> logStreamingAbstractions) {
+    if (logStreamingAbstractions.containsKey(IS_SIMPLIFY) && logStreamingAbstractions.get(IS_SIMPLIFY).equals("true")) {
+      logStreamingAbstractions.remove(IS_SIMPLIFY, "true");
+    }
+
+    // Generate base log key that will be used for writing logs to log streaming service
+    StringBuilder logBaseKey = new StringBuilder();
+    for (Map.Entry<String, String> entry : logStreamingAbstractions.entrySet()) {
+      if (logBaseKey.length() != 0) {
+        logBaseKey.append('/');
+      }
+
+      logBaseKey.append(entry.getValue());
+    }
+
     return logBaseKey.toString();
   }
 

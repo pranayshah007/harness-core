@@ -491,12 +491,13 @@ public class DelegateSetupResource {
          AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
       delegate.setAccountId(accountId);
       delegate.setUuid(delegateId);
-      delegate.setUuid(delegateId);
 
       Delegate existingDelegate = delegateCache.get(accountId, delegateId, true);
       if (existingDelegate != null) {
         delegate.setDelegateType(existingDelegate.getDelegateType());
         delegate.setDelegateGroupName(existingDelegate.getDelegateGroupName());
+        delegate.setDelegateName(existingDelegate.getDelegateName());
+        delegate.setIp(existingDelegate.getIp());
       }
 
       return new RestResponse<>(delegateService.update(delegate));

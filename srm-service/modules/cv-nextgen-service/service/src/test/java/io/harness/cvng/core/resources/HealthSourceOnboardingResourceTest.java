@@ -706,7 +706,7 @@ public class HealthSourceOnboardingResourceTest extends CvNextGenTestBase {
     queryRecordsRequest.setQuery(logQuery);
     queryRecordsRequest.setProviderType(DataSourceType.DATADOG_LOG);
     queryRecordsRequest.setHealthSourceQueryParams(
-        QueryParamsDTO.builder().serviceInstanceField("host").index("main").build());
+        QueryParamsDTO.builder().serviceInstanceField("host").indexes(List.of("main")).build());
     queryRecordsRequest.setHealthSourceParams(HealthSourceParamsDTO.builder().build());
     List<LogDataRecord> logDataRecords = generateLogRecordData(
         "gke-chi-play-delegate-non-preemptible-5a4eed4e-x64v.c.chi-play.internal", startTime, endTime);

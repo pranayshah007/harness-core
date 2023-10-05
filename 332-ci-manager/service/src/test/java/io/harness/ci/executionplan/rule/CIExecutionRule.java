@@ -220,6 +220,7 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
                                       .buildAndPushDockerRegistry("vm-buildAndPushDockerRegistry")
                                       .buildAndPushECR("vm-buildAndPushECR")
                                       .buildAndPushGCR("vm-buildAndPushGCR")
+                                      .buildAndPushGAR("vm-buildAndPushGAR")
                                       .cacheGCS("vm-cacheGCS")
                                       .cacheS3("vm-cacheS3")
                                       .security("vm-security")
@@ -232,6 +233,7 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
             .buildAndPushACRConfig(StepImageConfig.builder().image("bpacr:1.2.3").build())
             .buildAndPushECRConfig(StepImageConfig.builder().image("bpecr:1.2.3").build())
             .buildAndPushGCRConfig(StepImageConfig.builder().image("bpgcr:1.2.3").build())
+            .buildAndPushGARConfig(StepImageConfig.builder().image("bpgar:1.2.3").build())
             .gcsUploadConfig(StepImageConfig.builder().image("gcsupload:1.2.3").build())
             .s3UploadConfig(StepImageConfig.builder().image("s3upload:1.2.3").build())
             .artifactoryUploadConfig(StepImageConfig.builder().image("art:1.2.3").build())
@@ -243,6 +245,7 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
             .sscaEnforcementConfig(StepImageConfig.builder().image("sscaEnforcement:0.0.1").build())
             .slsaVerificationConfig(StepImageConfig.builder().image("slsaVerification:0.0.1").build())
             .provenanceConfig(StepImageConfig.builder().image("provenance:0.0.1").build())
+            .provenanceGcrConfig(StepImageConfig.builder().image("provenanceGcr:0.0.1").build())
             .vmImageConfig(vmImageConfig)
             .build();
 

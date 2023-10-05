@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 33
+version : 34
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers
     name: Mandate Webhook Secrets for Github Triggers
@@ -468,6 +468,51 @@ settings :
     allowOverrides: false
     allowedScopes:
       - ACCOUNT
+  - identifier: email_notification_domain_allowlist
+    name: Email Notification Domain Allowlist
+    category: NOTIFICATIONS
+    groupIdentifier: email_notification_settings
+    defaultValue:
+    valueType: STRING
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+  - identifier: webhook_notification_endpoints_allowlist
+    name: Webhook Notification Endpoints Allowlist
+    category: NOTIFICATIONS
+    groupIdentifier: webhook_notification_settings
+    defaultValue:
+    valueType: STRING
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+  - identifier: slack_notification_endpoints_allowlist
+    name: Slack Notification Endpoints Allowlist
+    category: NOTIFICATIONS
+    groupIdentifier: slack_notification_settings
+    defaultValue:
+    valueType: STRING
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+  - identifier: pagerduty_notification_integration_keys_allowlist
+    name: Pagerduty Notification Integration Keys Allowlist
+    category: NOTIFICATIONS
+    groupIdentifier: pagerduty_notification_settings
+    defaultValue:
+    valueType: STRING
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+  - identifier: msTeam_notification_endpoints_allowlist
+    name: Ms Teams Notification Endpoints Allowlist
+    category: NOTIFICATIONS
+    groupIdentifier: msTeam_notification_settings
+    defaultValue:
+    valueType: STRING
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
   - identifier: aida
     name: AIDA
     category: EULA
@@ -482,5 +527,14 @@ settings :
     category: GIT_EXPERIENCE
     defaultValue: false
     valueType: BOOLEAN
+    allowedScopes:
+      - ACCOUNT
+  - identifier: do_not_delete_pipeline_execution_details
+    name: Do Not Delete Pipeline Execution Details
+    category: PMS
+    groupIdentifier: pms_execution_settings
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: false
     allowedScopes:
       - ACCOUNT

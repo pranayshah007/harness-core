@@ -13,6 +13,7 @@ import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MA
 import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MIN_INSTANCES;
 import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_TARGET_INSTANCES;
 import static io.harness.spotinst.model.SpotInstConstants.GROUP_CONFIG_ELEMENT;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -75,6 +76,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
@@ -851,6 +853,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
         .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
         .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
+        .setMetadata(ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
         .build();
   }
 }

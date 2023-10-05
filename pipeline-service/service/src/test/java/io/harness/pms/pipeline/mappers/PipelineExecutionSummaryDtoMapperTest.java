@@ -17,8 +17,8 @@ import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
+import io.harness.abort.AbortedBy;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.AbortedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.retry.RetryExecutionMetadata;
 import io.harness.execution.StagesExecutionMetadata;

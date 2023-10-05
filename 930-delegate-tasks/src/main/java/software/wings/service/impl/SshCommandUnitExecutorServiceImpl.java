@@ -32,7 +32,6 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.shell.BaseScriptExecutor;
 import io.harness.shell.ShellExecutorConfig;
 import io.harness.shell.SshSessionConfig;
-import io.harness.shell.SshSessionManager;
 import io.harness.shell.ssh.SshClientManager;
 
 import software.wings.beans.command.CommandExecutionContext;
@@ -84,7 +83,6 @@ public class SshCommandUnitExecutorServiceImpl implements CommandUnitExecutorSer
 
   @Override
   public void cleanup(String activityId, Host host) {
-    SshSessionManager.evictAndDisconnectCachedSession(activityId, host.getHostName());
     SshClientManager.evictCacheAndDisconnect(activityId, host.getHostName());
   }
 

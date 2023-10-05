@@ -402,3 +402,12 @@ fi
 if [[ "" != "$SCORECARD_ITERATOR_TARGET_INTERVAL_IN_SECONDS" ]]; then
   export SCORECARD_ITERATOR_TARGET_INTERVAL_IN_SECONDS; yq -i '.scorecardScoreComputationIteratorConfig.targetIntervalInSeconds=env(SCORECARD_ITERATOR_TARGET_INTERVAL_IN_SECONDS)' $CONFIG_FILE
 fi
+
+
+if [[ "" != "$AUDIT_CLIENT_BASEURL" ]]; then
+  export AUDIT_CLIENT_BASEURL; yq -i '.auditClientConfig.baseUrl=env(AUDIT_CLIENT_BASEURL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$AUDIT_ENABLED" ]]; then
+  export AUDIT_ENABLED; yq -i '.enableAudit=env(AUDIT_ENABLED)' $CONFIG_FILE
+fi

@@ -7,10 +7,12 @@
 
 package io.harness.encryptors.clients;
 
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.GAURAV_NANDA;
 import static io.harness.rule.OwnerRule.PIYUSH;
 import static io.harness.rule.OwnerRule.UTKARSH;
 import static io.harness.rule.OwnerRule.VIKAS_M;
+import static io.harness.security.encryption.EncryptedRecordData.builder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -29,7 +31,6 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedRecord;
-import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionType;
 
 import software.wings.beans.AwsSecretsManagerConfig;
@@ -316,7 +317,7 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
         new GetSecretValueResult().withSecretString(UUIDGenerator.generateUuid());
     when(awsSecretsManager.getSecretValue(getSecretRequest)).thenReturn(getSecretValueResult);
 
-    EncryptedRecord oldRecord = EncryptedRecordData.builder()
+    EncryptedRecord oldRecord = builder()
                                     .name(UUIDGenerator.generateUuid())
                                     .encryptionKey(UUIDGenerator.generateUuid())
                                     .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
@@ -345,7 +346,7 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
         new GetSecretValueResult().withSecretString(UUIDGenerator.generateUuid());
     when(awsSecretsManager.getSecretValue(getSecretRequest)).thenReturn(getSecretValueResult);
 
-    EncryptedRecord oldRecord = EncryptedRecordData.builder()
+    EncryptedRecord oldRecord = builder()
                                     .name(UUIDGenerator.generateUuid())
                                     .encryptionKey(UUIDGenerator.generateUuid())
                                     .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
@@ -375,7 +376,7 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
         new GetSecretValueResult().withSecretString(UUIDGenerator.generateUuid());
     when(awsSecretsManager.getSecretValue(getSecretRequest)).thenReturn(getSecretValueResult);
 
-    EncryptedRecord oldRecord = EncryptedRecordData.builder()
+    EncryptedRecord oldRecord = builder()
                                     .name(UUIDGenerator.generateUuid())
                                     .encryptionKey(UUIDGenerator.generateUuid())
                                     .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
@@ -407,7 +408,7 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
         new GetSecretValueResult().withSecretString(UUIDGenerator.generateUuid());
     when(awsSecretsManager.getSecretValue(getSecretRequest)).thenReturn(getSecretValueResult);
 
-    EncryptedRecord oldRecord = EncryptedRecordData.builder()
+    EncryptedRecord oldRecord = builder()
                                     .name(UUIDGenerator.generateUuid())
                                     .encryptionKey(UUIDGenerator.generateUuid())
                                     .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
@@ -453,7 +454,7 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
         .thenReturn(new GetSecretValueResult().withSecretString(UUIDGenerator.generateUuid()));
 
     // Act
-    EncryptedRecord oldRecord = EncryptedRecordData.builder()
+    EncryptedRecord oldRecord = builder()
                                     .name(UUIDGenerator.generateUuid())
                                     .encryptionKey(UUIDGenerator.generateUuid())
                                     .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
@@ -490,7 +491,7 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
         new GetSecretValueResult().withSecretString(UUIDGenerator.generateUuid());
     when(awsSecretsManager.getSecretValue(getSecretRequest)).thenReturn(getSecretValueResult);
 
-    EncryptedRecord oldRecord = EncryptedRecordData.builder()
+    EncryptedRecord oldRecord = builder()
                                     .name(UUIDGenerator.generateUuid())
                                     .encryptionKey(UUIDGenerator.generateUuid())
                                     .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
@@ -523,7 +524,7 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
         new GetSecretValueResult().withSecretString(UUIDGenerator.generateUuid());
     when(awsSecretsManager.getSecretValue(getSecretRequest)).thenReturn(getSecretValueResult);
 
-    EncryptedRecord oldRecord = EncryptedRecordData.builder()
+    EncryptedRecord oldRecord = builder()
                                     .name(UUIDGenerator.generateUuid())
                                     .encryptionKey(UUIDGenerator.generateUuid())
                                     .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
@@ -554,7 +555,7 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
     when(awsSecretsManager.getSecretValue(getSecretRequest))
         .thenThrow(new ResourceNotFoundException("Secret not found"));
 
-    EncryptedRecord oldRecord = EncryptedRecordData.builder()
+    EncryptedRecord oldRecord = builder()
                                     .name(UUIDGenerator.generateUuid())
                                     .encryptionKey(UUIDGenerator.generateUuid())
                                     .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
@@ -594,7 +595,7 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
     when(awsSecretsManager.getSecretValue(getSecretRequest))
         .thenThrow(new ResourceNotFoundException("Secret not found"));
 
-    EncryptedRecord oldRecord = EncryptedRecordData.builder()
+    EncryptedRecord oldRecord = builder()
                                     .name(UUIDGenerator.generateUuid())
                                     .encryptionKey(UUIDGenerator.generateUuid())
                                     .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
@@ -634,7 +635,7 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
     when(awsSecretsManager.getSecretValue(getSecretRequest))
         .thenThrow(new ResourceNotFoundException("Secret not found"));
 
-    EncryptedRecord oldRecord = EncryptedRecordData.builder()
+    EncryptedRecord oldRecord = builder()
                                     .name(UUIDGenerator.generateUuid())
                                     .encryptionKey(UUIDGenerator.generateUuid())
                                     .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
@@ -699,7 +700,7 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
     String secretName = UUIDGenerator.generateUuid();
     when(awsSecretsManager.getSecretValue(any()))
         .thenThrow(new ResourceNotFoundException("Secret not found mock exception"));
-    EncryptedRecord encryptedRecord = EncryptedRecordData.builder()
+    EncryptedRecord encryptedRecord = builder()
                                           .encryptedValue(UUIDGenerator.generateUuid().toCharArray())
                                           .encryptionKey(UUIDGenerator.generateUuid())
                                           .name(UUIDGenerator.generateUuid())
@@ -726,10 +727,71 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
     GetSecretValueRequest getSecretRequest = new GetSecretValueRequest().withSecretId(fullSecretName);
     GetSecretValueResult getSecretValueResult = new GetSecretValueResult().withSecretString(result);
     when(awsSecretsManager.getSecretValue(getSecretRequest)).thenReturn(getSecretValueResult);
-    EncryptedRecord encryptedRecord = EncryptedRecordData.builder().path(fullSecretNameAndKey).build();
+    EncryptedRecord encryptedRecord = builder().path(fullSecretNameAndKey).build();
     char[] returnedValue = awsSecretsManagerEncryptor.fetchSecretValue(
         awsSecretsManagerConfig.getAccountId(), encryptedRecord, awsSecretsManagerConfig);
     assertThat(returnedValue).isEqualTo(value.toCharArray());
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testFetchJsonSecret() {
+    String jsonText =
+        "{\"key1\":\"value1\",\"key2\":{\"key21\":\"value21\",\"key22\":\"value22\"},\"key3\":{\"key31\":{\"key311\":\"value311\"}}}";
+    String fullSecretName = awsSecretsManagerConfig.getSecretNamePrefix() + "/" + UUIDGenerator.generateUuid();
+    GetSecretValueResult getSecretValueResult = new GetSecretValueResult().withSecretString(jsonText);
+    when(awsSecretsManager.getSecretValue(any(GetSecretValueRequest.class))).thenReturn(getSecretValueResult);
+
+    EncryptedRecord encryptedRecord = builder().path(fullSecretName).build();
+    char[] returnedValue = awsSecretsManagerEncryptor.fetchSecretValue(
+        awsSecretsManagerConfig.getAccountId(), encryptedRecord, awsSecretsManagerConfig);
+    assertThat(String.valueOf(returnedValue)).isEqualTo(jsonText);
+
+    encryptedRecord = builder().path(fullSecretName + "#").build();
+    returnedValue = awsSecretsManagerEncryptor.fetchSecretValue(
+        awsSecretsManagerConfig.getAccountId(), encryptedRecord, awsSecretsManagerConfig);
+    assertThat(String.valueOf(returnedValue)).isEqualTo(jsonText);
+
+    encryptedRecord = builder().path(fullSecretName + "#key1").build();
+    returnedValue = awsSecretsManagerEncryptor.fetchSecretValue(
+        awsSecretsManagerConfig.getAccountId(), encryptedRecord, awsSecretsManagerConfig);
+    assertThat(String.valueOf(returnedValue)).isEqualTo("value1");
+
+    encryptedRecord = builder().path(fullSecretName + "#key2").build();
+    returnedValue = awsSecretsManagerEncryptor.fetchSecretValue(
+        awsSecretsManagerConfig.getAccountId(), encryptedRecord, awsSecretsManagerConfig);
+    assertThat(String.valueOf(returnedValue)).isEqualTo("{\"key21\":\"value21\",\"key22\":\"value22\"}");
+
+    encryptedRecord = builder().path(fullSecretName + "#key3").build();
+    returnedValue = awsSecretsManagerEncryptor.fetchSecretValue(
+        awsSecretsManagerConfig.getAccountId(), encryptedRecord, awsSecretsManagerConfig);
+    assertThat(String.valueOf(returnedValue)).isEqualTo("{\"key31\":{\"key311\":\"value311\"}}");
+
+    encryptedRecord = builder().path(fullSecretName + "#key3.key31").build();
+    returnedValue = awsSecretsManagerEncryptor.fetchSecretValue(
+        awsSecretsManagerConfig.getAccountId(), encryptedRecord, awsSecretsManagerConfig);
+    assertThat(String.valueOf(returnedValue)).isEqualTo("{\"key311\":\"value311\"}");
+
+    encryptedRecord = builder().path(fullSecretName + "#key3.key31.key311").build();
+    returnedValue = awsSecretsManagerEncryptor.fetchSecretValue(
+        awsSecretsManagerConfig.getAccountId(), encryptedRecord, awsSecretsManagerConfig);
+    assertThat(String.valueOf(returnedValue)).isEqualTo("value311");
+  }
+
+  @Test(expected = SecretManagementDelegateException.class)
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testFetchJsonSecret_throwsAwsSecretManagerExceptionForInvalidKey() {
+    String jsonText =
+        "{\"key1\":\"value1\",\"key2\":{\"key21\":\"value21\",\"key22\":\"value22\"},\"key3\":{\"key31\":{\"key311\":\"value311\"}}}";
+    String fullSecretName = awsSecretsManagerConfig.getSecretNamePrefix() + "/" + UUIDGenerator.generateUuid();
+    GetSecretValueResult getSecretValueResult = new GetSecretValueResult().withSecretString(jsonText);
+    when(awsSecretsManager.getSecretValue(any(GetSecretValueRequest.class))).thenReturn(getSecretValueResult);
+
+    EncryptedRecord encryptedRecord = builder().path(fullSecretName + "#invalidKey").build();
+    awsSecretsManagerEncryptor.fetchSecretValue(
+        awsSecretsManagerConfig.getAccountId(), encryptedRecord, awsSecretsManagerConfig);
   }
 
   @Test
@@ -740,7 +802,7 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
     GetSecretValueRequest getSecretRequest = new GetSecretValueRequest().withSecretId(path);
     when(awsSecretsManager.getSecretValue(getSecretRequest))
         .thenThrow(new ResourceNotFoundException("Secret not found mock exception"));
-    EncryptedRecord encryptedRecord = EncryptedRecordData.builder().path(path).build();
+    EncryptedRecord encryptedRecord = builder().path(path).build();
     try {
       awsSecretsManagerEncryptor.fetchSecretValue(
           awsSecretsManagerConfig.getAccountId(), encryptedRecord, awsSecretsManagerConfig);
@@ -758,7 +820,7 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
     String path = UUIDGenerator.generateUuid();
     GetSecretValueRequest getSecretRequest = new GetSecretValueRequest().withSecretId(path);
     when(awsSecretsManager.getSecretValue(getSecretRequest)).thenThrow(new UncheckedTimeoutException("Time out"));
-    EncryptedRecord encryptedRecord = EncryptedRecordData.builder().path(path).build();
+    EncryptedRecord encryptedRecord = builder().path(path).build();
     try {
       awsSecretsManagerEncryptor.fetchSecretValue(
           awsSecretsManagerConfig.getAccountId(), encryptedRecord, awsSecretsManagerConfig);
@@ -777,7 +839,7 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
     GetSecretValueRequest getSecretRequest = new GetSecretValueRequest().withSecretId(path);
     when(awsSecretsManager.getSecretValue(getSecretRequest))
         .thenThrow(new RuntimeException("Random runtime exception"));
-    EncryptedRecord encryptedRecord = EncryptedRecordData.builder().path(path).build();
+    EncryptedRecord encryptedRecord = builder().path(path).build();
     try {
       awsSecretsManagerEncryptor.fetchSecretValue(
           awsSecretsManagerConfig.getAccountId(), encryptedRecord, awsSecretsManagerConfig);
@@ -794,7 +856,7 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCredentialProviderTypeSelection_shouldPass() {
     System.setProperty("AWS_ACCESS_KEY_ID", "AKIAWQ5IKSASTHBLFKEU");
-    System.setProperty("AWS_SECRET_ACCESS_KEY", "r6l+fyzSsocB9ng1HmShrsO7bloLTateNv0cUpVa");
+    System.setProperty("AWS_SECRET_ACCESS_KEY", "this-is-dummy-aws-access-key-for-testing");
     awsSecretsManagerConfig.setAssumeIamRoleOnDelegate(true);
     AWSCredentialsProvider provider = awsSecretsManagerEncryptor.getAwsCredentialsProvider(awsSecretsManagerConfig);
     assertThat(provider).isInstanceOf(DefaultAWSCredentialsProviderChain.class);

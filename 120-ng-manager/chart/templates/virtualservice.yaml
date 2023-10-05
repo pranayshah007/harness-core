@@ -12,7 +12,7 @@ metadata:
     {{- end }}
   annotations:
     {{- if .Values.virtualService.annotations }}
-    {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.ingress.annotations "context" $) | nindent 4 }}
+    {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.virtualService.annotations "context" $) | nindent 4 }}
     {{- end }}
     {{- if .Values.global.commonAnnotations }}
     {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
@@ -57,4 +57,39 @@ spec:
         port:
           number: 80
         host: next-gen-ui
+{{- if not .Values.global.cg.enabled }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: z-redirect-ng-ui
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  gateways:
+    {{- if .Values.global.istio.gateway.create }}
+    - istio-system/public
+    {{- else }}
+    {{- range .Values.global.istio.virtualService.gateways }}
+    - {{ . }}
+    {{- end }}
+    {{- end }}
+  hosts:
+    {{- range .Values.global.istio.virtualService.hosts }}
+    - {{ . }}
+    {{- end }}
+  http:
+  - name: z-redirect-next-gen-ui
+    match:
+    - uri:
+        prefix: "/"
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        port:
+          number: 80
+        host: next-gen-ui
+{{- end }}
 {{ end }}

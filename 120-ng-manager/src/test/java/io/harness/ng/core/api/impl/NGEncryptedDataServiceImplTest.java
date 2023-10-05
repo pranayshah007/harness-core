@@ -11,6 +11,7 @@ import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.rule.OwnerRule.ADITYA;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.JENNY;
@@ -32,6 +33,7 @@ import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.fail;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -49,9 +51,14 @@ import io.harness.beans.DecryptedSecretValue;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretText;
 import io.harness.category.element.UnitTests;
+import io.harness.connector.ConnectorDTO;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.helper.CustomSecretManagerHelper;
 import io.harness.connector.services.NGConnectorSecretManagerService;
 import io.harness.delegate.beans.ci.pod.SecretVariableDTO;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerConnectorDTO;
+import io.harness.delegate.beans.connector.customsecretmanager.TemplateLinkConfigForCustomSecretManager;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
@@ -70,14 +77,17 @@ import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.ng.core.AdditionalMetadataValidationHelper;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
+import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.dao.NGEncryptedDataDao;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretFileSpecDTO;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ng.core.entities.NGEncryptedData;
+import io.harness.ng.core.models.Secret;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
+import io.harness.secretmanagerclient.dto.CustomSecretManagerConfigDTO;
 import io.harness.secretmanagerclient.dto.LocalConfigDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.secretmanagerclient.dto.VaultConfigDTO;
@@ -88,17 +98,24 @@ import io.harness.security.encryption.AdditionalMetadata;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.security.encryption.EncryptionType;
+import io.harness.template.remote.TemplateResourceClient;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import software.wings.beans.AzureVaultConfig;
 import software.wings.beans.BaseVaultConfig;
+import software.wings.beans.NameValuePairWithDefault;
 import software.wings.service.impl.security.GlobalEncryptDecryptClient;
 import software.wings.service.impl.security.NGEncryptorService;
 import software.wings.settings.SettingVariableTypes;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.Before;
@@ -130,6 +147,9 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
   @Mock private LocalEncryptor localEncryptor;
   @Mock private AdditionalMetadataValidationHelper additionalMetadataValidationHelper;
   @Mock private DynamicSecretReferenceHelper dynamicSecretReferenceHelper;
+  @Mock private TemplateResourceClient templateResourceClient;
+  @Mock private NGSecretServiceV2 ngSecretServiceV2;
+
   public static final String HTTP_VAULT_URL = "http://vault.com";
   private String accountIdentifier = randomAlphabetic(10);
   private String orgIdentifier = randomAlphabetic(10);
@@ -138,68 +158,21 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
   private String encryptedValue = randomAlphabetic(10);
 
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
+  private static final String CONNECTOR_IDENTIFIER = randomAlphabetic(10);
+  private static final String TEMPLATE_REF = "templateRef";
+  private static final String VERSION = "VERSION1";
 
   @Before
   public void setup() {
     initMocks(this);
     ngConnectorSecretManagerService = mock(NGConnectorSecretManagerService.class);
-    ngEncryptedDataService =
-        spy(new NGEncryptedDataServiceImpl(encryptedDataDao, kmsEncryptorsRegistry, vaultEncryptorsRegistry,
-            secretsFileService, secretManagerClient, globalEncryptDecryptClient, ngConnectorSecretManagerService,
-            ngFeatureFlagHelperService, customEncryptorsRegistry, customSecretManagerHelper, ngEncryptorService,
-            additionalMetadataValidationHelper, dynamicSecretReferenceHelper));
+    ngEncryptedDataService = spy(new NGEncryptedDataServiceImpl(encryptedDataDao, kmsEncryptorsRegistry,
+        vaultEncryptorsRegistry, secretsFileService, secretManagerClient, globalEncryptDecryptClient,
+        ngConnectorSecretManagerService, ngFeatureFlagHelperService, customEncryptorsRegistry,
+        customSecretManagerHelper, ngEncryptorService, additionalMetadataValidationHelper, dynamicSecretReferenceHelper,
+        templateResourceClient, ngSecretServiceV2));
     when(vaultEncryptorsRegistry.getVaultEncryptor(any())).thenReturn(vaultEncryptor);
     when(kmsEncryptorsRegistry.getKmsEncryptor(any())).thenReturn(localEncryptor);
-  }
-
-  @Test
-  @Owner(developers = VIKAS_M)
-  @Category(UnitTests.class)
-  public void testCreateSecret_withVault_doNotRenewAppRoleToken_FF_disabled() {
-    String accountIdentifier = randomAlphabetic(10);
-    String orgIdentifier = randomAlphabetic(10);
-    String projectIdentifier = randomAlphabetic(10);
-    String identifier = randomAlphabetic(10);
-    SecretDTOV2 secretDTOV2 = SecretDTOV2.builder()
-                                  .type(SecretType.SecretText)
-                                  .orgIdentifier(orgIdentifier)
-                                  .projectIdentifier(projectIdentifier)
-                                  .spec(SecretTextSpecDTO.builder()
-                                            .secretManagerIdentifier(identifier)
-                                            .valueType(ValueType.Inline)
-                                            .value("value")
-                                            .build())
-                                  .build();
-    NGEncryptedData encryptedDataDTO = NGEncryptedData.builder()
-                                           .accountIdentifier(accountIdentifier)
-                                           .orgIdentifier(orgIdentifier)
-                                           .projectIdentifier(projectIdentifier)
-                                           .type(SettingVariableTypes.SECRET_TEXT)
-                                           .build();
-    when(encryptedDataDao.get(any(), any(), any(), any())).thenReturn(null);
-    when(encryptedDataDao.save(any())).thenReturn(encryptedDataDTO);
-    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(false);
-    SecretManagerConfigDTO vaultConfigDTO = VaultConfigDTO.builder()
-                                                .accountIdentifier(accountIdentifier)
-                                                .appRoleId("appRoleId")
-                                                .secretId("secretId")
-                                                .renewAppRoleToken(true)
-                                                .build();
-    vaultConfigDTO.setEncryptionType(VAULT);
-    when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
-        .thenReturn(vaultConfigDTO);
-    ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
-    when(vaultEncryptor.createSecret(any(), any(), argumentCaptor.capture()))
-        .thenReturn(NGEncryptedData.builder()
-                        .name("name")
-                        .encryptedValue("encryptedValue".toCharArray())
-                        .encryptionKey("encryptionKey")
-                        .build());
-    NGEncryptedData result = ngEncryptedDataService.createSecretText(accountIdentifier, secretDTOV2);
-    assertThat(result).isNotNull();
-    verify(ngFeatureFlagHelperService, times(1)).isEnabled(any(), any());
-    BaseVaultConfig vaultConfig = (BaseVaultConfig) argumentCaptor.getValue();
-    assertThat(vaultConfig.getRenewAppRoleToken()).isEqualTo(true);
   }
 
   @Test
@@ -297,7 +270,6 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
                         .build());
     NGEncryptedData result = ngEncryptedDataService.createSecretText(accountIdentifier, secretDTOV2);
     assertThat(result).isNotNull();
-    verify(ngFeatureFlagHelperService, times(1)).isEnabled(any(), any());
     BaseVaultConfig vaultConfig = (BaseVaultConfig) argumentCaptor.getValue();
     assertThat(vaultConfig.getRenewAppRoleToken()).isEqualTo(false);
   }
@@ -335,7 +307,6 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
     boolean deleted =
         ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
-    verify(ngFeatureFlagHelperService, times(1)).isEnabled(any(), any());
     BaseVaultConfig vaultConfig = (BaseVaultConfig) argumentCaptor.getValue();
     assertThat(vaultConfig.getRenewAppRoleToken()).isEqualTo(false);
     assertThat(deleted).isEqualTo(true);
@@ -375,7 +346,6 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
     boolean deleted =
         ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
-    verify(ngFeatureFlagHelperService, times(1)).isEnabled(any(), any());
     BaseVaultConfig vaultConfig = (BaseVaultConfig) argumentCaptor.getValue();
     assertThat(vaultConfig.getRenewAppRoleToken()).isEqualTo(false);
     assertThat(deleted).isEqualTo(true);
@@ -416,48 +386,8 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
     boolean deleted =
         ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
-    verify(ngFeatureFlagHelperService, times(1)).isEnabled(any(), any());
     BaseVaultConfig vaultConfig = (BaseVaultConfig) argumentCaptor.getValue();
     assertThat(vaultConfig.getRenewAppRoleToken()).isEqualTo(false);
-    assertThat(deleted).isEqualTo(true);
-  }
-
-  @Test
-  @Owner(developers = VIKAS_M)
-  @Category(UnitTests.class)
-  public void testDeleteSecret_appRoleBased_doNotRenewToken_ff_disabled() {
-    String accountIdentifier = randomAlphabetic(10);
-    String orgIdentifier = randomAlphabetic(10);
-    String projectIdentifier = randomAlphabetic(10);
-    String identifier = randomAlphabetic(10);
-    String encryptedValue = randomAlphabetic(10);
-    NGEncryptedData encryptedDataDTO = NGEncryptedData.builder()
-                                           .accountIdentifier(accountIdentifier)
-                                           .orgIdentifier(orgIdentifier)
-                                           .projectIdentifier(projectIdentifier)
-                                           .type(SettingVariableTypes.SECRET_TEXT)
-                                           .encryptedValue(encryptedValue.toCharArray())
-                                           .secretManagerIdentifier(identifier)
-                                           .build();
-    when(encryptedDataDao.get(any(), any(), any(), any())).thenReturn(encryptedDataDTO);
-    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(false);
-    SecretManagerConfigDTO vaultConfigDTO = VaultConfigDTO.builder()
-                                                .accountIdentifier(accountIdentifier)
-                                                .appRoleId("appRoleId")
-                                                .secretId("secretId")
-                                                .renewAppRoleToken(true)
-                                                .build();
-    vaultConfigDTO.setEncryptionType(VAULT);
-    when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
-        .thenReturn(vaultConfigDTO);
-    ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
-    when(vaultEncryptor.deleteSecret(any(), any(), argumentCaptor.capture())).thenReturn(true);
-    when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
-    boolean deleted =
-        ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
-    verify(ngFeatureFlagHelperService, times(1)).isEnabled(any(), any());
-    BaseVaultConfig vaultConfig = (BaseVaultConfig) argumentCaptor.getValue();
-    assertThat(vaultConfig.getRenewAppRoleToken()).isEqualTo(true);
     assertThat(deleted).isEqualTo(true);
   }
 
@@ -775,6 +705,9 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
   public void testDecryptSecret_Success() {
     String secretManagerIdentifier = randomAlphabetic(10);
     char[] secretValue = randomAlphabetic(10).toCharArray();
+    long createdAt = Instant.now().toEpochMilli();
+    long lastModifiedAt = Instant.now().toEpochMilli();
+
     SecretManagerConfigDTO secretManagerConfigDTO =
         LocalConfigDTO.builder().harnessManaged(true).encryptionType(LOCAL).build();
     NGEncryptedData encryptedData = NGEncryptedData.builder().secretManagerIdentifier(secretManagerIdentifier).build();
@@ -790,12 +723,16 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
              encryptedData, accountIdentifier, encryptionConfig))
         .thenReturn(encryptedRecordData);
     when(localEncryptor.fetchSecretValue(accountIdentifier, encryptedData, encryptionConfig)).thenReturn(secretValue);
+    when(ngSecretServiceV2.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier))
+        .thenReturn(Optional.of(Secret.builder().createdAt(createdAt).lastModifiedAt(lastModifiedAt).build()));
     DecryptedSecretValue decryptedSecretValue =
         ngEncryptedDataService.decryptSecret(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     assertEquals(decryptedSecretValue.getDecryptedValue(), String.valueOf(secretValue));
     assertEquals(decryptedSecretValue.getAccountIdentifier(), accountIdentifier);
     assertEquals(decryptedSecretValue.getOrgIdentifier(), orgIdentifier);
     assertEquals(decryptedSecretValue.getProjectIdentifier(), projectIdentifier);
+    assertEquals(decryptedSecretValue.getCreatedAt(), createdAt);
+    assertEquals(decryptedSecretValue.getLastModifiedAt(), lastModifiedAt);
   }
 
   @Test
@@ -863,6 +800,9 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
   public void testDecryptSecretFile_Success() {
     String secretManagerIdentifier = randomAlphabetic(10);
     char[] secretValue = randomAlphabetic(10).toCharArray();
+    long createdAt = Instant.now().toEpochMilli();
+    long lastModifiedAt = Instant.now().toEpochMilli();
+
     SecretManagerConfigDTO secretManagerConfigDTO =
         LocalConfigDTO.builder().harnessManaged(true).encryptionType(LOCAL).build();
     NGEncryptedData encryptedData = NGEncryptedData.builder()
@@ -883,12 +823,16 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
              encryptedData, accountIdentifier, encryptionConfig))
         .thenReturn(encryptedRecordData);
     when(localEncryptor.fetchSecretValue(accountIdentifier, encryptedData, encryptionConfig)).thenReturn(secretValue);
+    when(ngSecretServiceV2.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier))
+        .thenReturn(Optional.of(Secret.builder().createdAt(createdAt).lastModifiedAt(lastModifiedAt).build()));
     DecryptedSecretValue decryptedSecretValue =
         ngEncryptedDataService.decryptSecret(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     assertEquals(decryptedSecretValue.getDecryptedValue(), String.valueOf(secretValue));
     assertEquals(decryptedSecretValue.getAccountIdentifier(), accountIdentifier);
     assertEquals(decryptedSecretValue.getOrgIdentifier(), orgIdentifier);
     assertEquals(decryptedSecretValue.getProjectIdentifier(), projectIdentifier);
+    assertEquals(decryptedSecretValue.getCreatedAt(), createdAt);
+    assertEquals(decryptedSecretValue.getLastModifiedAt(), lastModifiedAt);
   }
 
   @Test
@@ -1118,5 +1062,320 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     assertThat(createdData.isBase64Encoded()).isEqualTo(true);
     assertThat(createdData.getEncryptionKey()).isEqualTo(encryptionKey);
     assertThat(createdData.getEncryptedValue()).isEqualTo(encryptedValue.toCharArray());
+  }
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testCreateSecretWithSomeRunTimeParametersMissingThrowError() {
+    String templateInputs =
+        "\"{\\\"environmentVariables\\\":[{\\\"name\\\":\\\"var1\\\",\\\"type\\\":\\\"String\\\",\\\"value\\\":\\\"value1\\\"}]}\"";
+    ConnectorDTO connectorDTO = ConnectorDTO.builder().connectorInfo(createTemplate()).build();
+    SecretDTOV2 secret = SecretDTOV2.builder()
+                             .identifier(randomAlphabetic(10))
+                             .orgIdentifier(orgIdentifier)
+                             .projectIdentifier(projectIdentifier)
+                             .spec(SecretTextSpecDTO.builder()
+                                       .secretManagerIdentifier(CONNECTOR_IDENTIFIER)
+                                       .valueType(ValueType.CustomSecretManagerValues)
+                                       .value(templateInputs)
+                                       .build())
+                             .build();
+    TemplateLinkConfigForCustomSecretManager templateLinkConfigForCustomSecretManager =
+        TemplateLinkConfigForCustomSecretManager.builder()
+            .templateRef(TEMPLATE_REF)
+            .versionLabel(VERSION)
+            .templateInputs(getInputValues())
+            .build();
+    SecretManagerConfigDTO customSecretManagerConfigDTO = CustomSecretManagerConfigDTO.builder()
+                                                              .identifier(CONNECTOR_IDENTIFIER)
+                                                              .accountIdentifier(accountIdentifier)
+                                                              .orgIdentifier(orgIdentifier)
+                                                              .projectIdentifier(projectIdentifier)
+                                                              .encryptionType(EncryptionType.CUSTOM_NG)
+                                                              .template(templateLinkConfigForCustomSecretManager)
+                                                              .build();
+    when(ngConnectorSecretManagerService.getUsingIdentifier(
+             accountIdentifier, orgIdentifier, projectIdentifier, CONNECTOR_IDENTIFIER, false))
+        .thenReturn(customSecretManagerConfigDTO);
+
+    when(ngConnectorSecretManagerService.getConnectorDTO(
+             accountIdentifier, orgIdentifier, projectIdentifier, CONNECTOR_IDENTIFIER))
+        .thenReturn(connectorDTO);
+    assertThatThrownBy(() -> ngEncryptedDataService.createSecretText(accountIdentifier, secret))
+        .isInstanceOf(InvalidRequestException.class)
+        .getCause()
+        .hasMessageContaining("RunTime Inputs are not provided for the Secret, Missing environment variables are: ");
+  }
+
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testCreateSecretWithWrongEnvVariablesThrowError() {
+    String templateInputs =
+        "\"{\\\"environmentVariables\\\":[{\\\"name\\\":\\\"var5\\\",\\\"type\\\":\\\"String\\\",\\\"value\\\":\\\"value9e\\\"}]}\"";
+    ConnectorDTO connectorDTO = ConnectorDTO.builder().connectorInfo(createTemplate()).build();
+    SecretDTOV2 secret = SecretDTOV2.builder()
+                             .identifier(randomAlphabetic(10))
+                             .orgIdentifier(orgIdentifier)
+                             .projectIdentifier(projectIdentifier)
+                             .spec(SecretTextSpecDTO.builder()
+                                       .secretManagerIdentifier(CONNECTOR_IDENTIFIER)
+                                       .valueType(ValueType.CustomSecretManagerValues)
+                                       .value(templateInputs)
+                                       .build())
+                             .build();
+    TemplateLinkConfigForCustomSecretManager templateLinkConfigForCustomSecretManager =
+        TemplateLinkConfigForCustomSecretManager.builder()
+            .templateRef(TEMPLATE_REF)
+            .versionLabel(VERSION)
+            .templateInputs(getInputValues())
+            .build();
+    SecretManagerConfigDTO customSecretManagerConfigDTO = CustomSecretManagerConfigDTO.builder()
+                                                              .identifier(CONNECTOR_IDENTIFIER)
+                                                              .accountIdentifier(accountIdentifier)
+                                                              .orgIdentifier(orgIdentifier)
+                                                              .projectIdentifier(projectIdentifier)
+                                                              .encryptionType(EncryptionType.CUSTOM_NG)
+                                                              .template(templateLinkConfigForCustomSecretManager)
+                                                              .build();
+    when(ngConnectorSecretManagerService.getUsingIdentifier(
+             accountIdentifier, orgIdentifier, projectIdentifier, CONNECTOR_IDENTIFIER, false))
+        .thenReturn(customSecretManagerConfigDTO);
+
+    when(ngConnectorSecretManagerService.getConnectorDTO(
+             accountIdentifier, orgIdentifier, projectIdentifier, CONNECTOR_IDENTIFIER))
+        .thenReturn(connectorDTO);
+    assertThatThrownBy(() -> ngEncryptedDataService.createSecretText(accountIdentifier, secret))
+        .isInstanceOf(InvalidRequestException.class)
+        .getCause()
+        .hasMessageContaining("RunTime Inputs are not provided for the Secret, Missing environment variables are: ");
+  }
+
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testCreateSecretWithDuplicateEnvVariablesThrowError() {
+    String templateInputs =
+        "{\"environmentVariables\":[{\"name\":\"var1\",\"type\":\"String\",\"value\":\"sd\"},{\"name\":\"var2\",\"type\":\"String\",\"value\":\"sds\"},{\"name\":\"var3\",\"type\":\"String\",\"value\":\"sds\"},{\"name\":\"var3\",\"type\":\"String\",\"value\":\"sds\"}]}";
+
+    ConnectorDTO connectorDTO = ConnectorDTO.builder().connectorInfo(createTemplate()).build();
+    SecretDTOV2 secret = SecretDTOV2.builder()
+                             .identifier(randomAlphabetic(10))
+                             .orgIdentifier(orgIdentifier)
+                             .projectIdentifier(projectIdentifier)
+                             .spec(SecretTextSpecDTO.builder()
+                                       .secretManagerIdentifier(CONNECTOR_IDENTIFIER)
+                                       .valueType(ValueType.CustomSecretManagerValues)
+                                       .value(templateInputs)
+                                       .build())
+                             .build();
+    TemplateLinkConfigForCustomSecretManager templateLinkConfigForCustomSecretManager =
+        TemplateLinkConfigForCustomSecretManager.builder()
+            .templateRef(TEMPLATE_REF)
+            .versionLabel(VERSION)
+            .templateInputs(getInputValues())
+            .build();
+    SecretManagerConfigDTO customSecretManagerConfigDTO = CustomSecretManagerConfigDTO.builder()
+                                                              .identifier(CONNECTOR_IDENTIFIER)
+                                                              .accountIdentifier(accountIdentifier)
+                                                              .orgIdentifier(orgIdentifier)
+                                                              .projectIdentifier(projectIdentifier)
+                                                              .encryptionType(EncryptionType.CUSTOM_NG)
+                                                              .template(templateLinkConfigForCustomSecretManager)
+                                                              .build();
+    when(ngConnectorSecretManagerService.getUsingIdentifier(
+             accountIdentifier, orgIdentifier, projectIdentifier, CONNECTOR_IDENTIFIER, false))
+        .thenReturn(customSecretManagerConfigDTO);
+
+    when(ngConnectorSecretManagerService.getConnectorDTO(
+             accountIdentifier, orgIdentifier, projectIdentifier, CONNECTOR_IDENTIFIER))
+        .thenReturn(connectorDTO);
+    assertThatThrownBy(() -> ngEncryptedDataService.createSecretText(accountIdentifier, secret))
+        .isInstanceOf(InvalidRequestException.class)
+        .getCause()
+        .hasMessageContaining("There are duplicate environment variables in the secret :");
+  }
+
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testCreateSecretWithUnnecessaryEnvVariablesThrowError() {
+    String templateInputs =
+        "{\"environmentVariables\":[{\"name\":\"var1\",\"type\":\"String\",\"value\":\"sd\"},{\"name\":\"var2\",\"type\":\"String\",\"value\":\"sds\"},{\"name\":\"var3\",\"type\":\"String\",\"value\":\"sds\"},{\"name\":\"var4\",\"type\":\"String\",\"value\":\"sds\"}]}";
+
+    ConnectorDTO connectorDTO = ConnectorDTO.builder().connectorInfo(createTemplate()).build();
+    SecretDTOV2 secret = SecretDTOV2.builder()
+                             .identifier(randomAlphabetic(10))
+                             .orgIdentifier(orgIdentifier)
+                             .projectIdentifier(projectIdentifier)
+                             .spec(SecretTextSpecDTO.builder()
+                                       .secretManagerIdentifier(CONNECTOR_IDENTIFIER)
+                                       .valueType(ValueType.CustomSecretManagerValues)
+                                       .value(templateInputs)
+                                       .build())
+                             .build();
+    TemplateLinkConfigForCustomSecretManager templateLinkConfigForCustomSecretManager =
+        TemplateLinkConfigForCustomSecretManager.builder()
+            .templateRef(TEMPLATE_REF)
+            .versionLabel(VERSION)
+            .templateInputs(getInputValues())
+            .build();
+    SecretManagerConfigDTO customSecretManagerConfigDTO = CustomSecretManagerConfigDTO.builder()
+                                                              .identifier(CONNECTOR_IDENTIFIER)
+                                                              .accountIdentifier(accountIdentifier)
+                                                              .orgIdentifier(orgIdentifier)
+                                                              .projectIdentifier(projectIdentifier)
+                                                              .encryptionType(EncryptionType.CUSTOM_NG)
+                                                              .template(templateLinkConfigForCustomSecretManager)
+                                                              .build();
+    when(ngConnectorSecretManagerService.getUsingIdentifier(
+             accountIdentifier, orgIdentifier, projectIdentifier, CONNECTOR_IDENTIFIER, false))
+        .thenReturn(customSecretManagerConfigDTO);
+
+    when(ngConnectorSecretManagerService.getConnectorDTO(
+             accountIdentifier, orgIdentifier, projectIdentifier, CONNECTOR_IDENTIFIER))
+        .thenReturn(connectorDTO);
+    assertThatThrownBy(() -> ngEncryptedDataService.createSecretText(accountIdentifier, secret))
+        .isInstanceOf(InvalidRequestException.class)
+        .getCause()
+        .hasMessageContaining("Unnecessary environment variables provided in the secret: ");
+  }
+
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testCreateSecretWithAllMissingEnvVariablesThrowError() {
+    String templateInputs = "";
+
+    ConnectorDTO connectorDTO = ConnectorDTO.builder().connectorInfo(createTemplate()).build();
+    SecretDTOV2 secret = SecretDTOV2.builder()
+                             .identifier(randomAlphabetic(10))
+                             .orgIdentifier(orgIdentifier)
+                             .projectIdentifier(projectIdentifier)
+                             .spec(SecretTextSpecDTO.builder()
+                                       .secretManagerIdentifier(CONNECTOR_IDENTIFIER)
+                                       .valueType(ValueType.CustomSecretManagerValues)
+                                       .value(templateInputs)
+                                       .build())
+                             .build();
+    TemplateLinkConfigForCustomSecretManager templateLinkConfigForCustomSecretManager =
+        TemplateLinkConfigForCustomSecretManager.builder()
+            .templateRef(TEMPLATE_REF)
+            .versionLabel(VERSION)
+            .templateInputs(getInputValues())
+            .build();
+    SecretManagerConfigDTO customSecretManagerConfigDTO = CustomSecretManagerConfigDTO.builder()
+                                                              .identifier(CONNECTOR_IDENTIFIER)
+                                                              .accountIdentifier(accountIdentifier)
+                                                              .orgIdentifier(orgIdentifier)
+                                                              .projectIdentifier(projectIdentifier)
+                                                              .encryptionType(EncryptionType.CUSTOM_NG)
+                                                              .template(templateLinkConfigForCustomSecretManager)
+                                                              .build();
+    when(ngConnectorSecretManagerService.getUsingIdentifier(
+             accountIdentifier, orgIdentifier, projectIdentifier, CONNECTOR_IDENTIFIER, false))
+        .thenReturn(customSecretManagerConfigDTO);
+
+    when(ngConnectorSecretManagerService.getConnectorDTO(
+             accountIdentifier, orgIdentifier, projectIdentifier, CONNECTOR_IDENTIFIER))
+        .thenReturn(connectorDTO);
+    assertThatThrownBy(() -> ngEncryptedDataService.createSecretText(accountIdentifier, secret))
+        .isInstanceOf(InvalidRequestException.class)
+        .getCause()
+        .hasMessageContaining("There are missing environment variables: ");
+  }
+
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testCreateSecretWithEnvVariablesSuccess() {
+    String templateInputs =
+        "{\"environmentVariables\":[{\"name\":\"var1\",\"type\":\"String\",\"value\":\"sd\"},{\"name\":\"var2\",\"type\":\"String\",\"value\":\"sds\"},{\"name\":\"var3\",\"type\":\"String\",\"value\":\"sds\"}]}";
+
+    ConnectorDTO connectorDTO = ConnectorDTO.builder().connectorInfo(createTemplate()).build();
+    SecretDTOV2 secret = SecretDTOV2.builder()
+                             .identifier(randomAlphabetic(10))
+                             .orgIdentifier(orgIdentifier)
+                             .projectIdentifier(projectIdentifier)
+                             .spec(SecretTextSpecDTO.builder()
+                                       .secretManagerIdentifier(CONNECTOR_IDENTIFIER)
+                                       .valueType(ValueType.CustomSecretManagerValues)
+                                       .value(templateInputs)
+                                       .build())
+                             .build();
+    TemplateLinkConfigForCustomSecretManager templateLinkConfigForCustomSecretManager =
+        TemplateLinkConfigForCustomSecretManager.builder()
+            .templateRef(TEMPLATE_REF)
+            .versionLabel(VERSION)
+            .templateInputs(getInputValues())
+            .build();
+    SecretManagerConfigDTO customSecretManagerConfigDTO = CustomSecretManagerConfigDTO.builder()
+                                                              .identifier(CONNECTOR_IDENTIFIER)
+                                                              .accountIdentifier(accountIdentifier)
+                                                              .orgIdentifier(orgIdentifier)
+                                                              .projectIdentifier(projectIdentifier)
+                                                              .encryptionType(EncryptionType.CUSTOM_NG)
+                                                              .template(templateLinkConfigForCustomSecretManager)
+                                                              .build();
+    when(ngConnectorSecretManagerService.getUsingIdentifier(
+             accountIdentifier, orgIdentifier, projectIdentifier, CONNECTOR_IDENTIFIER, false))
+        .thenReturn(customSecretManagerConfigDTO);
+
+    when(ngConnectorSecretManagerService.getConnectorDTO(
+             accountIdentifier, orgIdentifier, projectIdentifier, CONNECTOR_IDENTIFIER))
+        .thenReturn(connectorDTO);
+    NGEncryptedData encryptedDataDTO = NGEncryptedData.builder()
+                                           .accountIdentifier(accountIdentifier)
+                                           .orgIdentifier(orgIdentifier)
+                                           .projectIdentifier(projectIdentifier)
+                                           .secretManagerIdentifier(CONNECTOR_IDENTIFIER)
+                                           .type(SettingVariableTypes.SECRET_TEXT)
+                                           .build();
+    when(encryptedDataDao.save(any())).thenReturn(encryptedDataDTO);
+    NGEncryptedData result = ngEncryptedDataService.createSecretText(accountIdentifier, secret);
+    assertThat(result).isNotNull();
+    assertEquals(result.getOrgIdentifier(), orgIdentifier);
+    assertEquals(result.getProjectIdentifier(), projectIdentifier);
+    assertEquals(result.getSecretManagerIdentifier(), CONNECTOR_IDENTIFIER);
+  }
+
+  private ConnectorInfoDTO createTemplate() {
+    Map<String, List<NameValuePairWithDefault>> inputValues = getInputValues();
+    return getConnectorWithProjectTemplateRef(inputValues);
+  }
+  private ConnectorInfoDTO getConnectorWithProjectTemplateRef(
+      Map<String, List<NameValuePairWithDefault>> templateInputs) {
+    return ConnectorInfoDTO.builder()
+        .connectorType(ConnectorType.CUSTOM_SECRET_MANAGER)
+        .name("customSM")
+        .identifier(CONNECTOR_IDENTIFIER)
+        .accountIdentifier(accountIdentifier)
+        .projectIdentifier(projectIdentifier)
+        .orgIdentifier(orgIdentifier)
+        .connectorConfig(CustomSecretManagerConnectorDTO.builder()
+                             .template(TemplateLinkConfigForCustomSecretManager.builder()
+                                           .templateRef(TEMPLATE_REF)
+                                           .versionLabel(VERSION)
+                                           .templateInputs(templateInputs)
+                                           .build())
+                             .build())
+        .build();
+  }
+
+  private Map<String, List<NameValuePairWithDefault>> getInputValues() {
+    Map<String, List<NameValuePairWithDefault>> inputValues = new HashMap<>();
+    NameValuePairWithDefault var1 =
+        NameValuePairWithDefault.builder().name("var1").value("value1").type("String").build();
+    NameValuePairWithDefault var2 =
+        NameValuePairWithDefault.builder().name("var2").value("value2").type("String").build();
+    NameValuePairWithDefault var3 =
+        NameValuePairWithDefault.builder().name("var3").value("value3").type("String").useAsDefault(true).build();
+
+    List<NameValuePairWithDefault> inputEnvironmentVariables = new LinkedList<>();
+    inputEnvironmentVariables.add(var1);
+    inputEnvironmentVariables.add(var2);
+    inputEnvironmentVariables.add(var3);
+    inputValues.put("environmentVariables", inputEnvironmentVariables);
+    return inputValues;
   }
 }

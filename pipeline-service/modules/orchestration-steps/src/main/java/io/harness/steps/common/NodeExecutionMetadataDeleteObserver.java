@@ -17,7 +17,7 @@ import io.harness.engine.execution.ExecutionInputService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.observers.NodeExecutionDeleteObserver;
 import io.harness.execution.NodeExecution;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.approval.step.ApprovalInstanceService;
@@ -42,7 +42,7 @@ public class NodeExecutionMetadataDeleteObserver implements NodeExecutionDeleteO
   @Inject private TimeoutEngine timeoutEngine;
   @Inject private ResourceRestraintInstanceService resourceRestraintInstanceService;
   @Inject private PlanService planService;
-  @Inject private PmsGraphStepDetailsService pmsGraphStepDetailsService;
+  @Inject private NodeExecutionInfoService pmsGraphStepDetailsService;
   @Inject private WaitStepService waitStepService;
   @Inject private ExecutionInputService executionInputService;
   @Inject private ApprovalInstanceService approvalInstanceService;

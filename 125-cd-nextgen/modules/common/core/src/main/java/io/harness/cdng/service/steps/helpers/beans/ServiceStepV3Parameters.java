@@ -15,7 +15,6 @@ import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.SkipAutoEvaluation;
 
@@ -49,10 +48,6 @@ public class ServiceStepV3Parameters implements StepParameters {
   private ServiceDefinitionType deploymentType;
   @SkipAutoEvaluation private EnvironmentGroupYaml environmentGroupYaml;
   @SkipAutoEvaluation private EnvironmentsYaml environmentsYaml;
-  @Override
-  public String toViewJson() {
-    return RecastOrchestrationUtils.toJson(Map.of("service", serviceRef.fetchFinalValue()));
-  }
 
   @Override
   public List<String> excludeKeysFromStepInputs() {

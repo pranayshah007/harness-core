@@ -33,12 +33,16 @@ import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
+import io.harness.remote.CEAwsServiceEndpointConfig;
+import io.harness.remote.CEProxyConfig;
 
 import software.wings.service.impl.AwsApiHelperService;
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.Protocol;
 import com.amazonaws.arn.Arn;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -47,6 +51,7 @@ import com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper;
 import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.amazonaws.auth.WebIdentityTokenCredentialsProvider;
 import com.amazonaws.auth.policy.Policy;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.codecommit.AWSCodeCommitClient;
 import com.amazonaws.services.codecommit.AWSCodeCommitClientBuilder;
@@ -307,32 +312,48 @@ public class AwsClientImpl implements AwsClient {
 
   public AWSCredentialsProvider getAssumedCredentialsProvider(
       AWSCredentialsProvider credentialsProvider, CrossAccountAccess crossAccountAccess, String region) {
-    return getAssumedCredentialsProviderWithRegion(
-        credentialsProvider, crossAccountAccess.getCrossAccountRoleArn(), crossAccountAccess.getExternalId(), region);
+    return getAssumedCredentialsProviderWithRegion(credentialsProvider, crossAccountAccess.getCrossAccountRoleArn(),
+        crossAccountAccess.getExternalId(), region, null);
   }
 
   @Override
   public AWSCredentialsProvider getAssumedCredentialsProviderWithRegion(AWSCredentialsProvider credentialsProvider,
-      String crossAccountRoleArn, @Nullable String externalId, @NotNull String region) {
-    final AWSSecurityTokenService awsSecurityTokenService =
-        AWSSecurityTokenServiceClientBuilder.standard().withRegion(region).withCredentials(credentialsProvider).build();
+      String crossAccountRoleArn, @Nullable String externalId, @NotNull String region,
+      CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig) {
+    final AWSSecurityTokenServiceClientBuilder awsSecurityTokenServiceClientBuilder =
+        AWSSecurityTokenServiceClientBuilder.standard().withCredentials(credentialsProvider);
+    if (ceAwsServiceEndpointConfig != null && ceAwsServiceEndpointConfig.isEnabled()) {
+      awsSecurityTokenServiceClientBuilder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
+          ceAwsServiceEndpointConfig.getStsEndPointUrl(), ceAwsServiceEndpointConfig.getEndPointRegion()));
+    } else {
+      awsSecurityTokenServiceClientBuilder.withRegion(region);
+    }
     return new STSAssumeRoleSessionCredentialsProvider.Builder(crossAccountRoleArn, UUID.randomUUID().toString())
         .withExternalId(externalId)
-        .withStsClient(awsSecurityTokenService)
+        .withStsClient(awsSecurityTokenServiceClientBuilder.build())
         .build();
   }
 
   @Override
-  public AWSCredentialsProvider getAssumedCredentialsProvider(
-      AWSCredentialsProvider credentialsProvider, String crossAccountRoleArn, @Nullable String externalId) {
-    final AWSSecurityTokenService awsSecurityTokenService = constructAWSSecurityTokenService(credentialsProvider);
+  public AWSCredentialsProvider getAssumedCredentialsProvider(AWSCredentialsProvider credentialsProvider,
+      String crossAccountRoleArn, @Nullable String externalId, CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig) {
+    final AWSSecurityTokenService awsSecurityTokenService =
+        constructAWSSecurityTokenService(credentialsProvider, ceAwsServiceEndpointConfig);
     return new STSAssumeRoleSessionCredentialsProvider.Builder(crossAccountRoleArn, UUID.randomUUID().toString())
         .withExternalId(externalId)
         .withStsClient(awsSecurityTokenService)
         .build();
   }
 
-  public AmazonS3Client getAmazonS3Client(AWSCredentialsProvider credentialsProvider) {
+  public AmazonS3Client getAmazonS3Client(AWSCredentialsProvider credentialsProvider, CEProxyConfig ceProxyConfig) {
+    if (ceProxyConfig != null && ceProxyConfig.isEnabled()) {
+      return (AmazonS3Client) AmazonS3ClientBuilder.standard()
+          .withClientConfiguration(getClientConfiguration(ceProxyConfig))
+          .withRegion(DEFAULT_REGION)
+          .withForceGlobalBucketAccessEnabled(Boolean.TRUE)
+          .withCredentials(credentialsProvider)
+          .build();
+    }
     return (AmazonS3Client) AmazonS3ClientBuilder.standard()
         .withRegion(DEFAULT_REGION)
         .withForceGlobalBucketAccessEnabled(Boolean.TRUE)
@@ -342,8 +363,8 @@ public class AwsClientImpl implements AwsClient {
 
   @Override
   public Optional<ReportDefinition> getReportDefinition(
-      AWSCredentialsProvider credentialsProvider, String curReportName) {
-    AWSCostAndUsageReport awsCostAndUsageReportClient = getAwsCurClient(credentialsProvider);
+      AWSCredentialsProvider credentialsProvider, String curReportName, CEProxyConfig ceProxyConfig) {
+    AWSCostAndUsageReport awsCostAndUsageReportClient = getAwsCurClient(credentialsProvider, ceProxyConfig);
     DescribeReportDefinitionsRequest describeReportDefinitionsRequest = new DescribeReportDefinitionsRequest();
 
     String nextToken = null;
@@ -364,21 +385,40 @@ public class AwsClientImpl implements AwsClient {
     return Optional.empty();
   }
 
-  protected AmazonIdentityManagement getAwsIAMClient(AWSCredentialsProvider credentialsProvider, Regions region) {
+  protected AmazonIdentityManagement getAwsIAMClient(
+      AWSCredentialsProvider credentialsProvider, Regions region, CEProxyConfig ceProxyConfig) {
+    if (ceProxyConfig != null && ceProxyConfig.isEnabled()) {
+      return AmazonIdentityManagementClientBuilder.standard()
+          .withCredentials(credentialsProvider)
+          .withRegion(region)
+          .withClientConfiguration(getClientConfiguration(ceProxyConfig))
+          .build();
+    }
     return AmazonIdentityManagementClientBuilder.standard()
         .withCredentials(credentialsProvider)
         .withRegion(region)
         .build();
   }
 
-  protected AWSCostAndUsageReport getAwsCurClient(AWSCredentialsProvider credentialsProvider) {
-    return AWSCostAndUsageReportClientBuilder.standard()
-        .withRegion(DEFAULT_REGION)
-        .withCredentials(credentialsProvider)
-        .build();
+  protected AWSCostAndUsageReport getAwsCurClient(
+      AWSCredentialsProvider credentialsProvider, CEProxyConfig ceProxyConfig) {
+    AWSCostAndUsageReportClientBuilder awsCostAndUsageReportClientBuilder =
+        AWSCostAndUsageReportClientBuilder.standard().withRegion(DEFAULT_REGION).withCredentials(credentialsProvider);
+    if (ceProxyConfig != null && ceProxyConfig.isEnabled()) {
+      awsCostAndUsageReportClientBuilder.withClientConfiguration(getClientConfiguration(ceProxyConfig));
+    }
+    return awsCostAndUsageReportClientBuilder.build();
   }
 
-  protected AWSSecurityTokenService constructAWSSecurityTokenService(AWSCredentialsProvider credentialsProvider) {
+  protected AWSSecurityTokenService constructAWSSecurityTokenService(
+      AWSCredentialsProvider credentialsProvider, CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig) {
+    if (ceAwsServiceEndpointConfig != null && ceAwsServiceEndpointConfig.isEnabled()) {
+      return AWSSecurityTokenServiceClientBuilder.standard()
+          .withCredentials(credentialsProvider)
+          .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
+              ceAwsServiceEndpointConfig.getStsEndPointUrl(), ceAwsServiceEndpointConfig.getEndPointRegion()))
+          .build();
+    }
     return AWSSecurityTokenServiceClientBuilder.standard()
         .withRegion(DEFAULT_REGION)
         .withCredentials(credentialsProvider)
@@ -393,8 +433,8 @@ public class AwsClientImpl implements AwsClient {
 
   @Override
   public List<String> listRolePolicyNames(
-      AWSCredentialsProvider awsCredentialsProvider, @NotNull final String roleName) {
-    final AmazonIdentityManagement iam = getAwsIAMClient(awsCredentialsProvider, DEFAULT_REGION);
+      AWSCredentialsProvider awsCredentialsProvider, @NotNull final String roleName, CEProxyConfig ceProxyConfig) {
+    final AmazonIdentityManagement iam = getAwsIAMClient(awsCredentialsProvider, DEFAULT_REGION, ceProxyConfig);
 
     List<String> policyNames = new ArrayList<>();
 
@@ -418,8 +458,8 @@ public class AwsClientImpl implements AwsClient {
   @Override
   public List<EvaluationResult> simulatePrincipalPolicy(final AWSCredentialsProvider credentialsProvider,
       @NotNull String policySourceArn, @NotEmpty List<String> actionNames, @Nullable List<String> resourceArns,
-      @NotNull String region) {
-    final AmazonIdentityManagement iam = getAwsIAMClient(credentialsProvider, Regions.fromName(region));
+      @NotNull String region, CEProxyConfig ceProxyConfig) {
+    final AmazonIdentityManagement iam = getAwsIAMClient(credentialsProvider, Regions.fromName(region), ceProxyConfig);
     final SimulatePrincipalPolicyRequest request =
         new SimulatePrincipalPolicyRequest().withPolicySourceArn(policySourceArn).withActionNames(actionNames);
     if (isNotEmpty(resourceArns)) {
@@ -437,9 +477,9 @@ public class AwsClientImpl implements AwsClient {
 
   @SneakyThrows
   @Override
-  public Policy getRolePolicy(
-      AWSCredentialsProvider awsCredentialsProvider, @NotNull final String roleName, @NotNull final String policyName) {
-    final AmazonIdentityManagement iam = getAwsIAMClient(awsCredentialsProvider, DEFAULT_REGION);
+  public Policy getRolePolicy(AWSCredentialsProvider awsCredentialsProvider, @NotNull final String roleName,
+      @NotNull final String policyName, CEProxyConfig ceProxyConfig) {
+    final AmazonIdentityManagement iam = getAwsIAMClient(awsCredentialsProvider, DEFAULT_REGION, ceProxyConfig);
     final GetRolePolicyResult result =
         iam.getRolePolicy(new GetRolePolicyRequest().withPolicyName(policyName).withRoleName(roleName));
 
@@ -448,10 +488,10 @@ public class AwsClientImpl implements AwsClient {
   }
 
   @Override
-  public ObjectListing getBucket(
-      AWSCredentialsProvider credentialsProvider, @NotNull String s3BucketName, @Nullable String s3Prefix) {
+  public ObjectListing getBucket(AWSCredentialsProvider credentialsProvider, @NotNull String s3BucketName,
+      @Nullable String s3Prefix, CEProxyConfig ceProxyConfig) {
     try (CloseableAmazonWebServiceClient<AmazonS3Client> closeableAmazonS3Client =
-             new CloseableAmazonWebServiceClient(getAmazonS3Client(credentialsProvider))) {
+             new CloseableAmazonWebServiceClient(getAmazonS3Client(credentialsProvider, ceProxyConfig))) {
       return closeableAmazonS3Client.getClient().listObjects(s3BucketName, s3Prefix);
 
     } catch (Exception e) {
@@ -462,10 +502,10 @@ public class AwsClientImpl implements AwsClient {
 
   @Override
   public S3Objects getIterableS3ObjectSummaries(
-      AWSCredentialsProvider credentialsProvider, String s3BucketName, String s3Prefix) {
+      AWSCredentialsProvider credentialsProvider, String s3BucketName, String s3Prefix, CEProxyConfig ceProxyConfig) {
     s3Prefix = s3Prefix.replaceFirst("^//", "/");
     try {
-      return S3Objects.withPrefix(getAmazonS3Client(credentialsProvider), s3BucketName, s3Prefix);
+      return S3Objects.withPrefix(getAmazonS3Client(credentialsProvider, ceProxyConfig), s3BucketName, s3Prefix);
     } catch (Exception e) {
       log.error("Exception getIterableS3ObjectSummaries", e);
       throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
@@ -473,10 +513,11 @@ public class AwsClientImpl implements AwsClient {
   }
 
   @Override
-  public AWSOrganizationsClient getAWSOrganizationsClient(
-      String crossAccountRoleArn, String externalId, String awsAccessKey, String awsSecretKey) {
-    AWSSecurityTokenService awsSecurityTokenService =
-        constructAWSSecurityTokenService(constructStaticBasicAwsCredentials(awsAccessKey, awsSecretKey));
+  public AWSOrganizationsClient getAWSOrganizationsClient(String crossAccountRoleArn, String externalId,
+      String awsAccessKey, String awsSecretKey, CEProxyConfig ceProxyConfig,
+      CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig) {
+    AWSSecurityTokenService awsSecurityTokenService = constructAWSSecurityTokenService(
+        constructStaticBasicAwsCredentials(awsAccessKey, awsSecretKey), ceAwsServiceEndpointConfig);
     AWSOrganizationsClientBuilder builder = AWSOrganizationsClientBuilder.standard().withRegion(DEFAULT_REGION);
     AWSCredentialsProvider credentialsProvider =
         new STSAssumeRoleSessionCredentialsProvider.Builder(crossAccountRoleArn, UUID.randomUUID().toString())
@@ -484,6 +525,9 @@ public class AwsClientImpl implements AwsClient {
             .withStsClient(awsSecurityTokenService)
             .build();
     builder.withCredentials(credentialsProvider);
+    if (ceProxyConfig != null && ceProxyConfig.isEnabled()) {
+      builder.withClientConfiguration(getClientConfiguration(ceProxyConfig));
+    }
     return (AWSOrganizationsClient) builder.build();
   }
 
@@ -560,5 +604,20 @@ public class AwsClientImpl implements AwsClient {
 
   private String getRegion(AwsInternalConfig awsConfig) {
     return isNotBlank(awsConfig.getDefaultRegion()) ? awsConfig.getDefaultRegion() : AWS_DEFAULT_REGION;
+  }
+
+  private ClientConfiguration getClientConfiguration(CEProxyConfig ceProxyConfig) {
+    ClientConfiguration clientConfiguration = new ClientConfiguration();
+    clientConfiguration.setProxyHost(ceProxyConfig.getHost());
+    clientConfiguration.setProxyPort(ceProxyConfig.getPort());
+    if (!ceProxyConfig.getUsername().isEmpty()) {
+      clientConfiguration.setProxyUsername(ceProxyConfig.getUsername());
+    }
+    if (!ceProxyConfig.getPassword().isEmpty()) {
+      clientConfiguration.setProxyPassword(ceProxyConfig.getPassword());
+    }
+    clientConfiguration.setProtocol(
+        ceProxyConfig.getProtocol().equalsIgnoreCase("http") ? Protocol.HTTP : Protocol.HTTPS);
+    return clientConfiguration;
   }
 }

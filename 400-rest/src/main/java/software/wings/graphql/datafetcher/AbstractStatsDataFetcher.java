@@ -198,37 +198,6 @@ public abstract class AbstractStatsDataFetcher<A, F, G, S> implements DataFetche
         .toString();
   }
 
-  public String getGroupByTimeQueryWithGapFill(
-      QLTimeSeriesAggregation groupByTime, String dbFieldName, String from, String to) {
-    String unit;
-    int value = groupByTime.getTimeAggregationValue();
-
-    switch (groupByTime.getTimeAggregationType()) {
-      case DAY:
-        unit = "days";
-        break;
-      case HOUR:
-        unit = "hours";
-        break;
-      default:
-        log.warn("Unsupported timeAggregationType " + groupByTime.getTimeAggregationType());
-        throw new InvalidRequestException(GENERIC_EXCEPTION_MSG);
-    }
-
-    return new StringBuilder("time_bucket_gapfill('")
-        .append(value)
-        .append(' ')
-        .append(unit)
-        .append("',")
-        .append(dbFieldName)
-        .append(",'")
-        .append(from)
-        .append("','")
-        .append(to)
-        .append("')")
-        .toString();
-  }
-
   public void generateSqlInQuery(StringBuilder queryBuilder, Object[] values) {
     if (isEmpty(values)) {
       throw new InvalidRequestException("Filter should have at least one value");

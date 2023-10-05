@@ -244,7 +244,7 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
     CommandExecutionStatus commandExecutionStatus = FAILURE;
     File workingDirectory;
 
-    log.info("Shell script task parameters: accountId - {}, appId - {}, workingDir - {}, activityId - {}",
+    log.debug("Shell script task parameters: accountId - {}, appId - {}, workingDir - {}, activityId - {}",
         config.getAccountId(), config.getAppId(), config.getWorkingDirectory(), config.getExecutionId());
     if (isEmpty(config.getWorkingDirectory())) {
       String directoryPath = defaultParentWorkingDirectory + config.getExecutionId();

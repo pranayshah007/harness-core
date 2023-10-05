@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.core.api.impl;
+
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64ToByteArray;
@@ -27,6 +28,7 @@ import static io.harness.secretmanagerclient.ValueType.Inline;
 import static io.harness.secretmanagerclient.ValueType.Reference;
 import static io.harness.security.SimpleEncryption.CHARSET;
 import static io.harness.security.encryption.AccessType.APP_ROLE;
+import static io.harness.security.encryption.EncryptionType.AZURE_VAULT;
 import static io.harness.security.encryption.EncryptionType.GCP_KMS;
 import static io.harness.security.encryption.EncryptionType.LOCAL;
 import static io.harness.security.encryption.SecretManagerType.KMS;
@@ -38,7 +40,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DecryptedSecretValue;
-import io.harness.beans.FeatureName;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.helper.CustomSecretManagerHelper;
@@ -52,6 +53,7 @@ import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.encryptors.VaultEncryptorsRegistry;
 import io.harness.exception.DelegateNotAvailableException;
 import io.harness.exception.DelegateServiceDriverException;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
@@ -61,6 +63,7 @@ import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.ng.core.AdditionalMetadataValidationHelper;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.api.NGEncryptedDataService;
+import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.dao.NGEncryptedDataDao;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretFileSpecDTO;
@@ -68,6 +71,7 @@ import io.harness.ng.core.dto.secrets.SecretSpecDTO;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ng.core.entities.NGEncryptedData;
 import io.harness.ng.core.entities.NGEncryptedData.NGEncryptedDataBuilder;
+import io.harness.ng.core.models.Secret;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.secretmanagerclient.dto.CustomSecretManagerConfigDTO;
 import io.harness.secretmanagerclient.dto.LocalConfigDTO;
@@ -82,8 +86,10 @@ import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.security.encryption.EncryptionType;
 import io.harness.security.encryption.SecretManagerType;
+import io.harness.template.remote.TemplateResourceClient;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
+import software.wings.beans.AzureVaultConfig;
 import software.wings.beans.BaseVaultConfig;
 import software.wings.beans.CustomSecretNGManagerConfig;
 import software.wings.beans.NameValuePairWithDefault;
@@ -91,6 +97,9 @@ import software.wings.service.impl.security.GlobalEncryptDecryptClient;
 import software.wings.service.impl.security.NGEncryptorService;
 import software.wings.settings.SettingVariableTypes;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -102,10 +111,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -132,6 +143,10 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
   private final NGEncryptorService ngEncryptorService;
   private final AdditionalMetadataValidationHelper additionalMetadataValidationHelper;
   private final DynamicSecretReferenceHelper dynamicSecretReferenceHelper;
+  private final TemplateResourceClient templateResourceClient;
+  private final NGSecretServiceV2 ngSecretServiceV2;
+
+  private static final String ENVIRONMENT_VARIABLES = "environmentVariables";
 
   @Inject
   public NGEncryptedDataServiceImpl(NGEncryptedDataDao encryptedDataDao, KmsEncryptorsRegistry kmsEncryptorsRegistry,
@@ -141,7 +156,8 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
       NGFeatureFlagHelperService ngFeatureFlagHelperService, CustomEncryptorsRegistry customEncryptorsRegistry,
       CustomSecretManagerHelper customSecretManagerHelper, NGEncryptorService ngEncryptorService,
       AdditionalMetadataValidationHelper additionalMetadataValidationHelper,
-      DynamicSecretReferenceHelper dynamicSecretReferenceHelper) {
+      DynamicSecretReferenceHelper dynamicSecretReferenceHelper, TemplateResourceClient templateResourceClient,
+      NGSecretServiceV2 ngSecretServiceV2) {
     this.encryptedDataDao = encryptedDataDao;
     this.kmsEncryptorsRegistry = kmsEncryptorsRegistry;
     this.vaultEncryptorsRegistry = vaultEncryptorsRegistry;
@@ -154,6 +170,8 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     this.ngEncryptorService = ngEncryptorService;
     this.additionalMetadataValidationHelper = additionalMetadataValidationHelper;
     this.dynamicSecretReferenceHelper = dynamicSecretReferenceHelper;
+    this.templateResourceClient = templateResourceClient;
+    this.ngSecretServiceV2 = ngSecretServiceV2;
   }
 
   @Override
@@ -178,13 +196,98 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         validatePath(encryptedData.getPath(), encryptedData.getEncryptionType());
         break;
       case CustomSecretManagerValues:
+        try {
+          validateCustomSecrets(secretManager, dto);
+        } catch (JsonParseException e) {
+          throw new InvalidRequestException("Invalid JSON has been passed while creating the secret");
+        } catch (Exception e) {
+          log.error("Secret Creation failed for account {}, org {},project {} with identifier {}", accountIdentifier,
+              dto.getOrgIdentifier(), dto.getProjectIdentifier(), dto.getIdentifier(), e);
+          throw new InvalidRequestException("Secret Creation Failed", e);
+        }
         break;
       default:
         throw new RuntimeException("Secret value type is unknown");
     }
     return encryptedDataDao.save(encryptedData);
   }
+  private void validateCustomSecrets(SecretManagerConfigDTO secretManager, SecretDTOV2 dto) throws Exception {
+    CustomSecretManagerConfigDTO customSecretManagerConfigDTO = (CustomSecretManagerConfigDTO) secretManager;
+    Map<String, List<NameValuePairWithDefault>> connectorTemplateInputs =
+        customSecretManagerConfigDTO.getTemplate().getTemplateInputs();
 
+    List<NameValuePairWithDefault> envVariables =
+        (isNotEmpty(connectorTemplateInputs)) ? connectorTemplateInputs.get(ENVIRONMENT_VARIABLES) : new ArrayList<>();
+
+    if (envVariables.isEmpty()) {
+      return;
+    }
+
+    String jsonValue = ((SecretTextSpecDTO) dto.getSpec()).getValue();
+
+    if (jsonValue == null || StringUtils.isEmpty(jsonValue)) {
+      String missingEnvVariables =
+          envVariables.stream().map(NameValuePairWithDefault::getName).collect(Collectors.joining(", "));
+      throw new InvalidRequestException("There are missing environment variables: " + missingEnvVariables);
+    }
+
+    ObjectMapper objectMapper = new ObjectMapper();
+    JsonNode rootNode = objectMapper.readTree(jsonValue);
+    JsonNode environmentVariablesNode = rootNode.path(ENVIRONMENT_VARIABLES);
+    Set<String> givenInputs = new HashSet<>(environmentVariablesNode.findValuesAsText("name"));
+
+    validateDuplicates(environmentVariablesNode);
+    validateMissing(envVariables, givenInputs);
+    validateRedundant(givenInputs, envVariables);
+  }
+
+  private void validateDuplicates(JsonNode environmentVariablesNode) {
+    Set<String> local = new HashSet<>();
+    List<String> duplicateInputs = new ArrayList<>();
+    for (JsonNode variableNode : environmentVariablesNode) {
+      JsonNode nameNode = variableNode.get("name");
+      if (nameNode != null) {
+        if (!nameNode.isTextual()) {
+          throw new InvalidRequestException("\"name\" should be a string");
+        }
+        String name = nameNode.asText();
+        if (!local.add(name)) {
+          duplicateInputs.add(name);
+        }
+      }
+    }
+
+    if (!duplicateInputs.isEmpty()) {
+      throw new InvalidRequestException(
+          "There are duplicate environment variables in the secret : " + String.join(", ", duplicateInputs));
+    }
+  }
+  private void validateMissing(List<NameValuePairWithDefault> envVariables, Set<String> givenInputs) {
+    List<String> missingEnvVariables = new ArrayList<>();
+    if (envVariables != null) {
+      for (NameValuePairWithDefault variable : envVariables) {
+        String name = variable.getName();
+        if (!givenInputs.contains(name)) {
+          missingEnvVariables.add(name);
+        }
+      }
+    }
+    if (!missingEnvVariables.isEmpty()) {
+      throw new InvalidRequestException(
+          "RunTime Inputs are not provided for the Secret, Missing environment variables are: "
+          + String.join(", ", missingEnvVariables));
+    }
+  }
+
+  private void validateRedundant(Set<String> givenInputs, List<NameValuePairWithDefault> envVariables) {
+    Set<String> expectedInputs =
+        envVariables.stream().map(NameValuePairWithDefault::getName).collect(Collectors.toSet());
+    Set<String> redundantInputs = new HashSet<>(givenInputs);
+    redundantInputs.removeAll(expectedInputs);
+    if (!redundantInputs.isEmpty()) {
+      throw new InvalidRequestException("Unnecessary environment variables provided in the secret: " + redundantInputs);
+    }
+  }
   private void validateAdditionalMetadata(SecretManagerConfigDTO secretManager, SecretSpecDTO secret) {
     switch (secretManager.getEncryptionType()) {
       case GCP_SECRETS_MANAGER:
@@ -328,9 +431,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         validateEncryptedRecord(encryptedRecord);
       } else if (VAULT.equals(secretManagerType)) {
         if (EncryptionType.VAULT.equals(secretManagerConfig.getEncryptionType())
-            && APP_ROLE.equals(((BaseVaultConfig) secretManagerConfig).getAccessType())
-            && (ngFeatureFlagHelperService.isEnabled(
-                encryptedData.getAccountIdentifier(), FeatureName.DO_NOT_RENEW_APPROLE_TOKEN))) {
+            && APP_ROLE.equals(((BaseVaultConfig) secretManagerConfig).getAccessType())) {
           ((BaseVaultConfig) secretManagerConfig).setRenewAppRoleToken(false);
         }
         encryptedRecord = vaultEncryptorsRegistry.getVaultEncryptor(secretManagerConfig.getEncryptionType())
@@ -370,9 +471,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
 
       } else if (VAULT.equals(secretManagerType)) {
         if (EncryptionType.VAULT.equals(secretManagerConfig.getEncryptionType())
-            && APP_ROLE.equals(((BaseVaultConfig) secretManagerConfig).getAccessType())
-            && (ngFeatureFlagHelperService.isEnabled(
-                encryptedData.getAccountIdentifier(), FeatureName.DO_NOT_RENEW_APPROLE_TOKEN))) {
+            && APP_ROLE.equals(((BaseVaultConfig) secretManagerConfig).getAccessType())) {
           ((BaseVaultConfig) secretManagerConfig).setRenewAppRoleToken(false);
         }
         if (!Optional.ofNullable(existingEncryptedData.getPath()).isPresent()) {
@@ -591,12 +690,25 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
       String decryptedValue =
           String.valueOf(kmsEncryptorsRegistry.getKmsEncryptor(secretManagerConfig)
                              .fetchSecretValue(accountIdentifier, encryptedData, secretManagerConfig));
+
+      Optional<Secret> secret = ngSecretServiceV2.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+      if (secret.isEmpty()) {
+        throw new EntityNotFoundException(String.format(
+            "Secret with identifier {} is not present in the scope: accountIdentifier- {}, orgIdentifier- {}, projectIdentifier- {}",
+            identifier, accountIdentifier, orgIdentifier, projectIdentifier));
+      }
+
+      long createdAt = secret.get().getCreatedAt() == null ? 0 : secret.get().getCreatedAt();
+      long lastModifiedAt = secret.get().getLastModifiedAt() == null ? 0 : secret.get().getLastModifiedAt();
+
       return DecryptedSecretValue.builder()
           .identifier(identifier)
           .accountIdentifier(accountIdentifier)
           .orgIdentifier(orgIdentifier)
           .projectIdentifier(projectIdentifier)
           .decryptedValue(decryptedValue)
+          .createdAt(createdAt)
+          .lastModifiedAt(lastModifiedAt)
           .build();
     } else {
       throw new InvalidRequestException(
@@ -712,9 +824,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     SecretManagerType secretManagerType = secretManagerConfig.getType();
     if (VAULT.equals(secretManagerType)) {
       if (EncryptionType.VAULT.equals(secretManagerConfig.getEncryptionType())
-          && APP_ROLE.equals(((BaseVaultConfig) secretManagerConfig).getAccessType())
-          && (ngFeatureFlagHelperService.isEnabled(
-              encryptedData.getAccountIdentifier(), FeatureName.DO_NOT_RENEW_APPROLE_TOKEN))) {
+          && APP_ROLE.equals(((BaseVaultConfig) secretManagerConfig).getAccessType())) {
         ((BaseVaultConfig) secretManagerConfig).setRenewAppRoleToken(false);
       }
       try {
@@ -724,10 +834,13 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
               secretManagerConfig.getIdentifier());
         }
       } catch (SecretManagementException ex) {
-        // Logging the exception here and not throwing it further
-        // to ensure the record gets deleted locally even if it
-        // fails on the remote vault.
         log.error("Exception received while deleting secret : {}", ex.toString());
+        if (secretManagerConfig.getEncryptionType() == AZURE_VAULT) {
+          AzureVaultConfig azureVaultConfig = (AzureVaultConfig) secretManagerConfig;
+          if (Boolean.TRUE.equals(azureVaultConfig.getEnablePurge())) {
+            throw ex;
+          }
+        }
       }
     }
   }
@@ -865,10 +978,6 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
   }
 
   private void validatePath(String path, EncryptionType encryptionType) {
-    if (path != null && encryptionType == EncryptionType.VAULT && path.indexOf('#') < 0) {
-      throw new SecretManagementException(SECRET_MANAGEMENT_ERROR,
-          "Secret path need to include the # sign with the the key name after. E.g. /foo/bar/my-secret#my-key.", USER);
-    }
     // check if reference secrets are allowed based on EncryptionType
     if (Arrays.asList(GCP_KMS, KMS).contains(encryptionType)) {
       throw new SecretManagementException(

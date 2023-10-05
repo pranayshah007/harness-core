@@ -249,6 +249,10 @@ public class BatchJobRunner {
   }
 
   boolean checkOutOfClusterDependentJobs(String accountId, Instant startAt, Instant endAt, BatchJobType batchJobType) {
+    if (batchMainConfig.isClickHouseEnabled()) {
+      log.info("For OnPrem we are not calculating billing data from CUR so bypassing this check temporarily.");
+      return true;
+    }
     if (ImmutableSet.of(BatchJobType.INSTANCE_BILLING, BatchJobType.INSTANCE_BILLING_HOURLY).contains(batchJobType)) {
       if (batchJobType == BatchJobType.INSTANCE_BILLING_HOURLY) {
         // adding 6 hrs buffer because sometime last hr data is not present for few instances and we consider cost as 0

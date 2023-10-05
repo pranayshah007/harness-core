@@ -22,6 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.SlackTaskParams;
+import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.NotificationRequest;
 import io.harness.notification.Team;
@@ -32,6 +33,7 @@ import io.harness.notification.senders.SlackSenderImpl;
 import io.harness.notification.service.api.ChannelService;
 import io.harness.notification.service.api.NotificationSettingsService;
 import io.harness.notification.service.api.NotificationTemplateService;
+import io.harness.notification.utils.NotificationSettingsHelper;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import com.google.inject.Inject;
@@ -58,6 +60,7 @@ public class SlackServiceImpl implements ChannelService {
   private final NotificationTemplateService notificationTemplateService;
   private final SlackSenderImpl slackSender;
   private final DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  private final NotificationSettingsHelper notificationSettingsHelper;
 
   @Override
   public NotificationProcessingResponse send(NotificationRequest notificationRequest) {
@@ -100,6 +103,8 @@ public class SlackServiceImpl implements ChannelService {
           "Malformed webhook Url encountered while processing Test Connection request " + webhookUrl,
           DEFAULT_ERROR_CODE, USER);
     }
+    notificationSettingsHelper.validateRecipient(
+        webhookUrl, notificationSettingDTO.getAccountId(), SettingIdentifiers.SLACK_NOTIFICATION_ENDPOINTS_ALLOWLIST);
     NotificationProcessingResponse processingResponse = send(Collections.singletonList(webhookUrl), TEST_SLACK_TEMPLATE,
         Collections.emptyMap(), slackSettingDTO.getNotificationId(), null, notificationSettingDTO.getAccountId(), 0,
         Collections.emptyMap());
@@ -131,6 +136,7 @@ public class SlackServiceImpl implements ChannelService {
                                                                         .notificationId(notificationId)
                                                                         .message(message)
                                                                         .slackWebhookUrls(slackWebhookUrls)
+                                                                        .accountId(accountId)
                                                                         .build())
                                                     .taskSetupAbstractions(abstractionMap)
                                                     .expressionFunctorToken(expressionFunctorToken)
@@ -140,7 +146,7 @@ public class SlackServiceImpl implements ChannelService {
       log.info("Async delegate task created with taskID {}", taskId);
       processingResponse = NotificationProcessingResponse.allSent(slackWebhookUrls.size());
     } else {
-      processingResponse = slackSender.send(slackWebhookUrls, message, notificationId);
+      processingResponse = slackSender.send(slackWebhookUrls, message, notificationId, accountId);
     }
     log.info(NotificationProcessingResponse.isNotificationRequestFailed(processingResponse)
             ? "Failed to send notification for request {}"

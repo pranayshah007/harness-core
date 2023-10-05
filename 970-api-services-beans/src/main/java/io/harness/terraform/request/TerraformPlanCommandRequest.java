@@ -27,4 +27,5 @@ public class TerraformPlanCommandRequest {
   boolean destroySet;
   boolean isTerraformCloudCli;
   Map<String, String> additionalCliFlags;
+  boolean skipColorLogs;
 }

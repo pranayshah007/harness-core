@@ -4,6 +4,7 @@
 <#import "common/mtls.ftl" as mtls>
 <#import "common/upgrader.ftl" as upgrader>
 <#import "common/secret.ftl" as secret>
+<#import "common/hpa.ftl" as hpa>
 <#global accountTokenName=delegateName + "-account-token">
 apiVersion: v1
 kind: Namespace
@@ -122,6 +123,10 @@ spec:
 
     <@delegateService.ng />
 </#if>
+
+---
+
+    <@hpa.scale />
 
 ---
 

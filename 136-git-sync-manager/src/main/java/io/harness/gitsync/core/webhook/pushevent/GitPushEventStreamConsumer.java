@@ -9,6 +9,7 @@ package io.harness.gitsync.core.webhook.pushevent;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.eventsframework.EventsFrameworkConstants.GITX_WEBHOOK_PUSH_EVENT_STREAM;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_PUSH_EVENT_STREAM;
 import static io.harness.gitsync.common.WebhookEventConstants.GIT_PUSH_EVENT_CONSUMER;
 
@@ -41,10 +42,12 @@ public class GitPushEventStreamConsumer extends RedisTraceConsumer {
 
   @Inject
   public GitPushEventStreamConsumer(@Named(GIT_PUSH_EVENT_STREAM) Consumer redisConsumer,
-      @Named(GIT_PUSH_EVENT_STREAM) MessageListener gitPushEventListener) {
+      @Named(GIT_PUSH_EVENT_STREAM) MessageListener gitPushEventListener,
+      @Named(GITX_WEBHOOK_PUSH_EVENT_STREAM) MessageListener gitXWebhookPushEventListener) {
     this.redisConsumer = redisConsumer;
     messageListenersList = new ArrayList<>();
     messageListenersList.add(gitPushEventListener);
+    messageListenersList.add(gitXWebhookPushEventListener);
   }
 
   @Override

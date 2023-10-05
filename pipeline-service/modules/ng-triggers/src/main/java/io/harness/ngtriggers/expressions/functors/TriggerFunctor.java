@@ -11,6 +11,7 @@ import static io.harness.ngtriggers.Constants.CONNECTOR_REF;
 import static io.harness.ngtriggers.Constants.EVENT_PAYLOAD;
 import static io.harness.ngtriggers.Constants.HEADER;
 import static io.harness.ngtriggers.Constants.PAYLOAD;
+import static io.harness.ngtriggers.Constants.TRIGGER_PAYLOAD;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -55,6 +56,7 @@ public class TriggerFunctor implements LateBindingValue {
     if (null != metadata.getTriggerPayload()
         && EmptyPredicate.isNotEmpty(metadata.getTriggerPayload().getConnectorRef())) {
       jsonObject.put(CONNECTOR_REF, metadata.getTriggerPayload().getConnectorRef());
+      jsonObject.put(TRIGGER_PAYLOAD, metadata.getTriggerPayload());
     }
 
     if (EmptyPredicate.isNotEmpty(metadata.getTriggerHeader())) {

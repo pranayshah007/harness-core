@@ -78,7 +78,7 @@ public class NotifyEventListenerHelper {
         throw new UnsupportedOperationException(
             "No handling present for notify callback : " + notifyCallback.toString());
       }
-      log.info("WaitInstance callback finished");
+      log.debug("WaitInstance callback finished");
     } catch (Exception exception) {
       log.error("WaitInstance callback failed", exception);
     }

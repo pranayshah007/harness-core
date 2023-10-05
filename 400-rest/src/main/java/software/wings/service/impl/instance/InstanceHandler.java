@@ -254,6 +254,9 @@ public abstract class InstanceHandler {
       deploymentSummary.setArtifactId(deploymentSummaryFromDB.getArtifactId());
       deploymentSummary.setArtifactSourceName(deploymentSummaryFromDB.getArtifactSourceName());
       deploymentSummary.setArtifactStreamId(deploymentSummaryFromDB.getArtifactStreamId());
+      deploymentSummary.setWorkflowId(deploymentSummaryFromDB.getWorkflowId());
+      deploymentSummary.setWorkflowExecutionName(deploymentSummaryFromDB.getWorkflowExecutionName());
+      deploymentSummary.setWorkflowExecutionId(deploymentSummaryFromDB.getWorkflowExecutionId());
     } else {
       log.info("Unable to find DeploymentSummary while rolling back " + deploymentSummary);
     }
@@ -348,7 +351,7 @@ public abstract class InstanceHandler {
 
     if (isNotEmpty(instanceIdsToBeDeleted)) {
       instanceService.delete(instanceIdsToBeDeleted);
-      log.info("Instances to be deleted {}", instanceIdsToBeDeleted.size());
+      log.debug("Instances to be deleted {}", instanceIdsToBeDeleted.size());
     }
   }
 

@@ -44,6 +44,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.Setter;
 import lombok.Singular;
+import lombok.With;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.NonFinal;
 import lombok.experimental.Wither;
@@ -106,18 +107,18 @@ public class ServiceEntity implements PersistentEntity, GitAware, ScopeAware, Gi
   @Trimmed String projectIdentifier;
   @Wither @Singular @Size(max = 128) private List<NGTag> tags;
 
-  @NotEmpty @EntityName String name;
-  @Size(max = 1024) String description;
+  @NotEmpty @EntityName @With String name;
+  @Size(max = 1024) @With String description;
 
   @Wither @CreatedDate Long createdAt;
   @Wither @LastModifiedDate Long lastModifiedAt;
   @Wither @Version Long version;
   @Wither @Builder.Default Boolean deleted = Boolean.FALSE;
-  @Builder.Default Boolean gitOpsEnabled;
-  ServiceDefinitionType type;
+  @Builder.Default @With Boolean gitOpsEnabled;
+  @With ServiceDefinitionType type;
 
   Long deletedAt;
-  String yaml;
+  @With String yaml;
 
   // GitSync entities
   // Todo(Tathagat): Check if need to be deleted

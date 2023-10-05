@@ -22,7 +22,7 @@ import org.springframework.data.repository.CrudRepository;
 @HarnessRepo
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface GitXWebhookRepository extends CrudRepository<GitXWebhook, String>, GitXWebhookRepositoryCustom {
-  List<GitXWebhook> findByAccountIdentifierAndIdentifierAndRepoName(
-      String accountIdentifier, String identifier, String repoName);
   List<GitXWebhook> findByAccountIdentifierAndIdentifier(String accountIdentifier, String identifier);
+
+  List<GitXWebhook> findByAccountIdentifierAndRepoName(String accountIdentifier, String repoName);
 }

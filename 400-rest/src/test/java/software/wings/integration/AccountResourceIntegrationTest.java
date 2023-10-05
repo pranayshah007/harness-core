@@ -22,8 +22,8 @@ import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 
 import software.wings.beans.Account;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.User;
+import software.wings.beans.account.AccountStatus;
 import software.wings.beans.alert.Alert;
 import software.wings.beans.governance.GovernanceConfig;
 import software.wings.utils.Utils;

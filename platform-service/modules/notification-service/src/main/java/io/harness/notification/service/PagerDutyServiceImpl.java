@@ -22,6 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.PagerDutyTaskParams;
+import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.NotificationRequest;
 import io.harness.notification.Team;
@@ -32,6 +33,7 @@ import io.harness.notification.senders.PagerDutySenderImpl;
 import io.harness.notification.service.api.ChannelService;
 import io.harness.notification.service.api.NotificationSettingsService;
 import io.harness.notification.service.api.NotificationTemplateService;
+import io.harness.notification.utils.NotificationSettingsHelper;
 import io.harness.serializer.YamlUtils;
 import io.harness.service.DelegateGrpcClientWrapper;
 
@@ -67,6 +69,7 @@ public class PagerDutyServiceImpl implements ChannelService {
   private final YamlUtils yamlUtils;
   private final PagerDutySenderImpl pagerDutySender;
   private final DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  private final NotificationSettingsHelper notificationSettingsHelper;
 
   @Override
   public NotificationProcessingResponse send(NotificationRequest notificationRequest) {
@@ -109,6 +112,8 @@ public class PagerDutyServiceImpl implements ChannelService {
               + notificationSettingDTO.getNotificationId(),
           DEFAULT_ERROR_CODE, USER);
     }
+    notificationSettingsHelper.validateRecipient(pagerdutyKey, notificationSettingDTO.getAccountId(),
+        SettingIdentifiers.PAGERDUTY_NOTIFICATION_INTEGRATION_KEYS_ALLOWLIST);
     NotificationProcessingResponse processingResponse = send(Collections.singletonList(pagerdutyKey), TEST_PD_TEMPLATE,
         Collections.emptyMap(), pagerDutySettingDTO.getNotificationId(), null, notificationSettingDTO.getAccountId(), 0,
         Collections.emptyMap());
@@ -168,6 +173,7 @@ public class PagerDutyServiceImpl implements ChannelService {
                                                                         .pagerDutyKeys(pagerDutyKeys)
                                                                         .payload(payload)
                                                                         .links(links)
+                                                                        .accountId(accountId)
                                                                         .build())
                                                     .taskSetupAbstractions(abstractionMap)
                                                     .expressionFunctorToken(expressionFunctorToken)
@@ -177,7 +183,7 @@ public class PagerDutyServiceImpl implements ChannelService {
       log.info("Async delegate task created with taskID {}", taskId);
       processingResponse = NotificationProcessingResponse.allSent(pagerDutyKeys.size());
     } else {
-      processingResponse = pagerDutySender.send(pagerDutyKeys, payload, links, notificationId);
+      processingResponse = pagerDutySender.send(pagerDutyKeys, payload, links, notificationId, accountId);
     }
     log.info(NotificationProcessingResponse.isNotificationRequestFailed(processingResponse)
             ? "Failed to send notification for request {}"
@@ -209,7 +215,7 @@ public class PagerDutyServiceImpl implements ChannelService {
           notificationRequest.getPagerDuty().getExpressionFunctorToken());
       recipients.addAll(resolvedRecipients);
     }
-    return recipients.stream().distinct().collect(Collectors.toList());
+    return recipients.stream().distinct().filter(str -> !str.isEmpty()).collect(Collectors.toList());
   }
 
   @Getter

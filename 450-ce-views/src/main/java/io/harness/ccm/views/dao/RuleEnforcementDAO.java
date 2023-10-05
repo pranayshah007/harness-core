@@ -7,9 +7,13 @@
 
 package io.harness.ccm.views.dao;
 
+import static io.harness.beans.FeatureName.CCM_ENABLE_AZURE_CLOUD_ASSET_GOVERNANCE_UI;
+
 import io.harness.ccm.views.entities.RuleEnforcement;
 import io.harness.ccm.views.entities.RuleEnforcement.RuleEnforcementId;
+import io.harness.ccm.views.helper.RuleCloudProviderType;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
@@ -28,6 +32,7 @@ import org.springframework.data.mongodb.core.query.Update;
 public class RuleEnforcementDAO {
   @Inject private HPersistence hPersistence;
   @Inject private MongoTemplate mongoTemplate;
+  @Inject private FeatureFlagService featureFlagService;
 
   public boolean save(RuleEnforcement ruleEnforcement) {
     RuleEnforcement savedRuleEnforcement = mongoTemplate.save(ruleEnforcement);
@@ -135,11 +140,12 @@ public class RuleEnforcementDAO {
   }
 
   public List<RuleEnforcement> list(String accountId) {
-    return hPersistence.createQuery(RuleEnforcement.class)
-        .field(RuleEnforcementId.accountId)
-        .equal(accountId)
-        .order(Sort.ascending(RuleEnforcementId.name))
-        .asList();
+    Query<RuleEnforcement> query =
+        hPersistence.createQuery(RuleEnforcement.class).field(RuleEnforcementId.accountId).equal(accountId);
+    if (featureFlagService.isNotEnabled(CCM_ENABLE_AZURE_CLOUD_ASSET_GOVERNANCE_UI, accountId)) {
+      query.field(RuleEnforcementId.cloudProvider).notEqual(RuleCloudProviderType.AZURE);
+    }
+    return query.order(Sort.ascending(RuleEnforcementId.name)).asList();
   }
 
   public List<RuleEnforcement> ruleEnforcement(String accountId, List<String> ruleIds) {

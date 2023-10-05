@@ -273,6 +273,7 @@ public class NotificationHelper {
         pmsExecutionService.getPipelineExecutionSummaryEntity(
             AmbianceUtils.getAccountId(ambiance), orgIdentifier, projectIdentifier, ambiance.getPlanExecutionId());
     String pipelineId = ambiance.getMetadata().getPipelineIdentifier();
+    String pipelineName = pipelineExecutionSummaryEntity.getName();
 
     WebhookNotificationEventBuilder webhookNotificationEvent =
         WebhookNotificationEvent.builder()
@@ -294,6 +295,7 @@ public class NotificationHelper {
     String stepIdentifier = "";
     String stageIdentifier = "";
     String stepName = "";
+    String stageName = "";
     String imageStatus = PipelineNotificationUtils.getStatusForImage(planExecution.getStatus());
     String themeColor = PipelineNotificationUtils.getThemeColor(planExecution.getStatus());
     String nodeStatus = PipelineNotificationUtils.getNodeStatus(planExecution.getStatus());
@@ -312,13 +314,16 @@ public class NotificationHelper {
       if (pipelineEventType.isStepLevelEvent()) {
         stepIdentifier = nodeIdentifier;
         Optional<Level> stageOptional = AmbianceUtils.getStageLevelFromAmbiance(ambiance);
+        stepName = nodeExecution.getName();
         if (stageOptional.isPresent()) {
           stageIdentifier = stageOptional.get().getIdentifier();
         }
-      } else {
-        stageIdentifier = nodeIdentifier;
       }
-      stepName = nodeExecution.getName();
+      if (pipelineEventType.isStageLevelEvent()) {
+        stageIdentifier = nodeIdentifier;
+        stageName = nodeExecution.getName();
+      }
+
     } else {
       userName = ambiance.getMetadata().getTriggerInfo().getTriggeredBy().getIdentifier();
       startTs = planExecution.getStartTs() / 1000;
@@ -355,6 +360,19 @@ public class NotificationHelper {
     webhookNotificationEvent.nodeStatus(nodeStatus);
     webhookNotificationEvent.pipelineUrl(pipelineUrl);
     webhookNotificationEvent.executionUrl(executionUrl);
+    webhookNotificationEvent.tag(pipelineExecutionSummaryEntity.getTags());
+    webhookNotificationEvent.pipelineName(pipelineName);
+    webhookNotificationEvent.stepName(stepName);
+    webhookNotificationEvent.stageName(stageName);
+    if (null != nodeExecution && null != nodeExecution.getFailureInfo()
+        && EmptyPredicate.isNotEmpty(nodeExecution.getFailureInfo().toString())) {
+      webhookNotificationEvent.errorMessage(nodeExecution.getFailureInfo().toString());
+    } else if (PipelineEventType.PIPELINE_FAILED == pipelineEventType && null != pipelineExecutionSummaryEntity
+        && null != pipelineExecutionSummaryEntity.getFailureInfo()
+        && EmptyPredicate.isNotEmpty(pipelineExecutionSummaryEntity.getFailureInfo().getMessage())) {
+      webhookNotificationEvent.errorMessage(pipelineExecutionSummaryEntity.getFailureInfo().getMessage());
+    }
+
     if (!EmptyPredicate.isEmpty(endDate) && !PipelineEventType.startEvents.contains(pipelineEventType)) {
       webhookNotificationEvent.endTime(endDate);
       webhookNotificationEvent.endTs(endTs);

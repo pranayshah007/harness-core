@@ -8,11 +8,16 @@
 package io.harness.delegate.task.aws.eks;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.task.aws.eks.AwsEKSV2DelegateTaskHelper.CLUSTER_NAME_SPLIT_ERROR_MESSAGE_WITH_EXPLANATION;
+import static io.harness.delegate.task.aws.eks.AwsEKSV2DelegateTaskHelper.EMPTY_CLUSTER_NAME_ERROR_MESSAGE;
 import static io.harness.k8s.K8sConstants.EKS_AUTH_PLUGIN_INSTALL_HINT;
+import static io.harness.k8s.eks.EksConstants.AWS_STS_REGIONAL_ENDPOINTS;
 import static io.harness.k8s.eks.EksConstants.EKS_KUBECFG_ENV_VARS_AWS_ACCESS_KEY_ID;
 import static io.harness.k8s.eks.EksConstants.EKS_KUBECFG_ENV_VARS_AWS_SECRET_ACCESS_KEY;
+import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 
+import static java.lang.String.format;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
@@ -34,6 +39,7 @@ import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
+import io.harness.delegate.task.k8s.EksK8sInfraDelegateConfig;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
@@ -49,6 +55,7 @@ import io.harness.rule.Owner;
 import software.wings.beans.AwsCrossAccountAttributes;
 
 import java.util.List;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -93,8 +100,13 @@ public class AwsEKSV2DelegateTaskHelperTest extends CategoryTest {
     MockedStatic kubeConfigAuthPluginHelper = mockStatic(KubeConfigAuthPluginHelper.class);
     Mockito.when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(true);
 
-    KubernetesConfig result = awsEKSV2DelegateTaskHelper.getKubeConfig(
-        awsConnectorDTO, "us-west-2/test-cluster", "test-namespace", logCallback);
+    KubernetesConfig result = awsEKSV2DelegateTaskHelper.getKubeConfig(EksK8sInfraDelegateConfig.builder()
+                                                                           .awsConnectorDTO(awsConnectorDTO)
+                                                                           .cluster("us-west-2/test-cluster")
+                                                                           .addRegionalParam(true)
+                                                                           .namespace("test-namespace")
+                                                                           .build(),
+        logCallback);
     kubeConfigAuthPluginHelper.close();
     assertNotNull(result);
     assertEquals("endpoint/", result.getMasterUrl());
@@ -119,11 +131,13 @@ public class AwsEKSV2DelegateTaskHelperTest extends CategoryTest {
 
     List<EnvVariable> env = exec.getEnv();
     assertNotNull(env);
-    assertEquals(2, env.size());
+    assertEquals(3, env.size());
     assertEquals(EKS_KUBECFG_ENV_VARS_AWS_ACCESS_KEY_ID, env.get(0).getName());
     assertEquals("access-key", env.get(0).getValue());
     assertEquals(EKS_KUBECFG_ENV_VARS_AWS_SECRET_ACCESS_KEY, env.get(1).getName());
     assertEquals("secret-key", env.get(1).getValue());
+    assertEquals(AWS_STS_REGIONAL_ENDPOINTS, env.get(2).getName());
+    assertEquals("regional", env.get(2).getValue());
   }
 
   @Test
@@ -134,12 +148,18 @@ public class AwsEKSV2DelegateTaskHelperTest extends CategoryTest {
     AwsConnectorDTO awsConnectorDTO = mock(AwsConnectorDTO.class);
     LogCallback logCallback = mock(LogCallback.class);
 
-    assertThatThrownBy(
-        () -> awsEKSV2DelegateTaskHelper.getKubeConfig(awsConnectorDTO, "test-cluster", "test-namespace", logCallback))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining(String.format("Cluster name is not in proper format. "
-                + "Expected format is <Region/ClusterName> i.e us-east-1/test-cluster. Provided cluster name: [%s]",
-            "test-cluster"));
+    EksK8sInfraDelegateConfig infraDelegateConfig = EksK8sInfraDelegateConfig.builder()
+                                                        .awsConnectorDTO(awsConnectorDTO)
+                                                        .cluster("test-cluster")
+                                                        .addRegionalParam(true)
+                                                        .namespace("test-namespace")
+                                                        .build();
+    try (MockedStatic<KubeConfigAuthPluginHelper> mockedStatic = mockStatic(KubeConfigAuthPluginHelper.class)) {
+      Mockito.when(KubeConfigAuthPluginHelper.isExecAuthPluginBinaryAvailable(any(), any())).thenReturn(true);
+      assertThatThrownBy(() -> awsEKSV2DelegateTaskHelper.getKubeConfig(infraDelegateConfig, logCallback))
+          .isInstanceOf(InvalidRequestException.class)
+          .hasMessageContaining(format(CLUSTER_NAME_SPLIT_ERROR_MESSAGE_WITH_EXPLANATION, "test-cluster"));
+    }
   }
 
   @Test
@@ -171,5 +191,30 @@ public class AwsEKSV2DelegateTaskHelperTest extends CategoryTest {
                        .crossAccountAttributes(
                            AwsCrossAccountAttributes.builder().crossAccountRoleArn("arn").externalId("id").build())
                        .build());
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testRegionClusterCombo() {
+    assertThatThrownBy(() -> AwsEKSV2DelegateTaskHelper.getRegionAndClusterName("cluster-name", null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(format(CLUSTER_NAME_SPLIT_ERROR_MESSAGE_WITH_EXPLANATION, "cluster-name"));
+    assertThatThrownBy(() -> AwsEKSV2DelegateTaskHelper.getRegionAndClusterName("", null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(format(EMPTY_CLUSTER_NAME_ERROR_MESSAGE));
+
+    assertThat(AwsEKSV2DelegateTaskHelper.getRegionAndClusterName("us-east-1/cluster-name", null))
+        .isEqualTo(Pair.of("us-east-1", "cluster-name"));
+    assertThat(AwsEKSV2DelegateTaskHelper.getRegionAndClusterName("us-east-1/cluster-name/abc", null))
+        .isEqualTo(Pair.of("us-east-1", "cluster-name/abc"));
+
+    assertThat(AwsEKSV2DelegateTaskHelper.getRegionAndClusterName("cluster-name", "us-east-1"))
+        .isEqualTo(Pair.of("us-east-1", "cluster-name"));
+    assertThat(AwsEKSV2DelegateTaskHelper.getRegionAndClusterName("cluster-name/abc", "us-east-1"))
+        .isEqualTo(Pair.of("us-east-1", "cluster-name/abc"));
+
+    assertThat(AwsEKSV2DelegateTaskHelper.getRegionAndClusterName("us-east-1/cluster-name/abc", "us-east-1"))
+        .isEqualTo(Pair.of("us-east-1", "cluster-name/abc"));
   }
 }

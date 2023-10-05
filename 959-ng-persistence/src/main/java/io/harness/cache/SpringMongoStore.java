@@ -199,8 +199,8 @@ public class SpringMongoStore implements DistributedStore {
       Update update = new Update()
                           .setOnInsert(SpringCacheEntityKeys.canonicalKey, canonicalKey)
                           .set(SpringCacheEntityKeys.contextValue, contextValue)
-                          .set(SpringCacheEntityKeys.usingKryoWithoutReference, false)
-                          .set(SpringCacheEntityKeys.entity, kryoSerializer.asDeflatedBytes(entity))
+                          .set(SpringCacheEntityKeys.usingKryoWithoutReference, true)
+                          .set(SpringCacheEntityKeys.entity, referenceFalseKryoSerializer.asDeflatedBytes(entity))
                           .set(SpringCacheEntityKeys.validUntil, Date.from(OffsetDateTime.now().plus(ttl).toInstant()))
                           .set(SpringCacheEntityKeys.entityUpdatedAt, entityLastUpdatedAt);
 

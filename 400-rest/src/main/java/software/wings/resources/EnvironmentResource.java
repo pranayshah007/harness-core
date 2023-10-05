@@ -11,6 +11,7 @@ import static io.harness.beans.SearchFilter.Operator.IN;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.security.PermissionAttribute.PermissionType.ENV;
+import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
 import static software.wings.security.PermissionAttribute.ResourceType.APPLICATION;
 import static software.wings.security.PermissionAttribute.ResourceType.ENVIRONMENT;
 
@@ -88,8 +89,7 @@ public class EnvironmentResource {
   @ListAPI(ENVIRONMENT)
   @Timed
   @ExceptionMetered
-  @AuthRule(permissionType = PermissionType.ENV, action = Action.READ)
-  @ApiKeyAuthorized(permissionType = ENV, action = Action.READ)
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<PageResponse<Environment>> list(@QueryParam("accountId") String accountId,
       @QueryParam("appId") List<String> appIds, @BeanParam PageRequest<Environment> pageRequest,
       @QueryParam("details") @DefaultValue("true") boolean details, @QueryParam("tagFilter") String tagFilter,
@@ -124,8 +124,7 @@ public class EnvironmentResource {
   @Path("{envId}")
   @Timed
   @ExceptionMetered
-  @AuthRule(permissionType = PermissionType.ENV, action = Action.READ)
-  @ApiKeyAuthorized(permissionType = ENV, action = Action.READ)
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<Environment> get(@QueryParam("appId") String appId, @PathParam("envId") String envId) {
     try {
       return new RestResponse<>(environmentService.get(appId, envId, false));
@@ -145,8 +144,7 @@ public class EnvironmentResource {
   @Path("{envId}/services")
   @Timed
   @ExceptionMetered
-  @AuthRule(permissionType = PermissionType.ENV, action = Action.READ)
-  @ApiKeyAuthorized(permissionType = ENV, action = Action.READ)
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<List<Service>> getServicesWithOverrides(
       @QueryParam("appId") String appId, @PathParam("envId") String envId) {
     return new RestResponse(environmentService.getServicesWithOverrides(appId, envId));

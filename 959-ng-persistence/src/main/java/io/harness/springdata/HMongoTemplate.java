@@ -23,6 +23,7 @@ import com.mongodb.MongoExecutionTimeoutException;
 import com.mongodb.MongoSocketOpenException;
 import com.mongodb.MongoSocketReadException;
 import com.mongodb.client.model.CountOptions;
+import com.mongodb.client.result.UpdateResult;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -91,6 +92,12 @@ public class HMongoTemplate extends MongoTemplate implements HealthMonitor {
   public <T> T findAndModify(Query query, UpdateDefinition update, FindAndModifyOptions options, Class<T> entityClass) {
     traceQuery(query, entityClass);
     return retry(() -> findAndModify(query, update, options, entityClass, getCollectionName(entityClass)));
+  }
+
+  @Override
+  public UpdateResult upsert(Query query, UpdateDefinition update, Class<?> entityClass) {
+    traceQuery(query, entityClass);
+    return retry(() -> upsert(query, update, entityClass, getCollectionName(entityClass)));
   }
 
   @Override

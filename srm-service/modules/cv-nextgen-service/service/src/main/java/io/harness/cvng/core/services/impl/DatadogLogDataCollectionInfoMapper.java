@@ -15,8 +15,6 @@ import io.harness.cvng.core.entities.NextGenLogCVConfig;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
 import io.harness.cvng.core.services.api.DataCollectionInfoMapper;
 
-import java.util.List;
-
 public class DatadogLogDataCollectionInfoMapper
     implements DataCollectionInfoMapper<DatadogLogDataCollectionInfo, LogCVConfig> {
   @Override
@@ -38,7 +36,7 @@ public class DatadogLogDataCollectionInfoMapper
           DatadogLogDefinition.builder()
               .name(nextGenLogCVConfig.getQueryName())
               .query(nextGenLogCVConfig.getQuery())
-              .indexes(List.of(nextGenLogCVConfig.getQueryParams().getIndex())) // TODO FIX it has a list of indexes ?
+              .indexes(nextGenLogCVConfig.getQueryParams().getIndexes())
               .serviceInstanceIdentifier(nextGenLogCVConfig.getQueryParams().getServiceInstanceField())
               .build();
       datadogLogDataCollectionInfo = DatadogLogDataCollectionInfo.builder().logDefinition(definition).build();

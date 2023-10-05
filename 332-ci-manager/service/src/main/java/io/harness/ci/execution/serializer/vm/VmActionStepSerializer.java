@@ -44,7 +44,9 @@ public class VmActionStepSerializer {
       env = new HashMap<>();
     }
     if (with != null) {
-      env.put("PLUGIN_WITH", SerializerUtils.convertMapToJsonString(with));
+      for (String key : with.keySet()) {
+        env.put("PLUGIN_WITH_" + key, with.get(key));
+      }
     }
 
     Map<String, String> statusEnvVars = serializerUtils.getStepStatusEnvVars(ambiance);

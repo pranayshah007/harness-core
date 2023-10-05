@@ -89,7 +89,7 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
   private void syncInstancesInternal(String appId, String infraMappingId,
       List<DeploymentSummary> newDeploymentSummaries, ShellScriptProvisionExecutionData response,
       InstanceSyncFlow instanceSyncFlow) {
-    log.info("Performing Custom Deployment Type Instance sync via [{}], Infrastructure Mapping : [{}]",
+    log.debug("Performing Custom Deployment Type Instance sync via [{}], Infrastructure Mapping : [{}]",
         instanceSyncFlow, infraMappingId);
     InfrastructureMapping infrastructureMapping = infraMappingService.get(appId, infraMappingId);
     validateInfraMapping(infrastructureMapping);
@@ -117,8 +117,8 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
 
   private void rewriteInstances(List<Instance> instancesInDb, List<PhysicalHostInstanceInfo> latestHostInfos,
       List<DeploymentSummary> newDeploymentSummaries, InfrastructureMapping infraMapping) {
-    log.info("Instances to be added {}", latestHostInfos.size());
-    log.info("Instances to be deleted {}", instancesInDb.size());
+    log.debug("Instances to be added {}", latestHostInfos.size());
+    log.debug("Instances to be deleted {}", instancesInDb.size());
 
     if (isNotEmpty(instancesInDb)) {
       instanceService.delete(instancesInDb.stream().map(Instance::getUuid).collect(Collectors.toSet()));
@@ -166,9 +166,9 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
 
     Sets.SetView<String> instancesToBeDeleted = Sets.difference(instancesInDbMap.keySet(), latestHostInfoMap.keySet());
 
-    log.info("Instances to be added {}", instancesToBeAdded);
-    log.info("Instances to be deleted {}", instancesToBeDeleted);
-    log.info(
+    log.debug("Instances to be added {}", instancesToBeAdded);
+    log.debug("Instances to be deleted {}", instancesToBeDeleted);
+    log.debug(
         format("Instances in database=%d, Instances from server=%d", instancesInDb.size(), latestHostInfos.size()));
 
     Set<String> instanceIdsForDeletion = instancesInDbMap.entrySet()

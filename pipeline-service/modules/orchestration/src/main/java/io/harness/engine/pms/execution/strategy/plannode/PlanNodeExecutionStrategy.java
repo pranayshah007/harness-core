@@ -29,7 +29,6 @@ import io.harness.engine.facilitation.facilitator.publisher.FacilitateEventPubli
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.engine.pms.advise.AdviseHandlerFactory;
 import io.harness.engine.pms.advise.AdviserResponseHandler;
-import io.harness.engine.pms.advise.NodeAdviseHelper;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.ResolverUtils;
@@ -42,10 +41,11 @@ import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.NodeExecutionMetadata;
+import io.harness.execution.PmsNodeExecutionMetadata;
 import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.logging.AutoLogContext;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.advisers.AdviseType;
@@ -54,6 +54,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
 import io.harness.pms.contracts.resume.ResponseDataProto;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
@@ -95,7 +96,6 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   @Inject private FacilitationHelper facilitationHelper;
   @Inject private ExceptionManager exceptionManager;
   @Inject private EndNodeExecutionHelper endNodeExecutionHelper;
-  @Inject private NodeAdviseHelper nodeAdviseHelper;
   @Inject private FacilitateEventPublisher facilitateEventPublisher;
   @Inject private NodeStartHelper startHelper;
   @Inject private InterruptService interruptService;
@@ -109,12 +109,18 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   @Inject WaitForExecutionInputHelper waitForExecutionInputHelper;
   @Inject PlanExecutionService planExecutionService;
   @Inject TransactionHelper transactionHelper;
-  @Inject private PmsGraphStepDetailsService pmsGraphStepDetailsService;
+  @Inject private NodeExecutionInfoService pmsGraphStepDetailsService;
 
   @Override
-  public NodeExecution createNodeExecution(@NotNull Ambiance ambiance, @NotNull PlanNode node,
+  public NodeExecution createNodeExecutionInternal(@NotNull Ambiance ambiance, @NotNull PlanNode node,
       NodeExecutionMetadata metadata, String notifyId, String parentId, String previousId) {
     String uuid = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+    String name = node.getName();
+    String identifier = node.getIdentifier();
+    if (metadata != null && metadata.getStrategyMetadata() != null) {
+      name = AmbianceUtils.modifyIdentifier(metadata.getStrategyMetadata(), node.getName(), ambiance);
+      identifier = AmbianceUtils.modifyIdentifier(metadata.getStrategyMetadata(), node.getIdentifier(), ambiance);
+    }
     NodeExecution nodeExecution =
         NodeExecution.builder()
             .uuid(uuid)
@@ -127,9 +133,9 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
             .previousId(previousId)
             .unitProgresses(new ArrayList<>())
             .module(node.getServiceName())
-            .name(AmbianceUtils.modifyIdentifier(ambiance, node.getName()))
+            .name(name)
             .skipGraphType(node.getSkipGraphType())
-            .identifier(AmbianceUtils.modifyIdentifier(ambiance, node.getIdentifier()))
+            .identifier(identifier)
             .stepType(node.getStepType())
             .nodeId(node.getUuid())
             .stageFqn(node.getStageFqn())
@@ -138,6 +144,8 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
             .levelRuntimeIdx(ResolverUtils.prepareLevelRuntimeIdIndices(ambiance))
             .nodeType(node.getNodeType().name())
             .build();
+    pmsGraphStepDetailsService.saveNodeExecutionInfo(
+        uuid, ambiance.getPlanExecutionId(), metadata == null ? null : metadata.getStrategyMetadata());
     return nodeExecutionService.save(nodeExecution);
   }
 
@@ -216,7 +224,7 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
 
   @VisibleForTesting
   void addResolvedStepInputs(String planExecutionId, String nodeExecutionId, PmsStepParameters resolvedStepInputs) {
-    pmsGraphStepDetailsService.saveNodeExecutionInfo(nodeExecutionId, planExecutionId, resolvedStepInputs);
+    pmsGraphStepDetailsService.addStepInputs(nodeExecutionId, resolvedStepInputs, planExecutionId);
     log.info("Added Resolved step Inputs");
   }
 
@@ -357,7 +365,7 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
       log.warn("Cannot conclude node execution. Status update failed To:{}", toStatus);
       return;
     }
-    nodeAdviseHelper.queueAdvisingEvent(updatedNodeExecution, node, fromStatus);
+    processOrQueueAdvisingEvent(updatedNodeExecution, node, fromStatus);
   }
 
   @Override
@@ -432,7 +440,7 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
       return;
     }
 
-    nodeAdviseHelper.queueAdvisingEvent(updatedNodeExecution, planNode, nodeExecution.getStatus());
+    processOrQueueAdvisingEvent(updatedNodeExecution, planNode, nodeExecution.getStatus());
   }
 
   @VisibleForTesting
@@ -458,5 +466,10 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
       // Smile if you see irony in this
       log.error("This is very BAD!!!. Exception Occurred while handling Exception. Erroring out Execution", ex);
     }
+  }
+
+  @Override
+  public PmsNodeExecutionMetadata createMetadata(StrategyMetadata strategyMetadata) {
+    return NodeExecutionMetadata.builder().strategyMetadata(strategyMetadata).build();
   }
 }

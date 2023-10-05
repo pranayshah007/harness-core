@@ -33,4 +33,5 @@ public class NativeHelmDeployOutcome implements Outcome, ExecutionSweepingOutput
   int newReleaseVersion;
   List<ContainerInfo> containerInfoList;
   boolean hasInstallUpgradeStarted;
+  List<String> podIps;
 }

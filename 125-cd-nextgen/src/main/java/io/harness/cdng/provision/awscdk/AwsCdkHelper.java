@@ -25,11 +25,15 @@ import io.harness.delegate.task.stepstatus.StepMapOutput;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.AccessDeniedException;
 import io.harness.exception.WingsException;
+import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.ng.core.EntityDetail;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.serializer.KryoSerializer;
+import io.harness.tasks.BinaryResponseData;
+import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
@@ -54,10 +58,25 @@ public class AwsCdkHelper {
 
   @Inject private PipelineRbacHelper pipelineRbacHelper;
 
+  @Inject private SerializedResponseDataHelper serializedResponseDataHelper;
+
+  @Inject private KryoSerializer referenceFalseKryoSerializer;
+
   public void validateFeatureEnabled(Ambiance ambiance) {
     if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_AWS_CDK)) {
       throw new AccessDeniedException("AWS CDK is not enabled for this account. Please contact harness customer care.",
           ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
+    }
+  }
+
+  public void handleBinaryResponseData(Map<String, ResponseData> responseDataMap) {
+    for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
+      entry.setValue(serializedResponseDataHelper.deserialize(entry.getValue()));
+      if (entry.getValue() instanceof BinaryResponseData) {
+        log.info("Binary Response Data Received");
+        entry.setValue((ResponseData) referenceFalseKryoSerializer.asInflatedObject(
+            ((BinaryResponseData) entry.getValue()).getData()));
+      }
     }
   }
 

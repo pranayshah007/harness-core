@@ -1016,15 +1016,21 @@ public class InfrastructureStepTest extends CategoryTest {
     String namespace = "namespace";
     String connector = "connector";
     String cluster = "cluster";
+    String region = "region";
 
     Infrastructure infrastructureSpec = K8sAwsInfrastructure.builder()
                                             .connectorRef(ParameterField.createValueField(connector))
                                             .namespace(ParameterField.createValueField(namespace))
                                             .cluster(ParameterField.createValueField(cluster))
+                                            .region(ParameterField.createValueField(region))
                                             .build();
 
-    InfraMapping expectedInfraMapping =
-        K8sAwsInfraMapping.builder().awsConnector(connector).namespace(namespace).cluster(cluster).build();
+    InfraMapping expectedInfraMapping = K8sAwsInfraMapping.builder()
+                                            .awsConnector(connector)
+                                            .namespace(namespace)
+                                            .cluster(cluster)
+                                            .region(region)
+                                            .build();
 
     assertThat(infrastructureStep.createInfraMappingObject(infrastructureSpec)).isEqualTo(expectedInfraMapping);
 
@@ -1032,10 +1038,15 @@ public class InfrastructureStepTest extends CategoryTest {
                              .connectorRef(ParameterField.createValueField(connector))
                              .namespace(ParameterField.createValueField(namespace))
                              .cluster(ParameterField.createValueField(cluster))
+                             .region(ParameterField.createValueField(region))
                              .build();
 
-    expectedInfraMapping =
-        K8sAwsInfraMapping.builder().awsConnector(connector).namespace(namespace).cluster(cluster).build();
+    expectedInfraMapping = K8sAwsInfraMapping.builder()
+                               .awsConnector(connector)
+                               .namespace(namespace)
+                               .cluster(cluster)
+                               .region(region)
+                               .build();
 
     assertThat(infrastructureStep.createInfraMappingObject(infrastructureSpec)).isEqualTo(expectedInfraMapping);
 
@@ -1043,10 +1054,15 @@ public class InfrastructureStepTest extends CategoryTest {
                              .connectorRef(ParameterField.createValueField(connector))
                              .namespace(ParameterField.createValueField(namespace))
                              .cluster(ParameterField.createValueField(cluster))
+                             .region(ParameterField.createValueField(region))
                              .build();
 
-    expectedInfraMapping =
-        K8sAwsInfraMapping.builder().awsConnector(connector).namespace(namespace).cluster(cluster).build();
+    expectedInfraMapping = K8sAwsInfraMapping.builder()
+                               .awsConnector(connector)
+                               .namespace(namespace)
+                               .cluster(cluster)
+                               .region(region)
+                               .build();
 
     assertThat(infrastructureStep.createInfraMappingObject(infrastructureSpec)).isEqualTo(expectedInfraMapping);
   }

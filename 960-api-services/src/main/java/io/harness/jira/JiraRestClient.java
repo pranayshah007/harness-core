@@ -9,8 +9,12 @@ package io.harness.jira;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import net.sf.json.JSONArray;
 import retrofit2.Call;
@@ -21,6 +25,8 @@ import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 public interface JiraRestClient {
   @GET("serverInfo") Call<JiraInstanceData> getInstanceData();
@@ -38,6 +44,10 @@ public interface JiraRestClient {
 
   @GET("issue/{issueKey}")
   Call<JiraIssueNG> getIssue(@Path("issueKey") String issueKey, @Query("expand") String expand);
+
+  @GET("issue/{issueKey}")
+  Call<JsonNode> getIssueV2(
+      @Path("issueKey") String issueKey, @Query("expand") String expand, @Query("fields") String fields);
 
   @GET("issue/{issueKey}/transitions")
   Call<JiraIssueTransitionsNG> getIssueTransitions(@Path("issueKey") String issueKey);

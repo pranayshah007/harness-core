@@ -127,7 +127,8 @@ public class ShellScriptStepVariableCreatorTest extends CategoryTest {
 
     assertThat(fqnExtraPropertiesForShellEnum)
         .containsOnly("pipeline.stages.stage1.spec.execution.steps.shellScriptStep.spec.shell",
-            "pipeline.stages.stage1.spec.execution.steps.shellScriptStep.spec.executionTarget");
+            "pipeline.stages.stage1.spec.execution.steps.shellScriptStep.spec.executionTarget",
+            "pipeline.stages.stage1.spec.execution.steps.shellScriptStep.spec.outputAlias");
 
     // yaml output properties
     List<String> fqnOutputPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()

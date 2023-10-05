@@ -90,6 +90,9 @@ public interface AccountClient {
 
   @PUT(ACCOUNT_API + "/{accountId}/default-experience")
   Call<RestResponse<AccountDTO>> updateDefaultExperience(@Path("accountId") String accountId, @Body AccountDTO dto);
+  @PUT(ACCOUNT_API + "/{accountId}/harness-support-access")
+  Call<RestResponse<Boolean>> updateHarnessSupportAccess(
+      @Path("accountId") String accountId, @Body Boolean isHarnessSupportAccessAllowed);
 
   @PUT(ACCOUNT_API + "/{accountId}/cross-generation-access")
   Call<RestResponse<AccountDTO>> updateCrossGenerationAccessEnabled(

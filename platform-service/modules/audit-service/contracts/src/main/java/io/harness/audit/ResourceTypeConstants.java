@@ -76,7 +76,14 @@ public class ResourceTypeConstants {
   public static final String NETWORK_MAP = "NETWORK_MAP";
   public static final String CET_AGENT_TOKEN = "CET_AGENT_TOKEN";
   public static final String CET_CRITICAL_EVENT = "CET_CRITICAL_EVENT";
+  public static final String CET_SAVED_FILTER = "CET_SAVED_FILTER";
   public static final String CHAOS_SECURITY_GOVERNANCE = "CHAOS_SECURITY_GOVERNANCE";
   public static final String EULA = "END_USER_LICENSE_AGREEMENT";
   public static final String WORKSPACE = "WORKSPACE";
+
+  public static final String SEI_CONFIGURATION_SETTINGS = "SEI_CONFIGURATION_SETTINGS";
+  public static final String SEI_COLLECTIONS = "SEI_COLLECTIONS";
+  public static final String SEI_INSIGHTS = "SEI_INSIGHTS";
+  public static final String IDP_APP_CONFIGS = "IDP_APP_CONFIGS";
+  public static final String IDP_CONFIG_ENV_VARIABLES = "IDP_CONFIG_ENV_VARIABLES";
 }

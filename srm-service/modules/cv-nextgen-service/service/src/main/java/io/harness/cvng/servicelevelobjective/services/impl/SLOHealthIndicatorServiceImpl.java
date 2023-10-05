@@ -39,6 +39,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService {
   @Inject private HPersistence hPersistence;
@@ -187,22 +188,24 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
 
   @Override
   public boolean getFailedState(ProjectParams projectParams, AbstractServiceLevelObjective serviceLevelObjective) {
-    String verificationTaskId;
+    Optional<String> sliVerificationTaskId;
     if (serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
       String sliIdentifier = ((SimpleServiceLevelObjective) serviceLevelObjective).getServiceLevelIndicators().get(0);
       String sliId = serviceLevelIndicatorService.getServiceLevelIndicator(projectParams, sliIdentifier).getUuid();
-      verificationTaskId =
+      sliVerificationTaskId =
           verificationTaskService.getSLIVerificationTaskId(projectParams.getAccountIdentifier(), sliId);
-      List<DataCollectionTask> dataCollectionTasks =
-          dataCollectionTaskService.getLatestDataCollectionTasks(projectParams.getAccountIdentifier(),
-              verificationTaskId, MIN_COUNT_OF_DC_FAILED_TO_CONSIDER_SLI_AS_FAILED + 1);
-      if (dataCollectionTasks.size() >= MIN_COUNT_OF_DC_FAILED_TO_CONSIDER_SLI_AS_FAILED) {
-        for (DataCollectionTask dataCollectionTask : dataCollectionTasks) {
-          if (dataCollectionTask.getStatus() == DataCollectionExecutionStatus.SUCCESS) {
-            return false;
+      if (sliVerificationTaskId.isPresent()) {
+        List<DataCollectionTask> dataCollectionTasks =
+            dataCollectionTaskService.getLatestDataCollectionTasks(projectParams.getAccountIdentifier(),
+                sliVerificationTaskId.get(), MIN_COUNT_OF_DC_FAILED_TO_CONSIDER_SLI_AS_FAILED + 1);
+        if (dataCollectionTasks.size() >= MIN_COUNT_OF_DC_FAILED_TO_CONSIDER_SLI_AS_FAILED) {
+          for (DataCollectionTask dataCollectionTask : dataCollectionTasks) {
+            if (dataCollectionTask.getStatus() == DataCollectionExecutionStatus.SUCCESS) {
+              return false;
+            }
           }
+          return true;
         }
-        return true;
       }
     }
     return false;

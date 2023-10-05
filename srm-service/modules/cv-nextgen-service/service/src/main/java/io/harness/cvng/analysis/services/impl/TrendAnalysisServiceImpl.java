@@ -332,8 +332,8 @@ public class TrendAnalysisServiceImpl implements TrendAnalysisService {
         // the last step for log analysis is SERVICE_GAURD_TIME_SERIES. once we remove this and do distribution analysis
         // instead, we need to make sure that the data for control cluster is not there in the LE output and remove this
         // if condition
-        log.warn(String.format(
-            "Cluster does not exists for verificationTaskId %s , txnName %s", verificationTaskId, txnName));
+        // log.warn(String.format(
+        //    "Cluster does not exists for verificationTaskId %s , txnName %s", verificationTaskId, txnName));
       } else {
         if (analysisDataDTO.getRisk().isGreaterThanEq(Risk.OBSERVE)) {
           unexpectedClustersWithRiskScore.put(cluster.getLabel(), analysisDataDTO.getScore());

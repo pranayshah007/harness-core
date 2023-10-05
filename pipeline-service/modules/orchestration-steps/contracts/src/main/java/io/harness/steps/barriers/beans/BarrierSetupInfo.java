@@ -26,4 +26,5 @@ public class BarrierSetupInfo {
   String name;
   String identifier;
   Set<StageDetail> stages;
+  Set<String> strategySetupIds;
 }

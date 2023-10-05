@@ -131,6 +131,9 @@ public class AcrResourceServiceImpl implements AcrResourceService {
   @Override
   public AcrResponseDTO getBuildDetails(IdentifierRef connectorRef, String subscription, String registry,
       String repository, String orgIdentifier, String projectIdentifier) {
+    ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGCommonEntityConstants.SUBSCRIPTION_ID, subscription),
+        MutablePair.of(NGArtifactConstants.REGISTRY, registry),
+        MutablePair.of(NGArtifactConstants.REPOSITORY, repository));
     AzureConnectorDTO connector = azureHelperService.getConnector(connectorRef);
     BaseNGAccess baseNGAccess =
         azureHelperService.getBaseNGAccess(connectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);

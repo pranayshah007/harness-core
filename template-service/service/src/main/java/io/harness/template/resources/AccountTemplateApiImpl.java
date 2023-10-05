@@ -39,10 +39,11 @@ public class AccountTemplateApiImpl implements AccountTemplateApi {
   public Response createTemplatesAcc(
       TemplateCreateRequestBody templateCreateRequestBody, @AccountIdentifier String account) {
     GitCreateDetails gitCreateDetails = templateCreateRequestBody.getGitDetails();
-    String templateYaml = templateCreateRequestBody.getTemplateYaml();
+    TemplateRequestInfoDTO requestInfoDTO =
+        templateResourceApiUtils.mapCreateToRequestInfoDTO(templateCreateRequestBody);
     Boolean isStable = Boolean.TRUE.equals(templateCreateRequestBody.isIsStable());
     return templateResourceApiUtils.createTemplate(
-        account, null, null, gitCreateDetails, templateYaml, isStable, templateCreateRequestBody.getComments());
+        account, null, null, gitCreateDetails, requestInfoDTO, isStable, templateCreateRequestBody.getComments());
   }
 
   @Override
@@ -87,9 +88,10 @@ public class AccountTemplateApiImpl implements AccountTemplateApi {
   public Response updateTemplateAcc(@ResourceIdentifier String templateIdentifier, String versionLabel,
       TemplateUpdateRequestBody templateUpdateRequestBody, @AccountIdentifier String account) {
     GitUpdateDetails gitUpdateDetails = templateUpdateRequestBody.getGitDetails();
-    String templateYaml = templateUpdateRequestBody.getTemplateYaml();
+    TemplateRequestInfoDTO requestInfoDTO =
+        templateResourceApiUtils.mapUpdateToRequestInfoDTO(templateUpdateRequestBody);
     return templateResourceApiUtils.updateTemplate(account, null, null, templateIdentifier, versionLabel,
-        gitUpdateDetails, templateYaml, false, templateUpdateRequestBody.getComments());
+        gitUpdateDetails, requestInfoDTO, false, templateUpdateRequestBody.getComments());
   }
 
   @Override

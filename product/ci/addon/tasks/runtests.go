@@ -348,24 +348,35 @@ func (r *runTestsTask) getTestSelection(ctx context.Context, runner testintellig
 		return resp
 	}
 	// PR/Push execution
-	var errChangedFiles error
 	if isPushTriggerFn() {
 		// Get changes files from the previous successful commit
 		lastSuccessfulCommitID, err := getCommitInfoFn(ctx, r.id, r.log)
-		if err != nil || lastSuccessfulCommitID == "" {
-			// Run all tests when there's no CG present
-			log.Infow("Test Intelligence determined to run all tests to bootstrap", "error", zap.Error(err))
+		if err != nil {
+			log.Infow("Failed to get reference commit", "error", zap.Error(err))
+			r.runOnlySelectedTests = false // TI selected all the tests to be run
+			return resp
+		}
+		if lastSuccessfulCommitID == "" {
+			log.Infow("Test Intelligence determined to run all tests to bootstrap")
 			r.runOnlySelectedTests = false // TI selected all the tests to be run
 			return resp
 		}
 		log.Infof("Using reference commit: %s", lastSuccessfulCommitID)
+		var errChangedFiles error
 		files, errChangedFiles = getChangedFilesPushTriggerFn(ctx, r.id, lastSuccessfulCommitID, r.log)
-	}
-	if errChangedFiles != nil || len(files) == 0 {
-		// Select all tests if unable to find changed files list
-		log.Infow("Unable to get changed files list")
-		r.runOnlySelectedTests = false
-		return resp
+		if errChangedFiles != nil {
+			// Select all tests if unable to find changed files list
+			log.Infow("Unable to get changed files list. Running all the tests.")
+			r.runOnlySelectedTests = false
+			return resp
+		}
+	} else {
+		if len(files) == 0 {
+			// Select all tests if unable to find changed files list
+			log.Infow("Unable to get changed files list for PR. Running all the tests.")
+			r.runOnlySelectedTests = false
+			return resp
+		}
 	}
 	// Call TI svc to get test selection based on the files changed
 	files = runner.ReadPackages(files)
@@ -562,6 +573,7 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 
 	// Config file
 	var iniFilePath, agentArg string
+	tiPreCmd := "set -xe\n"
 	switch r.language {
 	case "java", "scala", "kotlin":
 		// Create the java agent config file
@@ -570,20 +582,20 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 			return "", err
 		}
 		agentArg = fmt.Sprintf(javaAgentArg, iniFilePath)
+		tiPreCmd += fmt.Sprintf("export TMPDIR=%s\nexport HARNESS_JAVA_AGENT=%s\n", r.tmpFilePath, agentArg)
 	case "csharp":
-		{
-			iniFilePath, err = r.createDotNetConfigFile()
-			if err != nil {
-				return "", err
-			}
+		iniFilePath, err = r.createDotNetConfigFile()
+		if err != nil {
+			return "", err
 		}
 	case "python":
-		{
-			iniFilePath, err = r.createPythonConfigFile()
-			if err != nil {
-				return "", err
-			}
+		iniFilePath, err = r.createPythonConfigFile()
+		if err != nil {
+			return "", err
 		}
+	case "ruby":
+		// Ruby does not have config file for now, but pass arguments by env variables
+		tiPreCmd += fmt.Sprintf("export TI_OUTPUT_PATH=%s\n", filepath.Join(r.tmpFilePath, cgDir))
 	}
 
 	// Test splitting: only when parallelism is enabled
@@ -600,7 +612,7 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 	// TMPDIR needs to be set for some build tools like bazel
 	// TODO: (Vistaar) These commands need to be handled for Windows as well. We should move this out to the tool
 	// implementations and check for OS there.
-	command := fmt.Sprintf("set -xe\nexport TMPDIR=%s\nexport HARNESS_JAVA_AGENT=%s\n%s\n%s\n%s%s", r.tmpFilePath, agentArg, r.preCommand, testCmd, r.postCommand, outputVarCmd)
+	command := fmt.Sprintf("%s\n%s\n%s\n%s%s", tiPreCmd, r.preCommand, testCmd, r.postCommand, outputVarCmd)
 	resolvedCmd, err := resolveExprInCmd(command)
 	if err != nil {
 		return "", err

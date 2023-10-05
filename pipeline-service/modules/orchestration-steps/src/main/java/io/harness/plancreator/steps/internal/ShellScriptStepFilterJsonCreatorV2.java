@@ -37,7 +37,7 @@ public class ShellScriptStepFilterJsonCreatorV2 extends GenericStepPMSFilterJson
   public FilterCreationResponse handleNode(FilterCreationContext filterCreationContext, AbstractStepNode yamlField) {
     ShellScriptStepNode scriptStepNode = (ShellScriptStepNode) yamlField;
     ShellScriptStepInfo scriptStepInfo = scriptStepNode.getShellScriptStepInfo();
-    if (!Boolean.TRUE.equals(scriptStepInfo.getOnDelegate().getValue())) {
+    if (Boolean.FALSE.equals(scriptStepInfo.getOnDelegate().getValue())) {
       if (scriptStepInfo.getExecutionTarget() == null) {
         throw new InvalidYamlRuntimeException(
             format("Execution target details cannot be null for step %s. Please add it & try again.",

@@ -420,6 +420,7 @@ io.harness.steps.SectionStepSweepingOutput
 io.harness.spotinst.model.ElastiGroup
 io.harness.delegate.cdng.execution.StepExecutionInstanceInfo
 io.harness.delegate.cdng.execution.K8sStepInstanceInfo
+io.harness.delegate.cdng.execution.TasStepInstanceInfo
 io.harness.ci.config.GitnessConfig
 io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO
 io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO
@@ -453,6 +454,7 @@ io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig
 io.harness.git.model.CommitResult
 io.harness.delegate.beans.connector.gcpkmsconnector.outcome.GcpKmsConnectorOutcomeDTO
 io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO
+io.harness.delegate.beans.connector.gcpconnector.GcpOidcDetailsDTO
 io.harness.container.ContainerInfo
 io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO
 io.harness.delegate.task.k8s.EksK8sInfraDelegateConfig
@@ -535,7 +537,9 @@ io.harness.delegate.beans.connector.azureconnector.outcome.AzureManualDetailsOut
 io.harness.delegate.beans.connector.azureconnector.outcome.AzureClientSecretKeyOutcomeDTO
 io.harness.delegate.beans.connector.azureconnector.outcome.AzureConnectorOutcomeDTO
 io.harness.slsa.beans.SlsaConfig
-io.harness.beans.steps.nodes.iacm.IACMCostEstimationStepNode
-io.harness.beans.steps.stepinfo.IACMCostEstimationInfo
 io.harness.app.beans.entities.StepExecutionParameters
 io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata
+io.harness.delegate.beans.instancesync.NativeHelmDeploymentOutcomeMetadata
+io.harness.beans.steps.nodes.BuildAndPushGARNode
+io.harness.beans.steps.stepinfo.GARStepInfo
+io.harness.beans.yaml.extended.cache.CachePolicy

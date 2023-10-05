@@ -22,7 +22,7 @@ import io.harness.exception.UnexpectedException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionBuilder;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.interrupts.InterruptEffect;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
@@ -48,7 +48,7 @@ import org.springframework.data.util.CloseableIterator;
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public class IdentityNodeExecutionStrategyHelper {
-  @Inject private PmsGraphStepDetailsService pmsGraphStepDetailsService;
+  @Inject private NodeExecutionInfoService pmsGraphStepDetailsService;
   @Inject private NodeExecutionService nodeExecutionService;
   @Inject private PlanService planService;
 

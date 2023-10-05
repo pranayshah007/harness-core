@@ -56,32 +56,33 @@ public interface TerraformClient {
 
   @Nonnull
   CliResponse workspace(String workspace, boolean isNew, long timeoutInMillis, Map<String, String> envVariables,
-      String scriptDirectory, @Nonnull LogCallback executionLogCallback, Map<String, String> additionalCliFlags)
-      throws InterruptedException, TimeoutException, IOException;
+      String scriptDirectory, @Nonnull LogCallback executionLogCallback, Map<String, String> additionalCliFlags,
+      boolean skipColorLogs) throws InterruptedException, TimeoutException, IOException;
 
   @Nonnull
   CliResponse getWorkspaceList(long timeoutInMillis, Map<String, String> envVariables, String scriptDirectory,
-      @Nonnull LogCallback executionLogCallback) throws InterruptedException, TimeoutException, IOException;
-
-  @Nonnull
-  CliResponse show(String planName, long timeoutInMillis, Map<String, String> envVariables, String scriptDirectory,
-      @Nonnull LogCallback executionLogCallback, @Nonnull PlanJsonLogOutputStream planJsonLogOutputStream)
+      @Nonnull LogCallback executionLogCallback, boolean skipColorLogs)
       throws InterruptedException, TimeoutException, IOException;
 
   @Nonnull
   CliResponse show(String planName, long timeoutInMillis, Map<String, String> envVariables, String scriptDirectory,
-      @Nonnull LogCallback executionLogCallback, @Nonnull PlanLogOutputStream planLogOutputStream)
-      throws InterruptedException, TimeoutException, IOException;
+      @Nonnull LogCallback executionLogCallback, @Nonnull PlanJsonLogOutputStream planJsonLogOutputStream,
+      boolean skipColorLogs) throws InterruptedException, TimeoutException, IOException;
+
+  @Nonnull
+  CliResponse show(String planName, long timeoutInMillis, Map<String, String> envVariables, String scriptDirectory,
+      @Nonnull LogCallback executionLogCallback, @Nonnull PlanLogOutputStream planLogOutputStream,
+      boolean skipColorLogs) throws InterruptedException, TimeoutException, IOException;
 
   @Nonnull
   CliResponse prepareHumanReadablePlan(String planName, long timeoutInMillis, Map<String, String> envVariables,
       String scriptDirectory, @Nonnull LogCallback executionLogCallback,
-      @Nonnull PlanHumanReadableOutputStream planHumanReadableOutputStream)
+      @Nonnull PlanHumanReadableOutputStream planHumanReadableOutputStream, boolean skipColorLogs)
       throws InterruptedException, TimeoutException, IOException;
 
   @Nonnull
   CliResponse output(String tfOutputsFile, long timeoutInMillis, Map<String, String> envVariables,
-      String scriptDirectory, @Nonnull LogCallback executionLogCallback)
+      String scriptDirectory, @Nonnull LogCallback executionLogCallback, boolean skipColorLogs)
       throws InterruptedException, TimeoutException, IOException;
 
   @Nonnull

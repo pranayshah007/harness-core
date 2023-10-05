@@ -64,11 +64,17 @@ func (b *rspecRunner) ReadPackages(files []types.File) []types.File {
 
 func (b *rspecRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
 	testCmd := ""
-	tiFlag := "INTEL=1"
+	tiFlag := "TI=1"
 	repoPath := filepath.Join(b.agentPath, "harness", "ruby-agent")
-	err := WriteGemFile(repoPath)
-	if err != nil {
-		return testCmd, err
+	if !ignoreInstr {
+		err := WriteGemFile(repoPath)
+		if err != nil {
+			return testCmd, err
+		}
+		err = WriteHelperFile(repoPath)
+		if err != nil {
+			b.log.Errorw("Unable to write rspec helper file automatically", err)
+		}
 	}
 	// Run all the tests
 	if runAll {

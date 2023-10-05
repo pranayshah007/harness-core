@@ -125,11 +125,16 @@ public class DockerArtifactResource {
       }
     }
 
-    dockerConnectorIdentifier = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, dockerConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+    dockerConnectorIdentifier = artifactResourceUtils
+                                    .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier,
+                                        projectIdentifier, pipelineIdentifier, runtimeInputYaml,
+                                        dockerConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                                    .getValue();
 
-    imagePath = artifactResourceUtils.getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier,
-        pipelineIdentifier, runtimeInputYaml, imagePath, fqnPath, gitEntityBasicInfo, serviceRef);
+    imagePath = artifactResourceUtils
+                    .getResolvedFieldValueWithYamlExpressionEvaluator(accountId, orgIdentifier, projectIdentifier,
+                        pipelineIdentifier, runtimeInputYaml, imagePath, fqnPath, gitEntityBasicInfo, serviceRef, null)
+                    .getValue();
 
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(dockerConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);

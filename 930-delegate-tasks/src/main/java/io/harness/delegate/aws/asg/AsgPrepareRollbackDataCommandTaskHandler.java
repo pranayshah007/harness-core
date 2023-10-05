@@ -8,7 +8,6 @@
 package io.harness.delegate.aws.asg;
 
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgConfiguration;
-import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScheduledUpdateGroupAction;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -25,12 +24,10 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgCommandUnitConstants;
-import io.harness.aws.asg.AsgContentParser;
 import io.harness.aws.asg.AsgSdkManager;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainFactory;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainState;
 import io.harness.aws.asg.manifest.request.AsgConfigurationManifestRequest;
-import io.harness.aws.asg.manifest.request.AsgLaunchTemplateManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScalingPolicyManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScheduledActionManifestRequest;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -49,7 +46,6 @@ import io.harness.logging.LogCallback;
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 
-import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Map;
@@ -80,11 +76,7 @@ public class AsgPrepareRollbackDataCommandTaskHandler extends AsgCommandTaskNGHa
 
     try {
       AsgSdkManager asgSdkManager = asgTaskHelper.getAsgSdkManager(asgCommandRequest, logCallback);
-
-      String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
-      CreateAutoScalingGroupRequest createAutoScalingGroupRequest =
-          AsgContentParser.parseJson(asgConfigurationContent, CreateAutoScalingGroupRequest.class, true);
-      String asgName = createAutoScalingGroupRequest.getAutoScalingGroupName();
+      String asgName = asgTaskHelper.getAsgName(asgPrepareRollbackDataRequest, asgStoreManifestsContent);
 
       Map<String, List<String>> asgManifestsDataForRollback =
           executePrepareRollbackData(asgSdkManager, logCallback, asgName);
@@ -122,7 +114,6 @@ public class AsgPrepareRollbackDataCommandTaskHandler extends AsgCommandTaskNGHa
             .initialChainState(AsgManifestHandlerChainState.builder().asgName(asgName).build())
             .asgSdkManager(asgSdkManager)
             .build()
-            .addHandler(AsgLaunchTemplate, AsgLaunchTemplateManifestRequest.builder().build())
             .addHandler(AsgConfiguration, AsgConfigurationManifestRequest.builder().build())
             .addHandler(AsgScalingPolicy, AsgScalingPolicyManifestRequest.builder().build())
             .addHandler(AsgScheduledUpdateGroupAction, AsgScheduledActionManifestRequest.builder().build())

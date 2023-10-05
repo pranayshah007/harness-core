@@ -29,7 +29,6 @@ public interface ScoreService {
   void populateData(
       String checkEntities, String datapointEntities, String datasourceEntities, String datasourceLocationEntities);
 
-  void computeScores(String accountIdentifier, List<String> scorecardIdentifiers, List<String> entityIdentifiers);
   List<ScorecardSummaryInfo> getScoresSummaryForAnEntity(String accountIdentifier, String entityIdentifier);
 
   List<ScorecardGraphSummaryInfo> getScoresGraphSummaryForAnEntityAndScorecard(

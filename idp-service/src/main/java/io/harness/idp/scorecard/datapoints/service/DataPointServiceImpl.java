@@ -8,6 +8,7 @@
 package io.harness.idp.scorecard.datapoints.service;
 
 import static io.harness.idp.common.CommonUtils.addGlobalAccountIdentifierAlong;
+import static io.harness.idp.common.Constants.DOT_SEPARATOR;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -58,5 +59,16 @@ public class DataPointServiceImpl implements DataPointService {
   @Override
   public List<DataPointEntity> getAllDataPointsForAccount(String accountIdentifier) {
     return dataPointsRepository.findAllByAccountIdentifierIn(addGlobalAccountIdentifierAlong(accountIdentifier));
+  }
+
+  @Override
+  public Map<String, DataPoint> getDataPointsMap(String accountIdentifier) {
+    Map<String, DataPoint> dataPointMap = new HashMap<>();
+    List<DataPointEntity> dataPointsInAccount = getAllDataPointsForAccount(accountIdentifier);
+    for (DataPointEntity dataPointEntity : dataPointsInAccount) {
+      String key = dataPointEntity.getDataSourceIdentifier() + DOT_SEPARATOR + dataPointEntity.getIdentifier();
+      dataPointMap.put(key, DataPointMapper.toDto(dataPointEntity));
+    }
+    return dataPointMap;
   }
 }

@@ -14,14 +14,18 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
+import io.harness.persistence.UpdatedAtAware;
+import io.harness.ssca.beans.Activity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import dev.morphia.annotations.Entity;
 import java.time.Instant;
 import javax.validation.constraints.NotEmpty;
 import lombok.Builder;
+import lombok.Setter;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
+import lombok.experimental.NonFinal;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -37,10 +41,11 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @Document("sscaArtefact")
 @TypeAlias("sscaArtefact")
 @HarnessEntity(exportable = true)
-public class ArtifactEntity implements PersistentEntity {
+public class ArtifactEntity implements PersistentEntity, UpdatedAtAware {
   @Id String id;
   @Field("artifactid") String artifactId;
   @Field("orchestrationid") String orchestrationId;
+  String artifactCorrelationId;
   @NotEmpty String url;
   String name;
   String type;
@@ -58,6 +63,11 @@ public class ArtifactEntity implements PersistentEntity {
   @Field("isattested") boolean isAttested;
   @Field("attestedfileurl") String attestedFileUrl;
   Sbom sbom;
+  boolean invalid;
+  @Setter @NonFinal long lastUpdatedAt;
+  @Setter @NonFinal long componentsCount;
+  Activity activity;
+
   @Value
   @Builder
   public static class Sbom {

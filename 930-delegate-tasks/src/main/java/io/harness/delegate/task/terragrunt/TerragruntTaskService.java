@@ -58,6 +58,7 @@ import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.runtime.TerragruntCliRuntimeException;
 import io.harness.exception.runtime.TerragruntFetchFilesRuntimeException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.filesystem.FileIo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -237,7 +238,7 @@ public class TerragruntTaskService {
 
     TerragruntClient terragruntClient = terragruntClientFactory.getClient(scriptDirectory,
         parameters.getTimeoutInMillis(), terragruntCommandLogCallback,
-        parameters.getRunConfiguration().getRunType().name(), parameters.getEnvVars());
+        parameters.getRunConfiguration().getRunType().name(), parameters.getEnvVars(), parameters.isSkipColorLogs());
     String terragruntWorkingDirectory = null;
     if (TerragruntTaskRunType.RUN_MODULE == parameters.getRunConfiguration().getRunType()) {
       terragruntWorkingDirectory = terragruntClient.terragruntWorkingDirectory();
@@ -382,7 +383,8 @@ public class TerragruntTaskService {
                   .build())
         .runType(getCliRunType(taskParameters))
         .envVars(taskParameters.getEnvVars())
-        .workingDirectory(filesContext.getScriptDirectory());
+        .workingDirectory(filesContext.getScriptDirectory())
+        .skipColorLogs(taskParameters.isSkipColorLogs());
 
     return baseBuilder;
   }
@@ -455,7 +457,12 @@ public class TerragruntTaskService {
 
   public void cleanDirectoryAndSecretFromSecretManager(
       EncryptedRecordData encryptedTfPlan, EncryptionConfig encryptionConfig, String baseDir, LogCallback logCallback) {
-    FileUtils.deleteQuietly(new File(baseDir));
+    try {
+      FileIo.deleteDirectoryAndItsContentIfExists(baseDir);
+    } catch (Exception e) {
+      log.warn(format("Failed to delete files in directory %s", baseDir), e);
+      logCallback.saveExecutionLog("Failed to clean up files", WARN);
+    }
     if (encryptedTfPlan != null) {
       try {
         boolean isSafelyDeleted = encryptDecryptHelper.deleteEncryptedRecord(encryptionConfig, encryptedTfPlan);

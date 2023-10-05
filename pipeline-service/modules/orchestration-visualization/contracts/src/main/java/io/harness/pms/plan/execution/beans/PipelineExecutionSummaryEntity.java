@@ -7,6 +7,7 @@
 
 package io.harness.pms.plan.execution.beans;
 
+import io.harness.abort.AbortedBy;
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
@@ -15,7 +16,6 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.beans.AbortedBy;
 import io.harness.data.validator.Trimmed;
 import io.harness.dto.FailureInfoDTO;
 import io.harness.engine.executions.retry.RetryExecutionMetadata;
@@ -40,7 +40,7 @@ import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.yaml.core.NGLabel;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -330,7 +330,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
 
   public String getPipelineVersion() {
     if (null == pipelineVersion || pipelineVersion.equals("0")) {
-      return PipelineVersion.V0;
+      return HarnessYamlVersion.V0;
     }
     return pipelineVersion;
   }

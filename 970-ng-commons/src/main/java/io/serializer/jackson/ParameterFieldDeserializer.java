@@ -6,6 +6,7 @@
  */
 
 package io.serializer.jackson;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
@@ -102,8 +103,8 @@ public class ParameterFieldDeserializer extends StdDeserializer<ParameterField<?
       // value. This will be useful in current Runtime inputs. In Execution inputs, we give the input template with
       // pre-filled default values. So user will always provide value.
       return ParameterField.createFieldWithDefaultValue(defaultValue == null, isExecutionInput,
-          NGExpressionUtils.DEFAULT_INPUT_SET_EXPRESSION, extractDefaultValue(defaultValue), inputSetValidator,
-          isTypeString);
+          NGExpressionUtils.DEFAULT_INPUT_SET_EXPRESSION, extractDefaultValue(defaultValue, isTypeString),
+          inputSetValidator, isTypeString);
     }
     if (inputSetValidator != null && isTypeString) {
       String value = getLeftSideOfExpression(text);
@@ -123,12 +124,16 @@ public class ParameterFieldDeserializer extends StdDeserializer<ParameterField<?
     if (EngineExpressionEvaluator.hasExpressions(text)) {
       return ParameterField.createExpressionField(true, text, null, isTypeString);
     }
+
     try {
       Object refd = (valueTypeDeserializer == null)
           ? valueDeserializer.deserialize(p, ctxt)
           : valueDeserializer.deserializeWithType(p, ctxt, valueTypeDeserializer);
       return ParameterField.createValueField(refd);
     } catch (Exception ex) {
+      if (NGExpressionUtils.NULL.equals(text)) {
+        return getNullValue(ctxt);
+      }
       if (referenceType.getRawClass() == List.class) {
         return ParameterField.createValueField(JsonUtils.read(text, ArrayList.class));
       }
@@ -191,9 +196,9 @@ public class ParameterFieldDeserializer extends StdDeserializer<ParameterField<?
       this.validatorPattern = validatorPattern;
     }
   }
-  private Object extractDefaultValue(String defaultValuesString) {
-    if (defaultValuesString == null) {
-      return null;
+  private Object extractDefaultValue(String defaultValuesString, boolean isTypeString) {
+    if (defaultValuesString == null || isTypeString) {
+      return defaultValuesString;
     }
     JsonNode jsonNode = ParameterFieldYamlUtils.readTree(defaultValuesString);
     if (jsonNode.isArray()) {

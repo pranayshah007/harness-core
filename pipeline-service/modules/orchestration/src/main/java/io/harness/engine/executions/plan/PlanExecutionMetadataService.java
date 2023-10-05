@@ -40,4 +40,13 @@ public interface PlanExecutionMetadataService {
   RetryStagesMetadata getRetryStagesMetadata(String planExecutionId);
 
   String updateNotesForExecution(String planExecutionId, String notes);
+
+  /**
+   * Fetches PlanExecutionMetadata and uses id Index
+   *
+   * @param planExecutionId
+   * @param fieldsToInclude
+   * @return
+   */
+  PlanExecutionMetadata getWithFieldsIncludedFromSecondary(String planExecutionId, Set<String> fieldsToInclude);
 }

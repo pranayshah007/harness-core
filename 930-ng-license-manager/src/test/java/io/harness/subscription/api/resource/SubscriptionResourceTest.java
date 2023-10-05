@@ -334,4 +334,29 @@ public class SubscriptionResourceTest extends CategoryTest {
         violations.stream().filter(violation -> "size must be between 0 and 46".equals(violation.getMessage())).count())
         .isEqualTo(1);
   }
+
+  @Test
+  @Owner(developers = OwnerRule.KAPIL)
+  @Category(UnitTests.class)
+  public void testSubscriptionRequestValidationWithPlusCharInCompanyName() {
+    AddressDto addressDto = AddressDto.builder()
+                                .line1("Address Line 1")
+                                .line2("Address Line 2")
+                                .city("Beverly Hills")
+                                .state("CA")
+                                .country("USA")
+                                .postalCode("90210")
+                                .build();
+    CustomerDTO customerDTO = CustomerDTO.builder()
+                                  .billingEmail("billingEmail@harness.io")
+                                  .companyName("Harness+440")
+                                  .address(addressDto)
+                                  .build();
+    SubscriptionRequest subscriptionRequest = SubscriptionRequest.builder().customer(customerDTO).build();
+
+    ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory();
+    Validator validator = validatorFactory.getValidator();
+    Set<ConstraintViolation<SubscriptionRequest>> violations = validator.validate(subscriptionRequest);
+    assertTrue(violations.isEmpty());
+  }
 }

@@ -11,9 +11,11 @@ import static io.harness.pms.contracts.plan.ExecutionMode.PIPELINE_ROLLBACK;
 import static io.harness.pms.contracts.plan.ExecutionMode.POST_EXECUTION_ROLLBACK;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -22,6 +24,7 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.retry.RetryStageInfo;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.execution.NodeExecution;
 import io.harness.pms.contracts.execution.Status;
@@ -71,13 +74,37 @@ public class RollbackModeYamlTransformerTest extends CategoryTest {
                  NodeExecution.builder().uuid("uuid").identifier("s1").status(Status.SUCCEEDED).build()))
         .when(nodeExecutionService)
         .fetchStageExecutionsWithProjection(eq("ogId"), anySet());
-    String transformedYaml =
-        rollbackModeYamlTransformer.transformProcessedYaml(original, POST_EXECUTION_ROLLBACK, "ogId");
+    String transformedYaml = rollbackModeYamlTransformer.transformProcessedYaml(
+        original, POST_EXECUTION_ROLLBACK, "ogId", Collections.EMPTY_LIST);
     String expected = "pipeline:\n"
         + "  stages:\n"
         + "    - stage:\n"
         + "        identifier: s1\n";
     assertThat(transformedYaml).isEqualTo(expected);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testRollBackForRunningExecution() {
+    doReturn(Collections.singletonList(NodeExecution.builder().identifier("s1").build()))
+        .when(nodeExecutionService)
+        .getAllWithFieldIncluded(anySet(), anySet());
+    String original = "pipeline:\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      identifier: \"s1\"\n"
+        + "  - stage:\n"
+        + "      identifier: \"s2\"\n";
+    doReturn(
+        Collections.singletonList(NodeExecution.builder().uuid("uuid").identifier("s1").status(Status.RUNNING).build()))
+        .when(nodeExecutionService)
+        .fetchStageExecutionsWithProjection(eq("ogId"), anySet());
+    assertThatThrownBy(()
+                           -> rollbackModeYamlTransformer.transformProcessedYaml(
+                               original, POST_EXECUTION_ROLLBACK, "ogId", Collections.singletonList("uuid")))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Stage plan execution [ogId] is still in Progress. Wait for Node Execution [s1] to complete.");
   }
 
   @Test
@@ -93,7 +120,8 @@ public class RollbackModeYamlTransformerTest extends CategoryTest {
     doReturn(Collections.singletonList(RetryStageInfo.builder().identifier("s1").name("s1").build()))
         .when(nodeExecutionService)
         .getStageDetailFromPlanExecutionId("ogId");
-    String transformedYaml = rollbackModeYamlTransformer.transformProcessedYaml(original, PIPELINE_ROLLBACK, "ogId");
+    String transformedYaml = rollbackModeYamlTransformer.transformProcessedYaml(
+        original, PIPELINE_ROLLBACK, "ogId", Collections.singletonList("uuid"));
     String expected = "pipeline:\n"
         + "  stages:\n"
         + "    - stage:\n"
@@ -124,7 +152,8 @@ public class RollbackModeYamlTransformerTest extends CategoryTest {
                  RetryStageInfo.builder().identifier("s3").name("s3").build()))
         .when(nodeExecutionService)
         .getStageDetailFromPlanExecutionId("ogId");
-    String transformedYaml = rollbackModeYamlTransformer.transformProcessedYaml(original, PIPELINE_ROLLBACK, "ogId");
+    String transformedYaml =
+        rollbackModeYamlTransformer.transformProcessedYaml(original, PIPELINE_ROLLBACK, "ogId", Collections.EMPTY_LIST);
     String expected = "pipeline:\n"
         + "  stages:\n"
         + "    - stage:\n"
@@ -151,7 +180,8 @@ public class RollbackModeYamlTransformerTest extends CategoryTest {
     doReturn(List.of(RetryStageInfo.builder().identifier("s2").name("s2").build()))
         .when(nodeExecutionService)
         .getStageDetailFromPlanExecutionId("ogId");
-    String transformedYaml = rollbackModeYamlTransformer.transformProcessedYaml(original, PIPELINE_ROLLBACK, "ogId");
+    String transformedYaml =
+        rollbackModeYamlTransformer.transformProcessedYaml(original, PIPELINE_ROLLBACK, "ogId", Collections.EMPTY_LIST);
     String expected = "pipeline:\n"
         + "  stages:\n"
         + "    - parallel:\n"
@@ -232,8 +262,8 @@ public class RollbackModeYamlTransformerTest extends CategoryTest {
                      .build()))
         .when(nodeExecutionService)
         .fetchStageExecutionsWithProjection(eq("ogId"), anySet());
-    String transformedYaml =
-        rollbackModeYamlTransformer.transformProcessedYaml(original, POST_EXECUTION_ROLLBACK, "ogId");
+    String transformedYaml = rollbackModeYamlTransformer.transformProcessedYaml(
+        original, POST_EXECUTION_ROLLBACK, "ogId", Collections.EMPTY_LIST);
     String expected = "pipeline:\n"
         + "  stages:\n"
         + "    - parallel:\n"

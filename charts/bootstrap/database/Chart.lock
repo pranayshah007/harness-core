@@ -17,5 +17,5 @@ dependencies:
 - name: clickhouse
   repository: https://charts.bitnami.com/bitnami
   version: 2.1.0
-digest: sha256:c5fa328182ca0e9eb1e0fee3429984187bfa893790ed938fb83f3e3c51b65fce
-generated: "2023-08-06T20:31:22.901698+05:30"
+digest: sha256:d43e384b235286421c701a0d13be0ab9862120118cba07014c16bfb5d8b37cba
+generated: "2023-09-12T21:28:03.21271+05:30"

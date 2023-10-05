@@ -222,7 +222,7 @@ public class ServerlessGitFetchTask extends AbstractDelegateRunnableTask {
     filePath = GitFetchTaskHelper.getCompleteFilePath(folderPath, filePath);
     List<String> filePaths = Collections.singletonList(filePath);
     gitFetchTaskHelper.printFileNames(executionLogCallback, filePaths, closeLogStream);
-    return gitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
+    return gitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO, false);
   }
 
   @Override

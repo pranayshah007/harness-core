@@ -30,9 +30,12 @@ import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
 import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.OciHelmChartConfig;
+import io.harness.cdng.manifest.yaml.OciHelmChartStoreEcrConfig;
 import io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
+import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.exception.InvalidArgumentsException;
@@ -67,6 +70,8 @@ public class ManifestOutcomeValidator {
       validateHarnessStore((HarnessStore) store, manifestId, allowExpression);
     } else if (ManifestStoreType.CUSTOM_REMOTE.equals(store.getKind())) {
       validateCustomRemoteStore((CustomRemoteStoreConfig) store, manifestId, allowExpression);
+    } else if (ManifestStoreType.OCI.equals(store.getKind())) {
+      validateOciStore((OciHelmChartConfig) store, manifestId, allowExpression);
     }
   }
 
@@ -197,6 +202,23 @@ public class ManifestOutcomeValidator {
 
     if (!hasValue(store.getBucketName(), allowExpression)) {
       throw new InvalidArgumentsException(Pair.of("bucketName", "Cannot be empty or null for S3 store"));
+    }
+  }
+
+  private void validateOciStore(OciHelmChartConfig store, String manifestId, boolean allowExpression) {
+    if (!hasValue(store.getConnectorReference(), allowExpression)) {
+      throw new InvalidArgumentsException(
+          format("Missing or empty connectorRef in OCI Helm store spec for manifest with identifier: %s", manifestId));
+    }
+    validateOciHelmStoreConfig(getParameterFieldValue(store.getConfig()).getSpec(), manifestId, allowExpression);
+  }
+
+  private void validateOciHelmStoreConfig(
+      OciHelmChartStoreConfig storeConfig, String manifestId, boolean allowExpression) {
+    if (storeConfig instanceof OciHelmChartStoreEcrConfig
+        && !hasValue(((OciHelmChartStoreEcrConfig) storeConfig).getRegion(), allowExpression)) {
+      throw new InvalidArgumentsException(
+          format("Missing or empty region in OCI Helm store Ecr config for manifest with identifier: %s", manifestId));
     }
   }
 

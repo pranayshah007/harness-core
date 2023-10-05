@@ -234,18 +234,21 @@ public class K8InitializeTaskParamsBuilder {
     k8InitializeTaskUtils.checkSecretAccess(ambiance, secretVariableDetails, accountId,
         AmbianceUtils.getProjectIdentifier(ambiance), AmbianceUtils.getOrgIdentifier(ambiance));
 
-    CIK8ContainerParams setupAddOnContainerParams = internalContainerParamsProvider.getSetupAddonContainerParams(
-        harnessInternalImageConnector, volumeToMountPath, k8InitializeTaskUtils.getWorkDir(),
-        k8InitializeTaskUtils.getCtrSecurityContext(infrastructure), ngAccess.getAccountIdentifier(), os);
+    String imagePullPolicy = getImagePullPolicy(infrastructure);
+    CIK8ContainerParams setupAddOnContainerParams =
+        internalContainerParamsProvider.getSetupAddonContainerParams(harnessInternalImageConnector, volumeToMountPath,
+            k8InitializeTaskUtils.getWorkDir(), k8InitializeTaskUtils.getCtrSecurityContext(infrastructure),
+            ngAccess.getAccountIdentifier(), os, imagePullPolicy);
 
     Pair<Integer, Integer> wrapperRequests = k8InitializeStepUtils.getStageRequest(initializeStepInfo, accountId);
     Integer stageCpuRequest = wrapperRequests.getLeft();
     Integer stageMemoryRequest = wrapperRequests.getRight();
 
-    CIK8ContainerParams liteEngineContainerParams = internalContainerParamsProvider.getLiteEngineContainerParams(
-        harnessInternalImageConnector, new HashMap<>(), k8PodDetails, stageCpuRequest, stageMemoryRequest, logEnvVars,
-        tiEnvVars, stoEnvVars, volumeToMountPath, k8InitializeTaskUtils.getWorkDir(),
-        k8InitializeTaskUtils.getCtrSecurityContext(infrastructure), logPrefix, ambiance, secretEnvVars);
+    CIK8ContainerParams liteEngineContainerParams =
+        internalContainerParamsProvider.getLiteEngineContainerParams(harnessInternalImageConnector, new HashMap<>(),
+            k8PodDetails, stageCpuRequest, stageMemoryRequest, logEnvVars, tiEnvVars, stoEnvVars, volumeToMountPath,
+            k8InitializeTaskUtils.getWorkDir(), k8InitializeTaskUtils.getCtrSecurityContext(infrastructure), logPrefix,
+            ambiance, secretEnvVars, imagePullPolicy);
 
     List<CIK8ContainerParams> containerParams = new ArrayList<>();
     containerParams.add(liteEngineContainerParams);
@@ -458,5 +461,14 @@ public class K8InitializeTaskParamsBuilder {
       throw new CIStageExecutionException("Stage details sweeping output cannot be empty");
     }
     return (StageDetails) optionalSweepingOutput.getOutput();
+  }
+
+  private String getImagePullPolicy(Infrastructure infrastructure) {
+    String imagePullPolicy = null;
+    if (infrastructure != null && infrastructure.getType() == Infrastructure.Type.KUBERNETES_DIRECT) {
+      K8sDirectInfraYaml k8Infra = (K8sDirectInfraYaml) infrastructure;
+      imagePullPolicy = RunTimeInputHandler.resolveImagePullPolicy(k8Infra.getSpec().getImagePullPolicy());
+    }
+    return imagePullPolicy;
   }
 }

@@ -22,6 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.WebhookTaskParams;
+import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.NotificationRequest;
 import io.harness.notification.Team;
@@ -32,12 +33,14 @@ import io.harness.notification.senders.WebhookSenderImpl;
 import io.harness.notification.service.api.ChannelService;
 import io.harness.notification.service.api.NotificationSettingsService;
 import io.harness.notification.service.api.NotificationTemplateService;
+import io.harness.notification.utils.NotificationSettingsHelper;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -58,6 +61,7 @@ public class WebhookServiceImpl implements ChannelService {
   private final NotificationTemplateService notificationTemplateService;
   private final WebhookSenderImpl webhookSender;
   private final DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  private final NotificationSettingsHelper notificationSettingsHelper;
 
   @Override
   public NotificationProcessingResponse send(NotificationRequest notificationRequest) {
@@ -88,7 +92,8 @@ public class WebhookServiceImpl implements ChannelService {
         notificationRequest.getAccountId(), webhookDetails.getOrgIdentifier(), webhookDetails.getProjectIdentifier());
 
     return send(webhookUrls, templateId, templateData, notificationRequest.getId(), notificationRequest.getTeam(),
-        notificationRequest.getAccountId(), expressionFunctorToken, abstractionMap);
+        notificationRequest.getAccountId(), expressionFunctorToken, abstractionMap,
+        new HashMap<>(webhookDetails.getHeadersMap()));
   }
 
   @Override
@@ -100,9 +105,11 @@ public class WebhookServiceImpl implements ChannelService {
           "Malformed webhook Url encountered while processing Test Connection request " + webhookUrl,
           DEFAULT_ERROR_CODE, USER);
     }
+    notificationSettingsHelper.validateRecipient(
+        webhookUrl, notificationSettingDTO.getAccountId(), SettingIdentifiers.WEBHOOK_NOTIFICATION_ENDPOINTS_ALLOWLIST);
     NotificationProcessingResponse processingResponse = send(Collections.singletonList(webhookUrl),
         TEST_WEBHOOK_TEMPLATE, Collections.emptyMap(), webhookSettingDTO.getNotificationId(), null,
-        notificationSettingDTO.getAccountId(), 0, Collections.emptyMap());
+        notificationSettingDTO.getAccountId(), 0, Collections.emptyMap(), Collections.emptyMap());
     if (NotificationProcessingResponse.isNotificationRequestFailed(processingResponse)) {
       throw new NotificationException(
           "Invalid webhook Url encountered while processing Test Connection request " + webhookUrl, DEFAULT_ERROR_CODE,
@@ -113,7 +120,7 @@ public class WebhookServiceImpl implements ChannelService {
 
   private NotificationProcessingResponse send(List<String> webhookUrls, String templateId,
       Map<String, String> templateData, String notificationId, Team team, String accountId, int expressionFunctorToken,
-      Map<String, String> abstractionMap) {
+      Map<String, String> abstractionMap, Map<String, String> headers) {
     Optional<String> templateOpt = notificationTemplateService.getTemplateAsString(templateId, team);
     if (!templateOpt.isPresent()) {
       log.info("Can't find template with templateId {} for notification request {}", templateId, notificationId);
@@ -123,7 +130,8 @@ public class WebhookServiceImpl implements ChannelService {
     StrSubstitutor strSubstitutor = new StrSubstitutor(templateData);
     String message = strSubstitutor.replace(template);
     NotificationProcessingResponse processingResponse = null;
-    if (notificationSettingsService.checkIfWebhookIsSecret(webhookUrls)) {
+    if (notificationSettingsService.checkIfWebhookIsSecret(webhookUrls)
+        || notificationSettingsService.checkIfHeadersHasAnySecretValue(headers)) {
       DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.builder()
                                                     .accountId(accountId)
                                                     .taskType("NOTIFY_WEBHOOK")
@@ -131,6 +139,8 @@ public class WebhookServiceImpl implements ChannelService {
                                                                         .notificationId(notificationId)
                                                                         .message(message)
                                                                         .webhookUrls(webhookUrls)
+                                                                        .headers(headers)
+                                                                        .accountId(accountId)
                                                                         .build())
                                                     .taskSetupAbstractions(abstractionMap)
                                                     .expressionFunctorToken(expressionFunctorToken)
@@ -140,7 +150,7 @@ public class WebhookServiceImpl implements ChannelService {
       log.info("Async delegate task created with taskID {}", taskId);
       processingResponse = NotificationProcessingResponse.allSent(webhookUrls.size());
     } else {
-      processingResponse = webhookSender.send(webhookUrls, message, notificationId);
+      processingResponse = webhookSender.send(webhookUrls, message, notificationId, headers, accountId);
     }
     log.info(NotificationProcessingResponse.isNotificationRequestFailed(processingResponse)
             ? "Failed to send notification for request {}"

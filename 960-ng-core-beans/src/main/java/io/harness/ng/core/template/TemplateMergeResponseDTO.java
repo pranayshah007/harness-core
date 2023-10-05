@@ -33,4 +33,5 @@ public class TemplateMergeResponseDTO {
   List<TemplateReferenceSummary> templateReferenceSummaries;
   String mergedPipelineYamlWithTemplateRef;
   CacheResponseMetadataDTO cacheResponseMetadata;
+  String processedYamlVersion;
 }

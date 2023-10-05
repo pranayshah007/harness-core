@@ -19,4 +19,5 @@ import lombok.Getter;
 public class PostProdRollbackCheckDTO {
   boolean isRollbackAllowed;
   String message;
+  PostProdRollbackSwimLaneInfo swimLaneInfo;
 }

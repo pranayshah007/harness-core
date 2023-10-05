@@ -45,6 +45,7 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.logging.Misc;
 import io.harness.pcf.CfCommandUnitConstants;
 import io.harness.pcf.CfDeploymentManager;
@@ -134,6 +135,9 @@ public class CfRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       cfCommandTaskHelperNG.downSizeListOfInstancesAndUnmapRoutes(executionLogCallback, cfRequestConfig,
           cfRollbackCommandRequestNG.getNewApplicationDetails(), cfRollbackCommandRequestNG, autoscalarRequestData);
       cfRollbackCommandResult.setCfInstanceElements(oldAppInstances);
+      cfRollbackCommandResult.setCurrentProdInfo(cfRollbackCommandRequestNG.getNewApplicationDetails());
+      cfRollbackCommandResult.setNewApplicationInfo(cfRollbackCommandRequestNG.getActiveApplicationDetails());
+      cfRollbackCommandResult.setCfInstanceElements(oldAppInstances);
       cfRollbackCommandResponseNG.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
 
       if (isRollbackCompleted(cfRollbackCommandRequestNG, cfRequestConfig)) {
@@ -160,6 +164,7 @@ public class CfRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
         } catch (IOException e) {
           Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
           log.warn("Failed to delete temp cf home folder", sanitizedException);
+          executionLogCallback.saveExecutionLog(sanitizedException.getMessage(), LogLevel.WARN);
         }
       }
     }

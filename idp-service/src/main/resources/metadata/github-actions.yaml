@@ -6,6 +6,7 @@ category: CI/CD
 source: https://github.com/backstage/backstage/tree/master/plugins/github-actions
 iconUrl: https://avatars2.githubusercontent.com/u/44036562?s=400&v=4
 imageUrl: ''
+documentation: https://developer.harness.io/docs/internal-developer-portal/plugins/available-plugins/github-actions/
 exports:
   defaultEntityTypes:
     - service

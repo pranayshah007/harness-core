@@ -75,6 +75,12 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
   private static final String WEBHOOK_FAILURE_ERROR_MESSAGE =
       "Unexpected error occurred while [%s] git webhook. Please contact Harness Support.";
 
+  private static final String CREATING = "creating";
+  private static final String FETCHING = "fetching";
+  private static final String UPDATING = "updating";
+  private static final String DELETING = "deleting";
+  private static final String LISTING_WEBHOOKS = "listing webhooks";
+
   @Override
   public CreateGitXWebhookResponseDTO createGitXWebhook(CreateGitXWebhookRequestDTO createGitXWebhookRequestDTO) {
     try (GitXWebhookLogContext context = new GitXWebhookLogContext(createGitXWebhookRequestDTO)) {
@@ -99,7 +105,7 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
       } catch (InternalServerErrorException exception) {
         throw exception;
       } catch (Exception exception) {
-        throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, "creating"));
+        throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, CREATING));
       }
     }
   }
@@ -128,9 +134,27 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
       } catch (InternalServerErrorException exception) {
         throw exception;
       } catch (Exception exception) {
-        throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, "fetching"));
+        throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, FETCHING));
       }
     }
+  }
+
+  @Override
+  public Optional<GitXWebhook> getGitXWebhook(String accountIdentifier, String webhookIdentifier, String repoName) {
+    List<GitXWebhook> gitXWebhookList;
+    if (isNotEmpty(webhookIdentifier)) {
+      gitXWebhookList =
+          gitXWebhookRepository.findByAccountIdentifierAndIdentifier(accountIdentifier, webhookIdentifier);
+    } else {
+      gitXWebhookList = gitXWebhookRepository.findByAccountIdentifierAndRepoName(accountIdentifier, repoName);
+    }
+    if (isEmpty(gitXWebhookList)) {
+      log.info(String.format(
+          "For the given key with accountIdentifier %s and gitXWebhookIdentifier %s or repoName %s no webhook found.",
+          accountIdentifier, webhookIdentifier, repoName));
+      return Optional.empty();
+    }
+    return Optional.of(gitXWebhookList.get(0));
   }
 
   @Override
@@ -163,7 +187,7 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
       } catch (InternalServerErrorException exception) {
         throw exception;
       } catch (Exception exception) {
-        throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, "updating"));
+        throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, UPDATING));
       }
     }
   }
@@ -173,12 +197,12 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
     try (GitXWebhookLogContext context = new GitXWebhookLogContext(listGitXWebhookRequestDTO)) {
       try {
         log.info(
-            String.format("Get List of pipelines in account %s", listGitXWebhookRequestDTO.getAccountIdentifier()));
+            String.format("Get List of GitX Webhooks in account %s", listGitXWebhookRequestDTO.getAccountIdentifier()));
         Criteria criteria = buildListCriteria(listGitXWebhookRequestDTO);
         List<GitXWebhook> gitXWebhookList = gitXWebhookRepository.list(criteria);
         return ListGitXWebhookResponseDTO.builder().gitXWebhooksList(prepareGitXWebhooks(gitXWebhookList)).build();
       } catch (Exception exception) {
-        throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, "listing"));
+        throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, LISTING_WEBHOOKS));
       }
     }
   }
@@ -194,7 +218,7 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
         DeleteResult deleteResult = gitXWebhookRepository.delete(criteria);
         return DeleteGitXWebhookResponseDTO.builder().successfullyDeleted(deleteResult.getDeletedCount() == 1).build();
       } catch (Exception exception) {
-        throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, "deleting"));
+        throw new InternalServerErrorException(String.format(WEBHOOK_FAILURE_ERROR_MESSAGE, DELETING));
       }
     }
   }
@@ -230,6 +254,7 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
                    .folderPaths(gitXWebhookResponseDTO.getFolderPaths())
                    .isEnabled(gitXWebhookResponseDTO.getIsEnabled())
                    .repoName(gitXWebhookResponseDTO.getRepoName())
+                   .eventTriggerTime(gitXWebhookResponseDTO.getLastEventTriggerTime())
                    .build())
         .collect(Collectors.toList());
   }
@@ -262,6 +287,9 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
     }
     if (updateGitXWebhookRequestDTO.getIsEnabled() != null) {
       update.set(GitXWebhookKeys.isEnabled, Boolean.TRUE.equals(updateGitXWebhookRequestDTO.getIsEnabled()));
+    }
+    if (updateGitXWebhookRequestDTO.getLastEventTriggerTime() != null) {
+      update.set(GitXWebhookKeys.lastEventTriggerTime, updateGitXWebhookRequestDTO.getLastEventTriggerTime());
     }
     update.set(GitXWebhookKeys.lastUpdatedAt, currentTimeInMilliseconds);
     return update;

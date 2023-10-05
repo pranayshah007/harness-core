@@ -47,6 +47,10 @@ public enum NGStepType {
   GITOPS_SYNC(
       "GitOps Sync", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes", StepSpecTypeConstants.GITOPS_SYNC),
 
+  @JsonProperty(StepSpecTypeConstants.UPDATE_GITOPS_APP)
+  UPDATE_GITOPS_APP("Update GitOps App", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes",
+      StepSpecTypeConstants.UPDATE_GITOPS_APP),
+
   // k8s steps
   @JsonProperty("APPLY")
   APPLY("Apply", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes", StepSpecTypeConstants.PLACEHOLDER),
@@ -352,7 +356,16 @@ public enum NGStepType {
       "Infrastructure Provisioners/AWS CDK Destroy", StepSpecTypeConstants.AWS_CDK_DESTROY),
   @JsonProperty(StepSpecTypeConstants.AWS_CDK_ROLLBACK)
   AWS_CDK_ROLLBACK("AWS CDK Rollback", Arrays.asList(ServiceDefinitionType.values()),
-      "Infrastructure Provisioners/AWS CDK Rollback", StepSpecTypeConstants.AWS_CDK_ROLLBACK);
+      "Infrastructure Provisioners/AWS CDK Rollback", StepSpecTypeConstants.AWS_CDK_ROLLBACK),
+  @JsonProperty(StepSpecTypeConstants.ECS_SERVICE_SETUP)
+  ECS_SERVICE_SETUP(
+      "ECS Service Setup", Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_SERVICE_SETUP),
+  @JsonProperty(StepSpecTypeConstants.ECS_UPGRADE_CONTAINER)
+  ECS_UPGRADE_CONTAINER("ECS Upgrade Container", Arrays.asList(ServiceDefinitionType.ECS), "ECS",
+      StepSpecTypeConstants.ECS_UPGRADE_CONTAINER),
+  @JsonProperty(StepSpecTypeConstants.ECS_BASIC_ROLLBACK)
+  ECS_BASIC_ROLLBACK(
+      "ECS Basic Rollback", Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_BASIC_ROLLBACK);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

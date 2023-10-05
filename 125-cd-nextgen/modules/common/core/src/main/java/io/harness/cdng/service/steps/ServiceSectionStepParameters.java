@@ -11,7 +11,6 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 
 import java.util.Arrays;
@@ -29,11 +28,6 @@ import org.springframework.data.annotation.TypeAlias;
 public class ServiceSectionStepParameters implements StepParameters {
   ParameterField<String> serviceRef;
   String childNodeId;
-
-  @Override
-  public String toViewJson() {
-    return RecastOrchestrationUtils.toJson(ServiceSectionStepParameters.builder().serviceRef(serviceRef).build());
-  }
 
   @Override
   public List<String> excludeKeysFromStepInputs() {

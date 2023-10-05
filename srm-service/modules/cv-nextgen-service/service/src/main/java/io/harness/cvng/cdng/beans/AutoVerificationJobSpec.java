@@ -7,6 +7,7 @@
 
 package io.harness.cvng.cdng.beans;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.verificationjob.entities.AutoVerificationJob;
@@ -23,6 +24,7 @@ import lombok.experimental.SuperBuilder;
 @OwnedBy(HarnessTeam.CV)
 @SuperBuilder
 @NoArgsConstructor
+@RecasterAlias("io.harness.cvng.cdng.beans.AutoVerificationJobSpec")
 public class AutoVerificationJobSpec extends BlueGreenCanaryVerificationJobSpec {
   @Override
   public String getType() {

@@ -1121,7 +1121,53 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
                             .post(Entity.json(convertToJson(monitoredServiceYaml)));
     assertThat(response.getStatus()).isEqualTo(200);
 
+    monitoredServiceYaml = getResource("monitoredservice/monitored-service-service-dependency-3.yaml");
+
+    response = RESOURCES.client()
+                   .target("http://localhost:9998/monitored-service/")
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .post(Entity.json(convertToJson(monitoredServiceYaml)));
+    assertThat(response.getStatus()).isEqualTo(200);
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testMonitoredServiceWithDependencyParentType() throws IOException {
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-service-dependency-2.yaml");
+
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/monitored-service/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(convertToJson(monitoredServiceYaml)));
+    assertThat(response.getStatus()).isEqualTo(200);
+
     monitoredServiceYaml = getResource("monitoredservice/monitored-service-service-dependency.yaml");
+
+    response = RESOURCES.client()
+                   .target("http://localhost:9998/monitored-service/")
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .post(Entity.json(convertToJson(monitoredServiceYaml)));
+    assertThat(response.getStatus()).isEqualTo(200);
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testMonitoredServiceWithServiceDependencyMetaDataMissing() throws IOException {
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-service-dependency-2.yaml");
+
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/monitored-service/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(convertToJson(monitoredServiceYaml)));
+    assertThat(response.getStatus()).isEqualTo(200);
+
+    monitoredServiceYaml = getResource("monitoredservice/monitored-service-service-dependency-4.yaml");
 
     response = RESOURCES.client()
                    .target("http://localhost:9998/monitored-service/")

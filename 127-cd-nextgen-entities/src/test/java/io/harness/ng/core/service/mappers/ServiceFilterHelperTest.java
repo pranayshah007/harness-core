@@ -107,7 +107,7 @@ public class ServiceFilterHelperTest extends CategoryTest {
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
-            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"$and\": [{\"$or\": [{\"name\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"identifier\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.key\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.value\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}]}]}");
+            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"$and\": [{\"$or\": [{\"name\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"identifier\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.key\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.value\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}]}], \"deleted\": false}");
   }
 
   @Test
@@ -119,7 +119,7 @@ public class ServiceFilterHelperTest extends CategoryTest {
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
-            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"type\": \"KUBERNETES\", \"$and\": [{\"$or\": [{\"name\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"identifier\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.key\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.value\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}]}], \"gitOpsEnabled\": true}");
+            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"$and\": [{\"$or\": [{\"name\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"identifier\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.key\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.value\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}]}], \"deleted\": false, \"type\": \"KUBERNETES\", \"gitOpsEnabled\": true}");
   }
 
   @Test
@@ -131,7 +131,19 @@ public class ServiceFilterHelperTest extends CategoryTest {
 
     assertThat(criteria.getCriteriaObject().toJson())
         .isEqualTo(
-            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"deleted\": false, \"type\": \"NATIVE_HELM\", \"$and\": [{\"$or\": [{\"name\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"identifier\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.key\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.value\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}]}]}");
+            "{\"accountId\": \"accId\", \"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\", \"$and\": [{\"$or\": [{\"name\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"identifier\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.key\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.value\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}]}], \"deleted\": false, \"type\": \"NATIVE_HELM\"}");
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testCreateCriteriaForGetList4() {
+    Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
+        "accId", "orgId", "projId", false, "foo", ServiceDefinitionType.NATIVE_HELM, null, true, null);
+
+    assertThat(criteria.getCriteriaObject().toJson())
+        .isEqualTo(
+            "{\"accountId\": \"accId\", \"$and\": [{\"$or\": [{\"orgIdentifier\": \"orgId\", \"projectIdentifier\": \"projId\"}, {\"orgIdentifier\": \"orgId\", \"projectIdentifier\": null}, {\"orgIdentifier\": null, \"projectIdentifier\": null}]}, {\"$or\": [{\"name\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"identifier\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.key\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}, {\"tags.value\": {\"$regularExpression\": {\"pattern\": \"foo\", \"options\": \"i\"}}}]}], \"deleted\": false, \"type\": \"NATIVE_HELM\"}");
   }
 
   @Test

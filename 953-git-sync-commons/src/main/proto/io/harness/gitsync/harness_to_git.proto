@@ -359,6 +359,7 @@ message CacheResponseParams {
   CacheState cacheState = 1;
   uint64 lastUpdateAt = 2;
   uint64 ttlLeft = 3;
+  bool isSyncEnabled = 4;
 }
 
 message GitSettings {

@@ -21,8 +21,8 @@ import lombok.NoArgsConstructor;
 public class PipelineTimeoutEvent extends NodeExecutionEvent {
   @Builder
   public PipelineTimeoutEvent(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String planExecutionId) {
-    super(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId);
+      String pipelineIdentifier, String planExecutionId, Integer runSequence) {
+    super(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, planExecutionId, runSequence);
   }
 
   @Override

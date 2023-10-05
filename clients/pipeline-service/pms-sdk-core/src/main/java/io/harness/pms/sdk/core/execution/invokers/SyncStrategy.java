@@ -15,6 +15,7 @@ import io.harness.pms.contracts.execution.ExecutableResponse;
 import io.harness.pms.contracts.execution.SyncExecutableResponse;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.execution.ExecuteStrategy;
+import io.harness.pms.sdk.core.execution.InterruptPackage;
 import io.harness.pms.sdk.core.execution.InvokerPackage;
 import io.harness.pms.sdk.core.execution.SdkNodeExecutionService;
 import io.harness.pms.sdk.core.registries.StepRegistry;
@@ -46,6 +47,21 @@ public class SyncStrategy implements ExecuteStrategy {
                          .addAllUnits(syncExecutable.getCommandUnits(ambiance))
                          .build())
             .build());
+  }
+
+  @Override
+  public void abort(InterruptPackage interruptPackage) {
+    throw new UnsupportedOperationException("Abort not supported for Child Chain");
+  }
+
+  @Override
+  public void expire(InterruptPackage interruptPackage) {
+    throw new UnsupportedOperationException("Expire not supported for Child Chain");
+  }
+
+  @Override
+  public void failure(InterruptPackage interruptPackage) {
+    throw new UnsupportedOperationException("Expire not supported for Child Chain");
   }
 
   @Override

@@ -32,6 +32,7 @@ public class SlackTaskParams implements TaskParameters, ExecutionCapabilityDeman
   @Expression(ALLOW_SECRETS) List<String> slackWebhookUrls;
   String message;
   String notificationId;
+  String accountId;
   private static final Pattern SECRET_EXPRESSION =
       Pattern.compile("\\$\\{ngSecretManager\\.obtain\\(\\\"\\w*[\\.]?\\w*\\\"\\, ([+-]?\\d*|0)\\)\\}");
 

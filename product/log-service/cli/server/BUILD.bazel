@@ -25,6 +25,7 @@ go_library(
         "//product/log-service/queue/memory",
         "//product/log-service/queue/redis",
         "//product/log-service/server",
+        "//product/log-service/stackdriver",
         "//product/log-service/store",
         "//product/log-service/store/bolt",
         "//product/log-service/store/s3",

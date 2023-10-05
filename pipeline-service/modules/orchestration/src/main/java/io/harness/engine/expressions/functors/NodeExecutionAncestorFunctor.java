@@ -15,6 +15,7 @@ import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.LateBindingMap;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 
@@ -23,6 +24,7 @@ import java.util.Set;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
+import org.apache.commons.jexl3.JexlEngine;
 
 @OwnedBy(CDC)
 @Value
@@ -32,9 +34,11 @@ public class NodeExecutionAncestorFunctor extends LateBindingMap {
   transient NodeExecutionsCache nodeExecutionsCache;
   transient PmsOutcomeService pmsOutcomeService;
   transient PmsSweepingOutputService pmsSweepingOutputService;
+  transient NodeExecutionInfoService nodeExecutionInfoService;
   transient Ambiance ambiance;
   transient Set<NodeExecutionEntityType> entityTypes;
   transient Map<String, String> groupAliases;
+  transient JexlEngine engine;
 
   @Override
   public synchronized Object get(Object key) {
@@ -48,9 +52,11 @@ public class NodeExecutionAncestorFunctor extends LateBindingMap {
                                             .nodeExecutionsCache(nodeExecutionsCache)
                                             .pmsOutcomeService(pmsOutcomeService)
                                             .pmsSweepingOutputService(pmsSweepingOutputService)
+                                            .nodeExecutionInfoService(nodeExecutionInfoService)
                                             .ambiance(ambiance)
                                             .startNodeExecution(startNodeExecution)
                                             .entityTypes(entityTypes)
+                                            .engine(engine)
                                             .build()
                                             .bind();
   }

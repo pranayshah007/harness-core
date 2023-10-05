@@ -16,6 +16,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.ExplanationException;
+import io.harness.exception.HintException;
+import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ScmException;
 import io.harness.exception.WingsException;
@@ -98,10 +101,43 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
 
   @Override
   public ServiceEntity update(Criteria criteria, ServiceEntity serviceEntity) {
-    Query query = new Query(criteria);
-    Update update = ServiceFilterHelper.getUpdateOperations(serviceEntity);
-    RetryPolicy<Object> retryPolicy = getRetryPolicy(
-        "[Retrying]: Failed updating Service; attempt: {}", "[Failed]: Failed updating Service; attempt: {}");
+    try {
+      Query query = new Query(criteria);
+      Update update = ServiceFilterHelper.getUpdateOperations(serviceEntity);
+      RetryPolicy<Object> retryPolicy = getRetryPolicy(
+          "[Retrying]: Failed updating Service; attempt: {}", "[Failed]: Failed updating Service; attempt: {}");
+
+      GitAwareContextHelper.initDefaultScmGitMetaData();
+      GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+
+      // inline entity
+      if (!GitAwareContextHelper.isRemoteEntity(gitEntityInfo)) {
+        return updateServiceEntityInMongo(query, update, retryPolicy);
+      }
+
+      // check whether GitX enabled for project
+      if (!cdGitXService.isNewGitXEnabled(
+              serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier())) {
+        throw new InvalidRequestException(GitXUtils.getErrorMessageForGitSimplificationNotEnabled(
+            serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier()));
+      }
+
+      Scope scope = Scope.of(
+          serviceEntity.getAccountIdentifier(), serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier());
+      gitAwareEntityHelper.updateEntityOnGit(serviceEntity, serviceEntity.getYaml(), scope);
+
+      return updateServiceEntityInMongo(query, update, retryPolicy);
+    } catch (ExplanationException | HintException | ScmException e) {
+      log.error(String.format("Error while updating service [%s]", serviceEntity.getIdentifier()), e);
+      throw e;
+    } catch (Exception e) {
+      log.error(String.format("Error while updating service [%s]", serviceEntity.getIdentifier()), e);
+      throw new InternalServerErrorException(
+          String.format("Error while updating service [%s]: [%s]", serviceEntity.getIdentifier(), e.getMessage()), e);
+    }
+  }
+
+  private ServiceEntity updateServiceEntityInMongo(Query query, Update update, RetryPolicy<Object> retryPolicy) {
     return Failsafe.with(retryPolicy)
         .get(()
                  -> mongoTemplate.findAndModify(
@@ -204,8 +240,7 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
 
     // inline entity
-    if (gitEntityInfo == null || StoreType.INLINE.equals(gitEntityInfo.getStoreType())
-        || gitEntityInfo.getStoreType() == null) {
+    if (!GitAwareContextHelper.isRemoteEntity(gitEntityInfo)) {
       serviceToSave.setStoreType(StoreType.INLINE);
       return mongoTemplate.save(serviceToSave);
     }
@@ -241,7 +276,7 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
   @Override
   public Optional<ServiceEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
-      boolean notDeleted, boolean loadFromCache, boolean loadFromFallbackBranch) {
+      boolean notDeleted, boolean loadFromCache, boolean loadFromFallbackBranch, boolean getMetadataOnly) {
     Query query = new Query(buildCriteriaForServiceIdentifier(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, !notDeleted));
 
@@ -249,6 +284,10 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
 
     if (savedEntity == null) {
       return Optional.empty();
+    }
+
+    if (getMetadataOnly) {
+      return Optional.of(savedEntity);
     }
 
     if (savedEntity.getStoreType() == StoreType.REMOTE) {

@@ -24,6 +24,7 @@ public interface EntityTypeConstants {
   String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
   String GITOPS_FETCH_LINKED_APPS = "GitOpsFetchLinkedApps";
   String GITOPS_SYNC = "GitOpsSync";
+  String UPDATE_GITOPS_APP = "UpdateGitOpsApp";
   String PROJECTS = "Projects";
   String PIPELINES = "Pipelines";
   String PIPELINE_STEPS = "PipelineSteps";
@@ -136,6 +137,9 @@ public interface EntityTypeConstants {
   String S3_UPLOAD = "S3Upload";
 
   String BUILD_AND_PUSH_GCR = "BuildAndPushGCR";
+
+  String BUILD_AND_PUSH_GAR = "BuildAndPushGAR";
+
   String BUILD_AND_PUSH_ECR = "BuildAndPushECR";
   String BUILD_AND_PUSH_ACR = "BuildAndPushACR";
   String BUILD_AND_PUSH_DOCKER_REGISTRY = "BuildAndPushDockerRegistry";
@@ -189,11 +193,15 @@ public interface EntityTypeConstants {
   String ECS_BLUE_GREEN_CREATE_SERVICE = "EcsBlueGreenCreateService";
   String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = "EcsBlueGreenSwapTargetGroups";
   String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
+  String ECS_SERVICE_SETUP = "EcsServiceSetup";
+  String ECS_UPGRADE_CONTAINER = "EcsUpgradeContainer";
+  String ECS_BASIC_ROLLBACK = "EcsBasicRollback";
   String WAIT_STEP = "Wait";
   String ARTIFACT_SOURCE_TEMPLATE = "ArtifactSource";
   String SHELL_SCRIPT_PROVISION_STEP = "ShellScriptProvision";
   String FREEZE = "Freeze";
   String CHAOS_STEP = "Chaos";
+  String CHAOS_INFRASTRUCTURE = "ChaosInfrastructure";
   String ELASTIGROUP_DEPLOY_STEP = "ElastigroupDeploy";
   String ELASTIGROUP_ROLLBACK_STEP = "ElastigroupRollback";
   String IACM_STAGE = "IACMStage";
@@ -207,7 +215,6 @@ public interface EntityTypeConstants {
   String CONTAINER_STEP = "Container";
   String IACM_TERRAFORM_PLUGIN = "IACMTerraformPlugin";
   String IACM_APPROVAL = "IACMApproval";
-  String IACM_COST_ESTIMATION = "IACMCostEstimation";
 
   String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
   String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";

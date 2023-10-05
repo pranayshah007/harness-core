@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.gitops.syncstep;
+import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants.UPDATE_GITOPS_APP_OUTCOME;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -16,6 +17,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.gitops.GitOpsStepUtils;
 import io.harness.cdng.gitops.beans.GitOpsLinkedAppsOutcome;
+import io.harness.cdng.gitops.updategitopsapp.UpdateGitOpsAppOutcome;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.exception.InvalidRequestException;
@@ -185,6 +187,13 @@ public class SyncRunnable implements Runnable {
     Set<Application> applications = optionalSweepingOutput != null && optionalSweepingOutput.isFound()
         ? new HashSet<>(((GitOpsLinkedAppsOutcome) optionalSweepingOutput.getOutput()).getApps())
         : new HashSet<>();
+
+    OptionalSweepingOutput optionalSweepingOutputUpdateGitOpsApp = executionSweepingOutputResolver.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(UPDATE_GITOPS_APP_OUTCOME));
+    if (optionalSweepingOutputUpdateGitOpsApp != null && optionalSweepingOutputUpdateGitOpsApp.isFound()) {
+      applications.add(((UpdateGitOpsAppOutcome) optionalSweepingOutputUpdateGitOpsApp.getOutput()).getApplication());
+    }
+
     if (syncStepParameters.getApplicationsList().getValue() != null) {
       applications.addAll(
           SyncStepHelper.getApplicationsToBeSynced(syncStepParameters.getApplicationsList().getValue()));

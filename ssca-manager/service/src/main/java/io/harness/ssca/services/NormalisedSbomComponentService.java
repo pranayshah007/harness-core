@@ -8,10 +8,19 @@
 package io.harness.ssca.services;
 
 import io.harness.spec.server.ssca.v1.model.Artifact;
+import io.harness.spec.server.ssca.v1.model.ArtifactComponentViewRequestBody;
+import io.harness.ssca.entities.ArtifactEntity;
+import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
 
 import javax.ws.rs.core.Response;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface NormalisedSbomComponentService {
   Response listNormalizedSbomComponent(
       String orgIdentifier, String projectIdentifier, Integer page, Integer limit, Artifact body, String accountId);
+
+  Page<NormalizedSBOMComponentEntity> getNormalizedSbomComponents(String accountId, String orgIdentifier,
+      String projectIdentifier, ArtifactEntity artifact, ArtifactComponentViewRequestBody filterBody,
+      Pageable pageable);
 }

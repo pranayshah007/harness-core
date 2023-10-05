@@ -221,7 +221,9 @@ public class ClickHouseClusterDataService {
     prepareStatement.setBigDecimal(67, BigDecimal.valueOf(billingData.getMaxstoragerequest()));
     prepareStatement.setString(68, (String) billingData.getOrgIdentifier());
     prepareStatement.setString(69, (String) billingData.getProjectIdentifier());
-    prepareStatement.setObject(70, getLabelMapFromLabelsArray(billingData));
+    prepareStatement.setLong(70, billingData.getUsagestarttime());
+    prepareStatement.setLong(71, billingData.getUsagestoptime());
+    prepareStatement.setObject(72, getLabelMapFromLabelsArray(billingData));
 
     prepareStatement.addBatch();
   }

@@ -120,6 +120,17 @@ public class ShellScriptParameters implements TaskParameters, ActivityAccess, Ex
     return resolvedEnvironment;
   }
 
+  public Map<String, String> getEscapedServiceVariables() {
+    Map<String, String> resolvedEnvironment = new HashMap<>();
+
+    if (serviceVariables != null) {
+      serviceVariables.replaceAll((k, v) -> v.replace("$", "\\$"));
+      resolvedEnvironment.putAll(serviceVariables);
+    }
+
+    return resolvedEnvironment;
+  }
+
   public SshSessionConfig sshSessionConfig(EncryptionService encryptionService,
       SecretManagementDelegateService secretManagementDelegateService) throws IOException {
     encryptionService.decrypt(hostConnectionAttributes, keyEncryptedDataDetails, false);

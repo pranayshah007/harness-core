@@ -17,7 +17,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.IDP)
 @UtilityClass
 public class DataSourceMapper {
-  public DataSource toDTO(DataSourceEntity dataSourceEntity) {
+  public static DataSource toDTO(DataSourceEntity dataSourceEntity) {
     DataSource dataSource = new DataSource();
     dataSource.setName(dataSourceEntity.getName());
     dataSource.setIdentifier(dataSourceEntity.getIdentifier());
