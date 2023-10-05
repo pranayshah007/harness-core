@@ -5,18 +5,15 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.dashboards;
+package io.harness.engine.observers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 
-import lombok.Builder;
-import lombok.Data;
+import javax.validation.constraints.NotNull;
 
 @OwnedBy(PIPELINE)
-@Data
-@Builder
-public class DeploymentCount {
-  int value;
+public interface BarrierExpandObserver {
+  void onInitializeRequest(@NotNull BarrierExpandRequest barrierExpandRequest);
 }

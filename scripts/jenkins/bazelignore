@@ -252,3 +252,4 @@ template-service/chart/templates/pdb.yaml
 template-service/chart/templates/service.yaml
 template-service/chart/templates/virtualservice.yaml
 template-service/chart/values.yaml
+product/log-service/chart/templates/external-secret.yaml

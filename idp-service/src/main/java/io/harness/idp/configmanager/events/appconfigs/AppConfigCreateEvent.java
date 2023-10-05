@@ -4,10 +4,10 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
-package io.harness.idp.configmanager.events;
+package io.harness.idp.configmanager.events.appconfigs;
 
 import static io.harness.annotations.dev.HarnessTeam.IDP;
-import static io.harness.audit.ResourceTypeConstants.IDP_CONFIG_ENV_VARIABLES;
+import static io.harness.audit.ResourceTypeConstants.IDP_APP_CONFIGS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.event.Event;
@@ -15,7 +15,7 @@ import io.harness.ng.core.AccountScope;
 import io.harness.ng.core.Resource;
 import io.harness.ng.core.ResourceConstants;
 import io.harness.ng.core.ResourceScope;
-import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
+import io.harness.spec.server.idp.v1.model.AppConfig;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.HashMap;
@@ -26,15 +26,14 @@ import lombok.NoArgsConstructor;
 @OwnedBy(IDP)
 @Getter
 @NoArgsConstructor
-public class BackstageEnvSecretSaveEvent implements Event {
-  public static final String ENV_VARIABLE_CREATED = "EnvVariableCreated";
+public class AppConfigCreateEvent implements Event {
+  public static final String APP_CONFIG_CREATED = "AppConfigCreated";
 
-  private BackstageEnvSecretVariable newBackstageEnvSecretVariable;
+  private AppConfig newAppConfig;
   private String accountIdentifier;
 
-  public BackstageEnvSecretSaveEvent(
-      String accountIdentifier, BackstageEnvSecretVariable newBackstageEnvSecretVariable) {
-    this.newBackstageEnvSecretVariable = newBackstageEnvSecretVariable;
+  public AppConfigCreateEvent(String accountIdentifier, AppConfig newAppConfig) {
+    this.newAppConfig = newAppConfig;
     this.accountIdentifier = accountIdentifier;
   }
 
@@ -48,11 +47,10 @@ public class BackstageEnvSecretSaveEvent implements Event {
   @Override
   public Resource getResource() {
     Map<String, String> labels = new HashMap<>();
-    labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME,
-        "IDP - " + newBackstageEnvSecretVariable.getEnvName() + " Env variable");
+    labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, newAppConfig.getConfigName() + " Config");
     return Resource.builder()
-        .identifier(newBackstageEnvSecretVariable.getEnvName() + "_" + accountIdentifier)
-        .type(IDP_CONFIG_ENV_VARIABLES)
+        .identifier(newAppConfig.getConfigId() + "_" + accountIdentifier)
+        .type(IDP_APP_CONFIGS)
         .labels(labels)
         .build();
   }
@@ -60,6 +58,6 @@ public class BackstageEnvSecretSaveEvent implements Event {
   @JsonIgnore
   @Override
   public String getEventType() {
-    return ENV_VARIABLE_CREATED;
+    return APP_CONFIG_CREATED;
   }
 }

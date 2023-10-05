@@ -259,8 +259,14 @@ public abstract class WorkflowHandler {
       variables.addAll(userVariables);
     }
 
+    List<GraphNode> steps = MigratorUtility.getSteps(workflow);
+    for (GraphNode step : steps) {
+      variables.addAll(stepMapperFactory.getStepMapper(step.getType()).getCustomVariables(step));
+    }
+
     MigratorExpressionUtils.render(
         context, workflow, MigExpressionOverrides.builder().customExpressions(new HashMap<>()).build());
+
     return variables.stream()
         .filter(variable -> variable.getType() != VariableType.ENTITY)
         .map(variable
@@ -270,6 +276,7 @@ public abstract class WorkflowHandler {
                    .required(variable.isMandatory())
                    .defaultValue(variable.getValue())
                    .value(getVariable(variable))
+                   .description(variable.getDescription())
                    .build())
         .collect(Collectors.toList());
   }

@@ -6,6 +6,7 @@
  */
 
 package io.harness.template.helpers;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.template.resources.beans.NGTemplateConstants.TEMPLATE_INPUTS;
 
@@ -25,6 +26,7 @@ import io.harness.ng.core.template.refresh.v2.TemplateNodeErrorSummary;
 import io.harness.ng.core.template.refresh.v2.UnknownNodeErrorSummary;
 import io.harness.ng.core.template.refresh.v2.ValidateInputsResponseDTO;
 import io.harness.pms.merger.helpers.RuntimeInputsValidator;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -117,7 +119,7 @@ public class InputsValidator {
     String resolvedTemplatesYaml = yaml;
     if (TemplateRefHelper.hasTemplateRef(yaml)) {
       Map<String, Object> resolvedTemplatesMap = templateMergeServiceHelper.mergeTemplateInputsInObject(
-          accountId, orgId, projectId, yamlNode, templateCacheMap, 0, loadFromCache, false);
+          accountId, orgId, projectId, yamlNode, templateCacheMap, 0, loadFromCache, false, HarnessYamlVersion.V0);
       resolvedTemplatesYaml = YamlUtils.writeYamlString(resolvedTemplatesMap);
     }
     InputsValidationResponse ngManagerInputsValidationResponse =
@@ -189,7 +191,7 @@ public class InputsValidator {
       JsonNode value = currentYamlNode.getCurrJsonNode();
 
       // If Template is present, validate the Template Inputs
-      if (templateMergeServiceHelper.isTemplatePresent(fieldName, value)) {
+      if (templateMergeServiceHelper.isV0TemplatePresent(fieldName, value)) {
         depth++;
         if (depth >= MAX_DEPTH) {
           throw new InvalidRequestException("Exponentially growing template nesting. Aborting");
@@ -235,7 +237,7 @@ public class InputsValidator {
     JsonNode templateNodeValue = templateNode.getCurrJsonNode();
     // Template YAML corresponding to the TemplateRef and Version Label
     TemplateEntityGetResponse templateEntityGetResponse = templateMergeServiceHelper.getLinkedTemplateEntity(
-        accountId, orgId, projectId, templateNodeValue, templateCacheMap, loadFromCache);
+        accountId, orgId, projectId, templateNodeValue, templateCacheMap, loadFromCache, HarnessYamlVersion.V0);
     TemplateEntity templateEntity = templateEntityGetResponse.getTemplateEntity();
     String templateYaml = templateEntity.getYaml();
 

@@ -51,6 +51,7 @@ import io.harness.pms.events.PipelineOutboxEvents;
 import io.harness.pms.events.PipelineUpdateEvent;
 import io.harness.pms.notification.orchestration.NodeExecutionEventUtils;
 import io.harness.pms.outbox.autoLog.OutboxLogContext;
+import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.observer.PipelineActionObserver;
 import io.harness.security.PrincipalContextData;
 import io.harness.security.dto.Principal;
@@ -110,12 +111,21 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
       principal = ((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal();
     }
     pipelineActionObserverSubject.fireInform(PipelineActionObserver::onCreate, event);
-    sendFilterCreationEvent(event.getAccountIdentifier(), event.getOrgIdentifier(), event.getProjectIdentifier(),
-        event.getPipeline().getIdentifier(), event.getPipeline().getYamlHash(), event.getPipeline().getUuid());
+    asyncFilterCreation(event.getPipeline());
     if (event.getIsForOldGitSync()) {
       return true;
     }
     return auditClientService.publishAudit(auditEntry, fromSecurityPrincipal(principal), globalContext);
+  }
+
+  private void asyncFilterCreation(PipelineEntity pipelineEntity) {
+    // Don't send async filter creation event for draft pipelines
+    Boolean isDraftPipeline = pipelineEntity.getIsDraft();
+    if (null == isDraftPipeline || !isDraftPipeline) {
+      sendFilterCreationEvent(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
+          pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(), pipelineEntity.getYamlHash(),
+          pipelineEntity.getUuid());
+    }
   }
 
   private void sendFilterCreationEvent(
@@ -156,8 +166,7 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
       principal = ((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal();
     }
     pipelineActionObserverSubject.fireInform(PipelineActionObserver::onUpdate, event);
-    sendFilterCreationEvent(event.getAccountIdentifier(), event.getOrgIdentifier(), event.getProjectIdentifier(),
-        event.getNewPipeline().getIdentifier(), event.getNewPipeline().getYamlHash(), event.getNewPipeline().getUuid());
+    asyncFilterCreation(event.getNewPipeline());
     if (event.getIsForOldGitSync() || event.getOldPipeline() == null) {
       return true;
     }

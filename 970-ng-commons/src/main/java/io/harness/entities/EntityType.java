@@ -319,6 +319,10 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.BUILD_AND_PUSH_GCR)
   BUILD_AND_PUSH_GCR(ModuleType.CI, EntityTypeConstants.BUILD_AND_PUSH_GCR, IdentifierRef.class,
       EntityYamlRootNames.BUILD_AND_PUSH_GCR),
+
+  @JsonProperty(EntityTypeConstants.BUILD_AND_PUSH_GAR)
+  BUILD_AND_PUSH_GAR(ModuleType.CI, EntityTypeConstants.BUILD_AND_PUSH_GAR, IdentifierRef.class,
+      EntityYamlRootNames.BUILD_AND_PUSH_GAR),
   @JsonProperty(EntityTypeConstants.BUILD_AND_PUSH_ECR)
   BUILD_AND_PUSH_ECR(ModuleType.CI, EntityTypeConstants.BUILD_AND_PUSH_ECR, IdentifierRef.class,
       EntityYamlRootNames.BUILD_AND_PUSH_ECR),
@@ -664,7 +668,10 @@ public enum EntityType {
       EntityYamlRootNames.ECS_UPGRADE_CONTAINER),
   @JsonProperty(EntityTypeConstants.ECS_BASIC_ROLLBACK)
   ECS_BASIC_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.ECS_BASIC_ROLLBACK, IdentifierRef.class,
-      EntityYamlRootNames.ECS_BASIC_ROLLBACK);
+      EntityYamlRootNames.ECS_BASIC_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.CHAOS_INFRASTRUCTURE)
+  CHAOS_INFRASTRUCTURE(ModuleType.CHAOS, EntityTypeConstants.CHAOS_INFRASTRUCTURE, IdentifierRef.class,
+      EntityYamlRootNames.CHAOS_INFRASTRUCTURE);
 
   private final ModuleType moduleType;
   String yamlName;

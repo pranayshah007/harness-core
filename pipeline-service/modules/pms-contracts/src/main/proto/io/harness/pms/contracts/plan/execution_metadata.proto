@@ -32,6 +32,7 @@ message ExecutionMetadata {
   string pipelineConnectorRef = 15;
   PipelineStageInfo pipelineStageInfo = 16;
   string harnessVersion = 17;
+  string processedYamlVersion = 25;
   bool isDebug = 18;
   ExecutionMode executionMode = 19;
   repeated PostExecutionRollbackInfo postExecutionRollbackInfo = 21 [deprecated = true];

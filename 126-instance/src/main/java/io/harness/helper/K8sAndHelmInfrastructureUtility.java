@@ -47,9 +47,16 @@ public class K8sAndHelmInfrastructureUtility {
     String subscriptionId = null;
     String resourceGroup = null;
     String clusterName = null;
+    String region = null;
     boolean useClusterAdminCredentials = false;
     if (k8sDeploymentInfoDTO.getCloudConfigMetadata() != null) {
       clusterName = k8sDeploymentInfoDTO.getCloudConfigMetadata().getClusterName();
+      if (k8sDeploymentInfoDTO.getCloudConfigMetadata() instanceof K8sAWSCloudConfigMetadata) {
+        K8sAWSCloudConfigMetadata k8sAWSCloudConfigMetadata =
+            (K8sAWSCloudConfigMetadata) k8sDeploymentInfoDTO.getCloudConfigMetadata();
+        region = k8sAWSCloudConfigMetadata.getRegion();
+      }
+
       if (k8sDeploymentInfoDTO.getCloudConfigMetadata() instanceof K8sAzureCloudConfigMetadata) {
         K8sAzureCloudConfigMetadata k8sAzureCloudConfigMetadata =
             (K8sAzureCloudConfigMetadata) k8sDeploymentInfoDTO.getCloudConfigMetadata();
@@ -67,6 +74,7 @@ public class K8sAndHelmInfrastructureUtility {
                                    .resourceGroup(resourceGroup)
                                    .useClusterAdminCredentials(useClusterAdminCredentials)
                                    .addRegionalParam(isAddRegionalParam)
+                                   .region(region)
                                    .build())
         .helmChartInfo(k8sDeploymentInfoDTO.getHelmChartInfo())
         .build();
@@ -78,9 +86,16 @@ public class K8sAndHelmInfrastructureUtility {
     String subscriptionId = null;
     String resourceGroup = null;
     String clusterName = null;
+    String region = null;
     boolean useClusterAdminCredentials = false;
     if (nativeHelmDeploymentInfoDTO.getCloudConfigMetadata() != null) {
       clusterName = nativeHelmDeploymentInfoDTO.getCloudConfigMetadata().getClusterName();
+
+      if (nativeHelmDeploymentInfoDTO.getCloudConfigMetadata() instanceof K8sAWSCloudConfigMetadata) {
+        K8sAWSCloudConfigMetadata k8sAWSCloudConfigMetadata =
+            (K8sAWSCloudConfigMetadata) nativeHelmDeploymentInfoDTO.getCloudConfigMetadata();
+        region = k8sAWSCloudConfigMetadata.getRegion();
+      }
       if (nativeHelmDeploymentInfoDTO.getCloudConfigMetadata() instanceof K8sAzureCloudConfigMetadata) {
         K8sAzureCloudConfigMetadata k8sAzureCloudConfigMetadata =
             (K8sAzureCloudConfigMetadata) nativeHelmDeploymentInfoDTO.getCloudConfigMetadata();
@@ -98,6 +113,7 @@ public class K8sAndHelmInfrastructureUtility {
                                    .resourceGroup(resourceGroup)
                                    .useClusterAdminCredentials(useClusterAdminCredentials)
                                    .addRegionalParam(isAddRegionalParam)
+                                   .region(region)
                                    .build())
         .helmVersion(nativeHelmDeploymentInfoDTO.getHelmVersion().toString())
         .helmChartInfo(nativeHelmDeploymentInfoDTO.getHelmChartInfo())
@@ -137,10 +153,13 @@ public class K8sAndHelmInfrastructureUtility {
             .namespace(namespace)
             .build();
       case KUBERNETES_AWS:
+        K8sAWSCloudConfigMetadata k8sAWSCloudConfigMetadata =
+            (K8sAWSCloudConfigMetadata) kubernetesInfrastructureDTO.getCloudConfigMetadata();
         return K8sAwsInfrastructureOutcome.builder()
             .releaseName(kubernetesInfrastructureDTO.getReleaseName())
             .connectorRef(connectorRef)
             .cluster(kubernetesInfrastructureDTO.getCloudConfigMetadata().getClusterName())
+            .region(k8sAWSCloudConfigMetadata.getRegion())
             .namespace(namespace)
             .build();
       case KUBERNETES_RANCHER:
