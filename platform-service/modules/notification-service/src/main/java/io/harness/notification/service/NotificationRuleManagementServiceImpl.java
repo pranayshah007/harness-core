@@ -8,8 +8,10 @@
 package io.harness.notification.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.notification.NotificationEntity;
 import io.harness.notification.entities.NotificationChannel.NotificationChannelKeys;
 import io.harness.notification.entities.NotificationRule;
 import io.harness.notification.entities.NotificationRule.NotificationRuleKeys;
@@ -47,8 +49,10 @@ public class NotificationRuleManagementServiceImpl implements NotificationRuleMa
   }
 
   @Override
-  public NotificationRule get(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+  public NotificationRule get(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, NotificationEntity notificationEntity) {
     Criteria criteria = createNotificationRuleScopeCriteria(accountIdentifier, orgIdentifier, projectIdentifier);
+    criteria.and(NotificationRuleKeys.notificationEntity).is(notificationEntity.name());
     return notificationRuleRepository.findOne(criteria);
   }
 
@@ -82,8 +86,12 @@ public class NotificationRuleManagementServiceImpl implements NotificationRuleMa
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     Criteria criteria = new Criteria();
     criteria.and(NotificationRuleKeys.accountIdentifier).is(accountIdentifier);
-    // criteria.and(NotificationRuleKeys.orgIdentifier).is(orgIdentifier);
-    // criteria.and(NotificationRuleKeys.projectIdentifier).is(projectIdentifier);
+    if (isNotEmpty(orgIdentifier)) {
+      criteria.and(NotificationRuleKeys.orgIdentifier).is(orgIdentifier);
+    }
+    if (isNotEmpty(projectIdentifier)) {
+      criteria.and(NotificationRuleKeys.projectIdentifier).is(projectIdentifier);
+    }
     return criteria;
   }
 }

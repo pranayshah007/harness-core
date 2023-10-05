@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.ng.beans.PageRequest;
+import io.harness.notification.NotificationEntity;
 import io.harness.notification.NotificationEvent;
 import io.harness.notification.NotificationRequest;
 import io.harness.notification.NotificationTriggerRequest;
@@ -129,14 +130,17 @@ public class NotificationServiceImpl implements NotificationService {
   @Override
   public boolean processNewMessage(NotificationTriggerRequest notificationTriggerRequest) {
     NotificationRule notificationRule = notificationManagementService.get(notificationTriggerRequest.getAccountId(),
-        notificationTriggerRequest.getOrgId(), notificationTriggerRequest.getProjectId());
+        notificationTriggerRequest.getOrgId(), notificationTriggerRequest.getProjectId(),
+        NotificationEntity.valueOf(notificationTriggerRequest.getEventEntity()));
     List<NotificationChannel> notificationChannels = notificationRule.getNotificationChannelForEvent(
         NotificationEvent.valueOf(notificationTriggerRequest.getEvent()));
-    notificationChannels.forEach(notificationChannel -> sendNotification(notificationRule, notificationChannel, notificationTriggerRequest.getTemplateDataMap()));
+    notificationChannels.forEach(notificationChannel
+        -> sendNotification(notificationRule, notificationChannel, notificationTriggerRequest.getTemplateDataMap()));
     return true;
   }
 
-  private boolean sendNotification(NotificationRule notificationRule, NotificationChannel notificationChannel, Map<String, String> templateData) {
+  private boolean sendNotification(
+      NotificationRule notificationRule, NotificationChannel notificationChannel, Map<String, String> templateData) {
     Notification notification = NotificationMapper.toNotification(notificationRule, notificationChannel);
 
     if (Objects.isNull(notification)) {
@@ -148,7 +152,8 @@ public class NotificationServiceImpl implements NotificationService {
     NotificationProcessingResponse processingResponse = null;
     try {
       // construct notification request from notification rule
-      processingResponse = channelService.send(NotificationMapper.constructNotificationRequest(notificationRule, notificationChannel, templateData));
+      processingResponse = channelService.send(
+          NotificationMapper.constructNotificationRequest(notificationRule, notificationChannel, templateData));
     } catch (NotificationException e) {
       log.error("Could not send notification.", e);
     }
