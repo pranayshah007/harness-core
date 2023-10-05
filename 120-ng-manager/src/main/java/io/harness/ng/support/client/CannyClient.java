@@ -120,9 +120,19 @@ public class CannyClient {
       JsonNode jsonResponse = objectMapper.readTree(response.body().byteStream());
 
       // if user doesn't exist on canny(checked through email since it is a unique entity on harness), create user
-      if (!response.isSuccessful() && response.code() == 400
-          && CannyClientConstants.INVALID_EMAIL_ERROR.equals(
-              jsonResponse.get(CannyClientConstants.ERROR_NODE).asText())) {
+      if (!response.isSuccessful()) {
+        if (response.code() != 400) {
+          log.error("Unexpected response from canny while trying to retrieve user: {}", jsonResponse.asText());
+          throw new UnexpectedException(
+              "Unexpected response from canny while trying to retrieve user: " + jsonResponse.asText());
+        }
+        if (jsonResponse.get(CannyClientConstants.ERROR_NODE) == null
+            || !CannyClientConstants.INVALID_EMAIL_ERROR.equals(
+                jsonResponse.get(CannyClientConstants.ERROR_NODE).asText())) {
+          log.error("Unexpected response from canny while trying to retrieve user: {}", jsonResponse.asText());
+          throw new UnexpectedException(
+              "Unexpected response from canny while trying to retrieve user: " + jsonResponse.asText());
+        }
         // use harness emailId as unique Identifier for canny
         Response createUserResponse = createCannyUser(emailId, emailId, name);
 
