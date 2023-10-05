@@ -17,6 +17,7 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
+        "//:lombok",
         "//999-annotations:module",
         "@maven//:org_bouncycastle_bcpg_jdk18on",
     ],
