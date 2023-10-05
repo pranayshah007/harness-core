@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.TaskChainExecutableResponse;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.steps.executable.TaskChainExecutableWithRbac;
@@ -23,8 +24,8 @@ public abstract class TaskChainExecutableWithRollbackAndRbac
     implements TaskChainExecutableWithRbac<StepBaseParameters> {
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Override
-  public void handleFailureInterrupt(
-      Ambiance ambiance, StepBaseParameters stepParameters, Map<String, String> metadata) {
+  public void handleFailure(Ambiance ambiance, StepBaseParameters stepParameters, TaskChainExecutableResponse response,
+      Map<String, String> metadata) {
     RollbackExecutableUtility.publishRollbackInfo(ambiance, stepParameters, metadata, executionSweepingOutputService);
   }
 }

@@ -22,6 +22,7 @@ java_library(
         "//980-commons/src/main/java/io/harness/exception/exceptionmanager/exceptionhandler:module",
         "//980-commons/src/main/java/io/harness/metrics:module",
         "//980-commons/src/main/java/io/harness/security:module",
+        "//980-commons/src/main/java/io/harness/security/delegate:module",
         "//980-commons/src/main/java/io/harness/threading:module",
         "//980-commons/src/main/java/io/harness/time:module",
         "//980-commons/src/main/java/io/harness/version:module",

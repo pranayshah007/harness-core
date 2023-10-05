@@ -3041,6 +3041,7 @@
 930011:io.harness.licensing.beans.modules.STOModuleLicenseDTO
 930012:io.harness.licensing.beans.modules.IACMModuleLicenseDTO
 930013:io.harness.licensing.beans.modules.CETModuleLicenseDTO
+930014:io.harness.licensing.beans.modules.IDPModuleLicenseDTO
 954001:io.harness.pms.contracts.advisers.AdviserObtainment
 954002:io.harness.pms.contracts.plan.RetryExecutionInfo
 955000:io.harness.beans.CommitDetails

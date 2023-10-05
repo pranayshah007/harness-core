@@ -16,11 +16,13 @@ import io.harness.pms.events.base.PmsMetricContextGuard;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.Map;
 import javax.cache.Cache;
 
 @OwnedBy(HarnessTeam.PIPELINE)
+@Singleton
 public class PlanExecutionMonitorServiceImpl implements PlanExecutionMonitorService {
   private static final String PIPELINE_EXECUTION_ACTIVE_COUNT = "pipeline_execution_active_count";
   private final PlanExecutionService planExecutionService;

@@ -39,7 +39,7 @@ import io.harness.ngmigration.dto.MigratedDetails;
 import io.harness.ngmigration.dto.SaveSummaryDTO;
 import io.harness.ngmigration.dto.WorkflowFilter;
 import io.harness.ngmigration.service.DiscoveryService;
-import io.harness.ngmigration.service.MigrationTemplateUtils;
+import io.harness.ngmigration.service.MigrationHelperService;
 import io.harness.ngmigration.service.entity.PipelineMigrationService;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.persistence.HPersistence;
@@ -96,7 +96,7 @@ import retrofit2.Response;
 public class WorkflowImportService implements ImportService {
   @Inject DiscoveryService discoveryService;
   @Inject HPersistence hPersistence;
-  @Inject private MigrationTemplateUtils migrationTemplateUtils;
+  @Inject private MigrationHelperService migrationHelperService;
   @Inject @Named("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceClientConfig;
 
   public DiscoveryResult discover(ImportDTO importConnectorDTO) {
@@ -251,7 +251,7 @@ public class WorkflowImportService implements ImportService {
     TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();
     templateLinkConfig.setTemplateRef(MigratorUtility.getIdentifierWithScope(ngEntityDetail));
     JsonNode templateInputs =
-        migrationTemplateUtils.getTemplateInputs(inputDTO, ngEntityDetail, inputDTO.getDestinationAccountIdentifier());
+        migrationHelperService.getTemplateInputs(inputDTO, ngEntityDetail, inputDTO.getDestinationAccountIdentifier());
 
     if (templateInputs != null && "Deployment".equals(templateInputs.get("type").asText())) {
       fixServiceDetails(templateInputs, workflow, inputDTO, summaryDTO);
@@ -425,7 +425,7 @@ public class WorkflowImportService implements ImportService {
       NgEntityDetail serviceDetails = serviceEntityNG.get(0);
       stageServiceRef = MigratorUtility.getIdentifierWithScope(serviceDetails);
       serviceInputs =
-          migrationTemplateUtils.getServiceInput(inputDTO, serviceDetails, inputDTO.getDestinationAccountIdentifier());
+          migrationHelperService.getServiceInput(inputDTO, serviceDetails, inputDTO.getDestinationAccountIdentifier());
       if (serviceInputs != null) {
         serviceInputs = serviceInputs.get(SERVICE_INPUTS);
       }
@@ -462,7 +462,7 @@ public class WorkflowImportService implements ImportService {
     if (isNotEmpty(infraEntityNG)) {
       NgEntityDetail infraDetails = infraEntityNG.get(0);
       stageInfraRef = MigratorUtility.getIdentifierWithScope(infraDetails);
-      infraInputs = migrationTemplateUtils.getInfraInput(
+      infraInputs = migrationHelperService.getInfraInput(
           inputDTO, inputDTO.getDestinationAccountIdentifier(), stageEnvRef, infraDetails);
       if (infraInputs != null) {
         infraInputs = infraInputs.get(INFRASTRUCTURE_DEFINITIONS);

@@ -173,6 +173,7 @@ public class PagerDutyServiceImpl implements ChannelService {
                                                                         .pagerDutyKeys(pagerDutyKeys)
                                                                         .payload(payload)
                                                                         .links(links)
+                                                                        .accountId(accountId)
                                                                         .build())
                                                     .taskSetupAbstractions(abstractionMap)
                                                     .expressionFunctorToken(expressionFunctorToken)
@@ -182,7 +183,7 @@ public class PagerDutyServiceImpl implements ChannelService {
       log.info("Async delegate task created with taskID {}", taskId);
       processingResponse = NotificationProcessingResponse.allSent(pagerDutyKeys.size());
     } else {
-      processingResponse = pagerDutySender.send(pagerDutyKeys, payload, links, notificationId);
+      processingResponse = pagerDutySender.send(pagerDutyKeys, payload, links, notificationId, accountId);
     }
     log.info(NotificationProcessingResponse.isNotificationRequestFailed(processingResponse)
             ? "Failed to send notification for request {}"
@@ -214,8 +215,7 @@ public class PagerDutyServiceImpl implements ChannelService {
           notificationRequest.getPagerDuty().getExpressionFunctorToken());
       recipients.addAll(resolvedRecipients);
     }
-    return notificationSettingsHelper.getRecipientsWithValidDomain(recipients, notificationRequest.getAccountId(),
-        SettingIdentifiers.PAGERDUTY_NOTIFICATION_INTEGRATION_KEYS_ALLOWLIST);
+    return recipients.stream().distinct().filter(str -> !str.isEmpty()).collect(Collectors.toList());
   }
 
   @Getter

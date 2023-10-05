@@ -9,6 +9,8 @@ package io.harness.pms.outbox;
 
 import static io.harness.audit.beans.AuthenticationInfoDTO.fromSecurityPrincipal;
 import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PIPELINE_ENTITY;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 import static io.harness.security.PrincipalContextData.PRINCIPAL_CONTEXT;
 
@@ -25,6 +27,7 @@ import io.harness.audit.beans.ResourceDTO;
 import io.harness.audit.beans.ResourceScopeDTO;
 import io.harness.audit.beans.custom.executions.NodeExecutionEventData;
 import io.harness.audit.client.api.AuditClientService;
+import io.harness.beans.FeatureName;
 import io.harness.context.GlobalContext;
 import io.harness.datacollection.utils.EmptyPredicate;
 import io.harness.engine.pms.audits.events.NodeExecutionOutboxEventConstants;
@@ -34,10 +37,14 @@ import io.harness.engine.pms.audits.events.PipelineStartEvent;
 import io.harness.engine.pms.audits.events.PipelineTimeoutEvent;
 import io.harness.engine.pms.audits.events.StageEndEvent;
 import io.harness.engine.pms.audits.events.StageStartEvent;
+import io.harness.eventsframework.EventsFrameworkConstants;
+import io.harness.eventsframework.api.Producer;
+import io.harness.eventsframework.producer.Message;
 import io.harness.logging.AutoLogContext;
 import io.harness.observer.Subject;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;
+import io.harness.pms.contracts.filter.AsyncFilterCreatorEvent;
 import io.harness.pms.events.PipelineCreateEvent;
 import io.harness.pms.events.PipelineDeleteEvent;
 import io.harness.pms.events.PipelineOutboxEvents;
@@ -49,12 +56,15 @@ import io.harness.security.PrincipalContextData;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.ServicePrincipal;
 import io.harness.security.dto.UserPrincipal;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import io.serializer.HObjectMapper;
 import java.io.IOException;
 import lombok.Getter;
@@ -68,10 +78,14 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
   private ObjectMapper objectMapper;
   private final AuditClientService auditClientService;
   private final InputSetEventHandler inputSetEventHandler;
+  private PmsFeatureFlagService featureFlagService;
+  @Inject @Named(EventsFrameworkConstants.ASYNC_FILTER_CREATION) private Producer asyncFilterCreationProducer;
 
   @Getter private final Subject<PipelineActionObserver> pipelineActionObserverSubject = new Subject<>();
   @Inject
-  PipelineOutboxEventHandler(AuditClientService auditClientService, InputSetEventHandler inputSetEventHandler) {
+  PipelineOutboxEventHandler(AuditClientService auditClientService, InputSetEventHandler inputSetEventHandler,
+      PmsFeatureFlagService featureFlagService) {
+    this.featureFlagService = featureFlagService;
     this.objectMapper = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
     this.auditClientService = auditClientService;
     this.inputSetEventHandler = inputSetEventHandler;
@@ -96,10 +110,30 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
       principal = ((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal();
     }
     pipelineActionObserverSubject.fireInform(PipelineActionObserver::onCreate, event);
+    sendFilterCreationEvent(event.getAccountIdentifier(), event.getOrgIdentifier(), event.getProjectIdentifier(),
+        event.getPipeline().getIdentifier(), event.getPipeline().getYamlHash(), event.getPipeline().getUuid());
     if (event.getIsForOldGitSync()) {
       return true;
     }
     return auditClientService.publishAudit(auditEntry, fromSecurityPrincipal(principal), globalContext);
+  }
+
+  private void sendFilterCreationEvent(
+      String accountId, String orgId, String projectId, String pipelineId, Integer yamlHash, String uuid) {
+    if (featureFlagService.isEnabled(accountId, FeatureName.PIE_ASYNC_FILTER_CREATION)) {
+      try {
+        asyncFilterCreationProducer.send(
+            Message.newBuilder()
+                .putAllMetadata(ImmutableMap.of(ENTITY_TYPE, PIPELINE_ENTITY))
+                .setData(
+                    AsyncFilterCreatorEvent.newBuilder().setYamlHash(yamlHash).setUuid(uuid).build().toByteString())
+                .build());
+      } catch (Exception ex) {
+        log.error(
+            "Error while the creating event for async filter creation event for pipeline identifier {} in project {} org {} account {}",
+            pipelineId, projectId, orgId, accountId);
+      }
+    }
   }
 
   private boolean handlePipelineUpdateEvent(OutboxEvent outboxEvent) throws IOException {
@@ -122,6 +156,8 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
       principal = ((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal();
     }
     pipelineActionObserverSubject.fireInform(PipelineActionObserver::onUpdate, event);
+    sendFilterCreationEvent(event.getAccountIdentifier(), event.getOrgIdentifier(), event.getProjectIdentifier(),
+        event.getNewPipeline().getIdentifier(), event.getNewPipeline().getYamlHash(), event.getNewPipeline().getUuid());
     if (event.getIsForOldGitSync() || event.getOldPipeline() == null) {
       return true;
     }

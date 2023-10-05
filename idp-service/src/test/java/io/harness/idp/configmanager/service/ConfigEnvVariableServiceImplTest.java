@@ -21,6 +21,7 @@ import io.harness.idp.common.Constants;
 import io.harness.idp.configmanager.beans.entity.PluginConfigEnvVariablesEntity;
 import io.harness.idp.configmanager.repositories.ConfigEnvVariablesRepository;
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
+import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
@@ -36,12 +37,18 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 public class ConfigEnvVariableServiceImplTest extends CategoryTest {
   AutoCloseable openMocks;
   @Mock ConfigEnvVariablesRepository configEnvVariablesRepository;
 
   @Mock BackstageEnvVariableService backstageEnvVariableService;
+  @Mock private TransactionTemplate transactionTemplate;
+
+  @Mock private OutboxService outboxService;
 
   @InjectMocks ConfigEnvVariablesServiceImpl configEnvVariablesServiceImpl;
 
@@ -84,6 +91,11 @@ public class ConfigEnvVariableServiceImplTest extends CategoryTest {
         .thenReturn(Collections.singletonList(getTestPluginConfigEnvVariablesEntity()));
     doNothing().when(configEnvVariablesRepository).deleteAllByAccountIdentifierAndPluginId(any(), any());
     doNothing().when(backstageEnvVariableService).deleteMultiUsingEnvNames(any(), any());
+    //    doNothing().when(outboxService).save(any());
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     List<BackstageEnvSecretVariable> returnList =
         configEnvVariablesServiceImpl.insertConfigEnvVariables(appConfig, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(returnList.get(0).getEnvName(), TEST_ENV_NAME);

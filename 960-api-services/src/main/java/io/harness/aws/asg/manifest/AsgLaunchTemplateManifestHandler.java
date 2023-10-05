@@ -95,6 +95,7 @@ public class AsgLaunchTemplateManifestHandler extends AsgManifestHandler<CreateL
         launchTemplate = asgSdkManager.createLaunchTemplate(asgName, createLaunchTemplateRequest);
         chainState.setLaunchTemplateVersion(launchTemplate.getLatestVersionNumber().toString());
       }
+      chainState.setLaunchTemplateName(asgName);
     }
     // currently assuming that during rollback - the launch template would always be available already and thus the
     // above if condition will not be executed

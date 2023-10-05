@@ -565,7 +565,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
 
   @Override
   public void handleAbort(Ambiance ambiance, InfrastructureTaskExecutableStepV2Params stepParameters,
-      AsyncExecutableResponse executableResponse) {
+      AsyncExecutableResponse executableResponse, boolean userMarked) {
     final NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, LOG_SUFFIX);
     logCallback.saveExecutionLog("Infrastructure Step was aborted", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
   }

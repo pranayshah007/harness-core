@@ -730,6 +730,7 @@ public class AccountServiceImpl implements AccountService {
     Account account = get(accountId);
     account.setPublicAccessEnabled(publicAccessEnabled);
     update(account);
+    publishAccountChangeEventViaEventFramework(accountId, UPDATE_ACTION);
   }
 
   private void ngAuditAccountDetailsCrossGenerationAccess(

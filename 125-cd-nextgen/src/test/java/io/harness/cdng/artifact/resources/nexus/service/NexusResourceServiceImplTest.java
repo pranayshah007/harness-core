@@ -9,6 +9,7 @@ package io.harness.cdng.artifact.resources.nexus.service;
 
 import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.MLUKIC;
+import static io.harness.rule.OwnerRule.RAKSHIT_AGARWAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -67,6 +68,10 @@ public class NexusResourceServiceImplTest extends CategoryTest {
   private static String ORG_IDENTIFIER = "orgIdentifier";
   private static String PROJECT_IDENTIFIER = "projectIdentifier";
   private static String REPO_PORT = "8181";
+  private static String PACKAGE_NAME = "packageName";
+  private static String GROUP_ID = "groupId";
+  private static String ARTIFACT_ID = "artifactId";
+  private static String ARTIFACT_REPOSITORY_URL = "artifactRepositoryUrl";
   private static final String TAG = "tag";
   private static final String IDENTIFIER = "identifier";
   private static final String INPUT = "<+input>-abc";
@@ -80,6 +85,13 @@ public class NexusResourceServiceImplTest extends CategoryTest {
   private static final NexusRequestDTO NEXUS_REQUEST_DTO = NexusRequestDTO.builder().build();
 
   private static final String REPOSITORY_MESSAGE = "value for repository is empty or not provided";
+  private static final String PACKAGE_MESSAGE = "value for packageName is empty or not provided";
+  private static final String GROUP_ID_MESSAGE = "value for groupId is empty or not provided";
+  private static final String ARTIFACT_PATH_MESSAGE = "value for artifactPath is empty or not provided";
+  private static final String REPOSITORY_URL_PORT_MESSAGE =
+      "value for repositoryUrl, repositoryPort is empty or not provided";
+  private static final String ARTIFACT_ID_MESSAGE = "value for artifactId is empty or not provided";
+  private static final String GROUP_MESSAGE = "value for group is empty or not provided";
   private static final String REPOSITORY_FORMAT_MESSAGE = "value for repositoryFormat is empty or not provided";
   private static final String TAG_TAG_REGEX_MESSAGE = "value for tag, tagRegex is empty or not provided";
 
@@ -141,6 +153,307 @@ public class NexusResourceServiceImplTest extends CategoryTest {
     DelegateTaskRequest delegateTaskRequest = delegateTaskRequestCaptor.getValue();
     ArtifactTaskParameters artifactTaskParameters = (ArtifactTaskParameters) delegateTaskRequest.getTaskParameters();
     assertThat(artifactTaskParameters.getArtifactTaskType()).isEqualTo(ArtifactTaskType.GET_BUILDS);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_Repository_Null() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, null, REPO_PORT, IMAGE_PATH,
+                               RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER, GROUP_ID,
+                               ARTIFACT_ID, "extension", "classifier", PACKAGE_NAME, "group"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REPOSITORY_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_Repository_Empty() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, "", REPO_PORT, IMAGE_PATH,
+                               RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER, GROUP_ID,
+                               ARTIFACT_ID, "extension", "classifier", PACKAGE_NAME, "group"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REPOSITORY_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetails_Repository_Input() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, INPUT, REPO_PORT, IMAGE_PATH,
+                               RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER, GROUP_ID,
+                               ARTIFACT_ID, "extension", "classifier", PACKAGE_NAME, "group"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REPOSITORY_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsDefault_UnsupportedFormat() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, REPO_PORT, IMAGE_PATH,
+                               "invalidFormat", ARTIFACT_REPOSITORY_URL, ORG_IDENTIFIER, PROJECT_IDENTIFIER, GROUP_ID,
+                               ARTIFACT_ID, "extension", "classifier", PACKAGE_NAME, "group"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("No enum constant software.wings.utils.RepositoryFormat.invalidFormat");
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsDocker_ArtifactPath_Null() {
+    assertThatThrownBy(
+        ()
+            -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, REPO_PORT, null,
+                RepositoryFormat.docker.name(), ARTIFACT_REPOSITORY_URL, ORG_IDENTIFIER, PROJECT_IDENTIFIER, GROUP_ID,
+                ARTIFACT_ID, "extension", "classifier", PACKAGE_NAME, "group"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(ARTIFACT_PATH_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsDocker_ArtifactPath_Empty() {
+    assertThatThrownBy(
+        ()
+            -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, REPO_PORT, "",
+                RepositoryFormat.docker.name(), ARTIFACT_REPOSITORY_URL, ORG_IDENTIFIER, PROJECT_IDENTIFIER, GROUP_ID,
+                ARTIFACT_ID, "extension", "classifier", PACKAGE_NAME, "group"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(ARTIFACT_PATH_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsDocker_ArtifactPath_Input() {
+    assertThatThrownBy(
+        ()
+            -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, REPO_PORT, INPUT,
+                RepositoryFormat.docker.name(), ARTIFACT_REPOSITORY_URL, ORG_IDENTIFIER, PROJECT_IDENTIFIER, GROUP_ID,
+                ARTIFACT_ID, "extension", "classifier", PACKAGE_NAME, "group"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(ARTIFACT_PATH_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsDocker_UrlNullPortNull() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, null, IMAGE_PATH,
+                               RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER, GROUP_ID,
+                               ARTIFACT_ID, "extension", "classifier", PACKAGE_NAME, "group"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REPOSITORY_URL_PORT_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsDocker_UrlEmptyPortNull() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, null, IMAGE_PATH,
+                               RepositoryFormat.docker.name(), "", ORG_IDENTIFIER, PROJECT_IDENTIFIER, GROUP_ID,
+                               ARTIFACT_ID, "extension", "classifier", PACKAGE_NAME, "group"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REPOSITORY_URL_PORT_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsDocker_UrlRuntimePortNull() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, null, IMAGE_PATH,
+                               RepositoryFormat.docker.name(), INPUT, ORG_IDENTIFIER, PROJECT_IDENTIFIER, GROUP_ID,
+                               ARTIFACT_ID, "extension", "classifier", PACKAGE_NAME, "group"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REPOSITORY_URL_PORT_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsDocker_UrlNullPortRuntime() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, INPUT, IMAGE_PATH,
+                               RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER, GROUP_ID,
+                               ARTIFACT_ID, "extension", "classifier", PACKAGE_NAME, "group"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REPOSITORY_URL_PORT_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsDocker_UrlNullPortEmpty() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, "", IMAGE_PATH,
+                               RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER, GROUP_ID,
+                               ARTIFACT_ID, "extension", "classifier", PACKAGE_NAME, "group"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REPOSITORY_URL_PORT_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsMaven_GroupId_Null() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, REPO_PORT, IMAGE_PATH,
+                               RepositoryFormat.maven.name(), ARTIFACT_REPOSITORY_URL, ORG_IDENTIFIER,
+                               PROJECT_IDENTIFIER, null, ARTIFACT_ID, "extension", "classifier", PACKAGE_NAME, "group"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(GROUP_ID_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsMaven_GroupId_Empty() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, REPO_PORT, IMAGE_PATH,
+                               RepositoryFormat.maven.name(), ARTIFACT_REPOSITORY_URL, ORG_IDENTIFIER,
+                               PROJECT_IDENTIFIER, "", ARTIFACT_ID, "extension", "classifier", PACKAGE_NAME, "group"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(GROUP_ID_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsMaven_GroupId_Input() {
+    assertThatThrownBy(
+        ()
+            -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, REPO_PORT, IMAGE_PATH,
+                RepositoryFormat.maven.name(), ARTIFACT_REPOSITORY_URL, ORG_IDENTIFIER, PROJECT_IDENTIFIER, INPUT,
+                ARTIFACT_ID, "extension", "classifier", PACKAGE_NAME, "group"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(GROUP_ID_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsMaven_ArtifactId_Null() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, REPO_PORT, IMAGE_PATH,
+                               RepositoryFormat.maven.name(), ARTIFACT_REPOSITORY_URL, ORG_IDENTIFIER,
+                               PROJECT_IDENTIFIER, GROUP_ID, null, "extension", "classifier", PACKAGE_NAME, "group"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(ARTIFACT_ID_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsMaven_ArtifactId_Empty() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, REPO_PORT, IMAGE_PATH,
+                               RepositoryFormat.maven.name(), ARTIFACT_REPOSITORY_URL, ORG_IDENTIFIER,
+                               PROJECT_IDENTIFIER, GROUP_ID, "", "extension", "classifier", PACKAGE_NAME, "group"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(ARTIFACT_ID_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsMaven_ArtifactId_Input() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, REPO_PORT, IMAGE_PATH,
+                               RepositoryFormat.maven.name(), ARTIFACT_REPOSITORY_URL, ORG_IDENTIFIER,
+                               PROJECT_IDENTIFIER, GROUP_ID, INPUT, "extension", "classifier", PACKAGE_NAME, "group"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(ARTIFACT_ID_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsNPM_PackageName_Null() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, REPO_PORT, IMAGE_PATH,
+                               RepositoryFormat.npm.name(), ARTIFACT_REPOSITORY_URL, ORG_IDENTIFIER, PROJECT_IDENTIFIER,
+                               GROUP_ID, ARTIFACT_ID, "extension", "classifier", null, "group"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsNPM_PackageName_Empty() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, REPO_PORT, IMAGE_PATH,
+                               RepositoryFormat.npm.name(), ARTIFACT_REPOSITORY_URL, ORG_IDENTIFIER, PROJECT_IDENTIFIER,
+                               GROUP_ID, ARTIFACT_ID, "extension", "classifier", "", "group"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsNPM_PackageName_Input() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, REPO_PORT, IMAGE_PATH,
+                               RepositoryFormat.npm.name(), ARTIFACT_REPOSITORY_URL, ORG_IDENTIFIER, PROJECT_IDENTIFIER,
+                               GROUP_ID, ARTIFACT_ID, "extension", "classifier", INPUT, "group"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsNuget_PackageName_Null() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, REPO_PORT, IMAGE_PATH,
+                               RepositoryFormat.nuget.name(), ARTIFACT_REPOSITORY_URL, ORG_IDENTIFIER,
+                               PROJECT_IDENTIFIER, GROUP_ID, ARTIFACT_ID, "extension", "classifier", null, "group"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsNuget_PackageName_Empty() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, REPO_PORT, IMAGE_PATH,
+                               RepositoryFormat.nuget.name(), ARTIFACT_REPOSITORY_URL, ORG_IDENTIFIER,
+                               PROJECT_IDENTIFIER, GROUP_ID, ARTIFACT_ID, "extension", "classifier", "", "group"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsNuget_PackageName_Input() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, REPO_PORT, IMAGE_PATH,
+                               RepositoryFormat.nuget.name(), ARTIFACT_REPOSITORY_URL, ORG_IDENTIFIER,
+                               PROJECT_IDENTIFIER, GROUP_ID, ARTIFACT_ID, "extension", "classifier", INPUT, "group"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsRaw_Group_Null() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, REPO_PORT, IMAGE_PATH,
+                               RepositoryFormat.raw.name(), ARTIFACT_REPOSITORY_URL, ORG_IDENTIFIER, PROJECT_IDENTIFIER,
+                               GROUP_ID, ARTIFACT_ID, "extension", "classifier", PACKAGE_NAME, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(GROUP_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsRaw_Group_Empty() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, REPO_PORT, IMAGE_PATH,
+                               RepositoryFormat.raw.name(), ARTIFACT_REPOSITORY_URL, ORG_IDENTIFIER, PROJECT_IDENTIFIER,
+                               GROUP_ID, ARTIFACT_ID, "extension", "classifier", PACKAGE_NAME, ""))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(GROUP_MESSAGE);
+  }
+  @Test
+  @Owner(developers = RAKSHIT_AGARWAL)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsRaw_Group_Input() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, REPO_PORT, IMAGE_PATH,
+                               RepositoryFormat.raw.name(), ARTIFACT_REPOSITORY_URL, ORG_IDENTIFIER, PROJECT_IDENTIFIER,
+                               GROUP_ID, ARTIFACT_ID, "extension", "classifier", PACKAGE_NAME, INPUT))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(GROUP_MESSAGE);
   }
 
   @Test

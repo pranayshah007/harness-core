@@ -113,6 +113,7 @@ import io.harness.pms.approval.ApprovalInstanceHandler;
 import io.harness.pms.async.plan.PlanNotifyEventPublisher;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
 import io.harness.pms.event.PMSEventConsumerService;
+import io.harness.pms.event.filter.AsyncFilterCreationStreamConsumer;
 import io.harness.pms.event.handlers.OrchestrationExecutionPmsEventHandlerRegistrar;
 import io.harness.pms.event.overviewLandingPage.PipelineExecutionSummaryRedisEventConsumer;
 import io.harness.pms.event.overviewLandingPage.PipelineExecutionSummaryRedisEventConsumerSnapshot;
@@ -854,6 +855,8 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         pipelineServiceConsumersConfig.getPollingEvent().getThreads());
     pipelineEventConsumerController.register(injector.getInstance(TriggerExecutionEventStreamConsumer.class),
         pipelineServiceConsumersConfig.getTriggerExecutionEvent().getThreads());
+    pipelineEventConsumerController.register(injector.getInstance(AsyncFilterCreationStreamConsumer.class),
+        pipelineServiceConsumersConfig.getAsyncFilterCreationEvent().getThreads());
   }
 
   /**-----------------------------Git sync --------------------------------------*/

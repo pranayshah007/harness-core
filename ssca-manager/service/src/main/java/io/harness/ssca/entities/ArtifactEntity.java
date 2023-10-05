@@ -45,6 +45,7 @@ public class ArtifactEntity implements PersistentEntity, UpdatedAtAware {
   @Id String id;
   @Field("artifactid") String artifactId;
   @Field("orchestrationid") String orchestrationId;
+  String artifactCorrelationId;
   @NotEmpty String url;
   String name;
   String type;

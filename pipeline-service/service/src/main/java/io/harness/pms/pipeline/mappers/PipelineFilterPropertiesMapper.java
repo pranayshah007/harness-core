@@ -14,26 +14,38 @@ import io.harness.ng.core.mapper.TagMapper;
 import io.harness.pms.pipeline.PipelineFilterProperties;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 
-import org.modelmapper.ModelMapper;
-
 public class PipelineFilterPropertiesMapper
     implements FilterPropertiesMapper<PipelineFilterPropertiesDto, PipelineFilterProperties> {
   @Override
   public FilterPropertiesDTO writeDTO(FilterProperties pipelineFilterProperties) {
-    ModelMapper modelMapper = new ModelMapper();
-    FilterPropertiesDTO filterPropertiesDTO =
-        modelMapper.map(pipelineFilterProperties, PipelineFilterPropertiesDto.class);
-    filterPropertiesDTO.setTags(TagMapper.convertToMap(pipelineFilterProperties.getTags()));
-    return filterPropertiesDTO;
+    PipelineFilterProperties properties = (PipelineFilterProperties) pipelineFilterProperties;
+    PipelineFilterPropertiesDto pipelineFilterPropertiesDto =
+        PipelineFilterPropertiesDto.builder()
+            .moduleProperties(properties.getModuleProperties())
+            .description(properties.getDescription())
+            .pipelineIdentifiers(properties.getPipelineIdentifiers())
+            .pipelineTags(properties.getPipelineTags())
+            .name(properties.getName())
+            .tags(TagMapper.convertToMap(pipelineFilterProperties.getTags()))
+            .build();
+
+    return pipelineFilterPropertiesDto;
   }
 
   @Override
   public FilterProperties toEntity(FilterPropertiesDTO pipelineFilterPropertiesDto) {
-    ModelMapper modelMapper = new ModelMapper();
-    PipelineFilterProperties filterProperties =
-        modelMapper.map(pipelineFilterPropertiesDto, PipelineFilterProperties.class);
-    filterProperties.setType(pipelineFilterPropertiesDto.getFilterType());
-    filterProperties.setTags(TagMapper.convertToList(pipelineFilterPropertiesDto.getTags()));
-    return filterProperties;
+    PipelineFilterPropertiesDto propertiesDto = (PipelineFilterPropertiesDto) pipelineFilterPropertiesDto;
+    PipelineFilterProperties pipelineFilterProperties =
+        PipelineFilterProperties.builder()
+            .moduleProperties(propertiesDto.getModuleProperties())
+            .description(propertiesDto.getDescription())
+            .name(propertiesDto.getName())
+            .pipelineIdentifiers(propertiesDto.getPipelineIdentifiers())
+            .pipelineTags(propertiesDto.getPipelineTags())
+            .type(pipelineFilterPropertiesDto.getFilterType())
+            .tags(TagMapper.convertToList(pipelineFilterPropertiesDto.getTags()))
+            .build();
+
+    return pipelineFilterProperties;
   }
 }

@@ -6,6 +6,7 @@
  */
 
 package io.harness.ci.execution.states;
+
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODE_BASE_CONNECTOR_REF;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -425,10 +426,6 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
   protected boolean shouldPublishArtifactForVm(CommandExecutionStatus commandExecutionStatus) {
     return commandExecutionStatus == CommandExecutionStatus.SUCCESS;
   }
-
-  @Override
-  public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {}
 
   @Override
   public UnitStep serialiseStep(CIStepInfo ciStepInfo, String taskId, String logKey, String stepIdentifier,

@@ -61,6 +61,7 @@ import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
+import io.harness.utils.PmsFeatureFlagHelper;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.validator.InvalidYamlException;
 
@@ -95,6 +96,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Mock GitAwareEntityHelper gitAwareEntityHelper;
   @Mock AccessControlClient accessControlClient;
   @Mock PMSYamlSchemaService yamlSchemaService;
+  @Mock PmsFeatureFlagHelper pmsFeatureFlagHelper;
 
   String accountIdentifier = "acc";
   String orgIdentifier = "org";
@@ -106,7 +108,7 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   public void setUp() {
     MockitoAnnotations.openMocks(this);
     pipelineService = new PMSPipelineServiceImpl(pipelineRepository, null, pipelineServiceHelper,
-        pmsPipelineTemplateHelper, null, null, gitSyncSdkService, null, null, null,
+        pmsPipelineTemplateHelper, null, null, gitSyncSdkService, null, null, pmsFeatureFlagHelper,
         new NoopPipelineSettingServiceImpl(), entitySetupUsageClient, pipelineAsyncValidationService,
         pipelineValidationService, projectClient, organizationClient, pmsFeatureFlagService, gitXSettingsHelper,
         accountClient, settingsClient, gitAwareEntityHelper, accessControlClient, yamlSchemaService);

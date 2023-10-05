@@ -21,7 +21,7 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.environment.SystemEnvironment;
 import io.harness.ff.FeatureFlagService;
-import io.harness.logging.AccessTokenBean;
+import io.harness.logging.common.AccessTokenBean;
 import io.harness.rule.Owner;
 
 import software.wings.app.MainConfiguration;
