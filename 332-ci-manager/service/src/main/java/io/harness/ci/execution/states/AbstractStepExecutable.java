@@ -456,6 +456,7 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
       case DOCKER:
       case ECR:
       case ACR:
+      case GAR:
       case UPLOAD_ARTIFACTORY:
       case UPLOAD_GCS:
       case UPLOAD_S3:

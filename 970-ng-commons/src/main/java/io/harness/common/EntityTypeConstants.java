@@ -137,6 +137,9 @@ public interface EntityTypeConstants {
   String S3_UPLOAD = "S3Upload";
 
   String BUILD_AND_PUSH_GCR = "BuildAndPushGCR";
+
+  String BUILD_AND_PUSH_GAR = "BuildAndPushGAR";
+
   String BUILD_AND_PUSH_ECR = "BuildAndPushECR";
   String BUILD_AND_PUSH_ACR = "BuildAndPushACR";
   String BUILD_AND_PUSH_DOCKER_REGISTRY = "BuildAndPushDockerRegistry";

@@ -317,6 +317,10 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.BUILD_AND_PUSH_GCR)
   BUILD_AND_PUSH_GCR(ModuleType.CI, EntityTypeConstants.BUILD_AND_PUSH_GCR, IdentifierRef.class,
       EntityYamlRootNames.BUILD_AND_PUSH_GCR),
+
+  @JsonProperty(EntityTypeConstants.BUILD_AND_PUSH_GAR)
+  BUILD_AND_PUSH_GAR(ModuleType.CI, EntityTypeConstants.BUILD_AND_PUSH_GAR, IdentifierRef.class,
+      EntityYamlRootNames.BUILD_AND_PUSH_GAR),
   @JsonProperty(EntityTypeConstants.BUILD_AND_PUSH_ECR)
   BUILD_AND_PUSH_ECR(ModuleType.CI, EntityTypeConstants.BUILD_AND_PUSH_ECR, IdentifierRef.class,
       EntityYamlRootNames.BUILD_AND_PUSH_ECR),
