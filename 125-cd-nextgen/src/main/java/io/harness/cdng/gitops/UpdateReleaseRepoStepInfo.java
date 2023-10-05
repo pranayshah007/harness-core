@@ -69,7 +69,7 @@ public class UpdateReleaseRepoStepInfo extends UpdateReleaseRepoBaseStepInfo imp
 
   @Override
   public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
+    return OrchestrationFacilitatorType.ASYNC_CHAIN;
   }
 
   @Override

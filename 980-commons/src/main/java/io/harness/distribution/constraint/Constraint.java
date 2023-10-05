@@ -29,6 +29,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Value;
@@ -229,8 +230,8 @@ public class Constraint {
     return consumers.stream()
         .filter(c
             -> isDifferentId(c, consumer) && hasContext(c) && hasContext(consumer)
-                && getReleaseEntityType(c).equals(getReleaseEntityType(consumer))
-                && getReleaseEntityId(c).equals(getReleaseEntityId(consumer)))
+                && Objects.equals(getReleaseEntityType(c), getReleaseEntityType(consumer))
+                && Objects.equals(getReleaseEntityId(c), getReleaseEntityId(consumer)))
         .map(Consumer::getId)
         .collect(Collectors.toList());
   }

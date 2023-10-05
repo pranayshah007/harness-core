@@ -66,7 +66,7 @@ public class MergePRStepInfo extends MergePRBaseStepInfo implements CDAbstractSt
 
   @Override
   public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
+    return OrchestrationFacilitatorType.ASYNC_CHAIN;
   }
 
   @Override
