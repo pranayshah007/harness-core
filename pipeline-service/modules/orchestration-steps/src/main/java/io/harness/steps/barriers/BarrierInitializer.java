@@ -11,6 +11,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.distribution.barrier.Barrier;
 import io.harness.engine.observers.OrchestrationStartObserver;
 import io.harness.engine.observers.beans.OrchestrationStartInfo;
@@ -36,6 +37,10 @@ public class BarrierInitializer implements OrchestrationStartObserver {
 
   @Override
   public void onStart(OrchestrationStartInfo orchestrationStartInfo) {
+    if (AmbianceUtils.checkIfFeatureFlagEnabled(
+            orchestrationStartInfo.getAmbiance(), FeatureName.CDS_NG_BARRIER_STEPS_WITHIN_LOOPING_STRATEGIES.name())) {
+      return;
+    }
     String version = AmbianceUtils.getPipelineVersion(orchestrationStartInfo.getAmbiance());
     String planExecutionId = orchestrationStartInfo.getPlanExecutionId();
     PlanExecutionMetadata planExecutionMetadata = orchestrationStartInfo.getPlanExecutionMetadata();

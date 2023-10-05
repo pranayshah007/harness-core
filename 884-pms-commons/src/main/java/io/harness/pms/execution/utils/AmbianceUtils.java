@@ -545,4 +545,12 @@ public class AmbianceUtils {
           EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY, String.join(",", enabledJsonSupportFeatureFlag));
     }
   }
+
+  public boolean checkIfFeatureFlagEnabled(Ambiance ambiance, String featureFlagName) {
+    if (ambiance.getMetadata() != null && ambiance.getMetadata().getFeatureFlagToValueMapMap() != null) {
+      Map<String, Boolean> stringMap = ambiance.getMetadata().getFeatureFlagToValueMapMap();
+      return stringMap.containsKey(featureFlagName) && Boolean.TRUE.equals(stringMap.get(featureFlagName));
+    }
+    return false;
+  }
 }

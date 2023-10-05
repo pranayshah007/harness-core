@@ -13,19 +13,22 @@ import io.harness.OrchestrationPublisherName;
 import io.harness.PipelineSettingsService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.concurrency.MaxConcurrentChildCallback;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
-import io.harness.engine.executions.plan.PlanService;
+import io.harness.engine.observers.BarrierExpandObserver;
+import io.harness.engine.observers.BarrierExpandRequest;
 import io.harness.engine.pms.resume.EngineResumeCallback;
 import io.harness.execution.InitiateNodeHelper;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.logging.AutoLogContext;
+import io.harness.observer.Subject;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse.Child;
 import io.harness.pms.contracts.execution.ExecutableResponse;
@@ -51,6 +54,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -65,14 +70,15 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
   @Inject private NodeExecutionInfoService nodeExecutionInfoService;
   @Inject private OrchestrationEngine orchestrationEngine;
   @Inject private PipelineSettingsService pipelineSettingsService;
-  @Inject private PlanService planService;
   @Inject @Named(OrchestrationPublisherName.PUBLISHER_NAME) private String publisherName;
+  @Inject @Getter private final Subject<BarrierExpandObserver> barrierWithinStrategyExpander = new Subject<>();
 
   @Override
   public void handleEvent(SdkResponseEventProto event) {
     SpawnChildrenRequest request = event.getSpawnChildrenRequest();
     Ambiance ambiance = event.getAmbiance();
     String nodeExecutionId = Objects.requireNonNull(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
+    String nodeSetupId = Objects.requireNonNull(AmbianceUtils.obtainCurrentSetupId(ambiance));
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
       List<String> childrenIds = new ArrayList<>();
       List<String> callbackIds = new ArrayList<>();
@@ -80,8 +86,13 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
       for (int i = 0; i < request.getChildren().getChildrenList().size(); i++) {
         childrenIds.add(generateUuid());
       }
-
       int maxConcurrency = getMaxConcurrencyLimit(ambiance, childrenIds, request.getChildren().getMaxConcurrency());
+      if (AmbianceUtils.checkIfFeatureFlagEnabled(
+              ambiance, FeatureName.CDS_NG_BARRIER_STEPS_WITHIN_LOOPING_STRATEGIES.name())) {
+        expandBarriersWithinStrategyNode(nodeExecutionId, nodeSetupId,
+            request.getChildren().getChildrenList().stream().map(Child::getChildNodeId).collect(Collectors.toList()),
+            childrenIds, ambiance, maxConcurrency);
+      }
 
       List<Child> filteredChildren = getFilteredChildren(ambiance, request.getChildren().getChildrenList());
       if (childrenIds.isEmpty() || filteredChildren.isEmpty()) {
@@ -220,5 +231,19 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
 
   private boolean shouldCreateAndStart(int maxConcurrency, int currentChild) {
     return currentChild < maxConcurrency;
+  }
+
+  private void expandBarriersWithinStrategyNode(String strategyExecutionId, String strategySetupId,
+      List<String> childrenSetupIds, List<String> childrenRuntimeIds, Ambiance ambiance, int maxConcurrency) {
+    barrierWithinStrategyExpander.fireInform(BarrierExpandObserver::onInitializeRequest,
+        BarrierExpandRequest.builder()
+            .strategyExecutionId(strategyExecutionId)
+            .strategySetupId(strategySetupId)
+            .childrenSetupIds(childrenSetupIds)
+            .childrenRuntimeIds(childrenRuntimeIds)
+            .stageExecutionId(ambiance.getStageExecutionId())
+            .planExecutionId(ambiance.getPlanExecutionId())
+            .maxConcurrency(maxConcurrency)
+            .build());
   }
 }
