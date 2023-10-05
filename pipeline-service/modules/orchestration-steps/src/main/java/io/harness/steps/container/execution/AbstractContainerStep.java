@@ -124,12 +124,6 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
   }
 
   @Override
-  public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {
-    // Do Nothing
-  }
-
-  @Override
   public void handleForCallbackId(Ambiance ambiance, StepElementParameters containerStepInfo,
       List<String> allCallbackIds, String callbackId, ResponseData responseData) {
     responseData = serializedResponseDataHelper.deserialize(responseData);

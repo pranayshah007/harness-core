@@ -274,7 +274,7 @@ public class HelmDeployStepTest extends AbstractHelmStepExecutorTestBase {
     ProgressData progressData =
         HelmDeployProgressData.builder().progressDataVersion(HelmDeployProgressDataVersion.V1.getVersionName()).build();
 
-    ProgressData result = helmDeployStep.handleProgress(ambiance, stepElementParameters, progressData);
+    ProgressData result = helmDeployStep.handleProgressTaskChain(ambiance, stepElementParameters, progressData);
 
     verify(executionSweepingOutputService, times(1))
         .consume(eq(ambiance), eq(OutcomeExpressionConstants.HELM_DEPLOY_RELEASE_OUTCOME),
@@ -292,7 +292,7 @@ public class HelmDeployStepTest extends AbstractHelmStepExecutorTestBase {
         HelmDeployProgressData.builder().progressDataVersion(HelmDeployProgressDataVersion.V1.getVersionName()).build();
     doReturn(false).when(cdFeatureFlagHelper).isEnabled(any(), eq(FeatureName.CDS_HELM_SEND_TASK_PROGRESS_NG));
 
-    ProgressData result = helmDeployStep.handleProgress(ambiance, stepElementParameters, progressData);
+    ProgressData result = helmDeployStep.handleProgressTaskChain(ambiance, stepElementParameters, progressData);
 
     verify(executionSweepingOutputService, times(0)).consume(any(), any(), any(), any());
 
@@ -308,7 +308,7 @@ public class HelmDeployStepTest extends AbstractHelmStepExecutorTestBase {
     ProgressData progressData = UnitProgressData.builder().build();
     doReturn(false).when(cdFeatureFlagHelper).isEnabled(any(), eq(FeatureName.CDS_HELM_SEND_TASK_PROGRESS_NG));
 
-    helmDeployStep.handleProgress(ambiance, stepElementParameters, progressData);
+    helmDeployStep.handleProgressTaskChain(ambiance, stepElementParameters, progressData);
 
     verify(executionSweepingOutputService, times(0)).consume(any(), any(), any(), any());
   }
@@ -321,7 +321,7 @@ public class HelmDeployStepTest extends AbstractHelmStepExecutorTestBase {
     final StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
     ProgressData progressData = UnitProgressData.builder().build();
 
-    helmDeployStep.handleProgress(ambiance, stepElementParameters, progressData);
+    helmDeployStep.handleProgressTaskChain(ambiance, stepElementParameters, progressData);
 
     verify(executionSweepingOutputService, times(0)).consume(any(), any(), any(), any());
   }

@@ -92,8 +92,8 @@ public class BarrierStep extends PipelineAsyncExecutable {
   }
 
   @Override
-  public void handleAbort(
-      Ambiance ambiance, StepBaseParameters stepElementParameters, AsyncExecutableResponse executableResponse) {
+  public void handleAbort(Ambiance ambiance, StepBaseParameters stepElementParameters,
+      AsyncExecutableResponse executableResponse, boolean userMarked) {
     BarrierSpecParameters barrierSpecParameters = (BarrierSpecParameters) stepElementParameters.getSpec();
 
     updateBarrierExecutionInstance(barrierSpecParameters.getBarrierRef(), ambiance.getPlanExecutionId());

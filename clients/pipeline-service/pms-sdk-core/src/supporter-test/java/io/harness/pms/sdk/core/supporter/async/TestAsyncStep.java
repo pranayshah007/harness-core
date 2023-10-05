@@ -20,19 +20,25 @@ import io.harness.pms.sdk.core.steps.executables.AsyncExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.tasks.ProgressData;
 import io.harness.tasks.ResponseData;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Getter;
 
+@Getter
 @OwnedBy(PIPELINE)
 public class TestAsyncStep implements AsyncExecutable<TestStepParameters> {
   public static int timeout = 100;
   public static final StepType ASYNC_STEP_TYPE =
       StepType.newBuilder().setType("TEST_STATE_PLAN_ASYNC").setStepCategory(StepCategory.STEP).build();
 
-  @Getter private String message;
+  public static AtomicInteger ABORT_COUNTER = new AtomicInteger(0);
+  public static AtomicInteger FAIL_COUNTER = new AtomicInteger(0);
+
+  private String message;
 
   public TestAsyncStep(String message) {
     this.message = message;
@@ -57,14 +63,32 @@ public class TestAsyncStep implements AsyncExecutable<TestStepParameters> {
   }
 
   @Override
-  public void handleForCallbackId(Ambiance ambiance, TestStepParameters stepParameters, List<String> allCallbackIds,
-      String callbackId, ResponseData responseData) {
-    message = callbackId;
+  public void handleFailure(Ambiance ambiance, TestStepParameters stepParameters, AsyncExecutableResponse response,
+      Map<String, String> metadata) {
+    FAIL_COUNTER.incrementAndGet();
   }
 
   @Override
-  public void handleAbort(
+  public void handleExpire(
       Ambiance ambiance, TestStepParameters stepParameters, AsyncExecutableResponse executableResponse) {
-    // Do Nothing
+    AsyncExecutable.super.handleExpire(ambiance, stepParameters, executableResponse);
+  }
+
+  @Override
+  public void handleAbort(Ambiance ambiance, TestStepParameters stepParameters,
+      AsyncExecutableResponse executableResponse, boolean userMarked) {
+    ABORT_COUNTER.incrementAndGet();
+  }
+
+  @Override
+  public ProgressData handleProgressAsync(
+      Ambiance ambiance, TestStepParameters stepParameters, ProgressData progressData) {
+    return AsyncExecutable.super.handleProgressAsync(ambiance, stepParameters, progressData);
+  }
+
+  @Override
+  public void handleForCallbackId(Ambiance ambiance, TestStepParameters stepParameters, List<String> allCallbackIds,
+      String callbackId, ResponseData responseData) {
+    message = callbackId;
   }
 }
