@@ -57,8 +57,8 @@ public class TerraformDestroyStepMapperImpl extends BaseTerraformProvisionerMapp
     baseSetup(graphNode, terraformDestroyStepNode, context.getIdentifierCaseFormat());
 
     TerraformStepConfiguration stepConfiguration = new TerraformStepConfiguration();
-    if ((Boolean) graphNode.getProperties().getOrDefault("inheritFromLast", false)) {
-      stepConfiguration.setTerraformStepConfigurationType(TerraformStepConfigurationType.INHERIT_FROM_APPLY);
+    if (state.isInheritApprovedPlan()) {
+      stepConfiguration.setTerraformStepConfigurationType(TerraformStepConfigurationType.INHERIT_FROM_PLAN);
     } else {
       stepConfiguration.setTerraformStepConfigurationType(TerraformStepConfigurationType.INLINE);
       stepConfiguration.setTerraformExecutionData(

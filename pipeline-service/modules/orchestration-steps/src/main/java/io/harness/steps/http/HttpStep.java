@@ -281,6 +281,7 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
     Map<String, String> outputVariablesEvaluated = new LinkedHashMap<>();
     final boolean resolveObjectsViaJSONSelect = pmsFeatureFlagHelper.isEnabled(
         AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_RESOLVE_OBJECTS_VIA_JSON_SELECT);
+
     if (outputVariables != null) {
       Map<String, String> contextMap = buildContextMapFromResponse(httpStepResponse, resolveObjectsViaJSONSelect);
       outputVariables.keySet().forEach(name -> {
@@ -288,6 +289,8 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
         if (expression instanceof ParameterField) {
           ParameterField<?> expr = (ParameterField<?>) expression;
           if (expr.isExpression()) {
+            // Adding Json Expression Support
+            AmbianceUtils.enabledJsonSupportFeatureFlag(ambiance, contextMap);
             Object evaluatedValue = engineExpressionService.evaluateExpression(
                 ambiance, expr.getExpressionValue(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED, contextMap);
             if (evaluatedValue != null) {

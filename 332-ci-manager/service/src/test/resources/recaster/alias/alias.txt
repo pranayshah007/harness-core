@@ -540,3 +540,4 @@ io.harness.slsa.beans.SlsaConfig
 io.harness.app.beans.entities.StepExecutionParameters
 io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata
 io.harness.delegate.beans.instancesync.NativeHelmDeploymentOutcomeMetadata
+io.harness.beans.yaml.extended.cache.CachePolicy

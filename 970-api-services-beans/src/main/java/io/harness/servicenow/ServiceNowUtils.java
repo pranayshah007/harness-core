@@ -24,11 +24,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(CDC)
 @UtilityClass
+@Slf4j
 public class ServiceNowUtils {
   public String prepareTicketUrlFromTicketNumber(String baseUrl, String ticketNumber, String ticketType) {
     try {
@@ -81,5 +83,25 @@ public class ServiceNowUtils {
       }
     }
     return parsedFields;
+  }
+
+  public static String getTicketUrlFromTicketIdOrNumber(
+      String serviceNowTicketType, String url, ServiceNowTicketNG ticketNg) {
+    String ticketUrlFromTicketId;
+
+    if (ticketNg.getNumber() != null) {
+      ticketUrlFromTicketId =
+          ServiceNowUtils.prepareTicketUrlFromTicketNumber(url, ticketNg.getNumber(), serviceNowTicketType);
+    } else if (ticketNg.getFields() != null && ticketNg.getFields().get("sys_id") != null
+        && ticketNg.getFields().get("sys_id").getDisplayValue() != null) {
+      log.info("ServiceNow response is not having field number");
+      ticketUrlFromTicketId = ServiceNowUtils.prepareTicketUrlFromTicketId(
+          url, ticketNg.getFields().get("sys_id").getDisplayValue(), serviceNowTicketType);
+    } else {
+      log.info("ServiceNow response is not having field number and sys_id");
+      throw new ServiceNowException(
+          String.format("Both sysId and ticketNumber are not present in serviceNow Response"), SERVICENOW_ERROR, USER);
+    }
+    return ticketUrlFromTicketId;
   }
 }

@@ -9,6 +9,7 @@ package io.harness.plancreator.stages;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
@@ -24,6 +25,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -31,6 +33,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.approval.stage.ApprovalStageNode;
+import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
@@ -113,5 +116,30 @@ public class GenericStagePlanCreatorTest extends OrchestrationStepsTestBase {
     StepParameters stepParameters = approvalStagePlanNode.getStepParameters();
     assertThat(stepParameters).isNotNull();
     assertThat(stepParameters instanceof StageElementParameters).isTrue();
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testCreatePlanForParentNodeTimeout() {
+    YamlField sibling = approvalStageYamlField.getNode().nextSiblingFromParentArray(
+        approvalStageYamlField.getName(), Arrays.asList(YAMLFieldNameConstants.STAGE, YAMLFieldNameConstants.PARALLEL));
+    assertThat(sibling).isNotNull();
+    NextStageAdviserParameters nextStepAdviserParameters =
+        NextStageAdviserParameters.builder().nextNodeId(sibling.getNode().getUuid()).build();
+    byte[] siblingAsBytes = kryoSerializerUnMocked.asBytes(nextStepAdviserParameters);
+    doReturn(siblingAsBytes).when(kryoSerializer).asBytes(nextStepAdviserParameters);
+    approvalStageConfig.setTimeout(ParameterField.createValueField(Timeout.builder().timeoutString("10s").build()));
+
+    PlanNode approvalStagePlanNode =
+        approvalStagePlanCreator.createPlanForParentNode(approvalStageContext, approvalStageConfig, null);
+    assertThat(approvalStagePlanNode).isNotNull();
+    assertThat(approvalStagePlanNode.getTimeoutObtainments().size()).isEqualTo(1);
+    assertThat(approvalStagePlanNode.getTimeoutObtainments()
+                   .get(0)
+                   .getParameters()
+                   .prepareTimeoutParameters()
+                   .getTimeoutMillis())
+        .isEqualTo(10000L);
   }
 }

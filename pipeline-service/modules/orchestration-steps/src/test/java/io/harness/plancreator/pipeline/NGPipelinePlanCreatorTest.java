@@ -10,6 +10,7 @@ package io.harness.plancreator.pipeline;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -157,6 +158,47 @@ public class NGPipelinePlanCreatorTest extends CategoryTest {
     assertThat(planForParentNode.getStepParameters()).isNotNull();
     assertThat(planForParentNode.getTimeoutObtainments()).isNotNull();
     assertThat(planForParentNode.getTimeoutObtainments()).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void shouldCreatePlanForParentNodeForValidTimeout() {
+    YamlField stagesField = pipelineYamlField.getNode().getField("stages");
+    String stagesUuid = Objects.requireNonNull(stagesField).getNode().getUuid();
+    List<String> childrenNodeIds = Collections.singletonList(stagesUuid);
+
+    ExecutionMetadata executionMetadata =
+        ExecutionMetadata.newBuilder().setRunSequence(860).setExecutionUuid("executionUuid").build();
+    context.setGlobalContext(Collections.singletonMap(
+        "metadata", PlanCreationContextValue.newBuilder().setMetadata(executionMetadata).build()));
+
+    NGPipelinePlanCreator ngPipelinePlanCreator = new NGPipelinePlanCreator();
+    pipelineInfoConfig.setTimeout(ParameterField.createValueField(Timeout.builder().timeoutString("10s").build()));
+    PlanNode planForParentNode =
+        ngPipelinePlanCreator.createPlanForParentNode(context, pipelineInfoConfig, childrenNodeIds);
+
+    assertThat(planForParentNode).isNotNull();
+    assertThat(
+        planForParentNode.getTimeoutObtainments().get(0).getParameters().prepareTimeoutParameters().getTimeoutMillis())
+        .isEqualTo(10000L);
+    assertThat(planForParentNode.getUuid()).isEqualTo(pipelineInfoConfig.getUuid());
+    assertThat(planForParentNode.getIdentifier()).isEqualTo("pipeline");
+
+    assertThat(planForParentNode.getStepType())
+        .isEqualTo(StepType.newBuilder().setType("PIPELINE_SECTION").setStepCategory(StepCategory.PIPELINE).build());
+
+    assertThat(planForParentNode.getGroup()).isEqualTo("PIPELINE");
+    assertThat(planForParentNode.getName()).isEqualTo("plan creator");
+
+    assertThat(planForParentNode.isSkipUnresolvedExpressionsCheck()).isTrue();
+    assertThat(planForParentNode.isSkipExpressionChain()).isFalse();
+
+    assertThat(planForParentNode.getFacilitatorObtainments()).hasSize(1);
+    assertThat(planForParentNode.getFacilitatorObtainments().get(0).getType().getType()).isEqualTo("CHILD");
+
+    assertThat(planForParentNode.getStepParameters()).isNotNull();
+    assertThat(planForParentNode.getTimeoutObtainments()).isNotNull();
   }
 
   @Test

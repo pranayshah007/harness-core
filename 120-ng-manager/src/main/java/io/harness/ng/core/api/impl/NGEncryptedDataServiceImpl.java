@@ -28,6 +28,7 @@ import static io.harness.secretmanagerclient.ValueType.Inline;
 import static io.harness.secretmanagerclient.ValueType.Reference;
 import static io.harness.security.SimpleEncryption.CHARSET;
 import static io.harness.security.encryption.AccessType.APP_ROLE;
+import static io.harness.security.encryption.EncryptionType.AZURE_VAULT;
 import static io.harness.security.encryption.EncryptionType.GCP_KMS;
 import static io.harness.security.encryption.EncryptionType.LOCAL;
 import static io.harness.security.encryption.SecretManagerType.KMS;
@@ -88,6 +89,7 @@ import io.harness.security.encryption.SecretManagerType;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
+import software.wings.beans.AzureVaultConfig;
 import software.wings.beans.BaseVaultConfig;
 import software.wings.beans.CustomSecretNGManagerConfig;
 import software.wings.beans.NameValuePairWithDefault;
@@ -832,10 +834,13 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
               secretManagerConfig.getIdentifier());
         }
       } catch (SecretManagementException ex) {
-        // Logging the exception here and not throwing it further
-        // to ensure the record gets deleted locally even if it
-        // fails on the remote vault.
         log.error("Exception received while deleting secret : {}", ex.toString());
+        if (secretManagerConfig.getEncryptionType() == AZURE_VAULT) {
+          AzureVaultConfig azureVaultConfig = (AzureVaultConfig) secretManagerConfig;
+          if (Boolean.TRUE.equals(azureVaultConfig.getEnablePurge())) {
+            throw ex;
+          }
+        }
       }
     }
   }

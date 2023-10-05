@@ -5,11 +5,18 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.ecs;
+package io.harness.common;
 
-public class EcsConstants {
-  public static final String RESIZE_NEW_FIRST = "ResizeNewFirst";
-  public static final String DOWNSIZE_OLD_FIRST = "DownsizeOldFirst";
-  public static final String PERCENTAGE = "Percentage";
-  public static final String COUNT = "Count";
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Value;
+
+@Value
+@Builder
+@AllArgsConstructor
+public class AccountAuthenticationSettings {
+  boolean twoFactorEnabled;
+  Integer sessionTimeoutInMinutes;
+  boolean publicAccessEnabled;
+  boolean oauthEnabled;
 }

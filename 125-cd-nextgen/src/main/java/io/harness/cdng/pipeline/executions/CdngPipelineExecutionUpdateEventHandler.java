@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.pipeline.executions;
+
 import static io.harness.executions.steps.StepSpecTypeConstants.K8S_ROLLING_ROLLBACK;
 import static io.harness.executions.steps.StepSpecTypeConstants.TERRAFORM_APPLY;
 import static io.harness.executions.steps.StepSpecTypeConstants.TERRAFORM_DESTROY;
@@ -43,7 +44,6 @@ import io.harness.pms.sdk.core.events.OrchestrationEventHandler;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
-import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.StageStatus;
 
 import com.google.inject.Inject;
@@ -69,7 +69,6 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
   @Inject private AccountService accountService;
   @Inject private StageExecutionInfoService stageExecutionInfoService;
   @Inject private InstanceDeploymentInfoService instanceDeploymentInfoService;
-  @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Override
   public void handleEvent(OrchestrationEvent event) {

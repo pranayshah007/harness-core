@@ -6,7 +6,9 @@
  */
 package io.harness.idp.audittrials.eventhandlers;
 
-import static io.harness.idp.configmanager.events.BackstageEnvSecretSaveEvent.ENV_VARIABLE_CREATED;
+import static io.harness.idp.configmanager.events.envvariables.BackstageEnvSecretCreateEvent.ENV_VARIABLE_CREATED;
+import static io.harness.idp.configmanager.events.envvariables.BackstageEnvSecretDeleteEvent.ENV_VARIABLE_DELETED;
+import static io.harness.idp.configmanager.events.envvariables.BackstageEnvSecretUpdateEvent.ENV_VARIABLE_UPDATED;
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 
@@ -19,7 +21,9 @@ import io.harness.audit.client.api.AuditClientService;
 import io.harness.context.GlobalContext;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.idp.audittrials.eventhandlers.dtos.BackstageEnvSecretDTO;
-import io.harness.idp.configmanager.events.BackstageEnvSecretSaveEvent;
+import io.harness.idp.configmanager.events.envvariables.BackstageEnvSecretCreateEvent;
+import io.harness.idp.configmanager.events.envvariables.BackstageEnvSecretDeleteEvent;
+import io.harness.idp.configmanager.events.envvariables.BackstageEnvSecretUpdateEvent;
 import io.harness.ng.core.utils.NGYamlUtils;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;
@@ -45,7 +49,11 @@ public class BackstageSecretEnvEventHandler implements OutboxEventHandler {
     try {
       switch (outboxEvent.getEventType()) {
         case ENV_VARIABLE_CREATED:
-          return handleBackstageSecretEnvSaveEvent(outboxEvent);
+          return handleBackstageSecretEnvCreateEvent(outboxEvent);
+        case ENV_VARIABLE_UPDATED:
+          return handleBackstageSecretEnvUpdateEvent(outboxEvent);
+        case ENV_VARIABLE_DELETED:
+          return handleBackstageSecretEnvDeleteEvent(outboxEvent);
         default:
           throw new InvalidArgumentsException(String.format("Not supported event type %s", outboxEvent.getEventType()));
       }
@@ -55,31 +63,75 @@ public class BackstageSecretEnvEventHandler implements OutboxEventHandler {
     }
   }
 
-  private boolean handleBackstageSecretEnvSaveEvent(OutboxEvent outboxEvent) throws IOException {
+  private boolean handleBackstageSecretEnvCreateEvent(OutboxEvent outboxEvent) throws IOException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
 
-    BackstageEnvSecretSaveEvent backstageEnvSecretSaveEvent =
-        objectMapper.readValue(outboxEvent.getEventData(), BackstageEnvSecretSaveEvent.class);
+    BackstageEnvSecretCreateEvent backstageEnvSecretCreateEvent =
+        objectMapper.readValue(outboxEvent.getEventData(), BackstageEnvSecretCreateEvent.class);
 
     BackstageEnvSecretVariable backstageEnvSecretVariable = new BackstageEnvSecretVariable();
-    backstageEnvSecretVariable.setEnvName(backstageEnvSecretSaveEvent.getNewBackstageEnvSecretVariable().getEnvName());
+    backstageEnvSecretVariable.setEnvName(
+        backstageEnvSecretCreateEvent.getNewBackstageEnvSecretVariable().getEnvName());
     backstageEnvSecretVariable.setHarnessSecretIdentifier(
-        backstageEnvSecretSaveEvent.getNewBackstageEnvSecretVariable().getHarnessSecretIdentifier());
+        backstageEnvSecretCreateEvent.getNewBackstageEnvSecretVariable().getHarnessSecretIdentifier());
 
-    AuditEntry auditEntry = AuditEntry.builder()
-                                .action(Action.CREATE)
-                                .module(ModuleType.CORE)
-                                .newYaml(NGYamlUtils.getYamlString(
-                                    BackstageEnvSecretDTO.builder()
-                                        .envVariableName(backstageEnvSecretVariable.getEnvName())
-                                        .secretIdentifier(backstageEnvSecretVariable.getHarnessSecretIdentifier())
-                                        .build(),
-                                    objectMapper))
-                                .timestamp(outboxEvent.getCreatedAt())
-                                .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
-                                .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
-                                .insertId(outboxEvent.getId())
-                                .build();
+    AuditEntry auditEntry =
+        AuditEntry.builder()
+            .action(Action.CREATE)
+            .module(ModuleType.CORE)
+            .newYaml(getYamlStringForEnvVariables(backstageEnvSecretCreateEvent.getNewBackstageEnvSecretVariable()))
+            .timestamp(outboxEvent.getCreatedAt())
+            .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
+            .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
+            .insertId(outboxEvent.getId())
+            .build();
     return auditClientService.publishAudit(auditEntry, globalContext);
+  }
+
+  private boolean handleBackstageSecretEnvUpdateEvent(OutboxEvent outboxEvent) throws IOException {
+    GlobalContext globalContext = outboxEvent.getGlobalContext();
+
+    BackstageEnvSecretUpdateEvent backstageEnvSecretUpdateEvent =
+        objectMapper.readValue(outboxEvent.getEventData(), BackstageEnvSecretUpdateEvent.class);
+
+    AuditEntry auditEntry =
+        AuditEntry.builder()
+            .action(Action.UPDATE)
+            .module(ModuleType.CORE)
+            .newYaml(getYamlStringForEnvVariables(backstageEnvSecretUpdateEvent.getNewBackstageEnvSecretVariable()))
+            .oldYaml(getYamlStringForEnvVariables(backstageEnvSecretUpdateEvent.getOldBackstageEnvSecretVariable()))
+            .timestamp(outboxEvent.getCreatedAt())
+            .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
+            .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
+            .insertId(outboxEvent.getId())
+            .build();
+    return auditClientService.publishAudit(auditEntry, globalContext);
+  }
+
+  private boolean handleBackstageSecretEnvDeleteEvent(OutboxEvent outboxEvent) throws IOException {
+    GlobalContext globalContext = outboxEvent.getGlobalContext();
+
+    BackstageEnvSecretDeleteEvent backstageEnvSecretDeleteEvent =
+        objectMapper.readValue(outboxEvent.getEventData(), BackstageEnvSecretDeleteEvent.class);
+
+    AuditEntry auditEntry =
+        AuditEntry.builder()
+            .action(Action.DELETE)
+            .module(ModuleType.CORE)
+            .oldYaml(getYamlStringForEnvVariables(backstageEnvSecretDeleteEvent.getOldBackstageEnvSecretVariable()))
+            .timestamp(outboxEvent.getCreatedAt())
+            .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
+            .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
+            .insertId(outboxEvent.getId())
+            .build();
+    return auditClientService.publishAudit(auditEntry, globalContext);
+  }
+
+  private String getYamlStringForEnvVariables(BackstageEnvSecretVariable backstageEnvSecretVariable) {
+    return NGYamlUtils.getYamlString(BackstageEnvSecretDTO.builder()
+                                         .envVariableName(backstageEnvSecretVariable.getEnvName())
+                                         .secretIdentifier(backstageEnvSecretVariable.getHarnessSecretIdentifier())
+                                         .build(),
+        objectMapper);
   }
 }

@@ -13,6 +13,7 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
+import io.harness.delegate.task.ecs.EcsResizeStrategy;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;

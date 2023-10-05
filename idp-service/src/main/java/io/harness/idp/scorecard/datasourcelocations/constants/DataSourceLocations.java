@@ -26,12 +26,18 @@ public class DataSourceLocations {
   public static final String BITBUCKET_MEAN_TIME_TO_MERGE_PR = "bitbucket_mean_time_to_merge_pr";
   public static final String BITBUCKET_IS_BRANCH_PROTECTION_SET = "bitbucket_is_branch_protection_set";
 
+  // Gitlab
+  public static final String GITLAB_MEAN_TIME_TO_MERGE_PR = "gitlab_mean_time_to_merge_pr";
+  public static final String GITLAB_IS_BRANCH_PROTECTION_SET = "gitlab_is_branch_protection_set";
+  public static final String GITLAB_FILE_EXISTS = "gitlab_is_file_exists";
+
   // SCM Commons
   public static final String API_BASE_URL = "{API_BASE_URL}";
   public static final String REPO_SCM = "{REPO_SCM}";
   public static final String REPOSITORY_OWNER = "{REPOSITORY_OWNER}";
   public static final String REPOSITORY_NAME = "{REPOSITORY_NAME}";
   public static final String WORKSPACE = "{WORKSPACE}";
+  public static final String PROJECT_PATH = "{PROJECT_PATH}";
   public static final String REPOSITORY_BRANCH = "{REPOSITORY_BRANCH}";
 
   // Catalog

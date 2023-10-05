@@ -670,7 +670,9 @@ public class PipelineMigrationService extends NgMigrationService {
       for (WorkflowPhase workflowPhase : buildWorkflow.getWorkflowPhases()) {
         for (PhaseStep phaseStep : workflowPhase.getPhaseSteps()) {
           for (GraphNode step : phaseStep.getSteps()) {
-            if (ARTIFACT_COLLECTION.name().equals(step.getType())) {
+            if (ARTIFACT_COLLECTION.name().equals(step.getType()) && isNotEmpty(step.getProperties())
+                && null != step.getProperties().get("artifactStreamId")
+                && null != step.getProperties().get("buildNo")) {
               artifactStreamMap.put(step.getProperties().get("artifactStreamId").toString(),
                   MigratorExpressionUtils
                       .render(migrationContext, step.getProperties().get("buildNo").toString(),

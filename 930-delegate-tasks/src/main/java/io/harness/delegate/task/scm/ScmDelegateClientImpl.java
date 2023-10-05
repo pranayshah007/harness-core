@@ -51,6 +51,9 @@ public class ScmDelegateClientImpl implements ScmDelegateClient {
           return functor.apply(channel);
         } catch (StatusRuntimeException e) {
           log.error("Error while communicating with the scm service. Retry count is {}", retryCount, e);
+          if (e.getStatus().getCode().equals(Status.Code.UNKNOWN) && e.getMessage().contains("x509")) {
+            throw new UnexpectedException("Failed to verify certificate. Please check if certificate is valid", e);
+          }
           if (e.getStatus().getCode().equals(Status.Code.UNAVAILABLE)) {
             if (++retryCount > 20) {
               throw new UnexpectedException("Faced Internal Server Error. Please contact Harness Support Team", e);

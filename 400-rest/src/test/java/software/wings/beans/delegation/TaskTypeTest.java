@@ -508,6 +508,10 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(468, "DLITE_CI_VM_EXECUTE_TASK_V2");
     taskTypeOrdinalMapping.put(469, "DLITE_CI_VM_CLEANUP_TASK_V2");
     taskTypeOrdinalMapping.put(470, "COMMAND_TASK_NG_WITH_GCS_ARTIFACT");
+    taskTypeOrdinalMapping.put(471, "ECS_BASIC_PREPARE_ROLLBACK_TASK_NG");
+    taskTypeOrdinalMapping.put(472, "ECS_SERVICE_SETUP_TASK_NG");
+    taskTypeOrdinalMapping.put(473, "ECS_UPGRADE_CONTAINER_TASK_NG");
+    taskTypeOrdinalMapping.put(474, "ECS_BASIC_ROLLBACK_TASK_NG");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

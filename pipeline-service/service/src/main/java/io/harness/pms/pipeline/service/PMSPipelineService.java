@@ -89,6 +89,8 @@ public interface PMSPipelineService {
   Optional<PipelineEntity> getPipeline(String accountId, String orgIdentifier, String projectIdentifier,
       String identifier, boolean deleted, boolean getMetadataOnly);
 
+  Optional<PipelineEntity> getPipelineByUUID(String uuid);
+
   Optional<PipelineEntity> getPipeline(String accountId, String orgIdentifier, String projectIdentifier,
       String identifier, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
       boolean loadFromCache);

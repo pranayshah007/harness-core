@@ -1313,6 +1313,9 @@
                 "type": "string"
               }
             },
+            "enablePurge": {
+              "type": "boolean"
+            },
             "managedClientId": {
               "type": "string"
             },

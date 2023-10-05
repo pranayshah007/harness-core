@@ -16,25 +16,85 @@ import io.harness.ng.core.NGAccess;
 public interface GitSyncableEntity extends NGAccess {
   String getUuid();
 
-  String getObjectIdOfYaml();
+  /**
+   * @deprecated This method is deprecated for new git experience
+   */
+  @Deprecated(forRemoval = false)
+  default String getObjectIdOfYaml() {
+    return null;
+  }
 
-  void setObjectIdOfYaml(String objectIdOfYaml);
+  /**
+   * @deprecated This method is deprecated for new git experience
+   */
+  @Deprecated(forRemoval = false)
+  default void setObjectIdOfYaml(String objectIdOfYaml) {
+    // Do nothing; this method is deprecated
+  }
 
-  Boolean getIsFromDefaultBranch();
+  /**
+   * @deprecated This method is deprecated for new git experience
+   */
+  @Deprecated(forRemoval = false)
+  default Boolean getIsFromDefaultBranch() {
+    return false;
+  }
 
-  void setIsFromDefaultBranch(Boolean isFromDefaultBranch);
+  /**
+   * @deprecated This method is deprecated for new git experience
+   */
+  @Deprecated(forRemoval = false)
+  default void setIsFromDefaultBranch(Boolean isFromDefaultBranch) {
+    // Do nothing; this method is deprecated
+  }
 
-  void setBranch(String branch);
+  /**
+   * @deprecated This method is deprecated for new git experience
+   */
+  @Deprecated(forRemoval = false)
+  default void setBranch(String branch) {
+    // Do nothing; this method is deprecated
+  }
 
-  String getBranch();
+  /**
+   * @deprecated This method is deprecated for new git experience
+   */
+  @Deprecated(forRemoval = false)
+  default String getBranch() {
+    return null;
+  }
 
-  String getYamlGitConfigRef();
+  /**
+   * @deprecated This method is deprecated for new git experience
+   */
+  @Deprecated(forRemoval = false)
+  default String getYamlGitConfigRef() {
+    return null;
+  }
 
-  void setYamlGitConfigRef(String yamlGitConfigRef);
+  /**
+   * @deprecated This method is deprecated for new git experience
+   */
+  @Deprecated(forRemoval = false)
+  default void setYamlGitConfigRef(String yamlGitConfigRef) {
+    // Do nothing; this method is deprecated
+  }
 
-  String getRootFolder();
+  /**
+   * @deprecated This method is deprecated for new git experience
+   */
+  @Deprecated(forRemoval = false)
+  default String getRootFolder() {
+    return null;
+  }
 
-  void setRootFolder(String rootFolder);
+  /**
+   * @deprecated This method is deprecated for new git experience
+   */
+  @Deprecated(forRemoval = false)
+  default void setRootFolder(String rootFolder) {
+    // Do nothing; this method is deprecated
+  }
 
   String getFilePath();
 

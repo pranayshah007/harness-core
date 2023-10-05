@@ -194,13 +194,14 @@ public class K8sAndHelmInfrastructureUtilityTest extends InstancesTestBase {
   @Category(UnitTests.class)
   public void testGetK8sAwsCloudConfigMetadata() {
     InfrastructureOutcome infrastructureOutcome =
-        K8sAwsInfrastructureOutcome.builder().cluster("cluster").namespace(NAMESPACE).build();
+        K8sAwsInfrastructureOutcome.builder().cluster("cluster").region("region").namespace(NAMESPACE).build();
     K8sCloudConfigMetadata k8sCloudConfigMetadata =
         K8sAndHelmInfrastructureUtility.getK8sCloudConfigMetadata(infrastructureOutcome);
     assertThat(k8sCloudConfigMetadata).isNotNull();
     assertThat(k8sCloudConfigMetadata).isInstanceOf(K8sAWSCloudConfigMetadata.class);
     K8sAWSCloudConfigMetadata k8sAWSCloudConfigMetadata = (K8sAWSCloudConfigMetadata) k8sCloudConfigMetadata;
     assertThat(k8sAWSCloudConfigMetadata.getClusterName()).contains("cluster");
+    assertThat(k8sAWSCloudConfigMetadata.getRegion()).isEqualTo("region");
   }
 
   @Test

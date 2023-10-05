@@ -27,6 +27,8 @@ import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.timeout.SdkTimeoutObtainment;
+import io.harness.pms.utils.StageTimeoutUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
@@ -76,7 +78,8 @@ public abstract class AbstractPmsStagePlanCreator<T extends PmsAbstractStageNode
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
-    PlanNodeBuilder builder =
+    SdkTimeoutObtainment sdkTimeoutObtainment = StageTimeoutUtils.getStageTimeoutObtainment(stageNode);
+    PlanNodeBuilder planNodeBuilder =
         PlanNode.builder()
             .uuid(getFinalPlanNodeId(ctx, stageNode))
             .name(stageNode.getName())
@@ -91,10 +94,11 @@ public abstract class AbstractPmsStagePlanCreator<T extends PmsAbstractStageNode
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                     .build())
             .adviserObtainments(getAdviserObtainmentFromMetaData(ctx.getCurrentField(), ctx.getDependency()));
+    planNodeBuilder = setStageTimeoutObtainment(sdkTimeoutObtainment, planNodeBuilder);
     if (!EmptyPredicate.isEmpty(ctx.getExecutionInputTemplate())) {
-      builder.executionInputTemplate(ctx.getExecutionInputTemplate());
+      planNodeBuilder.executionInputTemplate(ctx.getExecutionInputTemplate());
     }
-    return builder.build();
+    return planNodeBuilder.build();
   }
 
   protected String getFinalPlanNodeId(PlanCreationContext ctx, T stageNode) {

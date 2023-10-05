@@ -20,6 +20,7 @@ import lombok.AllArgsConstructor;
 public class DataSourceDataPointParserFactory {
   GithubDataPointParserFactory githubDataPointParserFactory;
   BitbucketDataPointParserFactory bitbucketDataPointParserFactory;
+  GitlabDataPointParserFactory gitlabDataPointParserFactory;
   HarnessDataPointParserFactory harnessDataPointParserFactory;
   CatalogDataPointParserFactory catalogDataPointParserFactory;
   KubernetesDataPointParserFactory kubernetesDataPointParserFactory;
@@ -35,6 +36,8 @@ public class DataSourceDataPointParserFactory {
         return githubDataPointParserFactory;
       case BITBUCKET_IDENTIFIER:
         return bitbucketDataPointParserFactory;
+      case GITLAB_IDENTIFIER:
+        return gitlabDataPointParserFactory;
       case CATALOG_IDENTIFIER:
         return catalogDataPointParserFactory;
       case KUBERNETES_IDENTIFIER:

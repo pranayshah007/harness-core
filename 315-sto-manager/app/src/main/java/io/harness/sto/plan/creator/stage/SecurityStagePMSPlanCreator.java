@@ -52,9 +52,12 @@ import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
 import io.harness.pms.sdk.core.plan.PlanNode;
+import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.timeout.SdkTimeoutObtainment;
+import io.harness.pms.utils.StageTimeoutUtils;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
@@ -86,6 +89,7 @@ public class SecurityStagePMSPlanCreator extends AbstractStagePlanCreator<Securi
   @Inject private KryoSerializer kryoSerializer;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private CIStagePlanCreationUtils ciStagePlanCreationUtils;
+  @Inject private StageTimeoutUtils stageTimeoutUtils;
 
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
@@ -167,21 +171,24 @@ public class SecurityStagePMSPlanCreator extends AbstractStagePlanCreator<Securi
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
-    return PlanNode.builder()
-        .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid()))
-        .name(stageNode.getName())
-        .identifier(stageNode.getIdentifier())
-        .group(StepOutcomeGroup.STAGE.name())
-        .stepParameters(stageParameters.build())
-        .stepType(getStepType(stageNode))
-        .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
-        .whenCondition(RunInfoUtils.getRunConditionForStage(stageNode.getWhen()))
-        .facilitatorObtainment(
-            FacilitatorObtainment.newBuilder()
-                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
-                .build())
-        .adviserObtainments(StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, true))
-        .build();
+    SdkTimeoutObtainment sdkTimeoutObtainment = StageTimeoutUtils.getStageTimeoutObtainment(stageNode);
+    PlanNodeBuilder planNodeBuilder =
+        PlanNode.builder()
+            .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid()))
+            .name(stageNode.getName())
+            .identifier(stageNode.getIdentifier())
+            .group(StepOutcomeGroup.STAGE.name())
+            .stepParameters(stageParameters.build())
+            .stepType(getStepType(stageNode))
+            .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
+            .whenCondition(RunInfoUtils.getRunConditionForStage(stageNode.getWhen()))
+            .facilitatorObtainment(
+                FacilitatorObtainment.newBuilder()
+                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
+                    .build())
+            .adviserObtainments(StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, true));
+    planNodeBuilder = setStageTimeoutObtainment(sdkTimeoutObtainment, planNodeBuilder);
+    return planNodeBuilder.build();
   }
 
   private void putNewExecutionYAMLInResponseMap(YamlField executionField,
