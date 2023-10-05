@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.ecs;
+package io.harness.delegate.task.ecs;
 
 public class EcsConstants {
   public static final String RESIZE_NEW_FIRST = "ResizeNewFirst";
