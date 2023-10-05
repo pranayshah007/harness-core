@@ -30,7 +30,6 @@ public class OrganizationMapper {
         .name(dto.getName())
         .harnessManaged(dto.isHarnessManaged())
         .version(dto.getVersion())
-        .uniqueId(dto.getUniqueId())
         .build();
   }
 
@@ -40,7 +39,6 @@ public class OrganizationMapper {
                                           .identifier(organization.getIdentifier())
                                           .name(organization.getName())
                                           .tags(convertToMap(organization.getTags()))
-                                          .uniqueId(organization.getUniqueId())
                                           .build();
     organizationDTO.setHarnessManaged(Boolean.TRUE.equals(organization.getHarnessManaged()));
     return organizationDTO;

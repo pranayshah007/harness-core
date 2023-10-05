@@ -241,8 +241,9 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
     return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       Organization savedOrganization = organizationRepository.save(organization);
-      outboxService.save(
-          new OrganizationCreateEvent(organization.getAccountIdentifier(), OrganizationMapper.writeDto(organization)));
+      OrganizationDTO organizationDTO = OrganizationMapper.writeDto(savedOrganization);
+      organizationDTO.setUniqueId(savedOrganization.getUniqueId());
+      outboxService.save(new OrganizationCreateEvent(organization.getAccountIdentifier(), organizationDTO));
       if (DEFAULT_ORG_IDENTIFIER.equalsIgnoreCase(organization.getIdentifier())) {
         log.info("[AccountSetup]: Default Organization created Successfully");
       }
