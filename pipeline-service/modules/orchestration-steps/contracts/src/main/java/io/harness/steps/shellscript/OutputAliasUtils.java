@@ -36,7 +36,7 @@ import org.apache.commons.lang3.StringUtils;
 public class OutputAliasUtils {
   private static final String UNDERSCORE = "_";
   private static final String DOT = "\\.";
-  private static final String DUPLICATE_KEY_EXCEPTION = "DuplicateKeyException";
+  private static final String DUPLICATE_SWEEPING_OUTPUT_EXCEPTION = "Sweeping output with name %s is already saved";
   public static final String EXPECTED_FORMAT = "scope.aliasKey.variableName";
   public static final List<String> ALLOWED_SCOPES =
       List.of(YAMLFieldNameConstants.PIPELINE, YAMLFieldNameConstants.STAGE, YAMLFieldNameConstants.STEP_GROUP);
@@ -58,9 +58,9 @@ public class OutputAliasUtils {
     return uuid;
   }
 
-  public static boolean isDuplicateKeyException(Exception ex) {
+  public static boolean isDuplicateKeyException(Exception ex, String uuid) {
     return ex instanceof GeneralException && StringUtils.isNotBlank(ex.getMessage())
-        && ex.getMessage().startsWith(DUPLICATE_KEY_EXCEPTION);
+        && ex.getMessage().startsWith(String.format(DUPLICATE_SWEEPING_OUTPUT_EXCEPTION, uuid));
   }
 
   private boolean validateScopeString(String scope) {

@@ -49,9 +49,11 @@ public class OutputAliasUtilsTest extends CategoryTest {
   @Owner(developers = NAMANG)
   @Category(UnitTests.class)
   public void testIsDuplicateKeyException() {
-    assertThat(OutputAliasUtils.isDuplicateKeyException(new InvalidRequestException(""))).isFalse();
-    assertThat(OutputAliasUtils.isDuplicateKeyException(new GeneralException("  "))).isFalse();
-    assertThat(OutputAliasUtils.isDuplicateKeyException(new GeneralException("DuplicateKeyException"))).isTrue();
+    assertThat(OutputAliasUtils.isDuplicateKeyException(new InvalidRequestException(""), " ")).isFalse();
+    assertThat(OutputAliasUtils.isDuplicateKeyException(new GeneralException("  "), " ")).isFalse();
+    assertThat(OutputAliasUtils.isDuplicateKeyException(
+                   new GeneralException("Sweeping output with name uuid is already saved"), "uuid"))
+        .isTrue();
   }
 
   @Test
