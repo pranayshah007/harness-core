@@ -97,7 +97,6 @@ public final class STOSettingsUtils {
   public static final String PRODUCT_SCAN_ID = "product_scan_id";
   public static final String PRODUCT_SITE_ID = "product_site_id";
   public static final String PRODUCT_IMAGE_NAME = "product_image_name";
-  public static final String PRODUCT_PRODUCT_DOMAIN_RBAC = "product_domain_rbac";
 
   public static final String TOOL_PROJECT_NAME = "tool.project_name";
   public static final String TOOL_PROJECT_KEY = "tool.project_key";
@@ -111,7 +110,6 @@ public final class STOSettingsUtils {
   public static final String TOOL_SCAN_ID = "tool.scan_id";
   public static final String TOOL_SITE_ID = "tool.site_id";
   public static final String TOOL_IMAGE_NAME = "tool.image_name";
-  public static final String PRODUCT_DOMAIN_RBAC = "tool.product_domain_rbac";
 
   private STOSettingsUtils() {
     throw new IllegalStateException("Utility class");
