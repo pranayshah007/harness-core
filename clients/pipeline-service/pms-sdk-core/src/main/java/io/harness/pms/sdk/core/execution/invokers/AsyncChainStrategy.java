@@ -77,8 +77,8 @@ public class AsyncChainStrategy implements ExecuteStrategy {
       StepResponse stepResponse;
       try {
         log.info("Chain end true: Calling finalizeExecution, nodeExecutionId: {}", nodeExecutionId);
-        stepResponse = asyncChainExecutable.finalizeExecution(
-            ambiance, stepParameters, buildResponseDataSupplier(resumePackage.getResponseDataMap()));
+        stepResponse = asyncChainExecutable.finalizeExecution(ambiance, stepParameters,
+            chainDetails.getPassThroughData(), buildResponseDataSupplier(resumePackage.getResponseDataMap()));
       } catch (Exception e) {
         log.error("Exception occurred while calling finalizeExecution, nodeExecutionId: {}", nodeExecutionId, e);
         stepResponse = strategyHelper.handleException(e);
@@ -88,7 +88,7 @@ public class AsyncChainStrategy implements ExecuteStrategy {
       try {
         AsyncChainExecutableResponse asyncChainExecutableResponse =
             asyncChainExecutable.executeNextLink(ambiance, stepParameters, resumePackage.getStepInputPackage(),
-                buildResponseDataSupplier(resumePackage.getResponseDataMap()));
+                chainDetails.getPassThroughData(), buildResponseDataSupplier(resumePackage.getResponseDataMap()));
         handleResponse(ambiance, ExecutionMode.ASYNC_CHAIN, stepParameters, asyncChainExecutableResponse);
       } catch (Exception e) {
         log.error("Exception occurred while calling executeNextLink, nodeExecutionId: {}", nodeExecutionId, e);

@@ -38,6 +38,7 @@ message AsyncChainExecutableResponse {
   repeated string units = 4;
   int32 timeout = 5;
   Status status = 6;
+  bytes passThroughData = 7;
 }
 
 message AsyncExecutableResponse {
