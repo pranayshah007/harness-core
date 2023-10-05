@@ -407,7 +407,7 @@ public class AuditServiceImpl implements AuditService {
     identifyEventProperties.put("totalProjects", totalProjects);
     identifyEventProperties.put("activeProjects", activeProjects);
 
-    float activeProjectPercentage = calculateActiveProjectPercentage(activeProjects, totalProjects);
+    float activeProjectPercentage = getActiveProjectPercentage(activeProjects, totalProjects);
     telemetryReporter.sendIdentifyEvent(
         accountIdentifier, identifyEventProperties, Collections.singletonMap(AMPLITUDE, true));
 
@@ -441,7 +441,7 @@ public class AuditServiceImpl implements AuditService {
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
   }
 
-  float calculateActiveProjectPercentage(int activeProjects, int totalProjects) {
+  float getActiveProjectPercentage(int activeProjects, int totalProjects) {
     if (totalProjects > 0) {
       return (activeProjects / totalProjects) * 100;
     } else {
