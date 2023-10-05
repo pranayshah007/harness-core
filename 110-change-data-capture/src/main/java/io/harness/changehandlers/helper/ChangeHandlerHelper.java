@@ -6,7 +6,6 @@
  */
 
 package io.harness.changehandlers.helper;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.util.Objects.isNull;
