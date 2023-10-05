@@ -1018,6 +1018,9 @@ public class DelegateServiceImpl implements DelegateService {
     setUnset(updateOperations, DelegateKeys.mtls, delegate.isMtls());
     setUnset(updateOperations, DelegateKeys.disconnected, false);
 
+    long delegateExpiry = setDelegateScalingGroupExpiration(Collections.singletonList(delegate));
+    setUnset(updateOperations, DelegateKeys.expireOn, delegateExpiry);
+
     return updateOperations;
   }
 
