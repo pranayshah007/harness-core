@@ -38,6 +38,8 @@ import io.harness.ngmigration.beans.MigrationInputSettings;
 import io.harness.ngmigration.beans.MigrationInputSettingsType;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.context.ImportDtoThreadLocal;
+import io.harness.ngmigration.dto.Flag;
 import io.harness.ngmigration.dto.ImportDTO;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
@@ -929,5 +931,13 @@ public class MigratorUtility {
       return false;
     }
     return str.startsWith("${") && str.endsWith("}");
+  }
+
+  public static boolean isEnabled(Flag flag) {
+    ImportDTO importDTO = ImportDtoThreadLocal.get();
+    if (null != flag && null != importDTO && null != importDTO.getFlags()) {
+      return importDTO.getFlags().contains(flag);
+    }
+    return false;
   }
 }
