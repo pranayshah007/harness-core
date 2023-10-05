@@ -9,6 +9,8 @@ package io.harness.pms.plan.execution.preprocess;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.pms.merger.helpers.FQNHelper;
 import io.harness.pms.utils.IdentifierGeneratorUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
@@ -92,7 +94,13 @@ public class PipelineV1Preprocessor implements PipelinePreprocessor {
       if (arrayElement.get(YAMLFieldNameConstants.ID) == null) {
         String id = getIdFromNameOrType(arrayElement);
         if (id == null) {
-          continue;
+          String wrapperKey = FQNHelper.getWrapperKeyForArrayElement(arrayElement);
+          if (EmptyPredicate.isNotEmpty(wrapperKey)) {
+            arrayElement = arrayElement.get(wrapperKey);
+            id = getIdFromNameOrType(arrayElement);
+          } else {
+            continue;
+          }
         }
         // get the last index that was used as suffix with this id previously.
         Integer previousSuffixValue = idsSufixMap.getOrDefault(id, 0);

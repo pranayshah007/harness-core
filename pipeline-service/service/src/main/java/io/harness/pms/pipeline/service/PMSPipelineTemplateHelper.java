@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.pipeline.service;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
@@ -37,6 +38,7 @@ import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.remote.client.PipelineRestUtils;
 import io.harness.template.remote.TemplateResourceClient;
@@ -82,20 +84,22 @@ public class PMSPipelineTemplateHelper {
   public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(String accountId, String orgId, String projectId,
       String yaml, boolean checkForTemplateAccess, boolean getMergedTemplateWithTemplateReferences,
       String loadFromCache) {
+    // TODO(BRIJESH): Pass the yamlVersion from caller instead of hardcoded value HarnessYamlVersion.V0. This flow is
+    // not main for execution so passed V0 for now.
     return resolveTemplateRefsInPipeline(accountId, orgId, projectId, yaml, checkForTemplateAccess,
-        getMergedTemplateWithTemplateReferences, loadFromCache, false);
+        getMergedTemplateWithTemplateReferences, loadFromCache, false, HarnessYamlVersion.V0);
   }
 
   public TemplateMergeResponseDTO resolveTemplateRefsInPipelineAndAppendInputSetValidators(String accountId,
       String orgId, String projectId, String yaml, boolean checkForTemplateAccess,
-      boolean getMergedTemplateWithTemplateReferences, String loadFromCache) {
+      boolean getMergedTemplateWithTemplateReferences, String loadFromCache, String yamlVersion) {
     return resolveTemplateRefsInPipeline(accountId, orgId, projectId, yaml, checkForTemplateAccess,
-        getMergedTemplateWithTemplateReferences, loadFromCache, true);
+        getMergedTemplateWithTemplateReferences, loadFromCache, true, yamlVersion);
   }
 
   private TemplateMergeResponseDTO resolveTemplateRefsInPipeline(String accountId, String orgId, String projectId,
       String yaml, boolean checkForTemplateAccess, boolean getMergedTemplateWithTemplateReferences,
-      String loadFromCache, boolean appendInputSetValidator) {
+      String loadFromCache, boolean appendInputSetValidator, String yamlVersion) {
     // validating the duplicate fields in yaml field
     if (TemplateRefHelper.hasTemplateRefWithCheckDuplicate(yaml)
         && pipelineEnforcementService.isFeatureRestricted(accountId, FeatureRestrictionName.TEMPLATE_SERVICE.name())) {
@@ -113,6 +117,7 @@ public class PMSPipelineTemplateHelper {
                     .checkForAccess(checkForTemplateAccess)
                     .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
                     .getOnlyFileContent(PipelineGitXHelper.isExecutionFlow())
+                    .yamlVersion(yamlVersion)
                     .build(),
                 appendInputSetValidator));
           } else {
@@ -124,6 +129,7 @@ public class PMSPipelineTemplateHelper {
                     .checkForAccess(checkForTemplateAccess)
                     .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
                     .getOnlyFileContent(PipelineGitXHelper.isExecutionFlow())
+                    .yamlVersion(yamlVersion)
                     .build(),
                 appendInputSetValidator));
           }
@@ -139,6 +145,7 @@ public class PMSPipelineTemplateHelper {
                     .checkForAccess(checkForTemplateAccess)
                     .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
                     .getOnlyFileContent(PipelineGitXHelper.isExecutionFlow())
+                    .yamlVersion(yamlVersion)
                     .build(),
                 appendInputSetValidator));
           } else {
@@ -149,6 +156,7 @@ public class PMSPipelineTemplateHelper {
                     .checkForAccess(checkForTemplateAccess)
                     .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
                     .getOnlyFileContent(PipelineGitXHelper.isExecutionFlow())
+                    .yamlVersion(yamlVersion)
                     .build(),
                 appendInputSetValidator));
           }

@@ -6,6 +6,7 @@
  */
 
 package io.harness.template.services;
+
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.template.resources.beans.NGTemplateConstants.GIT_BRANCH;
 import static io.harness.template.resources.beans.NGTemplateConstants.TEMPLATE;
@@ -79,12 +80,13 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
    * will deprecate this soon
    */
   public TemplateMergeResponseDTO applyTemplatesToYaml(String accountId, String orgId, String projectId, String yaml,
-      boolean getMergedYamlWithTemplateField, boolean loadFromCache, boolean appendInputSetValidator) {
+      boolean getMergedYamlWithTemplateField, boolean loadFromCache, boolean appendInputSetValidator,
+      String yamlVersion) {
     YamlNode yamlNode = TemplateUtils.validateAndGetYamlNode(yaml);
     TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId, null, null);
     Map<String, TemplateEntity> templateCacheMap = new HashMap<>();
     return getTemplateMergeResponseDTO(accountId, orgId, projectId, getMergedYamlWithTemplateField, yamlNode,
-        templateCacheMap, loadFromCache, appendInputSetValidator);
+        templateCacheMap, loadFromCache, appendInputSetValidator, yamlVersion);
   }
 
   @Override
@@ -101,12 +103,12 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
    */
   public TemplateMergeResponseDTO applyTemplatesToYamlV2(String accountId, String orgId, String projectId,
       JsonNode entityJsonNode, boolean getMergedYamlWithTemplateField, boolean loadFromCache,
-      boolean appendInputSetValidator) {
+      boolean appendInputSetValidator, String yamlVersion) {
     YamlNode entityYamlNode = TemplateUtils.validateAndGetYamlNode(entityJsonNode);
     TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId, null, null);
     Map<String, TemplateEntity> templateCacheMap = new HashMap<>();
     return getTemplateMergeResponseDTO(accountId, orgId, projectId, getMergedYamlWithTemplateField, entityYamlNode,
-        templateCacheMap, loadFromCache, appendInputSetValidator);
+        templateCacheMap, loadFromCache, appendInputSetValidator, yamlVersion);
   }
 
   @Override
@@ -134,22 +136,24 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
 
   private TemplateMergeResponseDTO getTemplateMergeResponseDTO(String accountId, String orgId, String projectId,
       boolean getMergedYamlWithTemplateField, YamlNode entityYamlNode, Map<String, TemplateEntity> templateCacheMap,
-      boolean loadFromCache, boolean appendInputSetValidator) {
+      boolean loadFromCache, boolean appendInputSetValidator, String yamlVersion) {
     Map<String, Object> resMap;
     if (ngTemplateFeatureFlagHelperService.isFeatureFlagEnabled(accountId, FeatureName.PIE_NG_BATCH_GET_TEMPLATES)) {
       templateCacheMap.putAll(templateMergeServiceHelper.getAllTemplatesFromYaml(
           accountId, orgId, projectId, entityYamlNode, loadFromCache));
     }
     MergeTemplateInputsInObject mergeTemplateInputsInObject = null;
+    String processedYamlVersion;
     if (!getMergedYamlWithTemplateField) {
-      resMap = templateMergeServiceHelper.mergeTemplateInputsInObject(
-          accountId, orgId, projectId, entityYamlNode, templateCacheMap, 0, loadFromCache, appendInputSetValidator);
+      mergeTemplateInputsInObject = templateMergeServiceHelper.mergeTemplateInputsInObjectWithVersion(accountId, orgId,
+          projectId, entityYamlNode, templateCacheMap, 0, loadFromCache, appendInputSetValidator, yamlVersion);
+
     } else {
       mergeTemplateInputsInObject = templateMergeServiceHelper.mergeTemplateInputsInObjectAlongWithOpaPolicy(
           accountId, orgId, projectId, entityYamlNode, templateCacheMap, 0, loadFromCache, appendInputSetValidator);
-      resMap = mergeTemplateInputsInObject.getResMap();
     }
-
+    resMap = mergeTemplateInputsInObject.getResMap();
+    processedYamlVersion = mergeTemplateInputsInObject.getProcessedYamlVersion();
     List<TemplateReferenceSummary> templateReferenceSummaries =
         getTemplateReferenceSummaries(accountId, orgId, projectId, entityYamlNode.getCurrJsonNode(), templateCacheMap);
     return TemplateMergeResponseDTO.builder()
@@ -159,6 +163,7 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
                 ? null
                 : YamlUtils.writeYamlString(mergeTemplateInputsInObject.getResMapWithOpaResponse()))
         .cacheResponseMetadata(NGTemplateDtoMapper.getCacheResponse())
+        .processedYamlVersion(processedYamlVersion)
         .build();
   }
 
