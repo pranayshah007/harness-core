@@ -17,7 +17,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cd.TimeScaleDAL;
-import io.harness.dashboards.DeploymentCount;
+import io.harness.dashboards.LandingPageDeploymentCount;
 import io.harness.rule.Owner;
 
 import org.junit.Before;
@@ -42,12 +42,12 @@ public class CDLandingPageServiceImplTest extends CategoryTest {
   @Owner(developers = RAFAEL)
   @Category(UnitTests.class)
   public void testGetDeploymentCount() {
-    DeploymentCount deploymentCount = cdLandingPageService.getDeploymentCount();
-    assertThat(deploymentCount.getValue()).isEqualTo(0);
+    LandingPageDeploymentCount landingPageDeploymentCount = cdLandingPageService.getDeploymentCount();
+    assertThat(landingPageDeploymentCount.getValue()).isEqualTo(0);
 
     doReturn(5).when(timeScaleDAL).getDeploymentCount();
 
-    deploymentCount = cdLandingPageService.getDeploymentCount();
-    assertThat(deploymentCount.getValue()).isEqualTo(5);
+    landingPageDeploymentCount = cdLandingPageService.getDeploymentCount();
+    assertThat(landingPageDeploymentCount.getValue()).isEqualTo(5);
   }
 }

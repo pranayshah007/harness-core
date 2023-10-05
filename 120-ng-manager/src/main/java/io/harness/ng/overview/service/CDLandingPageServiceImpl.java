@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cd.TimeScaleDAL;
-import io.harness.dashboards.DeploymentCount;
+import io.harness.dashboards.LandingPageDeploymentCount;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 public class CDLandingPageServiceImpl implements CDLandingPageService {
   @Inject private TimeScaleDAL timeScaleDAL;
 
-  public DeploymentCount getDeploymentCount() {
-    return DeploymentCount.builder().value(timeScaleDAL.getDeploymentCount()).build();
+  public LandingPageDeploymentCount getDeploymentCount() {
+    return LandingPageDeploymentCount.builder().value(timeScaleDAL.getDeploymentCount()).build();
   }
 }

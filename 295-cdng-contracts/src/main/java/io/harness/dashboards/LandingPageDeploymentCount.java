@@ -17,6 +17,6 @@ import lombok.Data;
 @OwnedBy(PIPELINE)
 @Data
 @Builder
-public class DeploymentCount {
+public class LandingPageDeploymentCount {
   int value;
 }
