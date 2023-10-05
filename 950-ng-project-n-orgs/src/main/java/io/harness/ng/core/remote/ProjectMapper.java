@@ -51,7 +51,6 @@ public class ProjectMapper {
         .description(project.getDescription())
         .color(project.getColor())
         .tags(convertToMap(project.getTags()))
-        .uniqueId(project.getUniqueId())
         .build();
   }
 
