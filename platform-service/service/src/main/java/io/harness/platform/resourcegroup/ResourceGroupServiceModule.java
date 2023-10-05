@@ -39,6 +39,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.platform.PlatformConfiguration;
+import io.harness.platform.audit.EventsFrameworkModule;
 import io.harness.queue.QueueController;
 import io.harness.redis.RedisConfig;
 import io.harness.redis.RedissonClientFactory;
@@ -153,6 +154,7 @@ public class ResourceGroupServiceModule extends AbstractModule {
 
     install(new TokenClientModule(this.appConfig.getRbacServiceConfig(),
         this.appConfig.getPlatformSecrets().getNgManagerServiceSecret(), RESOUCE_GROUP_SERVICE.getServiceId()));
+    install(new EventsFrameworkModule(this.appConfig.getEventsFrameworkConfiguration()));
   }
 
   @Provides

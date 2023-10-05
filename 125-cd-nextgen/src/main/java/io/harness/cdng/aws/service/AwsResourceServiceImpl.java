@@ -92,6 +92,7 @@ public class AwsResourceServiceImpl implements AwsResourceService {
   @Inject private AwsResourceServiceHelper serviceHelper;
   @Inject private GitResourceServiceHelper gitResourceServiceHelper;
   private static final String EKS_GET_CLUSTERS_EXCEPTION_MESSAGE = "Failed to get AWS EKS clusters";
+  private static final Duration EKS_LIST_CLUSTERS_TASK_TIMEOUT = Duration.ofMinutes(5);
 
   @Override
   public List<String> getCapabilities() {
@@ -553,18 +554,19 @@ public class AwsResourceServiceImpl implements AwsResourceService {
     return response.getListenerRulesArn();
   }
 
+  @Override
   public List<String> getEKSClusterNames(
-      IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier) {
+      IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier, String region) {
     BaseNGAccess access =
         serviceHelper.getBaseNGAccess(awsConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
 
     AwsConnectorDTO awsConnector = serviceHelper.getAwsConnector(awsConnectorRef);
     List<EncryptedDataDetail> encryptedData = serviceHelper.getAwsEncryptionDetails(awsConnector, access);
     AwsTaskParams awsTaskParams =
-        AwsTaskParams.builder().awsConnector(awsConnector).encryptionDetails(encryptedData).build();
+        AwsTaskParams.builder().awsConnector(awsConnector).region(region).encryptionDetails(encryptedData).build();
 
     DelegateResponseData responseData = serviceHelper.getResponseData(
-        access, awsTaskParams, TaskType.AWS_EKS_LIST_CLUSTERS_TASK.name(), Duration.ofMinutes(5));
+        access, awsTaskParams, TaskType.AWS_EKS_LIST_CLUSTERS_TASK.name(), EKS_LIST_CLUSTERS_TASK_TIMEOUT);
     return getEKSClusterNamesFromResponse(responseData);
   }
 

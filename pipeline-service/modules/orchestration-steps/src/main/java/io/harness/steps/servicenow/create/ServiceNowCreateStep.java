@@ -108,8 +108,8 @@ public class ServiceNowCreateStep extends PipelineTaskExecutable<ServiceNowTaskN
   }
 
   @Override
-  public void handleAbort(
-      Ambiance ambiance, StepBaseParameters stepParameters, TaskExecutableResponse executableResponse) {
+  public void handleAbort(Ambiance ambiance, StepBaseParameters stepParameters,
+      TaskExecutableResponse executableResponse, boolean userMarked) {
     closeLogStream(ambiance);
   }
 

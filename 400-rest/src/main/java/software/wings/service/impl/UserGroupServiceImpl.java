@@ -1071,7 +1071,8 @@ public class UserGroupServiceImpl implements UserGroupService {
 
     if (ssoType == SSOType.LDAP) {
       LdapSettings ldapSettings = (LdapSettings) ssoSettings;
-      ldapGroupScheduledHandler.handle(ldapSettings);
+      ldapGroupSyncJobHelper.syncUserGroupsParallel(
+          accountId, ldapSettings, Collections.singletonList(updatedGroup), ldapSettings.getUuid());
     }
 
     return updatedGroup;

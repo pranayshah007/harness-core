@@ -571,7 +571,7 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
       when(jenkinsBuild.getNumber()).thenReturn(20l);
       doReturn(new QueueReference(jenkinsUrl))
           .when(jenkinsRegistryUtils)
-          .trigger(jobName, jenkinsInternalConfig, jenkinsArtifactDelegateRequest.getJobParameter());
+          .trigger(jobName, jenkinsInternalConfig, jenkinsArtifactDelegateRequest.getJobParameter(), logCallback);
       Build build = new Build();
       doReturn(build).when(jenkinsRegistryUtils).waitForJobToStartExecution(queueReference, jenkinsInternalConfig);
       CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();

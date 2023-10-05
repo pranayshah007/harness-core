@@ -91,7 +91,7 @@ public class ShellScriptTemplateService implements NgTemplateService {
     Map<String, Object> templateSpec =
         ImmutableMap.<String, Object>builder()
             .put("delegateSelectors", RUNTIME_INPUT)
-            .put("onDelegate", true)
+            .put("onDelegate", RUNTIME_INPUT)
             .put("source",
                 ImmutableMap.<String, Object>builder()
                     .put("type", "Inline")

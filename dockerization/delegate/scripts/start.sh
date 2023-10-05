@@ -179,8 +179,8 @@ echo "The current watcher version is $WATCHER_CURRENT_VERSION"
 WATCHER_VERSION=$(echo $WATCHER_CURRENT_VERSION | cut -d "." -f3)
 
 echo "using JRE11 with watcher $WATCHER_VERSION"
-JRE_DIR="jdk-11.0.14+9-jre"
-JVM_URL=$JVM_URL_BASE_PATH/jre/openjdk-11.0.14_9/OpenJDK11U-jre_x64_linux_hotspot_11.0.14_9.tar.gz
+JRE_DIR="jdk-11.0.19+7-jre"
+JVM_URL=$JVM_URL_BASE_PATH/jre/openjdk-11.0.19+7/OpenJDK11U-jre_x64_linux_hotspot_11.0.19+7.tar.gz
 
 JRE_BINARY=$JRE_DIR/bin/java
 

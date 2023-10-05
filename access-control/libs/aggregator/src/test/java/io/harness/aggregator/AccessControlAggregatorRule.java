@@ -28,7 +28,12 @@ import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
+import io.harness.outbox.api.OutboxDao;
+import io.harness.outbox.api.OutboxService;
+import io.harness.outbox.api.impl.OutboxDaoImpl;
+import io.harness.outbox.api.impl.OutboxServiceImpl;
 import io.harness.persistence.HPersistence;
+import io.harness.repositories.outbox.OutboxEventRepository;
 import io.harness.rule.InjectorRuleMixin;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
@@ -52,6 +57,7 @@ import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 import dev.morphia.converters.TypeConverter;
+import io.serializer.HObjectMapper;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
@@ -92,8 +98,8 @@ public class AccessControlAggregatorRule implements MethodRule, InjectorRuleMixi
     modules.add(VersionModule.getInstance());
     modules.add(TimeModule.getInstance());
     modules.add(TestMongoModule.getInstance());
+    modules.add(AccessControlCoreModule.getInstance(null, false));
     modules.add(new AggregatorPersistenceTestModule());
-    modules.add(AccessControlCoreModule.getInstance());
 
     modules.add(new AbstractModule() {
       @Override
@@ -151,6 +157,15 @@ public class AccessControlAggregatorRule implements MethodRule, InjectorRuleMixi
             .build();
       }
     });
+
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(OutboxDao.class).to(OutboxDaoImpl.class);
+        bind(OutboxService.class).to(OutboxServiceImpl.class);
+        bind(OutboxEventRepository.class).toInstance(mock(OutboxEventRepository.class));
+      }
+    });
     return modules;
   }
 
@@ -168,5 +183,11 @@ public class AccessControlAggregatorRule implements MethodRule, InjectorRuleMixi
   @Override
   public Statement apply(Statement statement, FrameworkMethod frameworkMethod, Object target) {
     return applyInjector(log, statement, frameworkMethod, target);
+  }
+
+  @Provides
+  @Singleton
+  OutboxService getOutboxService(OutboxEventRepository outboxEventRepository) {
+    return new OutboxServiceImpl(new OutboxDaoImpl(outboxEventRepository), HObjectMapper.NG_DEFAULT_OBJECT_MAPPER);
   }
 }

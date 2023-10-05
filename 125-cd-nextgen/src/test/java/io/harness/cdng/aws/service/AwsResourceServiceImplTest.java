@@ -8,6 +8,8 @@
 package io.harness.cdng.aws.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.NGONZALEZ;
 import static io.harness.rule.OwnerRule.VITALIE;
@@ -16,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
 import static org.powermock.api.mockito.PowerMockito.mock;
 
@@ -38,6 +41,7 @@ import io.harness.delegate.beans.connector.awsconnector.AwsListElbTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListLoadBalancersTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListVpcTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.exception.AwsCFException;
 import io.harness.exception.AwsIAMRolesException;
@@ -62,6 +66,7 @@ import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -507,7 +512,47 @@ public class AwsResourceServiceImplTest extends CategoryTest {
     doReturn(mockResponse).when(serviceHelper).getResponseData(any(), any(), anyString(), any(Duration.class));
     IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
 
-    List<String> result = service.getEKSClusterNames(mockIdentifierRef, "org", "project");
+    List<String> result = service.getEKSClusterNames(mockIdentifierRef, "org", "project", "region");
     assertThat(result.get(0).equals("cluster"));
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testGetEKSClusterRegion() {
+    testRegionParam("region");
+    testRegionParam(null);
+    testRegionParam("");
+  }
+
+  private void testRegionParam(String region) {
+    AwsConnectorDTO awsMockConnectorDTO = mock(AwsConnectorDTO.class);
+    doReturn(awsMockConnectorDTO).when(serviceHelper).getAwsConnector(any());
+    BaseNGAccess mockAccess = BaseNGAccess.builder().build();
+    doReturn(mockAccess).when(serviceHelper).getBaseNGAccess(any(), any(), any());
+    List<EncryptedDataDetail> encryptedDataDetails = mock(List.class);
+    doReturn(encryptedDataDetails).when(serviceHelper).getAwsEncryptionDetails(any(), any());
+    ConnectorInfoDTO mockConnectorInfoDTO = mock(ConnectorInfoDTO.class);
+    doReturn(mockConnectorInfoDTO).when(gitHelper).getConnectorInfoDTO(any(), any());
+
+    AwsListClustersTaskResponse mockResponse = AwsListClustersTaskResponse.builder()
+                                                   .clusters(Arrays.asList("cluster"))
+                                                   .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                   .build();
+
+    ArgumentCaptor<AwsTaskParams> awsTaskParamsArgumentCaptor = ArgumentCaptor.forClass(AwsTaskParams.class);
+
+    when(serviceHelper.getResponseData(
+             any(BaseNGAccess.class), awsTaskParamsArgumentCaptor.capture(), anyString(), any(Duration.class)))
+        .thenReturn(mockResponse);
+    List<String> result = service.getEKSClusterNames(IdentifierRef.builder().build(), "org", "project", region);
+    assertThat(result.get(0)).isEqualTo("cluster");
+
+    AwsTaskParams awsTaskParams = awsTaskParamsArgumentCaptor.getValue();
+    if (isEmpty(region)) {
+      assertThat(awsTaskParams.getRegion()).isNullOrEmpty();
+    } else {
+      assertThat(awsTaskParams.getRegion()).isEqualTo(region);
+    }
   }
 }

@@ -8,6 +8,7 @@
 package io.harness.cdng.elastigroup.rollback;
 
 import static io.harness.rule.OwnerRule.FILIP;
+import static io.harness.rule.OwnerRule.SARTHAK_KASAT;
 import static io.harness.rule.OwnerRule.VITALIE;
 
 import static java.util.Collections.singletonList;
@@ -131,8 +132,8 @@ public class ElastigroupRollbackStepHelperTest extends CDNGTestBase {
 
     // Then
     assertThat(result).isNotNull().containsExactly("Downscale wait for steady state", "Rename old Elastigroup",
-        "Swap Routes", "Upscale wait for steady state", "Upscale Elastigroup", "Downscale Elastigroup",
-        "Delete new Elastigroup");
+        "Swap Routes", "Upscale wait for steady state", "Upscale Elastigroup", "Delete new Elastigroup",
+        "Downscale Elastigroup");
   }
 
   @Test
@@ -175,7 +176,10 @@ public class ElastigroupRollbackStepHelperTest extends CDNGTestBase {
   @Category(UnitTests.class)
   public void getExecutionUnitsTestBasicAndCanary() {
     // Given
-    ElastigroupRollbackTaskParameters params = ElastigroupRollbackTaskParameters.builder().blueGreen(false).build();
+    ElastigroupRollbackTaskParameters params = ElastigroupRollbackTaskParameters.builder()
+                                                   .blueGreen(false)
+                                                   .newElastigroup(ElastiGroup.builder().build())
+                                                   .build();
 
     // When
     Collection<String> result = elastigroupRollbackStepHelper.getExecutionUnits(params);
@@ -183,6 +187,20 @@ public class ElastigroupRollbackStepHelperTest extends CDNGTestBase {
     // Then
     assertThat(result).isNotNull().containsExactly("Upscale Elastigroup", "Upscale wait for steady state",
         "Downscale Elastigroup", "Downscale wait for steady state", "Delete new Elastigroup");
+  }
+
+  @Test
+  @Owner(developers = SARTHAK_KASAT)
+  @Category(UnitTests.class)
+  public void getExecutionUnitsTestBasicAndCanarySetupUnsuccessful() {
+    // Given
+    ElastigroupRollbackTaskParameters params = ElastigroupRollbackTaskParameters.builder().blueGreen(false).build();
+
+    // When
+    Collection<String> result = elastigroupRollbackStepHelper.getExecutionUnits(params);
+
+    // Then
+    assertThat(result).isNotNull().containsExactly("Delete new Elastigroup");
   }
 
   @Test

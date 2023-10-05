@@ -52,6 +52,7 @@ import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.encryptors.VaultEncryptorsRegistry;
 import io.harness.exception.DelegateNotAvailableException;
 import io.harness.exception.DelegateServiceDriverException;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
@@ -61,6 +62,7 @@ import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.ng.core.AdditionalMetadataValidationHelper;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.api.NGEncryptedDataService;
+import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.dao.NGEncryptedDataDao;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretFileSpecDTO;
@@ -68,6 +70,7 @@ import io.harness.ng.core.dto.secrets.SecretSpecDTO;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ng.core.entities.NGEncryptedData;
 import io.harness.ng.core.entities.NGEncryptedData.NGEncryptedDataBuilder;
+import io.harness.ng.core.models.Secret;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.secretmanagerclient.dto.CustomSecretManagerConfigDTO;
 import io.harness.secretmanagerclient.dto.LocalConfigDTO;
@@ -139,6 +142,8 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
   private final AdditionalMetadataValidationHelper additionalMetadataValidationHelper;
   private final DynamicSecretReferenceHelper dynamicSecretReferenceHelper;
   private final TemplateResourceClient templateResourceClient;
+  private final NGSecretServiceV2 ngSecretServiceV2;
+
   private static final String ENVIRONMENT_VARIABLES = "environmentVariables";
 
   @Inject
@@ -149,7 +154,8 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
       NGFeatureFlagHelperService ngFeatureFlagHelperService, CustomEncryptorsRegistry customEncryptorsRegistry,
       CustomSecretManagerHelper customSecretManagerHelper, NGEncryptorService ngEncryptorService,
       AdditionalMetadataValidationHelper additionalMetadataValidationHelper,
-      DynamicSecretReferenceHelper dynamicSecretReferenceHelper, TemplateResourceClient templateResourceClient) {
+      DynamicSecretReferenceHelper dynamicSecretReferenceHelper, TemplateResourceClient templateResourceClient,
+      NGSecretServiceV2 ngSecretServiceV2) {
     this.encryptedDataDao = encryptedDataDao;
     this.kmsEncryptorsRegistry = kmsEncryptorsRegistry;
     this.vaultEncryptorsRegistry = vaultEncryptorsRegistry;
@@ -163,6 +169,7 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     this.additionalMetadataValidationHelper = additionalMetadataValidationHelper;
     this.dynamicSecretReferenceHelper = dynamicSecretReferenceHelper;
     this.templateResourceClient = templateResourceClient;
+    this.ngSecretServiceV2 = ngSecretServiceV2;
   }
 
   @Override
@@ -681,12 +688,25 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
       String decryptedValue =
           String.valueOf(kmsEncryptorsRegistry.getKmsEncryptor(secretManagerConfig)
                              .fetchSecretValue(accountIdentifier, encryptedData, secretManagerConfig));
+
+      Optional<Secret> secret = ngSecretServiceV2.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+      if (secret.isEmpty()) {
+        throw new EntityNotFoundException(String.format(
+            "Secret with identifier {} is not present in the scope: accountIdentifier- {}, orgIdentifier- {}, projectIdentifier- {}",
+            identifier, accountIdentifier, orgIdentifier, projectIdentifier));
+      }
+
+      long createdAt = secret.get().getCreatedAt() == null ? 0 : secret.get().getCreatedAt();
+      long lastModifiedAt = secret.get().getLastModifiedAt() == null ? 0 : secret.get().getLastModifiedAt();
+
       return DecryptedSecretValue.builder()
           .identifier(identifier)
           .accountIdentifier(accountIdentifier)
           .orgIdentifier(orgIdentifier)
           .projectIdentifier(projectIdentifier)
           .decryptedValue(decryptedValue)
+          .createdAt(createdAt)
+          .lastModifiedAt(lastModifiedAt)
           .build();
     } else {
       throw new InvalidRequestException(

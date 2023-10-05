@@ -76,26 +76,40 @@ public final class EventsFrameworkConstants {
   public static final int PARTIAL_PLAN_EVENT_BATCH_SIZE = 20;
 
   public static final String PIPELINE_INTERRUPT_TOPIC = "pipeline_interrupt";
+  public static final String PIPELINE_INTERRUPT_TOPIC_WITH_SERVICE_NAME = "pipeline_interrupt_%s";
+
   public static final int PIPELINE_INTERRUPT_BATCH_SIZE = 20;
   public static final int PIPELINE_INTERRUPT_EVENT_MAX_TOPIC_SIZE = 1000;
 
   public static final String PIPELINE_FACILITATOR_EVENT_TOPIC = "pipeline_node_facilitation";
+
+  public static final String PIPELINE_FACILITATOR_EVENT_TOPIC_WITH_SERVICE_NAME = "pipeline_node_facilitation_%s";
+
   public static final int PIPELINE_FACILITATOR_EVENT_BATCH_SIZE = 20;
   public static final int PIPELINE_FACILITATOR_EVENT_MAX_TOPIC_SIZE = 5000;
 
   public static final String PIPELINE_NODE_START_EVENT_TOPIC = "pipeline_node_start";
+
+  public static final String PIPELINE_NODE_START_EVENT_TOPIC_WITH_SERVICE_NAME = "pipeline_node_start_%s";
+
   public static final int PIPELINE_NODE_START_EVENT_BATCH_SIZE = 20;
   public static final int PIPELINE_NODE_START_EVENT_MAX_TOPIC_SIZE = 5000;
 
   public static final String PIPELINE_PROGRESS_EVENT_TOPIC = "pipeline_node_progress";
+  public static final String PIPELINE_PROGRESS_EVENT_TOPIC_WITH_SERVICE_NAME = "pipeline_node_progress_%s";
+
   public static final int PIPELINE_PROGRESS_BATCH_SIZE = 20;
   public static final int PIPELINE_PROGRESS_MAX_TOPIC_SIZE = 5000;
 
   public static final String PIPELINE_NODE_ADVISE_EVENT_TOPIC = "pipeline_node_advise";
+  public static final String PIPELINE_NODE_ADVISE_EVENT_TOPIC_WITH_SERVICE_NAME = "pipeline_node_advise_%s";
+
   public static final int PIPELINE_NODE_ADVISE_BATCH_SIZE = 20;
   public static final int PIPELINE_NODE_ADVISE_MAX_TOPIC_SIZE = 5000;
 
   public static final String PIPELINE_NODE_RESUME_EVENT_TOPIC = "pipeline_node_resume";
+  public static final String PIPELINE_NODE_RESUME_EVENT_TOPIC_WITH_SERVICE_NAME = "pipeline_node_resume_%s";
+
   public static final int PIPELINE_NODE_RESUME_BATCH_SIZE = 20;
   public static final int PIPELINE_NODE_RESUME_MAX_TOPIC_SIZE = 5000;
 

@@ -32,8 +32,8 @@ public class TestTaskStep implements TaskExecutable<TestStepParameters, StepResp
   }
 
   @Override
-  public void handleAbort(
-      Ambiance ambiance, TestStepParameters stepParameters, TaskExecutableResponse executableResponse) {
+  public void handleAbort(Ambiance ambiance, TestStepParameters stepParameters,
+      TaskExecutableResponse executableResponse, boolean userMarked) {
     // doNothing
   }
 

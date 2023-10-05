@@ -10,6 +10,8 @@ package io.harness.notification.senders;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.delegate.beans.NotificationProcessingResponse;
+import io.harness.ngsettings.SettingIdentifiers;
+import io.harness.notification.helper.NotificationSettingsHelper;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
@@ -41,7 +43,9 @@ public class WebhookSenderImpl {
   }
 
   public NotificationProcessingResponse send(
-      List<String> webhookUrls, String message, String notificationId, Map<String, String> headers) {
+      List<String> webhookUrls, String message, String notificationId, Map<String, String> headers, String accountId) {
+    webhookUrls = NotificationSettingsHelper.getRecipientsWithValidDomain(
+        webhookUrls, accountId, SettingIdentifiers.WEBHOOK_NOTIFICATION_ENDPOINTS_ALLOWLIST);
     List<Boolean> results = new ArrayList<>();
     for (String webhookUrl : webhookUrls) {
       boolean ret = sendJSONMessage(message, webhookUrl, headers);

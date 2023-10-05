@@ -31,6 +31,7 @@ public class MicrosoftTeamsTaskParams implements TaskParameters, ExecutionCapabi
   @Expression(ALLOW_SECRETS) List<String> microsoftTeamsWebhookUrls;
   String message;
   String notificationId;
+  String accountId;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

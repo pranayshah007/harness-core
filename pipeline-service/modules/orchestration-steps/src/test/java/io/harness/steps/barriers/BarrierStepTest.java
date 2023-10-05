@@ -192,7 +192,7 @@ public class BarrierStepTest extends OrchestrationStepsTestBase {
         .thenReturn(barrier);
     when(barrierService.update(barrier)).thenReturn(barrier);
 
-    barrierStep.handleAbort(ambiance, stepElementParameters, null);
+    barrierStep.handleAbort(ambiance, stepElementParameters, null, false);
 
     verify(barrierService).findByIdentifierAndPlanExecutionId(barrierIdentifier, ambiance.getPlanExecutionId());
     verify(barrierService).update(barrier);

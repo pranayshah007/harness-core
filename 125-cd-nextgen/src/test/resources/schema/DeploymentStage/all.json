@@ -11347,6 +11347,9 @@
             "provisioner": {
               "type": "string"
             },
+            "region": {
+              "type": "string"
+            },
             "releaseName": {
               "type": "string",
               "minLength": 1

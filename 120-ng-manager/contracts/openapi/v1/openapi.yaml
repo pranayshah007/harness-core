@@ -53,6 +53,9 @@ tags:
   - name: K8s Release Service Mapping
     description: This contains APIs for Fetching Release details regarding a pod.
     x-displayName: K8s Release Service Mapping
+  - name: EULA
+    description: This contains APIs for EULA.
+    x-displayName: 'EULA [Beta]'
 paths:
   '/v1/orgs/{org}/projects/{project}/services/{service}':
     get:
@@ -1908,6 +1911,7 @@ components:
         - GOVERNANCE
         - CHAOS
         - CET
+        - IDP
     FavoritesResourceType:
       type: string
       enum:
@@ -2812,6 +2816,8 @@ components:
         event_trigger_time:
           type: integer
           format: int64
+        repo_name:
+          type: string
     ReleaseDetailsResponse:
       title: ReleaseDetailsResponse
       x-stoplight:

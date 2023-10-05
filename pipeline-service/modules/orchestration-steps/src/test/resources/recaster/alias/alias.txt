@@ -367,6 +367,7 @@ io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig
 io.harness.git.model.CommitResult
 io.harness.delegate.beans.connector.gcpkmsconnector.outcome.GcpKmsConnectorOutcomeDTO
 io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO
+io.harness.delegate.beans.connector.gcpconnector.GcpOidcDetailsDTO
 io.harness.container.ContainerInfo
 io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO
 io.harness.delegate.task.k8s.EksK8sInfraDelegateConfig

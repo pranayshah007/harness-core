@@ -19,6 +19,9 @@ import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceL
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_FILE_EXISTS;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_IS_BRANCH_PROTECTION_SET;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_MEAN_TIME_TO_MERGE_PR;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.JIRA_ISSUES_COUNT;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.JIRA_ISSUES_OPEN_CLOSE_RATIO;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.JIRA_MEAN_TIME_TO_RESOLVE;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.KUBERNETES;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -40,6 +43,9 @@ public class DataSourceLocationFactory {
   private PagerDutyServiceDirectory pagerDutyServiceDirectory;
   private PagerDutyIncidents pagerDutyIncidents;
   private KubernetesProxyThroughDsl kubernetesProxyThroughDsl;
+  private JiraMeanTimeToResolveDsl jiraMeanTimeToResolveDsl;
+  private JiraIssuesCountDsl jiraIssuesCountDsl;
+  private JiraIssuesOpenCloseRatioDsl jiraIssuesOpenCloseRatioDsl;
 
   public DataSourceLocation getDataSourceLocation(String identifier) {
     switch (identifier) {
@@ -79,6 +85,13 @@ public class DataSourceLocationFactory {
       case KUBERNETES:
         return kubernetesProxyThroughDsl;
 
+      // Jira
+      case JIRA_MEAN_TIME_TO_RESOLVE:
+        return jiraMeanTimeToResolveDsl;
+      case JIRA_ISSUES_COUNT:
+        return jiraIssuesCountDsl;
+      case JIRA_ISSUES_OPEN_CLOSE_RATIO:
+        return jiraIssuesOpenCloseRatioDsl;
       default:
         throw new UnsupportedOperationException(String.format("Could not find DataSource Location for %s", identifier));
     }

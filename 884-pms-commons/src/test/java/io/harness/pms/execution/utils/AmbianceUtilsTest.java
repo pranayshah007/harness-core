@@ -565,8 +565,7 @@ public class AmbianceUtilsTest extends CategoryTest {
                                         .addAllMatrixCombination(Collections.singletonList(1))
                                         .build();
     StrategyMetadata strategyMetadata = StrategyMetadata.newBuilder().setMatrixMetadata(matrixMetadata).build();
-    Level level = Level.newBuilder().setStrategyMetadata(strategyMetadata).build();
-    String identifier = AmbianceUtils.getStrategyPostfix(level, true);
+    String identifier = AmbianceUtils.getStrategyPostFixUsingMetadata(strategyMetadata, true);
     assertThat(identifier).isEqualTo("_true_hi_0");
   }
 
@@ -584,8 +583,7 @@ public class AmbianceUtilsTest extends CategoryTest {
                                         .setNodeName("a")
                                         .build();
     StrategyMetadata strategyMetadata = StrategyMetadata.newBuilder().setMatrixMetadata(matrixMetadata).build();
-    Level level = Level.newBuilder().setStrategyMetadata(strategyMetadata).build();
-    String identifier = AmbianceUtils.getStrategyPostfix(level, true);
+    String identifier = AmbianceUtils.getStrategyPostFixUsingMetadata(strategyMetadata, true);
     assertThat(identifier).isEqualTo("_a_0");
   }
 
@@ -602,8 +600,7 @@ public class AmbianceUtilsTest extends CategoryTest {
                                         .addAllMatrixCombination(Collections.singletonList(1))
                                         .build();
     StrategyMetadata strategyMetadata = StrategyMetadata.newBuilder().setMatrixMetadata(matrixMetadata).build();
-    Level level = Level.newBuilder().setStrategyMetadata(strategyMetadata).build();
-    String identifier = AmbianceUtils.getStrategyPostfix(level, true);
+    String identifier = AmbianceUtils.getStrategyPostFixUsingMetadata(strategyMetadata, true);
     assertThat(identifier).isEqualTo("_world_a_0");
   }
 
@@ -620,8 +617,7 @@ public class AmbianceUtilsTest extends CategoryTest {
                                         .addAllMatrixCombination(Collections.singletonList(0))
                                         .build();
     StrategyMetadata strategyMetadata = StrategyMetadata.newBuilder().setMatrixMetadata(matrixMetadata).build();
-    Level level = Level.newBuilder().setStrategyMetadata(strategyMetadata).build();
-    String identifier = AmbianceUtils.getStrategyPostfix(level, false);
+    String identifier = AmbianceUtils.getStrategyPostFixUsingMetadata(strategyMetadata, false);
     assertThat(identifier).isEqualTo("_0_0");
   }
 
@@ -639,8 +635,7 @@ public class AmbianceUtilsTest extends CategoryTest {
                                         .setNodeName("a")
                                         .build();
     StrategyMetadata strategyMetadata = StrategyMetadata.newBuilder().setMatrixMetadata(matrixMetadata).build();
-    Level level = Level.newBuilder().setStrategyMetadata(strategyMetadata).build();
-    String identifier = AmbianceUtils.getStrategyPostfix(level, false);
+    String identifier = AmbianceUtils.getStrategyPostFixUsingMetadata(strategyMetadata, false);
     assertThat(identifier).isEqualTo("_a_0");
   }
 

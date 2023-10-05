@@ -14,6 +14,7 @@ import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTI
 import static io.harness.NGConstants.ORGANIZATION_VIEWER_ROLE;
 import static io.harness.NGConstants.PROJECT_VIEWER_ROLE;
 import static io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants.DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+import static io.harness.accesscontrol.scopes.harness.ScopeMapper.fromDTO;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 
@@ -32,7 +33,6 @@ import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
-import io.harness.accesscontrol.scopes.harness.ScopeMapper;
 import io.harness.account.utils.AccountUtils;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -93,7 +93,7 @@ public class UserRoleAssignmentRemovalMigrationTest extends AccessControlTestBas
 
   private RoleAssignmentDBO createAccountScopeRoleAssignment(
       String accountIdentifier, PrincipalType principalType, String principalIdentifier) {
-    Scope scope = ScopeMapper.fromDTO(
+    Scope scope = fromDTO(
         ScopeDTO.builder().accountIdentifier(accountIdentifier).orgIdentifier(null).projectIdentifier(null).build());
 
     String roleAssignmentIdentifier = randomAlphabetic(10);
@@ -115,11 +115,11 @@ public class UserRoleAssignmentRemovalMigrationTest extends AccessControlTestBas
   }
 
   private RoleAssignmentDBO createOrganizationScopeUserRoleAssignment(String accountIdentifier, String orgIdentifier) {
-    Scope scope = ScopeMapper.fromDTO(ScopeDTO.builder()
-                                          .accountIdentifier(accountIdentifier)
-                                          .orgIdentifier(orgIdentifier)
-                                          .projectIdentifier(null)
-                                          .build());
+    Scope scope = fromDTO(ScopeDTO.builder()
+                              .accountIdentifier(accountIdentifier)
+                              .orgIdentifier(orgIdentifier)
+                              .projectIdentifier(null)
+                              .build());
     String principalIdentifier = randomAlphabetic(10);
     String roleAssignmentIdentifier = randomAlphabetic(10);
     return RoleAssignmentDBO.builder()
@@ -136,11 +136,11 @@ public class UserRoleAssignmentRemovalMigrationTest extends AccessControlTestBas
 
   private RoleAssignmentDBO createProjectScopeUserRoleAssignment(
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    Scope scope = ScopeMapper.fromDTO(ScopeDTO.builder()
-                                          .accountIdentifier(accountIdentifier)
-                                          .orgIdentifier(orgIdentifier)
-                                          .projectIdentifier(projectIdentifier)
-                                          .build());
+    Scope scope = fromDTO(ScopeDTO.builder()
+                              .accountIdentifier(accountIdentifier)
+                              .orgIdentifier(orgIdentifier)
+                              .projectIdentifier(projectIdentifier)
+                              .build());
     String principalIdentifier = randomAlphabetic(10);
     String roleAssignmentIdentifier = randomAlphabetic(10);
     return RoleAssignmentDBO.builder()

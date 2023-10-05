@@ -6,6 +6,7 @@
  */
 
 package io.harness.ngmigration.service.step;
+
 import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.INFRA_PROVISIONER;
@@ -24,7 +25,7 @@ import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
-import io.harness.ngmigration.service.MigrationTemplateUtils;
+import io.harness.ngmigration.service.MigrationHelperService;
 import io.harness.ngmigration.service.workflow.WorkflowHandler;
 import io.harness.ngmigration.service.workflow.WorkflowHandlerFactory;
 import io.harness.ngmigration.utils.CaseFormat;
@@ -68,7 +69,7 @@ import org.jetbrains.annotations.NotNull;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 public abstract class StepMapper {
-  @Inject MigrationTemplateUtils migrationTemplateUtils;
+  @Inject MigrationHelperService migrationHelperService;
   @Inject WorkflowHandlerFactory workflowHandlerFactory;
   @Inject protected SecretRefUtils secretRefUtils;
 
@@ -139,7 +140,7 @@ public abstract class StepMapper {
           String.format("The template used for step %s was not migrated", graphNode.getName()));
     }
 
-    JsonNode templateInputs = migrationTemplateUtils.getTemplateInputs(migrationContext.getInputDTO(),
+    JsonNode templateInputs = migrationHelperService.getTemplateInputs(migrationContext.getInputDTO(),
         template.getNgEntityDetail(), migrationContext.getInputDTO().getDestinationAccountIdentifier());
     if (templateInputs != null) {
       baseOverrideTemplateInputs(phaseStep, graphNode, templateInputs, skipCondition);

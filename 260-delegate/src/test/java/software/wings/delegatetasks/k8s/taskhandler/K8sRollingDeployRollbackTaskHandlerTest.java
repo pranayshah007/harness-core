@@ -13,6 +13,7 @@ import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.BOJANA;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 
 import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,6 +37,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.k8s.releasehistory.K8sLegacyRelease;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.rule.Owner;
@@ -46,6 +48,7 @@ import software.wings.delegatetasks.k8s.K8sTaskHelper;
 import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 import software.wings.helpers.ext.k8s.request.K8sRollingDeployRollbackTaskParameters;
+import software.wings.helpers.ext.k8s.response.K8sRollingDeployRollbackResponse;
 import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
 
 import org.junit.Before;
@@ -67,7 +70,6 @@ public class K8sRollingDeployRollbackTaskHandlerTest extends WingsBaseTest {
   @Mock private KubernetesConfig kubernetesConfig;
   @Mock private K8sClusterConfig k8sClusterConfig;
 
-  private K8sRollingRollbackHandlerConfig rollbackHandlerConfig;
   private K8sRollingDeployRollbackTaskParameters k8sRollingDeployRollbackTaskParameters;
   private K8sDelegateTaskParams k8sDelegateTaskParams;
 
@@ -81,13 +83,13 @@ public class K8sRollingDeployRollbackTaskHandlerTest extends WingsBaseTest {
 
     doReturn(kubernetesConfig).when(containerDeploymentDelegateHelper).getKubernetesConfig(k8sClusterConfig, false);
 
-    rollbackHandlerConfig = k8sRollingDeployRollbackTaskHandler.getRollbackHandlerConfig();
     k8sRollingDeployRollbackTaskParameters = K8sRollingDeployRollbackTaskParameters.builder()
                                                  .k8sClusterConfig(k8sClusterConfig)
                                                  .releaseName(releaseName)
                                                  .releaseNumber(releaseNumber)
                                                  .timeoutIntervalInMin(timeoutIntervalInMin)
                                                  .build();
+
     k8sDelegateTaskParams = K8sDelegateTaskParams.builder().build();
   }
 
@@ -95,6 +97,10 @@ public class K8sRollingDeployRollbackTaskHandlerTest extends WingsBaseTest {
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testRollbackSuccess() throws Exception {
+    K8sLegacyRelease k8sRelease = K8sLegacyRelease.builder().number(1).build();
+    K8sRollingRollbackHandlerConfig rollbackHandlerConfig =
+        k8sRollingDeployRollbackTaskHandler.getRollbackHandlerConfig();
+    rollbackHandlerConfig.setPreviousRollbackEligibleRelease(k8sRelease);
     doReturn(true)
         .when(k8sRollingRollbackBaseHandler)
         .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), false, null);
@@ -102,6 +108,7 @@ public class K8sRollingDeployRollbackTaskHandlerTest extends WingsBaseTest {
         k8sRollingDeployRollbackTaskParameters, k8sDelegateTaskParams);
 
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(((K8sRollingDeployRollbackResponse) response.getK8sTaskResponse()).getReleaseNumber()).isEqualTo(1);
     assertThat(rollbackHandlerConfig.getKubernetesConfig()).isSameAs(kubernetesConfig);
     assertThat(rollbackHandlerConfig.getClient()).isNotNull();
     verify(k8sRollingRollbackBaseHandler).init(rollbackHandlerConfig, releaseName, logCallback);
@@ -116,6 +123,10 @@ public class K8sRollingDeployRollbackTaskHandlerTest extends WingsBaseTest {
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testRollbackInitFailed() throws Exception {
+    K8sLegacyRelease k8sRelease = K8sLegacyRelease.builder().number(1).build();
+    K8sRollingRollbackHandlerConfig rollbackHandlerConfig =
+        k8sRollingDeployRollbackTaskHandler.getRollbackHandlerConfig();
+    rollbackHandlerConfig.setPreviousRollbackEligibleRelease(k8sRelease);
     RuntimeException exception = new RuntimeException("failed");
     doThrow(exception).when(k8sRollingRollbackBaseHandler).init(rollbackHandlerConfig, releaseName, logCallback);
 
@@ -138,6 +149,10 @@ public class K8sRollingDeployRollbackTaskHandlerTest extends WingsBaseTest {
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testRollbackInitThrownException() throws Exception {
+    K8sLegacyRelease k8sRelease = K8sLegacyRelease.builder().number(1).build();
+    K8sRollingRollbackHandlerConfig rollbackHandlerConfig =
+        k8sRollingDeployRollbackTaskHandler.getRollbackHandlerConfig();
+    rollbackHandlerConfig.setPreviousRollbackEligibleRelease(k8sRelease);
     InvalidRequestException thrownException = new InvalidRequestException("failed to init");
 
     doThrow(thrownException).when(k8sRollingRollbackBaseHandler).init(rollbackHandlerConfig, releaseName, logCallback);
@@ -155,6 +170,10 @@ public class K8sRollingDeployRollbackTaskHandlerTest extends WingsBaseTest {
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testRollbackRollbackFailed() throws Exception {
+    K8sLegacyRelease k8sRelease = K8sLegacyRelease.builder().build();
+    K8sRollingRollbackHandlerConfig rollbackHandlerConfig =
+        k8sRollingDeployRollbackTaskHandler.getRollbackHandlerConfig();
+    rollbackHandlerConfig.setPreviousRollbackEligibleRelease(k8sRelease);
     doReturn(false)
         .when(k8sRollingRollbackBaseHandler)
         .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), false, null);
@@ -186,6 +205,10 @@ public class K8sRollingDeployRollbackTaskHandlerTest extends WingsBaseTest {
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testExecuteTaskInternalPostProcessThrownException() throws Exception {
+    K8sLegacyRelease k8sRelease = K8sLegacyRelease.builder().number(1).build();
+    K8sRollingRollbackHandlerConfig rollbackHandlerConfig =
+        k8sRollingDeployRollbackTaskHandler.getRollbackHandlerConfig();
+    rollbackHandlerConfig.setPreviousRollbackEligibleRelease(k8sRelease);
     InvalidRequestException thrownException = new InvalidRequestException("failed post process");
 
     doReturn(true)
@@ -204,5 +227,29 @@ public class K8sRollingDeployRollbackTaskHandlerTest extends WingsBaseTest {
     verify(k8sRollingRollbackBaseHandler).postProcess(rollbackHandlerConfig, releaseName);
     verify(logCallback).saveExecutionLog(getMessage(thrownException), ERROR, FAILURE);
     verify(logCallback, never()).saveExecutionLog(anyString(), any(LogLevel.class), eq(CommandExecutionStatus.SUCCESS));
+  }
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testRollbackSuccessButPreviousReleaseNull() throws Exception {
+    K8sRollingRollbackHandlerConfig rollbackHandlerConfig =
+        k8sRollingDeployRollbackTaskHandler.getRollbackHandlerConfig();
+    doReturn(true)
+        .when(k8sRollingRollbackBaseHandler)
+        .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), false, null);
+    K8sTaskExecutionResponse response = k8sRollingDeployRollbackTaskHandler.executeTaskInternal(
+        k8sRollingDeployRollbackTaskParameters, k8sDelegateTaskParams);
+
+    assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(((K8sRollingDeployRollbackResponse) response.getK8sTaskResponse()).getReleaseNumber()).isNull();
+    assertThat(rollbackHandlerConfig.getKubernetesConfig()).isSameAs(kubernetesConfig);
+    assertThat(((K8sRollingDeployRollbackResponse) response.getK8sTaskResponse()).getReleaseNumber()).isNull();
+    assertThat(rollbackHandlerConfig.getClient()).isNotNull();
+    verify(k8sRollingRollbackBaseHandler).init(rollbackHandlerConfig, releaseName, logCallback);
+    verify(k8sRollingRollbackBaseHandler)
+        .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), false, null);
+    verify(k8sRollingRollbackBaseHandler)
+        .steadyStateCheck(rollbackHandlerConfig, k8sDelegateTaskParams, timeoutIntervalInMin, logCallback);
+    verify(k8sRollingRollbackBaseHandler).postProcess(rollbackHandlerConfig, releaseName);
   }
 }

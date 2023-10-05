@@ -7,15 +7,22 @@
 
 package io.harness.idp.configmanager.service;
 
+import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
 import io.harness.idp.configmanager.beans.entity.PluginConfigEnvVariablesEntity;
+import io.harness.idp.configmanager.events.AppConfigUpdateEvent;
+import io.harness.idp.configmanager.events.BackstageEnvSecretSaveEvent;
 import io.harness.idp.configmanager.mappers.ConfigEnvVariablesMapper;
 import io.harness.idp.configmanager.repositories.ConfigEnvVariablesRepository;
 import io.harness.idp.configmanager.utils.ReservedEnvVariables;
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
+import io.harness.outbox.api.OutboxService;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
@@ -23,6 +30,8 @@ import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -34,6 +43,9 @@ import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
@@ -41,6 +53,10 @@ import lombok.extern.slf4j.Slf4j;
 public class ConfigEnvVariablesServiceImpl implements ConfigEnvVariablesService {
   ConfigEnvVariablesRepository configEnvVariablesRepository;
   BackstageEnvVariableService backstageEnvVariableService;
+
+  @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
+  @Inject private OutboxService outboxService;
+  private static final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
 
   private static final String NO_ENV_VARIABLES_FOUND = "No env variables are added for given Plugins in account - {}";
   private static final String NO_ENV_VARIABLE_ASSOCIATED =
@@ -64,7 +80,13 @@ public class ConfigEnvVariablesServiceImpl implements ConfigEnvVariablesService 
     // Deleting older crated env secret variables
     deleteConfigEnvVariables(accountIdentifier, appConfig.getConfigId());
 
-    configEnvVariablesRepository.saveAll(configVariables);
+    Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      configEnvVariablesRepository.saveAll(configVariables);
+      for (BackstageEnvSecretVariable backstageEnvSecretVariable : appConfig.getEnvVariables()) {
+        outboxService.save(new BackstageEnvSecretSaveEvent(accountIdentifier, backstageEnvSecretVariable));
+      }
+      return true;
+    }));
 
     // creating secrets on the namespace of backstage and storing in DB
     List<BackstageEnvVariable> backstageEnvVariableList = getListOfBackstageEnvSecretVariable(appConfig);

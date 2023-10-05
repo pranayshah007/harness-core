@@ -6,11 +6,12 @@
  */
 package software.wings.resources;
 
-import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
+import static software.wings.security.PermissionAttribute.Action.READ;
+import static software.wings.security.PermissionAttribute.PermissionType.WORKFLOW;
 
 import io.harness.rest.RestResponse;
 
-import software.wings.security.annotations.AuthRule;
+import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.service.intfc.WorkflowExecutionService;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
@@ -33,7 +34,7 @@ public class LandingPageResource {
   @Path("/deploymentCount")
   @Timed
   @ExceptionMetered
-  @AuthRule(permissionType = LOGGED_IN)
+  @ApiKeyAuthorized(permissionType = WORKFLOW, action = READ, skipAuth = true)
   public RestResponse<Integer> getDeploymentCount() {
     return new RestResponse<>(workflowExecutionService.getDeploymentCount());
   }

@@ -151,6 +151,17 @@ public interface PMSPipelineService {
   String updateGitMetadata(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, PMSUpdateGitDetailsParams updateGitDetailsParams);
 
+  /**
+  The getPermittedPipelineIdentifier performs view permission check on the pipelineIdentifiers list. It returns pipeline
+  identifiers of which the user is having view permission.
+   */
+  List<String> getPermittedPipelineIdentifier(
+      String accountId, String orgId, String projectId, List<String> pipelineIdentifierList);
+
+  List<String> listAllIdentifiers(Criteria criteria);
+
+  boolean validateViewPermission(String accountId, String orgId, String projectId);
+
   List<YamlInputDetails> getInputSchemaDetails(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
 }

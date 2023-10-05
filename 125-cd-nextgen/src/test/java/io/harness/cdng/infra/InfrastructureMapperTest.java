@@ -531,6 +531,7 @@ public class InfrastructureMapperTest extends CategoryTest {
                                                     .namespace(ParameterField.createValueField("namespace"))
                                                     .releaseName(ParameterField.createValueField("release"))
                                                     .cluster(ParameterField.createValueField("cluster"))
+                                                    .region(ParameterField.createValueField("region"))
                                                     .build();
 
     K8sAwsInfrastructureOutcome k8sAwsInfrastructureOutcome =
@@ -539,9 +540,10 @@ public class InfrastructureMapperTest extends CategoryTest {
             .namespace("namespace")
             .releaseName("release")
             .cluster("cluster")
+            .region("region")
             .environment(environment)
-            .infrastructureKey("54874007d7082ff0ab54cd51865954f5e78c5c88")
-            .infrastructureKeyShort("548740")
+            .infrastructureKey("1018d8a40f09dfbc5877eb18297e6f0cff65b3b6")
+            .infrastructureKeyShort("1018d8")
             .build();
 
     InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(

@@ -9,6 +9,7 @@ package io.harness.entities;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.bean.ArtifactCorrelationDetails;
 
 import lombok.Builder;
 import lombok.Data;
@@ -22,4 +23,5 @@ public class ArtifactDetails {
   private String displayName;
   private String artifactId;
   private String tag; // this corresponds to the build number of the artifact
+  private ArtifactCorrelationDetails artifactIdentity;
 }
