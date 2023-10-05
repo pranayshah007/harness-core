@@ -40,7 +40,6 @@ public class ProjectMapper {
         .tags(convertToList(createProjectDTO.getTags()))
         .version(createProjectDTO.getVersion())
         .modules(ModuleType.getModules())
-        .uniqueId(createProjectDTO.getUniqueId())
         .build();
   }
 

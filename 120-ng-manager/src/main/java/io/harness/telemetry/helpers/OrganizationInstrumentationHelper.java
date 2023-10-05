@@ -41,8 +41,7 @@ public class OrganizationInstrumentationHelper extends InstrumentationHelper {
     try {
       if (EmptyPredicate.isNotEmpty(accountId) || !accountId.equals(GLOBAL_ACCOUNT_ID)) {
         HashMap<String, Object> map = new HashMap<>();
-        // Added here
-        map.put(UNIQUE_ID,organization.getUniqueId());
+        map.put(UNIQUE_ID, organization.getUniqueId());
         map.put(ACCOUNT_ID, organization.getAccountIdentifier());
         map.put(ORGANIZATION_ID, organization.getIdentifier());
         map.put(ORGANIZATION_CREATION_TIME, organization.getCreatedAt());

@@ -52,7 +52,7 @@ public class ProjectDTO {
   @Schema(description = PROJECT_PARAM_MESSAGE)
   @EntityIdentifier(allowBlank = false)
   String identifier;
-  String uniqueId;
+  @JsonIgnore String uniqueId;
   @ApiModelProperty(required = true) @Schema(description = "Project Name for the entity") @NGEntityName String name;
   @Schema(description = "Color") @VariableExpression(skipVariableExpression = true) String color;
 
