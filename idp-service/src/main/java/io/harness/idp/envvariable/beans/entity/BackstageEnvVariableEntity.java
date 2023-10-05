@@ -16,7 +16,6 @@ import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariableResponse;
-import io.harness.spec.server.idp.v1.model.ResolvedEnvVariable;
 import io.harness.spec.server.idp.v1.model.ResolvedEnvVariableResponse;
 
 import com.google.common.collect.ImmutableList;
@@ -56,7 +55,7 @@ public abstract class BackstageEnvVariableEntity implements PersistentEntity {
   @LastModifiedDate Long lastModifiedAt;
   public abstract BackstageEnvVariableType getType();
   public interface BackstageEnvVariableMapper<S extends BackstageEnvVariable, T extends BackstageEnvVariableEntity> {
-    T fromDto(S backstageEnvVariable, String accountIdentifier);
+    T fromDto(S backstageEnvVariable, String accountIdentifier, long secretLastModifiedAt);
 
     S toDto(T backstageEnvVariableEntity);
 
