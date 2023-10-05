@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.plan.IdentityPlanNode;
@@ -106,8 +107,15 @@ public class OrchestrationUtils {
     // parameters.
     SdkTimeoutTrackerParameters sdkTimeoutTrackerParameters =
         (SdkTimeoutTrackerParameters) kryoSerializer.asObject(timeoutObtainment.getParameters().toByteArray());
-    sdkTimeoutTrackerParameters = resolve(evaluator, sdkTimeoutTrackerParameters);
-    return sdkTimeoutTrackerParameters.prepareTimeoutParameters();
+
+    if (sdkTimeoutTrackerParameters == null) {
+      throw new InvalidRequestException(
+          String.format("sdkTimeoutTrackerParameters cannot be set to null. Please recheck for %s",
+              timeoutObtainment.getParameters()));
+    } else {
+      sdkTimeoutTrackerParameters = resolve(evaluator, sdkTimeoutTrackerParameters);
+      return sdkTimeoutTrackerParameters.prepareTimeoutParameters();
+    }
   }
 
   private <T> T resolve(EngineExpressionEvaluator evaluator, T o) {
