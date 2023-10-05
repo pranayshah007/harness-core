@@ -16,7 +16,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.CIStepInfoType;
-import io.harness.beans.steps.stepinfo.security.PrismaCloudStepInfo;
+import io.harness.beans.steps.stepinfo.security.AnchoreStepInfo;
 import io.harness.yaml.core.StepSpecType;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -54,7 +54,7 @@ public class AnchoreScanNode extends CIAbstractStepNode {
     }
 
     enum StepType {
-        PrismaCloud(CIStepInfoType.ANCHORE.getDisplayName());
+        Anchore(CIStepInfoType.ANCHORE.getDisplayName());
         @Getter String name;
 
         StepType(String name) {

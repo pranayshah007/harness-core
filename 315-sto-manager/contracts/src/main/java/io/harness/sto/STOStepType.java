@@ -90,7 +90,7 @@ import lombok.Getter;
 @AllArgsConstructor
 @OwnedBy(STO)
 public enum STOStepType {
-  ANCHORE("Anchore", "Anchore", FeatureName.STO_STEP_PALETTE_ANCHORE, AnchoreScanNode.class, EntityType.ANCHORE,
+  ANCHORE("Anchore", "Anchore", FeatureName.STO_STEP_PALETTE_ANCHORE_ENTERPRISE, AnchoreScanNode.class, EntityType.ANCHORE,
           new String[] {CONTAINER_SECURITY}),
   AQUA_TRIVY("AquaTrivy", "Aqua Trivy", null, AquaTrivyScanNode.class, EntityType.AQUA_TRIVY,
       new String[] {CONTAINER_SECURITY}),

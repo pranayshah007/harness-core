@@ -14,7 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlImage;
 import io.harness.yaml.sto.variables.STOYamlGenericConfig;
-import io.harness.beans.steps.stepinfo.security.shared.STOYamlAnchoreToolData;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -42,8 +41,6 @@ public class AnchoreStepInfo extends STOGenericStepInfo {
     @JsonProperty protected STOYamlImage image;
 
     @JsonProperty protected io.harness.beans.steps.stepinfo.security.shared.STOYamlAuth auth;
-
-    @JsonProperty("tool") protected STOYamlAnchoreToolData tool;
 
     @NotNull
     @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlGenericConfig")
