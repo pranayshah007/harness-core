@@ -18,6 +18,7 @@ import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.rule.Owner;
 
 import com.google.common.hash.Hashing;
@@ -60,11 +61,27 @@ public class OutputAliasUtilsTest extends CategoryTest {
     assertThat(OutputAliasUtils.validateExpressionFormat("a.b")).isFalse();
     assertThat(OutputAliasUtils.validateExpressionFormat("a.b.c.d")).isFalse();
     assertThat(OutputAliasUtils.validateExpressionFormat("a.b")).isFalse();
+    assertThat(OutputAliasUtils.validateExpressionFormat("pipeline.   .c")).isFalse();
     assertThat(OutputAliasUtils.validateExpressionFormat("  .b")).isFalse();
     assertThat(OutputAliasUtils.validateExpressionFormat("a.b.c")).isFalse();
     assertThat(OutputAliasUtils.validateExpressionFormat("   .b.c")).isFalse();
     assertThat(OutputAliasUtils.validateExpressionFormat("pipeline.b.c")).isTrue();
     assertThat(OutputAliasUtils.validateExpressionFormat("stepGroup.b.c")).isTrue();
     assertThat(OutputAliasUtils.validateExpressionFormat("stage.b.c")).isTrue();
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testToStepOutcomeGroup() {
+    assertThatThrownBy(() -> OutputAliasUtils.toStepOutcomeGroup("  "))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Empty scope constant provided, can't be mapped to step outcome.");
+    assertThatThrownBy(() -> OutputAliasUtils.toStepOutcomeGroup("random"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Unsupported scope constant value : random");
+    assertThat(OutputAliasUtils.toStepOutcomeGroup("pipeline")).isEqualTo(StepOutcomeGroup.PIPELINE.name());
+    assertThat(OutputAliasUtils.toStepOutcomeGroup("stage")).isEqualTo(StepOutcomeGroup.STAGE.name());
+    assertThat(OutputAliasUtils.toStepOutcomeGroup("stepGroup")).isEqualTo(StepOutcomeGroup.STEP_GROUP.name());
   }
 }

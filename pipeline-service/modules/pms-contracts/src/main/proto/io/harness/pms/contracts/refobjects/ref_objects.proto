@@ -14,6 +14,7 @@ message RefObject {
   string producerId = 2;
   string key = 3;
   RefType refType = 4;
+  string groupName = 5;
 }
 
 message RefType {

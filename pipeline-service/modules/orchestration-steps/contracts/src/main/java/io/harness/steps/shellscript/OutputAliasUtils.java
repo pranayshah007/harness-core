@@ -14,8 +14,10 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.GeneralException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 
 import com.google.common.hash.Hashing;
@@ -80,7 +82,30 @@ public class OutputAliasUtils {
           "Invalid format of export expression specified {}, expected format: {}", exportExpression, EXPECTED_FORMAT);
       return false;
     }
+    if (StringUtils.isBlank(exportExpressionSplit[1])) {
+      log.warn("Empty output alias key specified");
+      return false;
+    }
     String scope = exportExpressionSplit[0];
     return validateScopeString(scope);
+  }
+
+  /**
+   * Maps yaml constant for scope to step outcome group name
+   */
+  public String toStepOutcomeGroup(String scopeConstant) {
+    if (StringUtils.isBlank(scopeConstant)) {
+      throw new InvalidRequestException("Empty scope constant provided, can't be mapped to step outcome.");
+    }
+    switch (scopeConstant) {
+      case YAMLFieldNameConstants.PIPELINE:
+        return StepOutcomeGroup.PIPELINE.name();
+      case YAMLFieldNameConstants.STAGE:
+        return StepOutcomeGroup.STAGE.name();
+      case YAMLFieldNameConstants.STEP_GROUP:
+        return StepOutcomeGroup.STEP_GROUP.name();
+      default:
+        throw new InvalidRequestException(String.format("Unsupported scope constant value : %s", scopeConstant));
+    }
   }
 }
