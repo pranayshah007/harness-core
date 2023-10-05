@@ -175,7 +175,7 @@ global:
   useImmutableDelegate: "true"
   useMinimalDelegateImage: false
   smtpCreateSecret:
-    enabled: true
+    enabled: false
     SMTP_PASSWORD: ""
     SMTP_HOST: ""
     SMTP_USERNAME: ""
