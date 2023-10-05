@@ -87,20 +87,23 @@ public class CannyClient {
 
       if (!response.isSuccessful()) {
         JsonNode jsonResponse = objectMapper.readTree(response.body().byteStream());
-        log.error("Request to canny failed trying to create post. Response body: {}",
-            jsonResponse.get(CannyClientConstants.ERROR_NODE).asText());
-        throw new UnexpectedException("Request to canny failed trying to create post. Response body: "
-            + jsonResponse.get(CannyClientConstants.ERROR_NODE).asText());
+        String errorMsg = (jsonResponse.get(CannyClientConstants.ERROR_NODE) != null)
+            ? jsonResponse.get(CannyClientConstants.ERROR_NODE).asText()
+            : jsonResponse.asText();
+        log.error("Request to canny failed trying to create post. Response body: {}", errorMsg);
+        throw new UnexpectedException("Request to canny failed trying to create post. Response body: " + errorMsg);
       }
 
       String postId = objectMapper.readTree(response.body().byteStream()).get(CannyClientConstants.ID_NODE).asText();
       Response postDetailsResponse = retrieveCannyPostDetails(postId);
       if (!postDetailsResponse.isSuccessful()) {
         JsonNode jsonResponse = objectMapper.readTree(response.body().byteStream());
-        log.error("Request to canny failed trying to retrieve post details. Response body: {}",
-            jsonResponse.get(CannyClientConstants.ERROR_NODE).asText());
-        throw new UnexpectedException("Request to canny failed trying to retrieve post details. Response body: "
-            + jsonResponse.get(CannyClientConstants.ERROR_NODE).asText());
+        String errorMsg = (jsonResponse.get(CannyClientConstants.ERROR_NODE) != null)
+            ? jsonResponse.get(CannyClientConstants.ERROR_NODE).asText()
+            : jsonResponse.asText();
+        log.error("Request to canny failed trying to retrieve post details. Response body: {}", errorMsg);
+        throw new UnexpectedException(
+            "Request to canny failed trying to retrieve post details. Response body: " + errorMsg);
       }
       String postUrl = objectMapper.readTree(postDetailsResponse.body().byteStream()).get("url").asText();
       return CannyPostResponseDTO.builder().postURL(postUrl).message("Post created successfully").build();
@@ -125,10 +128,13 @@ public class CannyClient {
 
         JsonNode createUserResponseJson = objectMapper.readTree(createUserResponse.body().byteStream());
         if (!createUserResponse.isSuccessful()) {
+          String errorMsg = (createUserResponseJson.get(CannyClientConstants.ERROR_NODE) != null)
+              ? createUserResponseJson.get(CannyClientConstants.ERROR_NODE).asText()
+              : createUserResponseJson.asText();
           log.error("Request to canny failed trying to create user during getPostCreationAuthorId. Response body: {}",
-              createUserResponseJson.get(CannyClientConstants.ERROR_NODE).asText());
-          throw new UnexpectedException("Request to canny failed trying to create user during getPostCreationAuthorId."
-              + createUserResponseJson.get(CannyClientConstants.ERROR_NODE).asText());
+              errorMsg);
+          throw new UnexpectedException(
+              "Request to canny failed trying to create user during getPostCreationAuthorId." + errorMsg);
         }
 
         JsonNode id = createUserResponseJson.get(CannyClientConstants.ID_NODE);
