@@ -18,8 +18,7 @@ import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_USERGROUP_PER
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.USERGROUP;
 import static io.harness.ng.core.utils.NGUtils.verifyValuesNotChanged;
 import static io.harness.ng.core.utils.UserGroupMapper.toDTO;
-import static io.harness.utils.PageUtils.getNGPageResponse;
-import static io.harness.utils.PageUtils.getPageRequest;
+import static io.harness.utils.PageUtils.*;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
@@ -92,6 +91,7 @@ import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import retrofit2.http.Body;
 
 @OwnedBy(PL)
@@ -367,6 +367,44 @@ public class UserGroupResource {
     }
     List<UserGroupDTO> userGroupDTOs = userGroups.stream().map(UserGroupMapper::toDTO).collect(Collectors.toList());
     return ResponseDTO.newResponse(userGroupDTOs);
+  }
+
+  @POST
+  @Path("filter")
+  @ApiOperation(value = "Get User Group List with Filter", nickname = "getUserGroupListFilter")
+  @Operation(operationId = "getUsersGroupLisFilter", summary = "List User Groups by filter",
+      description = "List the User Groups selected by a filter in an account/org/project",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns the list of the user groups selected by a filter in a User Group.")
+      })
+  public ResponseDTO<PageResponse<UserGroupDTO>>
+  list(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @QueryParam(
+           NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @RequestBody(description = "User Group Filter", required = true) @Body
+      @NotNull UserGroupFilterDTO userGroupFilterDTO, @BeanParam PageRequest pageRequest) {
+    if (isEmpty(pageRequest.getSortOrders())) {
+      SortOrder order = SortOrder.Builder.aSortOrder().withField("lastModifiedAt", SortOrder.OrderType.DESC).build();
+      pageRequest.setSortOrders(ImmutableList.of(order));
+    }
+
+    if (accessControlClient.hasAccess(
+            ResourceScope.of(userGroupFilterDTO.getAccountIdentifier(), userGroupFilterDTO.getOrgIdentifier(),
+                userGroupFilterDTO.getProjectIdentifier()),
+            Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION)) {
+      Page<UserGroupDTO> userGroups =
+          userGroupService.list(userGroupFilterDTO, getPageRequest(pageRequest)).map(UserGroupMapper::toDTO);
+      ;
+      return ResponseDTO.newResponse(getNGPageResponse(userGroups));
+    }
+    Pageable pageable = Pageable.ofSize(50000); // keeping the default max supported value
+    Page<UserGroup> pagedUserGroups = userGroupService.list(userGroupFilterDTO, pageable);
+    List<UserGroup> permittedUserGroups = userGroupService.getPermittedUserGroups(pagedUserGroups.getContent());
+    List<UserGroupDTO> userGroupDTOs =
+        permittedUserGroups.stream().map(UserGroupMapper::toDTO).collect(Collectors.toList());
+    return ResponseDTO.newResponse(
+        getNGPageResponse(getPage(userGroupDTOs, pageRequest.getPageIndex(), pageRequest.getPageSize())));
   }
 
   @GET
