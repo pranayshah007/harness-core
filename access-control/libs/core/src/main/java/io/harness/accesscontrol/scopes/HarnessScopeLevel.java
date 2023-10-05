@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.accesscontrol.scopes.harness;
+package io.harness.accesscontrol.scopes;
 
 import static io.harness.accesscontrol.commons.AccessControlConstants.ACCOUNT_ENTITY;
 import static io.harness.accesscontrol.commons.AccessControlConstants.ORGANIZATION_ENTITY;

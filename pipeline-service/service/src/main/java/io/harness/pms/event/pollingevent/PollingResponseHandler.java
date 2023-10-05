@@ -7,6 +7,7 @@
 
 package io.harness.pms.event.pollingevent;
 
+import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
@@ -21,6 +22,8 @@ import io.harness.pms.triggers.build.eventmapper.BuildTriggerEventMapper;
 import io.harness.pms.triggers.webhook.helpers.TriggerEventExecutionHelper;
 import io.harness.polling.contracts.PollingResponse;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.ServicePrincipal;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -34,6 +37,8 @@ public class PollingResponseHandler implements PmsCommonsBaseEventHandler<Pollin
   @Override
   public void handleEvent(
       PollingResponse response, Map<String, String> metadataMap, long messageTimeStamp, long readTs) {
+    SecurityContextBuilder.setContext(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
+
     if (response == null) {
       return;
     }

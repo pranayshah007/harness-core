@@ -82,6 +82,10 @@ gitFullSyncJob {"name": "account_org_project__idx", "background": true} {"accoun
 gitFullSyncJob {"name": "messageId_1", "unique": true} {"messageId": 1}
 gitFullSyncJob {"name": "nextRuntime_1", "background": true} {"nextRuntime": 1}
 gitProcessRequestSdk {"name": "accountId_repo_branch_commit_index", "background": true} {"accountId": 1, "repoUrl": 1, "branch": 1, "commitId": 1}
+gitRestraintInstances {"name": "releaseEntityId_state_idx", "background": true} {"releaseEntityId": 1, "state": 1}
+gitRestraintInstances {"name": "resourceUnit_order_idx", "unique": true} {"resourceUnit": 1, "order": 1}
+gitRestraintInstances {"name": "resourceUnit_state_idx", "background": true} {"resourceUnit": 1, "state": 1}
+gitRestraintInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 gitSyncErrorNG {"name": "accountId_commitId_repo_branch_errorType_filePath_unique_Index", "unique": true} {"accountIdentifier": 1, "additionalErrorDetails.gitCommitId": 1, "repoUrl": 1, "branchName": 1, "errorType": 1, "completeFilePath": 1, "createdAt": -1}
 gitSyncErrorNG {"name": "accountId_orgIdentifier_projectIdentifier_Index", "background": true} {"accountIdentifier": 1, "scopes.projectIdentifier": 1, "scopes.orgIdentifier": 1}
 gitSyncErrorNG {"name": "accountId_repo_branch_errorType_status_filePath_sort_Index", "background": true} {"accountIdentifier": 1, "repoUrl": 1, "branchName": 1, "errorType": 1, "status": 1, "completeFilePath": 1, "createdAt": -1}

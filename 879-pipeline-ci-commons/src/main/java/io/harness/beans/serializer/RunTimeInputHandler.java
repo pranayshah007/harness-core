@@ -8,6 +8,7 @@
 package io.harness.beans.serializer;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.beans.yaml.extended.cache.CachePolicy.PULL_PUSH;
 import static io.harness.ci.commonconstants.CIExecutionConstants.NULL_STR;
 import static io.harness.common.NGExpressionUtils.matchesInputSetPattern;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -26,6 +27,7 @@ import io.harness.beans.yaml.extended.TIDotNetVersion;
 import io.harness.beans.yaml.extended.TILanguage;
 import io.harness.beans.yaml.extended.TIPythonVersion;
 import io.harness.beans.yaml.extended.TISplitStrategy;
+import io.harness.beans.yaml.extended.cache.CachePolicy;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.Toleration;
 import io.harness.beans.yaml.extended.platform.ArchType;
@@ -133,6 +135,14 @@ public class RunTimeInputHandler extends BaseRunTimeInputHandler {
       return null;
     } else {
       return TILanguage.fromString(language.fetchFinalValue().toString()).getYamlName();
+    }
+  }
+
+  public static CachePolicy resolveCachePolicy(ParameterField<CachePolicy> cachePolicy) {
+    if (cachePolicy == null || cachePolicy.isExpression() || cachePolicy.getValue() == null) {
+      return PULL_PUSH;
+    } else {
+      return CachePolicy.fromString(cachePolicy.fetchFinalValue().toString());
     }
   }
 

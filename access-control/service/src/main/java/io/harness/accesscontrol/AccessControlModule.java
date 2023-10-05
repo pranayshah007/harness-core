@@ -13,9 +13,9 @@ import static io.harness.accesscontrol.AccessControlPermissions.VIEW_PROJECT_PER
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
-import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.ACCOUNT;
-import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.ORGANIZATION;
-import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.PROJECT;
+import static io.harness.accesscontrol.scopes.HarnessScopeLevel.ACCOUNT;
+import static io.harness.accesscontrol.scopes.HarnessScopeLevel.ORGANIZATION;
+import static io.harness.accesscontrol.scopes.HarnessScopeLevel.PROJECT;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.authorization.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.DUMMY_GROUP_NAME;

@@ -63,7 +63,6 @@ public class AzureKeyVaultConfigDTOMapper {
             .useManagedIdentity(azureKeyVaultConnectorDTO.getUseManagedIdentity())
             .azureManagedIdentityType(azureKeyVaultConnectorDTO.getAzureManagedIdentityType())
             .managedClientId(azureKeyVaultConnectorDTO.getManagedClientId())
-
             .name(connector.getName())
             .accountIdentifier(accountIdentifier)
             .orgIdentifier(connector.getOrgIdentifier())
@@ -71,6 +70,7 @@ public class AzureKeyVaultConfigDTOMapper {
             .tags(connector.getTags())
             .identifier(connector.getIdentifier())
             .description(connector.getDescription())
+            .enablePurge(azureKeyVaultConnectorDTO.getEnablePurge())
             .build();
     if (null != azureKeyVaultConnectorDTO.getSecretKey().getDecryptedValue()) {
       azureKeyVaultConfigDTO.setSecretKey(String.valueOf(azureKeyVaultConnectorDTO.getSecretKey().getDecryptedValue()));

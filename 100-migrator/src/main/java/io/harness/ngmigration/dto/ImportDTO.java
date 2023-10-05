@@ -19,6 +19,7 @@ import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.v3.oas.annotations.Parameter;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -47,4 +48,5 @@ public class ImportDTO extends MigrationTrackReqPayload {
   @Parameter(description = "Required if trying migrate entities in an application") private String appId;
 
   private String accountIdentifier;
+  private Set<Flag> flags;
 }
