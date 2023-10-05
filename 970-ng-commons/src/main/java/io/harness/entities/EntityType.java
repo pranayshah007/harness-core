@@ -662,7 +662,10 @@ public enum EntityType {
       EntityYamlRootNames.ECS_UPGRADE_CONTAINER),
   @JsonProperty(EntityTypeConstants.ECS_BASIC_ROLLBACK)
   ECS_BASIC_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.ECS_BASIC_ROLLBACK, IdentifierRef.class,
-      EntityYamlRootNames.ECS_BASIC_ROLLBACK);
+      EntityYamlRootNames.ECS_BASIC_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.CHAOS_INFRASTRUCTURE)
+  CHAOS_INFRASTRUCTURE(ModuleType.CHAOS, EntityTypeConstants.CHAOS_INFRASTRUCTURE, IdentifierRef.class,
+      EntityYamlRootNames.CHAOS_INFRASTRUCTURE);
 
   private final ModuleType moduleType;
   String yamlName;
