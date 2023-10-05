@@ -31,6 +31,7 @@ import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
+import com.google.inject.Inject;
 import java.io.IOException;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
@@ -42,6 +43,7 @@ import org.junit.experimental.categories.Category;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class StageTimeoutUtilsTest extends CategoryTest {
   YamlField pipelineYamlField;
+  @Inject private StageTimeoutUtils stageTimeoutUtils;
   @Before
   public void setUp() throws IOException {
     ClassLoader classLoader = this.getClass().getClassLoader();
@@ -58,17 +60,21 @@ public class StageTimeoutUtilsTest extends CategoryTest {
   public void shouldReturnSdkTimeObtainmentFF() {
     long duration = 10;
 
-    SdkTimeoutObtainment sdkTimeoutObtainment =
-        StageTimeoutUtils.getStageTimeoutObtainment(ParameterField.createValueField(
-            Timeout.builder().timeoutString("10h").timeoutInMillis(TimeUnit.HOURS.toMillis(duration)).build()));
+    SdkTimeoutObtainment sdkTimeoutObtainment = stageTimeoutUtils.getStageTimeoutObtainment(
+        ParameterField.createValueField(
+            Timeout.builder().timeoutString("10h").timeoutInMillis(TimeUnit.HOURS.toMillis(duration)).build()),
+        "accountId");
 
     assertThat(sdkTimeoutObtainment).isNotNull();
     assertThat(sdkTimeoutObtainment.getParameters())
-        .isEqualTo(
-            AbsoluteSdkTimeoutTrackerParameters.builder()
-                .timeout(TimeoutUtils.getTimeoutParameterFieldStringForStage(ParameterField.createValueField(
-                    Timeout.builder().timeoutString("10h").timeoutInMillis(TimeUnit.HOURS.toMillis(duration)).build())))
-                .build());
+        .isEqualTo(AbsoluteSdkTimeoutTrackerParameters.builder()
+                       .timeout(TimeoutUtils.getTimeoutParameterFieldStringForStage(
+                           ParameterField.createValueField(Timeout.builder()
+                                                               .timeoutString("10h")
+                                                               .timeoutInMillis(TimeUnit.HOURS.toMillis(duration))
+                                                               .build()),
+                           ""))
+                       .build());
   }
 
   @Test
@@ -79,17 +85,20 @@ public class StageTimeoutUtilsTest extends CategoryTest {
     ApprovalStageNode stageNode = new ApprovalStageNode();
     stageNode.setTimeout(ParameterField.createValueField(
         Timeout.builder().timeoutString("10h").timeoutInMillis(TimeUnit.HOURS.toMillis(duration)).build()));
-    SdkTimeoutObtainment sdkTimeoutObtainment = StageTimeoutUtils.getStageTimeoutObtainment(stageNode);
+    SdkTimeoutObtainment sdkTimeoutObtainment = stageTimeoutUtils.getStageTimeoutObtainment(stageNode, "accountId");
 
     assertThat(sdkTimeoutObtainment).isNotNull();
     assertThat(sdkTimeoutObtainment.getParameters())
-        .isEqualTo(
-            AbsoluteSdkTimeoutTrackerParameters.builder()
-                .timeout(TimeoutUtils.getTimeoutParameterFieldStringForStage(ParameterField.createValueField(
-                    Timeout.builder().timeoutString("10h").timeoutInMillis(TimeUnit.HOURS.toMillis(duration)).build())))
-                .build());
+        .isEqualTo(AbsoluteSdkTimeoutTrackerParameters.builder()
+                       .timeout(TimeoutUtils.getTimeoutParameterFieldStringForStage(
+                           ParameterField.createValueField(Timeout.builder()
+                                                               .timeoutString("10h")
+                                                               .timeoutInMillis(TimeUnit.HOURS.toMillis(duration))
+                                                               .build()),
+                           ""))
+                       .build());
     stageNode.setTimeout(ParameterField.createValueField(null));
-    sdkTimeoutObtainment = StageTimeoutUtils.getStageTimeoutObtainment(stageNode);
+    sdkTimeoutObtainment = stageTimeoutUtils.getStageTimeoutObtainment(stageNode, "accountId");
 
     assertThat(sdkTimeoutObtainment).isNull();
   }
@@ -99,7 +108,7 @@ public class StageTimeoutUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldReturnNull() {
     SdkTimeoutObtainment sdkTimeoutObtainment =
-        StageTimeoutUtils.getStageTimeoutObtainment(ParameterField.createValueField(null));
+        stageTimeoutUtils.getStageTimeoutObtainment(ParameterField.createValueField(null), "accountId");
 
     assertThat(sdkTimeoutObtainment).isNull();
   }

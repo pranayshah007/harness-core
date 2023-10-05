@@ -163,6 +163,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   @Inject private FreezeEvaluateService freezeEvaluateService;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
   @Inject private StagePlanCreatorHelper stagePlanCreatorHelper;
+  @Inject private StageTimeoutUtils stageTimeoutUtils;
 
   @Override
   public Set<String> getSupportedStageTypes() {
@@ -227,7 +228,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
                     .build())
             .adviserObtainments(adviserObtainments);
 
-    SdkTimeoutObtainment sdkTimeoutObtainment = StageTimeoutUtils.getStageTimeoutObtainment(stageNode);
+    SdkTimeoutObtainment sdkTimeoutObtainment =
+        stageTimeoutUtils.getStageTimeoutObtainment(stageNode, ctx.getAccountIdentifier());
     builder = setStageTimeoutObtainment(sdkTimeoutObtainment, builder);
 
     if (!EmptyPredicate.isEmpty(ctx.getExecutionInputTemplate())) {

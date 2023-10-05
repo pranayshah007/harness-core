@@ -25,7 +25,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PIPELINE)
 public class TimeoutUtils {
   public final String DEFAULT_TIMEOUT = "10h";
-  public final String DEFAULT_STAGE_TIMEOUT = "15w";
+  public final String MAX_STAGE_TIMEOUT = "15w";
 
   public long getTimeoutInSeconds(Timeout timeout, long defaultTimeoutInSeconds) {
     if (timeout == null) {
@@ -65,13 +65,18 @@ public class TimeoutUtils {
     return timeout;
   }
 
-  public ParameterField<Timeout> getStageTimeout(ParameterField<Timeout> timeout) {
+  public ParameterField<Timeout> getStageTimeout(ParameterField<Timeout> timeout, String defaultTime) {
     if (ParameterField.isNull(timeout)) {
-      return ParameterField.createValueField(Timeout.fromString(DEFAULT_STAGE_TIMEOUT));
+      return ParameterField.createValueField(Timeout.fromString(defaultTime));
     }
     // If the timeout field is runtime input then use default value
     if (timeout.isExpression() && NGExpressionUtils.matchesInputSetPattern(timeout.getExpressionValue())) {
-      return ParameterField.createValueField(Timeout.fromString(DEFAULT_STAGE_TIMEOUT));
+      return ParameterField.createValueField(Timeout.fromString(defaultTime));
+    }
+
+    Timeout maxTimeout = Timeout.fromString(MAX_STAGE_TIMEOUT);
+    if (null != maxTimeout && timeout.getValue().getTimeoutInMillis() > maxTimeout.getTimeoutInMillis()) {
+      return ParameterField.createValueField(maxTimeout);
     }
     return timeout;
   }
@@ -97,8 +102,9 @@ public class TimeoutUtils {
     }
   }
 
-  public ParameterField<String> getTimeoutParameterFieldStringForStage(ParameterField<Timeout> timeoutParameterField) {
-    ParameterField<Timeout> timeout = getStageTimeout(timeoutParameterField);
+  public ParameterField<String> getTimeoutParameterFieldStringForStage(
+      ParameterField<Timeout> timeoutParameterField, String defaultTime) {
+    ParameterField<Timeout> timeout = getStageTimeout(timeoutParameterField, defaultTime);
     if (timeout.isExpression()) {
       return ParameterField.createExpressionField(
           true, timeout.getExpressionValue(), timeout.getInputSetValidator(), true);

@@ -384,7 +384,8 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                     .build())
             .adviserObtainments(StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, true));
-    SdkTimeoutObtainment sdkTimeoutObtainment = StageTimeoutUtils.getStageTimeoutObtainment(stageNode);
+    SdkTimeoutObtainment sdkTimeoutObtainment =
+        stageTimeoutUtils.getStageTimeoutObtainment(stageNode, ctx.getAccountIdentifier());
     planNodeBuilder = setStageTimeoutObtainment(sdkTimeoutObtainment, planNodeBuilder);
     return planNodeBuilder.build();
   }

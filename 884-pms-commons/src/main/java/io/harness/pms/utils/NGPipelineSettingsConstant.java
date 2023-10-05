@@ -16,7 +16,8 @@ public enum NGPipelineSettingsConstant {
   DEFAULT_IMAGE_PULL_POLICY_ADD_ON_CONTANER("default_image_pull_policy_for_add_on_container"),
   ENABLE_NODE_EXECUTION_AUDIT_EVENTS("enable_node_execution_audit_events"),
   ENABLE_EXPRESSION_ENGINE_V2("enable_expression_engine_v2"),
-  DO_NOT_DELETE_PIPELINE_EXECUTION_DETAILS("do_not_delete_pipeline_execution_details");
+  DO_NOT_DELETE_PIPELINE_EXECUTION_DETAILS("do_not_delete_pipeline_execution_details"),
+  STAGE_DEFAULT_TIMEOUT_DURATION("stage_default_timeout_duration");
   private final String name;
 
   NGPipelineSettingsConstant(String name) {

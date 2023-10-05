@@ -46,6 +46,7 @@ import lombok.SneakyThrows;
 @TargetModule(HarnessModule._882_PMS_SDK_CORE)
 public abstract class AbstractPmsStagePlanCreator<T extends PmsAbstractStageNode> extends AbstractStagePlanCreator<T> {
   @Inject private KryoSerializer kryoSerializer;
+  @Inject private StageTimeoutUtils stageTimeoutUtils;
 
   public abstract Set<String> getSupportedStageTypes();
 
@@ -78,7 +79,8 @@ public abstract class AbstractPmsStagePlanCreator<T extends PmsAbstractStageNode
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
-    SdkTimeoutObtainment sdkTimeoutObtainment = StageTimeoutUtils.getStageTimeoutObtainment(stageNode);
+    SdkTimeoutObtainment sdkTimeoutObtainment =
+        stageTimeoutUtils.getStageTimeoutObtainment(stageNode, ctx.getAccountIdentifier());
     PlanNodeBuilder planNodeBuilder =
         PlanNode.builder()
             .uuid(getFinalPlanNodeId(ctx, stageNode))

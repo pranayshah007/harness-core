@@ -94,6 +94,7 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
   @Inject private CILicenseService ciLicenseService;
   @Inject private CIFeatureFlagService featureFlagService;
   @Inject CIStagePlanCreationUtils ciStagePlanCreationUtils;
+  @Inject private StageTimeoutUtils stageTimeoutUtils;
 
   @Override
   public String getExecutionInputTemplateAndModifyYamlField(YamlField yamlField) {
@@ -206,7 +207,8 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
-    SdkTimeoutObtainment sdkTimeoutObtainment = StageTimeoutUtils.getStageTimeoutObtainment(stageNode);
+    SdkTimeoutObtainment sdkTimeoutObtainment =
+        stageTimeoutUtils.getStageTimeoutObtainment(stageNode, ctx.getAccountIdentifier());
     PlanNodeBuilder planNodeBuilder =
         PlanNode.builder()
             .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid()))

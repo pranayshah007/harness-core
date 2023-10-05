@@ -100,7 +100,7 @@ java_library(
         "//970-ng-commons/src/main/java/io/serializer/morphia:module",
         "//970-ng-commons/src/main/java/io/serializer/registrars:module",
         "//970-ng-commons/src/main/java/io/serializer/utils:module",
-        "//970-ng-commons/src/main/proto:970_ng_java_contract_proto",
+        "//970-ng-commons/src/main/proto:970_ng_java_contract_proto"
     ],
 )
 

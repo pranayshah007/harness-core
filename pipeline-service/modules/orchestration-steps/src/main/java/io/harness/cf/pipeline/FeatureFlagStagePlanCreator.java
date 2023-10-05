@@ -59,6 +59,7 @@ import java.util.Set;
 @OwnedBy(HarnessTeam.CF)
 public class FeatureFlagStagePlanCreator extends ChildrenPlanCreator<StageElementConfig> {
   @Inject private KryoSerializer kryoSerializer;
+  @Inject private StageTimeoutUtils stageTimeoutUtils;
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, StageElementConfig config) {
@@ -84,7 +85,8 @@ public class FeatureFlagStagePlanCreator extends ChildrenPlanCreator<StageElemen
       PlanCreationContext ctx, StageElementConfig config, List<String> childrenNodeIds) {
     StepParameters stepParameters =
         NGSectionStepParameters.builder().childNodeId(childrenNodeIds.get(0)).logMessage("Execution Element").build();
-    SdkTimeoutObtainment sdkTimeoutObtainment = StageTimeoutUtils.getStageTimeoutObtainment(config.getTimeout());
+    SdkTimeoutObtainment sdkTimeoutObtainment =
+        stageTimeoutUtils.getStageTimeoutObtainment(config.getTimeout(), ctx.getAccountIdentifier());
     PlanNodeBuilder planNodeBuilder = PlanNode.builder();
     if (null != sdkTimeoutObtainment) {
       planNodeBuilder.timeoutObtainment(sdkTimeoutObtainment);

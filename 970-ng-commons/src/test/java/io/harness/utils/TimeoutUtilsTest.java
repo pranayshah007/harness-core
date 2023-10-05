@@ -165,10 +165,10 @@ public class TimeoutUtilsTest extends CategoryTest {
   public void testGetStageTimeout() {
     ParameterField<Timeout> timeoutParameterField =
         ParameterField.createExpressionField(true, "<+input>.test", null, true);
-    ParameterField<Timeout> result = TimeoutUtils.getStageTimeout(timeoutParameterField);
+    ParameterField<Timeout> result = TimeoutUtils.getStageTimeout(timeoutParameterField, "35d");
     assertThat(result.getValue().getTimeoutInMillis()).isEqualTo(9072000000L);
     assertThat(result.getValue().getTimeoutString()).isEqualTo("15w");
-    result = TimeoutUtils.getStageTimeout(null);
+    result = TimeoutUtils.getStageTimeout(null, "35d");
     assertThat(result.getValue().getTimeoutInMillis()).isEqualTo(9072000000L);
     assertThat(result.getValue().getTimeoutString()).isEqualTo("15w");
   }

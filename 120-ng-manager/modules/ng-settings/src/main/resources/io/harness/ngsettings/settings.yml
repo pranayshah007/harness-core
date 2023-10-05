@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 34
+version : 35
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers
     name: Mandate Webhook Secrets for Github Triggers
@@ -535,6 +535,15 @@ settings :
     groupIdentifier: pms_execution_settings
     defaultValue: false
     valueType: BOOLEAN
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+  - identifier: stage_default_timeout_duration
+    name: Stage Default Timeout Duration
+    category: PMS
+    groupIdentifier: pms_execution_settings
+    defaultValue: "35d"
+    valueType: String
     allowOverrides: false
     allowedScopes:
       - ACCOUNT
