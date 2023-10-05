@@ -418,6 +418,7 @@ public enum FeatureName {
   FFM_8344_FLAG_CLEANUP("Enable Stale Flag Cleanup in Feature Flags filtered listing page", HarnessTeam.CF),
   FFM_8823_AIDA_SDK_CODE_SAMPLE("Enable AIDA generated code sample in FF Onboarding", HarnessTeam.CF),
   FFM_8184_FEATURE_FLAG_TAGGING("Enable tagging in Feature Flags", HarnessTeam.CF),
+  FFM_9497_PROXY_KEY_MANAGEMENT("Enable FF proxy key management via the Account Resources", HarnessTeam.CF),
   FF_ALLOW_OPTIONAL_VARIABLE("Allow Optional Variable from UI in NG.", HarnessTeam.PIPELINE),
   FF_FLAG_SYNC_THROUGH_GITEX_ENABLED,
   FF_GITSYNC,
