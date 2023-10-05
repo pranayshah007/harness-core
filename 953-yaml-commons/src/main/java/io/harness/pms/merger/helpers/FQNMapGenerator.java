@@ -77,7 +77,7 @@ public class FQNMapGenerator {
     HashSet<String> expressions = new HashSet<>();
     Set<String> fieldNames = new LinkedHashSet<>();
     yamlMap.fieldNames().forEachRemaining(fieldNames::add);
-    String topKey;
+    String topKey = "";
     Map<FQN, Object> res = new LinkedHashMap<>();
     // Generate fqn for each fieldName
     for (String fieldName : fieldNames) {

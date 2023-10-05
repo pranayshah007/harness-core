@@ -5,17 +5,20 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.yaml.schema.inputs.beans;
+package io.harness.utils;
 
-public enum SchemaInputType {
-  STRING,
-  INTEGER,
-  BOOLEAN,
-  OBJECT,
+public enum PipelineVersionConstants {
+  PIPELINE_VERSION_V0("v0"),
+  PIPELINE_VERSION_V1("v1"),
   ;
 
-  public static SchemaInputType getYamlInputType(String type) {
-    type = type.toUpperCase();
-    return SchemaInputType.valueOf(type);
+  String value;
+
+  public String getValue() {
+    return value;
+  }
+
+  PipelineVersionConstants(String value) {
+    this.value = value;
   }
 }

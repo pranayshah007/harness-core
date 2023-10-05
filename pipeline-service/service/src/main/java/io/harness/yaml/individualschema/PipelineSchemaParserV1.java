@@ -18,9 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(PIPELINE)
 @Singleton
-public class PipelineSchemaParserV0 extends BasePipelineSchemaParser {
-  static final String PIPELINE_DEFINITION_PATH = "#/definitions/pipeline/pipeline";
-  static final String PIPELINE_V0 = "v0";
+public class PipelineSchemaParserV1 extends BasePipelineSchemaParser {
+  static final String PIPELINE_DEFINITION_PATH = "#/definitions/pipeline";
+  static final String PIPELINE_V1 = "v1";
 
   void parseAndIngestSchema() {
     traverseNodeAndExtractAllRefsRecursively(
@@ -42,6 +42,6 @@ public class PipelineSchemaParserV0 extends BasePipelineSchemaParser {
 
   @Override
   String getYamlVersion() {
-    return PIPELINE_V0;
+    return PIPELINE_V1;
   }
 }
