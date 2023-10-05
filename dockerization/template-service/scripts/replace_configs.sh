@@ -98,10 +98,6 @@ if [[ "" != "$NG_MANAGER_SERVICE_SECRET" ]]; then
   export NG_MANAGER_SERVICE_SECRET; yq -i '.ngManagerServiceSecret=env(NG_MANAGER_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
-if [[ "" != "$PIPELINE_SERVICE_SECRET" ]]; then
-  export PIPELINE_SERVICE_SECRET; yq -i '.pipelineServiceSecret=env(PIPELINE_SERVICE_SECRET)' $CONFIG_FILE
-fi
-
 if [[ "" != "$NG_MANAGER_GITSYNC_TARGET" ]]; then
   export NG_MANAGER_GITSYNC_TARGET; yq -i '.gitSdkConfiguration.gitManagerGrpcClientConfig.target=env(NG_MANAGER_GITSYNC_TARGET)' $CONFIG_FILE
 fi
@@ -257,6 +253,5 @@ replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFOR
 
 replace_key_value pmsGrpcClientConfig.target $PMS_GRPC_TARGET
 replace_key_value pmsGrpcClientConfig.authority $PMS_GRPC_AUTHORITY
-replace_key_value pipelineServiceClientConfig.baseUrl "$PIPELINE_SERVICE_CLIENT_BASEURL"
 
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"

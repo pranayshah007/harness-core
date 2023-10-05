@@ -252,5 +252,44 @@
     "conditionalInputValueDescription" : "JQL (e.g issuetype = Bug AND priority in (P0,P1) AND created >= -90d)",
     "description": "Short description for the data point",
     "detailedDescription": "Short Description for data point here \n\n**How it's calculated:** Idea about the calculation of the data point\n\n**Prerequisites:** Prerequisites if any for calculation of data point"
+  },
+  {
+    "id": "651bf820d6134a3b8a9c5fcc",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "meanTimeToMerge",
+    "name": "Mean time to merge Pull Request (in hours)",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "gitlab",
+    "dataSourceLocationIdentifier": "gitlab_mean_time_to_merge_pr",
+    "isConditional": true,
+    "conditionalInputValueDescription": "Branch name",
+    "description": "Short description for the data point",
+    "detailedDescription": "Short Description for data point here \n\n**How it's calculated:** Idea about the calculation of the data point\n\n**Prerequisites:** Prerequisites if any for calculation of data point"
+  },
+  {
+    "id": "651bf825fadf434321ebcc70",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "isBranchProtected",
+    "name": "Branch protection is set",
+    "type": "BOOLEAN",
+    "dataSourceIdentifier": "gitlab",
+    "dataSourceLocationIdentifier": "gitlab_is_branch_protection_set",
+    "isConditional": true,
+    "conditionalInputValueDescription" : "Branch name",
+    "description": "Short description for the data point",
+    "detailedDescription": "Short Description for data point here \n\n**How it's calculated:** Idea about the calculation of the data point\n\n**Prerequisites:** Prerequisites if any for calculation of data point"
+  },
+  {
+    "id": "651bf82aae1e3423b5b14add",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "isFileExists",
+    "name": "Does file exist",
+    "type": "BOOLEAN",
+    "dataSourceIdentifier": "gitlab",
+    "dataSourceLocationIdentifier": "gitlab_is_file_exists",
+    "isConditional": true,
+    "conditionalInputValueDescription": "File path (e.g. src/index.js)",
+    "description": "Short description for the data point",
+    "detailedDescription": "Short Description for data point here \n\n**How it's calculated:** Idea about the calculation of the data point\n\n**Prerequisites:** Prerequisites if any for calculation of data point"
   }
 ]

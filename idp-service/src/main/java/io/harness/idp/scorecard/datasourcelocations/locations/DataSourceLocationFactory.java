@@ -19,6 +19,9 @@ import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceL
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_FILE_EXISTS;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_IS_BRANCH_PROTECTION_SET;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_MEAN_TIME_TO_MERGE_PR;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITLAB_FILE_EXISTS;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITLAB_IS_BRANCH_PROTECTION_SET;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITLAB_MEAN_TIME_TO_MERGE_PR;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.JIRA_ISSUES_COUNT;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.JIRA_ISSUES_OPEN_CLOSE_RATIO;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.JIRA_MEAN_TIME_TO_RESOLVE;
@@ -38,6 +41,9 @@ public class DataSourceLocationFactory {
   private GithubFileExistsDsl githubFileExistsDsl;
   private BitbucketMeanTimeToMergePRDsl bitbucketMeanTimeToMergePRDsl;
   private BitbucketIsBranchProtectionSetDsl bitbucketIsBranchProtectionSetDsl;
+  private GitlabMeanTimeToMergePRDsl gitlabMeanTimeToMergePRDsl;
+  private GitlabFileExistsDsl gitlabFileExistsDsl;
+  private GitlabIsBranchProtectionSetDsl gitlabIsBranchProtectionSetDsl;
   private HarnessProxyThroughDsl harnessProxyThroughDsl;
   private NoOpDsl noOpDsl;
   private PagerDutyServiceDirectory pagerDutyServiceDirectory;
@@ -62,6 +68,14 @@ public class DataSourceLocationFactory {
         return bitbucketMeanTimeToMergePRDsl;
       case BITBUCKET_IS_BRANCH_PROTECTION_SET:
         return bitbucketIsBranchProtectionSetDsl;
+
+      // Gitlab
+      case GITLAB_MEAN_TIME_TO_MERGE_PR:
+        return gitlabMeanTimeToMergePRDsl;
+      case GITLAB_IS_BRANCH_PROTECTION_SET:
+        return gitlabIsBranchProtectionSetDsl;
+      case GITLAB_FILE_EXISTS:
+        return gitlabFileExistsDsl;
 
         // Harness
       case HARNESS_STO_SCAN_SETUP_DSL:

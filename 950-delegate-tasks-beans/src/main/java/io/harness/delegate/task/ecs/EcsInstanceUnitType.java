@@ -5,21 +5,16 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.ecs;
-
-import static io.harness.annotations.dev.HarnessTeam.CDP;
-
-import io.harness.annotations.dev.OwnedBy;
+package io.harness.delegate.task.ecs;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-@OwnedBy(CDP)
-public enum EcsResizeStrategy {
-  @JsonProperty(EcsConstants.RESIZE_NEW_FIRST) RESIZE_NEW_FIRST(EcsConstants.RESIZE_NEW_FIRST),
-  @JsonProperty(EcsConstants.DOWNSIZE_OLD_FIRST) DOWNSIZE_OLD_FIRST(EcsConstants.DOWNSIZE_OLD_FIRST);
+public enum EcsInstanceUnitType {
+  @JsonProperty(EcsConstants.PERCENTAGE) PERCENTAGE(EcsConstants.PERCENTAGE),
+  @JsonProperty(EcsConstants.COUNT) COUNT(EcsConstants.COUNT);
 
   private final String displayName;
-  EcsResizeStrategy(String displayName) {
+  EcsInstanceUnitType(String displayName) {
     this.displayName = displayName;
   }
 
