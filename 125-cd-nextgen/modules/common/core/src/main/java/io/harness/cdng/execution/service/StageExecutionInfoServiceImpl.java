@@ -412,6 +412,7 @@ public class StageExecutionInfoServiceImpl implements StageExecutionInfoService 
         .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
         .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
         .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
+        .pipelineIdentifier(AmbianceUtils.getPipelineIdentifier(ambiance))
         .status(Status.RUNNING)
         .stageStatus(StageStatus.IN_PROGRESS)
         .build();

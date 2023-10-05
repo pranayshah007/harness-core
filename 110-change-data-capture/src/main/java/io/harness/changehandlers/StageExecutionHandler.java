@@ -51,7 +51,7 @@ public class StageExecutionHandler extends AbstractChangeDataHandler {
       columnValueMapping.put("duration", Long.toString(duration));
     }
 
-    BasicDBObject stageType = (BasicDBObject) dbObject.get(StageExecutionInfoKeys.stageType);
+    String stageType = dbObject.get(StageExecutionInfoKeys.stageType).toString();
     if (stageType != null) {
       if ("CUSTOM_STAGE".equals(stageType.toString())) {
         columnValueMapping.put("type", "Custom");
