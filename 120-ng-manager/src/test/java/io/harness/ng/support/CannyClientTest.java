@@ -183,7 +183,7 @@ public class CannyClientTest extends NgManagerTestBase {
     Request mockUserExistsRequest = new Request.Builder().url("https://canny.io/api/v1/users/retrieve").build();
     Response userDoesNotExistResponse =
         new Response.Builder()
-            .code(404)
+            .code(400)
             .message("Not Found")
             .protocol(Protocol.HTTP_2)
             .request(mockUserExistsRequest)
