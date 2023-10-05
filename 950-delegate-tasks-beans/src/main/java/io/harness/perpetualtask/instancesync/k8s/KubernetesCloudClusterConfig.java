@@ -21,6 +21,7 @@ import lombok.experimental.FieldDefaults;
 @OwnedBy(HarnessTeam.CDP)
 public class KubernetesCloudClusterConfig {
   String clusterName;
+  String region;
   String subscriptionId;
   String resourceGroup;
   boolean useClusterAdminCredentials;
