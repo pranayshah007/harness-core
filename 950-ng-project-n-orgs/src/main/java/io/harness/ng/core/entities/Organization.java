@@ -97,11 +97,11 @@ public class Organization implements PersistentEntity, NGAccountAccess, UniqueId
   }
 
   @Wither @Id @dev.morphia.annotations.Id String id;
-
   String accountIdentifier;
 
   String uniqueId;
   @EntityIdentifier(allowBlank = false) @FdIndex String identifier;
+
   @NGEntityName String name;
 
   @NotNull @Size(max = 1024) String description;
