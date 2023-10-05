@@ -30,7 +30,7 @@ import io.harness.cdng.service.steps.constants.ServiceSectionStepConstants;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
-import io.harness.exception.UnsupportedOperationException;
+import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.EntityDetail;
@@ -40,6 +40,8 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.data.StepOutcomeRef;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.pms.rbac.PipelineRbacHelper;
@@ -154,24 +156,31 @@ public class ServiceStepsHelper {
   }
 
   public NGLogCallback getServiceLogCallback(Ambiance ambiance, boolean shouldOpenStream) {
-    return getServiceLogCallback(prepareServiceAmbiance(ambiance), shouldOpenStream, null);
+    return getServiceLogCallback(prepareServiceOrCustomStageEnvAmbiance(ambiance), shouldOpenStream, null);
   }
 
   public NGLogCallback getServiceLogCallback(Ambiance ambiance, boolean shouldOpenStream, String commandUnit) {
     return new NGLogCallback(
-        logStreamingStepClientFactory, prepareServiceAmbiance(ambiance), commandUnit, shouldOpenStream);
+        logStreamingStepClientFactory, prepareServiceOrCustomStageEnvAmbiance(ambiance), commandUnit, shouldOpenStream);
   }
-  private Ambiance prepareServiceAmbiance(Ambiance ambiance) {
+  private Ambiance prepareServiceOrCustomStageEnvAmbiance(Ambiance ambiance) {
     List<Level> levels = ambiance.getLevelsList();
+    StepType customStageEnvStep = StepType.newBuilder()
+                                      .setType(ExecutionNodeType.CUSTOM_STAGE_ENVIRONMENT.getName())
+                                      .setStepCategory(StepCategory.STEP)
+                                      .build();
+
     for (int i = levels.size() - 1; i >= 0; i--) {
       Level level = levels.get(i);
       if (ServiceConfigStepConstants.STEP_TYPE.equals(level.getStepType())
           || ServiceSectionStepConstants.STEP_TYPE.equals(level.getStepType())
-          || ServiceStepV3Constants.STEP_TYPE.equals(level.getStepType())) {
+          || ServiceStepV3Constants.STEP_TYPE.equals(level.getStepType())
+          || customStageEnvStep.equals(level.getStepType())) {
         return AmbianceUtils.clone(ambiance, i + 1);
       }
     }
-    throw new UnsupportedOperationException("Not inside service step or one of it's children");
+    throw new UnsupportedOperationException(
+        "Not inside deployment stage service step or custom stage environment step or one of their children");
   }
 
   public List<Outcome> getChildrenOutcomes(Map<String, ResponseData> responseDataMap) {
@@ -221,7 +230,7 @@ public class ServiceStepsHelper {
   public void publishTaskIdsStepDetailsForServiceStep(
       Ambiance ambiance, List<StepDelegateInfo> stepDelegateInfos, String name) {
     if (isNotEmpty(stepDelegateInfos)) {
-      sdkGraphVisualizationDataService.publishStepDetailInformation(prepareServiceAmbiance(ambiance),
+      sdkGraphVisualizationDataService.publishStepDetailInformation(prepareServiceOrCustomStageEnvAmbiance(ambiance),
           StepDetailsDelegateInfo.builder().stepDelegateInfos(stepDelegateInfos).build(), name);
     }
   }
