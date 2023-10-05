@@ -103,7 +103,6 @@ import io.harness.notification.channeldetails.EmailChannel.EmailChannelBuilder;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.outbox.api.OutboxService;
 import io.harness.remote.client.CGRestUtils;
-import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.user.spring.UserMembershipRepository;
 import io.harness.repositories.user.spring.UserMetadataRepository;
 import io.harness.scim.PatchRequest;
@@ -390,7 +389,6 @@ public class NgUserServiceImpl implements NgUserService {
   }
 
   @Override
-
   public ScimListResponse<ScimUser> searchScimUsersByEmailQuery(
       String accountId, String searchQuery, Integer count, Integer startIndex) {
     return CGRestUtils.getResponse(userClient.searchScimUsers(accountId, searchQuery, count, startIndex));
@@ -613,17 +611,10 @@ public class NgUserServiceImpl implements NgUserService {
   public void addUserToScope(String userId, Scope scope, List<RoleBinding> roleBindings, List<String> userGroups,
       UserMembershipUpdateSource source) {
     ensureUserMetadata(userId);
-    boolean isAccountBasicFeatureFlagEnabled =
-        ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.ACCOUNT_BASIC_ROLE);
-    addUserToScopeInternal(userId, source, scope, getDefaultRoleIdentifier(scope), isAccountBasicFeatureFlagEnabled);
-    addUserToParentScope(userId, scope, source, isAccountBasicFeatureFlagEnabled);
+    addUserToScopeInternal(userId, source, scope);
+    addUserToParentScope(userId, scope, source);
     List<RoleAssignmentDTO> roleAssignmentDTOList = createRoleAssignmentDTOs(roleBindings, userId, scope);
-    if (isAccountBasicFeatureFlagEnabled) {
-      createRoleAssignments(userId, scope, roleAssignmentDTOList, false);
-    } else {
-      createRoleAssignments(userId, scope, getManagedRoleAssignments(roleAssignmentDTOList), true);
-      createRoleAssignments(userId, scope, getNonManagedRoleAssignments(roleAssignmentDTOList), false);
-    }
+    createRoleAssignments(userId, scope, roleAssignmentDTOList, false);
     defaultUserGroupService.addUserToDefaultUserGroup(scope, userId);
     userGroupService.addUserToUserGroups(scope, userId, getValidUserGroups(scope, userGroups));
   }
@@ -741,15 +732,6 @@ public class NgUserServiceImpl implements NgUserService {
             resourceGroupIdentifier -> resourceGroupIdentifier.equals(roleAssignmentDTO.getResourceGroupIdentifier()));
   }
 
-  private String getDefaultRoleIdentifier(Scope scope) {
-    if (!isBlank(scope.getProjectIdentifier())) {
-      return PROJECT_VIEWER;
-    } else if (!isBlank(scope.getOrgIdentifier())) {
-      return ORGANIZATION_VIEWER;
-    }
-    return ACCOUNT_VIEWER;
-  }
-
   private void ensureUserMetadata(String userId) {
     Optional<UserMetadata> userMetadataOpt = userMetadataRepository.findDistinctByUserId(userId);
     if (userMetadataOpt.isPresent()) {
@@ -777,26 +759,24 @@ public class NgUserServiceImpl implements NgUserService {
     }
   }
 
-  private void addUserToParentScope(
-      String userId, Scope scope, UserMembershipUpdateSource source, boolean isAccountBasicFeatureFlagEnabled) {
+  private void addUserToParentScope(String userId, Scope scope, UserMembershipUpdateSource source) {
     //  Adding user to the parent scopes as well
     if (!isBlank(scope.getProjectIdentifier())) {
       Scope orgScope = Scope.builder()
                            .accountIdentifier(scope.getAccountIdentifier())
                            .orgIdentifier(scope.getOrgIdentifier())
                            .build();
-      addUserToScopeInternal(userId, source, orgScope, ORGANIZATION_VIEWER, isAccountBasicFeatureFlagEnabled);
+      addUserToScopeInternal(userId, source, orgScope);
     }
 
     if (!isBlank(scope.getOrgIdentifier())) {
       Scope accountScope = Scope.builder().accountIdentifier(scope.getAccountIdentifier()).build();
-      addUserToScopeInternal(userId, source, accountScope, ACCOUNT_VIEWER, isAccountBasicFeatureFlagEnabled);
+      addUserToScopeInternal(userId, source, accountScope);
     }
   }
 
   @VisibleForTesting
-  protected void addUserToScopeInternal(String userId, UserMembershipUpdateSource source, Scope scope,
-      String roleIdentifier, boolean isAccountBasicFeatureFlagEnabled) {
+  protected void addUserToScopeInternal(String userId, UserMembershipUpdateSource source, Scope scope) {
     Optional<UserMetadata> userMetadata = userMetadataRepository.findDistinctByUserId(userId);
     String publicIdentifier = userMetadata.map(UserMetadata::getEmail).orElse(userId);
 
@@ -814,25 +794,6 @@ public class NgUserServiceImpl implements NgUserService {
       }
       return userMembership;
     });
-
-    if (!isAccountBasicFeatureFlagEnabled) {
-      try {
-        RoleAssignmentDTO roleAssignmentDTO =
-            RoleAssignmentDTO.builder()
-                .principal(PrincipalDTO.builder().type(USER).identifier(userId).build())
-                .resourceGroupIdentifier(getDefaultResourceGroupIdentifier(scope))
-                .disabled(false)
-                .roleIdentifier(roleIdentifier)
-                .build();
-        NGRestUtils.getResponse(accessControlAdminClient.createMultiRoleAssignment(scope.getAccountIdentifier(),
-            scope.getOrgIdentifier(), scope.getProjectIdentifier(), true,
-            RoleAssignmentCreateRequestDTO.builder().roleAssignments(singletonList(roleAssignmentDTO)).build()));
-      } catch (Exception e) {
-        /**
-         *  It's expected that user might already have this roleassignment.
-         */
-      }
-    }
   }
 
   public void addUserToCG(String userId, Scope scope) {
