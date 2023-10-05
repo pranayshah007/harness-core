@@ -813,8 +813,10 @@ public class ExecutionHelperTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testStartExecution() throws IOException {
-    ExecutionMetadata executionMetadata =
-        ExecutionMetadata.newBuilder().setHarnessVersion(HarnessYamlVersion.V0).build();
+    ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder()
+                                              .setHarnessVersion(HarnessYamlVersion.V0)
+                                              .setProcessedYamlVersion(HarnessYamlVersion.V0)
+                                              .build();
     PlanExecutionMetadata planExecutionMetadata = PlanExecutionMetadata.builder().build();
     String startingNodeId = "startingNodeId";
     PlanCreationBlobResponse planCreationBlobResponse =
@@ -853,6 +855,7 @@ public class ExecutionHelperTest extends CategoryTest {
     ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder()
                                               .setHarnessVersion(HarnessYamlVersion.V0)
                                               .setExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK)
+                                              .setProcessedYamlVersion(HarnessYamlVersion.V0)
                                               .build();
     PlanExecutionMetadata planExecutionMetadata = PlanExecutionMetadata.builder().build();
     String startingNodeId = "startingNodeId";
