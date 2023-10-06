@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_CREATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_UPDATE_PERMISSION;
 import static io.harness.rule.OwnerRule.ACHYUTH;
+import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.SATHISH;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.TATHAGAT;
@@ -42,8 +43,10 @@ import io.harness.cdng.manifest.yaml.kinds.KustomizeCommandFlagType;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.beans.ServiceV2YamlMetadata;
+import io.harness.ng.core.beans.ServiceWithGitInfo;
 import io.harness.ng.core.beans.ServicesV2YamlMetadataDTO;
 import io.harness.ng.core.beans.ServicesYamlMetadataApiInput;
+import io.harness.ng.core.beans.ServicesYamlMetadataApiInputV2;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.dto.ServiceResponse;
@@ -354,6 +357,55 @@ public class ServiceResourceV2Test extends CategoryTest {
     final ResponseDTO<ServicesV2YamlMetadataDTO> servicesYamlAndRuntimeInputsResponse =
         serviceResourceV2.getServicesYamlAndRuntimeInputs(
             servicesYamlMetadataApiInput, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+
+    final ServicesV2YamlMetadataDTO data = servicesYamlAndRuntimeInputsResponse.getData();
+    assertThat(data).isNotNull();
+    assertThat(data.getServiceV2YamlMetadataList()).hasSize(2);
+    assertThat(data.getServiceV2YamlMetadataList()
+                   .stream()
+                   .map(io.harness.ng.core.beans.ServiceV2YamlMetadata::getServiceYaml)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder("dummy-yaml1", "dummy-yaml2");
+    assertThat(data.getServiceV2YamlMetadataList()
+                   .stream()
+                   .map(io.harness.ng.core.beans.ServiceV2YamlMetadata::getServiceIdentifier)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder(svcId1, svcId2);
+
+    assertThat(data.getServiceV2YamlMetadataList()
+                   .stream()
+                   .map(ServiceV2YamlMetadata::getInputSetTemplateYaml)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder("input-set1", "input-set2");
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testGetServicesYamlAndRuntimeInputsV2WithInlineServices() {
+    String svcId1 = "svcId1";
+    String svcId2 = "svcId2";
+
+    final ServicesYamlMetadataApiInputV2 servicesYamlMetadataApiInput =
+        ServicesYamlMetadataApiInputV2.builder()
+            .serviceWithGitInfoList(Arrays.asList(
+                ServiceWithGitInfo.builder().ref(svcId1).build(), ServiceWithGitInfo.builder().ref(svcId2).build()))
+            .build();
+
+    ServiceEntity service1 = ServiceEntity.builder().identifier(svcId1).yaml("dummy-yaml1").build();
+    ServiceEntity service2 = ServiceEntity.builder().identifier(svcId2).yaml("dummy-yaml2").build();
+
+    doReturn(Arrays.asList(service1, service2))
+        .when(serviceEntityService)
+        .getServices(anyString(), anyString(), anyString(), anyList());
+    doReturn("input-set1", "input-set2").when(serviceEntityService).createServiceInputsYaml(anyString(), anyString());
+
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.CDS_ARTIFACTORY_REPOSITORY_URL_MANDATORY))
+        .thenReturn(true);
+
+    final ResponseDTO<ServicesV2YamlMetadataDTO> servicesYamlAndRuntimeInputsResponse =
+        serviceResourceV2.getServicesYamlAndRuntimeInputsV2(
+            servicesYamlMetadataApiInput, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, "false");
 
     final ServicesV2YamlMetadataDTO data = servicesYamlAndRuntimeInputsResponse.getData();
     assertThat(data).isNotNull();
