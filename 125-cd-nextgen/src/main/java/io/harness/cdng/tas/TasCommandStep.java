@@ -7,6 +7,8 @@
 
 package io.harness.cdng.tas;
 
+import static java.util.Collections.emptyList;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -22,6 +24,8 @@ import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.tas.outcome.TanzuCommandOutcome;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
@@ -32,8 +36,10 @@ import io.harness.delegate.task.pcf.response.TasRunPluginResponse;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.AccessDeniedException;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.pcf.model.CfCliVersionNG;
@@ -52,7 +58,9 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
+import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
@@ -62,6 +70,9 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -84,6 +95,7 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
   @Inject private StepHelper stepHelper;
   @Inject private OutcomeService outcomeService;
   @Inject private TasEntityHelper tasEntityHelper;
+  @Inject private io.harness.cdng.expressions.CDExpressionResolver cdExpressionResolver;
   public static final String TANZU_COMMAND = "TanzuCommand";
 
   @Override
@@ -150,9 +162,13 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
                     .getUnitProgresses())
             .build();
       }
-
       return StepResponse.builder()
           .status(Status.SUCCEEDED)
+          .stepOutcome(
+              StepResponse.StepOutcome.builder()
+                  .name(OutputExpressionConstants.OUTPUT)
+                  .outcome(TanzuCommandOutcome.builder().outputVariables(response.getOutputVariables()).build())
+                  .build())
           .unitProgressList(response.getUnitProgressData().getUnitProgresses())
           .build();
     } finally {
@@ -206,6 +222,8 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
             .repoRoot(executionPassThroughData.getRepoRoot())
             .renderedScriptString(executionPassThroughData.getRawScript())
             .useCfCLI(true)
+            .inputVariables(getInputVariables(tasCommandStepParameters.getInputVariables(), ambiance))
+            .outputVariables(getOutputVars(tasCommandStepParameters.getOutputVariables()))
             .build();
 
     TaskData taskData = TaskData.builder()
@@ -225,5 +243,71 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
         .chainEnd(true)
         .passThroughData(executionPassThroughData)
         .build();
+  }
+
+  public Map<String, String> getInputVariables(Map<String, Object> inputVariables, Ambiance ambiance) {
+    Map<String, String> res = new LinkedHashMap<>();
+    Map<String, Object> copiedInputVariables = new HashMap<>();
+
+    if (EmptyPredicate.isNotEmpty(inputVariables)) {
+      copiedInputVariables.putAll(inputVariables);
+    }
+
+    copiedInputVariables.forEach((key, value) -> {
+      if (value instanceof ParameterField) {
+        ParameterField<?> parameterFieldValue = (ParameterField<?>) value;
+        if (parameterFieldValue.fetchFinalValue() == null) {
+          throw new InvalidRequestException(String.format("Env. variable [%s] value found to be null", key));
+        }
+        res.put(key, parameterFieldValue.fetchFinalValue().toString());
+      } else if (value instanceof String) {
+        res.put(key, (String) value);
+      } else {
+        log.error(String.format(
+            "Value other than String or ParameterField found for env. variable [%s]. value: [%s]", key, value));
+      }
+    });
+
+    cdExpressionResolver.updateExpressions(ambiance, res);
+
+    // check for unresolved harness expressions
+    StringBuilder unresolvedInputVariables = new StringBuilder();
+    res.forEach((key, value) -> {
+      if (EngineExpressionEvaluator.hasExpressions(value)) {
+        unresolvedInputVariables.append(key).append(", ");
+      }
+    });
+
+    // Remove the trailing comma and whitespace, if any
+    if (unresolvedInputVariables.length() > 0) {
+      unresolvedInputVariables.setLength(unresolvedInputVariables.length() - 2);
+      throw new InvalidRequestException(
+          String.format("Env. variables: [%s] found to be unresolved", unresolvedInputVariables));
+    }
+
+    return res;
+  }
+
+  public List<String> getOutputVars(Map<String, Object> outputVariables) {
+    if (EmptyPredicate.isEmpty(outputVariables)) {
+      return emptyList();
+    }
+    // secret variables are stored separately so ignoring them
+    List<String> outputVars = new ArrayList<>();
+    outputVariables.forEach((key, val) -> {
+      if (val instanceof ParameterField) {
+        ParameterField<?> parameterFieldValue = (ParameterField<?>) val;
+        if (parameterFieldValue.getValue() == null) {
+          throw new InvalidRequestException(String.format("Output variable [%s] value found to be empty", key));
+        }
+        outputVars.add(((ParameterField<?>) val).getValue().toString());
+      } else if (val instanceof String) {
+        outputVars.add((String) val);
+      } else {
+        log.error(String.format(
+            "Value other than String or ParameterField found for output variable [%s]. value: [%s]", key, val));
+      }
+    });
+    return outputVars;
   }
 }
