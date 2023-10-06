@@ -15,7 +15,6 @@ import io.harness.delegate.service.secret.DecryptedSecrets;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
