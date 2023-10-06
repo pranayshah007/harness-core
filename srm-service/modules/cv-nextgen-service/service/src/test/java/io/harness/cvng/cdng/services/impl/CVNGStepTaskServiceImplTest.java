@@ -8,9 +8,9 @@
 package io.harness.cvng.cdng.services.impl;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ANSHIKA;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KANHAIYA;
-import static io.harness.rule.OwnerRule.ANSHIKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -45,11 +45,11 @@ import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Set;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Set;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -74,7 +74,8 @@ public class CVNGStepTaskServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(cvngStepTaskService, "waitNotifyEngine", waitNotifyEngine, true);
     FieldUtils.writeField(cvngStepTaskService, "verificationJobInstanceService", verificationJobInstanceService, true);
     FieldUtils.writeField(cvngStepTaskService, "deploymentLogAnalysisService", deploymentLogAnalysisService, true);
-    FieldUtils.writeField(cvngStepTaskService, "deploymentTimeSeriesAnalysisService", deploymentTimeSeriesAnalysisService, true);
+    FieldUtils.writeField(
+        cvngStepTaskService, "deploymentTimeSeriesAnalysisService", deploymentTimeSeriesAnalysisService, true);
   }
   @Test
   @Owner(developers = KAMAL)
@@ -233,42 +234,45 @@ public class CVNGStepTaskServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = ANSHIKA)
   @Category(UnitTests.class)
-  public void testGetDeployementActivityLogAnalysisClusters(){
+  public void testGetDeployementActivityLogAnalysisClusters() {
     String accountId = generateUuid();
     String callbackId = generateUuid();
     DeploymentLogAnalysisFilter deploymentLogAnalysisFilter = new DeploymentLogAnalysisFilter();
     String verificationJobInstanceId = generateUuid();
     List<LogAnalysisClusterChartDTO> expectedClusters = new ArrayList<>();
-    when(deploymentLogAnalysisService.getLogAnalysisClusters(accountId, verificationJobInstanceId, deploymentLogAnalysisFilter))
-            .thenReturn(expectedClusters);
-    List<LogAnalysisClusterChartDTO> resultClusters = deploymentLogAnalysisService.getLogAnalysisClusters(accountId, callbackId, deploymentLogAnalysisFilter);
+    when(deploymentLogAnalysisService.getLogAnalysisClusters(
+             accountId, verificationJobInstanceId, deploymentLogAnalysisFilter))
+        .thenReturn(expectedClusters);
+    List<LogAnalysisClusterChartDTO> resultClusters =
+        deploymentLogAnalysisService.getLogAnalysisClusters(accountId, callbackId, deploymentLogAnalysisFilter);
     assertThat(expectedClusters).isEqualTo(resultClusters);
   }
 
   @Test
   @Owner(developers = ANSHIKA)
   @Category(UnitTests.class)
-  public void testGetTransactionNames(){
+  public void testGetTransactionNames() {
     String accountId = generateUuid();
     String callbackId = generateUuid();
     String verificationJobInstanceId = generateUuid();
     List<String> expectedTransactionNames = new ArrayList<>();
     when(deploymentTimeSeriesAnalysisService.getTransactionNames(accountId, verificationJobInstanceId))
-            .thenReturn(expectedTransactionNames);
-    List<String> resultTransactionNames = deploymentTimeSeriesAnalysisService.getTransactionNames(accountId, callbackId);
+        .thenReturn(expectedTransactionNames);
+    List<String> resultTransactionNames =
+        deploymentTimeSeriesAnalysisService.getTransactionNames(accountId, callbackId);
     assertThat(expectedTransactionNames).isEqualTo(resultTransactionNames);
   }
 
   @Test
   @Owner(developers = ANSHIKA)
   @Category(UnitTests.class)
-  public void testGetExecutionLogs(){
+  public void testGetExecutionLogs() {
     String callbackId = generateUuid();
     String verificationJobInstanceId = generateUuid();
     List<VerificationJobInstance.ProgressLog> expectedExecutionLogs = new ArrayList<>();
-    when(verificationJobInstanceService.getProgressLogs(verificationJobInstanceId))
-            .thenReturn(expectedExecutionLogs);
-    List<VerificationJobInstance.ProgressLog> resultExecutionLogs = verificationJobInstanceService.getProgressLogs(callbackId);
+    when(verificationJobInstanceService.getProgressLogs(verificationJobInstanceId)).thenReturn(expectedExecutionLogs);
+    List<VerificationJobInstance.ProgressLog> resultExecutionLogs =
+        verificationJobInstanceService.getProgressLogs(callbackId);
     assertThat(expectedExecutionLogs).isEqualTo(resultExecutionLogs);
   }
 
