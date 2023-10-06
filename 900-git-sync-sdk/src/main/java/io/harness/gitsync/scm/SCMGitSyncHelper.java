@@ -120,7 +120,7 @@ public class SCMGitSyncHelper {
   public ScmGetFileResponse getFileByBranch(Scope scope, String repoName, String branchName, String commitId,
       String filePath, String connectorRef, boolean loadFromCache, EntityType entityType,
       Map<String, String> contextMap, boolean getOnlyFileContent, boolean applyRepoAllowListFilter,
-      boolean isGetFileFlow) {
+      boolean forceRefresh) {
     contextMap = GitSyncLogContextHelper.setContextMap(
         scope, repoName, branchName, commitId, filePath, GitOperation.GET_FILE, contextMap);
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
@@ -132,7 +132,7 @@ public class SCMGitSyncHelper {
               .setBranchName(Strings.nullToEmpty(branchName))
               .setCommitId(Strings.nullToEmpty(commitId))
               .setFilePath(filePath)
-              .setCacheRequestParams(CacheRequestMapper.getCacheRequest(loadFromCache, isGetFileFlow))
+              .setCacheRequestParams(CacheRequestMapper.getCacheRequest(loadFromCache, forceRefresh))
               .putAllContextMap(contextMap)
               .setEntityType(EntityTypeMapper.getEntityType(entityType))
               .setScopeIdentifiers(ScopeIdentifierMapper.getScopeIdentifiersFromScope(scope))

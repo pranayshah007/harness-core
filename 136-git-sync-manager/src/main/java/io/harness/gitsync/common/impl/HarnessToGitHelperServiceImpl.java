@@ -868,7 +868,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
         .repoName(getFileRequest.getRepoName())
         .scope(scope)
         .useCache(getFileRequest.getCacheRequestParams().getUseCache())
-        .isGetFileFlow(getFileRequest.getCacheRequestParams().getIsGetFileFlow())
+        .forceRefresh(getFileRequest.getCacheRequestParams().getForceRefresh())
         .getOnlyFileContent(getFileRequest.getGetOnlyFileContent())
         .gitXSettingsParams(GitXSettingsParams.builder()
                                 .applyRepoAllowListFilter(getFileRequest.getGitSettings().getApplyRepoAllowListFilter())

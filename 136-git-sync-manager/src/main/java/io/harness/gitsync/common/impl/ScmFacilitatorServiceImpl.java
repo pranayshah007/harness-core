@@ -1078,7 +1078,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   }
 
   private boolean useCache(ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO, boolean isSyncEnabled) {
-    if (scmGetFileByBranchRequestDTO.isGetFileFlow() && !scmGetFileByBranchRequestDTO.isUseCache()) {
+    if (scmGetFileByBranchRequestDTO.isForceRefresh() && !scmGetFileByBranchRequestDTO.isUseCache()) {
       return false;
     } else {
       return isSyncEnabled || scmGetFileByBranchRequestDTO.isUseCache();

@@ -77,7 +77,7 @@ public class GitAwareEntityHelper {
     validateFilePathHasCorrectExtension(filePath);
     String connectorRef = gitContextRequestParams.getConnectorRef();
     boolean loadFromCache = gitContextRequestParams.isLoadFromCache();
-    boolean isGetFileFlow = gitContextRequestParams.isGetFileFlow();
+    boolean forceRefresh = gitContextRequestParams.isForceRefresh();
     EntityType entityType = gitContextRequestParams.getEntityType();
     boolean getFileContentOnly = gitContextRequestParams.isGetOnlyFileContent();
 
@@ -89,7 +89,7 @@ public class GitAwareEntityHelper {
                                              .projectIdentifier(scope.getProjectIdentifier())
                                              .build(),
             repoName, branch, commitId, filePath, connectorRef, loadFromCache, entityType, contextMap,
-            getFileContentOnly, gitContextRequestParams.isApplyRepoAllowListFilter(), isGetFileFlow);
+            getFileContentOnly, gitContextRequestParams.isApplyRepoAllowListFilter(), forceRefresh);
     entity.setData(scmGetFileResponse.getFileContent());
     GitAwareContextHelper.updateScmGitMetaData(scmGetFileResponse.getGitMetaData());
     return entity;

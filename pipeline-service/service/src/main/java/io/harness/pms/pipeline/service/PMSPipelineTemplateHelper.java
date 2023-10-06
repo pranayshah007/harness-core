@@ -118,7 +118,7 @@ public class PMSPipelineTemplateHelper {
                     .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
                     .getOnlyFileContent(PipelineGitXHelper.isExecutionFlow())
                     .yamlVersion(yamlVersion)
-                    .isGetFileFlow(PipelineGitXHelper.isGetFileFlow())
+                    .forceRefresh(PipelineGitXHelper.isGetFileFlow())
                     .build(),
                 appendInputSetValidator));
           } else {
@@ -131,7 +131,7 @@ public class PMSPipelineTemplateHelper {
                     .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
                     .getOnlyFileContent(PipelineGitXHelper.isExecutionFlow())
                     .yamlVersion(yamlVersion)
-                    .isGetFileFlow(PipelineGitXHelper.isGetFileFlow())
+                    .forceRefresh(PipelineGitXHelper.isGetFileFlow())
                     .build(),
                 appendInputSetValidator));
           }
@@ -148,7 +148,7 @@ public class PMSPipelineTemplateHelper {
                     .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
                     .getOnlyFileContent(PipelineGitXHelper.isExecutionFlow())
                     .yamlVersion(yamlVersion)
-                    .isGetFileFlow(PipelineGitXHelper.isGetFileFlow())
+                    .forceRefresh(PipelineGitXHelper.isGetFileFlow())
                     .build(),
                 appendInputSetValidator));
           } else {
@@ -160,7 +160,7 @@ public class PMSPipelineTemplateHelper {
                     .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
                     .getOnlyFileContent(PipelineGitXHelper.isExecutionFlow())
                     .yamlVersion(yamlVersion)
-                    .isGetFileFlow(PipelineGitXHelper.isGetFileFlow())
+                    .forceRefresh(PipelineGitXHelper.isGetFileFlow())
                     .build(),
                 appendInputSetValidator));
           }

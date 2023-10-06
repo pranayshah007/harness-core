@@ -35,5 +35,5 @@ public class GitContextRequestParams {
   EntityType entityType;
   boolean getOnlyFileContent;
   boolean applyRepoAllowListFilter;
-  boolean isGetFileFlow;
+  boolean forceRefresh;
 }
