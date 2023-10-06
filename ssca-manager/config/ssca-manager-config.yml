@@ -27,7 +27,7 @@ server:
   maxThreads: 1024
 
 mongo:
-  uri: mongodb://mongo1:30001,mongo3:30003/ssca
+  uri: mongodb://localhost:27017/ssca
   connectTimeout: 30000
   serverSelectionTimeout: 90000
   socketTimeout: 360000
