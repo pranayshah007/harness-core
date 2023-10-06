@@ -33,6 +33,7 @@ public class TemplateApplyRequestDTO {
   boolean getMergedYamlWithTemplateField;
   boolean getOnlyFileContent;
   String yamlVersion;
+  boolean isGetFileFlow;
 
   public String getYamlVersion() {
     if (isNotEmpty(yamlVersion)) {
