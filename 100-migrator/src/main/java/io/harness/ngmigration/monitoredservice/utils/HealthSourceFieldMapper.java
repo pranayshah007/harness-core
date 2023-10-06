@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.monitoredservice.utils;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cvng.beans.TimeSeriesThresholdType;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.RiskCategory;
@@ -18,6 +20,7 @@ import java.util.Arrays;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @UtilityClass
 public class HealthSourceFieldMapper {
   public HealthSourceMetricDefinition.AnalysisDTO getAnalysisDTO(String metricType, String serviceInstanceIdentifier) {

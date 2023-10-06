@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngmigration.service.step.shellscriptprovisioner;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.MigratorUtility.RUNTIME_INPUT;
 import static io.harness.ngmigration.utils.NGMigrationConstants.SECRET_FORMAT;
@@ -15,6 +14,9 @@ import static software.wings.beans.ServiceVariableType.ENCRYPTED_TEXT;
 import static software.wings.ngmigration.NGMigrationEntityType.INFRA_PROVISIONER;
 import static software.wings.ngmigration.NGMigrationEntityType.SECRET;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.provision.shellscript.ShellScriptProvisionStepInfo;
 import io.harness.cdng.provision.shellscript.ShellScriptProvisionStepNode;
 import io.harness.data.structure.EmptyPredicate;
@@ -59,6 +61,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 public class ShellScriptProvisionerStepMapperImpl extends StepMapper {
   public List<CgEntityId> getReferencedEntities(

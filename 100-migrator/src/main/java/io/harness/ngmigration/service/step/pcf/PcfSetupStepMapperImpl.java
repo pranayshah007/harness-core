@@ -6,11 +6,13 @@
  */
 
 package io.harness.ngmigration.service.step.pcf;
-
 import static io.harness.delegate.beans.pcf.ResizeStrategy.DOWNSIZE_OLD_FIRST;
 import static io.harness.delegate.beans.pcf.TasResizeStrategyType.DOWNSCALE_OLD_FIRST;
 import static io.harness.delegate.beans.pcf.TasResizeStrategyType.UPSCALE_NEW_FIRST;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.tas.TasBGAppSetupStepInfo;
@@ -38,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class PcfSetupStepMapperImpl extends PcfAbstractStepMapper {
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {

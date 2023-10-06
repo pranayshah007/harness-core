@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.service.trigger;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
 
@@ -17,6 +19,7 @@ import software.wings.ngmigration.CgEntityId;
 
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public interface WebhookHandler {
   WebhookTriggerConfigV2 getConfig(WebHookTriggerCondition condition, Map<CgEntityId, NGYamlFile> yamlFileMap);

@@ -6,9 +6,12 @@
  */
 
 package io.harness.ngmigration.expressions;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.expression.LateBindingMap;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class PipelineVariablesMigratorFunctor extends LateBindingMap {
   @Override
   public synchronized Object get(Object key) {
