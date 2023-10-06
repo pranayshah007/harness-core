@@ -436,7 +436,7 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
       TemplateUtils.setUserFlowContext(USER_FLOW.EXECUTION);
     }
     String yamlVersion = templateApplyRequestDTO.getYamlVersion();
-    log.info("request yaml version: {}", yamlVersion);
+    log.warn("request yaml version: {}", yamlVersion);
     TemplateMergeResponseDTO templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(accountId, orgId,
         projectId, YamlUtils.readAsJsonNode(templateApplyRequestDTO.getOriginalEntityYaml()),
         templateApplyRequestDTO.isGetMergedYamlWithTemplateField(),

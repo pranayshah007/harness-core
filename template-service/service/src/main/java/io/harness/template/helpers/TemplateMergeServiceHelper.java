@@ -286,8 +286,8 @@ public class TemplateMergeServiceHelper {
       if (isTemplatePresent) {
         JsonNode templateJsonNode = value;
         if (HarnessYamlVersion.isV1(currentYamlVersion)) {
-          log.info("current yaml version: {}", currentYamlVersion);
-          log.info("current yaml node: {}", yamlNode);
+          log.warn("current yaml version: {}", currentYamlVersion);
+          log.warn("current yaml node: {}", yamlNode);
           templateJsonNode = yamlNode.getCurrJsonNode();
         }
         Pair<TemplateEntity, JsonNode> entry = replaceTemplateOccurrenceWithTemplateSpecYaml(accountId, orgId,
