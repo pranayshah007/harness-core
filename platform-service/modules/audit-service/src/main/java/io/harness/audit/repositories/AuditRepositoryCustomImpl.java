@@ -11,7 +11,9 @@ import static io.harness.NGCommonEntityConstants.MONGODB_ID;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.mongo.MongoConfig.NO_LIMIT;
 
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.newAggregation;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.project;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.Action;
