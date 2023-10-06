@@ -17,11 +17,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureFlag.Scope;
 
 import lombok.Getter;
+
 /**
  * Add your feature name here. When the feature is fully launched and no longer needs to be flagged,
  * delete the feature name.
  */
-
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
   // Sorted using https://github.com/google/keep-sorted/blob/main/README.md
@@ -854,6 +854,7 @@ public enum FeatureName {
   CDS_SERVICENOW_FETCH_FIELDS("FF to fetch service now fields", HarnessTeam.CDC),
   CDS_ENABLE_LOAD_FROM_CACHE_FOR_RETRY_FORM("Used for enabling load from cache on retry form", PIPELINE),
   CDS_DISABLE_FIRST_GEN_CD("Used to disable/block customer access to CG after the migration cut-over", SPG),
+  CDS_CG_REDUCED_EXPORT_LOG_LIMIT("Decrease to 5 deployments per export operation in CG", HarnessTeam.CDC),
   CDS_DISABLE_ALL_CG_TRIGGERS(
       "Used to disable/block triggers to accept webhooks or pooling artifact sources on CG after the migration cut-over",
       HarnessTeam.CDC),
