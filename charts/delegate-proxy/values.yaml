@@ -39,10 +39,10 @@ maxUnavailable: 0
 
 image:
   registry: docker.io
-  repository: harness/delegate-proxy-signed
+  repository: harness/delegate-proxy
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "80104_1"
+  tag: "80807"
   digest: ""
   imagePullSecrets: []
 
