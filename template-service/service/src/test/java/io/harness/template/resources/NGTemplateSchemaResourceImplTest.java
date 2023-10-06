@@ -10,11 +10,16 @@ package io.harness.template.resources;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.encryption.Scope;
 import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.pms.yaml.individualschema.TemplateSchemaParserFactory;
+import io.harness.pms.yaml.individualschema.TemplateSchemaParserV0;
 import io.harness.rule.Owner;
 import io.harness.template.services.NGTemplateSchemaService;
 import io.harness.template.utils.TemplateSchemaFetcher;
@@ -33,6 +38,8 @@ public class NGTemplateSchemaResourceImplTest extends CategoryTest {
   @InjectMocks NGTemplateSchemaResourceImpl ngTemplateSchemaResource;
   @Mock NGTemplateSchemaService ngTemplateSchemaService;
   @Mock TemplateSchemaFetcher templateSchemaFetcher;
+  @Mock TemplateSchemaParserV0 templateSchemaParserV0;
+  @Mock TemplateSchemaParserFactory templateSchemaParserFactory;
   private AutoCloseable mocks;
 
   private final String ACCOUNT_ID = "account_id";
@@ -42,6 +49,8 @@ public class NGTemplateSchemaResourceImplTest extends CategoryTest {
   @Before
   public void setUp() throws IOException {
     mocks = MockitoAnnotations.openMocks(this);
+    when(templateSchemaParserFactory.getTemplateSchemaParser("v0")).thenReturn(templateSchemaParserV0);
+    when(templateSchemaParserV0.getIndividualSchema(any())).thenReturn(null);
   }
 
   @After

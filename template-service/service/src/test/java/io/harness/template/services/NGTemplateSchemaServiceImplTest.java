@@ -34,7 +34,6 @@ import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.JsonSchemaException;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.pipeline.yamlschema.PipelineYamlSchemaServiceClient;
@@ -129,6 +128,7 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
     MockitoAnnotations.openMocks(this);
     String filename = "template.yaml";
     yaml = readFile(filename);
+    when(templateSchemaParserFactory.getTemplateSchemaParser("v0")).thenReturn(templateSchemaParserV0);
 
     on(ngTemplateSchemaService).set("yamlSchemaProvider", yamlSchemaProvider);
     on(ngTemplateSchemaService).set("yamlSchemaValidator", yamlSchemaValidator);
@@ -169,31 +169,6 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
                              .fullyQualifiedIdentifier("account_id/orgId/projId/template1/version1/")
                              .templateScope(Scope.PROJECT)
                              .build();
-  }
-
-  @Test
-  @Owner(developers = ABHINAV_MITTAL)
-  @Category(UnitTests.class)
-  public void getTemplateSchemaWithTemplateChildTypeNull() {
-    assertThat(ngTemplateSchemaService.getTemplateSchema(
-                   ACCOUNT_ID, PROJ_IDENTIFIER, ORG_IDENTIFIER, Scope.PROJECT, null, TemplateEntityType.STAGE_TEMPLATE))
-        .isEqualTo(readJsonFile("template-schema.json"));
-  }
-
-  @Test
-  @Owner(developers = ABHINAV_MITTAL)
-  @Category(UnitTests.class)
-  public void getTemplateSchemaWithException() {
-    Call<ResponseDTO<YamlSchemaResponse>> requestCall = mock(Call.class);
-    doReturn(requestCall).when(pipelineYamlSchemaServiceClient).getYamlSchema(any(), any(), any(), any(), any(), any());
-    try (MockedStatic<NGRestUtils> mockStatic = mockStatic(NGRestUtils.class)) {
-      mockStatic.when(() -> NGRestUtils.getResponse(requestCall)).thenThrow(new JsonSchemaException("Exception"));
-
-      assertThatThrownBy(() -> {
-        ngTemplateSchemaService.getTemplateSchema(
-            ACCOUNT_ID, PROJ_IDENTIFIER, ORG_IDENTIFIER, Scope.PROJECT, null, TemplateEntityType.PIPELINE_TEMPLATE);
-      }).isInstanceOf(JsonSchemaException.class);
-    }
   }
 
   @Test

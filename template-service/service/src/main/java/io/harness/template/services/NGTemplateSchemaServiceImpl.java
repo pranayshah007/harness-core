@@ -92,8 +92,7 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
   public JsonNode getTemplateSchema(String accountIdentifier, String projectIdentifier, String orgIdentifier,
       Scope scope, String templateChildType, TemplateEntityType templateEntityType) {
     try {
-      return getTemplateYamlSchemaInternal(
-          accountIdentifier, projectIdentifier, orgIdentifier, scope, templateChildType, templateEntityType);
+      return getIndividualStaticSchema(templateEntityType.getNodeGroup(), templateChildType, "v0");
     } catch (Exception e) {
       log.error("[Template] Failed to get template yaml schema", e);
       throw new JsonSchemaException(e.getMessage());
