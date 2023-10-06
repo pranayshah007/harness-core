@@ -32,7 +32,7 @@ public class EncryptionConfigProtoPojoMapper {
         .uuid(config.getUuid())
         .accountId(config.getAccountId())
         .name(config.getName())
-        .encryptionType(io.harness.security.encryption.EncryptionType.LOCAL)
+        .encryptionType(EncryptionTypeProtoPojoMapper.map(config.getEncryptionType()))
         .build();
   }
 }

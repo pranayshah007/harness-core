@@ -11,9 +11,11 @@ import io.harness.delegate.core.beans.TaskPayload;
 import io.harness.delegate.service.handlermapping.context.Context;
 import io.harness.delegate.service.runners.RunnersFactory;
 import io.harness.delegate.service.runners.itfc.Runner;
+import io.harness.delegate.service.secret.DecryptedSecrets;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,8 +26,8 @@ public class ExecutionHandler implements Handler {
   private final RunnersFactory runnersFactory;
 
   @Override
-  public void handle(String runnerType, TaskPayload taskPayload, Context context) {
+  public void handle(String runnerType, TaskPayload taskPayload, DecryptedSecrets decryptedSecrets, Context context) {
     Runner runner = runnersFactory.get(runnerType);
-    runner.execute(taskPayload.getExecutionInfraId(), taskPayload.getTaskData(), context);
+    runner.execute(taskPayload.getExecutionInfraId(), taskPayload.getTaskData(), decryptedSecrets, context);
   }
 }

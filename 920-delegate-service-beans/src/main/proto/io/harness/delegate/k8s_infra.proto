@@ -9,6 +9,8 @@ package io.harness.delegate;
 
 import "920-delegate-service-beans/src/main/proto/io/harness/delegate/resource.proto";
 import "920-delegate-service-beans/src/main/proto/io/harness/delegate/security_context.proto";
+import "920-delegate-service-beans/src/main/proto/io/harness/delegate/secrets.proto";
+
 option go_package = "920_delegate_service_beans";
 
 option java_multiple_files = true;
@@ -32,4 +34,5 @@ message ContainerSpec {
   repeated string command = 5;           // Commands to be executed
   repeated string args = 6;              // Args to be passed
   SecurityContext security_context = 7;  // Optional field to set container security context
+  Secrets secrets = 8;                   // Secrets (ids) needed by this container
 }

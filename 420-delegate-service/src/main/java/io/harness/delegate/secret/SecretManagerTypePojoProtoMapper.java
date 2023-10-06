@@ -7,24 +7,17 @@
 
 package io.harness.delegate.secret;
 
-import io.harness.delegate.core.beans.EncryptionType;
+import io.harness.delegate.core.beans.SecretManagerType;
 
 import java.util.Objects;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
-public class EncryptionTypePojoProtoMapper {
-  public static EncryptionType map(io.harness.security.encryption.EncryptionType type) {
+public class SecretManagerTypePojoProtoMapper {
+  public static SecretManagerType map(io.harness.security.encryption.SecretManagerType type) {
     if (Objects.isNull(type)) {
-      return EncryptionType.NOT_SET;
+      return SecretManagerType.SM_NOT_SET;
     }
-    switch (type) {
-      case KMS:
-        return EncryptionType.AWS_KMS;
-      case VAULT:
-        return EncryptionType.HASHICORP_VAULT;
-      default:
-        return EncryptionType.valueOf(type.name());
-    }
+    return SecretManagerType.valueOf(type.name());
   }
 }

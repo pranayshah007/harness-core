@@ -9,14 +9,13 @@ package io.harness.grpc;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import io.grpc.Status;
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.DelegateTask;
-import io.harness.beans.DelegateTask.SecretToDecrypt;
 import io.harness.beans.DelegateTask.DelegateTaskBuilder;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
+import io.harness.beans.DelegateTask.SecretToDecrypt;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.delegate.CancelTaskRequest;
 import io.harness.delegate.CancelTaskResponse;
@@ -102,6 +101,7 @@ import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.util.Durations;
 import com.google.protobuf.util.Timestamps;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -112,13 +112,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
 
 @Singleton
 @Slf4j
@@ -156,14 +154,10 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
   }
 
   // Helper function that will persist a delegate grpc request to task.
-  private void scheduleTaskInternal(@NotNull SchedulingConfig schedulingConfig,
-                                    @Nullable byte[] taskData,
-                                    @Nullable byte[] infraData,
-                                    SchedulingTaskEvent.EventType eventType,
-                                    Optional<String> executionInfraRef,
-                                    @NotNull String taskId,
-                                    Optional<List<SecretToDecrypt>> secrets,
-                                    StreamObserver<SubmitTaskResponse> responseObserver) {
+  private void scheduleTaskInternal(@NotNull SchedulingConfig schedulingConfig, @Nullable byte[] taskData,
+      @Nullable byte[] infraData, SchedulingTaskEvent.EventType eventType, Optional<String> executionInfraRef,
+      @NotNull String taskId, Optional<List<SecretToDecrypt>> secrets,
+      StreamObserver<SubmitTaskResponse> responseObserver) {
     try {
       Map<String, String> setupAbstractions = schedulingConfig.getSetupAbstractions().getValuesMap();
 
@@ -343,23 +337,23 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
     if (schedulingConfig.getRunnerType().equals(RunnerType.RUNNER_TYPE_K8S)) {
       String taskId = delegateTaskMigrationHelper.generateDelegateTaskUUID();
       K8SInfra k8SInfra = buildK8sInfra(setupExecutionInfrastructureRequest, taskId);
-      scheduleTaskInternal(
-              setupExecutionInfrastructureRequest.getConfig(),
-              null,
-              k8SInfra.toByteArray(),
-              SchedulingTaskEvent.EventType.SETUP,
-              executionInfraRef,
-              taskId,
-              Optional.of(setupExecutionInfrastructureRequest.getSecrets().getSecretsList()
-                      .stream()
-                      .map(ProtoSecretToSecretToDecryptMapper::map)
-                      .collect(Collectors.toList())),
-              responseObserver);
+      scheduleTaskInternal(setupExecutionInfrastructureRequest.getConfig(), null, k8SInfra.toByteArray(),
+          SchedulingTaskEvent.EventType.SETUP, executionInfraRef, taskId,
+          Optional.of(getSecretsFromK8sInfraSpec(setupExecutionInfrastructureRequest.getInfra().getK8Infraspec())),
+          responseObserver);
     } else {
       String errMsg = String.format("Runner type %s not supported for init request.", schedulingConfig.getRunnerType());
       log.error(errMsg);
       responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(errMsg).asRuntimeException());
     }
+  }
+
+  private List<SecretToDecrypt> getSecretsFromK8sInfraSpec(final K8sInfraSpec k8sInfraSpec) {
+    return k8sInfraSpec.getTasksList()
+        .stream()
+        .flatMap(containerSpec -> containerSpec.getSecrets().getSecretsList().stream())
+        .map(ProtoSecretToSecretToDecryptMapper::map)
+        .collect(Collectors.toList());
   }
 
   public void executeTask(
@@ -414,6 +408,12 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
                             .setMode(ExecutionMode.MODE_ONCE)
                             .setPriority(ExecutionPriority.PRIORITY_DEFAULT)
                             .setRuntime(stepRuntime)
+                            .addAllInputSecrets(
+                                    task.getSecrets()
+                                            .getSecretsList()
+                                            .stream()
+                                            .map(SecretToSecretRefMapper::map)
+                                            .collect(Collectors.toList()))
                             .build();
       k8SInfraBuilder.addSteps(k8SStep);
     }

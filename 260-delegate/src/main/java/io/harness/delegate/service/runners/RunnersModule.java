@@ -14,6 +14,8 @@ import io.harness.delegate.service.core.litek8s.K8SRunnerConfig;
 import com.google.inject.AbstractModule;
 import lombok.RequiredArgsConstructor;
 
+import java.util.Objects;
+
 @RequiredArgsConstructor
 public class RunnersModule extends AbstractModule {
   private final DelegateConfiguration configuration;
@@ -22,7 +24,8 @@ public class RunnersModule extends AbstractModule {
   protected void configure() {
     final var delegateName = System.getenv().get("DELEGATE_NAME");
     final var delegateNamespace = System.getenv().get("DELEGATE_NAMESPACE");
-    final var delegateTaskParamsFile = System.getenv().get("DELEGATE_TASK_PATH");
+    final var delegateTaskParamsFile =
+            Objects.toString(System.getenv().get("DELEGATE_TASK_PATH"), "/harness/taskfile");
     final var runnerConfig = new K8SRunnerConfig(delegateNamespace, delegateName, configuration.getDelegateToken(),
         delegateTaskParamsFile, configuration.getAccountId(), configuration.getLogStreamingServiceBaseUrl());
     install(new K8SRunnerModule(runnerConfig));

@@ -7,16 +7,19 @@
 
 package io.harness.delegate.service.core.litek8s;
 
+import io.harness.beans.IdentifierRef;
 import io.harness.delegate.core.beans.Secret;
 import io.harness.delegate.service.core.k8s.K8SSecret;
 import io.harness.delegate.service.core.util.ApiExceptionLogger;
 import io.harness.delegate.service.core.util.K8SResourceHelper;
+import io.harness.delegate.service.secret.RunnerDecryptionService;
 
 import com.google.common.base.Charsets;
 import com.google.inject.Inject;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Secret;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -64,12 +67,13 @@ public class SecretsBuilder {
     }
   }
 
-  public V1Secret createSecret(final String taskGroupId, final String taskId, final Secret infraSecret) {
+  public V1Secret createSecret(final String infraId, final String taskId, IdentifierRef ref, final char[] value) {
     final var secretName = K8SResourceHelper.getSecretName(taskId);
-    final var decryptedSecrets = decryptionService.decrypt(infraSecret);
+    // final var decryptedSecrets = decryptionService.decrypt(infraSecret);
     try {
-      return K8SSecret.secret(secretName, config.getNamespace(), taskGroupId)
-          .putAllCharDataItems(decryptedSecrets)
+      // TODO: create secret file
+      return K8SSecret.secret(secretName, config.getNamespace(), infraId)
+          .putAllCharDataItems(Map.of(K8SResourceHelper.normalizeResourceName(ref.getFullyQualifiedName()), value))
           .create(coreApi);
     } catch (ApiException e) {
       log.error(ApiExceptionLogger.format(e));

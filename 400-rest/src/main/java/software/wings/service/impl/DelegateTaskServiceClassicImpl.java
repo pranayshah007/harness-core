@@ -91,7 +91,9 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
-import io.harness.delegate.core.beans.*;
+import io.harness.delegate.core.beans.AcquireTasksResponse;
+import io.harness.delegate.core.beans.InputData;
+import io.harness.delegate.core.beans.TaskPayload;
 import io.harness.delegate.queueservice.DelegateTaskQueueService;
 import io.harness.delegate.secret.EncryptedDataRecordPojoProtoMapper;
 import io.harness.delegate.secret.EncryptionConfigPojoProtoMapper;
@@ -987,37 +989,65 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         // TODO: add metrics for new APIs
         // delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_ACQUIRE);
         // Fetch EncryptionDetails
-        List<EncryptedDataDetail> encryptedDataDetailList = new ArrayList<>();
-        delegateTask.getSecretsToDecrypt().forEach(secret -> {
-          List<EncryptedDataDetail> dataDetails = taskSecretService.getEncryptionDetails(
-                  secret.getSecretId(),
-                  Scope.fromString(secret.getScope()),
-                  delegateTask.getAccountId(),
-                  Optional.of(delegateTask.getOrgId()),
-                  Optional.of(delegateTask.getProjectId()));
-          encryptedDataDetailList.addAll(dataDetails);
-        });
-        List<Secret> secretsToDecryptByDelegate = encryptedDataDetailList.stream().map(encryptedDataDetail -> {
-          Secret secretToDecrypt = Secret.newBuilder()
-                  .setEncryptedRecord(InputData.newBuilder()
-                          .setBinaryData(ByteString.copyFrom(
-                                  EncryptedDataRecordPojoProtoMapper.map(
-                                          encryptedDataDetail.getEncryptedData()).toByteArray()))
-                          .build())
-                  .setConfig(SecretConfig.newBuilder()
-                          .setBinaryData(ByteString.copyFrom(
-                                  EncryptionConfigPojoProtoMapper.map(
-                                          encryptedDataDetail.getEncryptionConfig()).toByteArray()))
-                          .build())
-                  .build();
-          return secretToDecrypt;
-        }).collect(toList());
-
         var builder = TaskPayload.newBuilder()
                           .setId(taskId)
                           .setExecutionInfraId(delegateTask.getInfraId())
                           .setEventType(delegateTask.getEventType())
-                          .setRunnerType(delegateTask.getRunnerType()).addAllSecrets(secretsToDecryptByDelegate);
+                          .setRunnerType(delegateTask.getRunnerType());
+        List<Secret> secretsToDecryptByDelegate = null;
+        if (Objects.nonNull(delegateTask.getSecretsToDecrypt())) {
+          List<EncryptedDataDetail> encryptedDataDetailList = new ArrayList<>();
+          Map<String, SecretRef> encryptedRecordUuidToSecretRef = new HashMap<>();
+          delegateTask.getSecretsToDecrypt().forEach(secret -> {
+            List<EncryptedDataDetail> dataDetails = taskSecretService.getEncryptionDetails(secret.getSecretId(),
+                Scope.fromString(secret.getScope()), delegateTask.getAccountId(),
+                Optional.ofNullable(delegateTask.getOrgId()), Optional.ofNullable(delegateTask.getProjectId()));
+            encryptedDataDetailList.addAll(dataDetails);
+            if (dataDetails.size() == 1) {
+              encryptedRecordUuidToSecretRef.put(
+                      dataDetails.get(0).getEncryptedData().getUuid(),
+                      SecretRef.newBuilder()
+                              .setSecretId(secret.getSecretId())
+                              .setScope(io.harness.delegate.core.beans.Scope.valueOf(secret.getScope()))
+                              .build());
+            } else {
+              // Should not reach here
+              log.error(
+                  "Fetching encryption details returned unexpected number of results for secret ", secret.toString());
+            }
+          });
+
+          secretsToDecryptByDelegate =
+              encryptedDataDetailList.stream()
+                  .map(encryptedDataDetail -> {
+                    var secretToDecrypt =
+                        Secret.newBuilder()
+                            .setEncryptedRecord(
+                                InputData.newBuilder()
+                                    .setBinaryData(ByteString.copyFrom(
+                                        EncryptedDataRecordPojoProtoMapper.map(encryptedDataDetail.getEncryptedData())
+                                            .toByteArray()))
+                                    .build())
+                            .setConfig(
+                                SecretConfig.newBuilder()
+                                    .setBinaryData(ByteString.copyFrom(
+                                        EncryptionConfigPojoProtoMapper.map(encryptedDataDetail.getEncryptionConfig())
+                                            .toByteArray()))
+                                    .build());
+                    if (encryptedRecordUuidToSecretRef.containsKey(encryptedDataDetail.getEncryptedData().getUuid())) {
+                      secretToDecrypt.setSecretRef(
+                          encryptedRecordUuidToSecretRef.get(encryptedDataDetail.getEncryptedData().getUuid()));
+                    } else {
+                      // Should not reach here
+                      log.error("Cannot find secret id for encrypted data record ",
+                          encryptedDataDetail.getEncryptedData().getUuid());
+                    }
+                    return secretToDecrypt.build();
+                  })
+                  .collect(toList());
+          builder.addAllSecrets(secretsToDecryptByDelegate);
+        }
+
         if (Objects.nonNull(delegateTask.getRunnerData())) {
           builder.setInfraData(
               InputData.newBuilder().setBinaryData(ByteString.copyFrom(delegateTask.getRunnerData())).build());
@@ -1026,7 +1056,9 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
           builder.setTaskData(
               InputData.newBuilder().setBinaryData(ByteString.copyFrom(delegateTask.getTaskData())).build());
         }
-
+        builder.setAccountId(accountId);
+        builder.setOrgId(Objects.toString(delegateTask.getOrgId(), ""));
+        builder.setProjectId(Objects.toString(delegateTask.getProjectId(), ""));
         return Optional.of(AcquireTasksResponse.newBuilder().addTask(builder.build()).build());
       }
     } finally {

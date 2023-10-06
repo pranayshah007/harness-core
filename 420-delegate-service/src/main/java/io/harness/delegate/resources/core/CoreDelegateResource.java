@@ -109,7 +109,6 @@ public class CoreDelegateResource {
               .setPriority(delegateTaskPackage.getData().isAsync() ? ExecutionPriority.PRIORITY_DEFAULT
                                                                    : ExecutionPriority.PRIORITY_HIGH)
               //              .setInput(InputData.newBuilder().setBinaryData(ByteString.copyFrom(taskDataBytes)).build())
-              .addAllInputSecrets(protoSecrets)
               .setRuntime(StepRuntime.newBuilder()
                               .setType(delegateTaskPackage.getData().getTaskType())
                               .setSource(PluginSource.SOURCE_IMAGE)

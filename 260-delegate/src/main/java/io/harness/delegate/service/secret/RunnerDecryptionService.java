@@ -5,12 +5,10 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.service.core.litek8s;
+package io.harness.delegate.service.secret;
 
 import io.harness.delegate.core.beans.EncryptedDataRecord;
 import io.harness.delegate.core.beans.Secret;
-import io.harness.delegate.service.secret.EncryptedDataRecordProtoPojoMapper;
-import io.harness.delegate.service.secret.EncryptionConfigProtoPojoMapper;
 import io.harness.security.encryption.DelegateDecryptionService;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
@@ -32,17 +30,25 @@ public class RunnerDecryptionService {
   private final DelegateDecryptionService decryptionService;
   @Named("referenceFalseKryoSerializer") private final KryoSerializer kryoSerializer; // TODO: remove named
 
+  @Deprecated
   public Map<String, char[]> decrypt(final Secret secret) {
     final EncryptionConfig secretConfig =
         (EncryptionConfig) kryoSerializer.asInflatedObject(secret.getConfig().getBinaryData().toByteArray());
-    final List<EncryptedRecord> kryoSecrets =
-        (List<EncryptedRecord>) kryoSerializer.asInflatedObject(secret.getEncryptedRecord().getBinaryData().toByteArray());
+    final List<EncryptedRecord> kryoSecrets = (List<EncryptedRecord>) kryoSerializer.asInflatedObject(
+        secret.getEncryptedRecord().getBinaryData().toByteArray());
     final var decrypt = decryptionService.decrypt(Map.of(secretConfig, kryoSecrets));
     log.info("Decrypted secrets are: {}", decrypt);
     return decrypt;
   }
 
-  public Map<String, char[]> decryptByteArray(final Secret secret) throws InvalidProtocolBufferException {
+  /**
+   * Decrypts a secret described by Secret object.
+   * @param secret A protobuf definition of Secret to be decrypted. Refer to
+   *               955-delegate-beans/src/main/proto/io/harness/delegate/core/beans/secret.proto
+   * @return decrypted char value. Null if decryption fails
+   * @throws InvalidProtocolBufferException
+   */
+  public char[] decryptProtoBytes(final Secret secret) throws InvalidProtocolBufferException {
     final EncryptedDataRecord encryptedDataRecord =
         EncryptedDataRecord.parseFrom(secret.getEncryptedRecord().getBinaryData().toByteArray());
     EncryptedRecordData mappedRecordData = EncryptedDataRecordProtoPojoMapper.map(encryptedDataRecord);
@@ -52,8 +58,13 @@ public class RunnerDecryptionService {
     List<EncryptedRecord> encryptedRecordList = new ArrayList<>();
     encryptedRecordList.add(mappedRecordData);
     assert mappedEncryptionConfig != null;
+    // DelegateDecryptionService doesn't use cache
     final var decrypt = decryptionService.decrypt(Map.of(mappedEncryptionConfig, encryptedRecordList));
-    log.info("Decrypted secrets are: {}", decrypt);
-    return decrypt;
+    if (!decrypt.containsKey(mappedRecordData.getUuid())) {
+      log.error("After decryption, cannot find decrypted secret for encryption record {}", mappedRecordData.getUuid());
+      return null;
+    } else {
+      return decrypt.get(mappedRecordData.getUuid());
+    }
   }
 }

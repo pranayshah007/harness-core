@@ -30,15 +30,17 @@ public class EncryptedDataRecordProtoPojoMapper {
         .uuid(data.getUuid())
         .name(data.getName())
         .path(data.getPath())
+        .encryptedValue(new String(data.getEncryptedValue().toByteArray(), StandardCharsets.UTF_8).toCharArray())
         .parameters(
             data.getParamsList()
                 .stream()
                 .map(params -> EncryptedDataParams.builder().name(params.getName()).value(params.getValue()).build())
                 .collect(Collectors.toSet()))
         .encryptionKey(data.getEncryptionKey())
-        .encryptionType(EncryptionType.valueOf(data.getEncryptionType().name()))
+        .encryptionType(EncryptionTypeProtoPojoMapper.map(data.getEncryptionType()))
         .kmsId(data.getKmsId())
         .backupEncryptionKey(data.getBackupEncryptionKey())
+        .backupEncryptionType(EncryptionTypeProtoPojoMapper.map(data.getBackupEncryptionType()))
         .backupEncryptedValue(
             new String(data.getBackupEncryptedValue().toByteArray(), StandardCharsets.UTF_8).toCharArray())
         .backupKmsId(data.getBackupKmsId())

@@ -16,10 +16,12 @@ import io.harness.delegate.service.common.ManagerCallHelper;
 import io.harness.delegate.service.handlermapping.context.Context;
 import io.harness.delegate.service.runners.RunnersFactory;
 import io.harness.delegate.service.runners.itfc.Runner;
+import io.harness.delegate.service.secret.DecryptedSecrets;
 import io.harness.managerclient.DelegateAgentManagerClient;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -32,11 +34,11 @@ public class ExecutionInfrastructureHandler implements Handler {
   private final DelegateConfiguration delegateConfiguration;
 
   @Override
-  public void handle(String runnerType, TaskPayload taskPayload, Context context) {
+  public void handle(String runnerType, TaskPayload taskPayload, DecryptedSecrets decryptedSecrets, Context context) {
     Runner runner = runnersFactory.get(runnerType);
     SetupInfraResponse response;
     try {
-      runner.init(taskPayload.getId(), taskPayload.getInfraData(), context);
+      runner.init(taskPayload.getId(), taskPayload.getInfraData(), decryptedSecrets, context);
       response = SetupInfraResponse.newBuilder()
                      .setResponseCode(ResponseCode.RESPONSE_OK)
                      .setLocation(ExecutionInfraInfo.newBuilder()

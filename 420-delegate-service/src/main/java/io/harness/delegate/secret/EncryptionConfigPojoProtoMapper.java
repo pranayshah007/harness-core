@@ -10,27 +10,28 @@ package io.harness.delegate.secret;
 import io.harness.delegate.core.beans.EncryptionConfig;
 import io.harness.delegate.core.beans.SecretManagerType;
 import io.harness.security.encryption.EncryptionType;
+
+import java.util.Objects;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @UtilityClass
 public class EncryptionConfigPojoProtoMapper {
-    public static EncryptionConfig map(final io.harness.security.encryption.EncryptionConfig config) {
-        // TODO: After implementing all encryption types, remove this check
-        if (!config.getEncryptionType().equals(EncryptionType.LOCAL)) {
-            log.warn("Encryption type {} not implemented", config.getEncryptionType().name());
-            return null;
-        }
-        return EncryptionConfig.newBuilder()
-                .setUuid(config.getUuid())
-                .setAccountId(config.getAccountId())
-                .setName(config.getName())
-                .setIsGloblKms(config.isGlobalKms())
-                .setEncryptionType(
-                        EncryptionTypePojoProtoMapper.map(config.getEncryptionType()))
-                .setSecretManagerType(SecretManagerType.valueOf(config.getType().name()))
-                .setEncryptionServiceUrl(config.getEncryptionServiceUrl())
-                .build();
+  public static EncryptionConfig map(final io.harness.security.encryption.EncryptionConfig config) {
+    // TODO: After implementing all encryption types, remove this check
+    if (!config.getEncryptionType().equals(EncryptionType.LOCAL)) {
+      log.warn("Encryption type {} not implemented", config.getEncryptionType().name());
+      return null;
     }
+    return EncryptionConfig.newBuilder()
+        .setUuid(Objects.toString(config.getUuid(), ""))
+        .setAccountId(Objects.toString(config.getAccountId(), ""))
+        .setName(Objects.toString(config.getName(), ""))
+        .setIsGloblKms(config.isGlobalKms())
+        .setEncryptionType(EncryptionTypePojoProtoMapper.map(config.getEncryptionType()))
+        .setSecretManagerType(SecretManagerTypePojoProtoMapper.map(config.getType()))
+        .setEncryptionServiceUrl(Objects.toString(config.getEncryptionServiceUrl(), ""))
+        .build();
+  }
 }
