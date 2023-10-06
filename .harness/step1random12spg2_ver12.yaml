@@ -1,5 +1,5 @@
 template:
-  name: step1-random12-spg2
+  name: step1-random12-spg23
   type: Step
   projectIdentifier: naidusanity
   orgIdentifier: default
