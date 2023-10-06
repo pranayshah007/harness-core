@@ -8,8 +8,10 @@
 package io.harness.oidc;
 
 import lombok.Builder;
+import lombok.Getter;
 
 @Builder
+@Getter
 public class RSAKeyPairPEM {
   String publicKeyPem;
   String privateKeyPem;

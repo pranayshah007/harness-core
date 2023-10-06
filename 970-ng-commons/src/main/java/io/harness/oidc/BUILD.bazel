@@ -21,6 +21,18 @@ java_library(
         "//999-annotations:module",
         "@maven//:org_bouncycastle_bcpkix_jdk18on",
         "@maven//:org_bouncycastle_bcprov_jdk18on",
+        "@maven//:com_google_inject_guice",
+    ],
+)
+
+java_library(
+    name = "tests",
+    testonly = True,
+    srcs = glob(["src/test/**/*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":module",
+        "@maven//:org_mockito_mockito_core",
     ],
 )
 

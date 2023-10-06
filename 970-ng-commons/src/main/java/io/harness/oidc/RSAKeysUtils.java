@@ -7,11 +7,13 @@
 
 package io.harness.oidc;
 
+import com.google.inject.Singleton;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.StringReader;
+import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -34,7 +36,11 @@ import org.bouncycastle.util.io.pem.PemObjectGenerator;
 import org.bouncycastle.util.io.pem.PemWriter;
 
 @Slf4j
-public class RSAKeyPairGenerator {
+@Singleton
+public class RSAKeysUtils {
+  public static final String PRIVATE_KEY = "PRIVATE KEY";
+  public static final String PUBLIC_KEY = "PUBLIC KEY";
+
   public KeyPair generateKeyPair() {
     Security.addProvider(new BouncyCastleProvider());
     KeyPairGenerator keyPairGenerator = null;
@@ -49,32 +55,13 @@ public class RSAKeyPairGenerator {
 
   public RSAKeyPairPEM generateKeyPairPEM() {
     KeyPair keyPair = generateKeyPair();
+
     PublicKey publicKey = keyPair.getPublic();
     PrivateKey privateKey = keyPair.getPrivate();
 
-    try {
-      ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-      PemWriter pemWriter = new PemWriter(new OutputStreamWriter(byteArrayOutputStream));
-      PemObjectGenerator pemObjectGenerator = new PemObject("PRIVATE KEY", privateKey.getEncoded());
-      pemWriter.writeObject(pemObjectGenerator);
-      pemWriter.flush();
-      String privateKeyPEM = byteArrayOutputStream.toString();
-
-      byteArrayOutputStream = new ByteArrayOutputStream();
-      pemWriter = new PemWriter(new OutputStreamWriter(byteArrayOutputStream));
-
-      pemObjectGenerator = new PemObject("PUBLIC KEY", publicKey.getEncoded());
-      pemWriter.writeObject(pemObjectGenerator);
-      pemWriter.flush();
-      String publicKeyPEM = byteArrayOutputStream.toString();
-      pemWriter.close();
-      byteArrayOutputStream.close();
-      readPemFile(publicKeyPEM);
-      readPemFile(privateKeyPEM);
-      return RSAKeyPairPEM.builder().privateKeyPem(privateKeyPEM).publicKeyPem(publicKeyPEM).build();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    String privateKeyPEM = convertToPem(PRIVATE_KEY, privateKey);
+    String publicKeyPEM = convertToPem(PUBLIC_KEY, publicKey);
+    return RSAKeyPairPEM.builder().privateKeyPem(privateKeyPEM).publicKeyPem(publicKeyPEM).build();
   }
 
   public RSAKey readPemFile(String pemFile) {
@@ -103,5 +90,20 @@ public class RSAKeyPairGenerator {
       log.error("Invalid PEM file format");
       throw new RuntimeException("Invalid PEM file format");
     }
+  }
+
+  public String convertToPem(String keyType, Key key) {
+    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+    PemWriter pemWriter = new PemWriter(new OutputStreamWriter(byteArrayOutputStream));
+    PemObjectGenerator pemObjectGenerator = new PemObject(keyType, key.getEncoded());
+    try {
+      pemWriter.writeObject(pemObjectGenerator);
+      pemWriter.flush();
+      pemWriter.close();
+      byteArrayOutputStream.close();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    return byteArrayOutputStream.toString();
   }
 }
