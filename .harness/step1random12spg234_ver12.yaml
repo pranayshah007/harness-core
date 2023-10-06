@@ -1,0 +1,22 @@
+template:
+  name: step1-random12-spg234
+  type: Step
+  projectIdentifier: naidusanity
+  orgIdentifier: default
+  tags: {}
+  spec:
+    timeout: 10m
+    type: ShellScript
+    spec:
+      shell: Bash
+      onDelegate: true
+      source:
+        type: Inline
+        spec:
+          script: |-
+            echo "hello"
+            exit 0
+      environmentVariables: []
+      outputVariables: []
+  identifier: step1random12spg234
+  versionLabel: ver12
