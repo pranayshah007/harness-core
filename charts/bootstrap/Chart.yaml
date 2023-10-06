@@ -30,6 +30,7 @@ dependencies:
   - name: harness-secrets
     version: 0.9.x
     repository: "file://./secrets"
+    condition: harness-secrets.enabled
   - name: rbac
     version: 0.9.x
     repository: "file://./rbac"

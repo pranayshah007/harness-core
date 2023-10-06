@@ -98,7 +98,10 @@ public class RedisNodeResumeEventPublisher implements NodeResumeEventPublisher {
         case ASYNC_CHAIN:
           AsyncChainExecutableResponse asyncChainExecutableResponse =
               Objects.requireNonNull(resumeMetadata.getLatestExecutableResponse()).getAsyncChain();
-          return ChainDetails.newBuilder().setIsEnd(asyncChainExecutableResponse.getChainEnd()).build();
+          return ChainDetails.newBuilder()
+              .setIsEnd(asyncChainExecutableResponse.getChainEnd())
+              .setPassThroughData(asyncChainExecutableResponse.getPassThroughData())
+              .build();
         default:
           log.error("This Should Not Happen not a chain mode");
       }

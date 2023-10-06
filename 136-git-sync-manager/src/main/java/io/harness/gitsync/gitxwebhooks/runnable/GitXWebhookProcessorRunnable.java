@@ -7,6 +7,7 @@
 
 package io.harness.gitsync.gitxwebhooks.runnable;
 
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
@@ -30,6 +31,8 @@ import io.harness.gitsync.gitxwebhooks.service.GitXWebhookEventService;
 import io.harness.gitsync.gitxwebhooks.service.GitXWebhookService;
 import io.harness.gitsync.gitxwebhooks.utils.GitXWebhookUtils;
 import io.harness.repositories.gitxwebhook.GitXWebhookEventsRepository;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.ServicePrincipal;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -72,6 +75,7 @@ public class GitXWebhookProcessorRunnable implements Runnable {
 
   private void processQueuedEvent(GitXWebhookEvent gitXWebhookEvent) {
     try (GitXWebhookEventLogContext context = new GitXWebhookEventLogContext(gitXWebhookEvent)) {
+      SecurityContextBuilder.setContext(new ServicePrincipal(NG_MANAGER.getServiceId()));
       log.info(String.format("Picked the event %s from the queue.", gitXWebhookEvent.getEventIdentifier()));
       GitXWebhook gitXWebhook = getGitXWebhook(gitXWebhookEvent);
       if (gitXWebhook == null) {
@@ -153,10 +157,10 @@ public class GitXWebhookProcessorRunnable implements Runnable {
   public List<String> getDiffFilesUsingSCM(
       String accountIdentifier, ScmConnector scmConnector, String initialCommitId, String finalCommitId) {
     GitDiffResultFileListDTO gitDiffResultFileListDTO =
-        scmOrchestratorService.processScmRequest(scmClientFacilitatorService
+        scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
             -> scmClientFacilitatorService.listCommitsDiffFiles(
                 Scope.of(accountIdentifier, "", ""), scmConnector, initialCommitId, finalCommitId),
-            "", "", accountIdentifier);
+            scmConnector);
 
     StringBuilder gitDiffResultFileList =
         new StringBuilder(String.format("Compare Commits Response from %s to %s :: ", initialCommitId, finalCommitId));
@@ -174,6 +178,6 @@ public class GitXWebhookProcessorRunnable implements Runnable {
   public ScmConnector getScmConnector(String accountIdentifier, String connectorRef, String repoName) {
     ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnector(accountIdentifier, "", "", connectorRef);
     scmConnector.setUrl(gitRepoHelper.getRepoUrl(scmConnector, repoName));
-    return scmConnector;
+    return gitSyncConnectorHelper.getDecryptedConnectorForNewGitX(accountIdentifier, "", "", scmConnector);
   }
 }

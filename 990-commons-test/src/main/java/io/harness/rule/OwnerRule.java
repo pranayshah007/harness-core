@@ -336,6 +336,8 @@ public class OwnerRule implements TestRule {
   public static final String SHOBHIT_SINGH = "shobhit.singh";
   public static final String RAKSHIT_AGARWAL = "rakshit.agarwal";
 
+  public static final String EOIN_MCAFEE = "eoin.mcafee";
+
   @Deprecated public static final String UNKNOWN = "unknown";
 
   private static UserInfoBuilder defaultUserInfo(String user) {
@@ -483,6 +485,7 @@ public class OwnerRule implements TestRule {
           .put(VIKAS_M, defaultUserInfo(VIKAS_M).slack("U0257UVS11T").team(PL).build())
           .put(VOJIN, defaultUserInfo(VOJIN).slack("U015TFFL83G").team(PL).build())
           .put(VISTAAR, defaultUserInfo(VISTAAR).slack("U0138Q1JEHM").team(CI).build())
+          .put(EOIN_MCAFEE, defaultUserInfo(EOIN_MCAFEE).slack("U020990GT0R").team(CI).build())
           .put(VUK, defaultUserInfo(VUK).slack("U0115RT3EQL").team(DEL).build())
           .put(XIN, defaultUserInfo(XIN).slack("U01R3KSP3M1").team(DEL).build())
           .put(YOGESH, defaultUserInfo(YOGESH).slack("UJVLUUXAT").team(CDP).build())

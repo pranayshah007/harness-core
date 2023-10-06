@@ -147,6 +147,8 @@ public enum FeatureName {
       "Makes authenticated custom webhook calls use service principal instead of the principal inherited from the API key",
       HarnessTeam.CDC),
   CDS_NG_TRIGGER_MULTI_ARTIFACTS("Allows creation of multi-region artifact triggers", HarnessTeam.CDC),
+  CDS_OCI_HELM_ECR_CONFIG_SUPPORT_NG(
+      "This flag enables the support ECR config in OCI Helm store type.", HarnessTeam.CDP),
   CDS_PAUSE_JIRA_APPROVAL_CG("Pause CG Jira Approval", HarnessTeam.CDC),
   CDS_PIPELINE_STUDIO_UPGRADES("Enables upgraded one canvas pipeline studio with usability fixes", HarnessTeam.CDP),
   CDS_PROJECT_SCOPED_RESOURCE_CONSTRAINT_QUEUE(
@@ -156,7 +158,6 @@ public enum FeatureName {
   CDS_QUERY_OPTIMIZATION_V2("Feature flag to optimize CG Queries V2", HarnessTeam.CDC),
   CDS_QUERY_OPTIMIZATION_GLOBAL(
       "Feature flag to optimize CG Queries when accountId is not present", HarnessTeam.CDC, Scope.GLOBAL),
-  CDS_RANCHER_SUPPORT_NG("Enable Rancher support in NG.", HarnessTeam.CDP),
   CDS_RECONFIGURE_JIRA_APPROVAL_TIMEOUT("Reconfigure Jira Approval Timeout to 1 Minute", HarnessTeam.CDC),
   CDS_REMOVE_COMMENTS_FROM_VALUES_YAML("Remove comments from values.yaml files", HarnessTeam.CDP),
   CDS_RENAME_HARNESS_RELEASE_HISTORY_RESOURCE_NATIVE_HELM_NG(
@@ -418,6 +419,7 @@ public enum FeatureName {
   FFM_8344_FLAG_CLEANUP("Enable Stale Flag Cleanup in Feature Flags filtered listing page", HarnessTeam.CF),
   FFM_8823_AIDA_SDK_CODE_SAMPLE("Enable AIDA generated code sample in FF Onboarding", HarnessTeam.CF),
   FFM_8184_FEATURE_FLAG_TAGGING("Enable tagging in Feature Flags", HarnessTeam.CF),
+  FFM_9497_PROXY_KEY_MANAGEMENT("Enable FF proxy key management via the Account Resources", HarnessTeam.CF),
   FF_ALLOW_OPTIONAL_VARIABLE("Allow Optional Variable from UI in NG.", HarnessTeam.PIPELINE),
   FF_FLAG_SYNC_THROUGH_GITEX_ENABLED,
   FF_GITSYNC,
@@ -433,9 +435,6 @@ public enum FeatureName {
       SPG),
   SPG_CG_FIXING_PIPELINE_RESUME("This fixes pipeline resume when a loop state is skipped", HarnessTeam.SPG),
   GITOPS_FLUX_FLAMINGO("Support for flux via flamingo in GitOps", HarnessTeam.GITOPS),
-  GITOPS_IAM("Support for connecting via IAM role in GitOps Clusters", HarnessTeam.GITOPS),
-  GITOPS_ORG_LEVEL("Support GitOps at Org level", HarnessTeam.GITOPS),
-  GITOPS_REVERT_PR("Support for Revert PR step in GitOps pipeline flow", HarnessTeam.GITOPS),
   GITOPS_UPDATE_APP_STEP("Support for Update GitOps App step in GitOps pipeline flow", HarnessTeam.GITOPS),
   GITOPS_GITHUB_RESTRAINT_FOR_STEPS("Add restraining on git steps for GitOps", HarnessTeam.GITOPS),
   GIT_HOST_CONNECTIVITY,

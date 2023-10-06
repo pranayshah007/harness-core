@@ -9,6 +9,7 @@ package io.harness.engine.pms.data;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
@@ -138,6 +139,106 @@ public class PmsSweepingOutputServiceImplTest extends OrchestrationTestBase {
         .isInstanceOf(GroupNotFoundException.class);
   }
 
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testSaveAtScopeAndFindAtScope() {
+    Ambiance ambianceSection = AmbianceTestUtils.buildAmbiance();
+    Ambiance ambiancePhase = AmbianceUtils.cloneForFinish(ambianceSection);
+    Ambiance ambianceStep = prepareStepAmbiance(ambianceSection);
+
+    String outputName = "outputName";
+    String testValueSection = "testSection";
+    String testValueStep = "testStep";
+
+    pmsSweepingOutputService.consume(ambianceSection, outputName,
+        RecastOrchestrationUtils.toJson(DummySweepingOutput.builder().test(testValueSection).build()), "SECTION");
+
+    validateResult(resolveForScope(ambianceSection, outputName, "SECTION"), testValueSection);
+    validateResult(resolveForScope(ambianceSection, outputName, ""), testValueSection);
+    assertThatThrownBy(() -> resolveForScope(ambianceSection, outputName, "PHASE"))
+        .isInstanceOf(SweepingOutputException.class);
+
+    validateResult(resolveForScope(ambianceStep, outputName, "SECTION"), testValueSection);
+    validateResult(resolveForScope(ambianceStep, outputName, ""), testValueSection);
+    assertThatThrownBy(() -> resolveForScope(ambianceStep, outputName, "PHASE"))
+        .isInstanceOf(SweepingOutputException.class);
+
+    assertThatThrownBy(() -> resolveForScope(ambiancePhase, outputName, "SECTION"))
+        .isInstanceOf(SweepingOutputException.class);
+
+    pmsSweepingOutputService.consume(ambianceStep, outputName,
+        RecastOrchestrationUtils.toJson(DummySweepingOutput.builder().test(testValueStep).build()),
+        ResolverUtils.GLOBAL_GROUP_SCOPE);
+    validateResult(resolveForScope(ambiancePhase, outputName, ResolverUtils.GLOBAL_GROUP_SCOPE), testValueStep);
+    validateResult(resolveForScope(ambiancePhase, outputName, ""), testValueStep);
+    validateResult(resolveForScope(ambianceSection, outputName, ResolverUtils.GLOBAL_GROUP_SCOPE), testValueStep);
+    validateResult(resolveForScope(ambianceStep, outputName, ResolverUtils.GLOBAL_GROUP_SCOPE), testValueStep);
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testSaveAtScopeAndFindAtScopeOptional() {
+    Ambiance ambianceSection = AmbianceTestUtils.buildAmbiance();
+    Ambiance ambiancePhase = AmbianceUtils.cloneForFinish(ambianceSection);
+    Ambiance ambianceStep = prepareStepAmbiance(ambianceSection);
+
+    String outputName = "outputName";
+    String testValueSection = "testSection";
+    String testValueStep = "testStep";
+
+    pmsSweepingOutputService.consume(ambianceSection, outputName,
+        RecastOrchestrationUtils.toJson(DummySweepingOutput.builder().test(testValueSection).build()), "SECTION");
+
+    validateResult(resolveForScopeOptional(ambianceSection, outputName, "SECTION"), testValueSection);
+    validateResult(resolveForScopeOptional(ambianceSection, outputName, ""), testValueSection);
+    assertThat(resolveForScopeOptional(ambianceSection, outputName, "PHASE")).isNull();
+
+    validateResult(resolveForScopeOptional(ambianceStep, outputName, "SECTION"), testValueSection);
+    validateResult(resolveForScopeOptional(ambianceStep, outputName, ""), testValueSection);
+    assertThat(resolveForScopeOptional(ambianceStep, outputName, "PHASE")).isNull();
+
+    assertThat(resolveForScopeOptional(ambiancePhase, outputName, "SECTION")).isNull();
+
+    pmsSweepingOutputService.consume(ambianceStep, outputName,
+        RecastOrchestrationUtils.toJson(DummySweepingOutput.builder().test(testValueStep).build()),
+        ResolverUtils.GLOBAL_GROUP_SCOPE);
+    validateResult(resolveForScopeOptional(ambiancePhase, outputName, ResolverUtils.GLOBAL_GROUP_SCOPE), testValueStep);
+    validateResult(resolveForScopeOptional(ambiancePhase, outputName, ""), testValueStep);
+    validateResult(
+        resolveForScopeOptional(ambianceSection, outputName, ResolverUtils.GLOBAL_GROUP_SCOPE), testValueStep);
+    validateResult(resolveForScopeOptional(ambianceStep, outputName, ResolverUtils.GLOBAL_GROUP_SCOPE), testValueStep);
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testSaveAtScopeAndFindAtScopeWithStepGroupNestingShouldReturnChild() {
+    Ambiance ambianceSection = AmbianceTestUtils.buildAmbiance();
+    Ambiance ambianceParentStepGroup = addStepGroupAmbiance(ambianceSection, generateUuid());
+    Ambiance ambianceChildStepGroup = addStepGroupAmbiance(ambianceParentStepGroup, generateUuid());
+    Ambiance ambianceStep = prepareStepAmbiance(ambianceChildStepGroup);
+
+    String outputName = "outputName";
+    String testValueStepParent = "testStepP";
+    String testValueStepChild = "testStepC";
+
+    // published to inner step group
+    pmsSweepingOutputService.consume(ambianceStep, outputName,
+        RecastOrchestrationUtils.toJson(DummySweepingOutput.builder().test(testValueStepChild).build()), "StepGroup");
+    // published to outer step group
+    pmsSweepingOutputService.consume(ambianceParentStepGroup, outputName,
+        RecastOrchestrationUtils.toJson(DummySweepingOutput.builder().test(testValueStepParent).build()), "StepGroup");
+
+    // at step level will return nearest stepGroup output
+    validateResult(resolveForScopeOptional(ambianceStep, outputName, "StepGroup"), testValueStepChild);
+    // at inner step group level will return child stepGroup output
+    validateResult(resolveForScopeOptional(ambianceChildStepGroup, outputName, "StepGroup"), testValueStepChild);
+    // at outer step group level will return parent stepGroup output
+    validateResult(resolveForScopeOptional(ambianceParentStepGroup, outputName, "StepGroup"), testValueStepParent);
+  }
+
   private void validateResult(Document foundOutput, String testValue) {
     assertThat(foundOutput).isNotNull();
     assertThat(foundOutput.getString("test")).isEqualTo(testValue);
@@ -150,6 +251,11 @@ public class PmsSweepingOutputServiceImplTest extends OrchestrationTestBase {
             .setSetupId(STEP_SETUP_ID)
             .setStepType(StepType.newBuilder().setType("SHELL_SCRIPT").setStepCategory(StepCategory.STEP).build())
             .build());
+  }
+
+  private Ambiance addStepGroupAmbiance(Ambiance ambianceSection, String runtimeId) {
+    return AmbianceUtils.cloneForChild(ambianceSection,
+        Level.newBuilder().setRuntimeId(runtimeId).setSetupId(runtimeId).setGroup("StepGroup").build());
   }
 
   @Test
@@ -268,5 +374,23 @@ public class PmsSweepingOutputServiceImplTest extends OrchestrationTestBase {
       return null;
     }
     return Document.parse(resolvedVal);
+  }
+
+  private Document resolveForScope(Ambiance ambiance, String outputName, String groupName) {
+    String resolvedVal = pmsSweepingOutputService.resolve(
+        ambiance, RefObjectUtils.getSweepingOutputRefObjectUsingGroup(outputName, groupName));
+    if (resolvedVal == null) {
+      return null;
+    }
+    return Document.parse(resolvedVal);
+  }
+
+  private Document resolveForScopeOptional(Ambiance ambiance, String outputName, String groupName) {
+    RawOptionalSweepingOutput resolvedVal = pmsSweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObjectUsingGroup(outputName, groupName));
+    if (!resolvedVal.found) {
+      return null;
+    }
+    return Document.parse(resolvedVal.output);
   }
 }

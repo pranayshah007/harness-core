@@ -319,7 +319,16 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
       executeStepRequest.setDistributed(true);
     }
     DliteVmExecuteStepTaskParams dliteVmExecuteStepTaskParams =
-        DliteVmExecuteStepTaskParams.builder().executeStepRequest(executeStepRequest).build();
+        DliteVmExecuteStepTaskParams.builder()
+            .executeStepRequest(executeStepRequest)
+            .context(DliteVmExecuteStepTaskParams.Context.builder()
+                         .accountID(AmbianceUtils.getAccountId(ambiance))
+                         .projectID(AmbianceUtils.getProjectIdentifier(ambiance))
+                         .pipelineID(AmbianceUtils.getPipelineIdentifier(ambiance))
+                         .orgID(AmbianceUtils.getOrgIdentifier(ambiance))
+                         .runSequence(ambiance.getMetadata().getRunSequence())
+                         .build())
+            .build();
     hostedVmSecretResolver.resolve(ambiance, dliteVmExecuteStepTaskParams);
     return dliteVmExecuteStepTaskParams;
   }
@@ -447,6 +456,7 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
       case DOCKER:
       case ECR:
       case ACR:
+      case GAR:
       case UPLOAD_ARTIFACTORY:
       case UPLOAD_GCS:
       case UPLOAD_S3:

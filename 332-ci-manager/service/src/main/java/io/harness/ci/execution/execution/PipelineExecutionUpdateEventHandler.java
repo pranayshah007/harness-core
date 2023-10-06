@@ -22,6 +22,7 @@ import io.harness.app.beans.entities.StepExecutionParameters;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.execution.license.CILicenseService;
 import io.harness.beans.outcomes.VmDetailsOutcome;
+import io.harness.beans.steps.CILogKeyMetadata;
 import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.ci.config.CIExecutionServiceConfig;
@@ -53,6 +54,7 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.repositories.CIAccountExecutionMetadataRepository;
+import io.harness.repositories.CILogKeyRepository;
 import io.harness.repositories.CIStageOutputRepository;
 import io.harness.repositories.CIStepStatusRepository;
 import io.harness.repositories.CITaskDetailsRepository;
@@ -94,6 +96,8 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
   @Inject private HsqsClientService hsqsClientService;
   @Inject private StepExecutionParametersRepository stepExecutionParametersRepository;
 
+  @Inject private CILogKeyRepository ciLogKeyRepository;
+
   private final String SERVICE_NAME_CI = "ci";
   private final int MAX_ATTEMPTS = 3;
   private final int WAIT_TIME_IN_SECOND = 30;
@@ -134,6 +138,15 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
       ciStepStatusRepository.deleteByStageExecutionId(stageExecutionId);
     } catch (Exception e) {
       log.error("Error while deleting CI StepStatusMetadata for stageExecutionId " + stageExecutionId, e);
+    }
+  }
+
+  private void deleteCILogKeysMetadata(Ambiance ambiance) {
+    String stageExecutionId = ambiance.getStageExecutionId();
+    try {
+      ciLogKeyRepository.deleteByStageExecutionId(stageExecutionId);
+    } catch (Exception e) {
+      log.error("Error while deleting CLogKeyMetadata for stageExecutionId " + stageExecutionId, e);
     }
   }
 
@@ -189,15 +202,26 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
 
           String logKey = getLogKey(ambiance);
 
-          // Append '/' at the end of the prefix if it's not present so that it doesn't close log streams
-          // for a different key.
-          if (!logKey.endsWith("/")) {
-            logKey = logKey + "/";
-          }
+          // Get all keys list from executionID
+          CILogKeyMetadata ciLogKeyMetadata = ciLogKeyRepository.findByStageExecutionId(ambiance.getStageExecutionId());
 
           // If there are any leftover logs still in the stream (this might be possible in specific cases
           // like in k8s node pressure evictions) - then this is where we move all of them to blob storage.
-          ciLogServiceUtils.closeLogStream(AmbianceUtils.getAccountId(ambiance), logKey, true, true);
+          if (ciLogKeyMetadata != null) {
+            for (String key : ciLogKeyMetadata.getLogKeys()) {
+              ciLogServiceUtils.closeLogStream(AmbianceUtils.getAccountId(ambiance), key, true, false);
+            }
+            deleteCILogKeysMetadata(ambiance);
+          } else {
+            log.warn("Log keys not found in DB, deleting with prefix");
+            // Append '/' at the end of the prefix if it's not present so that it doesn't close log streams
+            // for a different key.
+            if (!logKey.endsWith("/")) {
+              logKey = logKey + "/";
+            }
+            ciLogServiceUtils.closeLogStream(AmbianceUtils.getAccountId(ambiance), logKey, true, true);
+          }
+
           // Now Delete the build from db while cleanup is happening. \
         } else if (level.getStepType().getStepCategory() == StepCategory.STAGE) {
           log.info("Skipping cleanup for stageExecutionID {} and stepCategory {} with status and pipeline {}",

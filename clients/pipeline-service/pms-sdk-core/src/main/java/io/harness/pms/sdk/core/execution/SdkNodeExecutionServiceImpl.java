@@ -107,6 +107,27 @@ public class SdkNodeExecutionServiceImpl implements SdkNodeExecutionService {
   }
 
   @Override
+  public void resumeNodeExecution(Ambiance ambiance, Map<String, ResponseData> response, boolean asyncError,
+      ExecutableResponse executableResponse) {
+    Map<String, ResponseDataProto> responseDataBytes = responseDataMapper.toResponseDataProtoV2(response);
+
+    ResumeNodeExecutionRequest.Builder resumeNodeExecutionRequestBuilder =
+        ResumeNodeExecutionRequest.newBuilder().putAllResponseData(responseDataBytes).setAsyncError(asyncError);
+    if (executableResponse != null) {
+      resumeNodeExecutionRequestBuilder.setExecutableResponse(executableResponse);
+    }
+    ResumeNodeExecutionRequest resumeNodeExecutionRequest = resumeNodeExecutionRequestBuilder.build();
+
+    SdkResponseEventProto sdkResponseEvent = SdkResponseEventProto.newBuilder()
+                                                 .setSdkResponseEventType(SdkResponseEventType.RESUME_NODE_EXECUTION)
+                                                 .setResumeNodeExecutionRequest(resumeNodeExecutionRequest)
+                                                 .setAmbiance(ambiance)
+                                                 .build();
+
+    sdkResponseEventPublisher.publishEvent(sdkResponseEvent);
+  }
+
+  @Override
   public void handleFacilitationResponse(
       Ambiance ambiance, @NonNull String notifyId, FacilitatorResponseProto facilitatorResponseProto) {
     FacilitatorResponseRequest facilitatorResponseRequest = FacilitatorResponseRequest.newBuilder()

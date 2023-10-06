@@ -22,6 +22,7 @@ public class CIStepConfig {
   StepImageConfig buildAndPushDockerRegistryConfig;
   StepImageConfig buildAndPushECRConfig;
   StepImageConfig buildAndPushGCRConfig;
+  StepImageConfig buildAndPushGARConfig;
   StepImageConfig buildAndPushACRConfig;
   StepImageConfig gcsUploadConfig;
   StepImageConfig s3UploadConfig;
