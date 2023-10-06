@@ -333,7 +333,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
         String decryptedValue = decryptedValueAndLastModifiedAt.getFirst();
         Long lastModifiedAt = decryptedValueAndLastModifiedAt.getSecond();
 
-        if (lastModifiedAt == null || entity == null
+        if (lastModifiedAt == null || entity == null || lastModifiedAt == 0
             || ((BackstageEnvSecretVariableEntity) entity).getSecretLastModifiedAt() < lastModifiedAt) {
           if (loadSecretsDynamically) {
             log.info("Updating LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES for env {} for account {}",
