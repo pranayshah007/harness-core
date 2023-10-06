@@ -9,7 +9,9 @@ package io.harness.ssca.services;
 
 import io.harness.entities.Instance;
 import io.harness.repositories.CdInstanceSummaryRepo;
+import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewRequestBody;
 import io.harness.ssca.beans.EnvType;
+import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.CdInstanceSummary;
 import io.harness.ssca.entities.CdInstanceSummary.CdInstanceSummaryKeys;
 
@@ -18,6 +20,8 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @Slf4j
@@ -25,7 +29,12 @@ public class CdInstanceSummaryServiceImpl implements CdInstanceSummaryService {
   @Inject CdInstanceSummaryRepo cdInstanceSummaryRepo;
 
   @Override
-  public void upsertInstance(Instance instance) {
+  public boolean upsertInstance(Instance instance) {
+    if (Objects.isNull(instance.getPrimaryArtifact().getArtifactIdentity())
+        || Objects.isNull(instance.getPrimaryArtifact().getArtifactIdentity().getImage())) {
+      return true;
+    }
+
     Criteria criteria = Criteria.where(CdInstanceSummaryKeys.artifactCorrelationId)
                             .is(instance.getPrimaryArtifact().getArtifactIdentity().getImage())
                             .and(CdInstanceSummaryKeys.accountIdentifier)
@@ -45,10 +54,11 @@ public class CdInstanceSummaryServiceImpl implements CdInstanceSummaryService {
     } else {
       cdInstanceSummaryRepo.save(createInstanceSummary(instance));
     }
+    return true;
   }
 
   @Override
-  public void removeInstance(Instance instance) {
+  public boolean removeInstance(Instance instance) {
     Criteria criteria = Criteria.where(CdInstanceSummaryKeys.artifactCorrelationId)
                             .is(instance.getPrimaryArtifact().getArtifactIdentity().getImage())
                             .and(CdInstanceSummaryKeys.accountIdentifier)
@@ -70,6 +80,23 @@ public class CdInstanceSummaryServiceImpl implements CdInstanceSummaryService {
         cdInstanceSummaryRepo.save(cdInstanceSummary);
       }
     }
+    return true;
+  }
+
+  @Override
+  public Page<CdInstanceSummary> getCdInstanceSummaries(String accountId, String orgIdentifier,
+      String projectIdentifier, ArtifactEntity artifact, ArtifactDeploymentViewRequestBody filterBody,
+      Pageable pageable) {
+    Criteria criteria = Criteria.where(CdInstanceSummaryKeys.artifactCorrelationId)
+                            .is(artifact.getArtifactCorrelationId())
+                            .and(CdInstanceSummaryKeys.accountIdentifier)
+                            .is(accountId)
+                            .and(CdInstanceSummaryKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(CdInstanceSummaryKeys.projectIdentifier)
+                            .is(projectIdentifier);
+
+    return cdInstanceSummaryRepo.findAll(criteria, pageable);
   }
 
   private CdInstanceSummary createInstanceSummary(Instance instance) {
@@ -80,6 +107,9 @@ public class CdInstanceSummaryServiceImpl implements CdInstanceSummaryService {
         .projectIdentifier(instance.getProjectIdentifier())
         .lastPipelineExecutionId(instance.getLastPipelineExecutionId())
         .lastPipelineExecutionName(instance.getLastPipelineExecutionName())
+        .lastDeployedById(instance.getLastDeployedById())
+        .lastDeployedByName(instance.getLastDeployedByName())
+        .lastDeployedAt(instance.getLastDeployedAt())
         .envIdentifier(instance.getEnvIdentifier())
         .envName(instance.getEnvName())
         .envType(EnvType.valueOf(instance.getEnvType().name()))

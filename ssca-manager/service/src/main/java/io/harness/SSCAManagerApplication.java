@@ -163,6 +163,7 @@ public class SSCAManagerApplication extends Application<SSCAManagerConfiguration
     registerRequestContextFilter(environment);
     registerCorsFilter(sscaManagerConfiguration, environment);
     registerSscaEvents(sscaManagerConfiguration, injector);
+    registerManagedBeans(environment, injector);
     MaintenanceController.forceMaintenance(false);
     injector.getInstance(PrimaryVersionChangeScheduler.class).registerExecutors();
     harnessMetricRegistry = injector.getInstance(HarnessMetricRegistry.class);
@@ -250,6 +251,14 @@ public class SSCAManagerApplication extends Application<SSCAManagerConfiguration
     SSCAEventConsumerController sscaEventConsumerController = injector.getInstance(SSCAEventConsumerController.class);
     sscaEventConsumerController.register(injector.getInstance(InstanceNGRedisEventConsumer.class),
         appConfig.getDebeziumConsumerConfigs().getInstanceNGConsumer().getThreads());
+  }
+
+  private void registerManagedBeans(Environment environment, Injector injector) {
+    createConsumerThreadsToListenToEvents(environment, injector);
+  }
+
+  private void createConsumerThreadsToListenToEvents(Environment environment, Injector injector) {
+    environment.lifecycle().manage(injector.getInstance(SSCAEventConsumerController.class));
   }
 
   private Predicate<Pair<ResourceInfo, ContainerRequestContext>> getAuthFilterPredicate(

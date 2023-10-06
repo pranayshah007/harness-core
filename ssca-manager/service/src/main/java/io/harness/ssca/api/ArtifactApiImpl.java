@@ -18,13 +18,11 @@ import io.harness.ssca.services.ArtifactService;
 import io.harness.ssca.utils.PageResponseUtils;
 
 import com.google.inject.Inject;
-import java.util.Collections;
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.ws.rs.core.Response;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
 public class ArtifactApiImpl implements ArtifactApi {
@@ -44,10 +42,9 @@ public class ArtifactApiImpl implements ArtifactApi {
   public Response getArtifactDetailDeploymentView(String org, String project, String artifact, String tag,
       @Valid ArtifactDeploymentViewRequestBody body, String harnessAccount, @Min(1L) @Max(1000L) Integer limit,
       String order, @Min(0L) Integer page, String sort) {
-    // TODO: Populate artifact deployment responses from CDInstanceSummary collection.
     Pageable pageable = PageResponseUtils.getPageable(page, limit, sort, order);
     Page<ArtifactDeploymentViewResponse> artifactDeploymentViewResponses =
-        new PageImpl<>(Collections.singletonList(new ArtifactDeploymentViewResponse()));
+        artifactService.getArtifactDeploymentView(harnessAccount, org, project, artifact, tag, body, pageable);
     return PageResponseUtils.getPagedResponse(artifactDeploymentViewResponses, page, limit);
   }
 

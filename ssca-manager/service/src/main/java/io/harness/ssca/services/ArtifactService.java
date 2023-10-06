@@ -9,6 +9,8 @@ package io.harness.ssca.services;
 
 import io.harness.spec.server.ssca.v1.model.ArtifactComponentViewRequestBody;
 import io.harness.spec.server.ssca.v1.model.ArtifactComponentViewResponse;
+import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewRequestBody;
+import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewResponse;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBody;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingResponse;
 import io.harness.spec.server.ssca.v1.model.SbomProcessRequestBody;
@@ -46,5 +48,9 @@ public interface ArtifactService {
 
   Page<ArtifactComponentViewResponse> getArtifactComponentView(String accountId, String orgIdentifier,
       String projectIdentifier, String artifactId, String tag, ArtifactComponentViewRequestBody filterBody,
+      Pageable pageable);
+
+  Page<ArtifactDeploymentViewResponse> getArtifactDeploymentView(String accountId, String orgIdentifier,
+      String projectIdentifier, String artifactId, String tag, ArtifactDeploymentViewRequestBody filterBody,
       Pageable pageable);
 }

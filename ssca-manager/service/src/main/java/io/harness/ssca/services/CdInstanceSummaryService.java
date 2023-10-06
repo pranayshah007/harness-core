@@ -8,9 +8,18 @@
 package io.harness.ssca.services;
 
 import io.harness.entities.Instance;
+import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewRequestBody;
+import io.harness.ssca.entities.ArtifactEntity;
+import io.harness.ssca.entities.CdInstanceSummary;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface CdInstanceSummaryService {
-  void upsertInstance(Instance instance);
+  boolean upsertInstance(Instance instance);
 
-  void removeInstance(Instance instance);
+  boolean removeInstance(Instance instance);
+
+  Page<CdInstanceSummary> getCdInstanceSummaries(String accountId, String orgIdentifier, String projectIdentifier,
+      ArtifactEntity artifact, ArtifactDeploymentViewRequestBody filterBody, Pageable pageable);
 }

@@ -17,16 +17,24 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.sort
 
 import io.harness.network.Http;
 import io.harness.repositories.ArtifactRepository;
+import io.harness.repositories.CdInstanceSummaryRepo;
 import io.harness.repositories.EnforcementSummaryRepo;
 import io.harness.spec.server.ssca.v1.model.ArtifactComponentViewRequestBody;
 import io.harness.spec.server.ssca.v1.model.ArtifactComponentViewResponse;
+import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewRequestBody;
+import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewResponse;
+import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewResponse.AttestedStatusEnum;
+import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewResponse.TypeEnum;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBody;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingResponse;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingResponse.ActivityEnum;
 import io.harness.spec.server.ssca.v1.model.SbomProcessRequestBody;
+import io.harness.ssca.beans.EnvType;
 import io.harness.ssca.beans.SbomDTO;
 import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.ArtifactEntity.ArtifactEntityKeys;
+import io.harness.ssca.entities.CdInstanceSummary;
+import io.harness.ssca.entities.CdInstanceSummary.CdInstanceSummaryKeys;
 import io.harness.ssca.entities.EnforcementSummaryEntity;
 import io.harness.ssca.entities.EnforcementSummaryEntity.EnforcementSummaryEntityKeys;
 import io.harness.ssca.utils.SBOMUtils;
@@ -37,10 +45,12 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.UriBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -64,6 +74,9 @@ public class ArtifactServiceImpl implements ArtifactService {
   @Inject ArtifactRepository artifactRepository;
   @Inject EnforcementSummaryRepo enforcementSummaryRepo;
   @Inject NormalisedSbomComponentService normalisedSbomComponentService;
+  @Inject CdInstanceSummaryRepo cdInstanceSummaryRepo;
+
+  @Inject CdInstanceSummaryService cdInstanceSummaryService;
 
   private final String GCP_REGISTRY_HOST = "grc.io";
 
@@ -174,7 +187,8 @@ public class ArtifactServiceImpl implements ArtifactService {
     // "kmpySmUISimoRrJL6NL73w", "orgId" : "default", "projectId" : "LocalPipeline", "invalid" : false}}, { "$sort" : {
     // "lastUpdatedAt" : -1, "sort" : 1}}, { "$group" : { "_id" : "$artifactId", "document" : { "$first" : "$$ROOT"}}},
     // { "$project" : { "_id" : 0}}, { "$skip" : skip}, { "$limit" : limit}]}
-    List<ArtifactListingResponse> artifactListingResponses = getArtifactListingResponses(artifactEntities);
+    List<ArtifactListingResponse> artifactListingResponses =
+        getArtifactListingResponses(accountId, orgIdentifier, projectIdentifier, artifactEntities);
 
     CountOperation countOperation = count().as("count");
     aggregation = Aggregation.newAggregation(matchOperation, groupByArtifactId, countOperation);
@@ -197,7 +211,8 @@ public class ArtifactServiceImpl implements ArtifactService {
 
     Page<ArtifactEntity> artifactEntities = artifactRepository.findAll(criteria, pageable);
 
-    List<ArtifactListingResponse> artifactListingResponses = getArtifactListingResponses(artifactEntities.toList());
+    List<ArtifactListingResponse> artifactListingResponses =
+        getArtifactListingResponses(accountId, orgIdentifier, projectIdentifier, artifactEntities.toList());
 
     return new PageImpl<>(artifactListingResponses, pageable, artifactEntities.getTotalElements());
   }
@@ -207,6 +222,9 @@ public class ArtifactServiceImpl implements ArtifactService {
       String projectIdentifier, String artifactId, String tag, ArtifactComponentViewRequestBody filterBody,
       Pageable pageable) {
     ArtifactEntity artifact = getLatestArtifact(accountId, orgIdentifier, projectIdentifier, artifactId, tag);
+    if (Objects.isNull(artifact)) {
+      throw new NotFoundException(String.format("No Artifact Found with {id: %s}", artifactId));
+    }
 
     return normalisedSbomComponentService
         .getNormalizedSbomComponents(accountId, orgIdentifier, projectIdentifier, artifact, filterBody, pageable)
@@ -220,7 +238,30 @@ public class ArtifactServiceImpl implements ArtifactService {
                    .version(entity.getPackageVersion()));
   }
 
-  private List<ArtifactListingResponse> getArtifactListingResponses(List<ArtifactEntity> artifactEntities) {
+  @Override
+  public Page<ArtifactDeploymentViewResponse> getArtifactDeploymentView(String accountId, String orgIdentifier,
+      String projectIdentifier, String artifactId, String tag, ArtifactDeploymentViewRequestBody filterBody,
+      Pageable pageable) {
+    ArtifactEntity artifact = getLatestArtifact(accountId, orgIdentifier, projectIdentifier, artifactId, tag);
+    if (Objects.isNull(artifact)) {
+      throw new NotFoundException(String.format("No Artifact Found with {id: %s}", artifactId));
+    }
+
+    return cdInstanceSummaryService
+        .getCdInstanceSummaries(accountId, orgIdentifier, projectIdentifier, artifact, filterBody, pageable)
+        .map(entity
+            -> new ArtifactDeploymentViewResponse()
+                   .id(entity.getEnvIdentifier())
+                   .name(entity.getEnvName())
+                   .type(entity.getEnvType() == EnvType.Production ? TypeEnum.PROD : TypeEnum.NONPROD)
+                   .attestedStatus(artifact.isAttested() ? AttestedStatusEnum.PASS : AttestedStatusEnum.FAIL)
+                   .pipelineId(entity.getLastPipelineExecutionName())
+                   .pipelineExecutionId(entity.getLastPipelineExecutionId())
+                   .triggeredBy(entity.getLastDeployedByName()));
+  }
+
+  private List<ArtifactListingResponse> getArtifactListingResponses(
+      String accountId, String orgIdentifier, String projectIdentifier, List<ArtifactEntity> artifactEntities) {
     List<String> orchestrationIds =
         artifactEntities.stream().map(ArtifactEntity::getOrchestrationId).collect(Collectors.toList());
 
@@ -238,21 +279,48 @@ public class ArtifactServiceImpl implements ArtifactService {
     Map<String, EnforcementSummaryEntity> enforcementSummaryEntityMap = enforcementSummaryEntities.stream().collect(
         Collectors.toMap(entity -> entity.getOrchestrationId(), Function.identity()));
 
+    List<String> artifactCorrelationIds =
+        artifactEntities.stream().map(ArtifactEntity::getArtifactCorrelationId).collect(Collectors.toList());
+    Criteria artifactDeploymentCriteria = Criteria.where(CdInstanceSummaryKeys.artifactCorrelationId)
+                                              .in(artifactCorrelationIds)
+                                              .and(CdInstanceSummaryKeys.accountIdentifier)
+                                              .is(accountId)
+                                              .and(CdInstanceSummaryKeys.orgIdentifier)
+                                              .is(orgIdentifier)
+                                              .and(CdInstanceSummaryKeys.projectIdentifier)
+                                              .is(projectIdentifier);
+    List<CdInstanceSummary> cdInstanceSummaries = cdInstanceSummaryRepo.findAll(artifactDeploymentCriteria);
+
+    Map<String, List<CdInstanceSummary>> artifactDeploymentMap = cdInstanceSummaries.stream().collect(
+        Collectors.groupingBy(cdInstanceSummary -> cdInstanceSummary.getArtifactCorrelationId()));
+
     List<ArtifactListingResponse> responses = new ArrayList<>();
     for (ArtifactEntity artifact : artifactEntities) {
-      responses.add(new ArtifactListingResponse()
-                        .artifactId(artifact.getArtifactId())
-                        .artifactName(artifact.getName())
-                        .tag(artifact.getTag())
-                        .componentsCount((int) artifact.getComponentsCount())
-                        .allowListViolationCount(
-                            enforcementSummaryEntityMap.get(artifact.getOrchestrationId()).getAllowListViolationCount())
-                        .denyListViolationCount(
-                            enforcementSummaryEntityMap.get(artifact.getOrchestrationId()).getDenyListViolationCount())
-                        .activity(ActivityEnum.GENERATED)
-                        .updatedAt(String.format("%d", artifact.getLastUpdatedAt()))
-                        .prodEnvCount(0)
-                        .nonProdEnvCount(0));
+      List<CdInstanceSummary> deploymentSummary = new ArrayList<>();
+
+      if (artifactDeploymentMap.containsKey(artifact.getArtifactCorrelationId())) {
+        deploymentSummary = artifactDeploymentMap.get(artifact.getArtifactCorrelationId());
+      }
+
+      responses.add(
+          new ArtifactListingResponse()
+              .artifactId(artifact.getArtifactId())
+              .artifactName(artifact.getName())
+              .tag(artifact.getTag())
+              .componentsCount((int) artifact.getComponentsCount())
+              .allowListViolationCount(
+                  enforcementSummaryEntityMap.get(artifact.getOrchestrationId()).getAllowListViolationCount())
+              .denyListViolationCount(
+                  enforcementSummaryEntityMap.get(artifact.getOrchestrationId()).getDenyListViolationCount())
+              .activity(Objects.isNull(deploymentSummary) ? ActivityEnum.GENERATED : ActivityEnum.DEPLOYED)
+              .updatedAt(String.format("%d", artifact.getLastUpdatedAt()))
+              .prodEnvCount((int) deploymentSummary.stream()
+                                .filter(cdInstanceSummary -> (cdInstanceSummary.getEnvType() == EnvType.Production))
+                                .count())
+              .nonProdEnvCount(
+                  (int) deploymentSummary.stream()
+                      .filter(cdInstanceSummary -> (cdInstanceSummary.getEnvType() == EnvType.PreProduction))
+                      .count()));
     }
     return responses;
   }

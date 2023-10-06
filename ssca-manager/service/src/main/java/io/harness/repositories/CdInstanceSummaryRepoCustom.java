@@ -9,8 +9,13 @@ package io.harness.repositories;
 
 import io.harness.ssca.entities.CdInstanceSummary;
 
+import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 public interface CdInstanceSummaryRepoCustom {
   CdInstanceSummary findOne(Criteria criteria);
+  List<CdInstanceSummary> findAll(Criteria criteria);
+  Page<CdInstanceSummary> findAll(Criteria criteria, Pageable pageable);
 }

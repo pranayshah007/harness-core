@@ -7,9 +7,7 @@
 
 package io.harness.debezium;
 
-import io.harness.beans.FeatureName;
 import io.harness.cf.client.api.CfClient;
-import io.harness.cf.client.dto.Target;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
@@ -76,8 +74,7 @@ public abstract class EventsFrameworkChangeConsumer implements MongoCollectionCh
                                                       .setTimestamp(System.currentTimeMillis())
                                                       .build();
         String collection = Arrays.stream(collectionName.split("\\.")).collect(Collectors.toList()).get(1);
-        boolean debeziumEnabled = cfClient.boolVariation(FeatureName.DEBEZIUM_ENABLED.toString(),
-            Target.builder().identifier(collection + "." + mode).build(), false);
+        boolean debeziumEnabled = true;
         Producer producer = producerFactory.get(record.destination(), redisStreamSize, mode, configuration);
         if (debeziumEnabled) {
           producer.send(Message.newBuilder().setData(debeziumChangeEvent.toByteString()).build());
