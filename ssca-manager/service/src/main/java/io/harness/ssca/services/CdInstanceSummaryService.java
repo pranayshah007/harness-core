@@ -22,4 +22,7 @@ public interface CdInstanceSummaryService {
 
   Page<CdInstanceSummary> getCdInstanceSummaries(String accountId, String orgIdentifier, String projectIdentifier,
       ArtifactEntity artifact, ArtifactDeploymentViewRequestBody filterBody, Pageable pageable);
+
+  CdInstanceSummary getCdInstanceSummary(String accountId, String orgIdentifier, String projectIdentifier,
+      String artifactCorrelationId, String envIdentifier);
 }

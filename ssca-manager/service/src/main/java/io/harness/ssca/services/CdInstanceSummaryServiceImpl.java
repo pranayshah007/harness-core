@@ -28,6 +28,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class CdInstanceSummaryServiceImpl implements CdInstanceSummaryService {
   @Inject CdInstanceSummaryRepo cdInstanceSummaryRepo;
 
+  @Inject ArtifactService artifactService;
+
   @Override
   public boolean upsertInstance(Instance instance) {
     if (Objects.isNull(instance.getPrimaryArtifact().getArtifactIdentity())
@@ -35,23 +37,20 @@ public class CdInstanceSummaryServiceImpl implements CdInstanceSummaryService {
       return true;
     }
 
-    Criteria criteria = Criteria.where(CdInstanceSummaryKeys.artifactCorrelationId)
-                            .is(instance.getPrimaryArtifact().getArtifactIdentity().getImage())
-                            .and(CdInstanceSummaryKeys.accountIdentifier)
-                            .is(instance.getAccountIdentifier())
-                            .and(CdInstanceSummaryKeys.orgIdentifier)
-                            .is(instance.getOrgIdentifier())
-                            .and(CdInstanceSummaryKeys.projectIdentifier)
-                            .is(instance.getProjectIdentifier())
-                            .and(CdInstanceSummaryKeys.envIdentifier)
-                            .is(instance.getEnvIdentifier());
-
-    CdInstanceSummary cdInstanceSummary = cdInstanceSummaryRepo.findOne(criteria);
+    CdInstanceSummary cdInstanceSummary = getCdInstanceSummary(instance.getAccountIdentifier(),
+        instance.getOrgIdentifier(), instance.getProjectIdentifier(),
+        instance.getPrimaryArtifact().getArtifactIdentity().getImage(), instance.getEnvIdentifier());
 
     if (Objects.nonNull(cdInstanceSummary)) {
       cdInstanceSummary.getInstanceIds().add(instance.getId());
       cdInstanceSummaryRepo.save(cdInstanceSummary);
     } else {
+      ArtifactEntity artifact =
+          artifactService.getArtifactByCorrelationId(instance.getAccountIdentifier(), instance.getOrgIdentifier(),
+              instance.getProjectIdentifier(), instance.getPrimaryArtifact().getArtifactIdentity().getImage());
+      if (Objects.isNull(artifact)) {
+        return true;
+      }
       cdInstanceSummaryRepo.save(createInstanceSummary(instance));
     }
     return true;
@@ -59,18 +58,9 @@ public class CdInstanceSummaryServiceImpl implements CdInstanceSummaryService {
 
   @Override
   public boolean removeInstance(Instance instance) {
-    Criteria criteria = Criteria.where(CdInstanceSummaryKeys.artifactCorrelationId)
-                            .is(instance.getPrimaryArtifact().getArtifactIdentity().getImage())
-                            .and(CdInstanceSummaryKeys.accountIdentifier)
-                            .is(instance.getAccountIdentifier())
-                            .and(CdInstanceSummaryKeys.orgIdentifier)
-                            .is(instance.getOrgIdentifier())
-                            .and(CdInstanceSummaryKeys.projectIdentifier)
-                            .is(instance.getProjectIdentifier())
-                            .and(CdInstanceSummaryKeys.envIdentifier)
-                            .is(instance.getEnvIdentifier());
-
-    CdInstanceSummary cdInstanceSummary = cdInstanceSummaryRepo.findOne(criteria);
+    CdInstanceSummary cdInstanceSummary = getCdInstanceSummary(instance.getAccountIdentifier(),
+        instance.getOrgIdentifier(), instance.getProjectIdentifier(),
+        instance.getPrimaryArtifact().getArtifactIdentity().getImage(), instance.getEnvIdentifier());
 
     if (Objects.nonNull(cdInstanceSummary)) {
       cdInstanceSummary.getInstanceIds().remove(instance.getId());
@@ -97,6 +87,23 @@ public class CdInstanceSummaryServiceImpl implements CdInstanceSummaryService {
                             .is(projectIdentifier);
 
     return cdInstanceSummaryRepo.findAll(criteria, pageable);
+  }
+
+  @Override
+  public CdInstanceSummary getCdInstanceSummary(String accountId, String orgIdentifier, String projectIdentifier,
+      String artifactCorrelationId, String envIdentifier) {
+    Criteria criteria = Criteria.where(CdInstanceSummaryKeys.artifactCorrelationId)
+                            .is(artifactCorrelationId)
+                            .and(CdInstanceSummaryKeys.accountIdentifier)
+                            .is(accountId)
+                            .and(CdInstanceSummaryKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(CdInstanceSummaryKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(CdInstanceSummaryKeys.envIdentifier)
+                            .is(envIdentifier);
+
+    return cdInstanceSummaryRepo.findOne(criteria);
   }
 
   private CdInstanceSummary createInstanceSummary(Instance instance) {

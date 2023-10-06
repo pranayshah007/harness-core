@@ -130,6 +130,22 @@ public class ArtifactServiceImpl implements ArtifactService {
   }
 
   @Override
+  public ArtifactEntity getArtifactByCorrelationId(
+      String accountId, String orgIdentifier, String projectIdentifier, String artifactCorrelationId) {
+    Criteria criteria = Criteria.where(ArtifactEntityKeys.accountId)
+                            .is(accountId)
+                            .and(ArtifactEntityKeys.orgId)
+                            .is(orgIdentifier)
+                            .and(ArtifactEntityKeys.projectId)
+                            .is(projectIdentifier)
+                            .and(ArtifactEntityKeys.artifactId)
+                            .is(artifactCorrelationId)
+                            .and(ArtifactEntityKeys.artifactCorrelationId)
+                            .is(false);
+    return artifactRepository.findOne(criteria);
+  }
+
+  @Override
   public ArtifactEntity getLatestArtifact(
       String accountId, String orgIdentifier, String projectIdentifier, String artifactId, String tag) {
     Criteria criteria = Criteria.where(ArtifactEntityKeys.accountId)
