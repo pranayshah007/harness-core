@@ -121,15 +121,15 @@ go_repository(
 go_repository(
     name = "com_google_cloud_go_iam",
     importpath = "cloud.google.com/go/iam",
-    sum = "h1:W2vbGCrE3Z7J/x3WXLxxGl9LMSB2uhsAA7Ss/6u/qRY=",
-    version = "v0.1.0",
+    sum = "h1:67gSqaPukx7O8WLLHMa0PNs3EBGd2eE4d+psbO/CO94=",
+    version = "v1.1.0",
 )
 
 go_repository(
     name = "com_google_cloud_go_secretmanager",
     importpath = "cloud.google.com/go/secretmanager",
-    sum = "h1:Wbw6lsRrpatsE8GVpuwYqImn+sY5DmRjaEImYPwcSMY=",
-    version = "v1.0.0",
+    sum = "h1:cLTCwAjFh9fKvU6F13Y4L9vPcx9yiWPyWXE4+zkuEQs=",
+    version = "v1.11.1",
 )
 
 go_repository(
@@ -864,8 +864,8 @@ go_repository(
 go_repository(
     name = "com_github_googleapis_gax_go_v2",
     importpath = "github.com/googleapis/gax-go/v2",
-    sum = "h1:dp3bWCh+PPO1zjRRiCSczJav13sBvG4UhNyVTa1KqdU=",
-    version = "v2.1.1",
+    sum = "h1:A+gCJKdRfqXkr+BIRGtZLibNXf0m1f9E4HG56etFpas=",
+    version = "v2.12.0",
 )
 
 go_repository(
@@ -941,8 +941,8 @@ go_repository(
 go_repository(
     name = "com_google_cloud_go_storage",
     importpath = "cloud.google.com/go/storage",
-    sum = "h1:STgFzyU5/8miMl0//zKh2aQeTyeaUH3WN9bSUiJ09bA=",
-    version = "v1.10.0",
+    sum = "h1:PVrDOkIC8qQVa1P3SXGpQvfuJhN2LHOoyZvWs8D2X5M=",
+    version = "v1.33.0",
 )
 
 go_repository(

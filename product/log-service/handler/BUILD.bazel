@@ -23,6 +23,7 @@ go_library(
     importpath = "github.com/harness/harness-core/product/log-service/handler",
     visibility = ["//visibility:public"],
     deps = [
+        "//commons/go/lib/gcputils",
         "//product/log-service/cache",
         "//product/log-service/config",
         "//product/log-service/entity",
@@ -43,6 +44,7 @@ go_library(
         "@com_github_pkg_errors//:errors",
         "@com_google_cloud_go_logging//:logging",
         "@go_googleapis//google/api:monitoredres_go_proto",
+        "@org_golang_google_api//option",
         "@org_golang_x_sync//errgroup",
     ],
 )

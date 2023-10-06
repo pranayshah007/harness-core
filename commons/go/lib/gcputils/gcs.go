@@ -28,6 +28,7 @@ type GCS interface {
 	GetObjectMetadata(ctx context.Context, bucketName, objectName string) (map[string]string, error)
 	DeleteObject(ctx context.Context, bucketName string, objectName string) error
 	UpdateObjectMetadata(ctx context.Context, bucketName, objectName string, metadata map[string]string) error
+	SignURL(bucketName, objectName, customHost string) (string, error)
 	Close() error
 }
 
@@ -242,6 +243,23 @@ func (gcs *gcs) DeleteObject(ctx context.Context, bucketName string, objectName 
 		"elapsed_time_ms", utils.TimeSince(start),
 	)
 	return nil
+}
+
+// SignURL signs an object from GCS bucket with custom host.
+// storage.ErrObjectNotExist is returned if object is not present in the bucket.
+func (gcs *gcs) SignURL(bucketName, objectName, customHost string) (string, error) {
+	expiration := time.Now().Add(1 * time.Hour) // Adjust expiration as needed
+	url, err := gcs.client.Bucket(bucketName).SignedURL(objectName, &storage.SignedURLOptions{
+		Method:   "GET",
+		Expires:  expiration,
+		Hostname: customHost,
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return url, nil
 }
 
 func (gcs *gcs) Close() error {

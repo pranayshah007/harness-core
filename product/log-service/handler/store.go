@@ -6,10 +6,14 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"time"
+
+	gcputils "github.com/harness/harness-core/commons/go/lib/gcputils/gcs.go"
+	"google.golang.org/api/option"
 
 	"github.com/harness/harness-core/product/log-service/cache"
 	"github.com/harness/harness-core/product/log-service/config"
@@ -295,4 +299,16 @@ func HandleExists(store store.Store) http.HandlerFunc {
 
 		io.WriteString(w, fmt.Sprintf("%t", exists))
 	}
+}
+
+func SignedURL(bucketName, objectName, customHost string) (string, error) {
+	client, err := gcputils.NewGCSClient(context.Background(), nil, nil, option.WithCredentialsFile("Downloads/gcp-ci-play-vm.json"))
+	if err != nil {
+		return "", err
+	}
+	url, err := gcputils.SignURL(bucketName, objectName, customHost, client)
+	if err != nil {
+		return "", nil
+	}
+	return url, err
 }
