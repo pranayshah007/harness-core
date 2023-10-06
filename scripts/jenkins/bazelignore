@@ -38,8 +38,8 @@ toolset
 .*.go$
 .*.lock$
 .*/chart/templates/
-.*/chart/*.yaml
-.*/chart/*.yml
+.*/chart/.*\.yaml$
+.*/chart/.*\.yml$
 100-migrator/chart/Chart.yaml
 100-migrator/chart/templates/config.yaml
 100-migrator/chart/templates/deployment.yaml
