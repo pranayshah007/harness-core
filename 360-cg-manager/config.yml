@@ -396,6 +396,7 @@ portal:
   optionalDelegateTaskRejectAtLimit: 5000
   importantDelegateTaskRejectAtLimit: 5000
   criticalDelegateTaskRejectAtLimit: 100000
+  parkedDelegateTaskRejectAtLimit: 10000
 
 totp:
   secOpsEmail: secops.fake.email@mailnator.com

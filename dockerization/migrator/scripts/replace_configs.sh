@@ -485,6 +485,10 @@ if [[ "" != "$OPTIONAL_DELEGATE_TASK_REJECT_AT_LIMIT" ]]; then
   export OPTIONAL_DELEGATE_TASK_REJECT_AT_LIMIT; yq -i '.portal.optionalDelegateTaskRejectAtLimit=env(OPTIONAL_DELEGATE_TASK_REJECT_AT_LIMIT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$PARKED_DELEGATE_TASK_REJECT_AT_LIMIT" ]]; then
+  export PARKED_DELEGATE_TASK_REJECT_AT_LIMIT; yq -i '.portal.parkedDelegateTaskRejectAtLimit=env(PARKED_DELEGATE_TASK_REJECT_AT_LIMIT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$EXECUTION_LOG_DATA_STORE" ]]; then
   export EXECUTION_LOG_DATA_STORE; yq -i '.cg.executionLogStorageMode=env(EXECUTION_LOG_DATA_STORE)' $CONFIG_FILE
 fi
