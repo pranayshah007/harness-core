@@ -392,6 +392,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
                                    .accountIdentifier(requestService.getAccountId())
                                    .orgIdentifier(requestService.getOrgIdentifier())
                                    .projectIdentifier(requestService.getProjectIdentifier())
+                                   .oldService(serviceEntityOptional.orElse(null))
                                    .service(requestService)
                                    .build());
           }
