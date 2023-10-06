@@ -14,6 +14,7 @@ import static dev.morphia.aggregation.Accumulator.accumulator;
 import static dev.morphia.aggregation.Group.grouping;
 import static dev.morphia.aggregation.Group.id;
 
+import io.harness.CVNGPrometheusExporterUtils;
 import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskKeys;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
@@ -41,6 +42,8 @@ import io.harness.mongo.metrics.MongoMetricsContext;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.PersistentEntity;
 
+import com.codahale.metrics.MetricFilter;
+import com.codahale.metrics.Timer;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.mongodb.AggregationOptions;
@@ -56,6 +59,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -78,6 +82,8 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
   private static final String CONTAINER_NAME = System.getenv("CONTAINER_NAME");
   private static final Map<Class<? extends PersistentEntity>, QueryParams> TASKS_INFO = new HashMap<>();
   private static final String ENV = isEmpty(System.getenv("ENV")) ? "localhost" : System.getenv("ENV");
+
+  private static final Double SNAPSHOT_FACTOR = 1.0D / (double) TimeUnit.SECONDS.toNanos(1L);
 
   @Inject private Clock clock;
   @Inject private HarnessMetricRegistry metricRegistry;
@@ -124,6 +130,7 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
       sendTaskStatusMetrics();
       sendLEAutoscaleMetrics();
       recordDBMetrics();
+      recordMeanForTimers();
     } catch (Exception ignored) {
       log.warn("Metric could not be recorded.");
     }
@@ -144,6 +151,27 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
             METRIC_PREFIX + CONNECTIONS_CHECKED_OUT, null, harnessConnectionPoolStatistics.getCheckedOutCount());
       }
     });
+  }
+
+  public void recordMeanForTimers() {
+    Set<Map.Entry<String, Timer>> timerSet =
+        metricRegistry.getMetricRegistry()
+            .getTimers(MetricFilter.startsWith("io.harness.cvng.core.resources.MonitoredServiceResource"))
+            .entrySet();
+    Set<Map.Entry<String, Timer>> webMetricsTimerSet =
+        metricRegistry.getMetricRegistry()
+            .getTimers(MetricFilter.startsWith("io.dropwizard.jetty.MutableServletContextHandler"))
+            .entrySet();
+    timerSet.forEach(entry -> recordTimer(entry.getKey(), entry.getValue()));
+    webMetricsTimerSet.forEach(entry -> recordTimer(entry.getKey(), entry.getValue()));
+  }
+
+  private void recordTimer(String metricName, Timer timer) {
+    metricRegistry.registerGaugeMetric(sanitizeName(metricName) + "_mean",
+        CVNGPrometheusExporterUtils.contextLabels.keySet().toArray(new String[0]), "Metrics from CVNG for LE");
+    metricRegistry.recordGaugeValue(sanitizeName(metricName) + "_mean",
+        CVNGPrometheusExporterUtils.contextLabels.values().toArray(new String[0]),
+        timer.getSnapshot().getMean() * SNAPSHOT_FACTOR);
   }
 
   private static String sanitizeName(String labelName) {
