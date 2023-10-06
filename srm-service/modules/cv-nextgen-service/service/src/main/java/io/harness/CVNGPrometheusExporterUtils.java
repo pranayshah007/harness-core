@@ -34,6 +34,8 @@ public class CVNGPrometheusExporterUtils {
   private static final String METHOD_LABEL = "method";
   private static final String STATUS_CODE_LABEL = "statusCode";
 
+  private static final String METRIC_NAME_FOR_RESOURCES = "io.harness.cvng.resources";
+
   static {
     if (StringUtils.isNotEmpty(NAMESPACE_VALUE)) {
       contextLabels.put(NAMESPACE_LABEL, NAMESPACE_VALUE);
@@ -72,7 +74,7 @@ public class CVNGPrometheusExporterUtils {
     // The match field in MapperConfig is a simplified glob expression that only allows * wildcard.
     requestConfig.setMatch(modulePackagePath + metricFilterPath);
     // The new Sample's template name.
-    requestConfig.setName(modulePackagePath + metricName);
+    requestConfig.setName(METRIC_NAME_FOR_RESOURCES + metricName);
     Map<String, String> labels = getRESTMetricLabels();
     requestConfig.setLabels(labels);
     return requestConfig;
@@ -94,7 +96,7 @@ public class CVNGPrometheusExporterUtils {
       MapperConfig requestConfig = new MapperConfig();
       requestConfig.setMatch(modulePackagePath + ".*.*." + code + "-responses");
       // The new Sample's template name.
-      requestConfig.setName(modulePackagePath + ".responses");
+      requestConfig.setName(METRIC_NAME_FOR_RESOURCES + ".responses");
       Map<String, String> labels = getRESTMetricLabels();
       labels.put(STATUS_CODE_LABEL, code);
       requestConfig.setLabels(labels);
