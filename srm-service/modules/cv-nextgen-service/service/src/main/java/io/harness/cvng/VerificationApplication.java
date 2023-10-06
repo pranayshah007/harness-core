@@ -1454,6 +1454,8 @@ public class VerificationApplication extends Application<VerificationConfigurati
     registerPrometheusExporter("io.harness.cvng.core.resources", "MonitoredServiceResource", metricRegistry);
     registerPrometheusExporter(
         "io.harness.cvng.servicelevelobjective.resources", "ServiceLevelObjectiveV2Resource", metricRegistry);
+    registerPrometheusExporter(
+        "io.harness.cvng.servicelevelobjective.resources", "SLODashboardResource", metricRegistry);
   }
 
   private void registerGaugeMetric(String metricName, String[] labels) {
