@@ -11,13 +11,11 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//930-oidc-core/src/main/java/io/harness/oidc/entities:module",
-        "//930-oidc-core/src/main/java/io/harness/oidc/idtoken:module",
-        "//960-persistence/src/main/java/io/harness/persistence:module",
-        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//:lombok",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
-        "@maven//:com_google_guava_guava",
-        "@maven//:com_google_inject_guice",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:io_jsonwebtoken_jjwt",
     ],
 )
 

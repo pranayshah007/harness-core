@@ -18,10 +18,17 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//930-oidc-core/src/main/java/io/harness/oidc/accesstoken:module",
+        "//930-oidc-core/src/main/java/io/harness/oidc/config:module",
+        "//930-oidc-core/src/main/java/io/harness/oidc/idtoken:module",
+        "//930-oidc-core/src/main/java/io/harness/oidc/jwks:module",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_google_inject_guice",
         "@maven//:io_swagger_core_v3_swagger_annotations",
-        "@maven//:io_swagger_swagger_annotations",
         "@maven//:javax_validation_validation_api",
+        "@maven//:org_apache_commons_commons_lang3",
     ],
 )
 

@@ -25,5 +25,5 @@ public class GcpOidcAccessTokenRequestDTO {
   @NotNull @NotEmpty @Schema(description = "The OIDC ID Token") private String oidcIdToken;
   @NotNull
   @Schema(description = "The OIDC Token Exchange Metadata")
-  private GcpOidcTokenRequestDTO gcpOidcTokenRequestDTO;
+  private io.harness.oidc.gcp.GcpOidcTokenRequestDTO gcpOidcTokenRequestDTO;
 }
