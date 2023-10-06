@@ -19,7 +19,8 @@ java_library(
     deps = [
         "//:lombok",
         "//999-annotations:module",
-        "@maven//:org_bouncycastle_bcpg_jdk18on",
+        "@maven//:org_bouncycastle_bcpkix_jdk18on",
+        "@maven//:org_bouncycastle_bcprov_jdk18on",
     ],
 )
 
