@@ -39,6 +39,8 @@ import static io.harness.provision.TerraformConstants.TERRAFORM_PLAN_FILE_OUTPUT
 import static io.harness.provision.TerraformConstants.TERRAFORM_PLAN_JSON_FILE_NAME;
 import static io.harness.provision.TerraformConstants.TERRAFORM_STATE_FILE_NAME;
 import static io.harness.provision.TerraformConstants.TERRAFORM_VARIABLES_FILE_NAME;
+import static io.harness.provision.TerraformConstants.TERRAFORM_VARIABLES_JSON_FILE_NAME;
+import static io.harness.provision.TerraformConstants.TERRAFORM_VAR_FILE_JSON_FORMAT;
 import static io.harness.provision.TerraformConstants.TF_BASE_DIR;
 import static io.harness.provision.TerraformConstants.TF_SCRIPT_DIR;
 import static io.harness.provision.TerraformConstants.TF_WORKING_DIR;
@@ -1150,8 +1152,17 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
                 ((InlineTerraformVarFileInfo) varFile).getVarFileContent(), scriptDir,
                 TERRAFORM_CLOUD_VARIABLES_FILE_NAME));
           } else {
-            varFilePaths.add(TerraformHelperUtils.createFileFromStringContent(
-                ((InlineTerraformVarFileInfo) varFile).getVarFileContent(), scriptDir, TERRAFORM_VARIABLES_FILE_NAME));
+            InlineTerraformVarFileInfo inlineVarFile = (InlineTerraformVarFileInfo) varFile;
+            if (inlineVarFile.getFilePath() != null
+                && inlineVarFile.getFilePath().contains(TERRAFORM_VAR_FILE_JSON_FORMAT)) {
+              varFilePaths.add(TerraformHelperUtils.createFileFromStringContent(
+                  ((InlineTerraformVarFileInfo) varFile).getVarFileContent(), scriptDir,
+                  TERRAFORM_VARIABLES_JSON_FILE_NAME));
+            } else {
+              varFilePaths.add(TerraformHelperUtils.createFileFromStringContent(
+                  ((InlineTerraformVarFileInfo) varFile).getVarFileContent(), scriptDir,
+                  TERRAFORM_VARIABLES_FILE_NAME));
+            }
           }
         } else if (varFile instanceof RemoteTerraformVarFileInfo) {
           checkoutRemoteTerraformFileAndConvertToFilePath((RemoteTerraformFileInfo) varFile, logCallback, accountId,
