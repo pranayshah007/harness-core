@@ -744,7 +744,6 @@ public enum FeatureName {
   SRM_ENABLE_SLI_BUCKET("This is used to enable sli bucket reads", HarnessTeam.CV),
   SRM_ET_EXPERIMENTAL("Feature flag for SRM only Error Tracking development", HarnessTeam.CV),
   SRM_ET_JIRA_INTEGRATION("Enable code errors JIRA integration", HarnessTeam.CV),
-  SRM_ET_RESOLVED_EVENTS("Feature flag for Error Tracking resolved events", HarnessTeam.CV),
   SRM_INTERNAL_CHANGE_SOURCE_CE("Control Chaos Engineering Internal Change Source from backend", HarnessTeam.CV),
   SRM_LICENSE_ENABLED,
   SRM_LOG_FEEDBACK_ENABLE_UI("Enable FE for Log feedback", HarnessTeam.CV),
