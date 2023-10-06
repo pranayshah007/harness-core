@@ -909,6 +909,9 @@ public enum FeatureName {
       "Allows to set Public Access of Resources on Authentication page under account settings", HarnessTeam.PL),
   CDS_SCOPE_INFRA_TO_SERVICES("This flag enables the scoping of Infrastructure to specific Services.", HarnessTeam.CDP),
   PIE_SIMPLIFY_LOG_BASE_KEY("FF to simplify log base key", PIPELINE),
+
+  SRM_OPTIMISE_CHANGE_EVENTS_API_RESPONSE(
+      "When enabled, this reduces the response size of the change-events list API", HarnessTeam.CV),
   CDS_NG_DISABLE_SPECIAL_CHARS_ESCAPE_OF_WINRM_ENV_VARS(
       "This flag disables WinRm special character escaping for environment variables usage", HarnessTeam.CDP),
   CDS_NG_K8S_SERVICE_RELEASE_NAME(
