@@ -145,7 +145,7 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
     MergeTemplateInputsInObject mergeTemplateInputsInObject = null;
     String processedYamlVersion;
     if (!getMergedYamlWithTemplateField) {
-      log.warn("template request yaml version: {}", yamlVersion);
+      log.error("template request yaml version: {}", yamlVersion);
       mergeTemplateInputsInObject = templateMergeServiceHelper.mergeTemplateInputsInObjectWithVersion(accountId, orgId,
           projectId, entityYamlNode, templateCacheMap, 0, loadFromCache, appendInputSetValidator, yamlVersion);
 

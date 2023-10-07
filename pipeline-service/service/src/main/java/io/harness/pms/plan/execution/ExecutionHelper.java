@@ -462,7 +462,7 @@ public class ExecutionHelper {
     String pipelineYamlWithTemplateRef = pipelineYaml;
     String processedYamlVersion = pipelineEntity.getHarnessVersion();
     if (Boolean.TRUE.equals(TemplateRefHelper.hasTemplateRef(pipelineJsonNode))) {
-      log.warn("pipeline entity version: {}", pipelineEntity.getHarnessVersion());
+      log.error("pipeline entity version: {}", pipelineEntity.getHarnessVersion());
       TemplateMergeResponseDTO templateMergeResponseDTO =
           pipelineTemplateHelper.resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
               pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYaml, true,
@@ -572,7 +572,7 @@ public class ExecutionHelper {
       Plan plan;
       try {
         String version = executionMetadata.getProcessedYamlVersion();
-        log.warn("processed yaml version: {}", version);
+        log.error("processed yaml version: {}", version);
         resp = planCreatorMergeService.createPlanVersioned(
             accountId, orgIdentifier, projectIdentifier, version, executionMetadata, planExecutionMetadata);
         plan = PlanExecutionUtils.extractPlan(resp);
