@@ -573,6 +573,7 @@ public class ExecutionHelper {
       try {
         String version = executionMetadata.getProcessedYamlVersion();
         log.error("processed yaml version: {}", version);
+        log.error("processed yaml: {}", planExecutionMetadata.getYaml());
         resp = planCreatorMergeService.createPlanVersioned(
             accountId, orgIdentifier, projectIdentifier, version, executionMetadata, planExecutionMetadata);
         plan = PlanExecutionUtils.extractPlan(resp);
