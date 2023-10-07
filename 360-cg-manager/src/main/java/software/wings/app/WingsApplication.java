@@ -217,6 +217,7 @@ import software.wings.resources.AppResource;
 import software.wings.resources.SearchResource;
 import software.wings.resources.graphql.GraphQLResource;
 import software.wings.scheduler.AccessRequestHandler;
+import software.wings.scheduler.AccountDeletionJob;
 import software.wings.scheduler.AccountPasswordExpirationJob;
 import software.wings.scheduler.DelegateDisconnectAlertHelper;
 import software.wings.scheduler.DeletedEntityHandler;
@@ -226,7 +227,6 @@ import software.wings.scheduler.ManagerVersionsCleanUpJob;
 import software.wings.scheduler.ResourceLookupSyncHandler;
 import software.wings.scheduler.UsageMetricsHandler;
 import software.wings.scheduler.VaultSecretManagerRenewalHandler;
-import software.wings.scheduler.account.DeleteAccountHandler;
 import software.wings.scheduler.account.LicenseCheckHandler;
 import software.wings.scheduler.approval.ApprovalPollingHandler;
 import software.wings.scheduler.audit.EntityAuditRecordHandler;
@@ -1362,6 +1362,10 @@ public class WingsApplication extends Application<MainConfiguration> {
     taskPollExecutor.scheduleWithFixedDelay(
         new Schedulable("Failed cleaning up manager versions.", injector.getInstance(ManagerVersionsCleanUpJob.class)),
         1, 5L, TimeUnit.MINUTES);
+
+    ScheduledExecutorService cgJobExecutor =
+        injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("cgJobExecutor")));
+    cgJobExecutor.scheduleWithFixedDelay(injector.getInstance(AccountDeletionJob.class), 0, 1, TimeUnit.HOURS);
   }
 
   private void scheduleJobsDelegateService(
@@ -1588,7 +1592,6 @@ public class WingsApplication extends Application<MainConfiguration> {
     injector.getInstance(DeploymentFreezeActivationHandler.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(DeploymentFreezeDeactivationHandler.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(CeLicenseExpiryHandler.class).registerIterator(iteratorExecutionHandler);
-    injector.getInstance(DeleteAccountHandler.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(DeletedEntityHandler.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(ResourceLookupSyncHandler.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(AccessRequestHandler.class).registerIterator(iteratorExecutionHandler);
