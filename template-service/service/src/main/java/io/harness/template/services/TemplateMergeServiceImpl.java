@@ -152,8 +152,8 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
 
     } else {
       log.error("template request yaml version opa: {}", yamlVersion);
-      mergeTemplateInputsInObject = templateMergeServiceHelper.mergeTemplateInputsInObjectAlongWithOpaPolicy(
-          accountId, orgId, projectId, entityYamlNode, templateCacheMap, 0, loadFromCache, appendInputSetValidator);
+      mergeTemplateInputsInObject = templateMergeServiceHelper.mergeTemplateInputsInObjectAlongWithOpaPolicy(accountId,
+          orgId, projectId, entityYamlNode, templateCacheMap, 0, loadFromCache, appendInputSetValidator, yamlVersion);
     }
     log.error("template request yaml version always: {}", yamlVersion);
     resMap = mergeTemplateInputsInObject.getResMap();
