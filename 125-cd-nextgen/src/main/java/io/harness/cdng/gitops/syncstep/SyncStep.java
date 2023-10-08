@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.gitops.syncstep;
+
 import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_OUTPUT;
 import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SYNC_SWEEPING_OUTPUT;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -95,10 +96,6 @@ public class SyncStep implements AsyncExecutableWithRbac<StepElementParameters> 
   private String getTaskId(StepElementParameters stepParameters) {
     return "GitOpsSync" + stepParameters.getUuid();
   }
-
-  @Override
-  public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {}
 
   @Override
   public StepResponse handleAsyncResponse(

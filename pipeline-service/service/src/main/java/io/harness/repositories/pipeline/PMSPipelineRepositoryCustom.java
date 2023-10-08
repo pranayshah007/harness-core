@@ -49,6 +49,8 @@ public interface PMSPipelineRepositoryCustom {
       String pipelineIdentifier, boolean notDeleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
       boolean loadFromCache);
 
+  Optional<PipelineEntity> find(String uuid);
+
   PipelineEntity updatePipelineYamlForOldGitSync(
       PipelineEntity pipelineToUpdate, PipelineEntity oldPipelineEntity, ChangeType changeType);
 
@@ -57,6 +59,8 @@ public interface PMSPipelineRepositoryCustom {
    * flows
    */
   PipelineEntity updatePipelineYaml(PipelineEntity pipelineToUpdate);
+
+  PipelineEntity updatePipelineFilters(PipelineEntity pipelineToUpdate, String uuid, Integer yamlHash);
 
   PipelineEntity updatePipelineMetadata(
       String accountId, String orgIdentifier, String projectIdentifier, Criteria criteria, Update update);

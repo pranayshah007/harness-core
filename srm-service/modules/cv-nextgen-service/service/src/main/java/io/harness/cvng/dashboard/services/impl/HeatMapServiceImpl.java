@@ -7,6 +7,7 @@
 
 package io.harness.cvng.dashboard.services.impl;
 
+import static io.harness.cvng.CVConstants.MONITORED_SERVICES_RISK_COUNT_CALCULATION_LIMIT;
 import static io.harness.cvng.core.utils.DateTimeUtils.roundDownTo5MinBoundary;
 import static io.harness.cvng.core.utils.DateTimeUtils.roundDownToMinBoundary;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -284,7 +285,7 @@ public class HeatMapServiceImpl implements HeatMapService {
   @Override
   public Map<String, RiskData> getLatestRiskScoreByMonitoredService(
       ProjectParams projectParams, List<String> monitoredServiceIdentifiers) {
-    Preconditions.checkArgument(monitoredServiceIdentifiers.size() <= 500,
+    Preconditions.checkArgument(monitoredServiceIdentifiers.size() <= MONITORED_SERVICES_RISK_COUNT_CALCULATION_LIMIT,
         "Based on page size, the health score calculation should be done for less than 500 services");
     int size = monitoredServiceIdentifiers.size();
     if (size == 0) {

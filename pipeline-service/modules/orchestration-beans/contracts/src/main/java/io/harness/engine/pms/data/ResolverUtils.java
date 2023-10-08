@@ -44,4 +44,27 @@ public class ResolverUtils {
     }
     return levelRuntimeIdIndices;
   }
+
+  public List<String> prepareLevelRuntimeIdIndicesUsingGroupName(
+      @NotNull Ambiance ambiance, @NotNull String groupName) {
+    if (EmptyPredicate.isEmpty(groupName) || EmptyPredicate.isEmpty(ambiance.getLevelsList())) {
+      // If group name is not provided, calculate levelRuntimeId without any restrictions
+      return prepareLevelRuntimeIdIndices(ambiance);
+    }
+
+    if (ResolverUtils.GLOBAL_GROUP_SCOPE.equals(groupName)) {
+      // in consume flow, global scope is mapped to empty runtimeIdIdx
+      return Collections.singletonList("");
+    }
+    List<String> levelRuntimeIdIndices = new ArrayList<>();
+    levelRuntimeIdIndices.add("");
+    List<Level> levels = ambiance.getLevelsList();
+    for (int i = levels.size() - 1; i >= 0; i--) {
+      Level level = levels.get(i);
+      if (groupName.equals(level.getGroup())) {
+        levelRuntimeIdIndices.add(prepareLevelRuntimeIdIdx(ambiance.getLevelsList().subList(0, i + 1)));
+      }
+    }
+    return levelRuntimeIdIndices;
+  }
 }

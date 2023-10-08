@@ -13,6 +13,7 @@ import static io.harness.accesscontrol.scopes.harness.HarnessScopeParams.PROJECT
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.accesscontrol.scopes.HarnessScopeLevel;
 import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeLevel;

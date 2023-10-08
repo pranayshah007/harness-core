@@ -183,6 +183,8 @@ public class NextGenConfiguration extends Configuration {
   private static final String TERRAGRUNT_RESOURCE_PACKAGE = "io.harness.ng.core.terragrunt.resources";
   private static final String GITX_WEBHOOKS_PACKAGE = "io.harness.ng.gitxwebhook";
 
+  private static final String OIDC_CORE_RESOURCE = "io.harness.ng.core.oidc";
+
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
 
   @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
@@ -354,7 +356,7 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.FAVORITES_PACKAGE, NextGenConfiguration.SERVICE_DISCOVERY_PACKAGE,
                 NextGenConfiguration.SUPPORT_PACKAGE, NextGenConfiguration.EULA_PACKAGE,
                 NextGenConfiguration.TERRAGRUNT_RESOURCE_PACKAGE, NextGenConfiguration.GITX_WEBHOOKS_PACKAGE,
-                NextGenConfiguration.K8S_RELEASE_DETAILS_PACKAGE))
+                NextGenConfiguration.K8S_RELEASE_DETAILS_PACKAGE, NextGenConfiguration.OIDC_CORE_RESOURCE))
         .collect(Collectors.toSet());
   }
 

@@ -46,9 +46,9 @@ public class MicrosoftTeamsSenderDelegateTask extends AbstractDelegateRunnableTa
   public DelegateResponseData run(TaskParameters parameters) {
     MicrosoftTeamsTaskParams microsoftTeamsTaskParams = (MicrosoftTeamsTaskParams) parameters;
     try {
-      NotificationProcessingResponse processingResponse =
-          microsoftTeamsSender.send(microsoftTeamsTaskParams.getMicrosoftTeamsWebhookUrls(),
-              microsoftTeamsTaskParams.getMessage(), microsoftTeamsTaskParams.getNotificationId());
+      NotificationProcessingResponse processingResponse = microsoftTeamsSender.send(
+          microsoftTeamsTaskParams.getMicrosoftTeamsWebhookUrls(), microsoftTeamsTaskParams.getMessage(),
+          microsoftTeamsTaskParams.getNotificationId(), microsoftTeamsTaskParams.getAccountId());
       return NotificationTaskResponse.builder().processingResponse(processingResponse).build();
     } catch (Exception e) {
       return NotificationTaskResponse.builder()

@@ -36,4 +36,5 @@ public class PipelineServiceConsumersConfig {
   PipelineServiceConsumerConfig pipelineExecutionEvent;
   PipelineServiceConsumerConfig pipelineExecutionEventSnapshot;
   PipelineServiceConsumerConfig triggerExecutionEvent;
+  PipelineServiceConsumerConfig asyncFilterCreationEvent;
 }

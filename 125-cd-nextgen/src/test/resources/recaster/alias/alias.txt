@@ -1294,3 +1294,6 @@ io.harness.cdng.ecs.EcsBasicRollbackStepParameters
 io.harness.cdng.ecs.EcsUpgradeContainerStepNode
 io.harness.cdng.ecs.EcsServiceSetupStepNode
 io.harness.cdng.ecs.EcsBasicRollbackStepNode
+io.harness.beans.yaml.extended.cache.CachePolicy
+io.harness.beans.steps.stepinfo.GARStepInfo
+

@@ -12,12 +12,11 @@ import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.data.structure.CollectionUtils;
 import io.harness.exception.InvalidRequestException;
-import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
 import io.harness.idp.configmanager.beans.entity.PluginConfigEnvVariablesEntity;
-import io.harness.idp.configmanager.events.AppConfigUpdateEvent;
-import io.harness.idp.configmanager.events.BackstageEnvSecretSaveEvent;
+import io.harness.idp.configmanager.events.envvariables.BackstageEnvSecretCreateEvent;
+import io.harness.idp.configmanager.events.envvariables.BackstageEnvSecretDeleteEvent;
+import io.harness.idp.configmanager.events.envvariables.BackstageEnvSecretUpdateEvent;
 import io.harness.idp.configmanager.mappers.ConfigEnvVariablesMapper;
 import io.harness.idp.configmanager.repositories.ConfigEnvVariablesRepository;
 import io.harness.idp.configmanager.utils.ReservedEnvVariables;
@@ -33,10 +32,11 @@ import com.google.gson.Gson;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -71,7 +71,7 @@ public class ConfigEnvVariablesServiceImpl implements ConfigEnvVariablesService 
   @Override
   public List<BackstageEnvSecretVariable> insertConfigEnvVariables(AppConfig appConfig, String accountIdentifier) {
     List<PluginConfigEnvVariablesEntity> configVariables =
-        ConfigEnvVariablesMapper.getEntitiesForEnvVariables(appConfig, accountIdentifier);
+        ConfigEnvVariablesMapper.getEntitiesForEnvVariables(appConfig, appConfig.getEnvVariables(), accountIdentifier);
     List<String> errorMessagesForEnvVariables = getErrorMessagesForEnvVariables(appConfig, accountIdentifier);
     if (!errorMessagesForEnvVariables.isEmpty()) {
       throw new InvalidRequestException(new Gson().toJson(errorMessagesForEnvVariables));
@@ -83,13 +83,14 @@ public class ConfigEnvVariablesServiceImpl implements ConfigEnvVariablesService 
     Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       configEnvVariablesRepository.saveAll(configVariables);
       for (BackstageEnvSecretVariable backstageEnvSecretVariable : appConfig.getEnvVariables()) {
-        outboxService.save(new BackstageEnvSecretSaveEvent(accountIdentifier, backstageEnvSecretVariable));
+        outboxService.save(new BackstageEnvSecretCreateEvent(accountIdentifier, backstageEnvSecretVariable));
       }
       return true;
     }));
 
     // creating secrets on the namespace of backstage and storing in DB
-    List<BackstageEnvVariable> backstageEnvVariableList = getListOfBackstageEnvSecretVariable(appConfig);
+    List<BackstageEnvVariable> backstageEnvVariableList =
+        getListOfBackstageEnvSecretVariable(appConfig.getEnvVariables());
     List<BackstageEnvVariable> backstageEnvVariables =
         backstageEnvVariableService.createOrUpdate(backstageEnvVariableList, accountIdentifier);
     List<BackstageEnvSecretVariable> returnList = new ArrayList<>();
@@ -101,9 +102,7 @@ public class ConfigEnvVariablesServiceImpl implements ConfigEnvVariablesService 
 
   @Override
   public List<BackstageEnvSecretVariable> updateConfigEnvVariables(AppConfig appConfig, String accountIdentifier) {
-    List<PluginConfigEnvVariablesEntity> configVariables =
-        ConfigEnvVariablesMapper.getEntitiesForEnvVariables(appConfig, accountIdentifier);
-    if (configVariables.isEmpty()) {
+    if (appConfig.getEnvVariables().isEmpty()) {
       log.info(NO_ENV_VARIABLE_ASSOCIATED, appConfig.getConfigId(), accountIdentifier);
     }
     List<String> errorMessagesForEnvVariables = getErrorMessagesForEnvVariables(appConfig, accountIdentifier);
@@ -111,8 +110,40 @@ public class ConfigEnvVariablesServiceImpl implements ConfigEnvVariablesService 
       throw new InvalidRequestException(new Gson().toJson(errorMessagesForEnvVariables));
     }
 
-    // creating new updated env variables
-    return insertConfigEnvVariables(appConfig, accountIdentifier);
+    List<PluginConfigEnvVariablesEntity> oldEnvVariables =
+        configEnvVariablesRepository.findAllByAccountIdentifierAndPluginId(accountIdentifier, appConfig.getConfigId());
+
+    List<BackstageEnvSecretVariable> oldBackstageEnvVariables =
+        backstageEnvVariableService.getAllSecretIdentifierForMultipleEnvVariablesInAccount(accountIdentifier,
+            oldEnvVariables.stream().map(PluginConfigEnvVariablesEntity::getEnvName).collect(Collectors.toList()));
+
+    Map<String, BackstageEnvSecretVariable> oldBackstageEnvVariableMap = oldBackstageEnvVariables.stream().collect(
+        Collectors.toMap(BackstageEnvSecretVariable::getIdentifier, Function.identity()));
+
+    List<BackstageEnvSecretVariable> newBackstageEnvVariables = appConfig.getEnvVariables();
+
+    // newly added env variables
+    List<BackstageEnvSecretVariable> newlyAddedEnvSecretVariables =
+        newBackstageEnvVariables.stream()
+            .filter(backstageEnvSecretVariable -> backstageEnvSecretVariable.getIdentifier() == null)
+            .collect(Collectors.toList());
+
+    // removing the newly added env variables from the list for the update case
+    newBackstageEnvVariables.removeAll(newlyAddedEnvSecretVariables);
+
+    // delete all the older created env variables not in use
+    deleteOlderEnvVariablesNotInUse(accountIdentifier, appConfig, oldBackstageEnvVariables, newBackstageEnvVariables);
+
+    List<BackstageEnvSecretVariable> returnList = new ArrayList<>();
+
+    // inserting newly added env variables
+    returnList.addAll(insertNewlyCreatedEnvVariables(accountIdentifier, newlyAddedEnvSecretVariables, appConfig));
+
+    // update cases
+    returnList.addAll(
+        updateExistingEnvVariables(accountIdentifier, newBackstageEnvVariables, appConfig, oldBackstageEnvVariableMap));
+
+    return returnList;
   }
 
   @Override
@@ -175,8 +206,8 @@ public class ConfigEnvVariablesServiceImpl implements ConfigEnvVariablesService 
     return backstageEnvSecretVariables.stream().map(entity -> entity.getEnvName()).collect(Collectors.toSet());
   }
 
-  private List<BackstageEnvVariable> getListOfBackstageEnvSecretVariable(AppConfig appConfig) {
-    List<BackstageEnvSecretVariable> appConfigEnvVariables = appConfig.getEnvVariables();
+  private List<BackstageEnvVariable> getListOfBackstageEnvSecretVariable(
+      List<BackstageEnvSecretVariable> appConfigEnvVariables) {
     List<BackstageEnvVariable> resultList = new ArrayList<>();
     for (BackstageEnvSecretVariable backstageEnvSecretVariable : appConfigEnvVariables) {
       backstageEnvSecretVariable.setType(BackstageEnvVariable.TypeEnum.SECRET);
@@ -219,5 +250,99 @@ public class ConfigEnvVariablesServiceImpl implements ConfigEnvVariablesService 
 
   private Boolean isReservedEnvVariable(String envVariableName) {
     return ReservedEnvVariables.reservedEnvVariables.contains(envVariableName);
+  }
+
+  private void deleteOlderEnvVariablesNotInUse(String accountIdentifier, AppConfig appConfig,
+      List<BackstageEnvSecretVariable> oldBackstageEnvVariables,
+      List<BackstageEnvSecretVariable> newBackstageEnvVariables) {
+    // remove the env variables from oldBackstageEnvVariables that are present in newBackstageEnvVariables
+    oldBackstageEnvVariables.removeIf(backstageEnvSecretVariable
+        -> newBackstageEnvVariables.stream().anyMatch(
+            backstageEnv -> backstageEnv.getIdentifier().equals(backstageEnvSecretVariable.getIdentifier())));
+
+    // Deleting the older created env variables that are deleted from UI.
+
+    Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      // removing all the mappings
+      configEnvVariablesRepository.deleteAllByAccountIdentifierAndPluginId(accountIdentifier, appConfig.getConfigId());
+
+      if (!oldBackstageEnvVariables.isEmpty()) {
+        log.info("Deleted env variables - {}", oldBackstageEnvVariables);
+        List<String> toBeDeletedEnvVariables =
+            oldBackstageEnvVariables.stream().map(BackstageEnvSecretVariable::getEnvName).collect(Collectors.toList());
+        backstageEnvVariableService.deleteMultiUsingEnvNames(toBeDeletedEnvVariables, accountIdentifier);
+        for (BackstageEnvSecretVariable oldEnvVariable : oldBackstageEnvVariables) {
+          outboxService.save(new BackstageEnvSecretDeleteEvent(accountIdentifier, oldEnvVariable));
+        }
+      }
+
+      return true;
+    }));
+  }
+
+  private List<BackstageEnvSecretVariable> insertNewlyCreatedEnvVariables(
+      String accountIdentifier, List<BackstageEnvSecretVariable> newlyAddedEnvSecretVariables, AppConfig appConfig) {
+    // inserting newly added env variables
+    List<PluginConfigEnvVariablesEntity> newlyAddedConfigEnvVariables =
+        ConfigEnvVariablesMapper.getEntitiesForEnvVariables(appConfig, newlyAddedEnvSecretVariables, accountIdentifier);
+
+    List<BackstageEnvSecretVariable> returnList = new ArrayList<>();
+    Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      log.info("Newly added env variables  - {}", newlyAddedEnvSecretVariables);
+      configEnvVariablesRepository.saveAll(newlyAddedConfigEnvVariables);
+
+      for (BackstageEnvSecretVariable backstageEnvSecretVariable : newlyAddedEnvSecretVariables) {
+        outboxService.save(new BackstageEnvSecretCreateEvent(accountIdentifier, backstageEnvSecretVariable));
+      }
+
+      List<BackstageEnvVariable> newlyAddedEnvVariablesToSave =
+          getListOfBackstageEnvSecretVariable(newlyAddedEnvSecretVariables);
+      List<BackstageEnvVariable> newlyAddedEnvVariablesSaved =
+          backstageEnvVariableService.createOrUpdate(newlyAddedEnvVariablesToSave, accountIdentifier);
+
+      for (BackstageEnvVariable backstageEnvVariable : newlyAddedEnvVariablesSaved) {
+        returnList.add((BackstageEnvSecretVariable) backstageEnvVariable);
+      }
+
+      return true;
+    }));
+
+    return returnList;
+  }
+
+  private List<BackstageEnvSecretVariable> updateExistingEnvVariables(String accountIdentifier,
+      List<BackstageEnvSecretVariable> newBackstageEnvVariables, AppConfig appConfig,
+      Map<String, BackstageEnvSecretVariable> oldBackstageEnvVariableMap) {
+    List<PluginConfigEnvVariablesEntity> updatedConfigEnvVariables =
+        ConfigEnvVariablesMapper.getEntitiesForEnvVariables(appConfig, newBackstageEnvVariables, accountIdentifier);
+    List<BackstageEnvSecretVariable> returnList = new ArrayList<>();
+
+    Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      configEnvVariablesRepository.saveAll(updatedConfigEnvVariables);
+
+      log.info("Updated env variables  - {}", updatedConfigEnvVariables);
+
+      for (BackstageEnvSecretVariable newBackstageEnvSecretVariable : newBackstageEnvVariables) {
+        String newEnvVariableIdentifier = newBackstageEnvSecretVariable.getIdentifier();
+        if (!newBackstageEnvSecretVariable.getEnvName().equals(
+                oldBackstageEnvVariableMap.get(newEnvVariableIdentifier).getEnvName())
+            || !newBackstageEnvSecretVariable.getHarnessSecretIdentifier().equals(
+                oldBackstageEnvVariableMap.get(newEnvVariableIdentifier).getHarnessSecretIdentifier())) {
+          outboxService.save(new BackstageEnvSecretUpdateEvent(accountIdentifier, newBackstageEnvSecretVariable,
+              oldBackstageEnvVariableMap.get(newBackstageEnvSecretVariable.getIdentifier())));
+        }
+      }
+
+      List<BackstageEnvVariable> envVariablesToUpdate = getListOfBackstageEnvSecretVariable(newBackstageEnvVariables);
+      List<BackstageEnvVariable> envVariablesUpdated =
+          backstageEnvVariableService.createOrUpdate(envVariablesToUpdate, accountIdentifier);
+
+      for (BackstageEnvVariable backstageEnvVariable : envVariablesUpdated) {
+        returnList.add((BackstageEnvSecretVariable) backstageEnvVariable);
+      }
+      return true;
+    }));
+
+    return returnList;
   }
 }

@@ -27,6 +27,7 @@ import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -70,6 +71,8 @@ public class ConfigEnvVariableServiceImplTest extends CategoryTest {
   static final long TEST_UPDATED_TIME = 1681756035;
   static final long TEST_LAST_CREATED_AT_TIME = 1681756035;
   static final long TEST_ENABLED_DISABLED_AT = 1681756035;
+  static final String TEST_OLD_IDENTIFIER = "test-old-id";
+  static final String TEST_NON_UPDATED_NAME = "test-non-udpated-name";
 
   static final String TEST_ERROR_MESSAGE_RESERVED_KEYWORD =
       "[\"HARNESS_GITHUB_TOKEN - is reserved env variable name, please use some other env variable name\"]";
@@ -148,8 +151,34 @@ public class ConfigEnvVariableServiceImplTest extends CategoryTest {
         .thenReturn(Collections.singletonList(getTestPluginConfigEnvVariablesEntity()));
     doNothing().when(configEnvVariablesRepository).deleteAllByAccountIdentifierAndPluginId(any(), any());
     doNothing().when(backstageEnvVariableService).deleteMultiUsingEnvNames(any(), any());
+    when(configEnvVariablesRepository.saveAll(any())).thenReturn(Collections.emptyList());
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+
+    // update case and delete case for env variables deleted from UI
+    // here mutable list is needed that's why we are constructing list like this
+    List<BackstageEnvSecretVariable> oldEnvSecretVariables = new ArrayList<>();
+    oldEnvSecretVariables.add(backstageEnvSecretVariable);
+    BackstageEnvSecretVariable toBeDeletedEnvSecretVariable = getTestBackstageEnvSecretVariable();
+    toBeDeletedEnvSecretVariable.setIdentifier(TEST_OLD_IDENTIFIER);
+    oldEnvSecretVariables.add(toBeDeletedEnvSecretVariable);
+    when(backstageEnvVariableService.getAllSecretIdentifierForMultipleEnvVariablesInAccount(any(), any()))
+        .thenReturn(oldEnvSecretVariables);
+
     List<BackstageEnvSecretVariable> returnList =
         configEnvVariablesServiceImpl.updateConfigEnvVariables(appConfig, TEST_ACCOUNT_IDENTIFIER);
+    assertEquals(returnList.get(0).getEnvName(), TEST_ENV_NAME);
+    assertEquals(returnList.get(0).getHarnessSecretIdentifier(), TEST_SECRET_IDENTIFIER);
+
+    // insert case
+    List<BackstageEnvSecretVariable> newEnvSecretVariables = new ArrayList<>();
+    backstageEnvSecretVariable.setIdentifier(null);
+    newEnvSecretVariables.add(backstageEnvSecretVariable);
+    appConfig.setEnvVariables(newEnvSecretVariables);
+
+    configEnvVariablesServiceImpl.updateConfigEnvVariables(appConfig, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(returnList.get(0).getEnvName(), TEST_ENV_NAME);
     assertEquals(returnList.get(0).getHarnessSecretIdentifier(), TEST_SECRET_IDENTIFIER);
 
@@ -284,7 +313,9 @@ public class ConfigEnvVariableServiceImplTest extends CategoryTest {
     appConfig.setEnabled(true);
     appConfig.setEnabledDisabledAt(TEST_ENABLED_DISABLED_AT);
     appConfig.setUpdated(TEST_UPDATED_TIME);
-    appConfig.setEnvVariables(Arrays.asList(backstageEnvSecretVariable));
+    ArrayList envVariables = new ArrayList();
+    envVariables.add(backstageEnvSecretVariable);
+    appConfig.setEnvVariables(envVariables);
     return appConfig;
   }
 

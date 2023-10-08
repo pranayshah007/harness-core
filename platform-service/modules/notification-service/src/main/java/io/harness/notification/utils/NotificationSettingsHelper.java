@@ -25,7 +25,6 @@ import com.google.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -49,18 +48,6 @@ public class NotificationSettingsHelper {
     String targetAllowlist = settingValueResponseDTO.getValue();
     List<String> listOfAllowedTargets = List.of(targetAllowlist.split(","));
     return HarnessStringUtils.removeLeadingAndTrailingSpacesInListOfStrings(listOfAllowedTargets);
-  }
-
-  public List<String> getRecipientsWithValidDomain(
-      List<String> recipients, String accountId, String settingIdentifier) {
-    recipients = recipients.stream().distinct().filter(str -> !str.isEmpty()).collect(Collectors.toList());
-    List<String> targetAllowlist = getTargetAllowlistFromSettings(settingIdentifier, accountId);
-    if (isEmpty(targetAllowlist)) {
-      return recipients;
-    }
-    return recipients.stream()
-        .filter(recipient -> validateTargetDomainFromGiveAllowlist(recipient, targetAllowlist))
-        .collect(Collectors.toList());
   }
 
   private boolean validateTargetDomainFromGiveAllowlist(String recipient, List<String> targetDomainAllowlist) {

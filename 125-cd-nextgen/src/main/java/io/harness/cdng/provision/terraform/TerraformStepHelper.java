@@ -1982,7 +1982,7 @@ public class TerraformStepHelper {
     return outputKeys;
   }
 
-  private List<String> getGitFetchFilesFromMultipleRepos(
+  private List<GitFile> getGitFetchFilesFromMultipleRepos(
       Map<String, FetchFilesResult> gitVarFilesFromMultipleRepo, String gitVarFileIdentifier) {
     Map<String, FetchFilesResult> filteredMapByIdentifier =
         gitVarFilesFromMultipleRepo.entrySet()
@@ -1994,11 +1994,10 @@ public class TerraformStepHelper {
         .stream()
         .map(FetchFilesResult::getFiles)
         .flatMap(Collection::stream)
-        .map(GitFile::getFileContent)
         .collect(Collectors.toList());
   }
 
-  private List<String> getS3RemoteFilesContentFiltered(
+  private List<S3FileDetailResponse> getS3RemoteFilesContentFiltered(
       Map<String, List<S3FileDetailResponse>> s3filesDetailsMap, String s3VarFileIdentifier) {
     Map<String, List<S3FileDetailResponse>> s3filesDetails =
         s3filesDetailsMap.entrySet()
@@ -2006,11 +2005,7 @@ public class TerraformStepHelper {
             .filter(x -> x.getKey().equals(s3VarFileIdentifier))
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-    return s3filesDetails.values()
-        .stream()
-        .map(list -> list.stream().map(S3FileDetailResponse::getFileContent).collect(Collectors.toList()))
-        .flatMap(Collection::stream)
-        .collect(Collectors.toList());
+    return s3filesDetails.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
   }
 
   @VisibleForTesting
@@ -2030,15 +2025,14 @@ public class TerraformStepHelper {
             if (storeConfigWrapper != null) {
               StoreConfig storeConfig = storeConfigWrapper.getSpec();
               if (storeConfig != null && ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
-                List<String> gitVarFilesContent = getGitFetchFilesFromMultipleRepos(
+                List<GitFile> gitVarFiles = getGitFetchFilesFromMultipleRepos(
                     terraformPassThroughData.getGitVarFilesFromMultipleRepo(), varFileIdentifier);
-                gitVarFilesContent.forEach(
-                    gitFileContent -> varFileInfo.add(createInlineAndUpdateExpression(ambiance, gitFileContent)));
+                gitVarFiles.forEach(gitFile -> varFileInfo.add(createInlineAndUpdateExpressionGit(ambiance, gitFile)));
               } else if (storeConfig != null && ManifestStoreType.S3.equals(storeConfig.getKind())) {
-                List<String> s3VarFilesContent =
+                List<S3FileDetailResponse> s3VarFilesResponse =
                     getS3RemoteFilesContentFiltered(terraformPassThroughData.getS3VarFilesDetails(), varFileIdentifier);
-                s3VarFilesContent.forEach(
-                    s3FileContent -> varFileInfo.add(createInlineAndUpdateExpression(ambiance, s3FileContent)));
+                s3VarFilesResponse.forEach(
+                    s3FileResponse -> varFileInfo.add(createInlineAndUpdateExpressionS3(ambiance, s3FileResponse)));
               } else if (storeConfig != null && ManifestStoreType.ARTIFACTORY.equals(storeConfig.getKind())) {
                 TerraformVarFileInfo artifactoryVarFileInfo =
                     getArtifactoryVarFile(tfTaskParametersBuilder.build().getVarFileInfos(), varFileIdentifier);
@@ -2072,18 +2066,17 @@ public class TerraformStepHelper {
             (TerraformRemoteVarFileConfig) terraformVarFileConfig;
 
         if (terraformRemoteVarFileConfig.getGitStoreConfigDTO() != null) {
-          List<String> gitVarFilesContent = getGitFetchFilesFromMultipleRepos(
+          List<GitFile> gitVarFiles = getGitFetchFilesFromMultipleRepos(
               terraformPassThroughData.getGitVarFilesFromMultipleRepo(), varFileIdentifier);
-          gitVarFilesContent.forEach(
-              gitFileContent -> varFileInfo.add(createInlineAndUpdateExpression(ambiance, gitFileContent)));
+          gitVarFiles.forEach(gitFile -> varFileInfo.add(createInlineAndUpdateExpressionGit(ambiance, gitFile)));
         } else if (terraformRemoteVarFileConfig.getFileStoreConfigDTO() != null) {
           FileStorageConfigDTO fileStorageConfigDTO = terraformRemoteVarFileConfig.getFileStoreConfigDTO();
 
           if (fileStorageConfigDTO.getKind().equals(ManifestStoreType.S3)) {
-            List<String> s3VarFilesContent =
+            List<S3FileDetailResponse> s3VarFilesResponse =
                 getS3RemoteFilesContentFiltered(terraformPassThroughData.getS3VarFilesDetails(), varFileIdentifier);
-            s3VarFilesContent.forEach(
-                s3FileContent -> varFileInfo.add(createInlineAndUpdateExpression(ambiance, s3FileContent)));
+            s3VarFilesResponse.forEach(
+                s3FileResponse -> varFileInfo.add(createInlineAndUpdateExpressionS3(ambiance, s3FileResponse)));
           } else if (fileStorageConfigDTO.getKind().equals(ManifestStoreType.ARTIFACTORY)) {
             TerraformVarFileInfo artifactoryVarFileInfo =
                 getArtifactoryVarFile(tfTaskParametersBuilder.build().getVarFileInfos(), varFileIdentifier);
@@ -2097,9 +2090,18 @@ public class TerraformStepHelper {
     return varFileInfo;
   }
 
-  private TerraformVarFileInfo createInlineAndUpdateExpression(Ambiance ambiance, String varFileContent) {
+  private TerraformVarFileInfo createInlineAndUpdateExpressionGit(Ambiance ambiance, GitFile gitFile) {
     return InlineTerraformVarFileInfo.builder()
-        .varFileContent(cdExpressionResolver.updateExpressions(ambiance, varFileContent).toString())
+        .varFileContent(cdExpressionResolver.updateExpressions(ambiance, gitFile.getFileContent()).toString())
+        .filePath(gitFile.getFilePath())
+        .build();
+  }
+
+  private TerraformVarFileInfo createInlineAndUpdateExpressionS3(
+      Ambiance ambiance, S3FileDetailResponse varFileContent) {
+    return InlineTerraformVarFileInfo.builder()
+        .varFileContent(cdExpressionResolver.updateExpressions(ambiance, varFileContent.getFileContent()).toString())
+        .filePath(varFileContent.getFileKey())
         .build();
   }
 

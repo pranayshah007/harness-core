@@ -475,7 +475,7 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
           break;
         case ABORTED:
           status = Status.FAILED;
-          errorCode = ErrorCode.ABORT_ALL_ALREADY;
+          errorCode = ErrorCode.ABORT_ALL_ALREADY_NG;
           failureType = FailureType.USER_MARKED_FAILURE;
           failureMessage = "Verification could not complete due to it being aborted";
           break;
@@ -510,7 +510,7 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
   }
 
   @Override
-  public ProgressData handleProgress(
+  public ProgressData handleProgressAsync(
       Ambiance ambiance, StepBaseParameters stepElementParameters, ProgressData progressData) {
     CVNGResponseData cvngResponseData = (CVNGResponseData) progressData;
     return VerifyStepOutcome.builder()
@@ -527,8 +527,8 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
   }
 
   @Override
-  public void handleAbort(
-      Ambiance ambiance, StepBaseParameters stepElementParameters, AsyncExecutableResponse executableResponse) {
+  public void handleAbort(Ambiance ambiance, StepBaseParameters stepElementParameters,
+      AsyncExecutableResponse executableResponse, boolean userMarked) {
     CVNGStepTask cvngStepTask = cvngStepTaskService.getByCallBackId(executableResponse.getCallbackIds(0));
     activityService.abort(cvngStepTask.getActivityId());
   }

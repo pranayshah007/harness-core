@@ -138,6 +138,11 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
 
   private void validateMultiServices(
       FilterCreationContext filterCreationContext, DeploymentStageConfig deploymentStageConfig) {
+    if (ParameterField.isNotNull(deploymentStageConfig.getServices().getValues())
+        && !deploymentStageConfig.getServices().getValues().isExpression()
+        && isEmpty(deploymentStageConfig.getServices().getValues().getValue())) {
+      throw new InvalidYamlRuntimeException("Atleast one service is required, Please select a service and try again");
+    }
     if (usesServicesFromAnotherStage(deploymentStageConfig)) {
       if (hasNoSiblingStages(filterCreationContext.getCurrentField())) {
         throw new InvalidYamlRuntimeException(

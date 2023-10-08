@@ -225,6 +225,7 @@ import io.harness.ng.core.event.UserMembershipReconciliationMessageProcessor;
 import io.harness.ng.core.event.UserMembershipStreamListener;
 import io.harness.ng.core.event.VariableEntityCRUDStreamListener;
 import io.harness.ng.core.event.gitops.ClusterCrudStreamListener;
+import io.harness.ng.core.event.modulelicense.ModuleLicenseStreamListener;
 import io.harness.ng.core.globalkms.impl.NgGlobalKmsServiceImpl;
 import io.harness.ng.core.globalkms.services.NgGlobalKmsService;
 import io.harness.ng.core.impl.OrganizationServiceImpl;
@@ -272,6 +273,8 @@ import io.harness.ng.opa.entities.secret.OpaSecretService;
 import io.harness.ng.opa.entities.secret.OpaSecretServiceImpl;
 import io.harness.ng.overview.service.CDLandingDashboardService;
 import io.harness.ng.overview.service.CDLandingDashboardServiceImpl;
+import io.harness.ng.overview.service.CDLandingPageService;
+import io.harness.ng.overview.service.CDLandingPageServiceImpl;
 import io.harness.ng.overview.service.CDOverviewDashboardService;
 import io.harness.ng.overview.service.CDOverviewDashboardServiceImpl;
 import io.harness.ng.rollback.PostProdRollbackService;
@@ -688,6 +691,7 @@ public class NextGenModule extends AbstractModule {
 
     bind(CDOverviewDashboardService.class).to(CDOverviewDashboardServiceImpl.class);
     bind(CDLandingDashboardService.class).to(CDLandingDashboardServiceImpl.class);
+    bind(CDLandingPageService.class).to(CDLandingPageServiceImpl.class);
 
     try {
       bind(TimeScaleDBService.class)
@@ -1180,6 +1184,9 @@ public class NextGenModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkConstants.USERMEMBERSHIP))
         .to(UserMembershipStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(EventsFrameworkConstants.MODULE_LICENSE))
+        .to(ModuleLicenseStreamListener.class);
 
     bind(MessageListener.class).annotatedWith(Names.named(SETUP_USAGE)).to(SetupUsageChangeEventMessageListener.class);
     bind(MessageListener.class)

@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngmigration.service.infra;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.service.infra.InfraDefMapperUtils.getExpression;
@@ -17,6 +16,9 @@ import static io.harness.yaml.infra.HostConnectionTypeKind.PUBLIC_IP;
 
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.elastigroup.ElastigroupConfiguration;
 import io.harness.cdng.infra.beans.AwsInstanceFilter;
 import io.harness.cdng.infra.beans.host.AllHostsFilter;
@@ -59,6 +61,7 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class SshWinRmInfraDefMapper implements InfraDefMapper {
   @Override
   public List<String> getConnectorIds(InfrastructureDefinition infrastructureDefinition) {

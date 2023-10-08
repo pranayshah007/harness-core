@@ -10,6 +10,7 @@ package io.harness.cdng.ecs;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.ecs.EcsInstanceUnitType;
 import io.harness.ecs.EcsCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;

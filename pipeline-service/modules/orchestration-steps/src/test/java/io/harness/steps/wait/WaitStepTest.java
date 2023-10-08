@@ -136,11 +136,4 @@ public class WaitStepTest extends OrchestrationStepsTestBase {
   public void testGetStepParametersClass() {
     assertEquals(waitStep.getStepParametersClass(), StepBaseParameters.class);
   }
-
-  @Test
-  @Owner(developers = OwnerRule.SHALINI)
-  @Category(UnitTests.class)
-  public void testHandleAbort() {
-    waitStep.handleAbort(null, null, null);
-  }
 }

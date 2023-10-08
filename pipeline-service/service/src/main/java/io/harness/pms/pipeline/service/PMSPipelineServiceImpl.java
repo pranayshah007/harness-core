@@ -210,8 +210,13 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         }
         // TODO: As part of this ticket https://harness.atlassian.net/browse/CDS-70970, we should publish the setup
         // usages after the entity has been created
-        PipelineEntity entityWithUpdatedInfo =
-            pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
+        PipelineEntity entityWithUpdatedInfo = pipelineEntity;
+        // If PIE_ASYNC_FILTER_CREATION is ON, then we do filter creation async
+        if (!pmsFeatureFlagHelper.isEnabled(pipelineEntity.getAccountId(), FeatureName.PIE_ASYNC_FILTER_CREATION)) {
+          entityWithUpdatedInfo =
+              pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
+        }
+
         PipelineEntity createdEntity;
         PipelineCRUDResult pipelineCRUDResult = createPipeline(entityWithUpdatedInfo);
         createdEntity = pipelineCRUDResult.getPipelineEntity();
@@ -412,6 +417,11 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   @Override
+  public Optional<PipelineEntity> getPipelineByUUID(String uuid) {
+    return pmsPipelineRepository.find(uuid);
+  }
+
+  @Override
   public Optional<PipelineEntity> getPipeline(String accountId, String orgIdentifier, String projectIdentifier,
       String identifier, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
       boolean loadFromCache) {
@@ -599,13 +609,13 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   private PipelineEntity makePipelineUpdateCall(
       PipelineEntity pipelineEntity, PipelineEntity oldEntity, ChangeType changeType, boolean isOldFlow) {
     try {
-      PipelineEntity entityWithUpdatedInfo;
-      if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
-        entityWithUpdatedInfo = pipelineEntity;
-      } else {
+      PipelineEntity entityWithUpdatedInfo = pipelineEntity;
+      // If PIE_ASYNC_FILTER_CREATION is ON, then we do filter creation async
+      if (!pmsFeatureFlagHelper.isEnabled(pipelineEntity.getAccountId(), FeatureName.PIE_ASYNC_FILTER_CREATION)) {
         entityWithUpdatedInfo =
             pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity, pipelineEntity.getHarnessVersion());
       }
+
       PipelineEntity updatedResult;
       if (isOldFlow) {
         updatedResult =

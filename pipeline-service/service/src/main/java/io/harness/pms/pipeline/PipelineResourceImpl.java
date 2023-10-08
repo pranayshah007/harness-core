@@ -82,6 +82,7 @@ import com.google.inject.Inject;
 import io.swagger.annotations.ApiParam;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Parameter;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -90,6 +91,7 @@ import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -165,7 +167,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     PublicAccessResponse existingPublicStatus =
         getPublicContextResponse(accountId, orgId, projectId, pipelineIdentifier);
     if (isPublic == existingPublicStatus.isPublic()) {
-      return createPublicAccessResponse(isPublic, "");
+      return createPublicAccessResponse(isPublic, null);
     }
 
     PublicAccessRequest publicAccessRequest =
@@ -179,8 +181,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
             publicAccessClient.disable(accountId, orgId, projectId, PIPELINE, pipelineIdentifier, accountId).execute();
       }
       if (isPublicResponse.body() == null) {
-        return createPublicAccessResponse(existingPublicStatus.isPublic(),
-            isPublicResponse.errorBody() != null ? isPublicResponse.errorBody().toString() : "");
+        return createPublicAccessResponse(existingPublicStatus.isPublic(), getErrorMessage(isPublicResponse));
       } else {
         return createPublicAccessResponse(isPublic ? isPublicResponse.body() : !isPublicResponse.body(), null);
       }
@@ -313,13 +314,20 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
         PublicAccessClientUtils.getPublicAccessRequest(accountId, orgId, projectId, PIPELINE, pipelineId);
     try {
       Response<Boolean> isPublic = publicAccessClient.isResourcePublic(publicAccessRequest, accountId).execute();
-      return createPublicAccessResponse(
-          Boolean.TRUE.equals(isPublic.body()), isPublic.errorBody() != null ? isPublic.errorBody().toString() : "");
+      return createPublicAccessResponse(Boolean.TRUE.equals(isPublic.body()), getErrorMessage(isPublic));
     } catch (Exception e) {
       log.error("There was an error while marking resource type [{}] with resource identifier [{}] as public.",
           PIPELINE, pipelineId, e);
       return createPublicAccessResponse(false, e.getMessage());
     }
+  }
+
+  private String getErrorMessage(Response<Boolean> isPublic) throws IOException {
+    if (isPublic.errorBody() != null) {
+      JSONObject jsonObject = new JSONObject(isPublic.errorBody().string());
+      return jsonObject.getString("message");
+    }
+    return null;
   }
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)

@@ -8,7 +8,10 @@
 package io.harness.ng.core.infrastructure.dto;
 
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.infrastructure.InfrastructureType;
+import io.harness.ng.core.template.CacheResponseMetadataDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -38,4 +41,9 @@ public class InfrastructureResponseDTO {
   InfrastructureType type;
   ServiceDefinitionType deploymentType;
   String yaml;
+  @Schema(hidden = true) EntityGitDetails entityGitDetails;
+  @Schema(hidden = true) String connectorRef;
+  @Schema(hidden = true) StoreType storeType;
+  @Schema(hidden = true) String fallbackBranch;
+  @Schema(hidden = true) CacheResponseMetadataDTO cacheResponseMetadataDTO;
 }

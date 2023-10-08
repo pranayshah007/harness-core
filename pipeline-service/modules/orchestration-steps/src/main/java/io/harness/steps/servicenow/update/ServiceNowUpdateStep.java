@@ -93,6 +93,12 @@ public class ServiceNowUpdateStep extends PipelineTaskExecutable<ServiceNowTaskN
       if (updateMultipleType.equalsIgnoreCase(CHANGE_TASK)) {
         ChangeTaskUpdateMultipleSpec changeTaskSpec =
             (ChangeTaskUpdateMultipleSpec) specParameters.getUpdateMultiple().getSpec();
+        if (!changeTaskSpec.getType().name().equalsIgnoreCase(specParameters.getTicketType().getValue())) {
+          throw new InvalidRequestException(
+              String.format(
+                  "Ticket type should be change task for update multiple of type %s", changeTaskSpec.getType().name()),
+              WingsException.USER);
+        }
         if (NULLABLE.equalsIgnoreCase(changeTaskSpec.getChangeRequestNumber().getValue())) {
           throw new InvalidRequestException(
               "Cannot resolve the expression for changeRequestNumber", WingsException.USER);
@@ -140,8 +146,8 @@ public class ServiceNowUpdateStep extends PipelineTaskExecutable<ServiceNowTaskN
   }
 
   @Override
-  public void handleAbort(
-      Ambiance ambiance, StepBaseParameters stepParameters, TaskExecutableResponse executableResponse) {
+  public void handleAbort(Ambiance ambiance, StepBaseParameters stepParameters,
+      TaskExecutableResponse executableResponse, boolean userMarked) {
     closeLogStream(ambiance);
   }
 

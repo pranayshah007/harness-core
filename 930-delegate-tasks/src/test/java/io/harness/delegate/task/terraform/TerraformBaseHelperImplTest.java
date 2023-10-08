@@ -879,6 +879,31 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
     assertThat(varFilePaths.size()).isEqualTo(1);
     assertThat(varFilePaths.get(0)).contains(scriptDirectory);
     assertThat(varFilePaths.get(0)).contains(".auto.tfvars");
+    FileUtils.deleteDirectory(Paths.get(tfvarDir).toFile());
+    FileUtils.deleteDirectory(Paths.get(scriptDirectory).toFile());
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testCheckoutRemoveVarFileAndConvertInlineVarFileWithJsonFormat() throws IOException {
+    HashMap<String, String> commitIdMap = new HashMap<>();
+    String scriptDirectory = "repository/testSaveAndGetTerraformPlanFile";
+    FileIo.createDirectoryIfDoesNotExist(scriptDirectory);
+    String tfvarDir = "repository/tfVarDir";
+    FileIo.createDirectoryIfDoesNotExist(tfvarDir);
+    doReturn("varFilesCommitId").when(gitClient).downloadFiles(any());
+
+    List<TerraformVarFileInfo> varFiles = getGitTerraformFileInfoListInline();
+    ((InlineTerraformVarFileInfo) varFiles.get(0)).setFilePath("testRandomVarFilePath.json");
+
+    List<String> varFilePaths = terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(
+        varFiles, scriptDirectory, logCallback, "accountId", tfvarDir, commitIdMap, false, null);
+    assertThat(varFilePaths.size()).isEqualTo(1);
+    assertThat(varFilePaths.get(0)).contains(scriptDirectory);
+    assertThat(varFilePaths.get(0)).contains(".json");
+    FileUtils.deleteDirectory(Paths.get(tfvarDir).toFile());
+    FileUtils.deleteDirectory(Paths.get(scriptDirectory).toFile());
   }
 
   @Test
