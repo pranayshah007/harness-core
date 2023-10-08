@@ -258,7 +258,6 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   private NotificationClientConfiguration notificationClientConfiguration;
   @JsonProperty("proxy") private CEProxyConfig ceProxyConfig;
   @JsonProperty("awsServiceEndpointUrls") private CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig;
-  @JsonProperty("maxAccountsToDeleteInParallel") private int maxAccountsToDeleteInParallel;
 
   private int applicationPort;
   private boolean sslEnabled;

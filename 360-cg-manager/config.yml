@@ -818,5 +818,3 @@ awsServiceEndpointUrls:
   stsEndPointUrl: https://sts.us-east-1.amazonaws.com
   ecsEndPointUrl: https://ecs.us-east-1.amazonaws.com
   cloudwatchEndPointUrl: https://monitoring.us-east-1.amazonaws.com
-
-maxAccountsToDeleteInParallel: 6

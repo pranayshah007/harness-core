@@ -305,6 +305,4 @@ public interface AccountService {
   void setPublicAccessEnabled(String accountId, boolean publicAccessEnabled);
 
   Account updateDefaultExperience(String accountIdentifier, DefaultExperience defaultExperience);
-
-  List<Account> listAccountsMarkedForDeletion(int limit);
 }
