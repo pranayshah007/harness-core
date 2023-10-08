@@ -286,8 +286,6 @@ public class TemplateMergeServiceHelper {
       if (isTemplatePresent) {
         JsonNode templateJsonNode = value;
         if (HarnessYamlVersion.isV1(currentYamlVersion)) {
-          log.error("current yaml version: {}", currentYamlVersion);
-          log.error("current yaml node: {}", yamlNode);
           templateJsonNode = yamlNode.getCurrJsonNode();
         }
         Pair<TemplateEntity, JsonNode> entry = replaceTemplateOccurrenceWithTemplateSpecYaml(accountId, orgId,
@@ -338,7 +336,6 @@ public class TemplateMergeServiceHelper {
             .processedYamlVersion(HarnessYamlVersion.V1)
             .build();
       } else {
-        log.error("v0 temp w v1 pip");
         return MergeTemplateInputsInObject.builder()
             .resMap(getMergedPipelineYaml(resMap, templateEntity.getTemplateEntityType()))
             .processedYamlVersion(HarnessYamlVersion.V0)
@@ -681,7 +678,6 @@ public class TemplateMergeServiceHelper {
             .processedYamlVersion(HarnessYamlVersion.V1)
             .build();
       } else {
-        log.error("v0 temp w v1 pip");
         return MergeTemplateInputsInObject.builder()
             .resMap(getMergedPipelineYaml(resMap, templateEntity.getTemplateEntityType()))
             .resMapWithOpaResponse(resMapWithTemplateRef)

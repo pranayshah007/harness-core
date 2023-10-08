@@ -436,16 +436,12 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
       TemplateUtils.setUserFlowContext(USER_FLOW.EXECUTION);
     }
     String yamlVersion = templateApplyRequestDTO.getYamlVersion();
-    log.error("request yaml version: {}", yamlVersion);
-    log.error("template apply request dto: {}", templateApplyRequestDTO);
     TemplateMergeResponseDTO templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(accountId, orgId,
         projectId, YamlUtils.readAsJsonNode(templateApplyRequestDTO.getOriginalEntityYaml()),
         templateApplyRequestDTO.isGetMergedYamlWithTemplateField(),
         NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache), appendInputSetValidator, yamlVersion);
     checkLinkedTemplateAccess(accountId, orgId, projectId, templateApplyRequestDTO, templateMergeResponseDTO);
     log.info("[TemplateService] applyTemplatesV2 took {}ms ", System.currentTimeMillis() - start);
-    log.error("Merged Yaml: {}", templateMergeResponseDTO.getMergedPipelineYaml());
-    log.error("Merged Yaml version: {}", templateApplyRequestDTO.getYamlVersion());
     return ResponseDTO.newResponse(templateMergeResponseDTO);
   }
 

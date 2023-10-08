@@ -462,7 +462,6 @@ public class ExecutionHelper {
     String pipelineYamlWithTemplateRef = pipelineYaml;
     String processedYamlVersion = pipelineEntity.getHarnessVersion();
     if (Boolean.TRUE.equals(TemplateRefHelper.hasTemplateRef(pipelineJsonNode))) {
-      log.error("pipeline entity version: {}", pipelineEntity.getHarnessVersion());
       TemplateMergeResponseDTO templateMergeResponseDTO =
           pipelineTemplateHelper.resolveTemplateRefsInPipelineAndAppendInputSetValidators(pipelineEntity.getAccountId(),
               pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYaml, true,
@@ -474,7 +473,6 @@ public class ExecutionHelper {
           ? pipelineYaml
           : templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
       processedYamlVersion = templateMergeResponseDTO.getProcessedYamlVersion();
-      log.error("processed Yaml version: {}", processedYamlVersion);
     }
     if (pipelineEntity.getStoreType() == null || pipelineEntity.getStoreType() == StoreType.INLINE) {
       // For REMOTE Pipelines, entity setup usage framework cannot be relied upon. That is because the setup usages can
@@ -573,8 +571,6 @@ public class ExecutionHelper {
       Plan plan;
       try {
         String version = executionMetadata.getProcessedYamlVersion();
-        log.error("processed yaml version: {}", version);
-        log.error("processed yaml: {}", planExecutionMetadata.getYaml());
         resp = planCreatorMergeService.createPlanVersioned(
             accountId, orgIdentifier, projectIdentifier, version, executionMetadata, planExecutionMetadata);
         plan = PlanExecutionUtils.extractPlan(resp);

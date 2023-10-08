@@ -108,7 +108,6 @@ public class PMSPipelineTemplateHelper {
       try {
         GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
         if (gitEntityInfo != null) {
-          log.error("yaml version ff on: {}", yamlVersion);
           if (pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.PIE_ERROR_ENHANCEMENTS)) {
             return PipelineRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId,
                 projectId, gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId(), true, getConnectorRef(),
@@ -122,7 +121,6 @@ public class PMSPipelineTemplateHelper {
                     .build(),
                 appendInputSetValidator));
           } else {
-            log.error("yaml version: {}", yamlVersion);
             return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId,
                 projectId, gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId(), true, getConnectorRef(),
                 getRepoName(), accountId, orgId, projectId, loadFromCache,

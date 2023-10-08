@@ -144,22 +144,16 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
     }
     MergeTemplateInputsInObject mergeTemplateInputsInObject = null;
     String processedYamlVersion;
-    log.error("getMergedYamlWithTemplateField: {}", getMergedYamlWithTemplateField);
     if (!getMergedYamlWithTemplateField) {
-      log.error("template request yaml version: {}", yamlVersion);
       mergeTemplateInputsInObject = templateMergeServiceHelper.mergeTemplateInputsInObjectWithVersion(accountId, orgId,
           projectId, entityYamlNode, templateCacheMap, 0, loadFromCache, appendInputSetValidator, yamlVersion);
 
     } else {
-      log.error("template request yaml version opa: {}", yamlVersion);
       mergeTemplateInputsInObject = templateMergeServiceHelper.mergeTemplateInputsInObjectAlongWithOpaPolicy(accountId,
           orgId, projectId, entityYamlNode, templateCacheMap, 0, loadFromCache, appendInputSetValidator, yamlVersion);
     }
-    log.error("template request yaml version always: {}", yamlVersion);
     resMap = mergeTemplateInputsInObject.getResMap();
     processedYamlVersion = mergeTemplateInputsInObject.getProcessedYamlVersion();
-    log.error("resmap: {}", resMap);
-    log.error("processedYamlVersion: {}", processedYamlVersion);
     List<TemplateReferenceSummary> templateReferenceSummaries =
         getTemplateReferenceSummaries(accountId, orgId, projectId, entityYamlNode.getCurrJsonNode(), templateCacheMap);
     return TemplateMergeResponseDTO.builder()
