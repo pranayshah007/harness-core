@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.service.workflow;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -22,6 +24,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
   @Override
   public TemplateEntityType getTemplateType(Workflow workflow) {

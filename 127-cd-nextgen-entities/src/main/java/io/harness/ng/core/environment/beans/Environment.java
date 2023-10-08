@@ -43,6 +43,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.Setter;
 import lombok.Singular;
+import lombok.With;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.NonFinal;
 import lombok.experimental.Wither;
@@ -96,10 +97,10 @@ public class Environment implements PersistentEntity, ScopeAware, GitAware, GitS
   @Trimmed private String projectIdentifier;
 
   @NotEmpty @EntityIdentifier private String identifier;
-  @EntityName private String name;
-  @Size(max = 1024) String description;
+  @With @EntityName private String name;
+  @With @Size(max = 1024) String description;
   @Size(max = 100) String color;
-  @NotEmpty private EnvironmentType type;
+  @With @NotEmpty private EnvironmentType type;
   @Wither @Singular @Size(max = 128) private List<NGTag> tags;
 
   @Wither @CreatedDate Long createdAt;
@@ -107,7 +108,7 @@ public class Environment implements PersistentEntity, ScopeAware, GitAware, GitS
   @Wither @Version Long version;
   @Builder.Default Boolean deleted = Boolean.FALSE;
 
-  String yaml;
+  @With String yaml;
 
   // GitSync entities
   @Wither @Setter @NonFinal String objectIdOfYaml;

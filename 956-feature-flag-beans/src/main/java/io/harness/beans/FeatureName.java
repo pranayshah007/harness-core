@@ -17,11 +17,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureFlag.Scope;
 
 import lombok.Getter;
+
 /**
  * Add your feature name here. When the feature is fully launched and no longer needs to be flagged,
  * delete the feature name.
  */
-
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
   // Sorted using https://github.com/google/keep-sorted/blob/main/README.md
@@ -854,6 +854,7 @@ public enum FeatureName {
   CDS_SERVICENOW_FETCH_FIELDS("FF to fetch service now fields", HarnessTeam.CDC),
   CDS_ENABLE_LOAD_FROM_CACHE_FOR_RETRY_FORM("Used for enabling load from cache on retry form", PIPELINE),
   CDS_DISABLE_FIRST_GEN_CD("Used to disable/block customer access to CG after the migration cut-over", SPG),
+  CDS_CG_REDUCED_EXPORT_LOG_LIMIT("Decrease to 5 deployments per export operation in CG", HarnessTeam.CDC),
   CDS_DISABLE_ALL_CG_TRIGGERS(
       "Used to disable/block triggers to accept webhooks or pooling artifact sources on CG after the migration cut-over",
       HarnessTeam.CDC),
@@ -909,6 +910,9 @@ public enum FeatureName {
       "Allows to set Public Access of Resources on Authentication page under account settings", HarnessTeam.PL),
   CDS_SCOPE_INFRA_TO_SERVICES("This flag enables the scoping of Infrastructure to specific Services.", HarnessTeam.CDP),
   PIE_SIMPLIFY_LOG_BASE_KEY("FF to simplify log base key", PIPELINE),
+
+  SRM_OPTIMISE_CHANGE_EVENTS_API_RESPONSE(
+      "When enabled, this reduces the response size of the change-events list API", HarnessTeam.CV),
   CDS_NG_DISABLE_SPECIAL_CHARS_ESCAPE_OF_WINRM_ENV_VARS(
       "This flag disables WinRm special character escaping for environment variables usage", HarnessTeam.CDP),
   CDS_NG_K8S_SERVICE_RELEASE_NAME(

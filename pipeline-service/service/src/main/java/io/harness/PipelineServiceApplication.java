@@ -110,7 +110,6 @@ import io.harness.plancreator.strategy.StrategyMaxConcurrencyRestrictionUsageImp
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.annotations.PipelineServiceAuthIfHasApiKey;
 import io.harness.pms.approval.ApprovalInstanceExpirationJob;
-import io.harness.pms.approval.ApprovalInstanceHandler;
 import io.harness.pms.async.plan.PlanNotifyEventPublisher;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
 import io.harness.pms.event.PMSEventConsumerService;
@@ -447,7 +446,6 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     }
 
     injector.getInstance(BarrierServiceImpl.class).registerIterators(iteratorsConfig.getBarrierConfig());
-    injector.getInstance(ApprovalInstanceHandler.class).registerIterators();
     injector.getInstance(IrregularApprovalInstanceHandler.class)
         .registerIterators(iteratorsConfig.getApprovalInstanceConfig());
     injector.getInstance(ResourceRestraintPersistenceMonitor.class)

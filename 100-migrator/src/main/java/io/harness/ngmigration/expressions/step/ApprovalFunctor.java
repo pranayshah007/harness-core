@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.expressions.step;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ngmigration.beans.StepOutput;
 
 import java.util.Collections;
@@ -15,6 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class ApprovalFunctor extends StepExpressionFunctor {
   private final StepOutput stepOutput;
   private List<String> variableNames = Collections.emptyList();

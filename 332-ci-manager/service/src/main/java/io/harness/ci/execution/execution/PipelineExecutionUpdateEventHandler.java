@@ -335,6 +335,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
         .eligibleToExecuteDelegateIds(eligibleToExecuteDelegateIds)
         .taskSelectors(taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()))
         .selectors(taskSelectors)
+        .selectionLogsTrackingEnabled(true)
         .taskSetupAbstractions(abstractions)
         .executionTimeout(java.time.Duration.ofSeconds(900))
         .taskType(taskType)

@@ -66,7 +66,7 @@ public class GitlabProvider extends DataSourceProvider {
   @Override
   protected Map<String, String> getAuthHeaders(String accountIdentifier, String configs) {
     String token = (String) configReader.getConfigValues(accountIdentifier, configs, TOKEN_EXPRESSION_KEY);
-    return Map.of(AUTHORIZATION_HEADER, "Basic " + token);
+    return Map.of(AUTHORIZATION_HEADER, "Bearer " + token);
   }
 
   private Map<String, String> prepareRequestBodyReplaceablePairs(String catalogLocation) {

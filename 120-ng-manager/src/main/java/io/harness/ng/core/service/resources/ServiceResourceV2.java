@@ -70,8 +70,10 @@ import io.harness.ng.core.artifact.ArtifactSourceYamlRequestDTO;
 import io.harness.ng.core.beans.DocumentationConstants;
 import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
 import io.harness.ng.core.beans.ServiceV2YamlMetadata;
+import io.harness.ng.core.beans.ServiceWithGitInfo;
 import io.harness.ng.core.beans.ServicesV2YamlMetadataDTO;
 import io.harness.ng.core.beans.ServicesYamlMetadataApiInput;
+import io.harness.ng.core.beans.ServicesYamlMetadataApiInputV2;
 import io.harness.ng.core.customDeployment.helper.CustomDeploymentYamlHelper;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -788,6 +790,58 @@ public class ServiceResourceV2 {
         ServicesV2YamlMetadataDTO.builder().serviceV2YamlMetadataList(serviceV2YamlMetadataList).build());
   }
 
+  @POST
+  @Path("/v2/services-yaml-metadata")
+  @ApiOperation(
+      value = "This api returns service YAML and runtime input YAML", nickname = "getServicesYamlAndRuntimeInputsV2")
+  @Hidden
+  public ResponseDTO<ServicesV2YamlMetadataDTO>
+  getServicesYamlAndRuntimeInputsV2(@Parameter(description = SERVICE_YAML_METADATA_INPUT_PARAM_MESSAGE) @Valid
+                                    @NotNull ServicesYamlMetadataApiInputV2 servicesYamlMetadataApiInput,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = "This contains details of Git Entity like Git Branch info for the Base entity")
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @Parameter(description = "Specifies whether to load the entity from cache") @HeaderParam(
+          "Load-From-Cache") @DefaultValue("false") String loadFromCache) {
+    // get service ref-> branch map
+    Map<String, String> serviceRefBranchMap = getServiceBranchMap(
+        accountId, orgIdentifier, projectIdentifier, servicesYamlMetadataApiInput.getServiceWithGitInfoList());
+
+    // scoped service refs
+    List<String> serviceRefs = new ArrayList<>(serviceRefBranchMap.keySet());
+
+    List<ServiceEntity> serviceEntities =
+        serviceEntityService.getServices(accountId, orgIdentifier, projectIdentifier, serviceRefs);
+
+    List<ServiceV2YamlMetadata> serviceV2YamlMetadataList = new ArrayList<>();
+    serviceEntities.forEach(serviceEntity -> serviceV2YamlMetadataList.add(createServiceV2YamlMetadata(serviceEntity)));
+
+    return ResponseDTO.newResponse(
+        ServicesV2YamlMetadataDTO.builder().serviceV2YamlMetadataList(serviceV2YamlMetadataList).build());
+  }
+
+  private Map<String, String> getServiceBranchMap(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, List<ServiceWithGitInfo> serviceWithGitInfo) {
+    Map<String, String> resultMap = new HashMap<>();
+
+    if (isEmpty(serviceWithGitInfo)) {
+      return resultMap;
+    }
+
+    for (ServiceWithGitInfo input : serviceWithGitInfo) {
+      String scopedRef = IdentifierRefHelper.getRefFromIdentifierOrRef(
+          accountIdentifier, orgIdentifier, projectIdentifier, input.getRef());
+      resultMap.put(scopedRef, input.getBranch());
+    }
+
+    return resultMap;
+  }
+
   private ServiceV2YamlMetadata createServiceV2YamlMetadata(ServiceEntity serviceEntity) {
     if (featureFlagService.isEnabled(
             serviceEntity.getAccountId(), FeatureName.CDS_ARTIFACTORY_REPOSITORY_URL_MANDATORY)) {
@@ -831,7 +885,11 @@ public class ServiceResourceV2 {
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = "This contains details of Git Entity like Git Branch info",
+          hidden = true) @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @Parameter(description = "Specifies whether to load the entity from cache", hidden = true) @HeaderParam(
+          "Load-From-Cache") @DefaultValue("false") String loadFromCache) {
     Optional<ServiceEntity> serviceEntity =
         serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, false);
 

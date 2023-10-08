@@ -90,6 +90,9 @@ public class ServiceOutBoxEventHandler implements OutboxEventHandler {
             .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
             .timestamp(outboxEvent.getCreatedAt())
             .newYaml(getYamlString(ServiceRequest.builder().service(serviceUpsertEvent.getService()).build()))
+            .oldYaml(serviceUpsertEvent.getOldService() != null
+                    ? getYamlString(ServiceRequest.builder().service(serviceUpsertEvent.getOldService()).build())
+                    : null)
             .build();
 
     Principal principal = null;
