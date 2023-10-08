@@ -338,6 +338,7 @@ public class TemplateMergeServiceHelper {
             .processedYamlVersion(HarnessYamlVersion.V1)
             .build();
       } else {
+        log.error("v0 temp w v1 pip");
         return MergeTemplateInputsInObject.builder()
             .resMap(getMergedPipelineYaml(resMap, templateEntity.getTemplateEntityType()))
             .processedYamlVersion(HarnessYamlVersion.V0)

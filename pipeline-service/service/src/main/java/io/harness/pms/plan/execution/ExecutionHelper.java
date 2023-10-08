@@ -474,6 +474,7 @@ public class ExecutionHelper {
           ? pipelineYaml
           : templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
       processedYamlVersion = templateMergeResponseDTO.getProcessedYamlVersion();
+      log.error("processed Yaml version: {}", processedYamlVersion);
     }
     if (pipelineEntity.getStoreType() == null || pipelineEntity.getStoreType() == StoreType.INLINE) {
       // For REMOTE Pipelines, entity setup usage framework cannot be relied upon. That is because the setup usages can
