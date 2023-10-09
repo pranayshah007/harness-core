@@ -18,7 +18,9 @@ import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_USERGROUP_PER
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.USERGROUP;
 import static io.harness.ng.core.utils.NGUtils.verifyValuesNotChanged;
 import static io.harness.ng.core.utils.UserGroupMapper.toDTO;
-import static io.harness.utils.PageUtils.*;
+import static io.harness.utils.PageUtils.getNGPageResponse;
+import static io.harness.utils.PageUtils.getPage;
+import static io.harness.utils.PageUtils.getPageRequest;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
@@ -44,6 +46,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
 import io.harness.ng.core.user.entities.UserGroup;
+import io.harness.ng.core.user.entities.UserGroup.UserGroupKeys;
 import io.harness.ng.core.user.remote.dto.UserFilter;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.usergroups.filter.UserGroupFilterType;
@@ -372,7 +375,7 @@ public class UserGroupResource {
   @POST
   @Path("filter")
   @ApiOperation(value = "Get User Group List with Filter", nickname = "getUserGroupListFilter")
-  @Operation(operationId = "getUsersGroupLisFilter", summary = "List User Groups by filter",
+  @Operation(operationId = "getUsersGroupListFilter", summary = "List User Groups by filter",
       description = "List the User Groups selected by a filter in an account/org/project",
       responses =
       {
@@ -385,7 +388,8 @@ public class UserGroupResource {
       @RequestBody(description = "User Group Filter", required = true) @Body
       @NotNull UserGroupFilterDTO userGroupFilterDTO, @BeanParam PageRequest pageRequest) {
     if (isEmpty(pageRequest.getSortOrders())) {
-      SortOrder order = SortOrder.Builder.aSortOrder().withField("lastModifiedAt", SortOrder.OrderType.DESC).build();
+      SortOrder order =
+          SortOrder.Builder.aSortOrder().withField(UserGroupKeys.lastModifiedAt, SortOrder.OrderType.DESC).build();
       pageRequest.setSortOrders(ImmutableList.of(order));
     }
 
