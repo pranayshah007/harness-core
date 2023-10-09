@@ -1,6 +1,3 @@
-# Default values for databases.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
 global:
   database:
     minio:
@@ -62,7 +59,7 @@ mongodb:
     nameOverride: "mongodb-replicaset-chart"
   auth:
     rootUser: "admin"
-    existingSecret: '{{ include "harnesscommon.secrets.InstalledMongoDBSecret" (dict "ctx" $) }}'
+    existingSecret: '{{ include "harnesscommon.secrets.InstalledDBSecret" (dict "ctx" $ "dbKey" "mongo" "defaultSecret" "mongodb-replicaset-chart") }}'
   podLabels: { app: mongodb-replicaset }
   resources:
     limits:
