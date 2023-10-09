@@ -39,6 +39,7 @@ import static software.wings.beans.LogWeight.Bold;
 import static java.lang.String.format;
 import static java.lang.String.join;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toSet;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -61,7 +62,6 @@ import io.harness.pcf.model.CfRequestConfig;
 import io.harness.pcf.model.CfRunPluginScriptRequestData;
 import io.harness.pcf.model.PcfRouteInfo;
 import io.harness.pcf.model.PcfRouteInfo.PcfRouteInfoBuilder;
-import io.harness.shell.ScriptType;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -662,7 +662,7 @@ public class CfCliClientImpl implements CfCliClient {
       logCallback.saveExecutionLog("\n# ------------------------------------------ ");
       logCallback.saveExecutionLog("\n# CF_HOME value: " + cfRunPluginScriptRequestData.getWorkingDirectory());
       String finalScriptString = cfRunPluginScriptRequestData.getFinalScriptString();
-      if (!outputVariables.isEmpty()) {
+      if (!isNull(outputVariables) && !outputVariables.isEmpty()) {
         envVariablesOutputFile = new File(cfRunPluginScriptRequestData.getWorkingDirectory(), envVariablesFilename);
         finalScriptString = addEnvVariablesCollector(
             finalScriptString, outputVariables, envVariablesOutputFile.getAbsolutePath(), startToken, endToken);
@@ -675,7 +675,9 @@ public class CfCliClientImpl implements CfCliClient {
         logCallback.saveExecutionLog("# Executing pcf plugin script :");
         Map<String, String> envMap = getEnvironmentMapForPluginScript(pcfRequestConfig.getEndpointUrl(),
             cfRunPluginScriptRequestData.getWorkingDirectory(), pcfPluginHome, pcfRequestConfig.getCfCliPath());
-        envMap.putAll(inputVariables);
+        if (!isNull(inputVariables)) {
+          envMap.putAll(inputVariables);
+        }
         ProcessResult processResult =
             getProcessResult(finalScriptString, envMap, pcfRequestConfig.getTimeOutIntervalInMins(), logCallback);
         exitCode = processResult.getExitValue();

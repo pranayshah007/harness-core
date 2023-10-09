@@ -162,18 +162,32 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
                     .getUnitProgresses())
             .build();
       }
+      TasCommandStepParameters tasCommandStepParameters = (TasCommandStepParameters) stepParameters.getSpec();
       return StepResponse.builder()
           .status(Status.SUCCEEDED)
-          .stepOutcome(
-              StepResponse.StepOutcome.builder()
-                  .name(OutputExpressionConstants.OUTPUT)
-                  .outcome(TanzuCommandOutcome.builder().outputVariables(response.getOutputVariables()).build())
-                  .build())
+          .stepOutcome(StepResponse.StepOutcome.builder()
+                           .name(OutputExpressionConstants.OUTPUT)
+                           .outcome(prepareTanzuCommandOutcome(
+                               response.getOutputVariables(), tasCommandStepParameters.getOutputVariables()))
+                           .build())
           .unitProgressList(response.getUnitProgressData().getUnitProgresses())
           .build();
     } finally {
       tasStepHelper.closeLogStream(ambiance);
     }
+  }
+
+  private TanzuCommandOutcome prepareTanzuCommandOutcome(
+      Map<String, String> response, Map<String, Object> outputVariables) {
+    if (outputVariables == null || response == null) {
+      return null;
+    }
+    Map<String, String> resolvedOutputVariables = new HashMap<>();
+    outputVariables.keySet().forEach(name -> {
+      Object value = ((ParameterField<?>) outputVariables.get(name)).getValue();
+      resolvedOutputVariables.put(name, response.get(value));
+    });
+    return TanzuCommandOutcome.builder().outputVariables(resolvedOutputVariables).build();
   }
 
   @Override
@@ -247,13 +261,11 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
 
   public Map<String, String> getInputVariables(Map<String, Object> inputVariables, Ambiance ambiance) {
     Map<String, String> res = new LinkedHashMap<>();
-    Map<String, Object> copiedInputVariables = new HashMap<>();
-
-    if (EmptyPredicate.isNotEmpty(inputVariables)) {
-      copiedInputVariables.putAll(inputVariables);
+    if (inputVariables == null) {
+      return res;
     }
 
-    copiedInputVariables.forEach((key, value) -> {
+    inputVariables.forEach((key, value) -> {
       if (value instanceof ParameterField) {
         ParameterField<?> parameterFieldValue = (ParameterField<?>) value;
         if (parameterFieldValue.fetchFinalValue() == null) {
@@ -292,7 +304,6 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
     if (EmptyPredicate.isEmpty(outputVariables)) {
       return emptyList();
     }
-    // secret variables are stored separately so ignoring them
     List<String> outputVars = new ArrayList<>();
     outputVariables.forEach((key, val) -> {
       if (val instanceof ParameterField) {
