@@ -211,6 +211,7 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
             .useOptimizedTfPlan(true)
             .isTerraformCloudCli(isTerraformCloudCli)
             .skipTerraformRefresh(skipRefreshCommand)
+            .providerCredentialInfo(helper.getProviderCredentialInfo(spec.getProviderCredential(), ambiance))
             .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
             .build();
 

@@ -1243,6 +1243,9 @@ io.harness.delegate.task.aws.asg.AutoScalingGroupInstance
 io.harness.delegate.beans.azure.appservicesettings.AzureAppServiceApplicationSettingDTO
 io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO
 io.harness.cdng.provision.terraform.TerraformInlineVarFileConfig
+io.harness.cdng.provision.terraform.AWSIAMRoleCredentialSpec
+io.harness.cdng.provision.terraform.TerraformProviderCredential
+io.harness.cdng.provision.terraform.TerraformAwsProviderCredentialConfig
 io.harness.delegate.beans.connector.customsecretmanager.TemplateLinkConfigForCustomSecretManager
 io.harness.cdng.azure.webapp.beans.AzureWebAppSwapSlotsDataOutput
 io.harness.cdng.ecs.beans.EcsManifestsContent

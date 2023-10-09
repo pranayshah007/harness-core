@@ -1041,6 +1041,8 @@ import io.harness.delegate.task.terraform.TerraformCommandUnit;
 import io.harness.delegate.task.terraform.TerraformTaskNGParameters;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.delegate.task.terraform.TerraformVarFileInfo;
+import io.harness.delegate.task.terraform.provider.TerraformAwsProviderCredentialDelegateInfo;
+import io.harness.delegate.task.terraform.provider.TerraformProviderCredentialDelegateInfo;
 import io.harness.delegate.task.terraformcloud.PlanType;
 import io.harness.delegate.task.terraformcloud.RollbackType;
 import io.harness.delegate.task.terraformcloud.TerraformCloudCommandUnit;
@@ -2368,6 +2370,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(DockerArtifactDelegateConfig.class, 9800014);
     kryo.register(GithubPackagesArtifactDelegateConfig.class, 9800015);
     kryo.register(GoogleCloudStorageArtifactDelegateConfig.class, 9800017);
+    kryo.register(TerraformProviderCredentialDelegateInfo.class, 9800020);
+    kryo.register(TerraformAwsProviderCredentialDelegateInfo.class, 9800021);
     kryo.register(WinrmConnectivityExecutionCapability.class, 55425);
     kryo.register(GcpSecretManagerValidationParams.class, 19879);
     kryo.register(ShellScriptProvisionTaskNGRequest.class, 55426);
