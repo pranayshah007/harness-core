@@ -35,7 +35,6 @@ import org.springframework.data.annotation.TypeAlias;
  */
 @OwnedBy(HarnessTeam.CDC)
 @Data
-// It doesn't use ConnectorRefExtractorHelper
 @SimpleVisitorHelper(helperClass = ArtifactListConfigVisitorHelper.class)
 @TypeAlias("artifactListConfig")
 @RecasterAlias("io.harness.cdng.artifact.bean.yaml.ArtifactListConfig")
