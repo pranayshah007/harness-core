@@ -7,6 +7,7 @@
 
 package io.harness.ssca.enforcement.executors.mongo.filter.denylist.fields;
 
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.ssca.beans.DenyList.DenyListItem;
 import io.harness.ssca.enforcement.executors.mongo.MongoOperators;
 import io.harness.ssca.entities.NormalizedSBOMComponentEntity.NormalizedSBOMEntityKeys;
@@ -17,9 +18,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 
 @AllArgsConstructor
+@Slf4j
 public class VersionField implements Field {
   @Override
   public boolean isMatched(DenyListItem denyListItem) {
@@ -96,22 +99,31 @@ public class VersionField implements Field {
     return Operator.UNKNOWN;
   }
 
-  private List<Integer> getVersion(String version) {
-    if (version == null) {
+  List<Integer> getVersion(String version) {
+    if (EmptyPredicate.isEmpty(version)) {
       return Arrays.asList(-1, -1, -1);
     }
     version = version.trim();
     String[] splitVersion = version.split("[.]");
     switch (splitVersion.length) {
       case 1:
-        return Arrays.asList(Integer.parseInt(splitVersion[0]), -1, -1);
+        return Arrays.asList(parseVersion(splitVersion[0]), -1, -1);
       case 2:
-        return Arrays.asList(Integer.parseInt(splitVersion[0]), Integer.parseInt(splitVersion[1]), -1);
+        return Arrays.asList(parseVersion(splitVersion[0]), parseVersion(splitVersion[1]), -1);
       case 3:
         return Arrays.asList(
-            Integer.parseInt(splitVersion[0]), Integer.parseInt(splitVersion[1]), Integer.parseInt(splitVersion[2]));
+            parseVersion(splitVersion[0]), parseVersion(splitVersion[1]), parseVersion(splitVersion[2]));
       default:
         return Arrays.asList(-1, -1, -1);
+    }
+  }
+
+  private Integer parseVersion(String version) {
+    try {
+      return Integer.parseInt(version);
+    } catch (NumberFormatException ex) {
+      log.warn(String.format("Cannot convert %s to integer, defaulting version to be -1", version));
+      return -1;
     }
   }
 }
