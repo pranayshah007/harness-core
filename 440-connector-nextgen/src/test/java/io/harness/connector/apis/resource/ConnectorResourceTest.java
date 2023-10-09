@@ -206,7 +206,8 @@ public class ConnectorResourceTest extends CategoryTest {
             .pageIndex(0)
             .sortOrders(
                 List.of(SortOrder.Builder.aSortOrder().withField("lastModifiedAt", SortOrder.OrderType.DESC).build()))
-            .build());
+            .build(),
+        null);
     Mockito.verify(connectorService, times(1))
         .list(eq(accountIdentifier), eq(null), eq(orgIdentifier), eq(projectIdentifier), eq(filterIdentifier),
             eq(searchTerm), eq(false), eq(false), any(), any(), any());
@@ -291,7 +292,7 @@ public class ConnectorResourceTest extends CategoryTest {
 
     ResponseDTO<PageResponse<ConnectorResponseDTO>> connectorListResponse = connectorResource.list(accountIdentifier,
         searchTerm, orgIdentifier, projectIdentifier, filterIdentifier, Boolean.FALSE, connectorFilterPropertiesDTO,
-        null, Boolean.FALSE, version, Boolean.FALSE, PageRequest.builder().pageSize(1).build());
+        null, Boolean.FALSE, version, Boolean.FALSE, PageRequest.builder().pageSize(1).build(), null);
 
     verify(connectorService, times(1))
         .list(accountIdentifier, connectorFilterPropertiesDTOWithConnectorIds, orgIdentifier, projectIdentifier,
@@ -332,7 +333,7 @@ public class ConnectorResourceTest extends CategoryTest {
 
     ResponseDTO<PageResponse<ConnectorResponseDTO>> connectorListResponse = connectorResource.list(accountIdentifier,
         searchTerm, orgIdentifier, projectIdentifier, filterIdentifier, Boolean.FALSE, connectorFilterPropertiesDTO,
-        null, Boolean.FALSE, version, Boolean.FALSE, PageRequest.builder().pageSize(1).build());
+        null, Boolean.FALSE, version, Boolean.FALSE, PageRequest.builder().pageSize(1).build(), null);
 
     verify(connectorService, times(1))
         .list(accountIdentifier, connectorFilterPropertiesDTO, orgIdentifier, projectIdentifier, filterIdentifier,

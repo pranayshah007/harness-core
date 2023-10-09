@@ -40,6 +40,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.ScopeInfo;
 import io.harness.cache.CacheModule;
 import io.harness.cdng.creator.CDNGModuleInfoProvider;
 import io.harness.cdng.creator.CDNGPlanCreatorProvider;
@@ -140,6 +141,7 @@ import io.harness.ng.core.handler.freezeHandlers.NgDeploymentFreezeActivationHan
 import io.harness.ng.core.migration.NGBeanMigrationProvider;
 import io.harness.ng.core.migration.ProjectMigrationProvider;
 import io.harness.ng.core.migration.UserGroupMigrationProvider;
+import io.harness.ng.core.remote.OrganizationResource;
 import io.harness.ng.core.remote.UserGroupRestrictionUsageImpl;
 import io.harness.ng.core.remote.UsersRestrictionUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.ApiKeyRestrictionsUsageImpl;
@@ -295,6 +297,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import javax.enterprise.context.RequestScoped;
 import javax.servlet.DispatcherType;
 import javax.servlet.FilterRegistration;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -303,6 +306,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
+import org.glassfish.hk2.api.Factory;
+import org.glassfish.hk2.api.ServiceLocator;
+import org.glassfish.hk2.api.ServiceLocatorFactory;
+import org.glassfish.hk2.utilities.ServiceLocatorUtilities;
+import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.server.model.Resource;
@@ -346,6 +354,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         return appConfig.getSwaggerBundleConfiguration();
       }
     });
+    //    bootstrap.addBundle(new HK2Bundle());
     bootstrap.setMetricRegistry(metricRegistry);
   }
 
@@ -490,6 +499,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     initializeEnforcementService(injector, appConfig);
     initializeEnforcementSdk(injector);
     initializeCdMonitoring(appConfig, injector);
+    registerHk2ServiceLocator(environment, injector);
     SettingsCreationJob settingsCreationJob = injector.getInstance(SettingsCreationJob.class);
     settingsCreationJob.run();
 
@@ -517,6 +527,40 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
       SMPEncLicenseDTO encLicenseDTO = SMPEncLicenseDTO.builder().encryptedLicense(license).decrypt(true).build();
       licenseService.applySMPLicense(encLicenseDTO);
     }
+  }
+
+  private void registerHk2ServiceLocator(Environment environment, Injector injector) {
+    environment.jersey().getResourceConfig().register(new AbstractBinder() {
+      @Override
+      protected void configure() {
+        bind(ScopeInfoFactory.class).to(ScopeInfo.class).in(RequestScoped.class);
+      }
+    });
+    //    environment.jersey().register(new AbstractBinder() {
+    //      @Override
+    //      protected void configure() {
+    //        bind(ScopeInfoFactory.class).to(ScopeInfo.class).in(RequestScoped.class);
+    //      }
+    //    });
+    //    ServiceLocator serviceLocator = ServiceLocatorFactory.getInstance().create(null);
+    //
+    //    AbstractBinder binder = new AbstractBinder() {
+    //      @Override
+    //      protected void configure() {
+    //        // Bind the factory to the type
+    //        bind(ScopeInfoFactory.class).to(Factory.class).to(ScopeInfo.class);
+    //      }
+    //    };
+    //    ServiceLocator serviceLocator = environment.getApplicationContext().getBean(ServiceLocator.class);
+    // Add the binder to the service locator
+    //    ServiceLocatorUtilities.enableImmediateScope(serviceLocator);
+    //    ServiceLocatorUtilities.addClasses(serviceLocator, OrganizationResource.class);
+    //    environment.jersey().register(
+    //    binder.bindFactory(ScopeInfoFactory.class).to(ScopeInfo.class).proxy(true).in(RequestScoped.class););
+
+    // Set the service locator in the application context
+    //    environment.getApplicationContext().addBean(serviceLocator);
+    //    ServiceLocatorUtilities.addClasses(serviceLocator, ScopeInfoFactory.class);
   }
 
   // ToDo-SMP: enable for future releases only for now (add condition on release tag)

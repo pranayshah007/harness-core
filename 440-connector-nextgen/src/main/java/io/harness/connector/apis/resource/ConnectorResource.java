@@ -33,6 +33,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ScopeInfo;
 import io.harness.beans.SortOrder;
 import io.harness.beans.SortOrder.OrderType;
 import io.harness.connector.CombineCcmK8sConnectorResponseDTO;
@@ -76,6 +77,7 @@ import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 import com.google.inject.name.Named;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -108,6 +110,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.core.Context;
 import org.hibernate.validator.constraints.NotBlank;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -307,7 +311,7 @@ public class ConnectorResource {
               + "The connector entity can belong to any branch") @QueryParam("getDistinctFromBranches")
       Boolean getDistinctFromBranches,
       @QueryParam("version") String version, @QueryParam("onlyFavorites") @DefaultValue("false") Boolean onlyFavorites,
-      @BeanParam PageRequest pageRequest) {
+      @BeanParam PageRequest pageRequest, @Context ScopeInfo scopeInfo) {
     if (isEmpty(pageRequest.getSortOrders())) {
       SortOrder order = SortOrder.Builder.aSortOrder().withField(ConnectorKeys.lastModifiedAt, OrderType.DESC).build();
       pageRequest.setSortOrders(List.of(order));

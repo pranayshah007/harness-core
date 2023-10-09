@@ -132,7 +132,7 @@ public class OrganizationResourceTest extends CategoryTest {
         .thenReturn(getPage(singletonList(organization), 1));
 
     ResponseDTO<PageResponse<OrganizationResponse>> response =
-        organizationResource.list(accountIdentifier, Collections.EMPTY_LIST, searchTerm, pageRequest);
+        organizationResource.list(accountIdentifier, Collections.EMPTY_LIST, searchTerm, pageRequest, null);
 
     verify(organizationService, times(1)).listPermittedOrgs(eq(accountIdentifier), any(), argumentCaptor.capture());
     OrganizationFilterDTO organizationFilterDTO = argumentCaptor.getValue();

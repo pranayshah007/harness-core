@@ -16,6 +16,8 @@ import static javax.ws.rs.Priorities.AUTHENTICATION;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ScopeInfo;
+import io.harness.beans.ScopeLevel;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
@@ -39,6 +41,8 @@ import javax.annotation.Priority;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.UriInfo;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
@@ -70,6 +74,7 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
       // Predicate testing failed with the current request context
       return;
     }
+    populateScopeInfo(containerRequestContext);
     boolean isScimCall = isScimAPI();
     Optional<String> apiKeyOptional =
         isScimCall ? getApiKeyForScim(containerRequestContext) : getApiKeyFromHeaders(containerRequestContext);
@@ -106,6 +111,27 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
     } else {
       super.filter(containerRequestContext);
     }
+  }
+
+  private void populateScopeInfo(ContainerRequestContext containerRequestContext) {
+    UriInfo uriInfo = containerRequestContext.getUriInfo();
+    final MultivaluedMap<String, String> pathParameters = uriInfo.getPathParameters();
+    final MultivaluedMap<String, String> queryParameters = uriInfo.getQueryParameters();
+    Optional<String> accountIdentifierOptional = getAccountIdentifierFrom(containerRequestContext);
+    if (accountIdentifierOptional.isEmpty()) {
+      throw new InvalidRequestException("Account detail is not present in the request");
+    }
+    String accountIdentifier = accountIdentifierOptional.get();
+    String orgIdentifier = queryParameters.getFirst("orgIdentifier");
+    String projIdentifier = queryParameters.getFirst("projectIdentifier");
+    containerRequestContext.setProperty("scopeInfo",
+        ScopeInfo.builder()
+            .accountIdentifier(accountIdentifier)
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projIdentifier)
+            .scopeType(ScopeLevel.PROJECT) // resolve scope
+            .uniqueId("uniqueId")
+            .build());
   }
 
   private boolean isScimAPI() {

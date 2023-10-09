@@ -5239,6 +5239,7 @@ plain_artifacts = [
     "org.glassfish.hk2.external:jakarta.inject:2.6.1",
     "org.glassfish.hk2.external:javax.inject:2.5.0-b32",
     "org.glassfish.hk2:hk2-api:2.6.1",
+    "org.glassfish.hk2:dropwizard-hk2:2.6.1",
     "org.glassfish.hk2:hk2-locator:2.5.0-b32",
     "org.glassfish.hk2:hk2-utils:2.6.1",
     "org.glassfish.hk2:osgi-resource-locator:1.0.3",
