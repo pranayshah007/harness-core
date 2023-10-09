@@ -299,8 +299,6 @@ public class GitStatusCheckHelper {
             .check_uid(checkUid)
             .build();
     String accountId = gitStatusCheckParams.getOwner();
-    // Gitness repo is expected to be either "git/account/org/project/repo" or "account/org/project/repo"
-    // depending on subdomain we use.
     String[] repoSplit = gitStatusCheckParams.getRepo().split("/");
     int len = repoSplit.length;
     if (len < 3 || len > 5) {
