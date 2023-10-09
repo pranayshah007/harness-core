@@ -106,6 +106,10 @@ public class NodeProjectionUtils {
   public static final Set<String> fieldsForIdentityNodeCreation = Sets.newHashSet(
       NodeExecutionKeys.uuid, NodeExecutionKeys.stepType, NodeExecutionKeys.planId, NodeExecutionKeys.nodeId);
 
+  public static final Set<String> fieldsForRollbackIdentityNodeCreation =
+      Sets.newHashSet(NodeExecutionKeys.uuid, NodeExecutionKeys.stepType, NodeExecutionKeys.planId,
+          NodeExecutionKeys.nodeId, NodeExecutionKeys.name, NodeExecutionKeys.identifier);
+
   public static final Set<String> fieldsForRollbackTransformer =
       Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.stageFqn);
 }

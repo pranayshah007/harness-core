@@ -32,15 +32,15 @@ public class BitbucketMeanTimeToMergeParser implements DataPointParser {
     Map<String, Object> dataPointData = new HashMap<>();
     for (String inputValue : inputValues) {
       if (!data.containsKey(inputValue)) {
-        dataPointData.putAll(constructDataPointInfo(inputValue, false, INVALID_BRANCH_NAME_ERROR));
+        dataPointData.putAll(constructDataPointInfo(inputValue, Long.MAX_VALUE, INVALID_BRANCH_NAME_ERROR));
         continue;
       }
       Map<String, Object> inputValueData = (Map<String, Object>) data.get(inputValue);
       List<Map<String, Object>> values =
           (List<Map<String, Object>>) CommonUtils.findObjectByName(inputValueData, "values");
       if (isEmpty(values)) {
-        dataPointData.putAll(
-            constructDataPointInfo(inputValue, false, format(NO_PULL_REQUESTS_FOUND, inputValue.replace("\"", ""))));
+        dataPointData.putAll(constructDataPointInfo(
+            inputValue, Long.MAX_VALUE, format(NO_PULL_REQUESTS_FOUND, inputValue.replace("\"", ""))));
         continue;
       }
       int numberOfPullRequests = values.size();

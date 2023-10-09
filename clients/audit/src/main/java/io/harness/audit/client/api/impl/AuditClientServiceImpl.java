@@ -124,7 +124,7 @@ public class AuditClientServiceImpl implements AuditClientService {
       resourceInfo = String.format("resourceIdentifier [%s], resourceType [%s]",
           auditEntry.getResource().getIdentifier(), auditEntry.getResource().getType());
     }
-    log.error(String.format(
+    log.warn(String.format(
         "[AUDIT_ERROR]: Principal not found for audit entry with insertId [%s] on resource {%s}, action [%s], module [%s]. This should not happen. Please check!!",
         auditEntry.getInsertId(), resourceInfo, auditEntry.getAction(), auditEntry.getModule()));
   }

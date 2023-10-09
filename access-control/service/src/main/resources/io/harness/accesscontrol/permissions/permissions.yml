@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 58
+version: 60
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -1714,3 +1714,15 @@ permissions:
       - account
       - organization
       - project
+  - identifier: ccm_anomalies_view
+    name: View CCM Anomalies
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_recommendations_view
+    name: View CCM Recommendations
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account

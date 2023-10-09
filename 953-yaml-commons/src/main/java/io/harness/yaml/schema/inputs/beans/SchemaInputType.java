@@ -8,13 +8,14 @@
 package io.harness.yaml.schema.inputs.beans;
 
 public enum SchemaInputType {
-  String,
-  Integer,
-  Boolean,
-  Object,
+  STRING,
+  INTEGER,
+  BOOLEAN,
+  OBJECT,
   ;
 
-  static SchemaInputType getYamlInputType(String type) {
+  public static SchemaInputType getYamlInputType(String type) {
+    type = type.toUpperCase();
     return SchemaInputType.valueOf(type);
   }
 }

@@ -46,6 +46,7 @@ public class StageElementParameters implements StepParameters {
   Map<String, String> tags;
   String type;
   SpecParameters specConfig;
+  ParameterField<String> timeout;
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @Override

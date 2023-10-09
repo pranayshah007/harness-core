@@ -12,13 +12,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.exception.KeyManagerBuilderException;
 import io.harness.exception.SslContextBuilderException;
-import io.harness.managerclient.DelegateAuthInterceptor;
 import io.harness.network.FibonacciBackOff;
 import io.harness.network.Http;
 import io.harness.network.NoopHostnameVerifier;
 import io.harness.security.X509KeyManagerBuilder;
 import io.harness.security.X509SslContextBuilder;
 import io.harness.security.X509TrustManagerBuilder;
+import io.harness.security.delegate.DelegateAuthInterceptor;
 import io.harness.version.VersionInfoManager;
 
 import com.fasterxml.jackson.databind.ObjectMapper;

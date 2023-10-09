@@ -27,6 +27,7 @@ public enum CIStepInfoType {
   ACR(CI_LITE_ENGINE, "BuildAndPushACR"),
   ECR(CI_LITE_ENGINE, "BuildAndPushECR"),
   GCR(CI_LITE_ENGINE, "BuildAndPushGCR"),
+  GAR(CI_LITE_ENGINE, "BuildAndPushGAR"),
   DOCKER(CI_LITE_ENGINE, "BuildAndPushDockerRegistry"),
   UPLOAD_GCS(CI_LITE_ENGINE, "GCSUpload"),
   UPLOAD_S3(CI_LITE_ENGINE, "S3Upload"),

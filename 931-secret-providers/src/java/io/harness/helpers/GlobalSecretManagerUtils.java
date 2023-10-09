@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.PathNotFoundException;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -41,7 +42,17 @@ public class GlobalSecretManagerUtils {
   }
 
   public static String getValueByJsonPath(DocumentContext context, String key) throws JsonProcessingException {
-    Object value = isEmpty(key) ? context.read("$") : context.read("$." + key);
+    Object value = null;
+    if (isEmpty(key)) {
+      value = context.read("$");
+    } else {
+      try {
+        value = context.read("$." + key);
+      } catch (PathNotFoundException exception) {
+        value = context.read("$.['" + key + "']"); // This is to handle json key with dots
+      }
+    }
+
     if (value instanceof String) {
       return value.toString();
     }

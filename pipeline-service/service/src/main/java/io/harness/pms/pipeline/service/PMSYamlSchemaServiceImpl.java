@@ -20,6 +20,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.exception.JsonSchemaValidationException;
 import io.harness.logging.AccountLogContext;
@@ -29,6 +30,7 @@ import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper;
 import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.utils.PipelineVersionConstants;
 import io.harness.yaml.individualschema.PipelineSchemaMetadata;
 import io.harness.yaml.individualschema.PipelineSchemaParserFactory;
 import io.harness.yaml.individualschema.PipelineSchemaRequest;
@@ -71,6 +73,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   Integer allowedParallelStages;
 
   private final String PIPELINE_VERSION_V0 = "v0";
+  private final String PIPELINE_VERSION_V1 = "v1";
 
   @Inject
   public PMSYamlSchemaServiceImpl(YamlSchemaValidator yamlSchemaValidator, PmsYamlSchemaHelper pmsYamlSchemaHelper,
@@ -190,9 +193,21 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
 
   private SchemaParserInterface getStaticSchemaParser(YamlConfig yamlConfig) {
     if (yamlConfig.getYamlMap().get("pipeline") != null) {
-      return pipelineSchemaParserFactory.getPipelineSchemaParser(PIPELINE_VERSION_V0);
+      return pipelineSchemaParserFactory.getPipelineSchemaParser(
+          PipelineVersionConstants.PIPELINE_VERSION_V0.getValue());
     }
-    // TODO add more cases for other versions of yaml for pipeline
-    return pipelineSchemaParserFactory.getPipelineSchemaParser(PIPELINE_VERSION_V0);
+
+    JsonNode versionNode = yamlConfig.getYamlMap().get("version");
+    if (versionNode != null) {
+      switch (versionNode.asText()) {
+        case "1":
+          return pipelineSchemaParserFactory.getPipelineSchemaParser(
+              PipelineVersionConstants.PIPELINE_VERSION_V1.getValue());
+        default:
+          throw new InvalidRequestException("Invalid version found in yaml : " + versionNode.asText());
+      }
+    } else {
+      throw new InvalidRequestException("No version field found in yaml");
+    }
   }
 }

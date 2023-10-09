@@ -498,6 +498,8 @@ public class TriggerServiceImpl implements TriggerService {
   @Override
   public void triggerExecutionPostArtifactCollectionAsync(
       String appId, String artifactStreamId, List<Artifact> artifacts) {
+    // THIS METHOD IS NOT CALLED FROM ANY PRODUCTION CODE, ONLY FROM TEST CODE.
+    // WHY KEEP IT ALIVE? CODE CLEANUP IS NEEDED HERE.
     executorService.execute(() -> triggerExecutionPostArtifactCollection(appId, artifactStreamId, artifacts));
   }
 
@@ -574,6 +576,9 @@ public class TriggerServiceImpl implements TriggerService {
   @Override
   public void triggerExecutionPostArtifactCollectionAsync(
       String accountId, String appId, String artifactStreamId, List<Artifact> artifacts) {
+    if (featureFlagService.isEnabled(FeatureName.CDS_DISABLE_ALL_CG_TRIGGERS, accountId)) {
+      return;
+    }
     executorService.execute(() -> {
       if (featureFlagService.isEnabled(FeatureName.TRIGGER_FOR_ALL_ARTIFACTS, accountId)) {
         List<Artifact> nonDuplicates = artifacts.stream().filter(t -> !t.isDuplicate()).collect(toList());
@@ -695,6 +700,9 @@ public class TriggerServiceImpl implements TriggerService {
 
   @Override
   public void triggerScheduledExecutionAsync(Trigger trigger, Date scheduledFireTime) {
+    if (featureFlagService.isEnabled(FeatureName.CDS_DISABLE_ALL_CG_TRIGGERS, trigger.getAccountId())) {
+      return;
+    }
     executorService.submit(() -> triggerScheduledExecution(trigger, scheduledFireTime));
   }
 

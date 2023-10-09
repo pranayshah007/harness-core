@@ -1066,6 +1066,83 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
+  public void testApplyServiceNowWithoutTemplateToCreateTicketWithoutNumber() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.createTicket(anyString(), anyString(), anyString(), isNull(), anyMap()))
+        .thenReturn(mockCall);
+
+    ImmutableMap<String, JsonNode> responsemap =
+
+        ImmutableMap.of("sys_id", JsonUtils.asTree(Collections.singletonMap("display_value", "123456789")),
+            "lastUpdated", JsonUtils.asTree(Collections.singletonMap("display_value", "123e9e")));
+
+    JsonNode successResponse = JsonUtils.asTree(Collections.singletonMap("result", responsemap));
+    Response<JsonNode> jsonNodeResponse = Response.success(successResponse);
+    when(mockCall.execute()).thenReturn(jsonNodeResponse);
+
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      Map<String, String> fieldmap = ImmutableMap.of("value", "BEvalue2", "display_value", "UIvalue2");
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+      ServiceNowTaskNGResponse response =
+          serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                           .action(ServiceNowActionNG.CREATE_TICKET)
+                                                           .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                           .useServiceNowTemplate(false)
+                                                           .ticketType("incident")
+                                                           .fields(fieldmap)
+                                                           .build(),
+              logStreamingTaskClient);
+
+      assertThat(response.getTicket().getUrl())
+          .isEqualTo("https://harness.service-now.com/nav_to.do?uri=/incident.do?sys_id=123456789");
+      assertThat(response.getTicket().getFields()).hasSize(2);
+      verify(secretDecryptionService).decrypt(any(), any());
+    }
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testApplyServiceNowWithoutTemplateToCreateTicketWithoutNumberSysID() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.createTicket(anyString(), anyString(), anyString(), isNull(), anyMap()))
+        .thenReturn(mockCall);
+
+    ImmutableMap<String, JsonNode> responsemap =
+
+        ImmutableMap.of("lastUpdated", JsonUtils.asTree(Collections.singletonMap("display_value", "123e9e")));
+
+    JsonNode successResponse = JsonUtils.asTree(Collections.singletonMap("result", responsemap));
+    Response<JsonNode> jsonNodeResponse = Response.success(successResponse);
+    when(mockCall.execute()).thenReturn(jsonNodeResponse);
+
+    try (MockedConstruction<Retrofit> ignored = mockConstruction(Retrofit.class,
+             (mock, context) -> { when(mock.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient); })) {
+      Map<String, String> fieldmap = ImmutableMap.of("value", "BEvalue2", "display_value", "UIvalue2");
+      ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+
+      assertThatThrownBy(
+          ()
+              -> serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                                  .action(ServiceNowActionNG.CREATE_TICKET)
+                                                                  .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                                  .useServiceNowTemplate(false)
+                                                                  .ticketType("incident")
+                                                                  .fields(fieldmap)
+                                                                  .build(),
+                  logStreamingTaskClient))
+          .isInstanceOf(ServiceNowException.class)
+          .hasMessage("Both sysId and ticketNumber are not present in serviceNow Response");
+    }
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
   public void testUpdateServiceNowWithoutTemplateToUpdateTicketWithRetry() throws Exception {
     ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
 

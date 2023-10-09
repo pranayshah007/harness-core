@@ -69,6 +69,7 @@ public class VmStepSerializer {
         return vmPluginStepSerializer.serialize((PluginStepInfo) stepInfo, stageInfraDetails, identifier,
             parameterFieldTimeout, stepName, ambiance, registries, executionSource, delegateId);
       case GCR:
+      case GAR:
       case DOCKER:
       case ECR:
       case ACR:
@@ -112,6 +113,7 @@ public class VmStepSerializer {
       case DOCKER:
       case ECR:
       case GCR:
+      case GAR:
       case ACR:
         return vmPluginCompatibleStepSerializer.preProcessStep(
             ambiance, (PluginCompatibleStep) stepInfo, stageInfraDetails, identifier, isBareMetalUsed);

@@ -39,6 +39,7 @@ import io.harness.delegate.task.k8s.K8sBGDeployResponse;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sTaskType;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.k8s.model.K8sPod;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -61,6 +62,7 @@ import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 
@@ -216,17 +218,21 @@ public class K8sBlueGreenStep extends CdTaskChainExecutable implements K8sStepEx
               StepOutcome.builder().name(OutcomeExpressionConstants.OUTPUT).outcome(k8sBlueGreenOutcome).build())
           .build();
     }
-    K8sBlueGreenOutcome k8sBlueGreenOutcome = K8sBlueGreenOutcome.builder()
-                                                  .releaseName(cdStepHelper.getReleaseName(ambiance, infrastructure))
-                                                  .releaseNumber(k8sBGDeployResponse.getReleaseNumber())
-                                                  .primaryServiceName(k8sBGDeployResponse.getPrimaryServiceName())
-                                                  .stageServiceName(k8sBGDeployResponse.getStageServiceName())
-                                                  .stageColor(k8sBGDeployResponse.getStageColor())
-                                                  .primaryColor(k8sBGDeployResponse.getPrimaryColor())
-                                                  .prunedResourceIds(k8sStepHelper.getPrunedResourcesIds(
-                                                      pruningEnabled, k8sBGDeployResponse.getPrunedResourceIds()))
-                                                  .manifest(executionPassThroughData.getK8sGitFetchInfo())
-                                                  .build();
+    K8sBlueGreenOutcome k8sBlueGreenOutcome =
+        K8sBlueGreenOutcome.builder()
+            .releaseName(cdStepHelper.getReleaseName(ambiance, infrastructure))
+            .releaseNumber(k8sBGDeployResponse.getReleaseNumber())
+            .primaryServiceName(k8sBGDeployResponse.getPrimaryServiceName())
+            .stageServiceName(k8sBGDeployResponse.getStageServiceName())
+            .stageColor(k8sBGDeployResponse.getStageColor())
+            .primaryColor(k8sBGDeployResponse.getPrimaryColor())
+            .prunedResourceIds(
+                k8sStepHelper.getPrunedResourcesIds(pruningEnabled, k8sBGDeployResponse.getPrunedResourceIds()))
+            .manifest(executionPassThroughData.getK8sGitFetchInfo())
+            .podIps(k8sBGDeployResponse.getK8sPodList() != null
+                    ? k8sBGDeployResponse.getK8sPodList().stream().map(K8sPod::getPodIP).collect(Collectors.toList())
+                    : null)
+            .build();
     executionSweepingOutputService.consume(
         ambiance, OutcomeExpressionConstants.K8S_BLUE_GREEN_OUTCOME, k8sBlueGreenOutcome, StepOutcomeGroup.STEP.name());
     HelmChartInfo helmChartInfo = k8sBGDeployResponse.getHelmChartInfo();

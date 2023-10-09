@@ -37,6 +37,24 @@ global:
       userKey: "redis-user"
       passwordKey: "redis-password"
       extraArgs: ""
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              LOG_SERVICE_REDIS_USERNAME: ""
+              LOG_SERVICE_REDIS_PASSWORD": ""
+        secretManagement:
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                LOG_SERVICE_REDIS_USERNAME:
+                  name: ""
+                  property: ""
+                LOG_SERVICE_REDIS_PASSWORD":
+                  name: ""
+                  property: ""
 s3:
   ### Default values are configured to work with Minio, override if you are using own s3 buckets
   endpoint: ""
@@ -44,11 +62,38 @@ s3:
   region: "us-east-1"
   accessKeyId: ""
   secretAccessKey: ""
-redis:
-  disableWatcher: false
+#redis:
+#  disableWatcher: false
 replicaCount: 1
 maxSurge: 1
 maxUnavailable: 0
+
+redis:
+  disableWatcher: false
+  protocol: ""
+  hosts: []
+  secretName: ""
+  userKey: ""
+  passwordKey: ""
+  extraArgs: ""
+  secrets:
+    kubernetesSecrets:
+      - secretName: ""
+        keys:
+          REDIS_USERNAME: ""
+          REDIS_PASSWORD": ""
+    secretManagement:
+      externalSecretsOperator:
+        - secretStore:
+            name: ""
+            kind: ""
+          remoteKeys:
+            REDIS_USERNAME:
+              name: ""
+              property: ""
+            REDIS_PASSWORD":
+              name: ""
+              property: ""
 
 image:
   registry: docker.io
@@ -133,3 +178,25 @@ virtualService:
   annotations: {}
 ingress:
   annotations: {}
+
+secrets:
+  default:
+    LOG_SERVICE_GLOBAL_TOKEN: c76e567a-b341-404d-a8dd-d9738714eb82
+    LOG_SERVICE_SECRET: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+  kubernetesSecrets:
+    - secretName: ""
+      keys:
+        LOG_SERVICE_GLOBAL_TOKEN: ""
+        LOG_SERVICE_SECRET: ""
+  secretManagement:
+    externalSecretsOperator:
+      - secretStore:
+          name: ""
+          kind: ""
+        remoteKeys:
+          LOG_SERVICE_GLOBAL_TOKEN:
+            name: ""
+            property: ""
+          LOG_SERVICE_SECRET:
+            name: ""
+            property: ""

@@ -84,6 +84,7 @@ public class DelegateOutboxEventHandler implements OutboxEventHandler {
                                 .action(Action.UPSERT)
                                 .module(ModuleType.CORE)
                                 .newYaml(getYamlString(delegateUpsertEvent.getDelegateSetupDetails()))
+                                .oldYaml(getYamlString(delegateUpsertEvent.getDelegateSetupDetailsOld()))
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
                                 .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))

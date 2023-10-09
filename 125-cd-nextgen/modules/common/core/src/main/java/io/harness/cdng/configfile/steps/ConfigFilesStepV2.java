@@ -372,8 +372,8 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
   }
 
   @Override
-  public void handleAbort(
-      Ambiance ambiance, EmptyStepParameters stepParameters, AsyncExecutableResponse executableResponse) {
+  public void handleAbort(Ambiance ambiance, EmptyStepParameters stepParameters,
+      AsyncExecutableResponse executableResponse, boolean userMarked) {
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     logCallback.saveExecutionLog(
         "Fetching Config Files Step was aborted", LogLevel.ERROR, CommandExecutionStatus.FAILURE);

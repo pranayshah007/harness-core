@@ -19,7 +19,9 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.plancreator.pipeline.PipelineConfig;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.pipeline.service.PMSYamlSchemaService;
+import io.harness.pms.yaml.SchemaErrorResponse;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlSchemaResponse;
 import io.harness.yaml.schema.YamlSchemaResource;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -45,6 +47,16 @@ public class PmsYamlSchemaResourceImpl implements YamlSchemaResource, PmsYamlSch
         pmsYamlSchemaService.getStaticSchemaForAllEntities(getNodeTypeFromEntityType(entityType), "", "", "v0");
 
     return ResponseDTO.newResponse(schema);
+  }
+
+  @Override
+  public ResponseDTO<io.harness.pms.yaml.YamlSchemaResponse> getIndividualYamlSchema(@NotNull String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String yamlGroup, EntityType stepEntityType, Scope scope) {
+    // TODO(Brijesh): write logic to handle empty schema when ff or feature restriction is off.
+    JsonNode schema =
+        pmsYamlSchemaService.getStaticSchemaForAllEntities(getNodeTypeFromEntityType(stepEntityType), "", "", "v0");
+    return ResponseDTO.newResponse(
+        YamlSchemaResponse.builder().schema(schema).schemaErrorResponse(SchemaErrorResponse.builder().build()).build());
   }
 
   // DO NOT DELETE THIS WITHOUT CONFIRMING WITH UI

@@ -1,7 +1,7 @@
 dependencies:
 - name: database
   repository: file://./database
-  version: 0.9.1
+  version: 0.9.2
 - name: harness-secrets
   repository: file://./secrets
   version: 0.9.0
@@ -10,6 +10,6 @@ dependencies:
   version: 0.9.0
 - name: networking
   repository: file://./networking
-  version: 0.9.0
-digest: sha256:b6ebc350797fead76ceac4fec99254ed1021fe325d80f6e4b4acd1779ff5caef
-generated: "2023-09-13T21:57:24.669355-07:00"
+  version: 0.9.1
+digest: sha256:860c6fde09acfab11a7623745fc30e6fc176d8b3afcb25be4c982c0feba0090d
+generated: "2023-10-04T15:35:22.374337+05:30"

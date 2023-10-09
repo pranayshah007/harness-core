@@ -47,6 +47,7 @@ import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome.VmDetailsOutcomeBuilder;
 import io.harness.beans.steps.CIAbstractStepNode;
+import io.harness.beans.steps.CILogKeyMetadata;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.InitializeExecutionSweepingOutput;
 import io.harness.beans.sweepingoutputs.TaskSelectorSweepingOutput;
@@ -133,6 +134,7 @@ import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.CIAccountExecutionMetadataRepository;
 import io.harness.repositories.CIExecutionRepository;
+import io.harness.repositories.CILogKeyRepository;
 import io.harness.repositories.StepExecutionParametersRepository;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
@@ -195,16 +197,14 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
   @Inject QueueExecutionUtils queueExecutionUtils;
   @Inject private StepExecutionParametersRepository stepExecutionParametersRepository;
   @Inject CIExecutionRepository ciExecutionRepository;
+  @Inject private CILogKeyRepository ciLogKeyRepository;
+
   private static final String DEPENDENCY_OUTCOME = "dependencies";
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return null;
   }
-
-  @Override
-  public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {}
 
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
@@ -224,7 +224,10 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
                                                .stageRunTimeId(stageRuntimeId)
                                                .stepParameters(RecastOrchestrationUtils.toJson(stepParameters))
                                                .build());
-
+    // Check and add log key to execution ID
+    CILogKeyMetadata ciLogKeyMetadata =
+        CILogKeyMetadata.builder().stageExecutionId(stageRuntimeId).logKeys(List.of(logKey)).build();
+    ciLogKeyRepository.save(ciLogKeyMetadata);
     boolean shouldQueue = false;
     boolean queueConcurrencyEnabled = infrastructure.getType() == Infrastructure.Type.HOSTED_VM
         && ciFeatureFlagService.isEnabled(QUEUE_CI_EXECUTIONS_CONCURRENCY, accountId);
@@ -459,6 +462,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
       sanitizationService.validate(steps);
     }
   }
+
   private void validateConnectors(InitializeStepInfo initializeStepInfo, List<EntityDetail> connectorEntitiesList,
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     if (initializeStepInfo.getInfrastructure().getType() != Infrastructure.Type.HOSTED_VM) {
@@ -502,6 +506,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     }
     return connectorDetailsList;
   }
+
   private void validateFeatureFlags(InitializeStepInfo initializeStepInfo, String accountIdentifier) {
     if (initializeStepInfo.getInfrastructure().getType() != Infrastructure.Type.HOSTED_VM) {
       return;
@@ -766,6 +771,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     }
     return null;
   }
+
   private List<EntityDetail> getConnectorIdentifiers(
       InitializeStepInfo initializeStepInfo, String accountIdentifier, String projectIdentifier, String orgIdentifier) {
     Infrastructure infrastructure = initializeStepInfo.getInfrastructure();
@@ -816,6 +822,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
     return entityDetails;
   }
+
   private EntityDetail createEntityDetails(
       String connectorIdentifier, String accountIdentifier, String projectIdentifier, String orgIdentifier) {
     IdentifierRef connectorRef =

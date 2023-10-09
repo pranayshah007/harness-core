@@ -14,6 +14,7 @@ import static io.harness.NGCommonEntityConstants.PROJECT_KEY;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.EntityType;
+import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
@@ -23,6 +24,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.plancreator.pipeline.PipelineConfig;
+import io.harness.pms.yaml.YamlSchemaResponse;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.annotations.Api;
@@ -55,6 +57,15 @@ public interface PmsYamlSchemaResource {
       @QueryParam(PROJECT_KEY) String projectIdentifier, @QueryParam(ORG_KEY) String orgIdentifier,
       @QueryParam("scope") Scope scope, @QueryParam(IDENTIFIER_KEY) String identifier,
       @NotNull @QueryParam(ACCOUNT_KEY) String accountIdentifier);
+
+  @GET
+  @Path("/get")
+  @ApiOperation(value = "Get step YAML schema", nickname = "getStepYamlSchema")
+  @Deprecated
+  ResponseDTO<YamlSchemaResponse> getIndividualYamlSchema(@NotNull @QueryParam(ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(ORG_KEY) String orgIdentifier, @QueryParam(PROJECT_KEY) String projectIdentifier,
+      @QueryParam("yamlGroup") String yamlGroup,
+      @QueryParam(NGCommonEntityConstants.ENTITY_TYPE) EntityType stepEntityType, @QueryParam("scope") Scope scope);
 
   @GET
   @ApiOperation(value = "dummy api for checking pms schema", nickname = "dummyApiForSwaggerSchemaCheck")

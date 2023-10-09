@@ -23,4 +23,6 @@ public class DecryptedSecretValue {
   String orgIdentifier;
   String projectIdentifier;
   String decryptedValue;
+  long lastModifiedAt;
+  long createdAt;
 }

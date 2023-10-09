@@ -6,6 +6,7 @@
  */
 
 package io.harness.template.helpers;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
@@ -41,11 +42,14 @@ import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitx.GitXTransientBranchGuard;
 import io.harness.logging.AutoLogContext;
+import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.merger.helpers.YamlSubMapExtractor;
+import io.harness.pms.yaml.HarnessYamlVersion;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -80,6 +84,7 @@ import java.util.UUID;
 import javax.ws.rs.InternalServerErrorException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY, HarnessModuleComponent.CDS_PIPELINE,
@@ -99,8 +104,13 @@ public class TemplateMergeServiceHelper {
 
   // Gets the Template Entity linked to a YAML
   public TemplateEntityGetResponse getLinkedTemplateEntity(String accountId, String orgId, String projectId,
-      JsonNode yaml, Map<String, TemplateEntity> templateCacheMap, boolean loadFromCache) {
-    TemplateUniqueIdentifier templateUniqueIdentifier = parseYamlAndGetTemplateIdentifierAndVersion(yaml);
+      JsonNode yaml, Map<String, TemplateEntity> templateCacheMap, boolean loadFromCache, String yamlVersion) {
+    TemplateUniqueIdentifier templateUniqueIdentifier;
+    if (HarnessYamlVersion.isV1(yamlVersion)) {
+      templateUniqueIdentifier = parseYamlAndGetTemplateIdentifierAndVersionV1(yaml.get(YAMLFieldNameConstants.SPEC));
+    } else {
+      templateUniqueIdentifier = parseYamlAndGetTemplateIdentifierAndVersion(yaml);
+    }
     long start = System.currentTimeMillis();
     try (AutoLogContext ignore1 =
              new NgAutoLogContextForMethod(projectId, orgId, accountId, "getLinkedTemplateEntity", OVERRIDE_NESTS)) {
@@ -163,11 +173,22 @@ public class TemplateMergeServiceHelper {
         templateIdentifier, versionLabel));
   }
 
+  // Checks if v0 or v1 template is present
+  public boolean isTemplatePresent(String fieldName, JsonNode templateValue, JsonNode jsonNode) {
+    return isV0TemplatePresent(fieldName, templateValue)
+        || (isV1TemplatePresent(jsonNode) && YAMLFieldNameConstants.SPEC.equals(fieldName));
+  }
+
   // Checks if the current Json node is a Template node with fieldName as TEMPLATE and Non-null Value
-  public boolean isTemplatePresent(String fieldName, JsonNode templateValue) {
+  public boolean isV0TemplatePresent(String fieldName, JsonNode templateValue) {
     return TEMPLATE.equals(fieldName) && templateValue.isObject() && templateValue.get(TEMPLATE_REF) != null;
   }
 
+  // checks if current json node is template with type set as template or spec and ref fields (pipeline template)
+  public boolean isV1TemplatePresent(JsonNode jsonNode) {
+    return jsonNode.has(YAMLFieldNameConstants.TYPE)
+        && YAMLFieldNameConstants.TEMPLATE.equals(jsonNode.get(YAMLFieldNameConstants.TYPE).asText());
+  }
   // Generates a unique Template Identifier
   private String generateUniqueTemplateIdentifier(
       String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel, String branch) {
@@ -241,28 +262,43 @@ public class TemplateMergeServiceHelper {
     }
   }
 
+  public Map<String, Object> mergeTemplateInputsInObject(String accountId, String orgId, String projectId,
+      YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, int depth, boolean loadFromCache,
+      boolean appendInputSetValidator, String yamlVersion) {
+    return mergeTemplateInputsInObjectWithVersion(accountId, orgId, projectId, yamlNode, templateCacheMap, depth,
+        loadFromCache, appendInputSetValidator, yamlVersion)
+        .getResMap();
+  }
+
   /**
    * This method iterates recursively on pipeline yaml. Whenever we find a key with "template" we call
    * replaceTemplateOccurrenceWithTemplateSpecYaml() to get the actual template.spec in template yaml.
    */
-  public Map<String, Object> mergeTemplateInputsInObject(String accountId, String orgId, String projectId,
-      YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, int depth, boolean loadFromCache,
-      boolean appendInputSetValidator) {
+  public MergeTemplateInputsInObject mergeTemplateInputsInObjectWithVersion(String accountId, String orgId,
+      String projectId, YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, int depth,
+      boolean loadFromCache, boolean appendInputSetValidator, String currentYamlVersion) {
     Map<String, Object> resMap = new LinkedHashMap<>();
+    TemplateEntity templateEntity = null;
     for (YamlField childYamlField : yamlNode.fields()) {
       String fieldName = childYamlField.getName();
       JsonNode value = childYamlField.getNode().getCurrJsonNode();
-      boolean isTemplatePresent = isTemplatePresent(fieldName, value);
+      boolean isTemplatePresent = isTemplatePresent(fieldName, value, yamlNode.getCurrJsonNode());
       if (isTemplatePresent) {
-        value = replaceTemplateOccurrenceWithTemplateSpecYaml(
-            accountId, orgId, projectId, value, templateCacheMap, loadFromCache, appendInputSetValidator);
+        JsonNode templateJsonNode = value;
+        if (HarnessYamlVersion.isV1(currentYamlVersion)) {
+          templateJsonNode = yamlNode.getCurrJsonNode();
+        }
+        Pair<TemplateEntity, JsonNode> entry = replaceTemplateOccurrenceWithTemplateSpecYaml(accountId, orgId,
+            projectId, templateJsonNode, templateCacheMap, loadFromCache, appendInputSetValidator, currentYamlVersion);
+        value = entry.getValue();
+        templateEntity = entry.getKey();
       }
       if (value.isValueNode() || YamlUtils.checkIfNodeIsArrayWithPrimitiveTypes(value)) {
         resMap.put(fieldName, value);
       } else if (value.isArray()) {
         resMap.put(fieldName,
             mergeTemplateInputsInArray(accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap, depth,
-                loadFromCache, appendInputSetValidator));
+                loadFromCache, appendInputSetValidator, currentYamlVersion));
       } else {
         // If it was template key in yaml, we have replace it with the fields in template.spec in template yaml.
         // Hence, we directly put all the keys returned in map, after iterating over them.
@@ -271,16 +307,67 @@ public class TemplateMergeServiceHelper {
           if (depth >= MAX_DEPTH) {
             throw new InvalidRequestException("Exponentially growing template nesting. Aborting");
           }
-          Map<String, Object> temp = mergeTemplateInputsInObject(accountId, orgId, projectId,
+          Map<String, Object> temp = mergeTemplateInputsInObjectWithVersion(accountId, orgId, projectId,
               new YamlNode(fieldName, value, childYamlField.getNode().getParentNode()), templateCacheMap, depth,
-              loadFromCache, appendInputSetValidator);
+              loadFromCache, appendInputSetValidator, templateEntity.getHarnessVersion())
+                                         .getResMap();
           resMap.putAll(temp);
           depth--;
         } else {
           resMap.put(fieldName,
-              mergeTemplateInputsInObject(accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap,
-                  depth, loadFromCache, appendInputSetValidator));
+              mergeTemplateInputsInObjectWithVersion(accountId, orgId, projectId, childYamlField.getNode(),
+                  templateCacheMap, depth, loadFromCache, appendInputSetValidator, currentYamlVersion)
+                  .getResMap());
         }
+      }
+    }
+    String processedYamlVersion = currentYamlVersion;
+    // If current yaml version is v0 then we can directly return the resMap
+    if (templateEntity == null || !HarnessYamlVersion.isV1(currentYamlVersion)) {
+      return MergeTemplateInputsInObject.builder().resMap(resMap).processedYamlVersion(processedYamlVersion).build();
+    }
+
+    // if current yaml version is v1 and template is of type pipeline, we need to merge yamls differently for v0 and v1
+    // templates
+    if (templateEntity.getTemplateEntityType() == TemplateEntityType.PIPELINE_TEMPLATE) {
+      if (HarnessYamlVersion.isV1(templateEntity.getHarnessVersion())) {
+        return MergeTemplateInputsInObject.builder()
+            .resMap(getMergedPipelineYamlV1(resMap))
+            .processedYamlVersion(HarnessYamlVersion.V1)
+            .build();
+      } else {
+        return MergeTemplateInputsInObject.builder()
+            .resMap(getMergedPipelineYaml(resMap, templateEntity.getTemplateEntityType()))
+            .processedYamlVersion(HarnessYamlVersion.V0)
+            .build();
+      }
+    } else {
+      // if template is of any other type then in case of v1, resMap can be returned directly but for v0 templates,
+      // template entity root name needs to be appended
+      if (HarnessYamlVersion.isV1(templateEntity.getHarnessVersion())) {
+        return MergeTemplateInputsInObject.builder().resMap(resMap).processedYamlVersion(processedYamlVersion).build();
+      } else {
+        return MergeTemplateInputsInObject.builder()
+            .resMap(Map.of(templateEntity.getTemplateEntityType().getRootYamlName(), resMap))
+            .processedYamlVersion(HarnessYamlVersion.V0)
+            .build();
+      }
+    }
+  }
+
+  private Map<String, Object> getMergedPipelineYaml(Map<String, Object> resMap, TemplateEntityType type) {
+    resMap.remove(YAMLFieldNameConstants.VERSION);
+    resMap.remove(YAMLFieldNameConstants.TYPE);
+    resMap.remove(YAMLFieldNameConstants.KIND);
+    return Map.of(type.getRootYamlName(), resMap);
+  }
+
+  private Map<String, Object> getMergedPipelineYamlV1(Map<String, Object> resMap) {
+    resMap.remove(YAMLFieldNameConstants.TYPE);
+    for (Map.Entry<String, Object> entry : resMap.entrySet()) {
+      if (entry.getKey().equals(YAMLFieldNameConstants.STAGES)) {
+        resMap.put(YAMLFieldNameConstants.SPEC, entry);
+        resMap.remove(YAMLFieldNameConstants.STAGES);
       }
     }
     return resMap;
@@ -298,7 +385,7 @@ public class TemplateMergeServiceHelper {
         YamlField childYamlField = yamlNodeQueue.remove();
         String fieldName = childYamlField.getName();
         JsonNode value = childYamlField.getNode().getCurrJsonNode();
-        boolean isTemplatePresent = isTemplatePresent(fieldName, value);
+        boolean isTemplatePresent = isV0TemplatePresent(fieldName, value);
         if (isTemplatePresent) {
           String templateUniqueIdentifier =
               getTemplateUniqueIdentifier(accountIdentifier, orgIdentifier, projectIdentifier, value);
@@ -497,17 +584,18 @@ public class TemplateMergeServiceHelper {
   }
 
   private List<Object> mergeTemplateInputsInArray(String accountId, String orgId, String projectId, YamlNode yamlNode,
-      Map<String, TemplateEntity> templateCacheMap, int depth, boolean loadFromCache, boolean appendInputSetValidator) {
+      Map<String, TemplateEntity> templateCacheMap, int depth, boolean loadFromCache, boolean appendInputSetValidator,
+      String yamlVersion) {
     List<Object> arrayList = new ArrayList<>();
     for (YamlNode arrayElement : yamlNode.asArray()) {
       if (yamlNode.getCurrJsonNode().isValueNode()) {
         arrayList.add(arrayElement);
       } else if (arrayElement.isArray()) {
         arrayList.add(mergeTemplateInputsInArray(accountId, orgId, projectId, arrayElement, templateCacheMap, depth,
-            loadFromCache, appendInputSetValidator));
+            loadFromCache, appendInputSetValidator, yamlVersion));
       } else {
         arrayList.add(mergeTemplateInputsInObject(accountId, orgId, projectId, arrayElement, templateCacheMap, depth,
-            loadFromCache, appendInputSetValidator));
+            loadFromCache, appendInputSetValidator, yamlVersion));
       }
     }
     return arrayList;
@@ -516,6 +604,8 @@ public class TemplateMergeServiceHelper {
   /**
    * This method Provides all the information from mergeTemplateInputsInObject method along with template references.
    */
+  // TODO(BRIJESH): Will handle this flow for v1 later. Its for OPA so not needed for now. BRIJESH to take care of
+  // this once back.
   public MergeTemplateInputsInObject mergeTemplateInputsInObjectAlongWithOpaPolicy(String accountId, String orgId,
       String projectId, YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, int depth,
       boolean loadFromCache, boolean appendInputSetValidator) {
@@ -524,12 +614,13 @@ public class TemplateMergeServiceHelper {
     for (YamlField childYamlField : yamlNode.fields()) {
       String fieldName = childYamlField.getName();
       JsonNode value = childYamlField.getNode().getCurrJsonNode();
-      boolean isTemplatePresent = isTemplatePresent(fieldName, value);
+      boolean isTemplatePresent = isV0TemplatePresent(fieldName, value);
       if (isTemplatePresent) {
         Map<String, Object> result = JsonUtils.jsonNodeToMap(value);
         resMapWithTemplateRef.put(fieldName, result);
-        value = replaceTemplateOccurrenceWithTemplateSpecYaml(
-            accountId, orgId, projectId, value, templateCacheMap, loadFromCache, appendInputSetValidator);
+        Pair<TemplateEntity, JsonNode> entry = replaceTemplateOccurrenceWithTemplateSpecYaml(accountId, orgId,
+            projectId, value, templateCacheMap, loadFromCache, appendInputSetValidator, HarnessYamlVersion.V0);
+        value = entry.getValue();
       }
       if (value.isValueNode() || YamlUtils.checkIfNodeIsArrayWithPrimitiveTypes(value)) {
         resMap.put(fieldName, value);
@@ -561,7 +652,11 @@ public class TemplateMergeServiceHelper {
         }
       }
     }
-    return MergeTemplateInputsInObject.builder().resMap(resMap).resMapWithOpaResponse(resMapWithTemplateRef).build();
+    return MergeTemplateInputsInObject.builder()
+        .resMap(resMap)
+        .resMapWithOpaResponse(resMapWithTemplateRef)
+        .processedYamlVersion(HarnessYamlVersion.V0)
+        .build();
   }
 
   private ArrayListForMergedTemplateRef mergeTemplateInputsInArrayWithOpaPolicy(String accountId, String orgId,
@@ -592,8 +687,8 @@ public class TemplateMergeServiceHelper {
   }
 
   /**
-   * This method gets the TemplateEntity from database. Further it gets template yaml and merge template inputs present
-   * in pipeline to template.spec in template yaml
+   * This method gets the TemplateEntity from database. Further it gets template yaml and merge template inputs
+   * present in pipeline to template.spec in template yaml
    *
    * @param template         - template json node present in pipeline yaml
    * @param templateCacheMap
@@ -601,26 +696,17 @@ public class TemplateMergeServiceHelper {
    * @param appendInputSetValidator
    * @return jsonNode of merged yaml
    */
-  private JsonNode replaceTemplateOccurrenceWithTemplateSpecYaml(String accountId, String orgId, String projectId,
-      JsonNode template, Map<String, TemplateEntity> templateCacheMap, boolean loadFromCache,
-      boolean appendInputSetValidator) {
+  private Pair<TemplateEntity, JsonNode> replaceTemplateOccurrenceWithTemplateSpecYaml(String accountId, String orgId,
+      String projectId, JsonNode template, Map<String, TemplateEntity> templateCacheMap, boolean loadFromCache,
+      boolean appendInputSetValidator, String yamlVersion) {
     JsonNode templateInputs = template.get(TEMPLATE_INPUTS);
 
     TemplateEntityGetResponse templateEntityGetResponse =
-        getLinkedTemplateEntity(accountId, orgId, projectId, template, templateCacheMap, loadFromCache);
+        getLinkedTemplateEntity(accountId, orgId, projectId, template, templateCacheMap, loadFromCache, yamlVersion);
     TemplateEntity templateEntity = templateEntityGetResponse.getTemplateEntity();
-    String templateYaml = templateEntity.getYaml();
-
-    JsonNode templateSpec;
-    try {
-      NGTemplateConfig templateConfig = YamlUtils.read(templateYaml, NGTemplateConfig.class);
-      templateSpec = templateConfig.getTemplateInfoConfig().getSpec();
-    } catch (IOException e) {
-      log.error("Could not read template yaml", e);
-      throw new NGTemplateException("Could not read template yaml: " + e.getMessage());
-    }
-
-    return mergeTemplateInputsToTemplateSpecInTemplateYaml(templateInputs, templateSpec, appendInputSetValidator);
+    JsonNode templateSpec = getSpecFromTemplateEntity(templateEntity);
+    return Pair.of(templateEntity,
+        mergeTemplateInputsToTemplateSpecInTemplateYaml(templateInputs, templateSpec, appendInputSetValidator));
   }
 
   /**
@@ -686,7 +772,7 @@ public class TemplateMergeServiceHelper {
     for (YamlField childYamlField : yamlNode.fields()) {
       String fieldName = childYamlField.getName();
       JsonNode value = childYamlField.getNode().getCurrJsonNode();
-      if (isTemplatePresent(fieldName, value)) {
+      if (isV0TemplatePresent(fieldName, value)) {
         resMap.put(fieldName,
             validateTemplateInputs(
                 accountId, orgId, projectId, value, templateInputsErrorMap, templateCacheMap, loadFromCache));
@@ -749,8 +835,8 @@ public class TemplateMergeServiceHelper {
       Map<String, TemplateInputsErrorDTO> errorMap, Map<String, TemplateEntity> templateCacheMap,
       boolean loadFromCache) {
     String identifier = linkedTemplate.get(TEMPLATE_REF).asText();
-    TemplateEntityGetResponse templateEntityGetResponse =
-        getLinkedTemplateEntity(accountId, orgId, projectId, linkedTemplate, templateCacheMap, loadFromCache);
+    TemplateEntityGetResponse templateEntityGetResponse = getLinkedTemplateEntity(
+        accountId, orgId, projectId, linkedTemplate, templateCacheMap, loadFromCache, HarnessYamlVersion.V0);
     TemplateEntity templateEntity = templateEntityGetResponse.getTemplateEntity();
     JsonNode linkedTemplateInputs = linkedTemplate.get(TEMPLATE_INPUTS);
     if (linkedTemplateInputs == null) {
@@ -868,6 +954,27 @@ public class TemplateMergeServiceHelper {
         .build();
   }
 
+  private TemplateUniqueIdentifier parseYamlAndGetTemplateIdentifierAndVersionV1(JsonNode yaml) {
+    String[] templateIdAndLabel = yaml.get(YAMLFieldNameConstants.REF).asText().split("@");
+    String templateIdentifier = templateIdAndLabel[0];
+    String versionLabel = "";
+    String versionMarker = STABLE_VERSION;
+    if (templateIdAndLabel.length > 1) {
+      versionLabel = templateIdAndLabel[1];
+      versionMarker = versionLabel;
+    }
+    String gitBranch = null;
+    if (yaml.get(GIT_BRANCH) != null) {
+      gitBranch = yaml.get(GIT_BRANCH).asText();
+    }
+    return TemplateUniqueIdentifier.builder()
+        .templateIdentifier(templateIdentifier)
+        .versionLabel(versionLabel)
+        .versionMaker(versionMarker)
+        .gitBranch(gitBranch)
+        .build();
+  }
+
   private String markAllRuntimeInputsInvalid(Map<String, TemplateInputsErrorDTO> uuidToErrorMessageMap,
       String templateRef, YamlConfig linkedTemplateInputsConfig, Set<FQN> linkedTemplateInputsFQNs,
       String errorMessage) {
@@ -883,5 +990,27 @@ public class TemplateMergeServiceHelper {
     }
     return new YamlConfig(linkedTemplateInputsConfig.getFqnToValueMap(), linkedTemplateInputsConfig.getYamlMap())
         .getYaml();
+  }
+
+  private JsonNode getSpecFromTemplateEntity(TemplateEntity templateEntity) {
+    String templateYaml = templateEntity.getYaml();
+    if (HarnessYamlVersion.isV1(templateEntity.getHarnessVersion())) {
+      // First spec is the root for the template content it will name/id/type field. Inner spec will have the content
+      // of the template.
+      JsonNode templateNode = YamlUtils.readAsJsonNode(templateYaml).get(YAMLFieldNameConstants.SPEC);
+      if (templateNode == null || !templateNode.has(YAMLFieldNameConstants.SPEC)) {
+        throw new NGTemplateException(
+            String.format("Could not extract spec from the template YAML for the template with id: %s",
+                templateEntity.getIdentifier()));
+      }
+      return templateNode.get(YAMLFieldNameConstants.SPEC);
+    }
+    try {
+      NGTemplateConfig templateConfig = YamlUtils.read(templateYaml, NGTemplateConfig.class);
+      return templateConfig.getTemplateInfoConfig().getSpec();
+    } catch (IOException e) {
+      log.error("Could not read template yaml", e);
+      throw new NGTemplateException("Could not read template yaml: " + e.getMessage());
+    }
   }
 }

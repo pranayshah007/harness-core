@@ -116,6 +116,7 @@ java_library(
         "//440-connector-nextgen:module",
         "//445-gitops:module",
         "//867-polling-contracts:module",
+        "//874-orchestration-delay:module",
         "//878-ng-common-utilities:module",
         "//878-ng-common-utilities/src/main/java/io/harness/beans/common:module",
         "//879-pipeline-ci-commons:module",

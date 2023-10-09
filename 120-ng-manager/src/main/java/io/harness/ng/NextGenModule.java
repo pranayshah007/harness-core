@@ -154,6 +154,7 @@ import io.harness.lock.PersistentLockModule;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.logstreaming.LogStreamingServiceRestClient;
 import io.harness.logstreaming.NGLogStreamingClientFactory;
+import io.harness.manage.ManagedExecutorService;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.metrics.impl.DelegateMetricsServiceImpl;
 import io.harness.metrics.intfc.DelegateMetricsService;
@@ -225,6 +226,7 @@ import io.harness.ng.core.event.UserMembershipReconciliationMessageProcessor;
 import io.harness.ng.core.event.UserMembershipStreamListener;
 import io.harness.ng.core.event.VariableEntityCRUDStreamListener;
 import io.harness.ng.core.event.gitops.ClusterCrudStreamListener;
+import io.harness.ng.core.event.modulelicense.ModuleLicenseStreamListener;
 import io.harness.ng.core.globalkms.impl.NgGlobalKmsServiceImpl;
 import io.harness.ng.core.globalkms.services.NgGlobalKmsService;
 import io.harness.ng.core.impl.OrganizationServiceImpl;
@@ -272,6 +274,8 @@ import io.harness.ng.opa.entities.secret.OpaSecretService;
 import io.harness.ng.opa.entities.secret.OpaSecretServiceImpl;
 import io.harness.ng.overview.service.CDLandingDashboardService;
 import io.harness.ng.overview.service.CDLandingDashboardServiceImpl;
+import io.harness.ng.overview.service.CDLandingPageService;
+import io.harness.ng.overview.service.CDLandingPageServiceImpl;
 import io.harness.ng.overview.service.CDOverviewDashboardService;
 import io.harness.ng.overview.service.CDOverviewDashboardServiceImpl;
 import io.harness.ng.rollback.PostProdRollbackService;
@@ -641,6 +645,18 @@ public class NextGenModule extends AbstractModule {
         new ThreadFactoryBuilder().setNameFormat("log-client-pool-%d").build());
   }
 
+  // this should be used with a managed executor service
+  private ThreadPoolExecutor serviceGitXThreadPool() {
+    ThreadPoolConfig threadPoolConfig = appConfig != null && appConfig.getServiceGitXThreadConfig() != null
+            && appConfig.getServiceGitXThreadConfig().getThreadPoolConfig() != null
+        ? appConfig.getServiceGitXThreadConfig().getThreadPoolConfig()
+        : ThreadPoolConfig.builder().corePoolSize(1).maxPoolSize(10).idleTime(30).timeUnit(TimeUnit.SECONDS).build();
+
+    return ThreadPool.create(threadPoolConfig.getCorePoolSize(), threadPoolConfig.getMaxPoolSize(),
+        threadPoolConfig.getIdleTime(), threadPoolConfig.getTimeUnit(),
+        new ThreadFactoryBuilder().setNameFormat("service-gitx-pool-%d").build());
+  }
+
   @Provides
   @Singleton
   @Named("webhookBranchHookEventHsqsDequeueConfig")
@@ -688,6 +704,7 @@ public class NextGenModule extends AbstractModule {
 
     bind(CDOverviewDashboardService.class).to(CDOverviewDashboardServiceImpl.class);
     bind(CDLandingDashboardService.class).to(CDLandingDashboardServiceImpl.class);
+    bind(CDLandingPageService.class).to(CDLandingPageServiceImpl.class);
 
     try {
       bind(TimeScaleDBService.class)
@@ -1006,6 +1023,10 @@ public class NextGenModule extends AbstractModule {
 
     bind(CDGitXService.class).to(CDGitXServiceImpl.class).in(Singleton.class);
 
+    bind(ExecutorService.class)
+        .annotatedWith(Names.named("service-gitx-executor"))
+        .toInstance(new ManagedExecutorService(serviceGitXThreadPool()));
+
     MapBinder<SCMType, SourceCodeManagerMapper> sourceCodeManagerMapBinder =
         MapBinder.newMapBinder(binder(), SCMType.class, SourceCodeManagerMapper.class);
     sourceCodeManagerMapBinder.addBinding(SCMType.BITBUCKET).to(BitbucketSCMMapper.class);
@@ -1180,6 +1201,9 @@ public class NextGenModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkConstants.USERMEMBERSHIP))
         .to(UserMembershipStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(EventsFrameworkConstants.MODULE_LICENSE))
+        .to(ModuleLicenseStreamListener.class);
 
     bind(MessageListener.class).annotatedWith(Names.named(SETUP_USAGE)).to(SetupUsageChangeEventMessageListener.class);
     bind(MessageListener.class)

@@ -61,15 +61,19 @@ public class VmIACMStepSerializer {
     Map<String, String> statusEnvVars = serializerUtils.getStepStatusEnvVars(ambiance);
     envVars.putAll(statusEnvVars);
 
-    ConnectorDetails harnessInternalImageConnector =
-        harnessImageUtils.getHarnessImageConnectorDetailsForVM(ngAccess, stageInfraDetails);
+    ConnectorDetails imageConnector;
+    if (stepInfo.getConnectorRef().getValue() != null) {
+      imageConnector = connectorUtils.getConnectorDetails(ngAccess, stepInfo.getConnectorRef().getValue());
+    } else {
+      imageConnector = harnessImageUtils.getHarnessImageConnectorDetailsForVM(ngAccess, stageInfraDetails);
+    }
 
     VmPluginStepBuilder vmPluginStepBuilder =
         VmPluginStep.builder()
-            .image(IntegrationStageUtils.getFullyQualifiedImageName(image, harnessInternalImageConnector))
+            .image(IntegrationStageUtils.getFullyQualifiedImageName(image, imageConnector))
             .envVariables(envVars)
             .timeoutSecs(timeout)
-            .imageConnector(harnessInternalImageConnector);
+            .imageConnector(imageConnector);
 
     String connectorRef;
     String provider;

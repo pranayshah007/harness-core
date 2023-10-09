@@ -21,10 +21,12 @@ import static dev.morphia.aggregation.Accumulator.accumulator;
 import static dev.morphia.aggregation.Group.grouping;
 import static dev.morphia.aggregation.Group.id;
 
+import io.harness.beans.FeatureName;
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.entities.Activity.ActivityKeys;
 import io.harness.cvng.activity.entities.ActivityBucket;
 import io.harness.cvng.activity.entities.ActivityBucket.ActivityBucketKeys;
+import io.harness.cvng.activity.entities.CustomChangeActivity.CustomChangeActivityKeys;
 import io.harness.cvng.activity.entities.DeploymentActivity;
 import io.harness.cvng.activity.entities.DeploymentActivity.DeploymentActivityKeys;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.KubernetesClusterActivityKeys;
@@ -238,12 +240,32 @@ public class ChangeEventServiceImpl implements ChangeEventService {
       List<String> monitoredServiceIdentifiers, List<ChangeCategory> changeCategories,
       List<ChangeSourceType> changeSourceTypes, Instant startTime, Instant endTime, PageRequest pageRequest,
       boolean isMonitoredServiceIdentifierScoped) {
-    List<Activity> activities = createQuery(startTime, endTime, projectParams, monitoredServiceIdentifiers,
-        changeCategories, changeSourceTypes, isMonitoredServiceIdentifierScoped)
-                                    .order(Sort.descending(ActivityKeys.eventTime))
-                                    .asList();
+    Query<Activity> query = createQuery(startTime, endTime, projectParams, monitoredServiceIdentifiers,
+        changeCategories, changeSourceTypes, isMonitoredServiceIdentifierScoped);
+    if (featureFlagService.isFeatureFlagEnabled(
+            projectParams.getAccountIdentifier(), FeatureName.SRM_OPTIMISE_CHANGE_EVENTS_API_RESPONSE.name())) {
+      query = setProjectionsToFetchNecessaryFields(query);
+    }
+    List<Activity> activities = query.order(Sort.descending(ActivityKeys.eventTime)).asList();
     return PageUtils.offsetAndLimit(activities.stream().map(transformer::getDto).collect(Collectors.toList()),
         pageRequest.getPageIndex(), pageRequest.getPageSize());
+  }
+
+  private static Query<Activity> setProjectionsToFetchNecessaryFields(Query<Activity> query) {
+    return query.project(ActivityKeys.uuid, true)
+        .project(ActivityKeys.accountId, true)
+        .project(ActivityKeys.orgIdentifier, true)
+        .project(ActivityKeys.projectIdentifier, true)
+        .project(ActivityKeys.monitoredServiceIdentifier, true)
+        .project(ActivityKeys.eventTime, true)
+        .project(ActivityKeys.activityName, true)
+        .project(ActivityKeys.type, true)
+        .project(ActivityKeys.changeSourceIdentifier, true)
+        .project(ActivityKeys.activityStartTime, true)
+        .project(ActivityKeys.activityEndTime, true)
+        .project(DeploymentActivityKeys.runSequence, true)
+        .project(DeploymentActivityKeys.pipelineId, true)
+        .project(CustomChangeActivityKeys.activityType, true);
   }
 
   public PageResponse<SRMAnalysisStepDetailDTO> getReportList(ProjectParams projectParams,

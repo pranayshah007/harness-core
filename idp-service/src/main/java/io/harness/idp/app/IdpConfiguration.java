@@ -106,6 +106,8 @@ public class IdpConfiguration extends Configuration {
   private IteratorConfig scorecardScoreComputationIteratorConfig;
   @JsonProperty("cpu") private String cpu;
   @JsonProperty("scoreComputerThreadsPerCore") private String scoreComputerThreadsPerCore;
+  @JsonProperty("auditClientConfig") private ServiceHttpClientConfig auditClientConfig;
+  @JsonProperty("enableAudit") private boolean enableAudit;
   private String managerTarget;
   private String managerAuthority;
   @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;

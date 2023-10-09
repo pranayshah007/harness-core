@@ -13,7 +13,6 @@ import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -182,7 +181,7 @@ public class ExecutionInputServiceImplTest extends OrchestrationTestBase {
 
     // Providing invalid input values. Would return false.
     doReturn(YamlUtils.readAsJsonNode("a:b")).when(pmsEngineExpressionService).resolve(any(), any(), any());
-    assertFalse(inputService.continueExecution(nodeExecutionId, "a:b"));
+    assertTrue(inputService.continueExecution(nodeExecutionId, "a:b"));
 
     // Giving partial user input. MergedUserInput should contain provided field's value and other value should be
     // expression.
@@ -194,8 +193,8 @@ public class ExecutionInputServiceImplTest extends OrchestrationTestBase {
         .when(pmsEngineExpressionService)
         .resolve(any(), any(), any());
     assertTrue(inputService.continueExecution(nodeExecutionId, partialExecutionInputYaml));
-    verify(executionInputRepositoryMock, times(2)).save(inputInstanceArgumentCaptor.capture());
-    verify(waitNotifyEngine, times(2)).doneWith(inputInstanceIdCapture.capture(), any());
+    verify(executionInputRepositoryMock, times(3)).save(inputInstanceArgumentCaptor.capture());
+    verify(waitNotifyEngine, times(3)).doneWith(inputInstanceIdCapture.capture(), any());
 
     savedEntity = inputInstanceArgumentCaptor.getValue();
     assertEquals(savedEntity.getMergedInputTemplate(), mergedTemplateForPartialInputMap);

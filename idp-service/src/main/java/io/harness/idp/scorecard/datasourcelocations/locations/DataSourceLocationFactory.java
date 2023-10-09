@@ -19,6 +19,12 @@ import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceL
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_FILE_EXISTS;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_IS_BRANCH_PROTECTION_SET;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_MEAN_TIME_TO_MERGE_PR;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITLAB_FILE_EXISTS;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITLAB_IS_BRANCH_PROTECTION_SET;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITLAB_MEAN_TIME_TO_MERGE_PR;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.JIRA_ISSUES_COUNT;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.JIRA_ISSUES_OPEN_CLOSE_RATIO;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.JIRA_MEAN_TIME_TO_RESOLVE;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.KUBERNETES;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -35,11 +41,17 @@ public class DataSourceLocationFactory {
   private GithubFileExistsDsl githubFileExistsDsl;
   private BitbucketMeanTimeToMergePRDsl bitbucketMeanTimeToMergePRDsl;
   private BitbucketIsBranchProtectionSetDsl bitbucketIsBranchProtectionSetDsl;
+  private GitlabMeanTimeToMergePRDsl gitlabMeanTimeToMergePRDsl;
+  private GitlabFileExistsDsl gitlabFileExistsDsl;
+  private GitlabIsBranchProtectionSetDsl gitlabIsBranchProtectionSetDsl;
   private HarnessProxyThroughDsl harnessProxyThroughDsl;
   private NoOpDsl noOpDsl;
   private PagerDutyServiceDirectory pagerDutyServiceDirectory;
   private PagerDutyIncidents pagerDutyIncidents;
   private KubernetesProxyThroughDsl kubernetesProxyThroughDsl;
+  private JiraMeanTimeToResolveDsl jiraMeanTimeToResolveDsl;
+  private JiraIssuesCountDsl jiraIssuesCountDsl;
+  private JiraIssuesOpenCloseRatioDsl jiraIssuesOpenCloseRatioDsl;
 
   public DataSourceLocation getDataSourceLocation(String identifier) {
     switch (identifier) {
@@ -56,6 +68,14 @@ public class DataSourceLocationFactory {
         return bitbucketMeanTimeToMergePRDsl;
       case BITBUCKET_IS_BRANCH_PROTECTION_SET:
         return bitbucketIsBranchProtectionSetDsl;
+
+      // Gitlab
+      case GITLAB_MEAN_TIME_TO_MERGE_PR:
+        return gitlabMeanTimeToMergePRDsl;
+      case GITLAB_IS_BRANCH_PROTECTION_SET:
+        return gitlabIsBranchProtectionSetDsl;
+      case GITLAB_FILE_EXISTS:
+        return gitlabFileExistsDsl;
 
         // Harness
       case HARNESS_STO_SCAN_SETUP_DSL:
@@ -79,6 +99,13 @@ public class DataSourceLocationFactory {
       case KUBERNETES:
         return kubernetesProxyThroughDsl;
 
+      // Jira
+      case JIRA_MEAN_TIME_TO_RESOLVE:
+        return jiraMeanTimeToResolveDsl;
+      case JIRA_ISSUES_COUNT:
+        return jiraIssuesCountDsl;
+      case JIRA_ISSUES_OPEN_CLOSE_RATIO:
+        return jiraIssuesOpenCloseRatioDsl;
       default:
         throw new UnsupportedOperationException(String.format("Could not find DataSource Location for %s", identifier));
     }

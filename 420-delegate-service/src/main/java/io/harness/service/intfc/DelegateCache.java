@@ -37,6 +37,8 @@ public interface DelegateCache {
 
   long getTasksCount(@NotNull String accountId, @NotNull DelegateTaskRank rank);
 
+  long getParkedTasksCount(@NotNull String accountId);
+
   Map<String, Long> getTasksCountPerAccount(@NotNull DelegateTaskRank rank);
 
   Set<String> getAbortedTaskList(@NotNull String accountId);

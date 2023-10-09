@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.service.step.azure.webapp;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStepInfo;
 import io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStepNode;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
@@ -24,6 +26,7 @@ import software.wings.sm.states.azure.appservices.AzureWebAppSlotShiftTraffic;
 
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class AzureSlotShiftTrafficMapperImpl extends StepMapper {
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {

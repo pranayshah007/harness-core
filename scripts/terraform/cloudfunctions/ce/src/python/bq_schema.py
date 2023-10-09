@@ -15,6 +15,7 @@ aws_cur_table_schema = [
     {"mode": "NULLABLE", "name": "usagetype_1", "type": "STRING"},
     {"mode": "NULLABLE", "name": "description", "type": "STRING"},
     {"mode": "NULLABLE", "name": "pricingunit", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "unit", "type": "STRING"},
     {"mode": "NULLABLE", "name": "publicondemandcost", "type": "FLOAT64"},
     {"mode": "NULLABLE", "name": "publicondemandrate", "type": "STRING"},
     {"mode": "NULLABLE", "name": "operation", "type": "STRING"},
@@ -187,6 +188,7 @@ unifiedTableTableSchema = [
     {"mode": "NULLABLE", "name": "awsusagetype_1", "type": "STRING"},
     {"mode": "NULLABLE", "name": "awsdescription", "type": "STRING"},
     {"mode": "NULLABLE", "name": "awspricingunit", "type": "STRING"},
+    {"mode": "NULLABLE", "name": "awsunit", "type": "STRING"},
     {"mode": "NULLABLE", "name": "awspublicondemandcost", "type": "FLOAT64"},
     {"mode": "NULLABLE", "name": "awspublicondemandrate", "type": "STRING"},
     {"mode": "NULLABLE", "name": "awsoperation", "type": "STRING"},
@@ -285,12 +287,12 @@ unifiedTableTableSchema = [
                 {"mode": "NULLABLE", "name": "pricing_unit_quantity", "type": "NUMERIC"}
                 ], "mode": "NULLABLE", "name": "gcpPrice", "type": "RECORD"},
     {"fields": [{"mode": "NULLABLE", "name": "amount", "type": "FLOAT64"},
-                {"mode": "NULLABLE", "name": "pricing_unit", "type": "STRING"},
                 {"mode": "NULLABLE", "name": "unit", "type": "STRING"},
-                {"mode": "NULLABLE", "name": "amount_in_pricing_unit", "type": "FLOAT64"}
+                {"mode": "NULLABLE", "name": "amount_in_pricing_units", "type": "FLOAT64"},
+                {"mode": "NULLABLE", "name": "pricing_unit", "type": "STRING"}
                 ], "mode": "NULLABLE", "name": "gcpUsage", "type": "RECORD"},
     {"fields": [{"name": "key", "mode": "NULLABLE", "type": "STRING"},
-                {"name": "valye", "mode": "NULLABLE", "type": "STRING"},
+                {"name": "value", "mode": "NULLABLE", "type": "STRING"},
                 ], "mode": "REPEATED", "name": "gcpSystemLabels", "type": "RECORD"}
 ]
 

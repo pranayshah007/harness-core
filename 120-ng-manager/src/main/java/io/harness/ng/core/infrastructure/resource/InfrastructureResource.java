@@ -43,6 +43,9 @@ import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.Envir
 import io.harness.cdng.ssh.SshEntityHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
+import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
+import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.beans.DocumentationConstants;
 import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
@@ -91,10 +94,12 @@ import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -178,7 +183,13 @@ public class InfrastructureResource {
       @Parameter(description = NGCommonEntityConstants.ENVIRONMENT_KEY, required = true) @NotNull @QueryParam(
           NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String envIdentifier,
       @Parameter(description = "Specify whether Infrastructure is deleted or not") @QueryParam(
-          NGCommonEntityConstants.DELETED_KEY) @DefaultValue("false") boolean deleted) {
+          NGCommonEntityConstants.DELETED_KEY) @DefaultValue("false") boolean deleted,
+      @Parameter(description = "This contains details of Git Entity like Git Branch info",
+          hidden = true) @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @Parameter(description = "Specifies whether to load the entity from cache", hidden = true) @HeaderParam(
+          "Load-From-Cache") @DefaultValue("false") String loadFromCache,
+      @Parameter(description = "Specifies whether to load the entity from fallback branch", hidden = true) @QueryParam(
+          "loadFromFallbackBranch") @DefaultValue("false") boolean loadFromFallbackBranch) {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(orgIdentifier, projectIdentifier, accountId);
     environmentValidationHelper.checkThatEnvExists(accountId, orgIdentifier, projectIdentifier, envIdentifier);
 
@@ -210,11 +221,15 @@ public class InfrastructureResource {
   public ResponseDTO<InfrastructureResponse>
   create(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @RequestBody(required = true, description = "Details of the Infrastructure to be created", content = {
-        @Content(
-            examples = @ExampleObject(name = "Create", summary = "Sample Infrastructure create payload",
-                value = DocumentationConstants.infrastructureRequestDTO, description = "Sample Infrastructure payload"))
-      }) @Valid InfrastructureRequestDTO infrastructureRequestDTO) {
+      @RequestBody(required = true, description = "Details of the Infrastructure to be created",
+          content =
+          {
+            @Content(examples = @ExampleObject(name = "Create", summary = "Sample Infrastructure create payload",
+                         value = DocumentationConstants.infrastructureRequestDTO,
+                         description = "Sample Infrastructure payload"))
+          }) @Valid InfrastructureRequestDTO infrastructureRequestDTO,
+      @Parameter(description = "This contains details of Git Entity like Git Branch, Git Repository to be created",
+          hidden = true) @BeanParam GitEntityCreateInfoDTO gitEntityCreateInfo) {
     throwExceptionForNoRequestDTO(infrastructureRequestDTO);
     infrastructureYamlSchemaHelper.validateSchema(accountId, infrastructureRequestDTO.getYaml());
     InfrastructureEntity infrastructureEntity =
@@ -305,11 +320,15 @@ public class InfrastructureResource {
   public ResponseDTO<InfrastructureResponse>
   update(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @RequestBody(required = true, description = "Details of the Infrastructure to be updated", content = {
-        @Content(
-            examples = @ExampleObject(name = "Update", summary = "Sample Infrastructure update payload",
-                value = DocumentationConstants.infrastructureRequestDTO, description = "Sample Infrastructure payload"))
-      }) @Valid InfrastructureRequestDTO infrastructureRequestDTO) {
+      @RequestBody(required = true, description = "Details of the Infrastructure to be updated",
+          content =
+          {
+            @Content(examples = @ExampleObject(name = "Update", summary = "Sample Infrastructure update payload",
+                         value = DocumentationConstants.infrastructureRequestDTO,
+                         description = "Sample Infrastructure payload"))
+          }) @Valid InfrastructureRequestDTO infrastructureRequestDTO,
+      @Parameter(description = "This contains details of Git Entity like Git Branch information to be updated",
+          hidden = true) @BeanParam GitEntityUpdateInfoDTO gitEntityInfo) {
     throwExceptionForNoRequestDTO(infrastructureRequestDTO);
     infrastructureYamlSchemaHelper.validateSchema(accountId, infrastructureRequestDTO.getYaml());
     InfrastructureEntity infrastructureEntity =
@@ -398,7 +417,9 @@ public class InfrastructureResource {
               "Specifies the sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
       @QueryParam("sort") List<String> sort,
       @Parameter(description = "list of service refs required to fetch infrastructures scoped to these service refs")
-      @QueryParam("serviceRefs") List<String> serviceRefs) {
+      @QueryParam("serviceRefs") List<String> serviceRefs,
+      @Parameter(description = "Specifies the repo name of the entity", hidden = true) @QueryParam(
+          "repoName") String repoName) {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(orgIdentifier, projectIdentifier, accountId);
     environmentValidationHelper.checkThatEnvExists(accountId, orgIdentifier, projectIdentifier, envIdentifier);
     checkForAccessOrThrow(

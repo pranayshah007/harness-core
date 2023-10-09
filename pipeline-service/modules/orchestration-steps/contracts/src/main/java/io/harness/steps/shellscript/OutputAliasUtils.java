@@ -14,8 +14,10 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.GeneralException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 
 import com.google.common.hash.Hashing;
@@ -34,7 +36,7 @@ import org.apache.commons.lang3.StringUtils;
 public class OutputAliasUtils {
   private static final String UNDERSCORE = "_";
   private static final String DOT = "\\.";
-  private static final String DUPLICATE_KEY_EXCEPTION = "DuplicateKeyException";
+  private static final String DUPLICATE_SWEEPING_OUTPUT_EXCEPTION = "Sweeping output with name %s is already saved";
   public static final String EXPECTED_FORMAT = "scope.aliasKey.variableName";
   public static final List<String> ALLOWED_SCOPES =
       List.of(YAMLFieldNameConstants.PIPELINE, YAMLFieldNameConstants.STAGE, YAMLFieldNameConstants.STEP_GROUP);
@@ -56,9 +58,9 @@ public class OutputAliasUtils {
     return uuid;
   }
 
-  public static boolean isDuplicateKeyException(Exception ex) {
+  public static boolean isDuplicateKeyException(Exception ex, String uuid) {
     return ex instanceof GeneralException && StringUtils.isNotBlank(ex.getMessage())
-        && ex.getMessage().startsWith(DUPLICATE_KEY_EXCEPTION);
+        && ex.getMessage().startsWith(String.format(DUPLICATE_SWEEPING_OUTPUT_EXCEPTION, uuid));
   }
 
   private boolean validateScopeString(String scope) {
@@ -80,7 +82,30 @@ public class OutputAliasUtils {
           "Invalid format of export expression specified {}, expected format: {}", exportExpression, EXPECTED_FORMAT);
       return false;
     }
+    if (StringUtils.isBlank(exportExpressionSplit[1])) {
+      log.warn("Empty output alias key specified");
+      return false;
+    }
     String scope = exportExpressionSplit[0];
     return validateScopeString(scope);
+  }
+
+  /**
+   * Maps yaml constant for scope to step outcome group name
+   */
+  public String toStepOutcomeGroup(String scopeConstant) {
+    if (StringUtils.isBlank(scopeConstant)) {
+      throw new InvalidRequestException("Empty scope constant provided, can't be mapped to step outcome.");
+    }
+    switch (scopeConstant) {
+      case YAMLFieldNameConstants.PIPELINE:
+        return StepOutcomeGroup.PIPELINE.name();
+      case YAMLFieldNameConstants.STAGE:
+        return StepOutcomeGroup.STAGE.name();
+      case YAMLFieldNameConstants.STEP_GROUP:
+        return StepOutcomeGroup.STEP_GROUP.name();
+      default:
+        throw new InvalidRequestException(String.format("Unsupported scope constant value : %s", scopeConstant));
+    }
   }
 }

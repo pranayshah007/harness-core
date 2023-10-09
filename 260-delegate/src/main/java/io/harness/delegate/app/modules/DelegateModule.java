@@ -302,15 +302,19 @@ import io.harness.delegate.task.common.DelegateRunnableTask;
 import io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNG;
 import io.harness.delegate.task.cvng.CVConnectorValidationHandler;
 import io.harness.delegate.task.docker.DockerTestConnectionDelegateTask;
+import io.harness.delegate.task.ecs.EcsBasicPrepareRollbackTaskNG;
+import io.harness.delegate.task.ecs.EcsBasicRollbackTaskNG;
 import io.harness.delegate.task.ecs.EcsCommandTaskNG;
 import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsGitFetchRunTask;
 import io.harness.delegate.task.ecs.EcsGitFetchTask;
 import io.harness.delegate.task.ecs.EcsRunTaskArnTask;
 import io.harness.delegate.task.ecs.EcsS3FetchTask;
+import io.harness.delegate.task.ecs.EcsServiceSetupTaskNG;
 import io.harness.delegate.task.ecs.EcsTaskArnBlueGreenCreateServiceTaskNG;
 import io.harness.delegate.task.ecs.EcsTaskArnCanaryDeployTaskNG;
 import io.harness.delegate.task.ecs.EcsTaskArnRollingDeployTaskNG;
+import io.harness.delegate.task.ecs.EcsUpgradeContainerTaskNG;
 import io.harness.delegate.task.elastigroup.ElastigroupBGStageSetupCommandTaskNG;
 import io.harness.delegate.task.elastigroup.ElastigroupDeployTask;
 import io.harness.delegate.task.elastigroup.ElastigroupParametersFetchTask;
@@ -2094,6 +2098,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V4).toInstance(TerraformTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V5).toInstance(TerraformTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V6).toInstance(TerraformTaskNG.class);
+    mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V7).toInstance(TerraformTaskNG.class);
     mapBinder.addBinding(TaskType.SCM_PUSH_TASK).toInstance(ScmPushTask.class);
     mapBinder.addBinding(TaskType.SCM_PATH_FILTER_EVALUATION_TASK).toInstance(ScmPathFilterEvaluationTask.class);
     mapBinder.addBinding(TaskType.SCM_GIT_REF_TASK).toInstance(ScmGitRefTask.class);
@@ -2169,6 +2174,10 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.ECS_TASK_ARN_CANARY_DEPLOY_NG).toInstance(EcsTaskArnCanaryDeployTaskNG.class);
     mapBinder.addBinding(TaskType.ECS_TASK_ARN_BLUE_GREEN_CREATE_SERVICE_NG)
         .toInstance(EcsTaskArnBlueGreenCreateServiceTaskNG.class);
+    mapBinder.addBinding(TaskType.ECS_BASIC_PREPARE_ROLLBACK_TASK_NG).toInstance(EcsBasicPrepareRollbackTaskNG.class);
+    mapBinder.addBinding(TaskType.ECS_SERVICE_SETUP_TASK_NG).toInstance(EcsServiceSetupTaskNG.class);
+    mapBinder.addBinding(TaskType.ECS_UPGRADE_CONTAINER_TASK_NG).toInstance(EcsUpgradeContainerTaskNG.class);
+    mapBinder.addBinding(TaskType.ECS_BASIC_ROLLBACK_TASK_NG).toInstance(EcsBasicRollbackTaskNG.class);
 
     // GIT
     mapBinder.addBinding(TaskType.GIT_TASK_NG).toInstance(GitTaskNG.class);

@@ -27,8 +27,8 @@ import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.expression.LateBindingMap;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.plan.Node;
-import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
@@ -66,6 +66,7 @@ public class NodeExecutionMap extends LateBindingMap {
   transient NodeExecutionsCache nodeExecutionsCache;
   transient PmsOutcomeService pmsOutcomeService;
   transient PmsSweepingOutputService pmsSweepingOutputService;
+  transient NodeExecutionInfoService nodeExecutionInfoService;
   transient Ambiance ambiance;
   transient NodeExecution nodeExecution;
   transient Set<NodeExecutionEntityType> entityTypes;
@@ -76,7 +77,8 @@ public class NodeExecutionMap extends LateBindingMap {
   @Builder
   NodeExecutionMap(NodeExecutionsCache nodeExecutionsCache, PmsOutcomeService pmsOutcomeService,
       PmsSweepingOutputService pmsSweepingOutputService, Ambiance ambiance, NodeExecution nodeExecution,
-      Set<NodeExecutionEntityType> entityTypes, Map<String, Object> children, JexlEngine engine) {
+      Set<NodeExecutionEntityType> entityTypes, Map<String, Object> children, JexlEngine engine,
+      NodeExecutionInfoService nodeExecutionInfoService) {
     this.nodeExecutionsCache = nodeExecutionsCache;
     this.pmsOutcomeService = pmsOutcomeService;
     this.pmsSweepingOutputService = pmsSweepingOutputService;
@@ -90,6 +92,7 @@ public class NodeExecutionMap extends LateBindingMap {
       this.children.putAll(children);
     }
     this.engine = engine;
+    this.nodeExecutionInfoService = nodeExecutionInfoService;
   }
 
   @Override
@@ -277,11 +280,11 @@ public class NodeExecutionMap extends LateBindingMap {
     return (Map<String, Object>) NodeExecutionUtils.resolveObject(node.getStepParameters());
   }
 
-  private static Map<String, Object> extractStrategyMetadata(NodeExecution nodeExecution) {
+  private Map<String, Object> extractStrategyMetadata(NodeExecution nodeExecution) {
     if (nodeExecution.getAmbiance() != null) {
       Level currentLevel = AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance());
       if (currentLevel != null) {
-        return StrategyUtils.fetchStrategyObjectMap(
+        return nodeExecutionInfoService.fetchStrategyObjectMap(
             currentLevel, AmbianceUtils.shouldUseMatrixFieldName(nodeExecution.getAmbiance()));
       }
     }

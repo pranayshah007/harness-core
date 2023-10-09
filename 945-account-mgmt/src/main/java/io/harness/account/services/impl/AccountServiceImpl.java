@@ -17,7 +17,6 @@ import io.harness.beans.PageResponse;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.remote.client.CGRestUtils;
-import io.harness.signup.dto.SignupDTO;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -29,20 +28,6 @@ import lombok.AllArgsConstructor;
 @OwnedBy(GTM)
 public class AccountServiceImpl implements AccountService {
   private final AccountClient accountClient;
-
-  @Override
-  public AccountDTO createAccount(SignupDTO dto) {
-    String username = dto.getEmail().split("@")[0];
-
-    AccountDTO accountDTO = AccountDTO.builder()
-                                .name(username)
-                                .companyName(username)
-                                .defaultExperience(DefaultExperience.NG)
-                                .isProductLed(true)
-                                .build();
-
-    return CGRestUtils.getResponse(accountClient.create(accountDTO));
-  }
 
   @Override
   public AccountDTO createAccount(AccountDTO accountDTO) {

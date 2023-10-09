@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.utils;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -18,6 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import java.util.Comparator;
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class MigrationEntityComparator implements Comparator<NGYamlFile> {
   private static final int APPLICATION = 0;
   private static final int SECRET_MANAGER_TEMPLATE = 1;

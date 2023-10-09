@@ -117,7 +117,7 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
     String uuid = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     String name = node.getName();
     String identifier = node.getIdentifier();
-    if (metadata != null) {
+    if (metadata != null && metadata.getStrategyMetadata() != null) {
       name = AmbianceUtils.modifyIdentifier(metadata.getStrategyMetadata(), node.getName(), ambiance);
       identifier = AmbianceUtils.modifyIdentifier(metadata.getStrategyMetadata(), node.getIdentifier(), ambiance);
     }

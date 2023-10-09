@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
+import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
@@ -24,7 +25,10 @@ import io.harness.persistence.UuidAccess;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
+import java.time.OffsetDateTime;
+import java.util.Date;
 import java.util.List;
+import javax.enterprise.inject.Default;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -68,6 +72,7 @@ public class GitXWebhookEvent implements PersistentEntity, UuidAccess {
   Author author;
   List<String> processedFilePaths;
   @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate @Builder.Default Long createdAt = 0L;
+  @FdTtlIndex @Default Date validUntil = Date.from(OffsetDateTime.now().plusDays(15).toInstant());
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

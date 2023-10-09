@@ -9,6 +9,7 @@ package io.harness.cvng;
 
 import static io.harness.CVNGPrometheusExporterUtils.registerJVMMetrics;
 import static io.harness.CVNGPrometheusExporterUtils.registerPrometheusExporter;
+import static io.harness.CVNGPrometheusExporterUtils.registerWebServerMetrics;
 import static io.harness.NGConstants.X_API_KEY;
 import static io.harness.authorization.AuthorizationServiceHeader.BEARER;
 import static io.harness.authorization.AuthorizationServiceHeader.CV_NEXT_GEN;
@@ -108,6 +109,7 @@ import io.harness.cvng.migration.SRMCoreMigrationProvider;
 import io.harness.cvng.migration.beans.CVNGSchema;
 import io.harness.cvng.migration.beans.CVNGSchema.CVNGSchemaKeys;
 import io.harness.cvng.migration.service.CVNGMigrationService;
+import io.harness.cvng.notification.jobs.ErrorTrackingNotificationHandler;
 import io.harness.cvng.notification.jobs.MonitoredServiceNotificationHandler;
 import io.harness.cvng.notification.jobs.SLONotificationHandler;
 import io.harness.cvng.notification.jobs.SRMAnalysisStepNotificationHandler;
@@ -496,8 +498,6 @@ public class VerificationApplication extends Application<VerificationConfigurati
     Injector injector = Guice.createInjector(modules);
     YamlSdkInitHelper.initialize(injector, yamlSdkConfiguration);
     initializeServiceSecretKeys();
-    harnessMetricRegistry = injector.getInstance(HarnessMetricRegistry.class);
-    initMetrics(injector);
     autoCreateCollectionsAndIndexes(injector);
     registerCorrelationFilter(environment, injector);
     registerAuthFilters(environment, injector, configuration);
@@ -524,6 +524,9 @@ public class VerificationApplication extends Application<VerificationConfigurati
     registerCVNGSchemaMigrationIterator(injector);
     registerActivityIterator(injector);
     registerVerificationJobInstanceTimeoutIterator(injector);
+    harnessMetricRegistry = injector.getInstance(HarnessMetricRegistry.class);
+    injector.getInstance(MetricService.class)
+        .initializeMetrics(Collections.singletonList(injector.getInstance(CVNGMetricsPublisher.class)));
     registerPipelineSDK(configuration, injector);
     registerWaitEnginePublishers(injector);
     registerPmsSdkEvents(injector);
@@ -531,21 +534,20 @@ public class VerificationApplication extends Application<VerificationConfigurati
     registerNotificationTemplates(configuration, injector);
     registerSLONotificationIterator(injector);
     registerMonitoredServiceNotificationIterator(injector);
+    registerMonitoredServiceErrorTrackingNotificationIterator(injector);
     registerAnalysisStepReportNotificationIterator(injector);
     scheduleSidekickProcessing(injector);
     scheduleMaintenanceActivities(injector, configuration);
     initializeEnforcementSdk(injector);
-    initCustomMetrics();
+    if (BooleanUtils.isTrue(configuration.getEnableOpentelemetry())) {
+      registerTraceFilter(environment, injector);
+    }
+    initializeMetrics(injector);
     registerOasResource(configuration, environment, injector);
     initializeSrmMonitoring(configuration, injector);
     registerAPIAuthTelemetryFilters(configuration, environment, injector);
     registerMigrations(injector);
     registerAPIAuthTelemetryFilters(configuration, environment, injector);
-
-    if (BooleanUtils.isTrue(configuration.getEnableOpentelemetry())) {
-      registerTraceFilter(environment, injector);
-    }
-
     log.info("Leaving startup maintenance mode");
     MaintenanceController.forceMaintenance(false);
     registerUpdateProgressScheduler(injector);
@@ -678,10 +680,16 @@ public class VerificationApplication extends Application<VerificationConfigurati
     return jsonExpansionHandlers;
   }
 
-  private void initMetrics(Injector injector) {
-    injector.getInstance(MetricService.class)
-        .initializeMetrics(Collections.singletonList(injector.getInstance(CVNGMetricsPublisher.class)));
+  private void initializeMetrics(Injector injector) {
     injector.getInstance(RecordMetricsJob.class).scheduleMetricsTasks();
+    CVConstants.CUSTOM_METRIC_LIST.forEach(metricName -> registerGaugeMetric(metricName, null));
+    registerJVMMetrics(metricRegistry);
+    registerWebServerMetrics(metricRegistry);
+    registerPrometheusExporter("io.harness.cvng.core.resources", "MonitoredServiceResource", metricRegistry);
+    registerPrometheusExporter(
+        "io.harness.cvng.servicelevelobjective.resources", "SLODashboardResource", metricRegistry);
+    registerPrometheusExporter(
+        "io.harness.cvng.servicelevelobjective.resources", "ServiceLevelObjectiveV2Resource", metricRegistry);
   }
 
   private void autoCreateCollectionsAndIndexes(Injector injector) {
@@ -1302,6 +1310,31 @@ public class VerificationApplication extends Application<VerificationConfigurati
     notificationExecutor.scheduleWithFixedDelay(dataCollectionIterator::process, 0, 2, TimeUnit.MINUTES);
   }
 
+  private void registerMonitoredServiceErrorTrackingNotificationIterator(Injector injector) {
+    ScheduledThreadPoolExecutor notificationExecutor = new ScheduledThreadPoolExecutor(
+        5, new ThreadFactoryBuilder().setNameFormat("error-tracking-notification-iterator").build());
+    ErrorTrackingNotificationHandler notificationHandler = injector.getInstance(ErrorTrackingNotificationHandler.class);
+
+    PersistenceIterator errorTrackingNotificationIterator =
+        MongoPersistenceIterator.<MonitoredService, MorphiaFilterExpander<MonitoredService>>builder()
+            .mode(PersistenceIterator.ProcessMode.PUMP)
+            .iteratorName("ErrorTrackingNotificationIterator")
+            .clazz(MonitoredService.class)
+            .fieldName(MonitoredServiceKeys.nextErrorTrackingNotificationIteration)
+            .targetInterval(ofMinutes(1))
+            .acceptableNoAlertDelay(ofMinutes(1))
+            .executorService(notificationExecutor)
+            .semaphore(new Semaphore(5))
+            .handler(notificationHandler)
+            .schedulingType(REGULAR)
+            .filterExpander(query -> query.field(MonitoredServiceKeys.notificationRuleRefs).exists())
+            .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
+            .redistribute(true)
+            .build();
+    injector.injectMembers(errorTrackingNotificationIterator);
+    notificationExecutor.scheduleWithFixedDelay(errorTrackingNotificationIterator::process, 0, 1, TimeUnit.MINUTES);
+  }
+
   private void registerAnalysisStepReportNotificationIterator(Injector injector) {
     ScheduledThreadPoolExecutor notificationExecutor = new ScheduledThreadPoolExecutor(
         2, new ThreadFactoryBuilder().setNameFormat("analysis-step-report-notification-iterator").build());
@@ -1446,14 +1479,6 @@ public class VerificationApplication extends Application<VerificationConfigurati
         .filter(
             klazz -> StringUtils.startsWithAny(klazz.getPackage().getName(), this.getClass().getPackage().getName()))
         .collect(Collectors.toSet());
-  }
-
-  private void initCustomMetrics() {
-    CVConstants.CUSTOM_METRIC_LIST.forEach(metricName -> registerGaugeMetric(metricName, null));
-    registerJVMMetrics(metricRegistry);
-    registerPrometheusExporter("io.harness.cvng.core.resources", "MonitoredServiceResource", metricRegistry);
-    registerPrometheusExporter(
-        "io.harness.cvng.servicelevelobjective.resources", "ServiceLevelObjectiveV2Resource", metricRegistry);
   }
 
   private void registerGaugeMetric(String metricName, String[] labels) {

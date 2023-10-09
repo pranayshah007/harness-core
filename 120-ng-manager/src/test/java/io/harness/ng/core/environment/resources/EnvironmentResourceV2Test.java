@@ -16,6 +16,7 @@ import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -41,6 +42,7 @@ import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.Servi
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
+import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
@@ -208,7 +210,9 @@ public class EnvironmentResourceV2Test extends CategoryTest {
             .build();
 
     doReturn(accessCheckResponseDTO).when(accessControlClient).checkForAccessOrThrow(anyList());
-    assertThatThrownBy(() -> environmentResourceV2.update(IF_MATCH, ACCOUNT_ID, environmentRequestDTO))
+    assertThatThrownBy(()
+                           -> environmentResourceV2.update(
+                               IF_MATCH, ACCOUNT_ID, environmentRequestDTO, GitEntityUpdateInfoDTO.builder().build()))
         .isInstanceOf(InvalidRequestException.class);
 
     verify(entityYamlSchemaHelper, times(1)).validateSchema(ACCOUNT_ID, environmentRequestDTO.getYaml());
@@ -305,8 +309,10 @@ public class EnvironmentResourceV2Test extends CategoryTest {
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   public void testGet() {
-    when(environmentService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(entity));
-    when(accessControlClient.checkForAccessOrThrow(any()))
+    doReturn(Optional.of(entity))
+        .when(environmentService)
+        .get(anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean(), anyBoolean());
+    when(accessControlClient.checkForAccessOrThrow(anyList()))
         .thenReturn(AccessCheckResponseDTO.builder()
                         .accessControlList(Arrays.asList(AccessControlDTO.builder().permitted(true).build()))
                         .build());

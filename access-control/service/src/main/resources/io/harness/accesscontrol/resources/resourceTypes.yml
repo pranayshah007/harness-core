@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: resourceTypeConfiguration
-version: 36
+version: 37
 resourceTypes:
   - identifier: ACCOUNT
     permissionKey: account
@@ -149,3 +149,7 @@ resourceTypes:
     permissionKey: seicollections
   - identifier: SEI_INSIGHTS
     permissionKey: seiinsights
+  - identifier: CCM_ANOMALIES
+    permissionKey: anomalies
+  - identifier: CCM_RECOMMENDATIONS
+    permissionKey: recommendations

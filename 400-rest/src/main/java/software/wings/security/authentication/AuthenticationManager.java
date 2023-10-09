@@ -23,10 +23,7 @@ import static io.harness.eraro.ErrorCode.USER_DOES_NOT_EXIST;
 import static io.harness.eraro.ErrorCode.USER_LOCKED;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_ADMIN;
-import static io.harness.ng.core.account.AuthenticationMechanism.OAUTH;
-import static io.harness.ng.core.account.AuthenticationMechanism.SAML;
 import static io.harness.remote.client.NGRestUtils.getResponse;
-import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import static software.wings.beans.User.Builder;
 
@@ -48,9 +45,6 @@ import io.harness.metrics.impl.LoginApiMetricsServiceImpl;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.account.OauthProviderType;
-import io.harness.telemetry.Category;
-import io.harness.telemetry.Destination;
-import io.harness.telemetry.TelemetryReporter;
 import io.harness.user.remote.UserClient;
 import io.harness.usermembership.remote.UserMembershipClient;
 
@@ -72,7 +66,6 @@ import software.wings.service.intfc.AuthService;
 import software.wings.service.intfc.UserService;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -112,7 +105,6 @@ public class AuthenticationManager {
   @Inject private DeployVariant deployVariant;
   @Inject private LoginApiMetricsServiceImpl loginApiMetricsService;
   @Inject @Named("PRIVILEGED") private UserMembershipClient userMembershipClient;
-  @Inject private TelemetryReporter telemetryReporter;
   private UserClient userClient;
   private static final String LOGIN_ERROR_CODE_INVALIDSSO = "#/login?errorCode=invalidsso";
   private static final String LOGIN_ERROR_CODE_SAMLTESTSUCCESS = "#/login?errorCode=samltestsuccess";
@@ -120,9 +112,6 @@ public class AuthenticationManager {
   private static final String ACCOUNT_ID = "accountId";
   public static final int DEFAULT_PAGE_SIZE = 1;
   public static final String NG_ADMIN_ROLE_IDENTIFIER = "_account_admin";
-  public static final String LOGIN_SUCCESSFUL = "Successful Login";
-  public static final String LOGIN_FAILURE = "Login Failure";
-  public static final String AUTHENTICATION_MECHANISM = "Authentication_Mechanism";
 
   private static final List<ErrorCode> NON_INVALID_CREDENTIALS_ERROR_CODES =
       Arrays.asList(USER_LOCKED, PASSWORD_EXPIRED, MAX_FAILED_ATTEMPT_COUNT_EXCEEDED);
@@ -283,7 +272,7 @@ public class AuthenticationManager {
     Account account = accountService.get(accountId);
     List<SSORequest> ssoRequests = new ArrayList<>();
     io.harness.ng.core.account.AuthenticationMechanism authenticationMechanism = account.getAuthenticationMechanism();
-    if (SAML == authenticationMechanism) {
+    if (AuthenticationMechanism.SAML == authenticationMechanism) {
       if (isV2) {
         // multiple IDP
         // get all the config's which have jitEnabled and return those sso requests
@@ -444,7 +433,8 @@ public class AuthenticationManager {
       } else {
         user = authHandler.authenticate(userName, password, account.getUuid()).getUser();
       }
-      updateLoginMetricsSuccess(account.getUuid(), account.getAuthenticationMechanism(), user);
+
+      updateDefaultLoginMetricsSuccess(account.getUuid(), account.getAuthenticationMechanism());
       if (user.isTwoFactorAuthenticationEnabled() || account.isTwoFactorAdminEnforced()) {
         return generate2faJWTToken(user);
       } else {
@@ -455,9 +445,9 @@ public class AuthenticationManager {
       }
 
     } catch (WingsException we) {
+      updateDefaultLoginMetricsFailure(account.getUuid(), account.getAuthenticationMechanism());
       log.error("Failed to login via default mechanism with raised exception", we);
       User user = userService.getUserByEmail(userName);
-      updateLoginMetricsFailure(account.getUuid(), account.getAuthenticationMechanism(), user);
       if (Objects.nonNull(user)) {
         String accountId = user.getDefaultAccountId();
         authService.auditUnsuccessfulLogin(accountId, user);
@@ -465,9 +455,9 @@ public class AuthenticationManager {
       }
       throw we;
     } catch (Exception e) {
+      updateDefaultLoginMetricsFailure(account.getUuid(), account.getAuthenticationMechanism());
       log.error("Failed to login via default mechanism due to unknown failure", e);
       User user = userService.getUserByEmail(userName);
-      updateLoginMetricsFailure(account.getUuid(), account.getAuthenticationMechanism(), user);
       if (Objects.nonNull(user)) {
         String accountId = user.getDefaultAccountId();
         authService.auditUnsuccessfulLogin(accountId, user);
@@ -559,12 +549,11 @@ public class AuthenticationManager {
 
       Map<String, String> params = getRedirectParamsForSsoRedirection(jwtToken, encodedApiUrl);
       URI redirectUrl = authenticationUtils.buildAbsoluteUrl("/saml.html", params, accountId);
-
-      updateLoginMetricsSuccess(accountId, SAML, user);
+      loginApiMetricsService.recordLoginRequestSuccessSaml(accountId);
       return Response.seeOther(redirectUrl).build();
     } catch (WingsException e) {
       accountId = getAccountIdFromUserCredential(user, credentials);
-      updateLoginMetricsFailure(accountId, SAML, user);
+      loginApiMetricsService.recordLoginRequestFailureSaml(accountId);
       if (e.getCode() == ErrorCode.SAML_TEST_SUCCESS_MECHANISM_NOT_ENABLED) {
         String baseUrl = accountService.get(accountId).getSubdomainUrl();
         if (isEmpty(baseUrl)) {
@@ -582,7 +571,7 @@ public class AuthenticationManager {
       }
     } catch (Exception e) {
       accountId = getAccountIdFromUserCredential(user, credentials);
-      updateLoginMetricsFailure(accountId, SAML, user);
+      loginApiMetricsService.recordLoginRequestFailureSaml(accountId);
       return generateInvalidSSOResponse(e);
     }
   }
@@ -638,21 +627,9 @@ public class AuthenticationManager {
 
       Map<String, String> params = getRedirectParamsForSsoRedirection(jwtToken, encodedApiUrl);
       URI redirectUrl = authenticationUtils.buildAbsoluteUrl("/saml.html", params, user.getDefaultAccountId());
+
       loginApiMetricsService.recordLoginRequestSuccessOAuth(
           oauthBasedAuthHandler.getOauthProviderName(credentials), user.getDefaultAccountId());
-      HashMap<String, Object> identifyEventProperties = new HashMap<>();
-      identifyEventProperties.put("email", user.getEmail());
-      identifyEventProperties.put("name", user.getName());
-      identifyEventProperties.put("id", user.getUuid());
-      identifyEventProperties.put("accountId", user.getDefaultAccountId());
-      identifyEventProperties.put("accountName", user.getAccountName());
-      telemetryReporter.sendIdentifyEvent(user.getEmail(), identifyEventProperties,
-          ImmutableMap.<Destination, Boolean>builder().put(Destination.AMPLITUDE, true).build());
-      HashMap<String, Object> properties = new HashMap<>();
-      properties.put(AUTHENTICATION_MECHANISM, OAUTH);
-      telemetryReporter.sendTrackEvent(LOGIN_SUCCESSFUL, user.getEmail(), user.getDefaultAccountId(), properties,
-          Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-
       return Response.seeOther(redirectUrl).build();
     } catch (Exception e) {
       String accountId = null;
@@ -662,21 +639,6 @@ public class AuthenticationManager {
       }
       loginApiMetricsService.recordLoginRequestFailureOAuth(
           oauthBasedAuthHandler.getOauthProviderName(credentials), accountId);
-      HashMap<String, Object> identifyEventProperties = new HashMap<>();
-
-      identifyEventProperties.put("email", user.getEmail());
-      identifyEventProperties.put("name", user.getName());
-      identifyEventProperties.put("id", user.getUuid());
-      identifyEventProperties.put("accountId", accountId);
-      identifyEventProperties.put("accountName", user.getAccountName());
-
-      telemetryReporter.sendIdentifyEvent(identifyEventProperties.get("email").toString(), identifyEventProperties,
-          ImmutableMap.<Destination, Boolean>builder().put(Destination.AMPLITUDE, true).build());
-
-      HashMap<String, Object> properties = new HashMap<>();
-      properties.put(AUTHENTICATION_MECHANISM, OAUTH);
-      telemetryReporter.sendTrackEvent(LOGIN_FAILURE, user.getEmail(), accountId, properties,
-          Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
       log.warn("Failed to login via oauth", e);
       URI redirectUrl = new URI(getBaseUrl() + LOGIN_ERROR_CODE_INVALIDSSO);
       return Response.seeOther(redirectUrl).build();
@@ -701,23 +663,7 @@ public class AuthenticationManager {
     return baseUrl;
   }
 
-  private void updateLoginMetricsSuccess(String accountId, AuthenticationMechanism authMechanism, User user) {
-    HashMap<String, Object> identifyEventProperties = new HashMap<>();
-    if (user != null) {
-      identifyEventProperties.put("email", user.getEmail());
-      identifyEventProperties.put("name", user.getName());
-      identifyEventProperties.put("id", user.getUuid());
-      identifyEventProperties.put("accountId", user.getDefaultAccountId());
-      identifyEventProperties.put("accountName", user.getAccountName());
-
-      telemetryReporter.sendIdentifyEvent(user.getEmail(), identifyEventProperties,
-          ImmutableMap.<Destination, Boolean>builder().put(Destination.AMPLITUDE, true).build());
-
-      HashMap<String, Object> properties = new HashMap<>();
-      properties.put(AUTHENTICATION_MECHANISM, authMechanism);
-      telemetryReporter.sendTrackEvent(LOGIN_SUCCESSFUL, user.getEmail(), accountId, properties,
-          Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-    }
+  private void updateDefaultLoginMetricsSuccess(String accountId, AuthenticationMechanism authMechanism) {
     switch (authMechanism) {
       case SAML:
         loginApiMetricsService.recordLoginRequestSuccessSaml(accountId);
@@ -734,23 +680,7 @@ public class AuthenticationManager {
     }
   }
 
-  private void updateLoginMetricsFailure(String accountId, AuthenticationMechanism authMechanism, User user) {
-    HashMap<String, Object> identifyEventProperties = new HashMap<>();
-    if (user != null) {
-      identifyEventProperties.put("email", user.getEmail());
-      identifyEventProperties.put("name", user.getName());
-      identifyEventProperties.put("id", user.getUuid());
-      identifyEventProperties.put("accountId", user.getDefaultAccountId());
-      identifyEventProperties.put("accountName", user.getAccountName());
-
-      telemetryReporter.sendIdentifyEvent(user.getEmail(), identifyEventProperties,
-          ImmutableMap.<Destination, Boolean>builder().put(Destination.AMPLITUDE, true).build());
-
-      HashMap<String, Object> properties = new HashMap<>();
-      properties.put(AUTHENTICATION_MECHANISM, authMechanism);
-      telemetryReporter.sendTrackEvent(LOGIN_FAILURE, user.getEmail(), accountId, properties,
-          Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-    }
+  private void updateDefaultLoginMetricsFailure(String accountId, AuthenticationMechanism authMechanism) {
     switch (authMechanism) {
       case SAML:
         loginApiMetricsService.recordLoginRequestFailureSaml(accountId);
