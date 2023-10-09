@@ -321,10 +321,19 @@ public class TemplateMergeServiceHelper {
         }
       }
     }
+    return getMergeTemplateInputsInObject(currentYamlVersion, templateEntity, resMap, null);
+  }
+
+  private MergeTemplateInputsInObject getMergeTemplateInputsInObject(String currentYamlVersion,
+      TemplateEntity templateEntity, Map<String, Object> resMap, Map<String, Object> resMapWithTemplateRef) {
     String processedYamlVersion = currentYamlVersion;
     // If current yaml version is v0 then we can directly return the resMap
     if (templateEntity == null || !HarnessYamlVersion.isV1(currentYamlVersion)) {
-      return MergeTemplateInputsInObject.builder().resMap(resMap).processedYamlVersion(processedYamlVersion).build();
+      return MergeTemplateInputsInObject.builder()
+          .resMap(resMap)
+          .processedYamlVersion(processedYamlVersion)
+          .resMapWithOpaResponse(resMapWithTemplateRef)
+          .build();
     }
 
     // if current yaml version is v1 and template is of type pipeline, we need to merge yamls differently for v0 and v1
@@ -333,11 +342,13 @@ public class TemplateMergeServiceHelper {
       if (HarnessYamlVersion.isV1(templateEntity.getHarnessVersion())) {
         return MergeTemplateInputsInObject.builder()
             .resMap(getMergedPipelineYamlV1(resMap))
+            .resMapWithOpaResponse(resMapWithTemplateRef)
             .processedYamlVersion(HarnessYamlVersion.V1)
             .build();
       } else {
         return MergeTemplateInputsInObject.builder()
             .resMap(getMergedPipelineYaml(resMap, templateEntity.getTemplateEntityType()))
+            .resMapWithOpaResponse(resMapWithTemplateRef)
             .processedYamlVersion(HarnessYamlVersion.V0)
             .build();
       }
@@ -345,10 +356,15 @@ public class TemplateMergeServiceHelper {
       // if template is of any other type then in case of v1, resMap can be returned directly but for v0 templates,
       // template entity root name needs to be appended
       if (HarnessYamlVersion.isV1(templateEntity.getHarnessVersion())) {
-        return MergeTemplateInputsInObject.builder().resMap(resMap).processedYamlVersion(processedYamlVersion).build();
+        return MergeTemplateInputsInObject.builder()
+            .resMap(resMap)
+            .resMapWithOpaResponse(resMapWithTemplateRef)
+            .processedYamlVersion(processedYamlVersion)
+            .build();
       } else {
         return MergeTemplateInputsInObject.builder()
             .resMap(Map.of(templateEntity.getTemplateEntityType().getRootYamlName(), resMap))
+            .resMapWithOpaResponse(resMapWithTemplateRef)
             .processedYamlVersion(HarnessYamlVersion.V0)
             .build();
       }
@@ -659,48 +675,7 @@ public class TemplateMergeServiceHelper {
       }
     }
 
-    String processedYamlVersion = currentYamlVersion;
-    if (templateEntity == null || !HarnessYamlVersion.isV1(currentYamlVersion)) {
-      return MergeTemplateInputsInObject.builder()
-          .resMap(resMap)
-          .processedYamlVersion(processedYamlVersion)
-          .resMapWithOpaResponse(resMapWithTemplateRef)
-          .build();
-    }
-
-    // if current yaml version is v1 and template is of type pipeline, we need to merge yamls differently for v0 and v1
-    // templates
-    if (templateEntity.getTemplateEntityType() == TemplateEntityType.PIPELINE_TEMPLATE) {
-      if (HarnessYamlVersion.isV1(templateEntity.getHarnessVersion())) {
-        return MergeTemplateInputsInObject.builder()
-            .resMap(getMergedPipelineYamlV1(resMap))
-            .resMapWithOpaResponse(resMapWithTemplateRef)
-            .processedYamlVersion(HarnessYamlVersion.V1)
-            .build();
-      } else {
-        return MergeTemplateInputsInObject.builder()
-            .resMap(getMergedPipelineYaml(resMap, templateEntity.getTemplateEntityType()))
-            .resMapWithOpaResponse(resMapWithTemplateRef)
-            .processedYamlVersion(HarnessYamlVersion.V0)
-            .build();
-      }
-    } else {
-      // if template is of any other type then in case of v1, resMap can be returned directly but for v0 templates,
-      // template entity root name needs to be appended
-      if (HarnessYamlVersion.isV1(templateEntity.getHarnessVersion())) {
-        return MergeTemplateInputsInObject.builder()
-            .resMap(resMap)
-            .resMapWithOpaResponse(resMapWithTemplateRef)
-            .processedYamlVersion(processedYamlVersion)
-            .build();
-      } else {
-        return MergeTemplateInputsInObject.builder()
-            .resMap(Map.of(templateEntity.getTemplateEntityType().getRootYamlName(), resMap))
-            .resMapWithOpaResponse(resMapWithTemplateRef)
-            .processedYamlVersion(HarnessYamlVersion.V0)
-            .build();
-      }
-    }
+    return getMergeTemplateInputsInObject(currentYamlVersion, templateEntity, resMap, resMapWithTemplateRef);
   }
 
   private ArrayListForMergedTemplateRef mergeTemplateInputsInArrayWithOpaPolicy(String accountId, String orgId,
