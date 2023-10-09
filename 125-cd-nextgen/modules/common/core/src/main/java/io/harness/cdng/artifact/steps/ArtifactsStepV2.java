@@ -48,6 +48,7 @@ import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.eventsframework.schemas.entity.EntityUsageDetailProto;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
@@ -75,6 +76,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.secretusage.SecretRuntimeUsageService;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.EntityReferenceExtractorUtils;
@@ -84,6 +86,7 @@ import io.harness.tasks.ResponseData;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
+import io.harness.walktree.visitor.entityreference.beans.VisitedSecretReference;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
@@ -125,6 +128,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
   @Inject private TemplateResourceClient templateResourceClient;
   @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
+  @Inject private SecretRuntimeUsageService secretRuntimeUsageService;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject ServiceEntityService serviceEntityService;
 
@@ -196,6 +200,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
     }
 
     resolveExpressions(ambiance, artifacts);
+    publishRuntimeSecretUsage(ambiance, artifacts);
 
     checkForAccessOrThrow(ambiance, artifacts);
     final Set<String> taskIds = new HashSet<>();
@@ -293,6 +298,18 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
 
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, true);
   }
+
+  private void publishRuntimeSecretUsage(Ambiance ambiance, ArtifactListConfig artifacts) {
+    Set<VisitedSecretReference> secretReferences =
+        artifacts == null ? Set.of() : entityReferenceExtractorUtils.extractReferredSecrets(ambiance, artifacts);
+
+    if (EmptyPredicate.isNotEmpty(secretReferences)) {
+      secretReferences.forEach(secretReference
+          -> secretRuntimeUsageService.createSecretRuntimeUsage(secretReference.getSecretRef(),
+              secretReference.getReferredBy(), EntityUsageDetailProto.newBuilder().build()));
+    }
+  }
+
   private void resolveExpressions(Ambiance ambiance, ArtifactListConfig artifacts) {
     final List<Object> toResolve = new ArrayList<>();
     if (artifacts.getPrimary() != null) {
