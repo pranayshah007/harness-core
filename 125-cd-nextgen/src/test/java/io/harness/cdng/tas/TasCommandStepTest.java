@@ -8,6 +8,7 @@
 package io.harness.cdng.tas;
 
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.RISHABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -35,10 +36,11 @@ import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.TasManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.cdng.tas.outcome.TanzuCommandOutcome;
+import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.instancesync.info.TasServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
-import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.request.CfRunPluginCommandRequestNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
@@ -62,9 +64,9 @@ import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
+import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
-import io.harness.supplier.ThrowingSupplier;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -72,9 +74,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -93,6 +97,7 @@ public class TasCommandStepTest extends CDNGTestBase {
   @Mock private InstanceInfoService instanceInfoService;
   @Mock private OutcomeService outcomeService;
   @Mock private TasEntityHelper tasEntityHelper;
+  @Mock private io.harness.cdng.expressions.CDExpressionResolver cdExpressionResolver;
   @InjectMocks private TasCommandStep tasCommandStep;
 
   private final TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome =
@@ -101,7 +106,7 @@ public class TasCommandStepTest extends CDNGTestBase {
           .organization("dev-org")
           .space("dev-space")
           .build();
-  private TasCommandStepParameters parameters =
+  private final TasCommandStepParameters parameters =
       TasCommandStepParameters.infoBuilder()
           .delegateSelectors(ParameterField.createValueField(List.of(new TaskSelectorYaml("selector-1"))))
           .build();
@@ -164,11 +169,7 @@ public class TasCommandStepTest extends CDNGTestBase {
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void testExecuteTasTask() {
-    TasCommandStepParameters tasCommandStepParameters = TasCommandStepParameters.infoBuilder().build();
-    StepElementParameters stepElementParameters = StepElementParameters.builder()
-                                                      .spec(tasCommandStepParameters)
-                                                      .timeout(ParameterField.createValueField("10m"))
-                                                      .build();
+    StepElementParameters stepElementParameters = getStepElementParameters(null, null);
     InfrastructureOutcome infrastructureOutcome = TanzuApplicationServiceInfrastructureOutcome.builder().build();
     doReturn(infrastructureOutcome).when(cdStepHelper).getInfrastructureOutcome(ambiance);
     Map<String, String> allFilesFetched = new HashMap<>();
@@ -182,24 +183,14 @@ public class TasCommandStepTest extends CDNGTestBase {
     doReturn(tasInfraConfig).when(cdStepHelper).getTasInfraConfig(infrastructureOutcome, ambiance);
     doReturn(cfCliVersion).when(tasStepHelper).cfCliVersionNGMapper(cliVersionNG);
 
-    CfRunPluginCommandRequestNG cfRunPluginCommandRequestNG =
-        CfRunPluginCommandRequestNG.builder()
-            .cfCliVersion(tasStepHelper.cfCliVersionNGMapper(cliVersionNG))
-            .cfCommandTypeNG(CfCommandTypeNG.TANZU_COMMAND)
-            .fileDataList(fileDataList)
-            .tasInfraConfig(tasInfraConfig)
-            .accountId("account")
-            .timeoutIntervalInMin(10)
-            .commandName(CfCommandTypeNG.TANZU_COMMAND.name())
-            .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
-            .filePathsInScript(tasExecutionPassThroughData.getPathsFromScript())
-            .repoRoot(tasExecutionPassThroughData.getRepoRoot())
-            .renderedScriptString(tasExecutionPassThroughData.getRawScript())
-            .useCfCLI(true)
-            .build();
+    CfRunPluginCommandRequestNG cfRunPluginCommandRequestNG = getCfRunPluginCommandRequestNG(cliVersionNG, fileDataList,
+        tasExecutionPassThroughData, tasInfraConfig, unitProgressData, Collections.emptyMap(), Collections.emptyList());
+    ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
 
     Mockito.mockStatic(TaskRequestsUtils.class);
-    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    PowerMockito
+        .when(TaskRequestsUtils.prepareCDTaskRequest(
+            any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     doReturn(EnvironmentType.PROD).when(stepHelper).getEnvironmentType(ambiance);
 
@@ -207,11 +198,160 @@ public class TasCommandStepTest extends CDNGTestBase {
     TaskChainResponse taskChainResponse = tasCommandStep.executeTasTask(
         tasManifestOutcome, ambiance, stepElementParameters, tasExecutionPassThroughData, true, unitProgressData);
 
+    CfRunPluginCommandRequestNG taskData =
+        (CfRunPluginCommandRequestNG) taskDataArgumentCaptor.getValue().getParameters()[0];
     PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
     TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
 
-    assertThat(taskChainResponse.isChainEnd()).isEqualTo(true);
+    assertThat(taskChainResponse.isChainEnd()).isTrue();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(TasExecutionPassThroughData.class);
+    assertThat((TasExecutionPassThroughData) taskChainResponse.getPassThroughData())
+        .isEqualTo(tasExecutionPassThroughData);
+    assertThat(taskData).isEqualToComparingFieldByField(cfRunPluginCommandRequestNG);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testExecuteTasTaskWithException() {
+    StepElementParameters stepElementParameters =
+        getStepElementParameters(getStepParametersInputVariablesMap(), getStepParametersOutputVariablesMap());
+    InfrastructureOutcome infrastructureOutcome = TanzuApplicationServiceInfrastructureOutcome.builder().build();
+    doReturn(infrastructureOutcome).when(cdStepHelper).getInfrastructureOutcome(ambiance);
+    Map<String, String> allFilesFetched = new HashMap<>();
+    CfCliVersionNG cliVersionNG = CfCliVersionNG.V7;
+    CfCliVersion cfCliVersion = CfCliVersion.V7;
+    TasExecutionPassThroughData tasExecutionPassThroughData =
+        TasExecutionPassThroughData.builder().allFilesFetched(allFilesFetched).cfCliVersion(cliVersionNG).build();
+    TasInfraConfig tasInfraConfig = TasInfraConfig.builder().build();
+    UnitProgressData unitProgressData = UnitProgressData.builder().build();
+    doReturn(tasInfraConfig).when(cdStepHelper).getTasInfraConfig(infrastructureOutcome, ambiance);
+    doReturn(cfCliVersion).when(tasStepHelper).cfCliVersionNGMapper(cliVersionNG);
+
+    ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito
+        .when(TaskRequestsUtils.prepareCDTaskRequest(
+            any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+    doReturn(EnvironmentType.PROD).when(stepHelper).getEnvironmentType(ambiance);
+
+    TasManifestOutcome tasManifestOutcome = TasManifestOutcome.builder().build();
+    assertThatThrownBy(()
+                           -> tasCommandStep.executeTasTask(tasManifestOutcome, ambiance, stepElementParameters,
+                               tasExecutionPassThroughData, true, unitProgressData))
+        .hasMessage("Env. variable [Input6] value found to be null");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testExecuteTasTaskWithOutputException() {
+    StepElementParameters stepElementParameters = getStepElementParameters(null, getStepParametersOutputVariablesMap());
+    InfrastructureOutcome infrastructureOutcome = TanzuApplicationServiceInfrastructureOutcome.builder().build();
+    doReturn(infrastructureOutcome).when(cdStepHelper).getInfrastructureOutcome(ambiance);
+    Map<String, String> allFilesFetched = new HashMap<>();
+    CfCliVersionNG cliVersionNG = CfCliVersionNG.V7;
+    CfCliVersion cfCliVersion = CfCliVersion.V7;
+    TasExecutionPassThroughData tasExecutionPassThroughData =
+        TasExecutionPassThroughData.builder().allFilesFetched(allFilesFetched).cfCliVersion(cliVersionNG).build();
+    TasInfraConfig tasInfraConfig = TasInfraConfig.builder().build();
+    UnitProgressData unitProgressData = UnitProgressData.builder().build();
+    doReturn(tasInfraConfig).when(cdStepHelper).getTasInfraConfig(infrastructureOutcome, ambiance);
+    doReturn(cfCliVersion).when(tasStepHelper).cfCliVersionNGMapper(cliVersionNG);
+
+    ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito
+        .when(TaskRequestsUtils.prepareCDTaskRequest(
+            any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+    doReturn(EnvironmentType.PROD).when(stepHelper).getEnvironmentType(ambiance);
+
+    TasManifestOutcome tasManifestOutcome = TasManifestOutcome.builder().build();
+    assertThatThrownBy(()
+                           -> tasCommandStep.executeTasTask(tasManifestOutcome, ambiance, stepElementParameters,
+                               tasExecutionPassThroughData, true, unitProgressData))
+        .hasMessage("Output variable [Output6] value found to be empty");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testExecuteTasTaskWithVariables() {
+    Map<String, Object> inputVariables = getStepParametersInputVariablesMap();
+    Map<String, String> inputVariablesStringMap = getStepParametersStringInputVariablesMap();
+    inputVariables.put("Input6", ParameterField.createValueField("InputValue6"));
+    inputVariablesStringMap.put("Input6", "InputValue6");
+    Map<String, Object> outputVariables = getStepParametersOutputVariablesMap();
+    Map<String, String> outputVariablesStringMap = getStepParametersStringOutputVariablesMap();
+    outputVariables.put("Output6", ParameterField.createValueField("OutputValue6"));
+    outputVariablesStringMap.put("Output6", "OutputValue6");
+    StepElementParameters stepElementParameters = getStepElementParameters(inputVariables, outputVariables);
+    InfrastructureOutcome infrastructureOutcome = TanzuApplicationServiceInfrastructureOutcome.builder().build();
+    doReturn(infrastructureOutcome).when(cdStepHelper).getInfrastructureOutcome(ambiance);
+    Map<String, String> allFilesFetched = new HashMap<>();
+    CfCliVersionNG cliVersionNG = CfCliVersionNG.V7;
+    CfCliVersion cfCliVersion = CfCliVersion.V7;
+    List<FileData> fileDataList = Collections.emptyList();
+    TasExecutionPassThroughData tasExecutionPassThroughData = TasExecutionPassThroughData.builder()
+                                                                  .resolvedOutputVariables(outputVariablesStringMap)
+                                                                  .allFilesFetched(allFilesFetched)
+                                                                  .cfCliVersion(cliVersionNG)
+                                                                  .build();
+    TasInfraConfig tasInfraConfig = TasInfraConfig.builder().build();
+    UnitProgressData unitProgressData = UnitProgressData.builder().build();
+    doReturn(tasInfraConfig).when(cdStepHelper).getTasInfraConfig(infrastructureOutcome, ambiance);
+    doReturn(cfCliVersion).when(tasStepHelper).cfCliVersionNGMapper(cliVersionNG);
+
+    CfRunPluginCommandRequestNG cfRunPluginCommandRequestNG = getCfRunPluginCommandRequestNG(cliVersionNG, fileDataList,
+        tasExecutionPassThroughData, tasInfraConfig, unitProgressData, inputVariablesStringMap,
+        Arrays.asList("OutputValue2", "OutputValue3", "OutputValue1", "OutputValue2", "", "OutputValue6"));
+    ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
+
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito
+        .when(TaskRequestsUtils.prepareCDTaskRequest(
+            any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+    doReturn(EnvironmentType.PROD).when(stepHelper).getEnvironmentType(ambiance);
+
+    TasManifestOutcome tasManifestOutcome = TasManifestOutcome.builder().build();
+    TaskChainResponse taskChainResponse = tasCommandStep.executeTasTask(
+        tasManifestOutcome, ambiance, stepElementParameters, tasExecutionPassThroughData, true, unitProgressData);
+
+    CfRunPluginCommandRequestNG taskData =
+        (CfRunPluginCommandRequestNG) taskDataArgumentCaptor.getValue().getParameters()[0];
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
+
+    assertThat(taskChainResponse.isChainEnd()).isTrue();
+    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(TasExecutionPassThroughData.class);
+    assertThat((TasExecutionPassThroughData) taskChainResponse.getPassThroughData())
+        .isEqualTo(tasExecutionPassThroughData);
+    assertThat(taskData).isEqualToComparingFieldByField(cfRunPluginCommandRequestNG);
+  }
+
+  private CfRunPluginCommandRequestNG getCfRunPluginCommandRequestNG(CfCliVersionNG cliVersionNG,
+      List<FileData> fileDataList, TasExecutionPassThroughData tasExecutionPassThroughData,
+      TasInfraConfig tasInfraConfig, UnitProgressData unitProgressData, Map<String, String> inputVariables,
+      List<String> outputVariables) {
+    return CfRunPluginCommandRequestNG.builder()
+        .cfCliVersion(tasStepHelper.cfCliVersionNGMapper(cliVersionNG))
+        .cfCommandTypeNG(CfCommandTypeNG.TANZU_COMMAND)
+        .fileDataList(fileDataList)
+        .tasInfraConfig(tasInfraConfig)
+        .accountId("account")
+        .timeoutIntervalInMin(10)
+        .commandName(CfCommandTypeNG.TANZU_COMMAND.name())
+        .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
+        .filePathsInScript(tasExecutionPassThroughData.getPathsFromScript())
+        .repoRoot(tasExecutionPassThroughData.getRepoRoot())
+        .inputVariables(inputVariables)
+        .outputVariables(outputVariables)
+        .renderedScriptString(tasExecutionPassThroughData.getRawScript())
+        .useCfCLI(true)
+        .build();
   }
 
   @Test
@@ -228,23 +368,13 @@ public class TasCommandStepTest extends CDNGTestBase {
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void testFinalizeExecutionWithSecurityContextWhenSuccess() throws Exception {
-    TasCommandStepParameters tasCommandStepParameters = TasCommandStepParameters.infoBuilder().build();
-    StepElementParameters stepElementParameters = StepElementParameters.builder()
-                                                      .spec(tasCommandStepParameters)
-                                                      .timeout(ParameterField.createValueField("10m"))
-                                                      .build();
-
+    StepElementParameters stepElementParameters = getStepElementParameters(null, getStepParametersOutputVariablesMap());
     String instanceIndex = "1";
     String appId = "id";
     String displayName = "displayName";
     String org = "org";
     String space = "space";
     UnitProgressData unitProgressData = UnitProgressData.builder().build();
-    CfInternalInstanceElement cfInternalInstanceElement = CfInternalInstanceElement.builder()
-                                                              .instanceIndex(instanceIndex)
-                                                              .applicationId(appId)
-                                                              .displayName(displayName)
-                                                              .build();
     TasServerInstanceInfo tasServerInstanceInfo = TasServerInstanceInfo.builder()
                                                       .id(appId + ":" + instanceIndex)
                                                       .instanceIndex(instanceIndex)
@@ -253,13 +383,7 @@ public class TasCommandStepTest extends CDNGTestBase {
                                                       .organization(org)
                                                       .space(space)
                                                       .build();
-    TasRunPluginResponse responseData = TasRunPluginResponse.builder()
-                                            .unitProgressData(unitProgressData)
-                                            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-                                            .build();
-
-    ThrowingSupplier<TasRunPluginResponse> responseDataSupplier = () -> responseData;
-    TasRunPluginResponse tasRunPluginResponse = (TasRunPluginResponse) responseDataSupplier.get();
+    TasRunPluginResponse responseData = getTasRunPluginResponse(unitProgressData, null);
     TanzuApplicationServiceInfrastructureOutcome tanzuApplicationServiceInfrastructureOutcome =
         TanzuApplicationServiceInfrastructureOutcome.builder().organization(org).space(space).build();
     doReturn(tanzuApplicationServiceInfrastructureOutcome)
@@ -269,34 +393,160 @@ public class TasCommandStepTest extends CDNGTestBase {
     StepResponse.StepOutcome stepOutcome = StepResponse.StepOutcome.builder().name("name").build();
     doReturn(stepOutcome)
         .when(instanceInfoService)
-        .saveServerInstancesIntoSweepingOutput(ambiance, Arrays.asList(tasServerInstanceInfo));
+        .saveServerInstancesIntoSweepingOutput(ambiance, List.of(tasServerInstanceInfo));
 
-    StepResponse stepResponse1 = tasCommandStep.finalizeExecutionWithSecurityContext(
-        ambiance, stepElementParameters, TasExecutionPassThroughData.builder().build(), () -> responseData);
+    StepResponse stepResponse1 = tasCommandStep.finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
+        TasExecutionPassThroughData.builder()
+            .resolvedOutputVariables(getStepParametersStringOutputVariablesMap())
+            .build(),
+        () -> responseData);
     assertThat(stepResponse1.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse1.getStepOutcomes()).isEmpty();
   }
 
   @Test
-  @Owner(developers = PIYUSH_BHUWALKA)
+  @Owner(developers = RISHABH)
   @Category(UnitTests.class)
-  public void testFinalizeExecutionWithSecurityContextWhenFailure() throws Exception {
-    TasCommandStepParameters tasCommandStepParameters = TasCommandStepParameters.infoBuilder().build();
-    StepElementParameters stepElementParameters = StepElementParameters.builder()
-                                                      .spec(tasCommandStepParameters)
-                                                      .timeout(ParameterField.createValueField("10m"))
-                                                      .build();
-
+  public void testFinalizeExecutionWithSecurityContextWhenSuccessWithOutputVariables() throws Exception {
+    StepElementParameters stepElementParameters = getStepElementParameters(null, getStepParametersOutputVariablesMap());
     String instanceIndex = "1";
     String appId = "id";
     String displayName = "displayName";
     String org = "org";
     String space = "space";
     UnitProgressData unitProgressData = UnitProgressData.builder().build();
-    CfInternalInstanceElement cfInternalInstanceElement = CfInternalInstanceElement.builder()
-                                                              .instanceIndex(instanceIndex)
-                                                              .applicationId(appId)
-                                                              .displayName(displayName)
-                                                              .build();
+    TasServerInstanceInfo tasServerInstanceInfo = TasServerInstanceInfo.builder()
+                                                      .id(appId + ":" + instanceIndex)
+                                                      .instanceIndex(instanceIndex)
+                                                      .tasApplicationName(displayName)
+                                                      .tasApplicationGuid(appId)
+                                                      .organization(org)
+                                                      .space(space)
+                                                      .build();
+    TasRunPluginResponse responseData = getTasRunPluginResponse(unitProgressData, getResponseOutputVariables());
+
+    TanzuApplicationServiceInfrastructureOutcome tanzuApplicationServiceInfrastructureOutcome =
+        TanzuApplicationServiceInfrastructureOutcome.builder().organization(org).space(space).build();
+    doReturn(tanzuApplicationServiceInfrastructureOutcome)
+        .when(outcomeService)
+        .resolve(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+
+    StepResponse.StepOutcome stepOutcome = StepResponse.StepOutcome.builder().name("name").build();
+    doReturn(stepOutcome)
+        .when(instanceInfoService)
+        .saveServerInstancesIntoSweepingOutput(ambiance, List.of(tasServerInstanceInfo));
+
+    StepResponse stepResponse1 = tasCommandStep.finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
+        TasExecutionPassThroughData.builder()
+            .resolvedOutputVariables(getStepParametersStringOutputVariablesMap())
+            .build(),
+        () -> responseData);
+    assertThat(stepResponse1.getStatus()).isEqualTo(Status.SUCCEEDED);
+    Map<String, String> outputVariablesStepParamReq = new HashMap<>();
+    outputVariablesStepParamReq.put("Output1", "Value1");
+    outputVariablesStepParamReq.put("Output2", "testing 123");
+    outputVariablesStepParamReq.put("Output3", "testing 123");
+    outputVariablesStepParamReq.put("Output4", "Value2-hello");
+    outputVariablesStepParamReq.put("Output5", null);
+    TanzuCommandOutcome tanzuCommandOutcome =
+        TanzuCommandOutcome.builder().outputVariables(outputVariablesStepParamReq).build();
+    assertThat(stepResponse1.getStepOutcomes())
+        .isEqualTo(List.of(StepResponse.StepOutcome.builder()
+                               .outcome(tanzuCommandOutcome)
+                               .name(OutputExpressionConstants.OUTPUT)
+                               .build()));
+  }
+
+  @NotNull
+  private Map<String, String> getResponseOutputVariables() {
+    Map<String, String> outputVariables = new HashMap<>();
+    outputVariables.put("OutputValue1", "Value1");
+    outputVariables.put("OutputValue2", "testing 123");
+    outputVariables.put("OutputValue3", "Value2-hello");
+    outputVariables.put("OutputValue4", null);
+    outputVariables.put("OutputValue5", "");
+    outputVariables.put("OutputValue7", "hello");
+    return outputVariables;
+  }
+
+  @NotNull
+  private Map<String, Object> getStepParametersInputVariablesMap() {
+    Map<String, Object> outputVariablesStepParam = new HashMap<>();
+    outputVariablesStepParam.put("Input1", ParameterField.createValueField("InputValue1"));
+    outputVariablesStepParam.put("Input2", ParameterField.createValueField("InputValue2"));
+    outputVariablesStepParam.put("Input3", ParameterField.createValueField("InputValue2"));
+    outputVariablesStepParam.put("Input4", ParameterField.createValueField("InputValue3"));
+    outputVariablesStepParam.put("Input5", ParameterField.createValueField(""));
+    outputVariablesStepParam.put("Input6", ParameterField.createValueField(null));
+    return outputVariablesStepParam;
+  }
+
+  @NotNull
+  private Map<String, String> getStepParametersStringInputVariablesMap() {
+    Map<String, String> outputVariablesStepParam = new HashMap<>();
+    outputVariablesStepParam.put("Input1", "InputValue1");
+    outputVariablesStepParam.put("Input2", "InputValue2");
+    outputVariablesStepParam.put("Input3", "InputValue2");
+    outputVariablesStepParam.put("Input4", "InputValue3");
+    outputVariablesStepParam.put("Input5", "");
+    outputVariablesStepParam.put("Input6", null);
+    return outputVariablesStepParam;
+  }
+
+  @NotNull
+  private Map<String, Object> getStepParametersOutputVariablesMap() {
+    Map<String, Object> outputVariablesStepParam = new HashMap<>();
+    outputVariablesStepParam.put("Output1", ParameterField.createValueField("OutputValue1"));
+    outputVariablesStepParam.put("Output2", ParameterField.createValueField("OutputValue2"));
+    outputVariablesStepParam.put("Output3", ParameterField.createValueField("OutputValue2"));
+    outputVariablesStepParam.put("Output4", ParameterField.createValueField("OutputValue3"));
+    outputVariablesStepParam.put("Output5", ParameterField.createValueField(""));
+    outputVariablesStepParam.put("Output6", ParameterField.createValueField(null));
+    return outputVariablesStepParam;
+  }
+
+  @NotNull
+  private Map<String, String> getStepParametersStringOutputVariablesMap() {
+    Map<String, String> outputVariablesStepParam = new HashMap<>();
+    outputVariablesStepParam.put("Output1", "OutputValue1");
+    outputVariablesStepParam.put("Output2", "OutputValue2");
+    outputVariablesStepParam.put("Output3", "OutputValue2");
+    outputVariablesStepParam.put("Output4", "OutputValue3");
+    outputVariablesStepParam.put("Output5", "");
+    outputVariablesStepParam.put("Output6", null);
+    return outputVariablesStepParam;
+  }
+
+  private TasRunPluginResponse getTasRunPluginResponse(
+      UnitProgressData unitProgressData, Map<String, String> outputVariables) {
+    return TasRunPluginResponse.builder()
+        .unitProgressData(unitProgressData)
+        .outputVariables(outputVariables)
+        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+        .build();
+  }
+
+  private StepElementParameters getStepElementParameters(
+      Map<String, Object> inputVariables, Map<String, Object> outputVariables) {
+    TasCommandStepParameters tasCommandStepParameters =
+        TasCommandStepParameters.infoBuilder().inputVariables(inputVariables).outputVariables(outputVariables).build();
+    return StepElementParameters.builder()
+        .spec(tasCommandStepParameters)
+        .timeout(ParameterField.createValueField("10m"))
+        .build();
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testFinalizeExecutionWithSecurityContextWhenFailure() throws Exception {
+    StepElementParameters stepElementParameters = getStepElementParameters(null, null);
+    String instanceIndex = "1";
+    String appId = "id";
+    String displayName = "displayName";
+    String org = "org";
+    String space = "space";
+    UnitProgressData unitProgressData = UnitProgressData.builder().build();
     TasServerInstanceInfo tasServerInstanceInfo = TasServerInstanceInfo.builder()
                                                       .id(appId + ":" + instanceIndex)
                                                       .instanceIndex(instanceIndex)
@@ -313,8 +563,6 @@ public class TasCommandStepTest extends CDNGTestBase {
 
     doReturn(unitProgressData).when(tasStepHelper).completeUnitProgressData(any(), any(), any());
 
-    ThrowingSupplier<TasRunPluginResponse> responseDataSupplier = () -> responseData;
-    TasRunPluginResponse tasRunPluginResponse = (TasRunPluginResponse) responseDataSupplier.get();
     TanzuApplicationServiceInfrastructureOutcome tanzuApplicationServiceInfrastructureOutcome =
         TanzuApplicationServiceInfrastructureOutcome.builder().organization(org).space(space).build();
     doReturn(tanzuApplicationServiceInfrastructureOutcome)
@@ -324,7 +572,7 @@ public class TasCommandStepTest extends CDNGTestBase {
     StepResponse.StepOutcome stepOutcome = StepResponse.StepOutcome.builder().name("name").build();
     doReturn(stepOutcome)
         .when(instanceInfoService)
-        .saveServerInstancesIntoSweepingOutput(ambiance, Arrays.asList(tasServerInstanceInfo));
+        .saveServerInstancesIntoSweepingOutput(ambiance, List.of(tasServerInstanceInfo));
 
     StepResponse stepResponse1 = tasCommandStep.finalizeExecutionWithSecurityContext(
         ambiance, stepElementParameters, TasExecutionPassThroughData.builder().build(), () -> responseData);
@@ -335,23 +583,13 @@ public class TasCommandStepTest extends CDNGTestBase {
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void testFinalizeExecutionWithSecurityContextWhenStepException() throws Exception {
-    TasCommandStepParameters tasCommandStepParameters = TasCommandStepParameters.infoBuilder().build();
-    StepElementParameters stepElementParameters = StepElementParameters.builder()
-                                                      .spec(tasCommandStepParameters)
-                                                      .timeout(ParameterField.createValueField("10m"))
-                                                      .build();
-
+    StepElementParameters stepElementParameters = getStepElementParameters(null, null);
     String instanceIndex = "1";
     String appId = "id";
     String displayName = "displayName";
     String org = "org";
     String space = "space";
     UnitProgressData unitProgressData = UnitProgressData.builder().build();
-    CfInternalInstanceElement cfInternalInstanceElement = CfInternalInstanceElement.builder()
-                                                              .instanceIndex(instanceIndex)
-                                                              .applicationId(appId)
-                                                              .displayName(displayName)
-                                                              .build();
     TasServerInstanceInfo tasServerInstanceInfo = TasServerInstanceInfo.builder()
                                                       .id(appId + ":" + instanceIndex)
                                                       .instanceIndex(instanceIndex)
@@ -367,8 +605,6 @@ public class TasCommandStepTest extends CDNGTestBase {
 
     doReturn(unitProgressData).when(tasStepHelper).completeUnitProgressData(any(), any(), any());
 
-    ThrowingSupplier<TasRunPluginResponse> responseDataSupplier = () -> responseData;
-    TasRunPluginResponse tasRunPluginResponse = (TasRunPluginResponse) responseDataSupplier.get();
     TanzuApplicationServiceInfrastructureOutcome tanzuApplicationServiceInfrastructureOutcome =
         TanzuApplicationServiceInfrastructureOutcome.builder().organization(org).space(space).build();
     doReturn(tanzuApplicationServiceInfrastructureOutcome)
@@ -378,7 +614,7 @@ public class TasCommandStepTest extends CDNGTestBase {
     StepResponse.StepOutcome stepOutcome = StepResponse.StepOutcome.builder().name("name").build();
     doReturn(stepOutcome)
         .when(instanceInfoService)
-        .saveServerInstancesIntoSweepingOutput(ambiance, Arrays.asList(tasServerInstanceInfo));
+        .saveServerInstancesIntoSweepingOutput(ambiance, List.of(tasServerInstanceInfo));
 
     StepResponse stepResponse1 = tasCommandStep.finalizeExecutionWithSecurityContext(ambiance, stepElementParameters,
         StepExceptionPassThroughData.builder().unitProgressData(unitProgressData).errorMessage("error").build(),

@@ -96,8 +96,10 @@ public class InstanceServiceImplTest extends InstancesTestBase {
   private static final Status stageStatus = Status.SUCCEEDED;
   private static final String stageSetupId = "stageSetupId";
   private static final RollbackStatus rollbackStatus = RollbackStatus.NOT_STARTED;
+  private static final String chartVersion = "0.1.0";
 
   private AggregationResults<ActiveServiceInstanceInfoWithEnvType> aggregationResults;
+  private AggregationResults<ActiveServiceInstanceInfoWithEnvType> aggregationResultsWithChartVersion;
 
   @Before
   public void setup() {
@@ -106,6 +108,12 @@ public class InstanceServiceImplTest extends InstancesTestBase {
             ENVIRONMENT_ID, EnvironmentType.PreProduction, INFRASTRUCTURE_ID, INFRASTRUCTURE_ID, CLUSTER_ID, AGENT_ID,
             1l, DISPLAY_NAME, 1, lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus,
             stageSetupId, rollbackStatus, null)),
+        new Document());
+    aggregationResultsWithChartVersion = new AggregationResults<>(
+        Arrays.asList(new ActiveServiceInstanceInfoWithEnvType(instanceKey, infraMappingId, ENVIRONMENT_ID,
+            ENVIRONMENT_ID, EnvironmentType.PreProduction, INFRASTRUCTURE_ID, INFRASTRUCTURE_ID, CLUSTER_ID, AGENT_ID,
+            1l, DISPLAY_NAME, 1, lastPipelineExecutionName, lastPipelineExecutionId, stageNodeExecutionId, stageStatus,
+            stageSetupId, rollbackStatus, chartVersion)),
         new Document());
   }
 
@@ -528,6 +536,15 @@ public class InstanceServiceImplTest extends InstancesTestBase {
     verify(instanceRepository)
         .getActiveServiceInstanceInfoWithEnvType(
             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, false, true, null, false);
+    when(instanceRepository.getActiveServiceInstanceInfoWithEnvType(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, false, true, chartVersion, true))
+        .thenReturn(aggregationResultsWithChartVersion);
+    aggregationResults1 = instanceRepository.getActiveServiceInstanceInfoWithEnvType(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, false, true, chartVersion, true);
+    assertThat(aggregationResults1).isEqualTo(aggregationResultsWithChartVersion);
+    verify(instanceRepository)
+        .getActiveServiceInstanceInfoWithEnvType(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_ID, SERVICE_ID, DISPLAY_NAME, false, true, chartVersion, true);
   }
 
   @Test
