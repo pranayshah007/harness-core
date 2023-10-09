@@ -11,6 +11,7 @@ import io.harness.data.encoding.EncodingUtils;
 import io.harness.exception.FunctorException;
 import io.harness.expression.functors.ExpressionFunctor;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
@@ -35,6 +36,7 @@ public class SecretDelegateFunctor implements ExpressionFunctor {
   }
 
   public Object obtainBase64(String secretDetailsUuid, int token) {
-    return EncodingUtils.encodeBase64((String) obtain(secretDetailsUuid, token));
+    String secretValue = (String) obtain(secretDetailsUuid, token);
+    return EncodingUtils.encodeBase64(secretValue.getBytes(StandardCharsets.ISO_8859_1));
   }
 }

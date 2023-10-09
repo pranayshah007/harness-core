@@ -51,6 +51,7 @@ import software.wings.service.intfc.security.SecretManager;
 import com.github.benmanes.caffeine.cache.Cache;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -302,7 +303,7 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
     String secretValue = String.valueOf(secretVariableDTO.getSecret().getDecryptedValue());
 
     if (encodeBase64) {
-      secretValue = EncodingUtils.encodeBase64(secretValue);
+      secretValue = EncodingUtils.encodeBase64(secretValue.getBytes(StandardCharsets.ISO_8859_1));
     }
 
     evaluatedSecrets.put(secretIdentifier, secretValue);
