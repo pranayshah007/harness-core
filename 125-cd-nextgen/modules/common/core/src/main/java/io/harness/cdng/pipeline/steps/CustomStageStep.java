@@ -17,6 +17,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.execution.StageExecutionInfoUpdateDTO;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.pipeline.beans.CustomStageSpecParams;
+import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
@@ -40,8 +41,10 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class CustomStageStep implements ChildExecutable<StageElementParameters> {
-  public static final StepType STEP_TYPE =
-      StepType.newBuilder().setType("CUSTOM_STAGE").setStepCategory(StepCategory.STAGE).build();
+  public static final StepType STEP_TYPE = StepType.newBuilder()
+                                               .setType(ExecutionNodeType.CUSTOM_STAGE.getName())
+                                               .setStepCategory(StepCategory.STAGE)
+                                               .build();
 
   @Inject private StageExecutionInfoService stageExecutionInfoService;
   @Inject @Named("DashboardExecutorService") ExecutorService dashboardExecutorService;

@@ -7,6 +7,8 @@
 
 package io.harness.changehandlers;
 
+import static io.harness.changehandlers.constants.StageExecutionHandlerConstants.CUSTOM_STAGE;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
@@ -40,6 +42,9 @@ public class CustomStageExecutionHandler extends AbstractChangeDataHandler {
     DBObject dbObject = changeEvent.getFullDocument();
 
     String stageExecutionId = getStageExecutionId(changeEvent, dbObject);
+    if (stageExecutionId == null) {
+      return null;
+    }
     columnValueMapping.put("id", stageExecutionId);
 
     if (changeEvent.getEntityType() == StageExecutionEntity.class) {
@@ -58,8 +63,10 @@ public class CustomStageExecutionHandler extends AbstractChangeDataHandler {
       }
 
       BasicDBObject failureInfo = (BasicDBObject) executionSummaryDetails.get("failureInfo");
-      changeHandlerHelper.addKeyValuePairToMapFromDBObject(
-          failureInfo, columnValueMapping, "errorMessage_", "failure_message");
+      if (failureInfo != null) {
+        changeHandlerHelper.addKeyValuePairToMapFromDBObject(
+            failureInfo, columnValueMapping, "errorMessage_", "failure_message");
+      }
     }
 
     return columnValueMapping;
@@ -73,17 +80,20 @@ public class CustomStageExecutionHandler extends AbstractChangeDataHandler {
     if (dbObject == null) {
       return true;
     }
-    if (changeEvent.getEntityType() == StageExecutionEntity.class) {
-      return dbObject.get(StageExecutionEntityKeys.failureInfo) == null;
+    if ((changeEvent.getEntityType() == StageExecutionEntity.class)
+        && (dbObject.get(StageExecutionEntityKeys.failureInfo) == null)) {
+      return true;
     }
 
     String stageType = null;
-    if (changeEvent.getEntityType() == StageExecutionEntity.class) {
+    if ((changeEvent.getEntityType() == StageExecutionEntity.class)
+        && (dbObject.get(StageExecutionEntityKeys.stageType) != null)) {
       stageType = dbObject.get(StageExecutionEntityKeys.stageType).toString();
-    } else if (changeEvent.getEntityType() == StageExecutionInfo.class) {
+    } else if ((changeEvent.getEntityType() == StageExecutionInfo.class)
+        && (dbObject.get(StageExecutionInfoKeys.stageType) != null)) {
       stageType = dbObject.get(StageExecutionInfoKeys.stageType).toString();
     }
-    if (!("CUSTOM_STAGE").equals(stageType)) {
+    if (!(CUSTOM_STAGE.equals(stageType))) {
       return true;
     }
     return false;

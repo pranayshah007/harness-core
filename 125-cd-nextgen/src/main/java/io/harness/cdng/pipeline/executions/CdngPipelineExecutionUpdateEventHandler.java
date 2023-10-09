@@ -65,7 +65,7 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
   private static final Set<String> STEPS_TO_UPDATE_LOG_STREAMS =
       getFieldValuesByType(StepSpecTypeConstants.class, String.class);
   private static final Set<String> STAGES_TO_UPDATE =
-      Sets.newHashSet("CUSTOM_STAGE", ExecutionNodeType.DEPLOYMENT_STAGE_STEP.getName());
+      Sets.newHashSet(ExecutionNodeType.CUSTOM_STAGE.getName(), ExecutionNodeType.DEPLOYMENT_STAGE_STEP.getName());
 
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepHelper stepHelper;

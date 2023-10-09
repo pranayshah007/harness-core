@@ -7,6 +7,8 @@
 
 package io.harness.changehandlers;
 
+import static io.harness.changehandlers.constants.StageExecutionHandlerConstants.CUSTOM_STAGE;
+
 import static java.util.Arrays.asList;
 
 import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
@@ -51,12 +53,10 @@ public class StageExecutionHandler extends AbstractChangeDataHandler {
       columnValueMapping.put("duration", Long.toString(duration));
     }
 
-    String stageType = dbObject.get(StageExecutionInfoKeys.stageType).toString();
-    if (stageType != null) {
-      if ("CUSTOM_STAGE".equals(stageType.toString())) {
-        columnValueMapping.put("type", "Custom");
-        return columnValueMapping;
-      }
+    if (dbObject.get(StageExecutionInfoKeys.stageType) != null
+        && (CUSTOM_STAGE.equals(dbObject.get(StageExecutionInfoKeys.stageType).toString()))) {
+      columnValueMapping.put("type", "Custom");
+      return columnValueMapping;
     }
 
     BasicDBObject executionSummaryDetails =
