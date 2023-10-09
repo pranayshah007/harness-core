@@ -1296,4 +1296,4 @@ io.harness.cdng.ecs.EcsServiceSetupStepNode
 io.harness.cdng.ecs.EcsBasicRollbackStepNode
 io.harness.beans.yaml.extended.cache.CachePolicy
 io.harness.beans.steps.stepinfo.GARStepInfo
-
+io.harness.cdng.provision.awscdk.beans.AwsCdkOutcome

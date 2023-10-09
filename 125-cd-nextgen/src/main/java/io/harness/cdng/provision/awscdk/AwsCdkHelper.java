@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_APP_PATH;
 import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_COMMAND_OPTIONS;
 import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_PARAMETERS;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.EntityType;
@@ -36,24 +37,32 @@ import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(CDP)
 @Singleton
 public class AwsCdkHelper {
+  public static final String CDK_OUTPUT_OUTCOME_NAME = "cdkOutput";
   public static final String GIT_COMMIT_ID = "GIT_COMMIT_ID";
+  public static final String CDK_OUTPUT = "CDK_OUTPUT";
   public static final String LATEST_SUCCESSFUL_PROVISIONING_COMMIT_ID = "LATEST_SUCCESSFUL_PROVISIONING_COMMIT_ID";
-  public static final List<String> OUTPUT_KEYS = Arrays.asList(GIT_COMMIT_ID, "CDK_OUTPUT");
+  public static final List<String> OUTPUT_KEYS = Arrays.asList(GIT_COMMIT_ID, CDK_OUTPUT);
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Inject private PipelineRbacHelper pipelineRbacHelper;
@@ -111,12 +120,18 @@ public class AwsCdkHelper {
     return environmentVariablesMap;
   }
 
-  public Map<String, String> processOutput(StepMapOutput stepOutput) {
+  public Map<String, Object> processOutput(StepMapOutput stepOutput) {
+    Map<String, Object> stepOutcome = new HashMap<>();
     Map<String, String> processedOutput = new HashMap<>();
     stepOutput.getMap().forEach((key, value) -> {
       if (OUTPUT_KEYS.contains(key)) {
         try {
-          processedOutput.put(key, new String(Base64.getDecoder().decode(value.replace("-", "="))));
+          String decodedOutput = getDecodedOutput(value);
+          if (CDK_OUTPUT.equals(key)) {
+            stepOutcome.putAll(parseOutputs(decodedOutput));
+          } else {
+            processedOutput.put(key, decodedOutput);
+          }
         } catch (Exception e) {
           log.error("Failed to decode: {} :", key, e);
         }
@@ -124,7 +139,13 @@ public class AwsCdkHelper {
         processedOutput.put(key, value);
       }
     });
-    return processedOutput;
+    stepOutput.setMap(processedOutput);
+    return stepOutcome;
+  }
+
+  @NotNull
+  public String getDecodedOutput(String value) {
+    return new String(Base64.getDecoder().decode(value.replace("-", "=")));
   }
 
   public void addParametersToEnvValues(
@@ -139,5 +160,20 @@ public class AwsCdkHelper {
       environmentVariablesMap.put(
           PLUGIN_AWS_CDK_PARAMETERS, "--parameters " + String.join(" --parameters ", parametersList));
     }
+  }
+
+  public Map<String, Object> parseOutputs(String outputString) {
+    Map<String, Object> outputs = new LinkedHashMap<>();
+    if (isEmpty(outputString)) {
+      return outputs;
+    }
+    try {
+      TypeReference<HashMap<String, Object>> typeRef = new TypeReference<>() {};
+      Map<String, Object> json = new ObjectMapper().readValue(IOUtils.toInputStream(outputString), typeRef);
+      outputs.putAll(json);
+    } catch (IOException exception) {
+      log.error("", exception);
+    }
+    return outputs;
   }
 }
