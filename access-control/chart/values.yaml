@@ -189,7 +189,7 @@ image:
   registry: docker.io
   repository: harness/accesscontrol-service-signed
   pullPolicy: IfNotPresent
-  tag: "79802"
+  tag: "80300"
   digest: ""
   imagePullSecrets: []
 # -- Wait-For-App initContainers details
