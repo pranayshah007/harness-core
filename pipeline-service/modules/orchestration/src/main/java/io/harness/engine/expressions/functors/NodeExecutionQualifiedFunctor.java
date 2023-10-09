@@ -14,11 +14,13 @@ import io.harness.engine.expressions.NodeExecutionsCache;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.expression.LateBindingValue;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 
 import java.util.Set;
 import lombok.Builder;
 import lombok.Value;
+import org.apache.commons.jexl3.JexlEngine;
 
 @OwnedBy(CDC)
 @Value
@@ -29,6 +31,8 @@ public class NodeExecutionQualifiedFunctor implements LateBindingValue {
   PmsSweepingOutputService pmsSweepingOutputService;
   Ambiance ambiance;
   Set<NodeExecutionEntityType> entityTypes;
+  JexlEngine engine;
+  NodeExecutionInfoService nodeExecutionInfoService;
 
   @Override
   public Object bind() {
@@ -36,9 +40,11 @@ public class NodeExecutionQualifiedFunctor implements LateBindingValue {
         .nodeExecutionsCache(nodeExecutionsCache)
         .pmsOutcomeService(pmsOutcomeService)
         .pmsSweepingOutputService(pmsSweepingOutputService)
+        .nodeExecutionInfoService(nodeExecutionInfoService)
         .ambiance(ambiance)
         .startNodeExecution(null)
         .entityTypes(entityTypes)
+        .engine(engine)
         .build()
         .bind();
   }

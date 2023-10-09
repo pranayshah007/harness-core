@@ -9,51 +9,50 @@ package io.harness.engine.executions.plan;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.execution.PlanExecution;
-import io.harness.execution.PlanExecution.PlanExecutionKeys;
 import io.harness.metrics.service.api.MetricService;
+import io.harness.monitoring.ExecutionCountWithAccountResult;
 import io.harness.pms.events.PmsEventMonitoringConstants;
 import io.harness.pms.events.base.PmsMetricContextGuard;
-import io.harness.pms.execution.utils.StatusUtils;
-import io.harness.pms.plan.execution.SetupAbstractionKeys;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
-import java.util.HashMap;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.Map;
-import org.springframework.data.util.CloseableIterator;
+import javax.cache.Cache;
 
 @OwnedBy(HarnessTeam.PIPELINE)
+@Singleton
 public class PlanExecutionMonitorServiceImpl implements PlanExecutionMonitorService {
-  private static final String PLAN_EXECUTION_ACTIVE_COUNT = "plan_execution_active_count";
+  private static final String PIPELINE_EXECUTION_ACTIVE_COUNT = "pipeline_execution_active_count";
+  private final PlanExecutionService planExecutionService;
+  private final MetricService metricService;
+  private final Cache<String, Integer> metricsCache;
 
-  @Inject private PlanExecutionService planExecutionService;
-  @Inject private MetricService metricService;
+  @Inject
+  public PlanExecutionMonitorServiceImpl(PlanExecutionService planExecutionService, MetricService metricService,
+      @Named("pmsMetricsCache") Cache<String, Integer> metricsCache) {
+    this.planExecutionService = planExecutionService;
+    this.metricService = metricService;
+    this.metricsCache = metricsCache;
+  }
 
   @Override
   public void registerActiveExecutionMetrics() {
-    Map<PipelineExecutionMetric, Integer> metricMap = new HashMap<>();
-    try (CloseableIterator<PlanExecution> iterator = planExecutionService.fetchPlanExecutionsByStatusFromAnalytics(
-             StatusUtils.activeStatuses(), ImmutableSet.of(PlanExecutionKeys.accountId))) {
-      while (iterator.hasNext()) {
-        PlanExecution planExecution = iterator.next();
-        PipelineExecutionMetric planExecutionMetric =
-            PipelineExecutionMetric.builder()
-                .accountId(planExecution.getSetupAbstractions().get(SetupAbstractionKeys.accountId))
-                .build();
-        metricMap.put(planExecutionMetric, metricMap.getOrDefault(planExecutionMetric, 0) + 1);
-      }
+    boolean alreadyMetricPublished = !metricsCache.putIfAbsent(PIPELINE_EXECUTION_ACTIVE_COUNT, 1);
+    if (alreadyMetricPublished) {
+      return;
     }
 
-    for (Map.Entry<PipelineExecutionMetric, Integer> entry : metricMap.entrySet()) {
+    for (ExecutionCountWithAccountResult accountResult :
+        planExecutionService.aggregateRunningExecutionCountPerAccount()) {
       Map<String, String> metricContextMap =
           ImmutableMap.<String, String>builder()
-              .put(PmsEventMonitoringConstants.ACCOUNT_ID, entry.getKey().getAccountId())
+              .put(PmsEventMonitoringConstants.ACCOUNT_ID, accountResult.getAccountId())
               .build();
 
       try (PmsMetricContextGuard pmsMetricContextGuard = new PmsMetricContextGuard(metricContextMap)) {
-        metricService.recordMetric(PLAN_EXECUTION_ACTIVE_COUNT, entry.getValue());
+        metricService.recordMetric(PIPELINE_EXECUTION_ACTIVE_COUNT, accountResult.getCount());
       }
     }
   }

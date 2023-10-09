@@ -69,11 +69,14 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -81,6 +84,7 @@ import javax.annotation.Nullable;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.DeleteConditionStep;
@@ -107,7 +111,6 @@ public class K8sRecommendationDAO {
   private static final String SUMMEMORY = "summemory";
   private static final String TIME = "time";
   private static final String ACCOUNT_ID = "accountid";
-  public static final String HARDCODED_MINIMUM_START_TIME = "2018-01-01T00:00:00+00";
 
   @Inject private HPersistence hPersistence;
   @Inject private DSLContext dslContext;
@@ -225,13 +228,24 @@ public class K8sRecommendationDAO {
 
     SelectFinalStep<? extends Record> finalStepT3 = dslContext.select(selectStepT3.getSelect()).from(t2);
     log.info("maxResourceOfAllTimeBucketsForANodePool, final query\n{}", finalStepT3.toString());
+    long startTime = System.nanoTime();
+    TotalResourceUsage totalResourceUsage = finalStepT3.fetchOneInto(TotalResourceUsage.class);
+    logQueryExecutionStats(jobConstants, nodePoolId, startTime);
+    return totalResourceUsage;
+  }
 
-    return finalStepT3.fetchOneInto(TotalResourceUsage.class);
+  private static void logQueryExecutionStats(
+      @NotNull JobConstants jobConstants, @NotNull NodePoolId nodePoolId, long startTime) {
+    long endTime = System.nanoTime();
+    long duration = (endTime - startTime) / 1_000_000;
+    log.info(
+        "NodePoolRecommendation Query execution: accountId: {}, nodePoolName: {}, clusterId: {}, startTime: {}. Total time in ms: {}",
+        jobConstants.getAccountId(), nodePoolId.getNodepoolname(), nodePoolId.getClusterid(),
+        new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(jobConstants.getJobStartTime())), duration);
   }
 
   private Table<? extends Record> sumResourceForEachTimeBucket(JobConstants jobConstants, NodePoolId nodePoolId) {
-    OffsetDateTime minStartTime = getMinStartTimeFromKubernetesUtilizationData(jobConstants, nodePoolId);
-    Table<? extends Record> t1 = groupByInstanceIdForEachTimeBucket(jobConstants, nodePoolId, minStartTime);
+    Table<? extends Record> t1 = groupByInstanceIdForEachTimeBucket(jobConstants, nodePoolId);
 
     SelectSelectStep<? extends Record> selectStep = select(sum(t1.field(KUBERNETES_UTILIZATION_DATA.CPU)).as(SUMCPU),
         sum(t1.field(KUBERNETES_UTILIZATION_DATA.MEMORY)).as(SUMMEMORY),
@@ -241,38 +255,27 @@ public class K8sRecommendationDAO {
     return dslContext.select(selectStep.getSelect()).from(t1).groupBy(t1.field(TIME)).asTable();
   }
 
-  private OffsetDateTime getMinStartTimeFromKubernetesUtilizationData(
-      JobConstants jobConstants, NodePoolId nodePoolId) {
-    OffsetDateTime minStartTime =
-        dslContext.select(DSL.min(KUBERNETES_UTILIZATION_DATA.STARTTIME))
-            .from(KUBERNETES_UTILIZATION_DATA)
-            .where(KUBERNETES_UTILIZATION_DATA.ACCOUNTID.eq(jobConstants.getAccountId())
-                       .and(KUBERNETES_UTILIZATION_DATA.CLUSTERID.eq(nodePoolId.getClusterid()))
-                       .and(KUBERNETES_UTILIZATION_DATA.STARTTIME.gt(
-                           DSL.offsetDateTime(OffsetDateTime.parse(HARDCODED_MINIMUM_START_TIME)))))
-            .fetchOneInto(OffsetDateTime.class);
-
-    log.info("Min Start Time fetched from KubernetesUtilizationData table: " + minStartTime);
-    return minStartTime != null ? minStartTime : OffsetDateTime.parse(HARDCODED_MINIMUM_START_TIME);
-  }
-
-  private Table<? extends Record> groupByInstanceIdForEachTimeBucket(
-      JobConstants jobConstants, NodePoolId nodePoolId, OffsetDateTime minStartTime) {
-    Table<? extends Record> t0 = getPodRequest(jobConstants, nodePoolId, minStartTime);
-
+  private Table<? extends Record> groupByInstanceIdForEachTimeBucket(JobConstants jobConstants, NodePoolId nodePoolId) {
+    Table<? extends Record> t0 = getPodRequest(jobConstants, nodePoolId);
     Field<OffsetDateTime> timeBucket =
         Routines.timeBucket2(val(YearToSecond.valueOf(Duration.ofMinutes(20))), KUBERNETES_UTILIZATION_DATA.STARTTIME)
             .as(TIME);
 
+    OffsetDateTime jobStartOffsetDateTime =
+        OffsetDateTime.ofInstant(Instant.ofEpochMilli(jobConstants.getJobStartTime()), ZoneOffset.UTC);
+    OffsetDateTime jobEndOffsetDateTime =
+        OffsetDateTime.ofInstant(Instant.ofEpochMilli(jobConstants.getJobEndTime()), ZoneOffset.UTC);
     Condition kubernetesUtilizationData_with_t0 =
         KUBERNETES_UTILIZATION_DATA.ACTUALINSTANCEID.eq(t0.field(KUBERNETES_UTILIZATION_DATA.ACTUALINSTANCEID))
-            .and(KUBERNETES_UTILIZATION_DATA.ACCOUNTID.eq(jobConstants.getAccountId())
-                     .and(KUBERNETES_UTILIZATION_DATA.CLUSTERID.eq(nodePoolId.getClusterid())
-                              .and(TimescaleUtils
-                                       .isAlive(KUBERNETES_UTILIZATION_DATA.STARTTIME,
-                                           KUBERNETES_UTILIZATION_DATA.ENDTIME, jobConstants.getJobStartTime(),
-                                           jobConstants.getJobEndTime())
-                                       .and(KUBERNETES_UTILIZATION_DATA.STARTTIME.greaterOrEqual(minStartTime)))));
+            .and(
+                KUBERNETES_UTILIZATION_DATA.ACCOUNTID.eq(jobConstants.getAccountId())
+                    .and(KUBERNETES_UTILIZATION_DATA.CLUSTERID.eq(nodePoolId.getClusterid())
+                             .and(TimescaleUtils
+                                      .isAlive(KUBERNETES_UTILIZATION_DATA.STARTTIME,
+                                          KUBERNETES_UTILIZATION_DATA.ENDTIME, jobConstants.getJobStartTime(),
+                                          jobConstants.getJobEndTime())
+                                      .and(KUBERNETES_UTILIZATION_DATA.STARTTIME.greaterOrEqual(jobStartOffsetDateTime))
+                                      .and(KUBERNETES_UTILIZATION_DATA.STARTTIME.lessThan(jobEndOffsetDateTime)))));
     SelectSelectStep<? extends Record> selectStepT1 = select(timeBucket,
         greatest(max(KUBERNETES_UTILIZATION_DATA.CPU), max(t0.field(POD_INFO.CPUREQUEST)))
             .as(KUBERNETES_UTILIZATION_DATA.CPU),
@@ -289,11 +292,14 @@ public class K8sRecommendationDAO {
         .asTable();
   }
 
-  private Table<? extends Record> getPodRequest(
-      JobConstants jobConstants, NodePoolId nodePoolId, OffsetDateTime minStartTime) {
+  private Table<? extends Record> getPodRequest(JobConstants jobConstants, NodePoolId nodePoolId) {
     final String kube_system_namespace = "kube-system";
     final String namespace_name_separator = "/";
 
+    OffsetDateTime jobStartOffsetDateTime =
+        OffsetDateTime.ofInstant(Instant.ofEpochMilli(jobConstants.getJobStartTime()), ZoneOffset.UTC);
+    OffsetDateTime jobEndOffsetDateTime =
+        OffsetDateTime.ofInstant(Instant.ofEpochMilli(jobConstants.getJobEndTime()), ZoneOffset.UTC);
     return dslContext
         .select(concat(POD_INFO.NAMESPACE, val(namespace_name_separator), POD_INFO.NAME)
                     .as(KUBERNETES_UTILIZATION_DATA.ACTUALINSTANCEID),
@@ -307,7 +313,9 @@ public class K8sRecommendationDAO {
             POD_INFO.NAMESPACE.notEqual(kube_system_namespace),
             TimescaleUtils.isAlive(
                 POD_INFO.STARTTIME, POD_INFO.STOPTIME, jobConstants.getJobStartTime(), jobConstants.getJobEndTime()),
-            POD_INFO.STARTTIME.greaterOrEqual(minStartTime), NODE_INFO.STARTTIME.greaterOrEqual(minStartTime)))
+            POD_INFO.STARTTIME.greaterOrEqual(jobStartOffsetDateTime),
+            POD_INFO.STARTTIME.lessThan(jobEndOffsetDateTime),
+            NODE_INFO.STARTTIME.greaterOrEqual(jobStartOffsetDateTime.minusMonths(12))))
         .asTable();
   }
 

@@ -14,6 +14,8 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.walktree.visitor.SimpleVisitorFactory;
 import io.harness.walktree.visitor.entityreference.EntityReferenceExtractorVisitor;
+import io.harness.walktree.visitor.entityreference.SecretReferenceExtractorVisitor;
+import io.harness.walktree.visitor.entityreference.beans.VisitedSecretReference;
 
 import com.google.inject.Inject;
 import java.util.LinkedList;
@@ -34,5 +36,15 @@ public class EntityReferenceExtractorUtils {
         accountIdentifier, orgIdentifier, projectIdentifier, new LinkedList<>());
     visitor.walkElementTree(object);
     return visitor.getEntityReferenceSet();
+  }
+
+  public Set<VisitedSecretReference> extractReferredSecrets(Ambiance ambiance, Object object) {
+    String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
+    String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
+    String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
+    SecretReferenceExtractorVisitor visitor = simpleVisitorFactory.obtainSecretReferenceExtractorVisitor(
+        accountIdentifier, orgIdentifier, projectIdentifier, new LinkedList<>());
+    visitor.walkElementTree(object);
+    return visitor.getVisitedSecretReferenceSet();
   }
 }

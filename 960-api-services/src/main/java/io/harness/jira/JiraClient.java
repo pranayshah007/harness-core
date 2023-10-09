@@ -8,7 +8,11 @@
 package io.harness.jira;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.jira.JiraConstantsNG.JIRA_USER_KEY;
 import static io.harness.network.Http.getOkHttpClientBuilder;
+
+import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -19,11 +23,13 @@ import io.harness.exception.HttpResponseException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.JiraClientException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.jira.JiraInstanceData.JiraDeploymentType;
 import io.harness.network.Http;
 import io.harness.network.SafeHttpCall;
 import io.harness.retry.RetryHelper;
 import io.harness.validation.Validator;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import io.github.resilience4j.retry.Retry;
 import java.util.ArrayList;
@@ -32,11 +38,13 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.json.JSONArray;
 import okhttp3.Credentials;
@@ -110,6 +118,20 @@ public class JiraClient {
       default:
         return executeCall(restClient.getUsers(userQuery, accountId, "10", startAt), "fetching users");
     }
+  }
+
+  public List<JiraUserData> getUsers(
+      String userQuery, String accountId, String startAt, @NotNull JiraInstanceData jiraInstanceData) {
+    if (isNull(jiraInstanceData) || isNull(jiraInstanceData.deploymentType)) {
+      return null;
+    }
+
+    if (jiraInstanceData.deploymentType == JiraDeploymentType.SERVER) {
+      return executeCall(
+          restClient.getUsersForJiraServer("".equals(userQuery) ? "\"\"" : userQuery, accountId, "10", startAt),
+          "fetching users from server");
+    }
+    return executeCall(restClient.getUsers(userQuery, accountId, "10", startAt), "fetching users from cloud");
   }
 
   /**
@@ -193,9 +215,39 @@ public class JiraClient {
     return getIssue(issueKey, false);
   }
 
+  public JiraIssueNG getIssue(@NotBlank String issueKey, String filterFields) {
+    return getIssue(issueKey, false, filterFields);
+  }
+
   private JiraIssueNG getIssue(@NotBlank String issueKey, boolean throwOnInvalidKey) {
     try {
       JiraIssueNG issue = executeCall(restClient.getIssue(issueKey, "names,schema"), "fetching issue");
+      if (issue != null) {
+        issue.updateJiraBaseUrl(config.getJiraUrl());
+      }
+      return issue;
+    } catch (Exception ex) {
+      if (!throwOnInvalidKey && is404StatusCode(ex)) {
+        return null;
+      }
+      throw ex;
+    }
+  }
+
+  private JiraIssueNG getIssue(@NotBlank String issueKey, boolean throwOnInvalidKey, String filterFields) {
+    try {
+      JiraIssueNG issue;
+      JsonNode issueNode = executeCall(
+          restClient.getIssueV2(issueKey, "names,schema", StringUtils.isBlank(filterFields) ? null : filterFields),
+          "fetching issue with filtered fields");
+
+      // only if filterFields is null, then fetch all the fields
+      if (isNull(filterFields)) {
+        issue = JiraIssueUtilsNG.toJiraIssueNGWithAllFieldNames(issueNode);
+      } else {
+        issue = new JiraIssueNG(issueNode);
+      }
+
       if (issue != null) {
         issue.updateJiraBaseUrl(config.getJiraUrl());
       }
@@ -374,10 +426,13 @@ public class JiraClient {
    * @param issueTypeName the issue type
    * @param fields        the issue fields - list/array type are represented as comma separated strings - if an array
    *                      element has comma itself, it should be wrapped in quotes
+   * @param checkRequiredFields checks whether fields param contains required fields
+   * @param setUserTypeFields sets user type custom fields if true
    * @return the created issue
    */
   public JiraIssueNG createIssue(@NotBlank String projectKey, @NotBlank String issueTypeName,
-      Map<String, String> fields, boolean checkRequiredFields, boolean ffEnabled, boolean fromCG) {
+      Map<String, String> fields, boolean checkRequiredFields, boolean ffEnabled, boolean fromCG,
+      boolean setUserTypeFields) {
     JiraIssueCreateMetadataNG createMetadata;
 
     try {
@@ -403,6 +458,10 @@ public class JiraClient {
           String.format("Invalid issue type in project %s: %s", projectKey, issueTypeName));
     }
 
+    if (setUserTypeFields && EmptyPredicate.isNotEmpty(fields)) {
+      setUserTypeCustomFieldsIfPresent(issueType.getFields(), fields);
+    }
+
     ImmutablePair<Map<String, String>, String> pair = extractCommentField(fields);
     fields = pair.getLeft();
     String comment = pair.getRight();
@@ -419,6 +478,12 @@ public class JiraClient {
           "adding issue comment");
     }
     return getIssue(issue.getKey(), true);
+  }
+
+  public JiraIssueNG createIssue(@NotBlank String projectKey, @NotBlank String issueTypeName,
+      Map<String, String> fields, boolean checkRequiredFields, boolean ffEnabled, boolean fromCG) {
+    // don't set user type fields by default
+    return createIssue(projectKey, issueTypeName, fields, checkRequiredFields, ffEnabled, fromCG, false);
   }
 
   /**
@@ -440,10 +505,11 @@ public class JiraClient {
    * @param transitionName     the transition name to choose in case multiple transitions have same to status
    * @param fields             the issue fields - list/array type are represented as comma separated strings - if an
    *                           array element has comma itself, it should be wrapped in quotes
+   * @param setUserTypeFields sets user type custom fields if true
    * @return the updated issue
    */
-  public JiraIssueNG updateIssue(
-      @NotBlank String issueKey, String transitionToStatus, String transitionName, Map<String, String> fields) {
+  public JiraIssueNG updateIssue(@NotBlank String issueKey, String transitionToStatus, String transitionName,
+      Map<String, String> fields, boolean setUserTypeFields) {
     JiraIssueUpdateMetadataNG updateMetadata;
     try {
       updateMetadata = getIssueUpdateMetadata(issueKey);
@@ -452,6 +518,10 @@ public class JiraClient {
         throw new JiraClientException(String.format("Invalid jira issue key: %s", issueKey));
       }
       throw ex;
+    }
+
+    if (setUserTypeFields && EmptyPredicate.isNotEmpty(fields)) {
+      setUserTypeCustomFieldsIfPresent(updateMetadata.getFields(), fields);
     }
 
     String transitionId = findIssueTransition(issueKey, transitionToStatus, transitionName);
@@ -478,6 +548,11 @@ public class JiraClient {
       executeCall(restClient.transitionIssue(issueKey, updateIssueRequest), "updating issue status");
     }
     return getIssue(issueKey, true);
+  }
+
+  public JiraIssueNG updateIssue(
+      @NotBlank String issueKey, String transitionToStatus, String transitionName, Map<String, String> fields) {
+    return updateIssue(issueKey, transitionToStatus, transitionName, fields, false);
   }
 
   /**
@@ -512,7 +587,9 @@ public class JiraClient {
           .filter(t -> t.getTo().getName().equalsIgnoreCase(transitionToStatus) && t.getName().equals(transitionName))
           .findFirst()
           .map(JiraIssueTransitionNG::getId)
-          .orElseThrow(() -> new JiraClientException(String.format("Invalid transition name: %s", transitionName)));
+          .orElseThrow(()
+                           -> new JiraClientException(String.format(
+                               "Invalid transition [%s] to status %s", transitionName, transitionToStatus)));
     } else {
       // If transitionName is not given, find first transition with the toStatus, else throw error.
       return transitions.getTransitions()
@@ -587,5 +664,102 @@ public class JiraClient {
           String.format("Invalid issue type in project %s: %s", projectKey, issueTypeName));
     }
     return issueType;
+  }
+
+  @VisibleForTesting
+  protected void setUserTypeCustomFieldsIfPresent(
+      @NotNull Map<String, JiraFieldNG> metadataFields, @NotNull Map<String, String> fields) {
+    // getting user type fields from metadata
+    Set<String> userTypeFields = metadataFields.entrySet()
+                                     .stream()
+                                     .filter(e -> e.getValue().getSchema().getType().equals(JiraFieldTypeNG.USER))
+                                     .map(Map.Entry::getKey)
+                                     .collect(Collectors.toSet());
+
+    // return if no user type fields in metadata; Added this condition in refactoring
+    if (EmptyPredicate.isEmpty(userTypeFields)) {
+      log.info("Found no user type fields in metadata, proceeding...");
+      return;
+    }
+
+    // getting instance data for deciding Server or Cloud
+    JiraInstanceData jiraInstanceData = getInstanceData();
+
+    fields.forEach((key, userQuery) -> {
+      if (userTypeFields.contains(key) && EmptyPredicate.isNotEmpty(userQuery)) {
+        // setting user type fields
+
+        if (userQuery.startsWith(JIRA_USER_KEY)) {
+          // directly get the user saved with Jira user key from Jira server
+          JiraUserData userData = getUser(userQuery);
+          fields.put(key, userData.getName());
+          return;
+        }
+
+        // else fetch jira users matching the user query
+        final List<JiraUserData> userDataList = getJiraUserDataList(userQuery, jiraInstanceData);
+        // extract one matching user
+        fields.put(key, extractUserValue(userDataList, userQuery));
+      }
+    });
+  }
+
+  private List<JiraUserData> getJiraUserDataList(String userQuery, JiraInstanceData jiraInstanceData) {
+    List<JiraUserData> userDataList;
+    if (isNull(jiraInstanceData) || isNull(jiraInstanceData.deploymentType)) {
+      return null;
+    }
+    if (jiraInstanceData.getDeploymentType() == JiraDeploymentType.CLOUD) {
+      userDataList = getUsers(null, userQuery, null, jiraInstanceData);
+      if (userDataList.isEmpty()) {
+        userDataList = getUsers(userQuery, null, null, jiraInstanceData);
+      }
+    } else {
+      userDataList = getUsers(userQuery, null, null, jiraInstanceData);
+    }
+    return userDataList;
+  }
+
+  private String extractUserValue(List<JiraUserData> userDataList, String userToMatch) {
+    if (isEmpty(userDataList)) {
+      throw new InvalidRequestException(String.format("Found no jira users with this query : [%s]", userToMatch));
+    }
+
+    if (userDataList.size() == 1) {
+      JiraUserData jiraUserData = userDataList.get(0);
+      return getUserNameOrAccountId(jiraUserData);
+    }
+
+    if (userDataList.size() > 1) {
+      log.info("Multiple users found in fuzzy search: {}", userDataList.size());
+    }
+
+    Set<String> matchedUsers = userDataList.stream()
+                                   .map(this::getUserNameOrAccountId)
+                                   .filter(user -> StringUtils.compare(userToMatch, user) == 0)
+                                   .collect(Collectors.toSet());
+
+    if (matchedUsers.isEmpty()) {
+      throw new InvalidRequestException(
+          String.format("Found no jira users with exact match for this query : [%s]", userToMatch));
+    }
+
+    if (matchedUsers.size() == 1) {
+      return matchedUsers.iterator().next();
+    }
+
+    throw new InvalidRequestException(String.format(
+        "Found %s jira users exactly matching with this query [%s]. Should be exactly 1. Total matches = %s",
+        matchedUsers.size(), userToMatch, userDataList.size()));
+  }
+
+  private String getUserNameOrAccountId(@NotNull JiraUserData jiraUserData) {
+    if (StringUtils.isNotBlank(jiraUserData.getAccountId()) && jiraUserData.getAccountId().startsWith(JIRA_USER_KEY)) {
+      // jira server
+      return jiraUserData.getName();
+    } else {
+      // jira cloud
+      return jiraUserData.getAccountId();
+    }
   }
 }

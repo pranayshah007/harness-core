@@ -23,6 +23,7 @@ public class NodeOutboxInfo {
   @NonNull NodeExecution nodeExecution;
   long updatedTs;
   @NonNull String type;
+  Integer runSequence;
 
   public String getNodeExecutionId() {
     return nodeExecution.getUuid();
@@ -30,5 +31,9 @@ public class NodeOutboxInfo {
 
   public Status getStatus() {
     return nodeExecution.getStatus();
+  }
+
+  public Integer getRunSequence() {
+    return runSequence;
   }
 }

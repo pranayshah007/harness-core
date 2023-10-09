@@ -65,8 +65,8 @@ import org.apache.commons.lang3.tuple.Pair;
 public class ArtifactUtils {
   public final String PRIMARY_ARTIFACT = "primary";
   public final String SIDECAR_ARTIFACT = "sidecars";
-  public final String GENERIC_PLACEHOLDER = "type: %s, artifactDirectory: %s, artifactPath/artifactPathFilter: %s,"
-      + " connectorRef: %s%n";
+  public final String GENERIC_PLACEHOLDER =
+      "\ntype: %s \nartifactDirectory: %s \nartifactFilter: %s \nartifactPath: %s \nartifactPathFilter: %s \nconnectorRef: %s\n";
 
   public String getArtifactKey(ArtifactConfig artifactConfig) {
     return artifactConfig.isPrimaryArtifact() ? PRIMARY_ARTIFACT
@@ -171,11 +171,11 @@ public class ArtifactUtils {
             (ArtifactoryRegistryArtifactConfig) artifactConfig;
         if (generic.name().equals(artifactoryRegistryArtifactConfig.getRepositoryFormat().getValue())) {
           return String.format(GENERIC_PLACEHOLDER, sourceType,
-              artifactoryRegistryArtifactConfig.getArtifactDirectory().getValue(),
-              ParameterField.isNull(artifactoryRegistryArtifactConfig.getArtifactPath())
-                  ? artifactoryRegistryArtifactConfig.getArtifactPathFilter().getValue()
-                  : artifactoryRegistryArtifactConfig.getArtifactPath().getValue(),
-              artifactoryRegistryArtifactConfig.getConnectorRef().getValue());
+              getValue(artifactoryRegistryArtifactConfig.getArtifactDirectory()),
+              getValue(artifactoryRegistryArtifactConfig.getArtifactFilter()),
+              getValue(artifactoryRegistryArtifactConfig.getArtifactPath()),
+              getValue(artifactoryRegistryArtifactConfig.getArtifactPathFilter()),
+              getValue(artifactoryRegistryArtifactConfig.getConnectorRef()));
         }
         return String.format(placeholder, sourceType, artifactoryRegistryArtifactConfig.getArtifactPath().getValue(),
             ParameterField.isNull(artifactoryRegistryArtifactConfig.getTag())
@@ -283,6 +283,10 @@ public class ArtifactUtils {
       default:
         throw new UnsupportedOperationException(String.format("Unknown Artifact Config type: [%s]", sourceType));
     }
+  }
+
+  private String getValue(ParameterField<String> parameterField) {
+    return ParameterField.isNotNull(parameterField) ? (String) parameterField.fetchFinalValue() : null;
   }
 
   public static Map<String, String> getTaskSetupAbstractions(BaseNGAccess ngAccess) {

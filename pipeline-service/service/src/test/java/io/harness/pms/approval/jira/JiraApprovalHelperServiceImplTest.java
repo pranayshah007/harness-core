@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.BRIJESH;
 
 import static junit.framework.TestCase.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -26,6 +27,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
@@ -36,6 +38,7 @@ import io.harness.delegate.beans.connector.jira.JiraAuthType;
 import io.harness.delegate.beans.connector.jira.JiraAuthenticationDTO;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
 import io.harness.delegate.beans.connector.jira.JiraUserNamePasswordDTO;
+import io.harness.delegate.task.jira.JiraTaskNGParameters;
 import io.harness.encryption.SecretRefData;
 import io.harness.engine.pms.tasks.NgDelegate2TaskExecutor;
 import io.harness.exception.HarnessJiraException;
@@ -50,13 +53,12 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.secrets.remote.SecretNGManagerClient;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.approval.ApprovalUtils;
 import io.harness.steps.approval.step.ApprovalInstanceService;
-import io.harness.steps.approval.step.ApprovalProgressData;
 import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.beans.CriteriaSpecWrapperDTO;
 import io.harness.steps.approval.step.beans.KeyValuesCriteriaSpecDTO;
 import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
+import io.harness.utils.PmsFeatureFlagHelper;
 import io.harness.waiter.WaitNotifyEngine;
 
 import java.time.Duration;
@@ -87,6 +89,7 @@ public class JiraApprovalHelperServiceImplTest extends CategoryTest {
   @Mock private PmsGitSyncHelper pmsGitSyncHelper;
   JiraApprovalHelperServiceImpl jiraApprovalHelperService;
   @Mock ILogStreamingStepClient iLogStreamingStepClient;
+  @Mock PmsFeatureFlagHelper pmsFeatureFlagHelper;
   private MockedStatic<NGRestUtils> aStatic;
   private static String accountId = "accountId";
   private static String orgIdentifier = "orgIdentifier";
@@ -98,7 +101,8 @@ public class JiraApprovalHelperServiceImplTest extends CategoryTest {
     aStatic = Mockito.mockStatic(NGRestUtils.class);
     jiraApprovalHelperService = spy(new JiraApprovalHelperServiceImpl(ngDelegate2TaskExecutor, connectorResourceClient,
         kryoSerializer, secretManagerClient, waitNotifyEngine, logStreamingStepClientFactory, publisherName,
-        pmsGitSyncHelper, null, approvalInstanceService));
+        pmsGitSyncHelper, null, approvalInstanceService, pmsFeatureFlagHelper));
+    when(pmsFeatureFlagHelper.isEnabled(any(), (FeatureName) any())).thenReturn(false);
   }
 
   @After
@@ -138,13 +142,11 @@ public class JiraApprovalHelperServiceImplTest extends CategoryTest {
     verify(secretManagerClient).getEncryptionDetails(any(), requestArgumentCaptorForSecretService.capture());
     assertTrue(requestArgumentCaptorForSecretService.getValue().getDecryptableEntity() instanceof JiraConnectorDTO);
     verify(waitNotifyEngine).waitForAllOn(any(), any(), any());
-    verify(waitNotifyEngine)
-        .progressOn("id",
-            ApprovalProgressData.builder()
-                .latestDelegateTaskId("__TASK_ID__")
-                .taskName(ApprovalUtils.JIRA_DELEGATE_TASK_NAME)
-                .build());
     verify(approvalInstanceService, times(1)).updateLatestDelegateTaskId("id", "__TASK_ID__");
+    ArgumentCaptor<JiraTaskNGParameters> jiraTaskNGParametersArgumentCaptor =
+        ArgumentCaptor.forClass(JiraTaskNGParameters.class);
+    verify(kryoSerializer, times(1)).asDeflatedBytes(jiraTaskNGParametersArgumentCaptor.capture());
+    assertThat(jiraTaskNGParametersArgumentCaptor.getValue().getFilterFields()).isNull();
 
     // since auth object is present, then decrypt-able entity will be JiraAuthCredentialsDTO
     doReturn(JiraConnectorDTO.builder()
@@ -171,12 +173,6 @@ public class JiraApprovalHelperServiceImplTest extends CategoryTest {
     assertThatCode(() -> jiraApprovalHelperService.handlePollingEvent(null, instance)).doesNotThrowAnyException();
     verify(ngDelegate2TaskExecutor, times(3)).queueTask(any(), any(), eq(Duration.ofSeconds(0)));
     verify(waitNotifyEngine, times(3)).waitForAllOn(any(), any(), any());
-    verify(waitNotifyEngine, times(3))
-        .progressOn("id",
-            ApprovalProgressData.builder()
-                .latestDelegateTaskId("__TASK_ID__")
-                .taskName(ApprovalUtils.JIRA_DELEGATE_TASK_NAME)
-                .build());
     verify(approvalInstanceService, times(3)).updateLatestDelegateTaskId("id", "__TASK_ID__");
 
     // when task id is empty, progress update shouldn't be called
@@ -185,6 +181,47 @@ public class JiraApprovalHelperServiceImplTest extends CategoryTest {
     jiraApprovalHelperService.handlePollingEvent(null, instance);
     verify(ngDelegate2TaskExecutor, times(4)).queueTask(any(), any(), eq(Duration.ofSeconds(0)));
     verify(waitNotifyEngine, times(4)).waitForAllOn(any(), any(), any());
+
+    // when FF optimization off and field is not blank
+    instance.setKeyListInKeyValueCriteria("status,priority");
+    jiraApprovalHelperService.handlePollingEvent(null, instance);
+    verify(ngDelegate2TaskExecutor, times(5)).queueTask(any(), any(), eq(Duration.ofSeconds(0)));
+    verify(waitNotifyEngine, times(5)).waitForAllOn(any(), any(), any());
+
+    verify(kryoSerializer, times(5)).asDeflatedBytes(jiraTaskNGParametersArgumentCaptor.capture());
+    assertThat(jiraTaskNGParametersArgumentCaptor.getValue().getFilterFields()).isEmpty();
+
+    // when FF optimization on and field is null
+
+    instance.setKeyListInKeyValueCriteria(null);
+    when(pmsFeatureFlagHelper.isEnabled(any(), (FeatureName) any())).thenReturn(true);
+    jiraApprovalHelperService.handlePollingEvent(null, instance);
+    verify(ngDelegate2TaskExecutor, times(6)).queueTask(any(), any(), eq(Duration.ofSeconds(0)));
+    verify(waitNotifyEngine, times(6)).waitForAllOn(any(), any(), any());
+
+    verify(kryoSerializer, times(6)).asDeflatedBytes(jiraTaskNGParametersArgumentCaptor.capture());
+    assertThat(jiraTaskNGParametersArgumentCaptor.getValue().getFilterFields()).isNull();
+
+    // when FF optimization on and field is blank
+
+    instance.setKeyListInKeyValueCriteria("  ");
+    jiraApprovalHelperService.handlePollingEvent(null, instance);
+    verify(ngDelegate2TaskExecutor, times(7)).queueTask(any(), any(), eq(Duration.ofSeconds(0)));
+    verify(waitNotifyEngine, times(7)).waitForAllOn(any(), any(), any());
+
+    verify(kryoSerializer, times(7)).asDeflatedBytes(jiraTaskNGParametersArgumentCaptor.capture());
+    assertThat(jiraTaskNGParametersArgumentCaptor.getValue().getFilterFields()).isEqualTo("  ");
+
+    // when FF optimization on and field is not blank
+
+    when(pmsFeatureFlagHelper.isEnabled(any(), (FeatureName) any())).thenReturn(true);
+    instance.setKeyListInKeyValueCriteria("status,priority");
+    jiraApprovalHelperService.handlePollingEvent(null, instance);
+    verify(ngDelegate2TaskExecutor, times(8)).queueTask(any(), any(), eq(Duration.ofSeconds(0)));
+    verify(waitNotifyEngine, times(8)).waitForAllOn(any(), any(), any());
+
+    verify(kryoSerializer, times(8)).asDeflatedBytes(jiraTaskNGParametersArgumentCaptor.capture());
+    assertThat(jiraTaskNGParametersArgumentCaptor.getValue().getFilterFields()).isEqualTo("status,priority");
     verifyNoMoreInteractions(waitNotifyEngine);
     verifyNoMoreInteractions(approvalInstanceService);
   }

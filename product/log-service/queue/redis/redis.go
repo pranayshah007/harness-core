@@ -30,8 +30,8 @@ const (
 	usePrefixParam = "prefix"
 )
 
-func NewWithClient(cmdable *redis.Cmdable) *Redis {
-	return &Redis{Client: *cmdable}
+func NewWithClient(cmdable redis.Cmdable) *Redis {
+	return &Redis{Client: cmdable}
 }
 
 func (r Redis) Produce(ctx context.Context, stream, key, zipKey string, values []string) error {
@@ -42,7 +42,7 @@ func (r Redis) Produce(ctx context.Context, stream, key, zipKey string, values [
 	if err != nil {
 		return err
 	}
-	_, err = r.Client.Expire(ctx, key, time.Minute*30).Result()
+	_, err = r.Client.Expire(ctx, key, time.Minute*10).Result()
 
 	if err != nil {
 		return err

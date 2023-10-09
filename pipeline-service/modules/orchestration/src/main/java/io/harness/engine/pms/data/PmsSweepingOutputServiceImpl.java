@@ -34,7 +34,6 @@ import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.mongodb.DuplicateKeyException;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -47,6 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.jexl3.JexlException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -67,7 +67,7 @@ public class PmsSweepingOutputServiceImpl implements PmsSweepingOutputService {
       // It is not an expression-like ref-object.
       return resolveUsingRuntimeId(ambiance, refObject);
     }
-
+    // TODO(sahil): Add implementation for groupName in refObject for expression-like ref name
     String fullyQualifiedName = ExpandedJsonFunctorUtils.createFullQualifiedName(ambiance, refObject.getName());
     ExecutionSweepingOutputInstance sweepingOutputInstance =
         getInstanceUsingFullyQualifiedName(ambiance, fullyQualifiedName);
@@ -84,9 +84,23 @@ public class PmsSweepingOutputServiceImpl implements PmsSweepingOutputService {
     return value == null ? null : RecastOrchestrationUtils.toJson(value);
   }
 
+  @Override
+  public String resolveUsingLevelRuntimeIdx(String planExecutionId, List<String> levelRuntimeIdx, RefObject refObject) {
+    String name = refObject.getName();
+    // We can't filter by groupName provided in rejObject via this utility
+    ExecutionSweepingOutputInstance instance = getInstance(planExecutionId, levelRuntimeIdx, refObject);
+    if (instance == null) {
+      throw new SweepingOutputException(format("Could not resolve sweeping output with name '%s'", name));
+    }
+
+    return instance.getOutputValueJson();
+  }
+
   private String resolveUsingRuntimeId(Ambiance ambiance, RefObject refObject) {
     String name = refObject.getName();
-    ExecutionSweepingOutputInstance instance = getInstance(ambiance, refObject);
+    String groupName = refObject.getGroupName();
+    ExecutionSweepingOutputInstance instance = getInstance(ambiance.getPlanExecutionId(),
+        ResolverUtils.prepareLevelRuntimeIdIndicesUsingGroupName(ambiance, groupName), refObject);
     if (instance == null) {
       throw new SweepingOutputException(format("Could not resolve sweeping output with name '%s'", name));
     }
@@ -143,6 +157,7 @@ public class PmsSweepingOutputServiceImpl implements PmsSweepingOutputService {
       // It is not an expression-like ref-object.
       return resolveOptionalUsingRuntimeId(ambiance, refObject);
     }
+    // TODO(sahil): Add implementation for groupName in refObject for expression-like ref name
     String fullyQualifiedName = ExpandedJsonFunctorUtils.createFullQualifiedName(ambiance, refObject.getName());
     RawOptionalSweepingOutput rawOptionalSweepingOutput =
         resolveOptionalUsingFullyQualifiedName(ambiance, fullyQualifiedName);
@@ -195,7 +210,9 @@ public class PmsSweepingOutputServiceImpl implements PmsSweepingOutputService {
   }
 
   private RawOptionalSweepingOutput resolveOptionalUsingRuntimeId(Ambiance ambiance, RefObject refObject) {
-    ExecutionSweepingOutputInstance instance = getInstance(ambiance, refObject);
+    String groupName = refObject.getGroupName();
+    ExecutionSweepingOutputInstance instance = getInstance(ambiance.getPlanExecutionId(),
+        ResolverUtils.prepareLevelRuntimeIdIndicesUsingGroupName(ambiance, groupName), refObject);
     if (instance == null) {
       return RawOptionalSweepingOutput.builder().found(false).build();
     }
@@ -211,12 +228,12 @@ public class PmsSweepingOutputServiceImpl implements PmsSweepingOutputService {
     return RawOptionalSweepingOutput.builder().found(true).output(instance.getOutputValueJson()).build();
   }
 
-  private ExecutionSweepingOutputInstance getInstance(Ambiance ambiance, RefObject refObject) {
+  private ExecutionSweepingOutputInstance getInstance(
+      String planExecutionId, List<String> levelRuntimeIdIdx, RefObject refObject) {
     String name = refObject.getName();
-    Query query = query(where(ExecutionSweepingOutputKeys.planExecutionId).is(ambiance.getPlanExecutionId()))
+    Query query = query(where(ExecutionSweepingOutputKeys.planExecutionId).is(planExecutionId))
                       .addCriteria(where(ExecutionSweepingOutputKeys.name).is(name))
-                      .addCriteria(where(ExecutionSweepingOutputKeys.levelRuntimeIdIdx)
-                                       .in(ResolverUtils.prepareLevelRuntimeIdIndices(ambiance)));
+                      .addCriteria(where(ExecutionSweepingOutputKeys.levelRuntimeIdIdx).in(levelRuntimeIdIdx));
     List<ExecutionSweepingOutputInstance> instances = mongoTemplate.find(query, ExecutionSweepingOutputInstance.class);
     // Multiple instances might be returned if the same name was saved at different levels/specificity.
     return EmptyPredicate.isEmpty(instances)
@@ -258,7 +275,7 @@ public class PmsSweepingOutputServiceImpl implements PmsSweepingOutputService {
               .build());
       return instance.getUuid();
     } catch (DuplicateKeyException ex) {
-      throw new SweepingOutputException(format("Sweeping output with name %s is already saved", name), ex);
+      throw new SweepingOutputException(format("Sweeping output with name %s is already saved", name));
     }
   }
 }

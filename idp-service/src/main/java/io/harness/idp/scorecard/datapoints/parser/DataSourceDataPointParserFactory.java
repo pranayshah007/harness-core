@@ -10,6 +10,7 @@ import static io.harness.idp.common.Constants.*;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.scorecard.datapoints.parser.kubernetes.KubernetesDataPointParserFactory;
 
 import com.google.inject.Inject;
 import lombok.AllArgsConstructor;
@@ -18,9 +19,14 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 public class DataSourceDataPointParserFactory {
   GithubDataPointParserFactory githubDataPointParserFactory;
+  BitbucketDataPointParserFactory bitbucketDataPointParserFactory;
+  GitlabDataPointParserFactory gitlabDataPointParserFactory;
   HarnessDataPointParserFactory harnessDataPointParserFactory;
   CatalogDataPointParserFactory catalogDataPointParserFactory;
+  KubernetesDataPointParserFactory kubernetesDataPointParserFactory;
   CustomDataPointParserFactory customDataPointParserFactory;
+  PagerDutyDataPointParserFactory pagerDutyDataPointParserFactory;
+  JiraDataPointParserFactory jiraDataPointParserFactory;
 
   public DataPointParserFactory getDataPointParserFactory(String identifier) {
     switch (identifier) {
@@ -28,10 +34,20 @@ public class DataSourceDataPointParserFactory {
         return harnessDataPointParserFactory;
       case GITHUB_IDENTIFIER:
         return githubDataPointParserFactory;
+      case BITBUCKET_IDENTIFIER:
+        return bitbucketDataPointParserFactory;
+      case GITLAB_IDENTIFIER:
+        return gitlabDataPointParserFactory;
       case CATALOG_IDENTIFIER:
         return catalogDataPointParserFactory;
+      case KUBERNETES_IDENTIFIER:
+        return kubernetesDataPointParserFactory;
       case CUSTOM_IDENTIFIER:
         return customDataPointParserFactory;
+      case PAGERDUTY_IDENTIFIER:
+        return pagerDutyDataPointParserFactory;
+      case JIRA_IDENTIFIER:
+        return jiraDataPointParserFactory;
       default:
         throw new UnsupportedOperationException(String.format("Could not find Datasource for %s", identifier));
     }

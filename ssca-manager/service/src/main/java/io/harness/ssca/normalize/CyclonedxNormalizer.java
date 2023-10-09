@@ -18,6 +18,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +38,7 @@ public class CyclonedxNormalizer implements Normalizer<CyclonedxDTO> {
               .artifactId(settings.getArtifactID())
               .artifactUrl(settings.getArtifactURL())
               .artifactName(component.getName())
+              .tags(Collections.singletonList(settings.getArtifactTag()))
               .createdOn(
                   new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'").parse(sbom.getMetadata().getTimestamp()).toInstant())
               .toolVersion(settings.getTool().getVersion())

@@ -111,6 +111,7 @@ io.harness.spotinst.model.ElastiGroup
 io.harness.ng.core.dto.secrets.SSHConfigDTO
 io.harness.delegate.cdng.execution.StepExecutionInstanceInfo
 io.harness.delegate.cdng.execution.K8sStepInstanceInfo
+io.harness.delegate.cdng.execution.TasStepInstanceInfo
 io.harness.ng.core.dto.secrets.NTLMConfigDTO
 io.harness.yaml.core.timeout.Timeout
 io.harness.delegate.task.localstore.ManifestFiles
@@ -152,6 +153,7 @@ io.harness.delegate.beans.connector.awskmsconnector.outcome.AwsKmsConnectorCrede
 io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthSADTO
 io.harness.delegate.beans.connector.gcpkmsconnector.outcome.GcpKmsConnectorOutcomeDTO
 io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO
+io.harness.delegate.beans.connector.gcpconnector.GcpOidcDetailsDTO
 io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO
 io.harness.container.ContainerInfo
 io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO
@@ -225,3 +227,4 @@ io.harness.delegate.beans.connector.azureconnector.outcome.AzureConnectorOutcome
 io.harness.delegate.beans.connector.azureconnector.outcome.AzureAuthOutcomeDTO
 io.harness.delegate.beans.connector.azureconnector.outcome.AzureCredentialOutcomeDTO
 io.harness.delegate.beans.instancesync.CustomDeploymentOutcomeMetadata
+io.harness.delegate.beans.instancesync.NativeHelmDeploymentOutcomeMetadata

@@ -9,9 +9,11 @@ package io.harness.cvng.servicelevelobjective.beans.slospec;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.math3.util.Pair;
 
 public abstract class CompositeSLOEvaluator {
-  public abstract Double evaluate(List<Double> weightage, List<Integer> sliValues);
+  public abstract Pair<Double, Double> evaluate(
+      List<Double> weightage, List<Integer> goodSliValues, List<Integer> badSliValues);
 
   List<Double> getSLOValuesOfIndividualSLIs(List<Double> weightage, List<Integer> sliValues) {
     List<Double> sliWithWeightage = new ArrayList<>();

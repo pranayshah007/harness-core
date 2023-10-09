@@ -196,6 +196,26 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
   }
 
   @Test
+  @Owner(developers = SHOBHIT_SINGH)
+  @Category(UnitTests.class)
+  public void testImagePullPolicyForGitClonePluginAndRunStepWithImagePullPolicyIfStageNodeIsNull() throws Exception {
+    List<ExecutionWrapperConfig> steps = K8InitializeStepUtilsHelper.getExecutionWrapperConfigForNullStageExecution();
+    IntegrationStageNode stageNode = null;
+    PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(new HashSet<>()).build();
+    CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
+    InitializeStepInfo initializeStepInfo =
+        InitializeStepInfo.builder()
+            .executionElementConfig(ExecutionElementConfig.builder().steps(steps).build())
+            .build();
+
+    Ambiance ambiance = Ambiance.newBuilder().build();
+    List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
+        initializeStepInfo, stageNode, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance, 0);
+
+    assertThat(stepContainers.get(0).getImagePullPolicy() == null).isEqualTo(true);
+  }
+
+  @Test
   @Owner(developers = DEV_MITTAL)
   @Category(UnitTests.class)
   public void testStepGroup() throws Exception {

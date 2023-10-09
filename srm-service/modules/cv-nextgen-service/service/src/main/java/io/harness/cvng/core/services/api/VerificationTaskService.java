@@ -46,7 +46,7 @@ public interface VerificationTaskService {
   Set<String> maybeGetVerificationTaskIds(String accountId, String verificationJobInstanceId);
 
   String getServiceGuardVerificationTaskId(String accountId, String cvConfigId);
-  String getSLIVerificationTaskId(String accountId, String sliId);
+  Optional<String> getSLIVerificationTaskId(String accountId, String sliId);
   String getCompositeSLOVerificationTaskId(String accountId, String sloId);
   List<String> getSLIVerificationTaskIds(String accountId, List<String> sliIds);
   VerificationTask getLiveMonitoringTask(String accountId, String cvConfigId);

@@ -7,7 +7,7 @@ global:
       installed: true
     mongodb:
       installed: true
-    postgresql:
+    postgres:
       installed: true
     timescaledb:
       installed: true
@@ -18,9 +18,9 @@ global:
 minio:
   fullnameOverride: "minio"
   mode: standalone
-  defaultBuckets: "logs"
+  defaultBuckets: "logs, sbom_store, policy_store"
   image:
-    tag: 2023.5.18-debian-11-r2
+    tag: 2023.7.18-debian-11-r2
   persistence:
     size: 200Gi
   auth:
@@ -78,6 +78,9 @@ postgresql:
         memory: 8192Mi
 clickhouse:
   fullnameOverride: "clickhouse"
+  auth:
+    existingSecret: "clickhouse"
+    existingSecretKey: "admin-password"
   image:
     tag: 23.3.13-debian-11-r0
   podLabels: { app: clickhouse }

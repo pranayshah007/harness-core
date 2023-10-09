@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.service.config;
-
 import static java.nio.charset.StandardCharsets.UTF_16;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ng.core.filestore.FileUsage;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.MigrationInputDTO;
@@ -20,6 +22,7 @@ import software.wings.ngmigration.NGMigrationEntityType;
 
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class ConfigFileHandlerImpl extends FileHandler<ConfigFile> {
   private byte[] fileContent;
 

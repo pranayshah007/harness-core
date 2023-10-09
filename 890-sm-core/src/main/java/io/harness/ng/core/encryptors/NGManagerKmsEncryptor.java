@@ -21,7 +21,7 @@ import io.harness.delegatetasks.EncryptSecretTaskParameters;
 import io.harness.delegatetasks.EncryptSecretTaskResponse;
 import io.harness.delegatetasks.ValidateSecretManagerConfigurationTaskParameters;
 import io.harness.encryptors.DelegateTaskUtils;
-import io.harness.encryptors.KmsEncryptor;
+import io.harness.encryptors.NgCgManagerKmsEncryptor;
 import io.harness.exception.SecretManagementException;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionConfig;
@@ -31,11 +31,12 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
 import javax.validation.executable.ValidateOnExecution;
+import org.apache.commons.lang3.tuple.Pair;
 
 @ValidateOnExecution
 @OwnedBy(PL)
 @Singleton
-public class NGManagerKmsEncryptor implements KmsEncryptor {
+public class NGManagerKmsEncryptor implements NgCgManagerKmsEncryptor {
   private final DelegateGrpcClientWrapper delegateService;
   private final NGManagerEncryptorHelper managerEncryptorHelper;
 
@@ -78,5 +79,12 @@ public class NGManagerKmsEncryptor implements KmsEncryptor {
     ValidateSecretManagerConfigurationTaskParameters parameters =
         ValidateSecretManagerConfigurationTaskParameters.builder().encryptionConfig(encryptionConfig).build();
     return managerEncryptorHelper.validateConfiguration(accountId, parameters);
+  }
+
+  @Override
+  public Pair<String, Boolean> validateKmsConfigurationWithTaskId(String accountId, EncryptionConfig encryptionConfig) {
+    ValidateSecretManagerConfigurationTaskParameters parameters =
+        ValidateSecretManagerConfigurationTaskParameters.builder().encryptionConfig(encryptionConfig).build();
+    return managerEncryptorHelper.validateConfigurationWithTaskId(accountId, parameters);
   }
 }

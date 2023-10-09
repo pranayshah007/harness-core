@@ -29,6 +29,7 @@ public class CIExecutionImages {
   @NotBlank String buildAndPushECRTag;
   @NotBlank String buildAndPushACRTag;
   @NotBlank String buildAndPushGCRTag;
+  @NotBlank String buildAndPushGARTag;
   @NotBlank String gcsUploadTag;
   @NotBlank String s3UploadTag;
   @NotBlank String artifactoryUploadTag;
@@ -38,5 +39,6 @@ public class CIExecutionImages {
   @NotBlank String sscaOrchestrationTag;
   @NotBlank String sscaEnforcementTag;
   @NotBlank String provenanceTag;
+  @NotBlank String provenanceGcrTag;
   @NotBlank String slsaVerificationTag;
 }

@@ -214,6 +214,96 @@ public class MatrixConfigurationServiceTest {
     assertThat(expectedStepIdentifiers.equals(stepIdentifiers)).isEqualTo(true);
   }
 
+  @Test
+  @Owner(developers = SHOBHIT_SINGH)
+  @Category(UnitTests.class)
+  public void testExpandJsonNodeFromClassTenth() throws IOException {
+    List<String> expectedIdentifiers = Arrays.asList(
+        "Run_1___names____bla___abcd___ef______azsd____kaq___lale___nc______dca____wdpr___sder___ks____wqd",
+        "Run_1___names____bla___abcd___ef____fsw___dca____wdpr___sder___ks____wqd",
+        "Run_1___names____bla___abcd___ef______azsd____kaq___lale___nc____dkw_wqd",
+        "Run_1___names____bla___abcd___ef____fsw_dkw_wqd",
+        "Run_1___names____bla___abcd___ef______azsd____kaq___lale___nc______spl____s___blahvalue____wqd",
+        "Run_1___names____bla___abcd___ef____fsw___spl____s___blahvalue____wqd",
+        "Run_1___kdkq____kql___d______azsd____kaq___lale___nc______dca____wdpr___sder___ks____wqd",
+        "Run_1___kdkq____kql___d____fsw___dca____wdpr___sder___ks____wqd",
+        "Run_1___kdkq____kql___d______azsd____kaq___lale___nc____dkw_wqd", "Run_1___kdkq____kql___d____fsw_dkw_wqd",
+        "Run_1___kdkq____kql___d______azsd____kaq___lale___nc______spl____s___blahvalue____wqd",
+        "Run_1___kdkq____kql___d____fsw___spl____s___blahvalue____wqd",
+        "Run_1___names____bla___abcd___ef______azsd____kaq___lale___nc______dca____wdpr___sder___ks____wple",
+        "Run_1___names____bla___abcd___ef____fsw___dca____wdpr___sder___ks____wple",
+        "Run_1___names____bla___abcd___ef______azsd____kaq___lale___nc____dkw_wple",
+        "Run_1___names____bla___abcd___ef____fsw_dkw_wple",
+        "Run_1___names____bla___abcd___ef______azsd____kaq___lale___nc______spl____s___blahvalue____wple",
+        "Run_1___names____bla___abcd___ef____fsw___spl____s___blahvalue____wple",
+        "Run_1___kdkq____kql___d______azsd____kaq___lale___nc______dca____wdpr___sder___ks____wple",
+        "Run_1___kdkq____kql___d____fsw___dca____wdpr___sder___ks____wple",
+        "Run_1___kdkq____kql___d______azsd____kaq___lale___nc____dkw_wple", "Run_1___kdkq____kql___d____fsw_dkw_wple",
+        "Run_1___kdkq____kql___d______azsd____kaq___lale___nc______spl____s___blahvalue____wple",
+        "Run_1___kdkq____kql___d____fsw___spl____s___blahvalue____wple");
+    testExpandJsonNodeFromClassCommon("matrix-loop-pipeline-4.yaml", 0, 24, expectedIdentifiers);
+  }
+
+  @Test
+  @Owner(developers = SHOBHIT_SINGH)
+  @Category(UnitTests.class)
+  public void testExpandJsonNodeFromClassEleventh() throws IOException {
+    List<String> expectedStepIdentifiers = Arrays.asList("Run_3_abc___qlo____s___q___", "Run_3_abc___qs____q___r___",
+        "Run_3_abc_wsq", "Run_3_abca___qlo____s___q___", "Run_3_abca___qs____q___r___", "Run_3_abca_wsq",
+        "Run_3_abcb___qlo____s___q___", "Run_3_abcb___qs____q___r___", "Run_3_abcb_wsq");
+    testExpandJsonNodeFromClassCommonForParallelStep("matrix-loop-pipeline-4.yaml", 2, 1, 9, expectedStepIdentifiers);
+  }
+
+  @Test
+  @Owner(developers = SHOBHIT_SINGH)
+  @Category(UnitTests.class)
+  public void testExpandJsonNodeFromClassTwelfth() throws IOException {
+    List<String> expectedStepIdentifiers = Arrays.asList("Run_5_aba_abd", "Run_5_abc_abd", "Run_5_abc_abd_0",
+        "Run_5_aba_abc", "Run_5_abc_abc", "Run_5_abc_abc_0", "Run_5_aba_abc_0", "Run_5_abc_abc_1", "Run_5_abc_abc_2");
+    testExpandJsonNodeFromClassCommon("matrix-loop-pipeline-4.yaml", 1, 9, expectedStepIdentifiers);
+  }
+
+  @Test
+  @Owner(developers = SHOBHIT_SINGH)
+  @Category(UnitTests.class)
+  public void testExpandJsonNodeFromClassThirteenth() throws IOException {
+    List<String> expectedStepIdentifiers = Arrays.asList("Run_4_a_ed", "Run_4_a_ed_0", "Run_4_a_ed_1", "Run_4_a_ed_2",
+        "Run_4_a_ed_3", "Run_4_a_ed_4", "Run_4_b_ed", "Run_4_b_ed_0", "Run_4_b_ed_1", "Run_4_b_ed_2", "Run_4_b_ed_3",
+        "Run_4_b_ed_4", "Run_4_c_ed", "Run_4_c_ed_0", "Run_4_c_ed_1", "Run_4_c_ed_2", "Run_4_c_ed_3", "Run_4_c_ed_4",
+        "Run_4_a_gf", "Run_4_a_gf_0", "Run_4_a_gf_1", "Run_4_a_gf_2", "Run_4_a_gf_3", "Run_4_a_gf_4", "Run_4_b_gf",
+        "Run_4_b_gf_0", "Run_4_b_gf_1", "Run_4_b_gf_2", "Run_4_b_gf_3", "Run_4_b_gf_4", "Run_4_c_gf", "Run_4_c_gf_0",
+        "Run_4_c_gf_1", "Run_4_c_gf_2", "Run_4_c_gf_3", "Run_4_c_gf_4");
+    testExpandJsonNodeFromClassCommonForParallelStep("matrix-loop-pipeline-4.yaml", 3, 0, 36, expectedStepIdentifiers);
+  }
+
+  @Test
+  @Owner(developers = SHOBHIT_SINGH)
+  @Category(UnitTests.class)
+  public void testExpandJsonNodeFromClassFourteenth() throws IOException {
+    List<String> expectedStepIdentifiers = Arrays.asList("Run_6_harness_hello", "Run_6_google_hello",
+        "Run_6_amazon_hello", "Run_6_harness___name____shobhit___dev___sahil___ved___",
+        "Run_6_google___name____shobhit___dev___sahil___ved___",
+        "Run_6_amazon___name____shobhit___dev___sahil___ved___", "Run_6_harness___age___23_26_28_25__",
+        "Run_6_google___age___23_26_28_25__", "Run_6_amazon___age___23_26_28_25__",
+        "Run_6_harness___gender____male___female___", "Run_6_google___gender____male___female___",
+        "Run_6_amazon___gender____male___female___");
+    testExpandJsonNodeFromClassCommonForParallelStep("matrix-loop-pipeline-4.yaml", 3, 1, 12, expectedStepIdentifiers);
+  }
+
+  @Test
+  @Owner(developers = SHOBHIT_SINGH)
+  @Category(UnitTests.class)
+  public void testExpandJsonNodeFromClassFifteenth() throws IOException {
+    // Actual length of list of stepIdentifiers without any exclusion is 27, with exclusion 21.
+    List<String> expectedStepIdentifiers = Arrays.asList("Run_7_var1_var4_var7", "Run_7_var1_var5_var7",
+        "Run_7_var1_var6_var7", "Run_7_var1_var4_var8", "Run_7_var1_var6_var8", "Run_7_var1_var4_var9",
+        "Run_7_var1_var5_var9", "Run_7_var1_var6_var9", "Run_7_var2_var4_var7", "Run_7_var2_var5_var7",
+        "Run_7_var2_var6_var7", "Run_7_var2_var4_var8", "Run_7_var2_var6_var8", "Run_7_var2_var4_var9",
+        "Run_7_var2_var5_var9", "Run_7_var2_var6_var9", "Run_7_var3_var5_var7", "Run_7_var3_var6_var7",
+        "Run_7_var3_var6_var8", "Run_7_var3_var5_var9", "Run_7_var3_var6_var9");
+    testExpandJsonNodeFromClassCommon("matrix-loop-pipeline-4.yaml", 4, 21, expectedStepIdentifiers);
+  }
+
   private void testExpandJsonNodeFromClassCommon(String yamlFile, int stepYamlNodeIndex, int sizeForAssertionCheck,
       List<String> expectedStepIdentifiers) throws IOException {
     ClassLoader classLoader = this.getClass().getClassLoader();

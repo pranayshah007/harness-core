@@ -6,11 +6,14 @@
  */
 
 package io.harness.ngmigration.service;
-
 import static io.harness.ngmigration.utils.MigratorUtility.getMigrationInput;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.ngmigration.context.ImportDtoThreadLocal;
 import io.harness.ngmigration.dto.ApplicationFilter;
 import io.harness.ngmigration.dto.ConnectorFilter;
 import io.harness.ngmigration.dto.EnvironmentFilter;
@@ -58,6 +61,7 @@ import javax.ws.rs.core.StreamingOutput;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class MigrationResourceService {
@@ -118,14 +122,19 @@ public class MigrationResourceService {
   }
 
   public SaveSummaryDTO save(String authToken, ImportDTO importDTO) {
-    DiscoveryResult discoveryResult = discover(importDTO);
-    if (discoveryResult == null) {
-      return SaveSummaryDTO.builder().build();
+    try {
+      ImportDtoThreadLocal.set(importDTO);
+      DiscoveryResult discoveryResult = discover(importDTO);
+      if (discoveryResult == null) {
+        return SaveSummaryDTO.builder().build();
+      }
+      SaveSummaryDTO saveSummaryDTO =
+          discoveryService.migrateEntities(getMigrationInput(authToken, importDTO), discoveryResult);
+      postMigrationHandler(authToken, importDTO, discoveryResult, saveSummaryDTO);
+      return saveSummaryDTO;
+    } finally {
+      ImportDtoThreadLocal.unset();
     }
-    SaveSummaryDTO saveSummaryDTO =
-        discoveryService.migrateEntities(getMigrationInput(authToken, importDTO), discoveryResult);
-    postMigrationHandler(authToken, importDTO, discoveryResult, saveSummaryDTO);
-    return saveSummaryDTO;
   }
 
   private void postMigrationHandler(

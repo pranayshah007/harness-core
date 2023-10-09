@@ -7,4 +7,4 @@
 
 package io.harness.annotations.dev;
 
-public enum ProductModule { CDB, CDS, CI, FFM, PL, PLG, SRM, STO }
+public enum ProductModule { CDB, CDS, CI, FFM, PL, PLG, SRM, STO, CCM }

@@ -866,6 +866,8 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
@@ -995,6 +997,14 @@ public class WingsModule extends AbstractModule implements ServersModule {
     boolean isFreeCluster = StringUtils.equals(clusterType, "freemium");
 
     return new CdnStorageUrlGenerator(configuration.getCdnConfig(), isFreeCluster);
+  }
+
+  @Provides
+  @Singleton
+  @Named("cgJobExecutor")
+  public ScheduledExecutorService cgJobExecutor() {
+    return new ScheduledThreadPoolExecutor(
+        2, new ThreadFactoryBuilder().setNameFormat("cg-job-%d").setPriority(Thread.MAX_PRIORITY).build());
   }
 
   @Override
@@ -1321,7 +1331,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     buildServiceMapBinder.addBinding(SftpConfig.class).toInstance(SftpBuildService.class);
     buildServiceMapBinder.addBinding(AzureArtifactsPATConfig.class).toInstance(AzureArtifactsBuildService.class);
 
-    install(new ManagerCacheRegistrar());
+    install(new ManagerCacheRegistrar(configuration));
     install(new FactoryModuleBuilder().implement(Jenkins.class, JenkinsImpl.class).build(JenkinsFactory.class));
     install(SecretManagementCoreModule.getInstance());
     install(new InstanceSyncMonitoringModule());

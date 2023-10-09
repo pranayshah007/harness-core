@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngmigration.service.entity;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.encryption.Scope.PROJECT;
@@ -32,8 +31,11 @@ import static software.wings.ngmigration.NGMigrationEntityType.TEMPLATE;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.elastigroup.config.yaml.StartupScriptConfiguration;
@@ -134,6 +136,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class ServiceMigrationService extends NgMigrationService {
@@ -328,6 +331,7 @@ public class ServiceMigrationService extends NgMigrationService {
                                                 .build()))
           .build();
     }
+
     ServiceRequestDTO serviceRequestDTO =
         ServiceRequestDTO.builder()
             .description(null)
@@ -337,11 +341,28 @@ public class ServiceMigrationService extends NgMigrationService {
             .projectIdentifier(yamlFile.getNgEntityDetail().getProjectIdentifier())
             .yaml(getYamlString(yamlFile))
             .build();
+
+    log.info("Service yaml: {}", getYamlString(yamlFile));
+
     Response<ResponseDTO<ServiceResponse>> resp =
         ngClient
             .createService(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
                 JsonUtils.asTree(serviceRequestDTO))
             .execute();
+    if (!(resp.code() >= 200 && resp.code() < 300)) {
+      serviceRequestDTO = ServiceRequestDTO.builder()
+                              .description(null)
+                              .identifier(yamlFile.getNgEntityDetail().getIdentifier())
+                              .name(((NGServiceConfig) yamlFile.getYaml()).getNgServiceV2InfoConfig().getName())
+                              .orgIdentifier(yamlFile.getNgEntityDetail().getOrgIdentifier())
+                              .projectIdentifier(yamlFile.getNgEntityDetail().getProjectIdentifier())
+                              .yaml(getYamlStringV2(yamlFile))
+                              .build();
+      resp = ngClient
+                 .createService(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                     JsonUtils.asTree(serviceRequestDTO))
+                 .execute();
+    }
     log.info("Service creation Response details {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);
   }
@@ -383,7 +404,6 @@ public class ServiceMigrationService extends NgMigrationService {
             .filter(entry -> CONFIG_FILE == entry.getType())
             .map(entry -> (ConfigFile) entry.getEntity())
             .filter(configFile -> configFile.getEntityType() == EntityType.SERVICE)
-            .filter(ConfigFile::isTargetToAllEnv)
             .filter(configFile -> StringUtils.equals(configFile.getEntityId(), service.getUuid()))
             .map(configFile -> CgEntityId.builder().type(CONFIG_FILE).id(configFile.getUuid()).build())
             .collect(Collectors.toSet());

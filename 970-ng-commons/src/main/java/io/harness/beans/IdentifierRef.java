@@ -7,6 +7,8 @@
 
 package io.harness.beans;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.encryption.Scope;
@@ -73,5 +75,13 @@ public class IdentifierRef implements EntityReference {
   @Override
   public void setIsDefault(Boolean isDefault) {
     this.isDefault = isDefault;
+  }
+
+  @Override
+  public Scope getScope() {
+    if (!isNull(this.scope)) {
+      return this.scope;
+    }
+    return Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
   }
 }

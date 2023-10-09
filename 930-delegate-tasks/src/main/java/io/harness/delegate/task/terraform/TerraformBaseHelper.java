@@ -114,4 +114,6 @@ public interface TerraformBaseHelper {
       int exitCode, LogCallback logCallback, PlanLogOutputStream planLogOutputStream);
 
   TerraformConfigInspectVersion getTerraformConfigInspectVersion(TerraformProvisionParameters parameters);
+
+  Map<String, String> getAwsAuthEnvVariables(TerraformTaskNGParameters taskParameters);
 }

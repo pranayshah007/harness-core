@@ -24,6 +24,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -42,10 +43,12 @@ import io.harness.engine.pms.advise.handlers.NextStepHandler;
 import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
+import io.harness.engine.pms.data.ResolverUtils;
 import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.execution.NodeExecution;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.plan.IdentityPlanNode;
+import io.harness.plan.NodeType;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserResponse;
@@ -56,6 +59,7 @@ import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.TriggeredBy;
+import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
@@ -76,7 +80,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
@@ -95,7 +98,7 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
   @Mock private PmsSweepingOutputService pmsSweepingOutputService;
   @Mock private OrchestrationEngine orchestrationEngine;
   @Mock private IdentityNodeResumeHelper identityNodeResumeHelper;
-  @Mock private PmsGraphStepDetailsService pmsGraphStepDetailsService;
+  @Mock private NodeExecutionInfoService pmsGraphStepDetailsService;
   @Mock private AdviseHandlerFactory adviseHandlerFactory;
   @Mock private NextStepHandler nextStepHandler;
   @Mock IdentityNodeExecutionStrategyHelper identityNodeExecutionStrategyHelper;
@@ -136,7 +139,7 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
                                             .build();
     doReturn(NodeExecution.builder().build())
         .when(executionStrategy)
-        .createNodeExecution(ambiance, identityPlanNode, null, null, null, null);
+        .createNodeExecutionInternal(ambiance, identityPlanNode, null, null, null, null);
     executionStrategy.runNode(ambiance, identityPlanNode, null);
     verify(executorService).submit(any(Runnable.class));
   }
@@ -144,7 +147,6 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
   @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
-  @Ignore("Flaky Test. Adding ignore to unblock PR checks")
   public void shouldTestStartExecution() {
     String planExecutionId = generateUuid();
     String nodeExecutionId = generateUuid();
@@ -185,8 +187,8 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
     when(planService.fetchNode(planId, planNode.getUuid())).thenReturn(planNode);
     when(nodeExecutionService.get(eq(nodeExecutionId))).thenReturn(nodeExecution);
     when(nodeExecutionService.get(eq(originalNodeExecutionId))).thenReturn(originalExecution);
-    when(nodeExecutionService.updateStatusWithOps(eq(nodeExecutionId), eq(Status.SKIPPED), any(), any()))
-        .thenReturn(nodeExecution);
+    when(nodeExecutionService.updateStatusWithOps(eq(nodeExecutionId), any(), any(), any())).thenReturn(nodeExecution);
+    doReturn(nextStepHandler).when(adviseHandlerFactory).obtainHandler(any());
 
     executionStrategy.startExecution(ambiance);
     verify(executionStrategy, times(1)).processAdviserResponse(ambiance, adviserResponse);
@@ -278,7 +280,6 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
   @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
-  @Ignore("Flaky Test. Adding ignore to unblock PR checks")
   public void shouldTestResumeNodeExecution() {
     String planExecutionId = generateUuid();
     String nodeExecutionId = generateUuid();
@@ -286,7 +287,10 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
     Ambiance ambiance = Ambiance.newBuilder()
                             .setPlanExecutionId(planExecutionId)
                             .putAllSetupAbstractions(prepareInputArgs())
-                            .addLevels(Level.newBuilder().setRuntimeId(nodeExecutionId).build())
+                            .addLevels(Level.newBuilder()
+                                           .setNodeType(NodeType.IDENTITY_PLAN_NODE.name())
+                                           .setRuntimeId(nodeExecutionId)
+                                           .build())
                             .build();
     IdentityPlanNode planNode = IdentityPlanNode.builder()
                                     .name("Test Node")
@@ -307,12 +311,15 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
     when(nodeExecutionService.get(eq(nodeExecutionId))).thenReturn(nodeExecution);
     assertThatCode(() -> executionStrategy.resumeNodeExecution(ambiance, new HashMap<>(), false))
         .doesNotThrowAnyException();
+
+    doThrow(new RuntimeException()).when(identityNodeResumeHelper).resume(any(), any(), eq(false), any());
+    assertThatCode(() -> executionStrategy.resumeNodeExecution(ambiance, new HashMap<>(), false))
+        .doesNotThrowAnyException();
   }
 
   @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
-  @Ignore("Flaky Test. Adding ignore to unblock PR checks")
   public void shouldTestProcessStepResponse() {
     String planExecutionId = generateUuid();
     String nodeExecutionId = generateUuid();
@@ -320,7 +327,10 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
     Ambiance ambiance = Ambiance.newBuilder()
                             .setPlanExecutionId(planExecutionId)
                             .putAllSetupAbstractions(prepareInputArgs())
-                            .addLevels(Level.newBuilder().setRuntimeId(nodeExecutionId).build())
+                            .addLevels(Level.newBuilder()
+                                           .setNodeType(NodeType.IDENTITY_PLAN_NODE.name())
+                                           .setRuntimeId(nodeExecutionId)
+                                           .build())
                             .build();
     IdentityPlanNode planNode = IdentityPlanNode.builder()
                                     .name("Test Node")
@@ -337,12 +347,18 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
                                       .adviserResponse(adviserResponse)
                                       .mode(ExecutionMode.SYNC)
                                       .build();
+    doReturn(planNode).when(planService).fetchNode(ambiance.getPlanId(), nodeExecution.getNodeId());
 
     when(nodeExecutionService.get(eq(nodeExecutionId))).thenReturn(nodeExecution);
     when(
         nodeExecutionService.updateStatusWithOps(nodeExecutionId, Status.SUCCEEDED, null, EnumSet.noneOf(Status.class)))
         .thenReturn(nodeExecution);
+    doReturn(nextStepHandler).when(adviseHandlerFactory).obtainHandler(any());
+
     StepResponseProto stepResponseProto = StepResponseProto.newBuilder().setStatus(Status.SUCCEEDED).build();
+    assertThatCode(() -> executionStrategy.processStepResponse(ambiance, stepResponseProto)).doesNotThrowAnyException();
+
+    doThrow(new RuntimeException()).when(nodeExecutionService).updateStatusWithOps(any(), any(), eq(null), any());
     assertThatCode(() -> executionStrategy.processStepResponse(ambiance, stepResponseProto)).doesNotThrowAnyException();
   }
 
@@ -385,13 +401,17 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
   @Test
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
-  @Ignore("Flaky Test. Adding ignore to unblock PR checks")
   public void testCreateNodeExecution() {
+    String originalNodeExecutionId = generateUuid();
     long startTs = System.currentTimeMillis();
     String uuid = generateUuid();
     Ambiance ambiance = Ambiance.newBuilder()
                             .setPlanExecutionId(generateUuid())
-                            .addLevels(Level.newBuilder().setStartTs(startTs).setRuntimeId(uuid).build())
+                            .addLevels(Level.newBuilder()
+                                           .setNodeType(NodeType.IDENTITY_PLAN_NODE.name())
+                                           .setStartTs(startTs)
+                                           .setRuntimeId(uuid)
+                                           .build())
                             .build();
     IdentityPlanNode node = IdentityPlanNode.builder().originalNodeExecutionId("OID").build();
     NodeExecution nodeExecution = NodeExecution.builder()
@@ -401,23 +421,38 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
                                       .status(Status.QUEUED)
                                       .unitProgresses(new ArrayList<>())
                                       .startTs(startTs)
-                                      .originalNodeExecutionId("OID")
+                                      .originalNodeExecutionId(originalNodeExecutionId)
                                       .notifyId("NID")
                                       .parentId("PaID")
                                       .previousId("PrID")
+                                      .levelRuntimeIdx(ResolverUtils.prepareLevelRuntimeIdIndices(ambiance))
+                                      .skipGraphType(SkipType.NOOP)
                                       .build();
-    when(nodeExecutionService.get(anyString())).thenReturn(NodeExecution.builder().uuid(generateUuid()).build());
+    when(nodeExecutionService.get(anyString()))
+        .thenReturn(NodeExecution.builder().uuid(originalNodeExecutionId).build());
     when(nodeExecutionService.save(any(NodeExecution.class))).thenReturn(nodeExecution);
     doNothing().when(pmsGraphStepDetailsService).copyStepDetailsForRetry(anyString(), anyString(), anyString());
     on(identityNodeExecutionStrategyHelper).set("nodeExecutionService", nodeExecutionService);
     on(identityNodeExecutionStrategyHelper).set("pmsGraphStepDetailsService", pmsGraphStepDetailsService);
     doCallRealMethod().when(identityNodeExecutionStrategyHelper).createNodeExecution(any(), any(), any(), any(), any());
-    NodeExecution nodeExecution1 = executionStrategy.createNodeExecution(ambiance, node, null, "NID", "PaID", "PrID");
+    NodeExecution nodeExecution1 =
+        executionStrategy.createNodeExecutionInternal(ambiance, node, null, "NID", "PaID", "PrID");
     assertEquals(nodeExecution1, nodeExecution);
     verify(pmsGraphStepDetailsService, times(1)).copyStepDetailsForRetry(anyString(), anyString(), anyString());
     ArgumentCaptor<NodeExecution> mCaptor = ArgumentCaptor.forClass(NodeExecution.class);
     verify(nodeExecutionService).save(mCaptor.capture());
-    assertThat(mCaptor.getValue().toString()).isEqualTo(nodeExecution.toString());
+    NodeExecution saveNodeExecution = mCaptor.getValue();
+    assertThat(saveNodeExecution.getOriginalNodeExecutionId()).isEqualTo(nodeExecution.getOriginalNodeExecutionId());
+    assertThat(saveNodeExecution.getParentId()).isEqualTo(nodeExecution.getParentId());
+    assertThat(saveNodeExecution.getAmbiance()).isEqualTo(nodeExecution.getAmbiance());
+    assertThat(saveNodeExecution.getNotifyId()).isEqualTo(nodeExecution.getNotifyId());
+    assertThat(saveNodeExecution.getNodeId()).isEqualTo(nodeExecution.getNodeId());
+    assertThat(saveNodeExecution.getNodeType()).isEqualTo(nodeExecution.getNodeType());
+    assertThat(saveNodeExecution.getPreviousId()).isEqualTo(nodeExecution.getPreviousId());
+    assertThat(saveNodeExecution.getIdentifier()).isEqualTo(nodeExecution.getIdentifier());
+    assertThat(saveNodeExecution.getStepType()).isEqualTo(nodeExecution.getStepType());
+    assertThat(saveNodeExecution.getResolvedParams()).isEqualTo(nodeExecution.getResolvedParams());
+    assertThat(saveNodeExecution.getStatus()).isEqualTo(nodeExecution.getStatus());
   }
 
   @Test

@@ -11,12 +11,15 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.PlanExecution.PlanExecutionKeys;
+import io.harness.execution.PlanExecutionMetadata.PlanExecutionMetadataKeys;
 
 import com.google.common.collect.Sets;
 import java.util.Set;
 
 @OwnedBy(PIPELINE)
 public final class PlanExecutionProjectionConstants {
-  public static final Set<String> fieldsForPlanExecutionDelete =
-      Sets.newHashSet(PlanExecutionKeys.ambiance + ".planId");
+  public static final Set<String> fieldsForPlanExecutionDelete = Sets.newHashSet(PlanExecutionKeys.planId);
+
+  public static final Set<String> fieldsForPostProdRollback =
+      Sets.newHashSet(PlanExecutionMetadataKeys.postExecutionRollbackInfos);
 }

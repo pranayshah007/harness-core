@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.ReleaseMetadataFactory;
 import io.harness.cdng.executables.CdTaskChainExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.helm.ReleaseHelmChartOutcome;
@@ -41,6 +42,7 @@ import io.harness.delegate.task.k8s.K8sRollingDeployRequest;
 import io.harness.delegate.task.k8s.K8sRollingDeployResponse;
 import io.harness.delegate.task.k8s.K8sTaskType;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.k8s.model.K8sPod;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -65,6 +67,7 @@ import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
@@ -83,6 +86,7 @@ public class K8sRollingStep extends CdTaskChainExecutable implements K8sStepExec
   @Inject private InstanceInfoService instanceInfoService;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
+  @Inject private ReleaseMetadataFactory releaseMetadataFactory;
   @Override
   public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // Noop
@@ -153,6 +157,9 @@ public class K8sRollingStep extends CdTaskChainExecutable implements K8sStepExec
 
     if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
       rollingRequestBuilder.serviceHooks(k8sStepHelper.getServiceHooks(ambiance));
+    }
+    if (cdStepHelper.shouldPassReleaseMetadata(accountId)) {
+      rollingRequestBuilder.releaseMetadata(releaseMetadataFactory.createReleaseMetadata(infrastructure, ambiance));
     }
 
     Map<String, String> k8sCommandFlag =
@@ -225,10 +232,14 @@ public class K8sRollingStep extends CdTaskChainExecutable implements K8sStepExec
 
     boolean pruningEnabled = CDStepHelper.getParameterFieldBooleanValue(
         k8sRollingStepParameters.getPruningEnabled(), K8sRollingBaseStepInfoKeys.pruningEnabled, stepElementParameters);
-    K8sRollingOutcome k8sRollingOutcome = k8sRollingOutcomeBuilder.releaseNumber(k8sTaskResponse.getReleaseNumber())
-                                              .prunedResourceIds(k8sStepHelper.getPrunedResourcesIds(
-                                                  pruningEnabled, k8sTaskResponse.getPrunedResourceIds()))
-                                              .build();
+    K8sRollingOutcome k8sRollingOutcome =
+        k8sRollingOutcomeBuilder.releaseNumber(k8sTaskResponse.getReleaseNumber())
+            .prunedResourceIds(
+                k8sStepHelper.getPrunedResourcesIds(pruningEnabled, k8sTaskResponse.getPrunedResourceIds()))
+            .podIps(k8sTaskResponse.getK8sPodList() != null
+                    ? k8sTaskResponse.getK8sPodList().stream().map(K8sPod::getPodIP).collect(Collectors.toList())
+                    : null)
+            .build();
     HelmChartInfo helmChartInfo = k8sTaskResponse.getHelmChartInfo();
     ReleaseHelmChartOutcome releaseHelmChartOutcome = k8sStepHelper.getHelmChartOutcome(helmChartInfo);
     executionSweepingOutputService.consume(

@@ -166,7 +166,7 @@ public class AwsLambdaInstanceHandler extends InstanceHandler implements Instanc
   void syncInstancesInternal(String appId, String infraMappingId,
       @NotNull List<DeploymentSummary> newDeploymentSummaries, AwsLambdaDetailsMetricsResponse awsLambdaDetailsResponse,
       InstanceSyncFlow instanceSyncFlow) {
-    log.info("# Performing Aws Lambda Instance Sync");
+    log.debug("# Performing Aws Lambda Instance Sync");
     final AwsLambdaInfraStructureMapping awsLambdaInfraStructureMapping = getInfraMapping(infraMappingId, appId);
     final SettingAttribute cloudProviderSetting = cloudProviderSetting(awsLambdaInfraStructureMapping);
     final AwsConfig awsConfig = (AwsConfig) cloudProviderSetting.getValue();
@@ -174,7 +174,7 @@ public class AwsLambdaInstanceHandler extends InstanceHandler implements Instanc
 
     final Collection<ServerlessInstance> activeInstancesInDB =
         emptyIfNull(getActiveServerlessInstances(appId, infraMappingId));
-    log.info("Total no of instances found in DB for AppId: {}, "
+    log.debug("Total no of instances found in DB for AppId: {}, "
             + "No of instances in DB: {}, No of new instances to add: {}",
         appId, activeInstancesInDB.size(), newDeploymentSummaries.size());
 
@@ -311,8 +311,8 @@ public class AwsLambdaInstanceHandler extends InstanceHandler implements Instanc
       List<EncryptedDataDetail> encryptedDataDetails, ServerlessInstance instanceToUpdate) {
     final String functionName = instanceToUpdate.getLambdaInstanceKey().getFunctionName();
     final String functionVersion = instanceToUpdate.getLambdaInstanceKey().getFunctionVersion();
-    log.info("Syncing existing instance id=[{}], function name=[{}], function version=[{}]", instanceToUpdate.getUuid(),
-        functionName, functionVersion);
+    log.debug("Syncing existing instance id=[{}], function name=[{}], function version=[{}]",
+        instanceToUpdate.getUuid(), functionName, functionVersion);
     try {
       final AwsLambdaInstanceInfo lambdaInstanceInfo = getLambdaInstanceInfo(functionName, functionVersion,
           new Date(instanceToUpdate.getLastDeployedAt()), infrastructureMapping, awsConfig, encryptedDataDetails);
@@ -330,8 +330,8 @@ public class AwsLambdaInstanceHandler extends InstanceHandler implements Instanc
       ServerlessInstance instanceToUpdate, AwsLambdaDetailsMetricsResponse awsLambdaDetailsResponse) {
     final String functionName = instanceToUpdate.getLambdaInstanceKey().getFunctionName();
     final String functionVersion = instanceToUpdate.getLambdaInstanceKey().getFunctionVersion();
-    log.info("Syncing existing instance id=[{}], function name=[{}], function version=[{}]", instanceToUpdate.getUuid(),
-        functionName, functionVersion);
+    log.debug("Syncing existing instance id=[{}], function name=[{}], function version=[{}]",
+        instanceToUpdate.getUuid(), functionName, functionVersion);
     try {
       final AwsLambdaInstanceInfo lambdaInstanceInfo = createLambdaInstanceInfo(
           awsLambdaDetailsResponse.getLambdaDetails(), awsLambdaDetailsResponse.getInvocationCountList());

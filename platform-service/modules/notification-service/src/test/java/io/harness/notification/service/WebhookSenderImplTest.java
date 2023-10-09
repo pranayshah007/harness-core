@@ -7,10 +7,14 @@
 
 package io.harness.notification.service;
 
+import static io.harness.notification.senders.WebhookSenderImpl.ACCEPT_HEADER_KEY;
+import static io.harness.notification.senders.WebhookSenderImpl.CONTENT_TYPE_HEADER_KEY;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
+import static io.harness.rule.OwnerRule.BHAVYA;
 
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -24,7 +28,9 @@ import io.harness.notification.senders.WebhookSenderImpl;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.SneakyThrows;
 import okhttp3.Call;
 import okhttp3.MediaType;
@@ -77,11 +83,34 @@ public class WebhookSenderImplTest extends CategoryTest {
     when(okHttpClient.newCall(any())).thenReturn(call);
 
     NotificationProcessingResponse notificationProcessingResponse =
-        webhookSender.send(wekbhookUrl, message, notificationId);
+        webhookSender.send(wekbhookUrl, message, notificationId, null, null);
 
     verify(okHttpClient, times(2)).newCall(any());
 
     assertTrue(notificationProcessingResponse.getResult().get(0));
     assertFalse(notificationProcessingResponse.getResult().get(1));
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void test_addBasicHeaders_whenNoHeaderIsSent() {
+    Map<String, String> header = webhookSender.addBasicHeadersIfNotProvided(null);
+    assertThat(header.size()).isEqualTo(2);
+    assertThat(header.get(CONTENT_TYPE_HEADER_KEY)).isNotEmpty();
+    assertThat(header.get(ACCEPT_HEADER_KEY)).isNotEmpty();
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void test_addBasicHeaders_whenHeaderIsSent_shouldNotOverride() {
+    Map<String, String> header = new HashMap<>();
+    header.put(CONTENT_TYPE_HEADER_KEY, "test");
+    header.put("authenticate", "token");
+    header = webhookSender.addBasicHeadersIfNotProvided(header);
+    assertThat(header.size()).isEqualTo(3);
+    assertThat(header.get(CONTENT_TYPE_HEADER_KEY)).isEqualTo("test");
+    assertThat(header.get(ACCEPT_HEADER_KEY)).isNotEmpty();
   }
 }

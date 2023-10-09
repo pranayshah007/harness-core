@@ -450,6 +450,8 @@ pipelineEventConsumersConfig:
     threads: 1
   triggerExecutionEvent:
     threads: ${TRIGGER_EXECUTION_EVENT_CONSUMER_THREAD_COUNT:-1}
+  asyncFilterCreationEvent:
+    threads: ${ASYNC_FILTER_CREATION_CONSUMER_THREAD_COUNT:-1}
 
 delegatePollingConfig:
   syncDelay: 2000
@@ -669,3 +671,9 @@ useQueueServiceForWebhookTriggers: ${USE_QUEUE_SERVICE_FOR_WEBHOOK_TRIGGERS:-fal
 useNewNodeEntityConfiguration: ${USE_NEW_NODE_ENTITY_CONFIGURATION:-false}
 
 graphConsumerSleepIntervalMs: ${GRAPH_CONSUMER_SLEEP_INTERVAL_MS:-0}
+
+asyncFilterCreationConsumerSleepIntervalMs: ${ASYNC_FILTER_CREATION_CONSUMER_SLEEP_INTERVAL_MS:-5000}
+
+streamPerServiceConfiguration: ${PIE_STREAM_PER_SERVICE:- false}
+
+publishAdviserEventForCustomAdvisers: ${PUBLISH_ADVISER_EVENT_FOR_CUSTOM_ADVISERS:-false}

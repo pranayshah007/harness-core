@@ -1,6 +1,6 @@
 # batch-processing
 
-![Version: 0.10.0](https://img.shields.io/badge/Version-0.10.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.80801](https://img.shields.io/badge/AppVersion-0.0.80801-informational?style=flat-square)
+![Version: 0.10.4](https://img.shields.io/badge/Version-0.10.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.80807](https://img.shields.io/badge/AppVersion-0.0.80807-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -27,6 +27,12 @@ A Helm chart for Kubernetes
 | awsSecret.S3_SYNC_CONFIG_SECRETKEY | string | `""` |  |
 | ceBatchGCPCredentials | string | `""` |  |
 | ceGCPHomeProjectCreds | string | `""` |  |
+| cliProxy.enabled | bool | `false` |  |
+| cliProxy.host | string | `"localhost"` |  |
+| cliProxy.password | string | `""` |  |
+| cliProxy.port | int | `80` |  |
+| cliProxy.protocol | string | `"http"` |  |
+| cliProxy.username | string | `""` |  |
 | clickhouse.password.key | string | `"admin-password"` |  |
 | clickhouse.password.name | string | `"clickhouse"` |  |
 | clickhouse.username | string | `"default"` |  |
@@ -38,6 +44,11 @@ A Helm chart for Kubernetes
 | extraVolumeMounts | list | `[]` |  |
 | extraVolumes | list | `[]` |  |
 | fullnameOverride | string | `""` |  |
+| global.awsServiceEndpointUrls.cloudwatchEndPointUrl | string | `"https://monitoring.us-east-2.amazonaws.com"` |  |
+| global.awsServiceEndpointUrls.ecsEndPointUrl | string | `"https://ecs.us-east-2.amazonaws.com"` |  |
+| global.awsServiceEndpointUrls.enabled | bool | `false` |  |
+| global.awsServiceEndpointUrls.endPointRegion | string | `"us-east-2"` |  |
+| global.awsServiceEndpointUrls.stsEndPointUrl | string | `"https://sts.us-east-2.amazonaws.com"` |  |
 | global.ccm.gcpProjectId | string | `"placeHolder"` |  |
 | global.commonAnnotations | object | `{}` |  |
 | global.commonLabels | object | `{}` |  |
@@ -72,6 +83,12 @@ A Helm chart for Kubernetes
 | global.ingress.tls.enabled | bool | `true` |  |
 | global.ingress.tls.secretName | string | `""` |  |
 | global.loadbalancerURL | string | `"https://test"` |  |
+| global.proxy.enabled | bool | `false` |  |
+| global.proxy.host | string | `"localhost"` |  |
+| global.proxy.password | string | `""` |  |
+| global.proxy.port | int | `80` |  |
+| global.proxy.protocol | string | `"http"` |  |
+| global.proxy.username | string | `""` |  |
 | global.smtpCreateSecret.enabled | bool | `false` |  |
 | global.stackDriverLoggingEnabled | bool | `false` |  |
 | image.digest | string | `""` |  |
@@ -79,13 +96,13 @@ A Helm chart for Kubernetes
 | image.pullPolicy | string | `"Always"` |  |
 | image.registry | string | `"docker.io"` |  |
 | image.repository | string | `"harness/batch-processing-signed"` |  |
-| image.tag | string | `"80801-000"` |  |
+| image.tag | string | `"80807-000"` |  |
 | imageClickhouseEnabled.digest | string | `""` |  |
 | imageClickhouseEnabled.imagePullSecrets | list | `[]` |  |
 | imageClickhouseEnabled.pullPolicy | string | `"Always"` |  |
 | imageClickhouseEnabled.registry | string | `"docker.io"` |  |
 | imageClickhouseEnabled.repository | string | `"harness/batch-processing-signed"` |  |
-| imageClickhouseEnabled.tag | string | `"80801-000"` |  |
+| imageClickhouseEnabled.tag | string | `"80807-000"` |  |
 | isolatedReplica | int | `0` |  |
 | java.memory | string | `"7168"` |  |
 | java17flags | string | `""` |  |

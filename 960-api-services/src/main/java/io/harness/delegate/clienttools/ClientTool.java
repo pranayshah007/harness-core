@@ -30,7 +30,7 @@ public enum ClientTool {
       "storage/harness-download/harness-helm/release/%s/bin/%s/%s/helm", ImmutableList.copyOf(HelmVersion.values()),
       HelmVersion.V3_8),
   KUBECTL("kubectl", "public/shared/tools/kubectl/release/%s/bin/%s/%s/kubectl", "./client-tools/kubectl/",
-      "version --short --client", "storage/harness-download/kubernetes-release/release/%s/bin/%s/%s/kubectl",
+      "version --client", "storage/harness-download/kubernetes-release/release/%s/bin/%s/%s/kubectl",
       ImmutableList.copyOf(KubectlVersion.values()), KubectlVersion.V1_19),
   KUSTOMIZE("kustomize", "public/shared/tools/kustomize/release/%s/bin/%s/%s/kustomize", "./client-tools/kustomize/",
       "version --short", "storage/harness-download/harness-kustomize/release/%s/bin/%s/%s/kustomize",

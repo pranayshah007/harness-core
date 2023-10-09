@@ -536,8 +536,9 @@ public class CVNGStepTest extends CvNextGenTestBase {
                                               .remainingTimeMs(Duration.ofMinutes(3).toMillis())
                                               .durationMs(Duration.ofMinutes(30).toMillis())
                                               .build();
-    VerifyStepOutcome verifyStepOutcome = (VerifyStepOutcome) cvngStep.handleProgress(ambiance, stepElementParameters,
-        CVNGStep.CVNGResponseData.builder().activityId(activityId).activityStatusDTO(activityStatusDTO).build());
+    VerifyStepOutcome verifyStepOutcome =
+        (VerifyStepOutcome) cvngStep.handleProgressAsync(ambiance, stepElementParameters,
+            CVNGStep.CVNGResponseData.builder().activityId(activityId).activityStatusDTO(activityStatusDTO).build());
     VerifyStepOutcome expected = VerifyStepOutcome.builder()
                                      .progressPercentage(50)
                                      .estimatedRemainingTime("3 minutes")
@@ -558,7 +559,7 @@ public class CVNGStepTest extends CvNextGenTestBase {
     FieldUtils.writeField(cvngStep, "activityService", activityService, true);
 
     cvngStep.handleAbort(ambiance, stepElementParameters,
-        AsyncExecutableResponse.newBuilder().addCallbackIds(cvngStepTask.getCallbackId()).build());
+        AsyncExecutableResponse.newBuilder().addCallbackIds(cvngStepTask.getCallbackId()).build(), false);
     Mockito.verify(activityService).abort(cvngStepTask.getActivityId());
   }
 
@@ -643,7 +644,7 @@ public class CVNGStepTest extends CvNextGenTestBase {
             .build());
     StepResponse stepResponse = cvngStep.handleAsyncResponseInternal(ambiance, stepElementParameters, responseDataMap);
     FailureData failureData = FailureData.newBuilder()
-                                  .setCode(ErrorCode.ABORT_ALL_ALREADY.name())
+                                  .setCode(ErrorCode.ABORT_ALL_ALREADY_NG.name())
                                   .setLevel(io.harness.eraro.Level.ERROR.name())
                                   .addFailureTypes(FailureType.USER_MARKED_FAILURE)
                                   .setMessage("Verification could not complete due to it being aborted")

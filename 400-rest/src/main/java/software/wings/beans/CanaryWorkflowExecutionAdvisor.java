@@ -162,12 +162,12 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
     boolean isTimeoutSupportOnWFLevelEnabled =
         featureFlagService.isEnabled(SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, context.getAccountId());
     try (AutoLogContext ignore = context.autoLogContext()) {
-      log.info("Calculating execution advice for workflow");
+      log.debug("Calculating execution advice for workflow");
       List<ExecutionInterrupt> executionInterrupts =
           executionInterruptManager.checkForExecutionInterrupt(context.getAppId(), context.getWorkflowExecutionId());
       if (executionInterrupts != null
           && executionInterrupts.stream().anyMatch(ex -> ex.getExecutionInterruptType() == ABORT_ALL)) {
-        log.info("Returning advise for ABORT_ALL");
+        log.debug("Returning advise for ABORT_ALL");
         return anExecutionEventAdvice().withExecutionInterruptType(ExecutionInterruptType.END_EXECUTION).build();
       }
 

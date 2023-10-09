@@ -6,6 +6,7 @@
  */
 
 package io.harness.eventsframework;
+
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.CodePulse;
@@ -119,4 +120,9 @@ public final class EventsFrameworkMetadataConstants {
   public static final String DEPLOYMENT_ACCOUNTS = "DeploymentAccounts";
   public static final String INSTANCE_DEPLOYMENT_INFO = "instanceDeploymentInfo";
   public static final String INSTANCE_NG = "instanceNG";
+
+  // SEI
+  public static final String SEI_CONFIGURATION_SETTINGS = "seiconfigurationsettings";
+  public static final String SEI_COLLECTIONS = "seicollections";
+  public static final String SEI_INSIGHTS = "seiinsights";
 }

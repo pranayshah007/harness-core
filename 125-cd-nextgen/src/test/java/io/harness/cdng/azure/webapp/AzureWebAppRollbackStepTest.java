@@ -234,7 +234,7 @@ public class AzureWebAppRollbackStepTest extends CDNGTestBase {
         AzureAppServicePreDeploymentData.builder().build();
     AzurePackageArtifactConfig lastArtifactConfig = AzurePackageArtifactConfig.builder().build();
     AzureWebAppsStageExecutionDetails azureWebAppsStageExecutionDetails =
-        AzureWebAppsStageExecutionDetails.builder().artifactConfig(lastArtifactConfig).build();
+        AzureWebAppsStageExecutionDetails.builder().artifactConfig(lastArtifactConfig).cleanDeployment(false).build();
     doReturn(azureWebAppsStageExecutionDetails)
         .when(stepHelper)
         .findLastSuccessfulStageExecutionDetails(ambiance, azureWebAppInfraDelegateConfig);
@@ -276,6 +276,7 @@ public class AzureWebAppRollbackStepTest extends CDNGTestBase {
     assertThat(requestParameters.getInfrastructure()).isEqualTo(azureWebAppInfraDelegateConfig);
     assertThat(requestParameters.getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(requestParameters.getArtifact()).isEqualTo(lastArtifactConfig);
+    assertThat(requestParameters.isCleanDeployment()).isFalse();
   }
 
   @Test
@@ -292,7 +293,7 @@ public class AzureWebAppRollbackStepTest extends CDNGTestBase {
     AzureWebAppsStageExecutionDetails lastAzureExecutionDetails =
         AzureWebAppsStageExecutionDetails.builder().targetSlot("targetSlot").artifactConfig(lastArtifactConfig).build();
     AzureWebAppsStageExecutionDetails preLastExecutionDetails =
-        AzureWebAppsStageExecutionDetails.builder().artifactConfig(preLastArtifactConfig).build();
+        AzureWebAppsStageExecutionDetails.builder().artifactConfig(preLastArtifactConfig).cleanDeployment(true).build();
     doReturn(preLastExecutionDetails)
         .when(stepHelper)
         .findLastSuccessfulStageExecutionDetails(ambiance, azureWebAppInfraDelegateConfig);
@@ -334,6 +335,7 @@ public class AzureWebAppRollbackStepTest extends CDNGTestBase {
     assertThat(requestParameters.getInfrastructure()).isEqualTo(azureWebAppInfraDelegateConfig);
     assertThat(requestParameters.getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(requestParameters.getArtifact()).isEqualTo(preLastArtifactConfig);
+    assertThat(requestParameters.isCleanDeployment()).isTrue();
   }
 
   @Test

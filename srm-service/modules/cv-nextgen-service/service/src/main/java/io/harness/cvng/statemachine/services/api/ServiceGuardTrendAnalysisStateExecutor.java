@@ -83,14 +83,4 @@ public class ServiceGuardTrendAnalysisStateExecutor extends AnalysisStateExecuto
     analysisState.setStatus(AnalysisStatus.SUCCESS);
     return analysisState;
   }
-
-  @Override
-  public AnalysisState handleRetry(ServiceGuardTrendAnalysisState analysisState) {
-    if (analysisState.getRetryCount() >= getMaxRetry()) {
-      analysisState.setStatus(AnalysisStatus.IGNORED);
-    } else {
-      return handleRerun(analysisState);
-    }
-    return analysisState;
-  }
 }

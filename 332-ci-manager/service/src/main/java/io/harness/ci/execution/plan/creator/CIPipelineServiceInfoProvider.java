@@ -22,6 +22,7 @@ import io.harness.ci.execution.creator.variables.ArtifactoryUploadStepVariableCr
 import io.harness.ci.execution.creator.variables.BackgroundStepVariableCreator;
 import io.harness.ci.execution.creator.variables.BuildAndPushACRStepVariableCreator;
 import io.harness.ci.execution.creator.variables.BuildAndPushECRStepVariableCreator;
+import io.harness.ci.execution.creator.variables.BuildAndPushGARStepVariableCreator;
 import io.harness.ci.execution.creator.variables.BuildAndPushGCRStepVariableCreator;
 import io.harness.ci.execution.creator.variables.CIStageVariableCreator;
 import io.harness.ci.execution.creator.variables.CIStepVariableCreator;
@@ -50,6 +51,7 @@ import io.harness.ci.plancreator.BackgroundStepPlanCreator;
 import io.harness.ci.plancreator.BitriseStepPlanCreator;
 import io.harness.ci.plancreator.BuildAndPushACRStepPlanCreator;
 import io.harness.ci.plancreator.BuildAndPushECRStepPlanCreator;
+import io.harness.ci.plancreator.BuildAndPushGARStepPlanCreator;
 import io.harness.ci.plancreator.BuildAndPushGCRStepPlanCreator;
 import io.harness.ci.plancreator.DockerStepPlanCreator;
 import io.harness.ci.plancreator.GCSUploadStepPlanCreator;
@@ -121,6 +123,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     planCreators.add(new DockerStepPlanCreator());
     planCreators.add(new ArtifactoryUploadStepPlanCreator());
     planCreators.add(new BuildAndPushECRStepPlanCreator());
+    planCreators.add(new BuildAndPushGARStepPlanCreator());
     planCreators.add(new BuildAndPushACRStepPlanCreator());
     planCreators.add(new BuildAndPushGCRStepPlanCreator());
     planCreators.add(new SaveCacheS3StepPlanCreator());
@@ -185,6 +188,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     variableCreators.add(new BuildAndPushECRStepVariableCreator());
     variableCreators.add(new BuildAndPushACRStepVariableCreator());
     variableCreators.add(new BuildAndPushGCRStepVariableCreator());
+    variableCreators.add(new BuildAndPushGARStepVariableCreator());
     variableCreators.add(new SaveCacheS3StepVariableCreator());
     variableCreators.add(new SecurityStepVariableCreator());
     variableCreators.add(new GitCloneStepVariableCreator());
@@ -312,6 +316,13 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
             .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Artifacts").addFolderPaths("Build").build())
             .build();
 
+    StepInfo garPushBuilds =
+        StepInfo.newBuilder()
+            .setName("Build and Push to GAR")
+            .setType(StepSpecTypeConstants.BUILD_AND_PUSH_GAR)
+            .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Artifacts").addFolderPaths("Build").build())
+            .build();
+
     StepInfo uploadToGCS = StepInfo.newBuilder()
                                .setName("Upload Artifacts to GCS")
                                .setType(StepSpecTypeConstants.GCS_UPLOAD)
@@ -332,6 +343,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     stepInfos.add(ecrPushBuilds);
     stepInfos.add(uploadToS3);
     stepInfos.add(gcrPushBuilds);
+    stepInfos.add(garPushBuilds);
     stepInfos.add(acrPushBuilds);
     stepInfos.add(restoreCacheFromGCS);
     stepInfos.add(runTestsStepInfo);

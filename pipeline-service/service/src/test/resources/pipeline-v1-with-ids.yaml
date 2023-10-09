@@ -1,0 +1,27 @@
+version: 1
+name: Java with Gradle Infra
+spec:
+  stages:
+    - name: stage1
+      type: custom
+      spec:
+        steps:
+          - type: Http
+            timeout: 30s
+            spec:
+              method: GET
+              url: https://www.google.com
+          - type: Http
+            timeout: 30s
+            spec:
+              method: GET
+              url: https://www.google.com
+    - type: custom
+      spec:
+        steps:
+          - id: Http_2
+            type: Http
+            timeout: 30s
+            spec:
+              method: GET
+              url: https://www.google.com

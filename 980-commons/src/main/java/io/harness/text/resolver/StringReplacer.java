@@ -6,18 +6,23 @@
  */
 
 package io.harness.text.resolver;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.text.StringEscapeUtils;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_EXPRESSION_ENGINE})
 @OwnedBy(HarnessTeam.PIPELINE)
+@Slf4j
 public class StringReplacer {
   private static final char ESCAPE_CHAR = '\\';
 
@@ -103,7 +108,7 @@ public class StringReplacer {
 
         // Get whole expression
         int expressionEndPos = pos;
-        String expressionWithDelimiters = buf.substring(expressionStartPos, expressionEndPos);
+        String expressionWithDelimiters = getModifiedExpression(expressionStartPos, expressionEndPos, buf);
         String expression = expressionWithDelimiters.substring(
             expressionPrefix.length, expressionWithDelimiters.length() - expressionSuffix.length);
 
@@ -227,36 +232,30 @@ public class StringReplacer {
       return false;
     }
 
+    // https://commons.apache.org/proper/commons-jexl/reference/syntax.html
+    Set<String> jexlKeywordOperators = Set.of("or", "eq", "ne", "and", "not", "size", "empty");
+
+    int minLength = 2;
+    int maxLength = 5;
+
     if (leftSubString) {
-      if ((currentPos - 2 < 0) || (currentPos + 1 >= s.length())) {
-        return false;
+      for (int i = minLength; i <= maxLength; i++) {
+        if (currentPos - i + 1 >= 0 && currentPos + 1 < s.length()) {
+          String substring = s.substring(currentPos - i + 1, currentPos + 1).trim();
+          if (jexlKeywordOperators.contains(substring)) {
+            return true;
+          }
+        }
       }
-
-      // check for and / not operator - https://commons.apache.org/proper/commons-jexl/reference/syntax.html
-      String substring = s.substring(currentPos - 2, currentPos + 1).trim();
-      if (substring.equals("and") || substring.equals("not")) {
-        return true;
-      }
-      // check for or operator
-      String orSubString = s.substring(currentPos - 1, currentPos + 1);
-      if (orSubString.equals("or")) {
-        return true;
-      }
-      return false;
     }
 
-    if (currentPos + 3 >= s.length()) {
-      return false;
-    }
-    // check for and / not operator - https://commons.apache.org/proper/commons-jexl/reference/syntax.html
-    String substring = s.substring(currentPos, currentPos + 3).trim();
-    if (substring.equals("and") || substring.equals("not")) {
-      return true;
-    }
-    // check for or operator
-    String orSubString = s.substring(currentPos, currentPos + 2);
-    if (orSubString.equals("or")) {
-      return true;
+    for (int i = minLength; i <= maxLength; i++) {
+      if (currentPos >= 0 && currentPos + i < s.length()) {
+        String substring = s.substring(currentPos, currentPos + i).trim();
+        if (jexlKeywordOperators.contains(substring)) {
+          return true;
+        }
+      }
     }
     return false;
   }
@@ -275,7 +274,7 @@ public class StringReplacer {
   }
 
   private boolean skipNonCriticalCharacters(char c) {
-    return c == ' ' || c == '(' || c == ')' || c == ';';
+    return c == ' ' || c == '(' || c == ')' || c == ';' || c == '\n';
   }
 
   private static boolean isMatch(char ch, StringBuffer buf, int bufStart, int bufEnd) {
@@ -292,5 +291,17 @@ public class StringReplacer {
       }
     }
     return true;
+  }
+
+  // When expression is wrapped around quotes, the characters like " and \ will be escaped in it. So, when we are
+  // extracting the expression from buf we need to unescape them.
+  private String getModifiedExpression(int expressionStartPos, int expressionEndPos, StringBuffer buf) {
+    String expression = buf.substring(expressionStartPos, expressionEndPos);
+    if (expressionStartPos > 0 && buf.charAt(expressionStartPos - 1) == '\"' && expressionEndPos < buf.length()
+        && buf.charAt(expressionEndPos) == '\"') {
+      log.info("[String Replacer] expression: {}, unescaped expression: {}", expression,
+          StringEscapeUtils.unescapeJson(expression));
+    }
+    return expression;
   }
 }

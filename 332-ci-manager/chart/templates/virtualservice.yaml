@@ -11,7 +11,7 @@ metadata:
     {{- end }}
   annotations:
     {{- if .Values.virtualService.annotations }}
-    {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.ingress.annotations "context" $) | nindent 4 }}
+    {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.virtualService.annotations "context" $) | nindent 4 }}
     {{- end }}
     {{- if .Values.global.commonAnnotations }}
     {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
@@ -32,10 +32,10 @@ spec:
   http:
   - name: ci-manager
     match:
-      - uri:
-          prefix: /ng/api/
-      - uri:
-          prefix: /ng/api
+    - uri:
+        prefix: /ci/
+    - uri:
+        prefix: /ci
     rewrite:
       uri: /
     route:

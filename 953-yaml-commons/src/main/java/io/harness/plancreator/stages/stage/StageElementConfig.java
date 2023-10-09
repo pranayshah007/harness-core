@@ -31,6 +31,7 @@ import io.harness.when.beans.StageWhenCondition;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
+import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.core.variables.NGVariable;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -111,12 +112,16 @@ public class StageElementConfig {
   @VariableExpression
   StageInfoConfig stageType;
   @VariableExpression(skipVariableExpression = true) TemplateLinkConfig template;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @Pattern(regexp = NGRegexValidatorConstants.TIMEOUT_PATTERN_WITHOUT_EXECUTION_INPUT)
+  @VariableExpression(skipInnerObjectTraversal = true)
+  ParameterField<Timeout> timeout;
 
   @Builder
   public StageElementConfig(String uuid, String identifier, String name, ParameterField<String> description,
       ParameterField<List<FailureStrategyConfig>> failureStrategies, List<NGVariable> variables, String type,
       StageInfoConfig stageType, ParameterField<String> skipCondition, ParameterField<StageWhenCondition> when,
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<Timeout> timeout) {
     this.uuid = uuid;
     this.identifier = identifier;
     this.name = name;
@@ -128,5 +133,6 @@ public class StageElementConfig {
     this.skipCondition = skipCondition;
     this.when = when;
     this.delegateSelectors = delegateSelectors;
+    this.timeout = timeout;
   }
 }

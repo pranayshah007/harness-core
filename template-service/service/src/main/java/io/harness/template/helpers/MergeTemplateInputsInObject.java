@@ -21,4 +21,5 @@ import lombok.Data;
 public class MergeTemplateInputsInObject {
   private Map<String, Object> resMap;
   private Map<String, Object> resMapWithOpaResponse;
+  String processedYamlVersion;
 }

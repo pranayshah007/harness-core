@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.connector;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.dynatrace.DynatraceConnectorDTO;
@@ -24,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class DynatraceConnectorImpl implements BaseConnector {
   @Override
   public List<String> getSecretIds(SettingAttribute settingAttribute) {

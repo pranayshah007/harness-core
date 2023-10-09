@@ -3,15 +3,15 @@ kind: PodDisruptionBudget
 metadata:
   name: scm-service
   namespace: {{ .Release.Namespace }}
+  {{- if .Values.global.commonLabels }}
   labels:
-    {{- if .Values.global.commonLabels }}
     {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
-    {{- end }}
+  {{- end }}
   {{- if .Values.global.commonAnnotations }}
   annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
 spec:
   minAvailable: "50%"
   selector:
-   matchLabels:
-    app: scm-service
+    matchLabels:
+      {{- include "scm-service.selectorLabels" . | nindent 6 }}

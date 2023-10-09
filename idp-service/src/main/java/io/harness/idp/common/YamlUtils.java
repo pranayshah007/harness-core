@@ -15,7 +15,9 @@ import io.harness.exception.UnexpectedException;
 import io.harness.utils.YamlPipelineUtils;
 
 import java.io.IOException;
+import java.util.Map;
 import lombok.experimental.UtilityClass;
+import org.yaml.snakeyaml.Yaml;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @UtilityClass
@@ -31,5 +33,10 @@ public class YamlUtils {
     } catch (IOException e) {
       throw new UnexpectedException("Error reading the content", e);
     }
+  }
+
+  public static Map<String, Object> loadYamlStringAsMap(String yamlString) {
+    Yaml yaml = new Yaml();
+    return yaml.load(yamlString);
   }
 }

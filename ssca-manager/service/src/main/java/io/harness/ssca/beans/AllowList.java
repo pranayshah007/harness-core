@@ -12,6 +12,7 @@ import io.harness.ssca.enforcement.constants.PolicyType;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import javax.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,14 +21,14 @@ import lombok.Getter;
 @Data
 @Builder
 public class AllowList {
-  @JsonProperty("allow_list") AllowListItem allowListItem;
+  @JsonProperty("allow_list") @Valid AllowListItem allowListItem;
 
   @Data
   @Builder
   public static class AllowListItem implements EnforcementListItem {
-    List<Supplier> suppliers;
-    List<AllowLicense> licenses;
-    List<String> purls;
+    @Valid List<Supplier> suppliers;
+    @Valid List<AllowLicense> licenses;
+    @Valid List<String> purls;
 
     @Override
     public String getPackageName() {

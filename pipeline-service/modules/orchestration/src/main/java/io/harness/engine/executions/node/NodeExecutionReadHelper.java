@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.executions.node;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.CodePulse;
@@ -14,8 +15,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.mongo.helper.AnalyticsMongoTemplateHolder;
 import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
+import io.harness.monitoring.ExecutionCountWithAccountResult;
+import io.harness.monitoring.ExecutionCountWithAccountResult.ExecutionCountWithAccountResultKeys;
+import io.harness.pms.execution.utils.StatusUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -23,6 +28,8 @@ import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.util.CloseableIterator;
 
@@ -33,10 +40,8 @@ import org.springframework.data.util.CloseableIterator;
 public class NodeExecutionReadHelper {
   private static final int MAX_BATCH_SIZE = 1000;
   private final MongoTemplate mongoTemplate;
-  private final MongoTemplate analyticsMongoTemplate;
-
   private final MongoTemplate secondaryMongoTemplate;
-
+  private final MongoTemplate analyticsMongoTemplate;
   @Inject
   public NodeExecutionReadHelper(MongoTemplate mongoTemplate, AnalyticsMongoTemplateHolder analyticsMongoTemplateHolder,
       SecondaryMongoTemplateHolder secondaryMongoTemplateHolder) {
@@ -115,5 +120,18 @@ public class NodeExecutionReadHelper {
   public NodeExecution fetchNodeExecutionsFromSecondaryTemplate(Query query) {
     validateNodeExecutionProjection(query);
     return secondaryMongoTemplate.findOne(query, NodeExecution.class);
+  }
+
+  /**
+   * Fetches aggregated running execution count per account from analytics node
+   * @return
+   */
+  public List<ExecutionCountWithAccountResult> aggregateRunningExecutionCountPerAccount() {
+    Aggregation aggregation = Aggregation.newAggregation(
+        Aggregation.match(Criteria.where(NodeExecutionKeys.status).in(StatusUtils.activeStatuses())),
+        Aggregation.group(NodeExecutionKeys.accountId).count().as(ExecutionCountWithAccountResultKeys.count));
+
+    return analyticsMongoTemplate.aggregate(aggregation, NodeExecution.class, ExecutionCountWithAccountResult.class)
+        .getMappedResults();
   }
 }

@@ -9,7 +9,9 @@ package io.harness.idp.scorecard.scores.service;
 
 import static io.harness.expression.common.ExpressionMode.RETURN_NULL_IF_UNRESOLVED;
 import static io.harness.idp.common.Constants.DATA_POINT_VALUE_KEY;
+import static io.harness.idp.common.Constants.DOT_SEPARATOR;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
+import static io.harness.idp.common.Constants.SPACE_SEPARATOR;
 import static io.harness.idp.common.JacksonUtils.convert;
 import static io.harness.idp.scorecard.scorecardchecks.mappers.CheckDetailsMapper.constructExpressionFromRules;
 import static io.harness.remote.client.NGRestUtils.getGeneralResponse;
@@ -20,10 +22,9 @@ import io.harness.clients.BackstageResourceClient;
 import io.harness.exception.UnexpectedException;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
 import io.harness.idp.backstagebeans.BackstageCatalogEntityTypes;
-import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
-import io.harness.idp.scorecard.datapoints.repositories.DataPointsRepository;
 import io.harness.idp.scorecard.datasources.providers.DataSourceProvider;
 import io.harness.idp.scorecard.datasources.providers.DataSourceProviderFactory;
+import io.harness.idp.scorecard.datasources.utils.ConfigReader;
 import io.harness.idp.scorecard.expression.IdpExpressionEvaluator;
 import io.harness.idp.scorecard.scorecardchecks.beans.ScorecardAndChecks;
 import io.harness.idp.scorecard.scorecardchecks.entity.CheckEntity;
@@ -33,6 +34,7 @@ import io.harness.idp.scorecard.scores.entities.ScoreEntity;
 import io.harness.idp.scorecard.scores.logging.ScoreComputationLogContext;
 import io.harness.idp.scorecard.scores.repositories.ScoreRepository;
 import io.harness.logging.AutoLogContext;
+import io.harness.spec.server.idp.v1.model.CheckDetails;
 import io.harness.spec.server.idp.v1.model.CheckStatus;
 import io.harness.spec.server.idp.v1.model.Rule;
 import io.harness.spec.server.idp.v1.model.ScorecardFilter;
@@ -42,7 +44,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -69,7 +70,7 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
   @Inject BackstageResourceClient backstageResourceClient;
   @Inject DataSourceProviderFactory dataSourceProviderFactory;
   @Inject ScoreRepository scoreRepository;
-  @Inject DataPointsRepository datapointRepository;
+  @Inject ConfigReader configReader;
   static final ObjectMapper mapper =
       new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
@@ -78,25 +79,22 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
       String accountIdentifier, List<String> scorecardIdentifiers, List<String> entityIdentifiers) {
     List<ScorecardAndChecks> scorecardsAndChecks =
         scorecardService.getAllScorecardAndChecks(accountIdentifier, scorecardIdentifiers);
-    if (scorecardsAndChecks.isEmpty()) {
-      log.info("No scorecards configured for account: {}", accountIdentifier);
-      return;
-    }
 
-    List<ScorecardFilter> filters = getAllFilters(scorecardsAndChecks);
-    Set<? extends BackstageCatalogEntity> entities = this.getAllEntities(accountIdentifier, entityIdentifiers, filters);
+    Set<? extends BackstageCatalogEntity> entities = getBackstageEntitiesForScorecardsAndEntityIdentifiers(
+        accountIdentifier, scorecardsAndChecks, entityIdentifiers);
     if (entities.isEmpty()) {
       log.warn("Account {} has no backstage entities matching the scorecard filters", accountIdentifier);
       return;
     }
 
-    Map<String, Set<String>> dataPointsAndInputValues = getDataPointsAndInputValues(scorecardsAndChecks);
+    Map<String, Map<String, Set<String>>> providerDataPointValues = getProviderDataPointValues(scorecardsAndChecks);
+    String configs = configReader.fetchAllConfigs(accountIdentifier);
 
     CountDownLatch latch = new CountDownLatch(entities.size());
     for (BackstageCatalogEntity entity : entities) {
       executorService.submit(() -> {
         try {
-          Map<String, Map<String, Object>> data = fetch(accountIdentifier, entity, dataPointsAndInputValues);
+          Map<String, Map<String, Object>> data = fetch(accountIdentifier, entity, providerDataPointValues, configs);
           compute(accountIdentifier, entity, scorecardsAndChecks, data);
         } catch (Exception e) {
           log.error("Could not fetch data and compute score for account: {}, entity: {}", accountIdentifier,
@@ -120,13 +118,24 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
   }
 
   @Override
+  public Set<? extends BackstageCatalogEntity> getBackstageEntitiesForScorecardsAndEntityIdentifiers(
+      String accountIdentifier, List<ScorecardAndChecks> scorecardsAndChecks, List<String> entityIdentifiers) {
+    if (scorecardsAndChecks.isEmpty()) {
+      log.info("No scorecards configured for account: {}", accountIdentifier);
+      return new HashSet<>();
+    }
+    List<ScorecardFilter> filters = getAllFilters(scorecardsAndChecks);
+    return getAllEntities(accountIdentifier, entityIdentifiers, filters);
+  }
+
+  @Override
   public Set<BackstageCatalogEntity> getAllEntities(
       String accountIdentifier, List<String> entityIdentifiers, List<ScorecardFilter> filters) {
     Set<BackstageCatalogEntity> allEntities = new HashSet<>();
 
     for (ScorecardFilter filter : filters) {
       StringBuilder filterStringBuilder = new StringBuilder("filter=kind=").append(filter.getKind().toLowerCase());
-      if (!filter.getType().equalsIgnoreCase("all")) {
+      if (StringUtils.isNotBlank(filter.getType()) && !filter.getType().equalsIgnoreCase("all")) {
         filterStringBuilder.append(",spec.type=").append(filter.getType().toLowerCase());
       }
 
@@ -171,35 +180,19 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
         .collect(Collectors.toList());
   }
 
-  private Map<String, Map<String, Object>> fetch(
-      String accountIdentifier, BackstageCatalogEntity entity, Map<String, Set<String>> dataPointsAndInputValues) {
+  private Map<String, Map<String, Object>> fetch(String accountIdentifier, BackstageCatalogEntity entity,
+      Map<String, Map<String, Set<String>>> providerDataPoints, String configs) {
     try (AutoLogContext ignore1 = ScoreComputationLogContext.builder()
                                       .accountIdentifier(accountIdentifier)
                                       .threadName(Thread.currentThread().getName())
                                       .build(AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
       log.info("Fetching data from provider for entity: {}", entity.getMetadata().getUid());
-      Set<String> dataPointIdentifiers = dataPointsAndInputValues.keySet();
-      List<DataPointEntity> dataPointEntities = datapointRepository.findByIdentifierIn(dataPointIdentifiers);
-      Map<String, Map<String, Set<String>>> providerDataPoints = new HashMap<>();
-      dataPointsAndInputValues.forEach((k, v) -> {
-        DataPointEntity dataPointEntity =
-            dataPointEntities.stream().filter(dpe -> dpe.getIdentifier().equals(k)).findFirst().orElse(null);
-        assert dataPointEntity != null;
-        String dataSourceIdentifier = dataPointEntity.getDataSourceIdentifier();
-        if (providerDataPoints.containsKey(dataSourceIdentifier)) {
-          Map<String, Set<String>> existingProviderDataPoints = providerDataPoints.get(dataSourceIdentifier);
-          existingProviderDataPoints.put(k, v);
-          providerDataPoints.put(dataSourceIdentifier, existingProviderDataPoints);
-        } else {
-          providerDataPoints.put(dataSourceIdentifier, new HashMap<>(Map.of(k, v)));
-        }
-      });
 
       Map<String, Map<String, Object>> aggregatedData = new HashMap<>();
       providerDataPoints.forEach((k, v) -> {
         DataSourceProvider provider = dataSourceProviderFactory.getProvider(k);
         try {
-          Map<String, Map<String, Object>> data = provider.fetchData(accountIdentifier, entity, v);
+          Map<String, Map<String, Object>> data = provider.fetchData(accountIdentifier, entity, v, configs);
           if (data != null) {
             aggregatedData.putAll(data);
           }
@@ -223,7 +216,7 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
                                         .scorecardIdentifier(scorecard.getIdentifier())
                                         .threadName(Thread.currentThread().getName())
                                         .build(AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
-        if (!shouldComputeScore(scorecard.getFilter(), entity)) {
+        if (!isFilterMatchingWithAnEntity(scorecard.getFilter(), entity)) {
           log.info("Not computing score as the entity {} does not match the scorecard filters",
               entity.getMetadata().getUid());
           continue;
@@ -272,7 +265,8 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
     }
   }
 
-  private boolean shouldComputeScore(ScorecardFilter filter, BackstageCatalogEntity entity) {
+  @Override
+  public boolean isFilterMatchingWithAnEntity(ScorecardFilter filter, BackstageCatalogEntity entity) {
     String entityType = BackstageCatalogEntityTypes.getEntityType(entity);
     String entityOwner = BackstageCatalogEntityTypes.getEntityOwner(entity);
     String entityLifecycle = BackstageCatalogEntityTypes.getEntityLifecycle(entity);
@@ -301,6 +295,9 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
     }
     if (value == null) {
       log.warn("Could not evaluate check status for {}", checkEntity.getIdentifier());
+      if (CheckDetails.DefaultBehaviourEnum.FAIL.equals(checkEntity.getDefaultBehaviour())) {
+        return new Pair<>(CheckStatus.StatusEnum.FAIL, getCheckFailureReason(evaluator, checkEntity));
+      }
       return new Pair<>(CheckStatus.StatusEnum.valueOf(checkEntity.getDefaultBehaviour().toString()), null);
     } else {
       if (!(value instanceof Boolean)) {
@@ -322,7 +319,13 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
             Collections.singletonList(rule), checkEntity.getRuleStrategy(), ERROR_MESSAGE_KEY, true);
         Object errorMessage = evaluator.evaluateExpression(errorMessageExpression, RETURN_NULL_IF_UNRESOLVED);
         if ((errorMessage instanceof String) && !((String) errorMessage).isEmpty()) {
-          reasonBuilder.append(String.format("Reason: %s", errorMessage));
+          reasonBuilder.append(String.format("Reason: %s", errorMessage + DOT_SEPARATOR + SPACE_SEPARATOR));
+        } else {
+          String lhsExpression = constructExpressionFromRules(
+              Collections.singletonList(rule), checkEntity.getRuleStrategy(), DATA_POINT_VALUE_KEY, true);
+          Object lhsValue = evaluator.evaluateExpression(lhsExpression, RETURN_NULL_IF_UNRESOLVED);
+          reasonBuilder.append(
+              String.format("Expected %s %s. Actual %s", rule.getOperator(), rule.getValue(), lhsValue));
         }
       } catch (Exception e) {
         log.warn("Reason expression evaluation failed", e);
@@ -343,8 +346,9 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
     });
   }
 
-  private Map<String, Set<String>> getDataPointsAndInputValues(List<ScorecardAndChecks> scorecardsAndChecks) {
-    Map<String, Set<String>> dataPointIdentifiersAndInputValues = new HashMap<>();
+  private Map<String, Map<String, Set<String>>> getProviderDataPointValues(
+      List<ScorecardAndChecks> scorecardsAndChecks) {
+    Map<String, Map<String, Set<String>>> providerDataPointValues = new HashMap<>();
 
     for (ScorecardAndChecks scorecardAndChecks : scorecardsAndChecks) {
       List<CheckEntity> checks = scorecardAndChecks.getChecks();
@@ -356,15 +360,19 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
           continue;
         }
         for (Rule rule : check.getRules()) {
+          String dataSourceIdentifier = rule.getDataSourceIdentifier();
+          Map<String, Set<String>> dataPointIdentifiersAndInputValues =
+              providerDataPointValues.getOrDefault(dataSourceIdentifier, new HashMap<>());
           Set<String> inputValues =
               dataPointIdentifiersAndInputValues.getOrDefault(rule.getDataPointIdentifier(), new HashSet<>());
           if (StringUtils.isNotBlank(rule.getConditionalInputValue())) {
             inputValues.add(rule.getConditionalInputValue());
           }
           dataPointIdentifiersAndInputValues.put(rule.getDataPointIdentifier(), inputValues);
+          providerDataPointValues.put(dataSourceIdentifier, dataPointIdentifiersAndInputValues);
         }
       }
     }
-    return dataPointIdentifiersAndInputValues;
+    return providerDataPointValues;
   }
 }

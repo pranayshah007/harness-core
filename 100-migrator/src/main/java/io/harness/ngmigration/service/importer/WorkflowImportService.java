@@ -9,6 +9,7 @@ package io.harness.ngmigration.service.importer;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ngmigration.service.NgMigrationService.getYamlStringV2;
 import static io.harness.ngmigration.utils.NGMigrationConstants.INFRASTRUCTURE_DEFINITIONS;
 import static io.harness.ngmigration.utils.NGMigrationConstants.INFRA_DEFINITION_ID;
 import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
@@ -38,7 +39,7 @@ import io.harness.ngmigration.dto.MigratedDetails;
 import io.harness.ngmigration.dto.SaveSummaryDTO;
 import io.harness.ngmigration.dto.WorkflowFilter;
 import io.harness.ngmigration.service.DiscoveryService;
-import io.harness.ngmigration.service.MigrationTemplateUtils;
+import io.harness.ngmigration.service.MigrationHelperService;
 import io.harness.ngmigration.service.entity.PipelineMigrationService;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.persistence.HPersistence;
@@ -62,6 +63,7 @@ import software.wings.beans.Variable;
 import software.wings.beans.Workflow;
 import software.wings.beans.Workflow.WorkflowKeys;
 import software.wings.beans.WorkflowPhase;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.DiscoveryResult;
 import software.wings.ngmigration.NGMigrationEntityType;
@@ -94,7 +96,7 @@ import retrofit2.Response;
 public class WorkflowImportService implements ImportService {
   @Inject DiscoveryService discoveryService;
   @Inject HPersistence hPersistence;
-  @Inject private MigrationTemplateUtils migrationTemplateUtils;
+  @Inject private MigrationHelperService migrationHelperService;
   @Inject @Named("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceClientConfig;
 
   public DiscoveryResult discover(ImportDTO importConnectorDTO) {
@@ -167,14 +169,25 @@ public class WorkflowImportService implements ImportService {
 
   private void createPipeline(MigrationInputDTO inputDTO, PipelineConfig pipelineConfig) {
     PmsClient pmsClient = MigratorUtility.getRestClient(inputDTO, pipelineServiceClientConfig, PmsClient.class);
-    String yaml = YamlUtils.writeYamlString(pipelineConfig);
+
     try {
+      String yaml = YamlUtils.writeYamlString(pipelineConfig);
       Response<ResponseDTO<PipelineSaveResponse>> resp =
           pmsClient
               .createPipeline(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
                   inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
                   RequestBody.create(MediaType.parse("application/yaml"), yaml), StoreType.INLINE)
               .execute();
+
+      if (!(resp.code() >= 200 && resp.code() < 300)) {
+        yaml = getYamlStringV2(pipelineConfig);
+        resp = pmsClient
+                   .createPipeline(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                       inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
+                       RequestBody.create(MediaType.parse("application/yaml"), yaml), StoreType.INLINE)
+                   .execute();
+      }
+
       log.info("Workflow as pipeline creation Response details {} {}", resp.code(), resp.message());
       if (resp.code() >= 400) {
         log.info("Workflows as pipeline template is \n - {}", yaml);
@@ -238,7 +251,7 @@ public class WorkflowImportService implements ImportService {
     TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();
     templateLinkConfig.setTemplateRef(MigratorUtility.getIdentifierWithScope(ngEntityDetail));
     JsonNode templateInputs =
-        migrationTemplateUtils.getTemplateInputs(inputDTO, ngEntityDetail, inputDTO.getDestinationAccountIdentifier());
+        migrationHelperService.getTemplateInputs(inputDTO, ngEntityDetail, inputDTO.getDestinationAccountIdentifier());
 
     if (templateInputs != null && "Deployment".equals(templateInputs.get("type").asText())) {
       fixServiceDetails(templateInputs, workflow, inputDTO, summaryDTO);
@@ -412,7 +425,7 @@ public class WorkflowImportService implements ImportService {
       NgEntityDetail serviceDetails = serviceEntityNG.get(0);
       stageServiceRef = MigratorUtility.getIdentifierWithScope(serviceDetails);
       serviceInputs =
-          migrationTemplateUtils.getServiceInput(inputDTO, serviceDetails, inputDTO.getDestinationAccountIdentifier());
+          migrationHelperService.getServiceInput(inputDTO, serviceDetails, inputDTO.getDestinationAccountIdentifier());
       if (serviceInputs != null) {
         serviceInputs = serviceInputs.get(SERVICE_INPUTS);
       }
@@ -449,7 +462,7 @@ public class WorkflowImportService implements ImportService {
     if (isNotEmpty(infraEntityNG)) {
       NgEntityDetail infraDetails = infraEntityNG.get(0);
       stageInfraRef = MigratorUtility.getIdentifierWithScope(infraDetails);
-      infraInputs = migrationTemplateUtils.getInfraInput(
+      infraInputs = migrationHelperService.getInfraInput(
           inputDTO, inputDTO.getDestinationAccountIdentifier(), stageEnvRef, infraDetails);
       if (infraInputs != null) {
         infraInputs = infraInputs.get(INFRASTRUCTURE_DEFINITIONS);
@@ -459,17 +472,22 @@ public class WorkflowImportService implements ImportService {
   }
 
   private List<NgEntityDetail> getMigratedEntity(SaveSummaryDTO summaryDTO, String entityId) {
-    List<NgEntityDetail> entityNG =
-        summaryDTO.getAlreadyMigratedDetails()
-            .stream()
-            .filter(migratedEntity -> migratedEntity.getCgEntityDetail().getId().equals(entityId))
-            .map(MigratedDetails::getNgEntityDetail)
-            .collect(Collectors.toList());
+    List<NgEntityDetail> entityNG = summaryDTO.getAlreadyMigratedDetails()
+                                        .stream()
+                                        .filter(migratedEntity -> {
+                                          CgBasicInfo cgEntityDetail = migratedEntity.getCgEntityDetail();
+                                          return cgEntityDetail != null && entityId.equals(cgEntityDetail.getId());
+                                        })
+                                        .map(MigratedDetails::getNgEntityDetail)
+                                        .collect(Collectors.toList());
 
     List<NgEntityDetail> successfullyMigratedList =
         summaryDTO.getSuccessfullyMigratedDetails()
             .stream()
-            .filter(migratedEntity -> migratedEntity.getCgEntityDetail().getId().equals(entityId))
+            .filter(migratedEntity -> {
+              CgBasicInfo cgEntityDetail = migratedEntity.getCgEntityDetail();
+              return cgEntityDetail != null && entityId.equals(cgEntityDetail.getId());
+            })
             .map(MigratedDetails::getNgEntityDetail)
             .collect(Collectors.toList());
     entityNG.addAll(successfullyMigratedList);

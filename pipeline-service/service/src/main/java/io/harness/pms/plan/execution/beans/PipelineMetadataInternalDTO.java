@@ -21,4 +21,5 @@ public class PipelineMetadataInternalDTO {
   String pipelineYaml;
   String pipelineYamlWithTemplateRef;
   BasicPipeline basicPipeline;
+  String processedYamlVersion;
 }

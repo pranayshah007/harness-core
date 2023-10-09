@@ -9,6 +9,7 @@ package io.harness.ci.execution.execution;
 
 import static io.harness.rule.OwnerRule.AMAN;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
+import static io.harness.rule.OwnerRule.EOIN_MCAFEE;
 import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,6 +19,7 @@ import static org.mockito.Mockito.when;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.stepinfo.DockerStepInfo;
 import io.harness.beans.steps.stepinfo.ECRStepInfo;
+import io.harness.beans.steps.stepinfo.GARStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.beans.entities.CIExecutionConfig;
@@ -112,6 +114,7 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
                                             .buildAndPushDockerRegistryImage("bpdr:1.2.3")
                                             .buildAndPushECRImage("bpecr:1.2.3")
                                             .buildAndPushGCRImage("bpgcr:1.2.3")
+                                            .buildAndPushGARImage("bpgar:1.2.3")
                                             .gcsUploadImage("gcsupload:1.2.3")
                                             .s3UploadImage("s3upload:1.2.3")
                                             .artifactoryUploadTag("art:1.2.3")
@@ -229,6 +232,7 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
                                             .gitCloneImage("gc:abc")
                                             .buildAndPushECRImage("bpecr:1.2.3")
                                             .buildAndPushGCRImage("bpgcr:1.2.3")
+                                            .buildAndPushGARImage("bpgcr:1.2.3")
                                             .gcsUploadImage("gcsupload:1.2.3")
                                             .s3UploadImage("s3upload:1.2.3")
                                             .artifactoryUploadTag("art:1.2.3")
@@ -242,6 +246,8 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
         .isEqualTo("gc:abc");
     assertThat(ciExecutionConfigService.getPluginVersionForK8(CIStepInfoType.DOCKER, "acct").getImage())
         .isEqualTo("bpdr:1.2.4");
+    assertThat(ciExecutionConfigService.getPluginVersionForK8(CIStepInfoType.GAR, "acct").getImage())
+        .isEqualTo("bpgcr:1.2.3");
   }
 
   @Test
@@ -332,6 +338,7 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
                                             .buildAndPushECRImage("bpecr:1.2.3")
                                             .buildAndPushGCRImage("bpgcr:1.2.3")
                                             .buildAndPushACRImage("bpacr:1.2.3")
+                                            .buildAndPushGARImage("bpgar:1.2.3")
                                             .gcsUploadImage("gcsupload:1.2.3")
                                             .vmImageConfig(vmImageConfig)
                                             .build();
@@ -343,6 +350,8 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
         .isEqualTo("vm-buildAndPushECR");
     assertThat(ciExecutionConfigService.getPluginVersionForVM(CIStepInfoType.GCR, "acct"))
         .isEqualTo("vm-buildAndPushGCR");
+    assertThat(ciExecutionConfigService.getPluginVersionForVM(CIStepInfoType.GAR, "acct"))
+        .isEqualTo("vm-buildAndPushGAR");
     assertThat(ciExecutionConfigService.getPluginVersionForVM(CIStepInfoType.RESTORE_CACHE_S3, "acct"))
         .isEqualTo("vm-cacheS3");
     assertThat(ciExecutionConfigService.getPluginVersionForVM(CIStepInfoType.SAVE_CACHE_GCS, "acct"))
@@ -369,6 +378,7 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
                                             .buildAndPushACRImage("bpacr:1.2.3")
                                             .buildAndPushECRImage("bpecr:1.2.3")
                                             .buildAndPushGCRImage("bpgcr:1.2.3")
+                                            .buildAndPushGARImage("bpgar:1.2.3")
                                             .gcsUploadImage("gcsupload:1.2.3")
                                             .vmImageConfig(vmImageConfig)
                                             .build();
@@ -415,6 +425,7 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
     assertThat(ciExecutionImages.getSscaEnforcementTag()).isEqualTo("sscaEnforcement:0.0.1");
     assertThat(ciExecutionImages.getSlsaVerificationTag()).isEqualTo("slsaVerification:0.0.1");
     assertThat(ciExecutionImages.getProvenanceTag()).isEqualTo("provenance:0.0.1");
+    assertThat(ciExecutionImages.getProvenanceGcrTag()).isEqualTo("provenanceGcr:0.0.1");
   }
 
   @Test
@@ -471,6 +482,7 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
                                             .gitCloneImage("gc:abc")
                                             .buildAndPushECRImage("bpecr:1.2.3")
                                             .buildAndPushGCRImage("bpgcr:1.2.3")
+                                            .buildAndPushGARImage("bpgcr:1.2.3")
                                             .buildAndPushACRImage("bpacr:1.2.3")
                                             .gcsUploadImage("gcsupload:1.2.3")
                                             .s3UploadImage("s3upload:1.2.3")
@@ -575,6 +587,29 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
     when(pluginSettingUtils.buildxRequired(ecrStepInfo)).thenReturn(false);
     String pluginName =
         ciExecutionConfigServiceWithMocks.getContainerlessPluginNameForVM(CIStepInfoType.ECR, ecrStepInfo);
+    assertThat(pluginName).isNull();
+  }
+
+  @Test
+  @Owner(developers = EOIN_MCAFEE)
+  @Category(UnitTests.class)
+  public void testGetContainerlessPluginNameForVMGAR() {
+    CIStepConfig ciStepConfig =
+        CIStepConfig.builder()
+            .vmContainerlessStepConfig(
+                VmContainerlessStepConfig.builder()
+                    .dockerBuildxEcrConfig(ContainerlessPluginConfig.builder().name("dockerBuildxGarConfig").build())
+                    .build())
+            .build();
+    GARStepInfo garStepInfo = GARStepInfo.builder()
+                                  .imageName(ParameterField.createValueField("harness"))
+                                  .tags(ParameterField.createValueField(Arrays.asList("tag1", "tag2")))
+                                  .caching(ParameterField.createValueField(true))
+                                  .build();
+    when(ciExecutionServiceConfigMock.getStepConfig()).thenReturn(ciStepConfig);
+    when(pluginSettingUtils.buildxRequired(garStepInfo)).thenReturn(false);
+    String pluginName =
+        ciExecutionConfigServiceWithMocks.getContainerlessPluginNameForVM(CIStepInfoType.GAR, garStepInfo);
     assertThat(pluginName).isNull();
   }
 }

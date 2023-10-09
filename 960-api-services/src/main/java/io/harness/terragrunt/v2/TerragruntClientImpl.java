@@ -17,6 +17,7 @@ import static io.harness.provision.TerragruntConstants.VAR_FILE_FORMAT;
 import static io.harness.terragrunt.v2.TerragruntV2Contants.APPLY;
 import static io.harness.terragrunt.v2.TerragruntV2Contants.DESTROY;
 import static io.harness.terragrunt.v2.TerragruntV2Contants.INIT;
+import static io.harness.terragrunt.v2.TerragruntV2Contants.OUTPUT;
 import static io.harness.terragrunt.v2.TerragruntV2Contants.PLAN;
 import static io.harness.terragrunt.v2.TerragruntV2Contants.WORKSPACE;
 
@@ -27,6 +28,7 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.version.Version;
+import io.harness.cli.CliCommandRequest;
 import io.harness.cli.CliHelper;
 import io.harness.cli.CliResponse;
 import io.harness.cli.LogCallbackOutputStream;
@@ -163,9 +165,10 @@ public class TerragruntClientImpl implements TerragruntClient {
   @Override
   public CliResponse output(@NotNull TerragruntOutputCliRequest request, @NotNull LogCallback logCallback)
       throws InterruptedException, TimeoutException, IOException {
+    String additionalCliOptions = getAdditionalCliOption(request.getArgs().getAdditionalCliArgs(), OUTPUT);
     String command = TerragruntRunType.RUN_ALL == request.getRunType()
-        ? TerragruntCommandUtils.runAllOutput(request.getTerraformOutputsFile())
-        : TerragruntCommandUtils.output(request.getTerraformOutputsFile());
+        ? TerragruntCommandUtils.runAllOutput(request.getTerraformOutputsFile(), additionalCliOptions)
+        : TerragruntCommandUtils.output(request.getTerraformOutputsFile(), additionalCliOptions);
     log.info("Execute terragrunt output: {}", command);
     return executeCliCommand(command, request, logCallback, new LogCallbackOutputStream(logCallback));
   }
@@ -247,9 +250,20 @@ public class TerragruntClientImpl implements TerragruntClient {
       String command, AbstractTerragruntCliRequest cliRequest, LogCallback logCallback, LogOutputStream outputStream)
       throws IOException, InterruptedException, TimeoutException {
     logCallback.saveExecutionLog(color(command, LogColor.White, LogWeight.Bold), INFO, CommandExecutionStatus.RUNNING);
-    return cliHelper.executeCliCommand(command, cliRequest.getTimeoutInMillis(), cliRequest.getEnvVars(),
-        cliRequest.getWorkingDirectory(), logCallback, command, outputStream,
-        new TerraformCliErrorLogOutputStream(logCallback), SECONDS_TO_WAIT_FOR_GRACEFUL_SHUTDOWN);
+    CliCommandRequest request =
+        CliCommandRequest.builder()
+            .command(command)
+            .timeoutInMillis(cliRequest.getTimeoutInMillis())
+            .envVariables(cliRequest.getEnvVars())
+            .directory(cliRequest.getWorkingDirectory())
+            .logCallback(logCallback)
+            .loggingCommand(command)
+            .logOutputStream(outputStream)
+            .errorLogOutputStream(new TerraformCliErrorLogOutputStream(logCallback, cliRequest.isSkipColorLogs()))
+            .secondsToWaitForGracefulShutdown(SECONDS_TO_WAIT_FOR_GRACEFUL_SHUTDOWN)
+            .build();
+
+    return cliHelper.executeCliCommand(request);
   }
 
   private Set<String> parseWorkspaceList(String workspaceOutput) {

@@ -31,4 +31,5 @@ public class AzureWebAppsStageExecutionDetails implements ExecutionDetails {
   private Set<String> userAddedAppSettingNames;
   private Set<String> userAddedConnStringNames;
   private Boolean userChangedStartupCommand;
+  private Boolean cleanDeployment;
 }

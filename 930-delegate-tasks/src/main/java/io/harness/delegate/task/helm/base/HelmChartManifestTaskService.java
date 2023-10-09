@@ -18,7 +18,11 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.aws.AwsClient;
+import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.connector.task.git.ScmConnectorMapperDelegate;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
@@ -26,6 +30,7 @@ import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
+import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.git.GitFetchTaskHelper;
 import io.harness.delegate.task.helm.beans.FetchHelmChartManifestRequest;
 import io.harness.delegate.task.helm.response.HelmChartManifest;
@@ -77,6 +82,8 @@ public class HelmChartManifestTaskService {
 
   @Inject private GitFetchTaskHelper gitFetchTaskHelper;
   @Inject private ScmConnectorMapperDelegate scmConnectorMapperDelegate;
+  @Inject private static AwsClient awsClient;
+  @Inject private static AwsNgConfigMapper awsNgConfigMapper;
 
   private final Cache<HelmChartKey, HelmChartManifest> cache =
       CacheBuilder.newBuilder()
@@ -159,7 +166,7 @@ public class HelmChartManifestTaskService {
     String chartYamlPath = getChartYamlPath(manifestConfig, chartPath);
 
     FetchFilesResult result = gitFetchTaskHelper.fetchFileFromRepo(
-        gitStoreDelegateConfig, Collections.singletonList(chartYamlPath), accountId, gitConfigDTO);
+        gitStoreDelegateConfig, Collections.singletonList(chartYamlPath), accountId, gitConfigDTO, false);
     if (isEmpty(result.getFiles())) {
       return;
     }
@@ -254,9 +261,18 @@ public class HelmChartManifestTaskService {
         break;
       case OCI_HELM:
         OciHelmStoreDelegateConfig ociHelm = (OciHelmStoreDelegateConfig) config.getStoreDelegateConfig();
-        metadataBuilder.url(ociHelm.getOciHelmConnector().getHelmRepoUrl())
-            .basePath(ociHelm.getBasePath())
-            .cacheRepoUrl(format("%s/%s", ociHelm.getOciHelmConnector().getHelmRepoUrl(), ociHelm.getBasePath()));
+        if (ociHelm.getConnectorConfigDTO() instanceof OciHelmConnectorDTO) {
+          metadataBuilder.url(ociHelm.getRepoUrl())
+              .basePath(ociHelm.getBasePath())
+              .cacheRepoUrl(format("%s/%s", ociHelm.getRepoUrl(), ociHelm.getBasePath()));
+        } else if (ociHelm.getConnectorConfigDTO() instanceof AwsConnectorDTO) {
+          String repoUrl = getEcrRepoUrl(ociHelm);
+          metadataBuilder.url(repoUrl)
+              .region(ociHelm.getRegion())
+              .registryId(ociHelm.getRegistryId())
+              .basePath(ociHelm.getBasePath())
+              .cacheRepoUrl(format("%s/%s", repoUrl, ociHelm.getBasePath()));
+        }
         break;
       case GIT:
         GitStoreDelegateConfig gitConfig = (GitStoreDelegateConfig) config.getStoreDelegateConfig();
@@ -284,6 +300,13 @@ public class HelmChartManifestTaskService {
     return metadataBuilder.build();
   }
 
+  private static String getEcrRepoUrl(OciHelmStoreDelegateConfig ociHelmStoreDelegateConfig) {
+    AwsInternalConfig awsInternalConfig =
+        awsNgConfigMapper.createAwsInternalConfig((AwsConnectorDTO) ociHelmStoreDelegateConfig.getConnectorConfigDTO());
+    return awsClient.getEcrImageUrl(awsInternalConfig, ociHelmStoreDelegateConfig.getRegistryId(),
+        ociHelmStoreDelegateConfig.getRegion(), ociHelmStoreDelegateConfig.getRepoName());
+  }
+
   @Value
   @Builder
   @EqualsAndHashCode
@@ -309,6 +332,7 @@ public class HelmChartManifestTaskService {
     String commitId;
     String branch;
     String cacheRepoUrl;
+    String registryId;
 
     public Optional<HelmChartKey> toHelmChartKey() {
       if (isEmpty(cacheRepoUrl) || isEmpty(chartVersion)) {

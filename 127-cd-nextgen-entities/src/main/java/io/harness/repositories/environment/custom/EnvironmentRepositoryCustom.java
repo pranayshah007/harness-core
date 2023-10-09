@@ -10,12 +10,15 @@ package io.harness.repositories.environment.custom;
 import io.harness.ng.core.environment.beans.Environment;
 
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 public interface EnvironmentRepositoryCustom {
   Page<Environment> findAll(Criteria criteria, Pageable pageable);
+
+  Environment saveGitAware(Environment environmentToSave);
 
   Environment upsert(Criteria criteria, Environment environment);
 
@@ -34,4 +37,8 @@ public interface EnvironmentRepositoryCustom {
   List<Environment> findAll(Criteria criteria);
 
   List<String> getEnvironmentIdentifiers(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+
+  Optional<Environment> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String environmentIdentifier,
+      boolean notDeleted, boolean loadFromCache, boolean loadFromFallbackBranch, boolean getMetadataOnly);
 }

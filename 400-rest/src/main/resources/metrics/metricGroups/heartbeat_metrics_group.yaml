@@ -1,0 +1,21 @@
+name: HeartBeat
+identifier: heartbeat_entry
+labels:
+  - accountId
+  - accountName
+  - companyName
+  - ringName
+  - delegateImageTag
+  - upgraderImageTag
+  - watcherVersion
+  - watcherJREVersion
+  - delegateJREVersion
+  - orgId
+  - projectId
+  - delegateName
+  - delegateId
+  - delegateVersion
+  - delegateConnectionStatus
+  - delegateEventType
+  - isNg
+  - isImmutable

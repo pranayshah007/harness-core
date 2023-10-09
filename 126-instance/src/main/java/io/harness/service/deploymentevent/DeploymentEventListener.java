@@ -6,6 +6,8 @@
  */
 
 package io.harness.service.deploymentevent;
+
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
@@ -24,10 +26,14 @@ import io.harness.delegate.beans.instancesync.DeploymentOutcomeMetadata;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.dtos.DeploymentSummaryDTO;
 import io.harness.dtos.InfrastructureMappingDTO;
+import io.harness.dtos.ReleaseDetailsMappingDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
+import io.harness.dtos.releasedetailsinfo.ReleaseDetailsDTO;
 import io.harness.encryption.Scope;
 import io.harness.entities.ArtifactDetails;
 import io.harness.entities.RollbackStatus;
+import io.harness.entities.releasedetailsinfo.ReleaseEnvDetails;
+import io.harness.entities.releasedetailsinfo.ReleaseServiceDetails;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -49,6 +55,7 @@ import io.harness.service.infrastructuremapping.InfrastructureMappingService;
 import io.harness.service.instancesync.InstanceSyncService;
 import io.harness.service.instancesynchandler.AbstractInstanceSyncHandler;
 import io.harness.service.instancesynchandlerfactory.InstanceSyncHandlerFactoryService;
+import io.harness.service.releasedetailsmapping.ReleaseDetailsMappingService;
 import io.harness.util.logging.InstanceSyncLogContext;
 import io.harness.utils.ExecutionModeUtils;
 import io.harness.utils.IdentifierRefHelper;
@@ -57,6 +64,8 @@ import com.google.inject.Inject;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -70,6 +79,7 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
   private final OutcomeService outcomeService;
   private final InstanceSyncHandlerFactoryService instanceSyncHandlerFactoryService;
   private final InfrastructureMappingService infrastructureMappingService;
+  private final ReleaseDetailsMappingService releaseDetailsMappingService;
   private final InstanceSyncService instanceSyncService;
   private final InstanceInfoService instanceInfoService;
   private final DeploymentSummaryService deploymentSummaryService;
@@ -96,6 +106,14 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
       }
       ServiceStepOutcome serviceStepOutcome = getServiceOutcomeFromAmbiance(ambiance);
       InfrastructureOutcome infrastructureOutcome = getInfrastructureOutcomeFromAmbiance(ambiance);
+      ReleaseDetailsDTO releaseDetailsDTO = getReleaseDetailsDTO(serviceStepOutcome, infrastructureOutcome, ambiance);
+      Set<String> releaseKeys = serverInstanceInfoList.stream()
+                                    .map(ServerInstanceInfo::getReleaseKey)
+                                    .filter(Objects::nonNull)
+                                    .collect(Collectors.toSet());
+      releaseKeys.forEach(releaseKey
+          -> createReleaseDetailsMapping(
+              ambiance, infrastructureOutcome.getInfrastructureKey(), releaseKey, releaseDetailsDTO));
 
       InfrastructureMappingDTO infrastructureMappingDTO =
           createInfrastructureMappingIfNotExists(ambiance, serviceStepOutcome, infrastructureOutcome);
@@ -106,7 +124,7 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
       instanceSyncService.processInstanceSyncForNewDeployment(
           new DeploymentEvent(deploymentSummaryDTO, null, infrastructureOutcome));
     } catch (Exception exception) {
-      log.error("Exception occured while handling event for instance sync", exception);
+      log.error("Exception occurred while handling event for instance sync", exception);
     }
   }
 
@@ -161,6 +179,17 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
     return Scope.values()[minScope];
   }
 
+  private Scope getScopeOfEntity(@NotEmpty String entityRef) {
+    Scope entityScope;
+    String[] entityRefSplit = StringUtils.split(entityRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    if (entityRefSplit.length == 1) {
+      entityScope = Scope.PROJECT;
+    } else {
+      entityScope = IdentifierRefHelper.getScope(entityRefSplit[0]);
+    }
+    return entityScope;
+  }
+
   private DeploymentSummaryDTO createDeploymentSummary(Ambiance ambiance, ServiceStepOutcome serviceOutcome,
       InfrastructureOutcome infrastructureOutcome, InfrastructureMappingDTO infrastructureMappingDTO,
       List<ServerInstanceInfo> serverInstanceInfoList, Status status,
@@ -211,6 +240,29 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
     return deploymentSummaryDTO;
   }
 
+  private void createReleaseDetailsMapping(
+      Ambiance ambiance, String infraKey, String releaseKey, ReleaseDetailsDTO releaseDetailsDTO) {
+    if (isEmpty(releaseKey)) {
+      return;
+    }
+
+    ReleaseDetailsMappingDTO releaseDetailsMappingDTO =
+        ReleaseDetailsMappingDTO.builder()
+            .releaseKey(releaseKey)
+            .accountIdentifier(getAccountIdentifier(ambiance))
+            .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
+            .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
+            .releaseDetailsDTO(releaseDetailsDTO)
+            .infraKey(infraKey)
+            .build();
+
+    Optional<ReleaseDetailsMappingDTO> releaseDetailsMappingDTOOptional =
+        releaseDetailsMappingService.createNewOrReturnExistingReleaseDetailsMapping(releaseDetailsMappingDTO);
+    if (releaseDetailsMappingDTOOptional.isEmpty()) {
+      log.error("Failed to create release details Mapping for releaseKey : " + releaseKey);
+    }
+  }
+
   private void setArtifactDetails(
       Ambiance ambiance, DeploymentSummaryDTO deploymentSummaryDTO, DeploymentInfoDTO deploymentInfoDTO) {
     if (isRollbackDeploymentEvent(ambiance)) {
@@ -246,12 +298,43 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
             .tag(artifactsOutcome.getPrimary().getTag())
             .artifactId(artifactsOutcome.getPrimary().getIdentifier())
             .displayName(artifactsOutcome.getPrimary().getArtifactSummary().getDisplayName())
+            .artifactIdentity(artifactsOutcome.getPrimary().getArtifactSummary().getArtifactIdentity())
             .build());
   }
 
   private ServiceStepOutcome getServiceOutcomeFromAmbiance(Ambiance ambiance) {
     return (ServiceStepOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
+  }
+
+  private ReleaseDetailsDTO getReleaseDetailsDTO(
+      ServiceStepOutcome serviceStepOutcome, InfrastructureOutcome infrastructureOutcome, Ambiance ambiance) {
+    String serviceRef = serviceStepOutcome.getIdentifier();
+    String environmentRef = infrastructureOutcome.getEnvironment().getIdentifier();
+    Scope envScope = getScopeOfEntity(environmentRef);
+    Scope serviceScope = getScopeOfEntity(serviceRef);
+
+    ReleaseEnvDetails releaseEnvDetails =
+        ReleaseEnvDetails.builder()
+            .connectorRef(infrastructureOutcome.getConnectorRef())
+            .envId(infrastructureOutcome.getEnvironment().getEnvironmentRef())
+            .envName(infrastructureOutcome.getEnvironment().getName())
+            .infraIdentifier(infrastructureOutcome.getInfraIdentifier())
+            .infraName(infrastructureOutcome.getInfraName())
+            .infrastructureKind(infrastructureOutcome.getKind())
+            .orgIdentifier(envScope == Scope.ACCOUNT ? null : AmbianceUtils.getOrgIdentifier(ambiance))
+            .projectIdentifier(envScope == Scope.PROJECT ? AmbianceUtils.getProjectIdentifier(ambiance) : null)
+            .build();
+
+    ReleaseServiceDetails releaseServiceDetails =
+        ReleaseServiceDetails.builder()
+            .serviceId(serviceStepOutcome.getIdentifier())
+            .serviceName(serviceStepOutcome.getName())
+            .orgIdentifier(serviceScope == Scope.ACCOUNT ? null : AmbianceUtils.getOrgIdentifier(ambiance))
+            .projectIdentifier(serviceScope == Scope.PROJECT ? AmbianceUtils.getProjectIdentifier(ambiance) : null)
+            .build();
+
+    return ReleaseDetailsDTO.builder().envDetails(releaseEnvDetails).serviceDetails(releaseServiceDetails).build();
   }
 
   private InfrastructureOutcome getInfrastructureOutcomeFromAmbiance(Ambiance ambiance) {

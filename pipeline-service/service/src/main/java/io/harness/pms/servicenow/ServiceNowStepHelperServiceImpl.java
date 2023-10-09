@@ -6,7 +6,9 @@
  */
 
 package io.harness.pms.servicenow;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.SERVICENOW_ERROR;
 import static io.harness.exception.WingsException.USER;
 
@@ -48,6 +50,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.servicenow.ServiceNowStepHelperService;
 import io.harness.steps.servicenow.ServiceNowTicketOutcome;
+import io.harness.steps.servicenow.ServiceNowTicketOutcome.MultipleOutcome;
 import io.harness.steps.servicenow.ServiceNowTicketOutcome.ServiceNowTicketOutcomeBuilder;
 import io.harness.steps.servicenow.importset.ServiceNowImportSetOutcome;
 import io.harness.steps.servicenow.importset.ServiceNowImportSetOutcome.ServiceNowImportSetOutcomeBuilder;
@@ -63,6 +66,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
@@ -127,14 +131,28 @@ public class ServiceNowStepHelperServiceImpl implements ServiceNowStepHelperServ
   public StepResponse prepareStepResponse(ThrowingSupplier<ServiceNowTaskNGResponse> responseSupplier)
       throws Exception {
     ServiceNowTaskNGResponse taskResponse = responseSupplier.get();
-    ServiceNowTicketOutcomeBuilder serviceNowTicketOutcomeBuilder =
-        ServiceNowTicketOutcome.builder()
-            .ticketNumber(taskResponse.getTicket().getNumber())
-            .ticketUrl(taskResponse.getTicket().getUrl());
-    if (taskResponse.getTicket().getFields() != null) {
+    ServiceNowTicketOutcomeBuilder serviceNowTicketOutcomeBuilder = ServiceNowTicketOutcome.builder();
+
+    if (taskResponse.getTicket() != null && taskResponse.getTicket().getFields() != null) {
       Map<String, String> fields = new HashMap<>();
+
       taskResponse.getTicket().getFields().forEach((k, v) -> fields.put(k, v.getDisplayValue()));
-      serviceNowTicketOutcomeBuilder.fields(fields);
+      serviceNowTicketOutcomeBuilder.fields(fields)
+          .ticketNumber(taskResponse.getTicket().getNumber())
+          .ticketUrl(taskResponse.getTicket().getUrl());
+
+    } else if (isNotEmpty(taskResponse.getTickets())) {
+      List<MultipleOutcome> ticketOutcomes = taskResponse.getTickets()
+                                                 .stream()
+                                                 .map(serviceNowTicketNG
+                                                     -> MultipleOutcome.builder()
+                                                            .ticketUrl(serviceNowTicketNG.getUrl())
+                                                            .ticketNumber(serviceNowTicketNG.getNumber())
+                                                            .build())
+                                                 .collect(Collectors.toList());
+      serviceNowTicketOutcomeBuilder.multipleOutcomeList(ticketOutcomes);
+    } else if (taskResponse.getTickets() != null && taskResponse.getTickets().isEmpty()) {
+      serviceNowTicketOutcomeBuilder.message("No change tasks to update");
     }
     return StepResponse.builder()
         .status(Status.SUCCEEDED)

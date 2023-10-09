@@ -17,7 +17,6 @@ metadata:
   {{- end }}
   name: template-service
   namespace: {{ .Release.Namespace }}
-  
 spec:
   ports:
   - name: grpc-template

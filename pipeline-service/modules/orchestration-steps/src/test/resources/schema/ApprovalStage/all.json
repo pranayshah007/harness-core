@@ -65,6 +65,10 @@
         "type": "string"
       }
     },
+    "timeout": {
+      "type": "string",
+      "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(.*<\\+.*>(?!.*\\.executionInput\\(\\)).*)|(^$))$"
+    },
     "type": {
       "type": "string",
       "enum": [
@@ -607,6 +611,10 @@
           "additionalProperties": {
             "type": "string"
           }
+        },
+        "timeout": {
+          "type": "string",
+          "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(.*<\\+.*>(?!.*\\.executionInput\\(\\)).*)|(^$))$"
         },
         "type": {
           "type": "string",
@@ -1407,6 +1415,28 @@
             },
             "tool": {
               "$ref": "#/definitions/SbomOrchestrationTool"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ChangeTaskUpdateMultipleSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/UpdateMultipleSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "changeRequestNumber"
+          ],
+          "properties": {
+            "changeRequestNumber": {
+              "type": "string"
+            },
+            "changeTaskType": {
+              "type": "string"
             }
           }
         }
@@ -2626,6 +2656,142 @@
                   "minLength": 1
                 }
               ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GARStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "host",
+            "imageName",
+            "projectID",
+            "tags"
+          ],
+          "properties": {
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "buildArgs": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheFrom": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheTo": {
+              "type": "string"
+            },
+            "caching": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "connectorRef": {
+              "type": "string"
+            },
+            "context": {
+              "type": "string"
+            },
+            "dockerfile": {
+              "type": "string"
+            },
+            "host": {
+              "type": "string"
+            },
+            "imageName": {
+              "type": "string"
+            },
+            "labels": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "optimize": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "projectID": {
+              "type": "string"
+            },
+            "remoteCacheImage": {
+              "type": "string"
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "tags": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "type": "string"
             }
           }
         }
@@ -3865,6 +4031,28 @@
       "properties": {
         "action": {
           "$ref": "#/definitions/FailureStrategyActionConfig"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "OutputAlias": {
+      "type": "object",
+      "required": [
+        "key",
+        "scope"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "Pipeline",
+            "Stage",
+            "StepGroup"
+          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -5187,7 +5375,6 @@
         {
           "type": "object",
           "required": [
-            "args",
             "buildTool",
             "language"
           ],
@@ -6242,7 +6429,6 @@
           "type": "object",
           "required": [
             "connectorRef",
-            "ticketNumber",
             "ticketType",
             "useServiceNowTemplate"
           ],
@@ -6280,10 +6466,27 @@
             "ticketType": {
               "type": "string"
             },
+            "updateMultiple": {
+              "$ref": "#/definitions/UpdateMultipleTaskNode"
+            },
             "useServiceNowTemplate": {
               "type": "boolean"
             }
           }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "ticketNumber"
+              ]
+            },
+            {
+              "required": [
+                "updateMultiple"
+              ]
+            }
+          ]
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6603,6 +6806,9 @@
                 }
               ]
             },
+            "outputAlias": {
+              "$ref": "#/definitions/OutputAlias"
+            },
             "outputVariables": {
               "type": "array",
               "items": {
@@ -6911,6 +7117,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/ECRStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "BuildAndPushGAR"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GARStepInfo"
               }
             }
           }
@@ -8094,6 +8316,45 @@
     "UnitTestReportSpec": {
       "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "UpdateMultipleSpec": {
+      "type": "object",
+      "discriminator": "type",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "UpdateMultipleTaskNode": {
+      "type": "object",
+      "required": [
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "CHANGE_TASK"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "CHANGE_TASK"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ChangeTaskUpdateMultipleSpec"
+              }
+            }
+          }
+        }
+      ]
     },
     "UpdateRuleYaml": {
       "allOf": [

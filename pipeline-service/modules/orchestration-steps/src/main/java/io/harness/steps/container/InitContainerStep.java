@@ -85,7 +85,7 @@ public class InitContainerStep implements TaskExecutableWithRbac<StepElementPara
     TaskData taskData = getTaskData(stepElementParameters, buildSetupTaskParams);
     final List<TaskSelector> delegateSelectors = featureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance),
                                                      FeatureName.CD_CONTAINER_STEP_DELEGATE_SELECTOR)
-        ? ContainerSpecUtils.getDelegateSelectors(containerStepSpec)
+        ? ContainerSpecUtils.getStepDelegateSelectors(containerStepSpec)
         : new ArrayList<>();
     return TaskRequestsUtils.prepareTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         TaskCategory.DELEGATE_TASK_V2, null, true, TaskType.valueOf(taskData.getTaskType()).getDisplayName(),

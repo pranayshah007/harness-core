@@ -3,8 +3,8 @@
     "id": "64d4f1a9b308cf71096284be",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "__HARNESS__bfeece93-8892-4459-be93-b7a647df7e5f",
-    "name": "Mean time to merge PR is less than 2 days",
-    "description": "Mean time to merge PR is less than 2 days",
+    "name": "GitHub Mean time to merge PR is less than 2 days",
+    "description": "GitHub Mean time to merge PR is less than 2 days",
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
@@ -44,8 +44,8 @@
     "id": "64d5f23eb90d6686d2a9a007",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "__HARNESS__a9b98e87-d9c1-4c5e-9ba6-4485f171dbc4",
-    "name": "Branch protection is set",
-    "description": "Branch protection is set",
+    "name": "GitHub Branch protection is set",
+    "description": "GitHub Branch protection is set",
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
@@ -105,8 +105,8 @@
     "id": "64ede62a8b4004661f8e59aa",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "__HARNESS__b9a99e87-d9c1-4c5e-9ba6-4605a771dbc4",
-    "name": "Gitleaks file exists",
-    "description": "Gitleaks file exists",
+    "name": "GitHub Gitleaks file exists",
+    "description": "GitHub Gitleaks file exists",
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
@@ -126,8 +126,8 @@
     "id": "64ef7bb0f616c89330020df9",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "__HARNESS__dfc93822-604a-4dfe-8e65-b71928034897",
-    "name": "Is STO scan stage setup In Pipeline",
-    "description": "Check will pass if sto stage is added in Pipelines",
+    "name": "Is STO scan stage setup in pipeline",
+    "description": "Check will pass if STO stage is added in pipeline",
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
@@ -140,13 +140,13 @@
     "expression": "harness.stoStageAdded == true",
     "tags": ["Software quality"],
     "defaultBehaviour": "FAIL",
-    "failMessage": "STO stage is not setup in Pipelines"
+    "failMessage": "STO stage is not setup in pipeline"
   },
   {
     "id": "64ef7cfff616c89330020dfa",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "__HARNESS__76549f1d-f342-4875-ac1c-ff33036aa1f0",
-    "name": "Is Policy Evaluation Successful for Pipelines",
+    "name": "Is policy evaluation successful for pipelines",
     "description": "Check will pass if policy evaluation will be successful for pipelines",
     "ruleStrategy": "ALL_OF",
     "rules": [
@@ -160,14 +160,14 @@
     "expression": "harness.isPolicyEvaluationSuccessful == true",
     "tags": ["Software quality", "Development maturity"],
     "defaultBehaviour": "FAIL",
-    "failMessage": "STO stage is not setup in CI and CD pipeline"
+    "failMessage": "Policy evaluation is failing for pipelines"
   },
   {
     "id": "64ef7d8bf616c89330020dfb",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "__HARNESS__d4bc06ee-6f27-43f6-b095-f90b48d6061c",
-    "name": "Percentage of ci pipelines passing in past 7 days is more than 80",
-    "description": "Percentage of ci pipelines passing in past 7 days is more than 80",
+    "name": "Percentage of CI pipelines passing in past 7 days is more than 80",
+    "description": "Percentage of CI pipelines passing in past 7 days is more than 80",
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
@@ -177,17 +177,17 @@
         "value": "80"
       }
     ],
-    "expression": "harness.%ofCIPipelinePassingInPast7Days > 80",
+    "expression": "harness.PercentageOfCIPipelinePassingInPastSevenDays > 80",
     "tags": ["Software quality", "Development maturity"],
     "defaultBehaviour": "FAIL",
-    "failMessage": "Percentage of ci pipeline is less than 80 in past 7 days"
+    "failMessage": "Percentage of CI pipelines passing is less than 80 in past 7 days"
   },
   {
     "id": "64ef7e41f616c89330020dfc",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "__HARNESS__b5e32af1-1c66-4501-9bdf-571ba9cdee16",
-    "name": "No test failing on CI Pipeline is zero",
-    "description": "No test failing on CI Pipeline is zero",
+    "name": "No test failing on CI pipeline",
+    "description": "No test failing on CI pipeline",
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
@@ -197,9 +197,297 @@
         "value": "true"
       }
     ],
-    "expression": "harness.noTestsFailingInCiPipeline == 0",
+    "expression": "harness.noTestsFailingInCiPipeline == true",
     "tags": ["Software quality", "Development maturity"],
     "defaultBehaviour": "FAIL",
-    "failMessage": "Tests are failing on CI Pipeline"
+    "failMessage": "Tests are failing on CI pipeline"
+  },
+  {
+    "id": "65009e1bc28a1a3f5607f80c",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__712025a1-c192-4212-8c29-252a37a44225",
+    "name": "Is on-call set",
+    "description": "Checks if on-call is set on PagerDuty for the service.",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "pagerduty",
+        "data_point_identifier": "isOnCallSet",
+        "operator": "==",
+        "value": "true"
+      }
+    ],
+    "expression": "pagerduty.isOnCallSet == true",
+    "tags": ["DevOps maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "On-call is not set on PagerDuty [Reference for setting up on-call - https://support.pagerduty.com/docs/schedule-basics ]"
+  },
+  {
+    "id": "65009bfec28a1a3f5607f809",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__566ff4fa-1ba8-40bf-bd4a-fd1ddb9a9b21",
+    "name": "Is escalation policy set",
+    "description": "Checks if the Escalation Policy is set on PagerDuty.",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "pagerduty",
+        "data_point_identifier": "isEscalationPolicySet",
+        "operator": "==",
+        "value": "true"
+      }
+    ],
+    "expression": "pagerduty.isEscalationPolicySet == true",
+    "tags": ["DevOps maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Escalation policy is not set on PagerDuty. [Reference for setting up Escalation Policy - https://support.pagerduty.com/docs/escalation-policies ]"
+  },
+  {
+    "id": "6500ac528ea5a4798502f512",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__c758266c-22b4-454f-83c4-bd205f0ea277",
+    "name": "Number of incidents in last 30 days is less than 20",
+    "description": "Checks if number of incidents in last 30 days is less than 20 on PagerDuty",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "pagerduty",
+        "data_point_identifier": "noOfIncidentsInLastThirtyDays",
+        "operator": "<",
+        "value": "20"
+      }
+    ],
+    "expression": "pagerduty.noOfIncidentsInLastThirtyDays < 20",
+    "tags": ["DevOps maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Number of incidents in last 30 days is more than 20 on PagerDuty."
+  },
+  {
+    "id": "6500ce178ea5a4798502f516",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__565c5545-2b7f-4400-95e2-6b8ac470f40e",
+    "name": "Average resolved time for the last 10 resolved incidents is less than 50 minutes",
+    "description": "Checks if the average resolved time for last 10 resolved incidents is less than 50 minutes on PagerDuty",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "pagerduty",
+        "data_point_identifier": "avgResolvedTimeForLastTenResolvedIncidentsInMinutes",
+        "operator": "<",
+        "value": "50"
+      }
+    ],
+    "expression": "pagerduty.avgResolvedTimeForLastTenResolvedIncidentsInMinutes < 50",
+    "tags": ["DevOps maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Average resolved time for last 10 resolved incidents is more than 50 minutes."
+  },
+  {
+    "id": "64fec4369a5dcde88b2137c7",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__ce1ea812-868e-457e-a547-00638dbcafb2",
+    "name": "Replicas count greater than 1",
+    "description": "Replicas count greater than 1",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "kubernetes",
+        "data_point_identifier": "replicas",
+        "operator": ">",
+        "value": 1
+      }
+    ],
+    "expression": "kubernetes.replicas > 1",
+    "tags": ["DevOps maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Make sure you have minimum 2 replicas configured for the application to be considered minimally available"
+  },
+  {
+    "id": "65083295bd13c114730fe02c",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__43957df0-d59b-4799-a2ed-14ecbd32fe3f",
+    "name": "Deployed within last 7 days",
+    "description": "Checks if the most recent deployment was done within the past 7 days.",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "kubernetes",
+        "data_point_identifier": "daysSinceLastDeployed",
+        "operator": "<=",
+        "value": 7
+      }
+    ],
+    "expression": "kubernetes.daysSinceLastDeployed <= 7",
+    "tags": ["DevOps maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Application should be deployed within a week"
+  },
+  {
+    "id": "650c3ff3b0979ea005707417",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__beefce94-8892-5590-be93-b7a247ef7e5e",
+    "name": "Bitbucket Mean time to merge PR is less than 2 days",
+    "description": "Bitbucket Mean time to merge PR is less than 2 days",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "bitbucket",
+        "data_point_identifier": "meanTimeToMerge",
+        "conditional_input_value": "\"refs/\"",
+        "operator": "<",
+        "value": "48"
+      }
+    ],
+    "expression": "bitbucket.meanTimeToMerge < 48",
+    "tags": ["Development maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Mean time to merge PR is more than 2 days"
+  },
+  {
+    "id": "65155fe3bc2fee7d40edbd10",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__d3823a2b-390a-f44b-d351-214ab64d37456",
+    "name": "Mean time to resolve P0/P1 bugs in last 90 days is less than 2 days",
+    "description": "Mean time to resolve P0/P1 bugs in last 90 days is less than 2 days",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "jira",
+        "data_point_identifier": "meanTimeToResolve",
+        "conditional_input_value": "\"issuetype = Bug AND priority in (P0,P1) AND resolved >= -90d\"",
+        "operator": "<",
+        "value": "48"
+      }
+    ],
+    "expression": "jira.meanTimeToResolve < 48",
+    "tags": ["Quality"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Mean time to resolve P0/P1 bugs is more than 2 days"
+  },
+  {
+    "id": "65155fe8e7060235c286443e",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__a05fdb1e-c709-2a45-7b06-528ee4c26f01",
+    "name": "Number of open P0/P1 bugs is less than 5",
+    "description": "Number of open P0/P1 bugs is less than 5",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "jira",
+        "data_point_identifier": "issuesCount",
+        "conditional_input_value": "\"issuetype = Bug AND priority in (P0,P1) AND statusCategory != Done\"",
+        "operator": "<",
+        "value": "5"
+      }
+    ],
+    "expression": "jira.issuesCount < 5",
+    "tags": ["Quality"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Number of open P0/P1 bugs is more than 5"
+  },
+  {
+    "id": "65155ff0c0d13e55a1949910",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__f60d48a5-ca8e-38ca-5031-95cab6ede5b1",
+    "name": "Features delivered in last 90 days is more than 5",
+    "description": "Features delivered in last 90 days is more than 5",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "jira",
+        "data_point_identifier": "issuesCount",
+        "conditional_input_value": "\"issuetype in (Epic, 'New Feature') AND resolved >= -90d\"",
+        "operator": "<",
+        "value": "5"
+      }
+    ],
+    "expression": "jira.issuesCount < 5",
+    "tags": ["Development maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Features delivered in last 90 days is less than 5"
+  },
+  {
+    "id": "65157ea246474b8c022d26c5",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__a4818149-8eb2-fb94-673a-70c9f4ec65e6",
+    "name": "P0/P1 bugs Open/Close ratio is less than 3 (last 90 days)",
+    "description": "P0/P1 bugs Open/Close ratio is less than 3 (last 90 days)",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "jira",
+        "data_point_identifier": "issuesOpenCloseRatio",
+        "conditional_input_value": "\"issuetype = Bug AND priority in (P0,P1) AND created >= -90d\"",
+        "operator": "<",
+        "value": "3"
+      }
+    ],
+    "expression": "jira.issuesOpenCloseRatio < 3",
+    "tags": ["Quality"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "P0/P1 bugs Open/Close ratio is more than 3"
+  },
+  {
+    "id": "64d4f2a0b309cf72096284be",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__bfffcf93-8892-4459-be93-b7a690df7f6f",
+    "name": "Gitlab Mean time to merge PR is less than 2 days",
+    "description": "Gitlab Mean time to merge PR is less than 2 days",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "gitlab",
+        "data_point_identifier": "meanTimeToMerge",
+        "conditional_input_value": "\"refs/\"",
+        "operator": "<",
+        "value": "48"
+      }
+    ],
+    "expression": "gitlab.meanTimeToMerge < 48",
+    "tags": ["Development maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Mean time to merge PR is more than 2 days"
+  },
+  {
+    "id": "64e5e23fb11d6686d2a9a007",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__b9e98e87-e9f1-4c5e-9ba6-49085f71dbc4",
+    "name": "Gitlab Branch protection is set",
+    "description": "Gitlab Branch protection is set",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "gitlab",
+        "data_point_identifier": "isBranchProtected",
+        "conditional_input_value": "\"refs/\"",
+        "operator": "==",
+        "value": "true"
+      }
+    ],
+    "expression": "gitlab.isBranchProtected == true",
+    "tags": ["Software quality", "Development maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Branch protection is not set"
+  },
+  {
+    "id": "64ffe63a8b4005661f8e59ff",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__b8a10e98-d9c1-4c5e-9ba6-4605a772fbc4",
+    "name": "Gitlab Gitleaks file exists",
+    "description": "Gitlab Gitleaks file exists",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "gitlab",
+        "data_point_identifier": "isFileExists",
+        "conditional_input_value": "\".gitleaks.toml\"",
+        "operator": "==",
+        "value": "true"
+      }
+    ],
+    "expression": "gitlab.isFileExists.\".gitleaks.toml\" == true",
+    "tags": ["Software quality", "Development maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Gitleaks file does not exist"
   }
 ]

@@ -13,14 +13,17 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.DbAliases;
+import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.ssca.beans.Artifact;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import dev.morphia.annotations.Entity;
 import lombok.Builder;
+import lombok.Setter;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
+import lombok.experimental.NonFinal;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -35,11 +38,12 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @Document("enforcementResultSummary")
 @TypeAlias("enforcementResultSummary")
 @HarnessEntity(exportable = true)
-public class EnforcementSummaryEntity implements PersistentEntity {
+public class EnforcementSummaryEntity implements PersistentEntity, CreatedAtAware {
   Artifact artifact;
   @Field("enforcementid") String enforcementId;
   @Field("orchestrationid") String orchestrationId;
   @Field("denylistviolationcount") int denyListViolationCount;
   @Field("allowlistviolationcount") int allowListViolationCount;
   String status;
+  @NonFinal @Setter long createdAt;
 }

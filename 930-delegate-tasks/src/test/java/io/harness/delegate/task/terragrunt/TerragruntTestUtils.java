@@ -92,6 +92,7 @@ public class TerragruntTestUtils {
             put("INIT", "-lock-timeout=10s");
           }
         })
+        .skipColorLogs(true)
         .build();
   }
 

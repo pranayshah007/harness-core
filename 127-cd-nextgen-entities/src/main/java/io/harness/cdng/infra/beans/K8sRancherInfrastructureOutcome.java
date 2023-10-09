@@ -38,6 +38,7 @@ public class K8sRancherInfrastructureOutcome extends InfrastructureOutcomeAbstra
   String releaseName;
   @VariableExpression(skipVariableExpression = true) EnvironmentOutcome environment;
   String infrastructureKey;
+  String infrastructureKeyShort;
 
   @Override
   public String getKind() {

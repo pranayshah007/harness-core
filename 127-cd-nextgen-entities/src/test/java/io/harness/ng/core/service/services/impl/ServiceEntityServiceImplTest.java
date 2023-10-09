@@ -836,7 +836,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     // List down all services accessible from that scope
     // project level
     Criteria criteriaFromServiceFilter =
-        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", null, false, true);
+        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", null, false, true, null);
     Pageable pageRequest = PageUtils.getPageRequest(0, 10, null);
     Page<ServiceEntity> list = serviceEntityService.list(criteriaFromServiceFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
@@ -845,7 +845,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
 
     // org level
     criteriaFromServiceFilter =
-        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", "ORG_ID", null, null, false, true);
+        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", "ORG_ID", null, null, false, true, null);
     list = serviceEntityService.list(criteriaFromServiceFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
     // services from org,account scopes
@@ -853,7 +853,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
 
     // account level
     criteriaFromServiceFilter =
-        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", null, null, null, false, true);
+        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", null, null, null, false, true, null);
     list = serviceEntityService.list(criteriaFromServiceFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
     // services from acc scope
@@ -865,7 +865,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Category(UnitTests.class)
   public void testCreateCriteriaForGetListWithOptionalOrgAndProject() {
     Criteria criteriaFromServiceFilter =
-        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", null, null, null, false, false);
+        ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", null, null, null, false, false, null);
 
     assertThat(criteriaFromServiceFilter.getCriteriaObject()).containsKey("accountId");
     assertThat(criteriaFromServiceFilter.getCriteriaObject()).containsKey("orgIdentifier");

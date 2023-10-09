@@ -9,6 +9,9 @@ package io.harness.pms.approval;
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.exception.ApprovalStepNGException;
@@ -29,6 +32,7 @@ import software.wings.beans.LogHelper;
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @Slf4j
 public abstract class AbstractApprovalCallback {
   @Inject protected ApprovalInstanceService approvalInstanceService;
@@ -119,6 +123,11 @@ public abstract class AbstractApprovalCallback {
   }
 
   protected void updateTicketFieldsInApprovalInstance(TicketNG ticket, ApprovalInstance instance) {
+    // to add implementation, override this method in approval callback
+  }
+
+  protected void updateKeyListToFetchFilteredFields(
+      NGLogCallback logCallback, TicketNG ticket, ApprovalInstance instance) {
     // to add implementation, override this method in approval callback
   }
 }

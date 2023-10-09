@@ -41,6 +41,7 @@ import io.harness.notification.senders.MailSenderImpl;
 import io.harness.notification.service.MailServiceImpl.EmailTemplate;
 import io.harness.notification.service.api.NotificationSettingsService;
 import io.harness.notification.service.api.NotificationTemplateService;
+import io.harness.notification.utils.NotificationSettingsHelper;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.serializer.YamlUtils;
@@ -76,6 +77,7 @@ public class MailServiceImplTest extends CategoryTest {
   @Mock private UserNGClient userNGClient;
   @Mock private Call<ResponseDTO<Boolean>> responseTrue;
   @Mock private Call<ResponseDTO<Boolean>> responseFalse;
+  @Mock private NotificationSettingsHelper notificationSettingsHelper;
   private MockedStatic<NGRestUtils> restUtilsMockedStatic;
   private MailServiceImpl mailService;
   private String accountId = "accountId";
@@ -94,7 +96,7 @@ public class MailServiceImplTest extends CategoryTest {
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
     mailService = new MailServiceImpl(notificationSettingsService, notificationTemplateService, yamlUtils,
-        smtpConfigDefault, mailSender, delegateGrpcClientWrapper, userNGClient);
+        smtpConfigDefault, mailSender, delegateGrpcClientWrapper, notificationSettingsHelper, userNGClient);
     emailTemplate.setBody("this is test mail");
     emailTemplate.setSubject("test notification");
     restUtilsMockedStatic = mockStatic(NGRestUtils.class);

@@ -10,7 +10,7 @@ package io.harness.gitops.models;
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.gitops.models.ApplicationResource.ApplicationSpec;
+import io.harness.gitops.models.ApplicationResource.App;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -22,12 +22,5 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(GITOPS)
 public class ApplicationUpdateRequest {
-  @JsonProperty("application") Application application;
-
-  @Data
-  @Builder
-  @JsonIgnoreProperties(ignoreUnknown = true)
-  public static class Application {
-    @JsonProperty("spec") ApplicationSpec applicationSpec;
-  }
+  @JsonProperty("application") App application;
 }

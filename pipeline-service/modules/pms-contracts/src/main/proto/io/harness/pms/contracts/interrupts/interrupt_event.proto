@@ -24,5 +24,6 @@ message InterruptEvent {
     io.harness.pms.contracts.execution.AsyncExecutableResponse async = 8;
     io.harness.pms.contracts.execution.TaskExecutableResponse task = 9;
     io.harness.pms.contracts.execution.TaskChainExecutableResponse taskChain = 10;
+    io.harness.pms.contracts.execution.AsyncChainExecutableResponse asyncChain = 11;
   }
 }

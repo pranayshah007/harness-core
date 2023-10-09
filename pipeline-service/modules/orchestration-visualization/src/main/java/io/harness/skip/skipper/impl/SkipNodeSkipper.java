@@ -57,11 +57,13 @@ public class SkipNodeSkipper extends VertexSkipper {
     } else if (skippedVertexEdgeList.getParentId() != null) {
       String parentId = skippedVertexEdgeList.getParentId();
       EdgeListInternal parentEdgeList = adjacencyList.get(parentId);
-      skippedVertexEdgeList.getEdges().forEach(edge -> {
-        adjacencyList.get(edge).setParentId(parentId);
-        parentEdgeList.getEdges().add(edge);
-      });
-      parentEdgeList.getEdges().remove(skippedVertex.getUuid());
+      if (parentEdgeList != null) {
+        skippedVertexEdgeList.getEdges().forEach(edge -> {
+          adjacencyList.get(edge).setParentId(parentId);
+          parentEdgeList.getEdges().add(edge);
+        });
+        parentEdgeList.getEdges().remove(skippedVertex.getUuid());
+      }
     } else {
       // vertex is a rootId
       orchestrationGraph.getRootNodeIds().clear();

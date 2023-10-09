@@ -36,12 +36,12 @@ import io.harness.testframework.framework.utils.TestUtils;
 
 import software.wings.beans.Account;
 import software.wings.beans.Account.AccountKeys;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;
 import software.wings.beans.LicenseInfo;
 import software.wings.beans.Role;
 import software.wings.beans.RoleType;
 import software.wings.beans.User;
+import software.wings.beans.account.AccountStatus;
 import software.wings.beans.security.HarnessUserGroup;
 import software.wings.beans.security.UserGroup;
 import software.wings.dl.WingsPersistence;
@@ -318,7 +318,7 @@ public class AccountGenerator {
   public void addUserToUserGroup(User user, String accountId, String userGroupName) {
     PageRequest<UserGroup> pageRequest =
         aPageRequest().addFilter("accountId", EQ, accountId).addFilter("name", EQ, userGroupName).build();
-    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, true, null, null);
+    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, true, null, null, false);
     UserGroup userGroup = pageResponse.get(0);
     userService.addUserToUserGroups(accountId, user, Collections.singletonList(userGroup), false, false);
   }
@@ -326,7 +326,7 @@ public class AccountGenerator {
   private void addUsersToUserGroup(List<User> users, String accountId, String userGroupName) {
     PageRequest<UserGroup> pageRequest =
         aPageRequest().addFilter("accountId", EQ, accountId).addFilter("name", EQ, userGroupName).build();
-    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, true, null, null);
+    PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, true, null, null, false);
     UserGroup userGroup = pageResponse.get(0);
     for (User user : users) {
       userService.addUserToUserGroups(accountId, user, Collections.singletonList(userGroup), false, false);

@@ -443,6 +443,30 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
   }
 
   @Override
+  public GitDiffResultFileListDTO listCommitsDiffFiles(
+      Scope scope, ScmConnector scmConnector, String initialCommitId, String finalCommitId) {
+    final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetails(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmConnector);
+    final ScmGitRefTaskParams scmGitRefTaskParams = ScmGitRefTaskParams.builder()
+                                                        .gitRefType(GitRefType.COMPARE_COMMITS)
+                                                        .initialCommitId(initialCommitId)
+                                                        .finalCommitId(finalCommitId)
+                                                        .scmConnector(scmConnector)
+                                                        .encryptedDataDetails(encryptionDetails)
+                                                        .build();
+    DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(scope.getAccountIdentifier(),
+        scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmGitRefTaskParams, TaskType.SCM_GIT_REF_TASK);
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+    ScmGitRefTaskResponseData scmGitRefTaskResponseData = (ScmGitRefTaskResponseData) delegateResponseData;
+    try {
+      return PRFileListMapper.toGitDiffResultFileListDTO(
+          CompareCommitsResponse.parseFrom(scmGitRefTaskResponseData.getCompareCommitsResponse()).getFilesList());
+    } catch (InvalidProtocolBufferException e) {
+      throw new UnexpectedException("Unexpected error occurred while doing scm operation");
+    }
+  }
+
+  @Override
   public List<String> listCommits(YamlGitConfigDTO yamlGitConfigDTO, String branch) {
     final ScmConnector scmConnector = getSCMConnectorUsedInGitSyncConfig(yamlGitConfigDTO.getAccountIdentifier(),
         yamlGitConfigDTO.getOrganizationIdentifier(), yamlGitConfigDTO.getProjectIdentifier(),

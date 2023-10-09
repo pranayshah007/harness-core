@@ -22,7 +22,9 @@ import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.pipeline.StepCategory;
 import io.harness.pms.pipeline.StepPalleteFilterWrapper;
 import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
+import io.harness.yaml.schema.inputs.beans.YamlInputDetails;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -87,6 +89,8 @@ public interface PMSPipelineService {
   Optional<PipelineEntity> getPipeline(String accountId, String orgIdentifier, String projectIdentifier,
       String identifier, boolean deleted, boolean getMetadataOnly);
 
+  Optional<PipelineEntity> getPipelineByUUID(String uuid);
+
   Optional<PipelineEntity> getPipeline(String accountId, String orgIdentifier, String projectIdentifier,
       String identifier, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
       boolean loadFromCache);
@@ -148,4 +152,18 @@ public interface PMSPipelineService {
 
   String updateGitMetadata(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, PMSUpdateGitDetailsParams updateGitDetailsParams);
+
+  /**
+  The getPermittedPipelineIdentifier performs view permission check on the pipelineIdentifiers list. It returns pipeline
+  identifiers of which the user is having view permission.
+   */
+  List<String> getPermittedPipelineIdentifier(
+      String accountId, String orgId, String projectId, List<String> pipelineIdentifierList);
+
+  List<String> listAllIdentifiers(Criteria criteria);
+
+  boolean validateViewPermission(String accountId, String orgId, String projectId);
+
+  List<YamlInputDetails> getInputSchemaDetails(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
 }

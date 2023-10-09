@@ -396,6 +396,7 @@ portal:
   optionalDelegateTaskRejectAtLimit: 5000
   importantDelegateTaskRejectAtLimit: 5000
   criticalDelegateTaskRejectAtLimit: 100000
+  parkedDelegateTaskRejectAtLimit: 10000
 
 totp:
   secOpsEmail: secops.fake.email@mailnator.com
@@ -756,7 +757,7 @@ debeziumConsumersConfigs:
 
 dataReconciliation:
   enabled: true
-  duration: 900
+  duration: ${DATA_RECONCILIATION_CRON_DURATION:-900}
 
 disableDelegateMgmtInManager: false
 
@@ -772,8 +773,8 @@ secretsConfiguration:
 
 ldapSyncJobConfig:
   poolSize: 8
-  syncInterval: 15
-  defaultCronExpression: "0 0/15 * 1/1 * ? *"
+  syncInterval: 60
+  defaultCronExpression: "0 0 */1 ? * * *"
 
 useGlobalKMSAsBaseAlgo: false
 
@@ -803,3 +804,20 @@ notificationClient:
     readTimeOutSeconds: 15
   secrets:
     notificationClientSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+
+proxy:
+  enabled: false
+  host: localhost
+  port: 80
+  username: ""
+  password: ""
+  protocol: http
+
+awsServiceEndpointUrls:
+  enabled: false
+  endPointRegion: us-east-1
+  stsEndPointUrl: https://sts.us-east-1.amazonaws.com
+  ecsEndPointUrl: https://ecs.us-east-1.amazonaws.com
+  cloudwatchEndPointUrl: https://monitoring.us-east-1.amazonaws.com
+
+maxAccountsToDeleteInParallel: 6

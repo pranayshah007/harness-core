@@ -9,6 +9,9 @@ package io.harness.iterator;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_DELETE_EVENT;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_DISCONNECTED;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_RECEIVED;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -17,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
+import io.harness.delegate.heartbeat.DelegateHeartBeatMetricsHelper;
 import io.harness.delegate.task.DelegateLogContext;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
 import io.harness.logging.AccountLogContext;
@@ -38,6 +42,7 @@ import software.wings.service.intfc.DelegateTaskServiceClassic;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -51,7 +56,7 @@ import lombok.extern.slf4j.Slf4j;
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
 public class DelegateDisconnectDetectorIterator
     extends IteratorPumpAndRedisModeHandler implements MongoPersistenceIterator.Handler<Delegate> {
-  private static final long DELEGATE_DISCONNECT_TIMEOUT = 1L;
+  private static final long DELEGATE_DISCONNECT_TIMEOUT = 5L;
   private static final long DELEGATE_EXPIRY_CHECK_MINUTES = 1L;
 
   @Inject private io.harness.iterator.PersistenceIteratorFactory persistenceIteratorFactory;
@@ -60,6 +65,8 @@ public class DelegateDisconnectDetectorIterator
   @Inject private DelegateService delegateService;
   @Inject private DelegateDao delegateDao;
   @Inject private DelegateMetricsService delegateMetricsService;
+  @Inject protected Clock clock;
+  @Inject private DelegateHeartBeatMetricsHelper delegateHeartBeatMetricsHelper;
   @Inject private NotificationServiceClient notificationServiceClient;
 
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
@@ -122,6 +129,21 @@ public class DelegateDisconnectDetectorIterator
          AccountLogContext ignore2 = new AccountLogContext(delegate.getAccountId(), OVERRIDE_ERROR)) {
       // trigger disconnect event which marks started delegate task as expired and PT's as unassigned
       delegateService.onDelegateDisconnected(delegate.getAccountId(), delegate.getUuid());
+      // delegate de-registered heartbeat event
+      String orgId = (null != delegate.getOwner())
+          ? DelegateEntityOwnerHelper.extractOrgIdFromOwnerIdentifier(delegate.getOwner().getIdentifier())
+          : null;
+      String projectId = (null != delegate.getOwner())
+          ? DelegateEntityOwnerHelper.extractProjectIdFromOwnerIdentifier(delegate.getOwner().getIdentifier())
+          : null;
+      try {
+        delegateHeartBeatMetricsHelper.addDelegateHeartBeatMetric(clock.millis(), delegate.getAccountId(), orgId,
+            projectId, delegate.getDelegateName(), delegate.getUuid(), delegate.getVersion(), HEARTBEAT_DISCONNECTED,
+            HEARTBEAT_DELETE_EVENT, delegate.isNg(), delegate.isImmutable(), delegate.getLastHeartBeat(),
+            HEARTBEAT_RECEIVED);
+      } catch (Exception ex) {
+        log.error("Exception occurred while recording heartBeat metric", ex);
+      }
       // mark delegate as disconnected
       delegateDao.delegateDisconnected(delegate.getAccountId(), delegate.getUuid());
       delegateService.updateLastExpiredEventHeartbeatTime(

@@ -26,7 +26,7 @@ import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.delegate.beans.DelegateTaskEvent;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.connector.ConnectorHeartbeatDelegateResponse;
-import io.harness.logging.AccessTokenBean;
+import io.harness.logging.common.AccessTokenBean;
 import io.harness.ng.core.dto.ErrorDetail;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.packages.HarnessPackages;

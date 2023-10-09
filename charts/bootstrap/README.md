@@ -1,6 +1,6 @@
 # bootstrap
 
-![Version: 0.8.1](https://img.shields.io/badge/Version-0.8.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.16.0](https://img.shields.io/badge/AppVersion-1.16.0-informational?style=flat-square)
+![Version: 0.9.2](https://img.shields.io/badge/Version-0.9.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.16.0](https://img.shields.io/badge/AppVersion-1.16.0-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -8,10 +8,10 @@ A Helm chart for Kubernetes
 
 | Repository | Name | Version |
 |------------|------|---------|
-| file://./database | database | 0.8.x |
-| file://./networking | networking | 0.8.x |
-| file://./rbac | rbac | 0.8.x |
-| file://./secrets | harness-secrets | 0.8.x |
+| file://./database | database | 0.9.x |
+| file://./networking | networking | 0.9.x |
+| file://./rbac | rbac | 0.9.x |
+| file://./secrets | harness-secrets | 0.9.x |
 
 ## Values
 
@@ -19,7 +19,7 @@ A Helm chart for Kubernetes
 |-----|------|---------|-------------|
 | global.database.minio.installed | bool | `true` |  |
 | global.database.mongo.installed | bool | `true` |  |
-| global.database.postgresql.installed | bool | `true` |  |
+| global.database.postgres.installed | bool | `true` |  |
 | global.database.redis.installed | bool | `true` |  |
 | global.database.timescaledb.installed | bool | `true` |  |
 | global.ingress.className | string | `"harness"` |  |

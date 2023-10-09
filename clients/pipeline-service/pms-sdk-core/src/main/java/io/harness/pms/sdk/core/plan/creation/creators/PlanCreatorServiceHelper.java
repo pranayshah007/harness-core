@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.data.structure.UUIDGenerator;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
@@ -26,6 +27,7 @@ import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.pipeline.creators.CreatorResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.MergePlanCreationResponse;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -44,8 +46,10 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
 public class PlanCreatorServiceHelper {
-  private static final List<String> parentInfoKeysList = List.of(PlanCreatorConstants.YAML_VERSION,
-      PlanCreatorConstants.STAGE_FAILURE_STRATEGIES, PlanCreatorConstants.STEP_GROUP_FAILURE_STRATEGIES);
+  private static final List<String> parentInfoKeysList =
+      List.of(PlanCreatorConstants.STAGE_FAILURE_STRATEGIES, PlanCreatorConstants.STAGE_ID,
+          PlanCreatorConstants.STEP_GROUP_FAILURE_STRATEGIES, PlanCreatorConstants.STEP_GROUP_ID,
+          PlanCreatorConstants.STRATEGY_ID, PlanCreatorConstants.STRATEGY_NODE_TYPE, PlanCreatorConstants.YAML_VERSION);
   public Optional<PartialPlanCreator<?>> findPlanCreator(
       List<PartialPlanCreator<?>> planCreators, YamlField field, String yamlVersion) {
     return planCreators.stream()
@@ -298,5 +302,20 @@ public class PlanCreatorServiceHelper {
     logContext.put("projId", projId);
 
     return logContext;
+  }
+  public AutoLogContext autoLogContextWithRandomRequestId(PlanCreationContext ctx) {
+    Map<String, String> logContextMap = new HashMap<>();
+    logContextMap.put("planExecutionId", ctx.getExecutionUuid());
+    logContextMap.put("pipelineIdentifier", ctx.getPipelineIdentifier());
+    logContextMap.put("accountIdentifier", ctx.getAccountIdentifier());
+    logContextMap.put("orgIdentifier", ctx.getOrgIdentifier());
+    logContextMap.put("projectIdentifier", ctx.getProjectIdentifier());
+    logContextMap.put("sdkPlanCreatorRequestId", UUIDGenerator.generateUuid());
+    return new AutoLogContext(logContextMap, AutoLogContext.OverrideBehavior.OVERRIDE_NESTS);
+  }
+
+  public AutoLogContext autoLogContext(PlanCreationContext ctx) {
+    return PlanCreatorUtils.autoLogContext(ctx.getAccountIdentifier(), ctx.getOrgIdentifier(),
+        ctx.getProjectIdentifier(), ctx.getPipelineIdentifier(), ctx.getExecutionUuid());
   }
 }

@@ -104,6 +104,8 @@ import org.junit.rules.ExpectedException;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Update;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -721,34 +723,6 @@ public class NGVaultServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = VIKAS_M)
   @Category(UnitTests.class)
-  public void testRenewAppRoleClientToken_willUpdateCorrespondingPPT() throws IOException {
-    VaultConnectorDTO vaultConnectorDTO = vaultEntityToDTO.createConnectorDTO(buildAppRoleVaultConnector());
-    vaultConnectorDTO.setRenewAppRoleToken(true);
-    VaultConnector vaultConnector = vaultDTOToEntity.toConnectorEntity(vaultConnectorDTO);
-    VaultConfigDTO vaultConfigDTO = (VaultConfigDTO) getVaultConfigDTOWithAppRoleAuth();
-    vaultConfigDTO.setEncryptionType(VAULT);
-    Call<RestResponse<Boolean>> request = mock(Call.class);
-    doReturn(request).when(accountClient).isFeatureFlagEnabled(any(), any());
-    when(request.execute()).thenReturn(Response.success(new RestResponse<>(false)));
-    when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
-        .thenReturn(vaultConfigDTO);
-    when(delegateService.executeSyncTaskV2(any()))
-        .thenReturn(
-            NGVaultRenewalAppRoleTaskResponse.builder()
-                .vaultAppRoleLoginResult(VaultAppRoleLoginResult.builder().clientToken(randomAlphabetic(10)).build())
-                .build());
-    when(ngEncryptedDataService.updateSecretText(any(), any())).thenReturn(NGEncryptedData.builder().build());
-    when(connectorRepository.save(vaultConnector, ChangeType.NONE)).thenReturn(vaultConnector);
-    ngVaultService.renewAppRoleClientToken(vaultConnector);
-    ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
-    verify(ngConnectorSecretManagerService, times(1)).getPerpetualTaskId(any(), any(), any(), argumentCaptor.capture());
-    assertThat(argumentCaptor.getValue()).isEqualTo(vaultConnector.getIdentifier());
-    verify(ngConnectorSecretManagerService, times(1)).resetHeartBeatTask(any(), any());
-  }
-
-  @Test
-  @Owner(developers = VIKAS_M)
-  @Category(UnitTests.class)
   public void testRenewVaultToken_willUpdateCorrespondingPPT() throws IOException {
     VaultConnectorDTO vaultConnectorDTO = vaultEntityToDTO.createConnectorDTO(buildTokenBasedConnector());
     vaultConnectorDTO.setRenewAppRoleToken(true);
@@ -795,7 +769,8 @@ public class NGVaultServiceImplTest extends CategoryTest {
     when(ngEncryptedDataService.updateSecretText(any(), any())).thenReturn(NGEncryptedData.builder().build());
     ngVaultService.renewToken(vaultConnector);
     ArgumentCaptor<VaultConnector> vaultConnectorArgumentCaptor = ArgumentCaptor.forClass(VaultConnector.class);
-    verify(connectorRepository, times(1)).save(vaultConnectorArgumentCaptor.capture(), ChangeType.NONE);
+    verify(connectorRepository, times(1))
+        .update(any(String.class), any(String.class), any(String.class), any(Criteria.class), any(Update.class));
   }
 
   @Test(expected = SecretManagementDelegateException.class)
@@ -818,7 +793,8 @@ public class NGVaultServiceImplTest extends CategoryTest {
         .thenThrow(new SecretManagementDelegateException(ErrorCode.SECRET_MANAGEMENT_ERROR, "Error", null));
     when(ngEncryptedDataService.updateSecretText(any(), any())).thenReturn(NGEncryptedData.builder().build());
     ngVaultService.renewToken(vaultConnector);
-    verify(connectorRepository, times(0)).save(any(), ChangeType.NONE);
+    verify(connectorRepository, times(0))
+        .update(any(String.class), any(String.class), any(String.class), any(Criteria.class), any(Update.class));
   }
 
   private VaultConnector buildAppRoleVaultConnector() {

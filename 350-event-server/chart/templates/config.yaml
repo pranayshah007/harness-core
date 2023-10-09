@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: event-service
-  namespace: {{ .Release.Namespace }}
+  namespace: '{{ .Release.Namespace }}'
   labels:
     {{- if .Values.global.commonLabels }}
     {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
@@ -15,9 +15,8 @@ data:
   MONGO_INDEX_MANAGER_MODE: "AUTO"
   EVEMTS_MONGO_INDEX_MANAGER_MODE: "AUTO"
   DEPLOY_MODE: "KUBERNETES_ONPREM"
-  STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
-  MEMORY: {{ .Values.java.memory | quote }}
-  {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
+  STACK_DRIVER_LOGGING_ENABLED: '{{ .Values.global.stackDriverLoggingEnabled }}'
+  MEMORY: '{{ .Values.java.memory }}'
   {{- if .Values.additionalConfigs }}
   {{- toYaml .Values.additionalConfigs | nindent 2 }}
   {{- end }}

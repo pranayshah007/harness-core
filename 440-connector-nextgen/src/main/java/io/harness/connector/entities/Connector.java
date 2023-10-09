@@ -143,6 +143,7 @@ public abstract class Connector implements PersistentEntity, NGAccountAccess, Gi
         ConnectorKeys.connectivityDetails + "." + ConnectorConnectivityDetailsKeys.status;
     public static final String tagKey = ConnectorKeys.tags + "." + NGTagKeys.key;
     public static final String tagValue = ConnectorKeys.tags + "." + NGTagKeys.value;
+    public static final String renewalPaused = "renewalPaused";
     public static final String featuresEnabled = "featuresEnabled";
   }
 

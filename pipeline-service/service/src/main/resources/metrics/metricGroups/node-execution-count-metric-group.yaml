@@ -1,4 +1,0 @@
-name: Group by fields for metrics
-identifier: node_execution_count_metric_group
-labels:
-  - accountId

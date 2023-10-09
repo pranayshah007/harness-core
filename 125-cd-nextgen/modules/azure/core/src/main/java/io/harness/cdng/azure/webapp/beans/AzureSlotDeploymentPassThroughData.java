@@ -39,4 +39,5 @@ public class AzureSlotDeploymentPassThroughData implements PassThroughData {
   CommandUnitsProgress commandUnitsProgress;
   ArtifactOutcome primaryArtifactOutcome;
   @Builder.Default String taskType = TaskType.AZURE_WEB_APP_TASK_NG.name();
+  Boolean cleanDeploymentEnabled;
 }

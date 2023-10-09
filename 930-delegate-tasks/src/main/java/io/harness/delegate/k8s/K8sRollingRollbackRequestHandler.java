@@ -10,6 +10,7 @@ package io.harness.delegate.k8s;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.k8s.K8sRollingRollbackBaseHandler.ResourceRecreationStatus.NO_RESOURCE_CREATED;
 import static io.harness.delegate.k8s.K8sRollingRollbackBaseHandler.ResourceRecreationStatus.RESOURCE_CREATION_FAILED;
+import static io.harness.delegate.k8s.utils.HelmChartInfoMapper.toHelmChartInfo;
 import static io.harness.exception.ExceptionUtils.getMessage;
 import static io.harness.k8s.K8sCommandUnitConstants.DeleteFailedReleaseResources;
 import static io.harness.k8s.K8sCommandUnitConstants.Init;
@@ -30,6 +31,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.k8s.K8sRollingRollbackBaseHandler.ResourceRecreationStatus;
 import io.harness.delegate.k8s.beans.K8sRollingRollbackHandlerConfig;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
@@ -106,6 +108,11 @@ public class K8sRollingRollbackRequestHandler extends K8sRequestHandler {
     rollbackBaseHandler.steadyStateCheck(rollbackHandlerConfig, k8sDelegateTaskParams,
         k8sRollingRollbackDeployRequest.getTimeoutIntervalInMin(), waitForSteadyStateLogCallback);
     rollbackBaseHandler.postProcess(rollbackHandlerConfig, k8sRollingRollbackDeployRequest.getReleaseName());
+    HelmChartInfo previousReleaseHelmChartInfo = null;
+    if (rollbackHandlerConfig.getPreviousRollbackEligibleRelease() != null) {
+      previousReleaseHelmChartInfo =
+          toHelmChartInfo(rollbackHandlerConfig.getPreviousRollbackEligibleRelease().getHelmChartInfo());
+    }
     K8sRollingDeployRollbackResponse response =
         K8sRollingDeployRollbackResponse.builder()
             .k8sPodList(k8sTaskHelperBase.tagNewPods(
@@ -114,6 +121,7 @@ public class K8sRollingRollbackRequestHandler extends K8sRequestHandler {
                 existingPodList))
             .previousK8sPodList(existingPodList)
             .recreatedResourceIds(recreatedResourceIds)
+            .helmChartInfo(previousReleaseHelmChartInfo)
             .build();
 
     waitForSteadyStateLogCallback.saveExecutionLog("\nDone.", INFO, SUCCESS);

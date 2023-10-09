@@ -6,6 +6,9 @@
  */
 
 package io.harness.ngmigration.service.workflow;
+
+import static io.harness.cdng.service.beans.ServiceDefinitionType.ASG;
+import static io.harness.cdng.service.beans.ServiceDefinitionType.ELASTIGROUP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.MigratorUtility.ELASTIC_GROUP_ACCOUNT_IDS;
@@ -40,6 +43,7 @@ import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
+import io.harness.ngmigration.service.MigrationHelperService;
 import io.harness.ngmigration.service.servicev2.ServiceV2Factory;
 import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.service.step.StepMapperFactory;
@@ -95,7 +99,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -117,6 +120,7 @@ public abstract class WorkflowHandler {
       CUSTOM_DEPLOYMENT_FETCH_INSTANCES.getName(), AWS_NODE_SELECT.name(), AZURE_NODE_SELECT.getName());
 
   @Inject private StepMapperFactory stepMapperFactory;
+  @Inject private MigrationHelperService migrationHelperService;
 
   public Set<String> getBarriers(Workflow workflow) {
     List<GraphNode> steps = MigratorUtility.getSteps(workflow);
@@ -141,7 +145,13 @@ public abstract class WorkflowHandler {
           CgEntityId.builder().id(workflow.getServiceId()).type(NGMigrationEntityType.SERVICE).build());
     }
 
-    List<String> serviceIds = workflow.getOrchestrationWorkflow().getServiceIds();
+    List<String> serviceIds =
+        workflow.checkServiceTemplatized() ? new ArrayList<>() : workflow.getOrchestrationWorkflow().getServiceIds();
+    Optional<String> envId = Optional.empty();
+    if (!workflow.checkEnvironmentTemplatized() && isNotEmpty(workflow.getEnvId())) {
+      envId = Optional.of(workflow.getEnvId());
+    }
+
     if (EmptyPredicate.isNotEmpty(serviceIds)) {
       referencedEntities.addAll(
           serviceIds.stream()
@@ -149,10 +159,11 @@ public abstract class WorkflowHandler {
               .collect(Collectors.toList()));
     }
 
-    if (StringUtils.isNotBlank(workflow.getEnvId())) {
-      referencedEntities.add(
-          CgEntityId.builder().id(workflow.getEnvId()).type(NGMigrationEntityType.ENVIRONMENT).build());
-    }
+    envId.ifPresent(
+        s -> referencedEntities.add(CgEntityId.builder().id(s).type(NGMigrationEntityType.ENVIRONMENT).build()));
+
+    migrationHelperService.addOverrideRefs(
+        workflow.getAppId(), workflow.getAccountId(), envId.orElse(null), serviceIds, referencedEntities);
 
     if (EmptyPredicate.isEmpty(steps)) {
       return referencedEntities;
@@ -249,8 +260,14 @@ public abstract class WorkflowHandler {
       variables.addAll(userVariables);
     }
 
+    List<GraphNode> steps = MigratorUtility.getSteps(workflow);
+    for (GraphNode step : steps) {
+      variables.addAll(stepMapperFactory.getStepMapper(step.getType()).getCustomVariables(step));
+    }
+
     MigratorExpressionUtils.render(
         context, workflow, MigExpressionOverrides.builder().customExpressions(new HashMap<>()).build());
+
     return variables.stream()
         .filter(variable -> variable.getType() != VariableType.ENTITY)
         .map(variable
@@ -260,6 +277,7 @@ public abstract class WorkflowHandler {
                    .required(variable.isMandatory())
                    .defaultValue(variable.getValue())
                    .value(getVariable(variable))
+                   .description(variable.getDescription())
                    .build())
         .collect(Collectors.toList());
   }
@@ -329,11 +347,10 @@ public abstract class WorkflowHandler {
     return result;
   }
 
-  List<ExecutionWrapperConfig> getStepGroups(
-      MigrationContext migrationContext, WorkflowMigrationContext context, WorkflowPhase phase) {
+  List<ExecutionWrapperConfig> getStepGroups(MigrationContext migrationContext, WorkflowMigrationContext context,
+      WorkflowPhase phase, boolean addLoopingStrategy) {
     List<PhaseStep> phaseSteps = phase != null ? phase.getPhaseSteps() : Collections.emptyList();
     List<ExecutionWrapperConfig> stepGroups = new ArrayList<>();
-    boolean addLoopingStrategy = false;
     if (EmptyPredicate.isNotEmpty(phaseSteps)) {
       for (PhaseStep phaseStep : phaseSteps) {
         if (EmptyPredicate.isNotEmpty(phaseStep.getSteps())) {
@@ -360,6 +377,19 @@ public abstract class WorkflowHandler {
       }
     }
     return false;
+  }
+
+  private boolean checkIfLoopNextSteps(WorkflowPhase phase) {
+    List<PhaseStep> phaseSteps = phase != null ? phase.getPhaseSteps() : Collections.emptyList();
+    boolean loopNextSteps = false;
+    if (EmptyPredicate.isNotEmpty(phaseSteps)) {
+      for (PhaseStep phaseStep : phaseSteps) {
+        if (checkIfLoopNextSteps(phaseStep)) {
+          return true;
+        }
+      }
+    }
+    return loopNextSteps;
   }
 
   boolean areSimilarPhase(StepMapperFactory stepMapperFactory, WorkflowPhase phase1, WorkflowPhase phase2) {
@@ -451,14 +481,14 @@ public abstract class WorkflowHandler {
                 .name(MigratorUtility.generateName(phaseStep.getName()))
                 .steps(allSteps)
                 .skipCondition(null)
-                .strategy(
-                    addLoopingStrategy ? ParameterField.createValueField(
-                        StrategyConfig.builder()
-                            .repeat(HarnessForConfig.builder()
-                                        .items(ParameterField.createValueField(Arrays.asList("<+stage.output.hosts>")))
-                                        .build())
-                            .build())
-                                       : null)
+                .strategy(addLoopingStrategy ? ParameterField.createValueField(
+                              StrategyConfig.builder()
+                                  .repeat(HarnessForConfig.builder()
+                                              .items(ParameterField.createExpressionField(
+                                                  true, "<+stage.output.hosts>", null, false))
+                                              .build())
+                                  .build())
+                                             : null)
                 .when(ParameterField.createValueField(when))
                 .failureStrategies(null)
                 .build()))
@@ -498,6 +528,12 @@ public abstract class WorkflowHandler {
         }
       }
     }
+    MigratorExpressionUtils.render(migrationContext, stepWrappers,
+        MigExpressionOverrides.builder()
+            .workflowVarsAsPipeline(context.isWorkflowVarsAsPipeline())
+            .customExpressions(MigratorUtility.getExpressions(
+                phase, context.getStepExpressionFunctors(), context.getIdentifierCaseFormat()))
+            .build());
     return stepWrappers;
   }
 
@@ -543,7 +579,7 @@ public abstract class WorkflowHandler {
       stepNode.setStrategy(ParameterField.createValueField(
           StrategyConfig.builder()
               .repeat(HarnessForConfig.builder()
-                          .items(ParameterField.createValueField(Arrays.asList("<+stage.output.hosts>")))
+                          .items(ParameterField.createExpressionField(true, "<+stage.output.hosts>", null, false))
                           .build())
               .build()));
     }
@@ -619,20 +655,23 @@ public abstract class WorkflowHandler {
     DeploymentType deploymentType = getDeploymentTypeFromPhase(context.getWorkflow());
     if (deploymentType != null) {
       ServiceDefinitionType serviceDefinitionType = ServiceV2Factory.mapDeploymentTypeToServiceDefType(deploymentType);
-      if (serviceDefinitionType != null) {
-        if (ELASTIC_GROUP_ACCOUNT_IDS.contains(context.getWorkflow().getAccountId())) {
-          if (isNotEmpty(steps)) {
-            for (GraphNode step : steps) {
-              if (ServiceV2Factory.checkForASG(step.getType())) {
-                return ServiceDefinitionType.ASG;
-              }
+
+      // Override for Elastigroup / ASG services for specific account ids
+      if (ELASTIC_GROUP_ACCOUNT_IDS.contains(context.getWorkflow().getAccountId())
+          && (ELASTIGROUP.equals(serviceDefinitionType) || ASG.equals(serviceDefinitionType))) {
+        if (isNotEmpty(steps)) {
+          for (GraphNode step : steps) {
+            if (ServiceV2Factory.checkForASG(step.getType())) {
+              return ASG;
             }
           }
-          return ServiceDefinitionType.ELASTIGROUP;
         }
-        return serviceDefinitionType;
+        return ELASTIGROUP;
       }
+
+      return serviceDefinitionType;
     }
+
     ServiceDefinitionType defaultType = workflowType.equals(OrchestrationWorkflowType.BASIC)
         ? ServiceDefinitionType.SSH
         : ServiceDefinitionType.KUBERNETES;
@@ -684,11 +723,11 @@ public abstract class WorkflowHandler {
 
   DeploymentStageConfig getDeploymentStageConfig(MigrationContext migrationContext, WorkflowMigrationContext context,
       ServiceDefinitionType serviceDefinitionType, WorkflowPhase phase, WorkflowPhase rollbackPhase) {
-    List<ExecutionWrapperConfig> stepGroups = getStepGroups(migrationContext, context, phase);
+    List<ExecutionWrapperConfig> stepGroups = getStepGroups(migrationContext, context, phase, false);
     if (EmptyPredicate.isEmpty(stepGroups)) {
       return null;
     }
-    List<ExecutionWrapperConfig> rollbackSteps = getStepGroups(migrationContext, context, rollbackPhase);
+    List<ExecutionWrapperConfig> rollbackSteps = getStepGroups(migrationContext, context, rollbackPhase, false);
     return getDeploymentStageConfig(
         serviceDefinitionType, stepGroups, rollbackSteps, context.getIdentifierCaseFormat());
   }
@@ -777,7 +816,7 @@ public abstract class WorkflowHandler {
     // Add all the steps
     if (EmptyPredicate.isNotEmpty(phases)) {
       steps.addAll(phases.stream()
-                       .flatMap(phase -> getStepGroups(migrationContext, context, phase).stream())
+                       .flatMap(phase -> getStepGroups(migrationContext, context, phase, false).stream())
                        .filter(Objects::nonNull)
                        .collect(Collectors.toList()));
     }
@@ -785,7 +824,7 @@ public abstract class WorkflowHandler {
     // Add all the rollback steps
     if (EmptyPredicate.isNotEmpty(rollbackPhases)) {
       rollbackSteps.addAll(rollbackPhases.stream()
-                               .flatMap(phase -> getStepGroups(migrationContext, context, phase).stream())
+                               .flatMap(phase -> getStepGroups(migrationContext, context, phase, false).stream())
                                .filter(Objects::nonNull)
                                .collect(Collectors.toList()));
     }
@@ -808,7 +847,7 @@ public abstract class WorkflowHandler {
       return Collections.emptyList();
     }
     return phases.stream()
-        .flatMap(phase -> getStepGroups(migrationContext, context, phase).stream())
+        .flatMap(phase -> getStepGroups(migrationContext, context, phase, false).stream())
         .filter(Objects::nonNull)
         .collect(Collectors.toList());
   }
@@ -916,6 +955,7 @@ public abstract class WorkflowHandler {
     List<WorkflowPhase> phases = getPhases(workflow);
     PhaseStep postPhaseStep = getPostDeploymentPhase(workflow);
     List<WorkflowPhase> rollbackPhases = getRollbackPhases(workflow);
+    boolean addLoopingStrategy = false;
 
     final String PHASE_NAME = "DUMMY";
     List<ExecutionWrapperConfig> stepGroupWrappers = new ArrayList<>();
@@ -925,7 +965,8 @@ public abstract class WorkflowHandler {
                                    .name(PHASE_NAME)
                                    .phaseSteps(Collections.singletonList(prePhaseStep))
                                    .build();
-      List<ExecutionWrapperConfig> stage = getStepGroups(migrationContext, context, prePhase);
+      List<ExecutionWrapperConfig> stage = getStepGroups(migrationContext, context, prePhase, false);
+      addLoopingStrategy = checkIfLoopNextSteps(prePhase);
       if (EmptyPredicate.isNotEmpty(stage)) {
         stepGroupWrappers.addAll(stage);
       }
@@ -935,12 +976,18 @@ public abstract class WorkflowHandler {
       for (WorkflowPhase phase : phases) {
         String prefix = phase.getName();
         phase.setName(PHASE_NAME);
-        stepGroupWrappers.addAll(phase.getPhaseSteps()
-                                     .stream()
-                                     .peek(phaseStep -> phaseStep.setName(prefix + "-" + phaseStep.getName()))
-                                     .map(phaseStep -> getStepGroup(migrationContext, context, phase, phaseStep, false))
-                                     .filter(Objects::nonNull)
-                                     .collect(Collectors.toList()));
+        List<PhaseStep> phaseSteps = phase.getPhaseSteps();
+        for (PhaseStep phaseStep : phaseSteps) {
+          phaseStep.setName(prefix + "-" + phaseStep.getName());
+          ExecutionWrapperConfig stepGroup =
+              getStepGroup(migrationContext, context, phase, phaseStep, addLoopingStrategy);
+          if (!addLoopingStrategy) {
+            addLoopingStrategy = checkIfLoopNextSteps(phaseStep);
+          }
+          if (stepGroup != null) {
+            stepGroupWrappers.add(stepGroup);
+          }
+        }
       }
     }
 
@@ -950,7 +997,7 @@ public abstract class WorkflowHandler {
                                     .name(PHASE_NAME)
                                     .phaseSteps(Collections.singletonList(postPhaseStep))
                                     .build();
-      List<ExecutionWrapperConfig> stage = getStepGroups(migrationContext, context, postPhase);
+      List<ExecutionWrapperConfig> stage = getStepGroups(migrationContext, context, postPhase, addLoopingStrategy);
       if (EmptyPredicate.isNotEmpty(stage)) {
         stepGroupWrappers.addAll(stage);
       }

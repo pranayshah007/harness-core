@@ -49,6 +49,7 @@ import io.harness.terraform.TerraformHelperUtils;
 import io.harness.terraform.TerraformStepResponse;
 import io.harness.terraform.request.TerraformExecuteStepRequest;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.io.File;
 import java.io.IOException;
@@ -61,6 +62,7 @@ import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FilenameUtils;
+import org.jetbrains.annotations.NotNull;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
@@ -170,6 +172,9 @@ public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
           scriptDirectory, logCallback, taskParameters.getAccountId(), tfBackendConfigDirectory,
           commitIdToFetchedFilesMap, keyVersionMap);
     }
+
+    ImmutableMap<String, String> environmentVars = getEnvironmentVariables(taskParameters);
+
     try (PlanJsonLogOutputStream planJsonLogOutputStream = new PlanJsonLogOutputStream();
          PlanLogOutputStream planLogOutputStream = new PlanLogOutputStream();
          PlanHumanReadableOutputStream planHumanReadableOutputStream = new PlanHumanReadableOutputStream()) {
@@ -183,7 +188,7 @@ public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
               .scriptDirectory(scriptDirectory)
               .encryptedTfPlan(taskParameters.getEncryptedTfPlan())
               .encryptionConfig(taskParameters.getEncryptionConfig())
-              .envVars(taskParameters.getEnvironmentVariables())
+              .envVars(environmentVars)
               .isSaveTerraformJson(taskParameters.isSaveTerraformStateJson())
               .logCallback(logCallback)
               .planJsonLogOutputStream(planJsonLogOutputStream)
@@ -200,6 +205,7 @@ public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
               .encryptDecryptPlanForHarnessSMOnManager(taskParameters.isEncryptDecryptPlanForHarnessSMOnManager())
               .additionalCliFlags(taskParameters.getTerraformCommandFlags())
               .isNG(true)
+              .skipColorLogs(taskParameters.isSkipColorLogs())
               .build();
 
       TerraformStepResponse terraformStepResponse =
@@ -230,5 +236,19 @@ public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
           .stateFileId(stateFileId)
           .build();
     }
+  }
+
+  @NotNull
+  private ImmutableMap<String, String> getEnvironmentVariables(TerraformTaskNGParameters taskParameters) {
+    Map<String, String> awsAuthEnvVariables = terraformBaseHelper.getAwsAuthEnvVariables(taskParameters);
+    ImmutableMap.Builder<String, String> envVars = ImmutableMap.builder();
+    if (isNotEmpty(taskParameters.getEnvironmentVariables())) {
+      envVars.putAll(taskParameters.getEnvironmentVariables());
+    }
+
+    if (isNotEmpty(awsAuthEnvVariables)) {
+      envVars.putAll(awsAuthEnvVariables);
+    }
+    return envVars.build();
   }
 }

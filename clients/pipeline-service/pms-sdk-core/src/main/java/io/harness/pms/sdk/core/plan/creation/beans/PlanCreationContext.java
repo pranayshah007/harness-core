@@ -11,11 +11,13 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.async.AsyncCreatorContext;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.ExecutionMode;
+import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStoreType;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.triggers.TriggerPayload;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -204,6 +206,22 @@ public class PlanCreationContext implements AsyncCreatorContext {
 
   public String getYamlVersion() {
     String harnessVersion = getMetadata().getMetadata().getHarnessVersion();
-    return StringUtils.isEmpty(harnessVersion) ? PipelineVersion.V0 : harnessVersion;
+    return StringUtils.isEmpty(harnessVersion) ? HarnessYamlVersion.V0 : harnessVersion;
+  }
+
+  public ExecutionPrincipalInfo getPrincipalInfo() {
+    PlanCreationContextValue value = getMetadata();
+    if (value == null) {
+      return null;
+    }
+    return value.getMetadata().getPrincipalInfo();
+  }
+
+  public ExecutionMode getExecutionMode() {
+    PlanCreationContextValue value = getMetadata();
+    if (value == null) {
+      return null;
+    }
+    return value.getMetadata().getExecutionMode();
   }
 }

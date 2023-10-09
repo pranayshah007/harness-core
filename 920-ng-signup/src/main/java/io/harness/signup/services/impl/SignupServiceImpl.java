@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.GTM;
 import static io.harness.beans.FeatureName.AUTO_FREE_MODULE_LICENSE;
 import static io.harness.configuration.DeployMode.DEPLOY_MODE;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.remote.client.CGRestUtils.getResponse;
 import static io.harness.remote.client.CGRestUtils.getRetryPolicy;
@@ -41,6 +42,7 @@ import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.licensing.Edition;
 import io.harness.licensing.services.LicenseService;
+import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.user.SignupAction;
 import io.harness.ng.core.user.UserInfo;
@@ -425,8 +427,22 @@ public class SignupServiceImpl implements SignupService {
   }
 
   private AccountDTO createAccount(SignupDTO dto) {
+    return createAccount(dto, null);
+  }
+
+  private AccountDTO createAccount(SignupDTO dto, String accountId) {
     try {
-      return accountService.createAccount(dto);
+      String username = dto.getEmail().split("@")[0];
+      AccountDTO accountDTO = AccountDTO.builder()
+                                  .name(username)
+                                  .companyName(username)
+                                  .defaultExperience(DefaultExperience.NG)
+                                  .isProductLed(true)
+                                  .build();
+      if (isNotEmpty(accountId)) {
+        accountDTO.setIdentifier(accountId);
+      }
+      return accountService.createAccount(accountDTO);
     } catch (Exception e) {
       sendFailedTelemetryEvent(dto.getEmail(), dto.getUtmInfo(), e, null, "Account creation");
       throw e;
@@ -498,8 +514,20 @@ public class SignupServiceImpl implements SignupService {
       throw e;
     }
 
+    dto.setEmail(dto.getEmail().toLowerCase());
     SignupDTO signupDTO = SignupDTO.builder().email(dto.getEmail()).utmInfo(dto.getUtmInfo()).build();
     AccountDTO account = createAccount(signupDTO);
+    return oAuthSignup(dto, account);
+  }
+
+  @Override
+  public UserInfo oAuthSignupForDS(OAuthSignupDTO dto, String accountId) {
+    SignupDTO signupDTO = SignupDTO.builder().email(dto.getEmail()).utmInfo(dto.getUtmInfo()).build();
+    AccountDTO account = createAccount(signupDTO, accountId);
+    return oAuthSignup(dto, account);
+  }
+
+  private UserInfo oAuthSignup(OAuthSignupDTO dto, AccountDTO account) {
     UserInfo oAuthUser = createOAuthUser(dto, account);
 
     if (dto.getIntent() != null && !dto.getIntent().equals("")) {

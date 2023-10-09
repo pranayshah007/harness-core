@@ -44,6 +44,7 @@ import io.harness.event.OrchestrationLogPublisher;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
+import io.harness.monitoring.ExecutionCountWithAccountResult;
 import io.harness.observer.Subject;
 import io.harness.plan.Node;
 import io.harness.plan.PlanNode;
@@ -54,6 +55,7 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
+import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.rule.Owner;
 import io.harness.utils.AmbianceTestUtils;
 
@@ -67,6 +69,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -1052,7 +1055,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
   @Test
   @Owner(developers = AYUSHI_TIWARI)
   @Category(UnitTests.class)
-  public void testFetchAllWithPlanExecutionId() {
+  public void testFetchAllLeavesWithPlanExecutionId() {
     NodeExecutionReadHelper nodeExecutionReadHelperMock = Mockito.mock(NodeExecutionReadHelper.class);
     Reflect.on(nodeExecutionService).set("nodeExecutionReadHelper", nodeExecutionReadHelperMock);
     NodeExecution nodeExecutions = NodeExecution.builder().build();
@@ -1066,7 +1069,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     doReturn(iterator).when(nodeExecutionReadHelperMock).fetchNodeExecutionsFromAnalytics(any());
     Set<String> fieldsToBeIncluded = new HashSet<>();
     CloseableIterator<NodeExecution> actualNodeExecution =
-        nodeExecutionService.fetchAllWithPlanExecutionId("placeExecutionID", fieldsToBeIncluded);
+        nodeExecutionService.fetchAllLeavesUsingPlanExecutionId("placeExecutionID", fieldsToBeIncluded);
     verify(nodeExecutionReadHelperMock, times(1)).fetchNodeExecutionsFromAnalytics(any());
     assertThat(actualNodeExecution).isEqualTo(iterator);
   }
@@ -1209,5 +1212,68 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
 
     List<Status> statuses = nodeExecutionService.fetchNonFlowingAndNonFinalStatuses(planExecutionUuid);
     assertThat(statuses).contains(Status.QUEUED_LICENSE_LIMIT_REACHED, Status.APPROVAL_WAITING);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testAggregateRunningExecutionCountPerAccount() {
+    String planExecutionUuid = generateUuid();
+    String parentId = generateUuid();
+    Map<String, String> m1 = new HashMap<>();
+    m1.put(SetupAbstractionKeys.accountId, generateUuid());
+    NodeExecution nodeExecution =
+        NodeExecution.builder()
+            .uuid(generateUuid())
+            .parentId(parentId)
+            .ambiance(Ambiance.newBuilder().putAllSetupAbstractions(m1).setPlanExecutionId(planExecutionUuid).build())
+            .mode(ExecutionMode.SYNC)
+            .uuid(generateUuid())
+            .name("name")
+            .identifier(generateUuid())
+            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+            .module("CD")
+            .startTs(System.currentTimeMillis())
+            .status(SUCCEEDED)
+            .build();
+    m1.put(SetupAbstractionKeys.accountId, generateUuid());
+    NodeExecution nodeExecution1 =
+        NodeExecution.builder()
+            .uuid(generateUuid())
+            .parentId(parentId)
+            .ambiance(Ambiance.newBuilder().putAllSetupAbstractions(m1).setPlanExecutionId(planExecutionUuid).build())
+            .mode(ExecutionMode.SYNC)
+            .uuid(generateUuid())
+            .name("name")
+            .identifier(generateUuid())
+            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+            .module("CD")
+            .startTs(System.currentTimeMillis())
+            .status(Status.INPUT_WAITING)
+            .build();
+    m1.put(SetupAbstractionKeys.accountId, generateUuid());
+    NodeExecution nodeExecution2 =
+        NodeExecution.builder()
+            .uuid(generateUuid())
+            .parentId(parentId)
+            .ambiance(Ambiance.newBuilder().putAllSetupAbstractions(m1).setPlanExecutionId(planExecutionUuid).build())
+            .mode(ExecutionMode.SYNC)
+            .uuid(generateUuid())
+            .name("name")
+            .identifier(generateUuid())
+            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+            .module("CD")
+            .startTs(System.currentTimeMillis())
+            .status(Status.APPROVAL_WAITING)
+            .build();
+
+    doReturn(false).when(nodeExecutionService).checkPresenceOfResolvedParametersForNonIdentityNodes(any());
+
+    nodeExecutionService.save(nodeExecution);
+    nodeExecutionService.save(nodeExecution1);
+    nodeExecutionService.save(nodeExecution2);
+
+    List<ExecutionCountWithAccountResult> accountResults = nodeExecutionService.aggregateRunningNodesCountPerAccount();
+    assertThat(accountResults.size()).isEqualTo(2);
   }
 }

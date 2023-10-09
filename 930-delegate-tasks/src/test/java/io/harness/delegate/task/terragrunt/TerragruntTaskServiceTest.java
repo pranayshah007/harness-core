@@ -21,6 +21,7 @@ import static io.harness.rule.OwnerRule.VLICA;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -142,7 +143,7 @@ public class TerragruntTaskServiceTest extends CategoryTest {
                         .files(List.of("test-be-123.tfVars"))
                         .build());
 
-    when(terragruntClientFactory.getClient(any(), anyLong(), any(), any(), any()))
+    when(terragruntClientFactory.getClient(any(), anyLong(), any(), any(), any(), anyBoolean()))
         .thenReturn(TerragruntClientImpl.builder()
                         .cliHelper(cliHelper)
                         .terragruntInfoJson("{ \"WorkingDir\": \"workingDir/\" }")
@@ -201,7 +202,7 @@ public class TerragruntTaskServiceTest extends CategoryTest {
                         .files(List.of("test-be-123.tfVars"))
                         .build());
 
-    when(terragruntClientFactory.getClient(any(), anyLong(), any(), any(), any()))
+    when(terragruntClientFactory.getClient(any(), anyLong(), any(), any(), any(), anyBoolean()))
         .thenReturn(TerragruntClientImpl.builder()
                         .cliHelper(cliHelper)
                         .terragruntInfoJson("{ \"WorkingDir\": \"workingDir/\" }")

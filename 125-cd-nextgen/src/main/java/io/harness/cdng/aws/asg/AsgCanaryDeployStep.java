@@ -7,10 +7,16 @@
 
 package io.harness.cdng.aws.asg;
 
-import static software.wings.beans.TaskType.AWS_ASG_CANARY_DEPLOY_TASK_NG;
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 
+import static software.wings.beans.TaskType.AWS_ASG_CANARY_DEPLOY_TASK_NG;
+import static software.wings.beans.TaskType.AWS_ASG_CANARY_DEPLOY_TASK_NG_V2;
+
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -21,6 +27,7 @@ import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployRequest;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployResponse;
+import io.harness.delegate.task.aws.asg.AsgInfraConfig;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
@@ -40,12 +47,15 @@ import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
+import software.wings.beans.TaskType;
+
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac implements AsgStepExecutor {
@@ -98,14 +108,14 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
         asgStepCommonHelper.buildManifestContentMap(executionPassThroughData.getAsgManifestFetchData(), ambiance);
 
     AsgCanaryDeployStepParameters asgSpecParameters = (AsgCanaryDeployStepParameters) stepElementParameters.getSpec();
-
+    AsgInfraConfig asgInfraConfig = asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance);
     String amiImageId = asgStepCommonHelper.getAmiImageId(ambiance);
 
     AsgCanaryDeployRequest asgCanaryDeployRequest =
         AsgCanaryDeployRequest.builder()
             .commandName(ASG_CANARY_DEPLOY_COMMAND_NAME)
             .accountId(accountId)
-            .asgInfraConfig(asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance))
+            .asgInfraConfig(asgInfraConfig)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .asgStoreManifestsContent(asgStoreManifestsContent)
@@ -113,10 +123,16 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
             .unitValue(asgSpecParameters.getInstanceSelection().getSpec().getInstances())
             .unitType(asgSpecParameters.getInstanceSelection().getSpec().getType())
             .amiImageId(amiImageId)
+            .asgName(getParameterFieldValue(asgSpecParameters.getAsgName()))
             .build();
 
-    return asgStepCommonHelper.queueAsgTask(stepElementParameters, asgCanaryDeployRequest, ambiance,
-        executionPassThroughData, true, AWS_ASG_CANARY_DEPLOY_TASK_NG);
+    TaskType taskType =
+        asgStepCommonHelper.isV2Feature(asgStoreManifestsContent, null, null, asgInfraConfig, asgSpecParameters)
+        ? AWS_ASG_CANARY_DEPLOY_TASK_NG_V2
+        : AWS_ASG_CANARY_DEPLOY_TASK_NG;
+
+    return asgStepCommonHelper.queueAsgTask(
+        stepElementParameters, asgCanaryDeployRequest, ambiance, executionPassThroughData, true, taskType);
   }
 
   @Override

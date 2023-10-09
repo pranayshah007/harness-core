@@ -17,6 +17,8 @@ import com.azure.core.http.rest.Response;
 import com.azure.resourcemanager.appservice.fluent.WebAppsClient;
 import com.azure.resourcemanager.appservice.fluent.models.SiteConfigResourceInner;
 import com.azure.resourcemanager.appservice.fluent.models.WebSiteInstanceStatusInner;
+import com.azure.resourcemanager.appservice.models.DeployOptions;
+import com.azure.resourcemanager.appservice.models.DeployType;
 import com.azure.resourcemanager.appservice.models.DeploymentSlot;
 import com.azure.resourcemanager.appservice.models.WebApp;
 import com.azure.resourcemanager.appservice.models.WebAppBasic;
@@ -403,6 +405,30 @@ public interface AzureWebClient {
    * @return
    */
   Mono<Void> deployZipToSlotAsync(AzureWebClientContext context, String slotName, File file);
+
+  /**
+   * Deploying async to deployment slot.
+   *
+   * @param context
+   * @param type
+   * @param slotName
+   * @param file
+   * @param options
+   * @return
+   */
+  Mono<Void> deployAsync(
+      AzureWebClientContext context, DeployType type, String slotName, File file, DeployOptions options);
+
+  /**
+   * Deploying async to deployment slot.
+   *
+   * @param context
+   * @param type
+   * @param file
+   * @param options
+   * @return
+   */
+  Mono<Void> deployToWebAppAsync(AzureWebClientContext context, DeployType type, File file, DeployOptions options);
 
   Mono<Void> deployZipToWebAppAsync(AzureWebClientContext context, File file);
 

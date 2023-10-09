@@ -11,6 +11,7 @@ import static io.harness.ngtriggers.Constants.CONNECTOR_REF;
 import static io.harness.ngtriggers.Constants.EVENT_PAYLOAD;
 import static io.harness.ngtriggers.Constants.HEADER;
 import static io.harness.ngtriggers.Constants.PAYLOAD;
+import static io.harness.ngtriggers.Constants.TRIGGER_PAYLOAD;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -21,7 +22,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
-import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.expression.LateBindingValue;
 import io.harness.ngtriggers.helpers.TriggerHelper;
@@ -55,6 +55,7 @@ public class TriggerFunctor implements LateBindingValue {
     if (null != metadata.getTriggerPayload()
         && EmptyPredicate.isNotEmpty(metadata.getTriggerPayload().getConnectorRef())) {
       jsonObject.put(CONNECTOR_REF, metadata.getTriggerPayload().getConnectorRef());
+      jsonObject.put(TRIGGER_PAYLOAD, metadata.getTriggerPayload());
     }
 
     if (EmptyPredicate.isNotEmpty(metadata.getTriggerHeader())) {
@@ -70,7 +71,7 @@ public class TriggerFunctor implements LateBindingValue {
         try {
           jsonObject.put(PAYLOAD, JsonPipelineUtils.read(metadata.getTriggerJsonPayload(), List.class));
         } catch (IOException toListEx) {
-          throw new InvalidRequestException("Event payload could not be converted to a hashmap or list");
+          jsonObject.put(PAYLOAD, metadata.getTriggerPayload());
         }
       }
     }

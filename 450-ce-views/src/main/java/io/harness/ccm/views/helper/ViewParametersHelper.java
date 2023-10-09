@@ -74,6 +74,9 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.TASK_ID;
 import static io.harness.ccm.views.utils.ClusterTableKeys.WORKLOAD_NAME;
 import static io.harness.ccm.views.utils.ClusterTableKeys.WORKLOAD_TYPE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.entities.CEView;
@@ -126,6 +129,8 @@ import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
 
+@CodePulse(
+    module = ProductModule.CCM, unitCoverageRequired = true, components = {HarnessModuleComponent.CCM_PERSPECTIVE})
 @Slf4j
 @Singleton
 public class ViewParametersHelper {
@@ -516,7 +521,9 @@ public class ViewParametersHelper {
   public boolean isDataFilteredByAwsAccount(final List<QLCEViewFilter> idFilters) {
     return idFilters.stream()
         .filter(idFilter -> Objects.nonNull(idFilter) && Objects.nonNull(idFilter.getField()))
-        .anyMatch(idFilter -> AWS_ACCOUNT_FIELD.equals(idFilter.getField().getFieldName()));
+        .anyMatch(idFilter
+            -> AWS_ACCOUNT_FIELD.equalsIgnoreCase(idFilter.getField().getFieldName())
+                || AWS_ACCOUNT_FIELD_ID.equalsIgnoreCase(idFilter.getField().getFieldId()));
   }
 
   public boolean isDataGroupedByAwsAccount(List<QLCEViewFilterWrapper> filters, List<QLCEViewGroupBy> groupBy) {

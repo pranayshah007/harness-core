@@ -1,0 +1,22 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/rest/api/2/issue/TJI-123",
+    "queryParameters": {
+      "expand": {
+        "contains": "names,schema"
+      },
+      "fields": {
+        "contains": "priority,project,issuetype,status,timetracking,labels"
+      }
+    }
+  },
+
+  "response": {
+    "status": 200,
+    "bodyFileName" : "/jira/jiraIssueFilteredFields.json",
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

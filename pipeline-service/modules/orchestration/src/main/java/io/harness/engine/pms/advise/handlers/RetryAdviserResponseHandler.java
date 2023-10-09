@@ -11,11 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.OrchestrationPublisherName;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delay.DelayEventHelper;
 import io.harness.engine.interrupts.InterruptManager;
 import io.harness.engine.interrupts.InterruptPackage;
 import io.harness.engine.pms.advise.AdviserResponseHandler;
-import io.harness.engine.pms.resume.EngineWaitRetryCallback;
 import io.harness.execution.NodeExecution;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
@@ -26,32 +24,20 @@ import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.contracts.interrupts.IssuedBy;
 import io.harness.pms.contracts.interrupts.RetryInterruptConfig;
 import io.harness.serializer.ProtoUtils;
-import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDC)
 @Slf4j
 public class RetryAdviserResponseHandler implements AdviserResponseHandler {
-  @Inject private WaitNotifyEngine waitNotifyEngine;
-  @Inject private DelayEventHelper delayEventHelper;
   @Inject private InterruptManager interruptManager;
   @Inject @Named(OrchestrationPublisherName.PUBLISHER_NAME) String publisherName;
 
   @Override
   public void handleAdvise(NodeExecution nodeExecution, AdviserResponse adviserResponse) {
     RetryAdvise advise = adviserResponse.getRetryAdvise();
-    if (advise.getWaitInterval() > 0) {
-      log.info("Retry Wait Interval : {}", advise.getWaitInterval());
-      String resumeId = delayEventHelper.delay(advise.getWaitInterval(), Collections.emptyMap());
-      waitNotifyEngine.waitForAllOn(publisherName,
-          new EngineWaitRetryCallback(nodeExecution.getAmbiance().getPlanExecutionId(), nodeExecution.getUuid()),
-          resumeId);
-      return;
-    }
     InterruptPackage interruptPackage =
         InterruptPackage.builder()
             .nodeExecutionId(nodeExecution.getUuid())
@@ -64,7 +50,8 @@ public class RetryAdviserResponseHandler implements AdviserResponseHandler {
                             .setAdviserIssuer(AdviserIssuer.newBuilder().setAdviserType(AdviseType.RETRY).build())
                             .setIssueTime(ProtoUtils.unixMillisToTimestamp(System.currentTimeMillis()))
                             .build())
-                    .setRetryInterruptConfig(RetryInterruptConfig.newBuilder().build())
+                    .setRetryInterruptConfig(
+                        RetryInterruptConfig.newBuilder().setWaitInterval(advise.getWaitInterval()).build())
                     .build())
             .build();
     interruptManager.register(interruptPackage);

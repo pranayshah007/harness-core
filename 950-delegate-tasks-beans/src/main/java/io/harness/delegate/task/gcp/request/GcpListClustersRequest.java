@@ -11,10 +11,16 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import java.time.Duration;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
 
 @OwnedBy(CDP)
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
-public class GcpListClustersRequest extends GcpRequest {}
+public class GcpListClustersRequest extends GcpRequest {
+  @Override
+  public Duration getExecutionTimeout() {
+    return Duration.ofMinutes(5);
+  }
+}

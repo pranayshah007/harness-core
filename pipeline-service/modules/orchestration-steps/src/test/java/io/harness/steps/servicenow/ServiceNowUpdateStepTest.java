@@ -7,9 +7,11 @@
 
 package io.harness.steps.servicenow;
 
+import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -22,6 +24,7 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters.ServiceNowTaskNGParametersBuilder;
+import io.harness.exception.InvalidRequestException;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
@@ -34,6 +37,10 @@ import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.approval.step.ApprovalInstanceService;
+import io.harness.steps.servicenow.beans.ChangeTaskUpdateMultipleSpec;
+import io.harness.steps.servicenow.beans.UpdateMultipleSpec;
+import io.harness.steps.servicenow.beans.UpdateMultipleSpecType;
+import io.harness.steps.servicenow.beans.UpdateMultipleTaskNode;
 import io.harness.steps.servicenow.update.ServiceNowUpdateSpecParameters;
 import io.harness.steps.servicenow.update.ServiceNowUpdateStep;
 
@@ -77,6 +84,11 @@ public class ServiceNowUpdateStepTest extends CategoryTest {
 
   private static final ParameterField DELEGATE_SELECTORS_PARAMETER = ParameterField.createValueField(
       Arrays.asList(new TaskSelectorYaml(DELEGATE_SELECTOR), new TaskSelectorYaml(DELEGATE_SELECTOR_2)));
+  private static final UpdateMultipleSpec changeTask =
+      ChangeTaskUpdateMultipleSpec.builder()
+          .changeTaskType(ParameterField.createValueField("type"))
+          .changeRequestNumber(ParameterField.createValueField(TICKET_NUMBER))
+          .build();
 
   private static final List<TaskSelector> TASK_SELECTORS =
       TaskSelectorYaml.toTaskSelector(DELEGATE_SELECTORS_PARAMETER);
@@ -84,7 +96,7 @@ public class ServiceNowUpdateStepTest extends CategoryTest {
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
-  public void testObtainTaskAfterRbac() {
+  public void testObtainTaskAfterRbacSingleTask() {
     Ambiance ambiance = Ambiance.newBuilder()
                             .putSetupAbstractions("accountId", accountId)
                             .putSetupAbstractions("orgIdentifier", orgIdentifier)
@@ -92,7 +104,50 @@ public class ServiceNowUpdateStepTest extends CategoryTest {
                             .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
                             .build();
     doReturn(logStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(any());
-    StepElementParameters parameters = getStepElementParameters();
+    StepElementParameters parameters = getStepSingleElementParameters();
+    parameters.setTimeout(ParameterField.createValueField(CONNECTOR));
+    TaskRequest taskRequest = TaskRequest.newBuilder().build();
+    when(serviceNowStepHelperService.prepareTaskRequest(any(ServiceNowTaskNGParametersBuilder.class),
+             any(Ambiance.class), anyString(), anyString(), anyString(), eq(TASK_SELECTORS)))
+        .thenReturn(taskRequest);
+
+    assertThat(serviceNowUpdateStep.obtainTaskAfterRbac(ambiance, parameters, null)).isSameAs(taskRequest);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void testObtainTaskAfterRbacMultipleTaskInvalid() {
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .putSetupAbstractions("accountId", accountId)
+                            .putSetupAbstractions("orgIdentifier", orgIdentifier)
+                            .putSetupAbstractions("projectIdentifier", projectIdentifier)
+                            .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
+                            .build();
+    doReturn(logStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(any());
+    StepElementParameters parameters = getStepMultipleTaskElementParametersInvalid();
+    parameters.setTimeout(ParameterField.createValueField(CONNECTOR));
+    TaskRequest taskRequest = TaskRequest.newBuilder().build();
+    when(serviceNowStepHelperService.prepareTaskRequest(any(ServiceNowTaskNGParametersBuilder.class),
+             any(Ambiance.class), anyString(), anyString(), anyString(), eq(TASK_SELECTORS)))
+        .thenReturn(taskRequest);
+
+    assertThatThrownBy(() -> serviceNowUpdateStep.obtainTaskAfterRbac(ambiance, parameters, null))
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void testObtainTaskAfterRbacMultipleTask() {
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .putSetupAbstractions("accountId", accountId)
+                            .putSetupAbstractions("orgIdentifier", orgIdentifier)
+                            .putSetupAbstractions("projectIdentifier", projectIdentifier)
+                            .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
+                            .build();
+    doReturn(logStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(any());
+    StepElementParameters parameters = getStepMultipleTaskElementParameters();
     parameters.setTimeout(ParameterField.createValueField(CONNECTOR));
     TaskRequest taskRequest = TaskRequest.newBuilder().build();
     when(serviceNowStepHelperService.prepareTaskRequest(any(ServiceNowTaskNGParametersBuilder.class),
@@ -113,7 +168,7 @@ public class ServiceNowUpdateStepTest extends CategoryTest {
                             .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
                             .build();
 
-    StepElementParameters parameters = getStepElementParameters();
+    StepElementParameters parameters = getStepSingleElementParameters();
     parameters.setTimeout(ParameterField.createValueField(CONNECTOR));
 
     serviceNowUpdateStep.validateResources(ambiance, parameters);
@@ -121,7 +176,26 @@ public class ServiceNowUpdateStepTest extends CategoryTest {
     verify(pipelineRbacHelper, times(1)).checkRuntimePermissions(eq(ambiance), captor.capture(), eq(true));
   }
 
-  private StepElementParameters getStepElementParameters() {
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void testValidateResourcesMultipleTask() {
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .putSetupAbstractions("accountId", accountId)
+                            .putSetupAbstractions("orgIdentifier", orgIdentifier)
+                            .putSetupAbstractions("projectIdentifier", projectIdentifier)
+                            .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
+                            .build();
+
+    StepElementParameters parameters = getStepMultipleTaskElementParameters();
+    parameters.setTimeout(ParameterField.createValueField(CONNECTOR));
+
+    serviceNowUpdateStep.validateResources(ambiance, parameters);
+
+    verify(pipelineRbacHelper, times(1)).checkRuntimePermissions(eq(ambiance), captor.capture(), eq(true));
+  }
+
+  private StepElementParameters getStepSingleElementParameters() {
     return StepElementParameters.builder()
         .type("SERVICENOW_UPDATE")
         .spec(ServiceNowUpdateSpecParameters.builder()
@@ -132,6 +206,38 @@ public class ServiceNowUpdateStepTest extends CategoryTest {
                   .useServiceNowTemplate(ParameterField.createValueField(true))
                   .delegateSelectors(DELEGATE_SELECTORS_PARAMETER)
                   .build())
+        .build();
+  }
+
+  private StepElementParameters getStepMultipleTaskElementParametersInvalid() {
+    return StepElementParameters.builder()
+        .type("SERVICENOW_UPDATE")
+        .spec(
+            ServiceNowUpdateSpecParameters.builder()
+                .connectorRef(ParameterField.<String>builder().value(CONNECTOR).build())
+                .templateName(ParameterField.<String>builder().value(TEMPLATE_NAME).build())
+                .useServiceNowTemplate(ParameterField.createValueField(true))
+                .ticketType(ParameterField.createValueField("invalid"))
+                .updateMultiple(
+                    UpdateMultipleTaskNode.builder().type(UpdateMultipleSpecType.CHANGE_TASK).spec(changeTask).build())
+                .delegateSelectors(DELEGATE_SELECTORS_PARAMETER)
+                .build())
+        .build();
+  }
+
+  private StepElementParameters getStepMultipleTaskElementParameters() {
+    return StepElementParameters.builder()
+        .type("SERVICENOW_UPDATE")
+        .spec(
+            ServiceNowUpdateSpecParameters.builder()
+                .connectorRef(ParameterField.<String>builder().value(CONNECTOR).build())
+                .templateName(ParameterField.<String>builder().value(TEMPLATE_NAME).build())
+                .useServiceNowTemplate(ParameterField.createValueField(true))
+                .ticketType(ParameterField.createValueField("change_task"))
+                .updateMultiple(
+                    UpdateMultipleTaskNode.builder().type(UpdateMultipleSpecType.CHANGE_TASK).spec(changeTask).build())
+                .delegateSelectors(DELEGATE_SELECTORS_PARAMETER)
+                .build())
         .build();
   }
 }

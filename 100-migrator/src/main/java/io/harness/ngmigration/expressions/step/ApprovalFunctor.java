@@ -6,28 +6,46 @@
  */
 
 package io.harness.ngmigration.expressions.step;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ngmigration.beans.StepOutput;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class ApprovalFunctor extends StepExpressionFunctor {
-  private StepOutput stepOutput;
+  private final StepOutput stepOutput;
+  private List<String> variableNames = Collections.emptyList();
   public ApprovalFunctor(StepOutput stepOutput) {
     super(stepOutput);
     this.stepOutput = stepOutput;
+  }
+  public ApprovalFunctor(StepOutput stepOutput, List<String> variableNames) {
+    super(stepOutput);
+    this.stepOutput = stepOutput;
+    this.variableNames = variableNames;
   }
 
   @Override
   public synchronized Object get(Object key) {
     String newKey = key.toString();
 
-    if ("approvedBy.name".equals(key.toString())) {
-      newKey = "user.name";
+    if ("variables".equals(newKey)) {
+      return variableNames.stream().collect(Collectors.toMap(var -> var, this::getApprovalInputVariableFQN));
     }
 
-    if ("approvedBy.email".equals(key.toString())) {
-      newKey = "user.email";
+    if ("approvedBy".equals(key.toString())) {
+      return new HashMap<>() {
+        {
+          put("name", getFQN("user.name"));
+          put("email", getFQN("user.email"));
+        }
+      };
     }
 
     if ("approvalStatus".equals(key.toString())) {
@@ -42,10 +60,20 @@ public class ApprovalFunctor extends StepExpressionFunctor {
       newKey = "comments";
     }
 
+    return getFQN(newKey);
+  }
+
+  private String getFQN(String newKey) {
     if (StringUtils.equals(stepOutput.getStageIdentifier(), getCurrentStageIdentifier())) {
       return String.format("%s.output.approvalActivities[0].%s>", getStepFQN(), newKey);
     }
-
     return String.format("%s.output.approvalActivities[0].%s>", getStageFQN(), newKey);
+  }
+
+  private String getApprovalInputVariableFQN(String newKey) {
+    if (StringUtils.equals(stepOutput.getStageIdentifier(), getCurrentStageIdentifier())) {
+      return String.format("%s.output.approverInputs.%s>", getStepFQN(), newKey);
+    }
+    return String.format("%s.output.approverInputs.%s>", getStageFQN(), newKey);
   }
 }

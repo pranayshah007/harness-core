@@ -195,8 +195,8 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
 
     Page<PipelineExecutionSummaryDTO> content =
         executionDetailsResource
-            .getListOfExecutions(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, 0, 10, null, null, null, null,
-                null, false, GitEntityFindInfoDTO.builder().build())
+            .getListOfExecutions(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, 0, 10, null, null, false,
+                null, null, null, false, GitEntityFindInfoDTO.builder().build())
             .getData();
     assertThat(content).isNotEmpty();
     assertThat(content.getNumberOfElements()).isEqualTo(1);
@@ -218,7 +218,7 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
     doReturn(criteria)
         .when(pmsExecutionService)
         .formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, null, null,
-            false, false, true);
+            false, false, false);
 
     Pageable pageable = PageRequest.of(0, 10, Sort.by(Direction.DESC, PlanExecutionSummaryKeys.startTs));
     Page<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntities =
@@ -230,7 +230,7 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
     Page<PipelineExecutionSummaryDTO> content =
         executionDetailsResource
             .getListOfExecutions(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, PIPELINE_IDENTIFIER, 0, 10, null,
-                null, null, null, null, false, GitEntityFindInfoDTO.builder().branch("branchName").build())
+                null, false, null, null, null, false, GitEntityFindInfoDTO.builder().branch("branchName").build())
             .getData();
     assertThat(content).isNotEmpty();
     assertThat(content.getNumberOfElements()).isEqualTo(1);
@@ -247,8 +247,8 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
   public void testGetListOfExecutionsInvalidPage() {
     try {
       executionDetailsResource
-          .getListOfExecutions(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, -1, 10, null, null, null, null,
-              null, false, GitEntityFindInfoDTO.builder().build())
+          .getListOfExecutions(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, -1, 10, null, null, false, null,
+              null, null, false, GitEntityFindInfoDTO.builder().build())
           .getData();
     } catch (InvalidRequestException invalidRequestException) {
       assertEquals(invalidRequestException.getMessage(),
@@ -262,8 +262,8 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
   public void testGetListOfExecutionsInvalidSizeEQ0() {
     try {
       executionDetailsResource
-          .getListOfExecutions(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, 0, 0, null, null, null, null,
-              null, false, GitEntityFindInfoDTO.builder().build())
+          .getListOfExecutions(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, 0, 0, null, null, false, null,
+              null, null, false, GitEntityFindInfoDTO.builder().build())
           .getData();
     } catch (InvalidRequestException invalidRequestException) {
       assertEquals(invalidRequestException.getMessage(),
@@ -277,8 +277,8 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
   public void testGetListOfExecutionsInvalidSizeGT1000() {
     try {
       executionDetailsResource
-          .getListOfExecutions(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, 0, 1001, null, null, null, null,
-              null, false, GitEntityFindInfoDTO.builder().build())
+          .getListOfExecutions(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, 0, 1001, null, null, false,
+              null, null, null, false, GitEntityFindInfoDTO.builder().build())
           .getData();
     } catch (InvalidRequestException invalidRequestException) {
       assertEquals(invalidRequestException.getMessage(),
@@ -304,8 +304,8 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
 
     Page<PipelineExecutionSummaryDTO> content =
         executionDetailsResource
-            .getListOfExecutions(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, 0, 10, null, null, null, null,
-                null, false, GitEntityFindInfoDTO.builder().build())
+            .getListOfExecutions(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, 0, 10, null, null, false,
+                null, null, null, false, GitEntityFindInfoDTO.builder().build())
             .getData();
     assertThat(content).isEmpty();
     assertThat(content.getNumberOfElements()).isZero();

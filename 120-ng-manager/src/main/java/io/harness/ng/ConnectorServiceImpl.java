@@ -22,14 +22,12 @@ import static io.harness.ng.NextGenModule.SECRET_MANAGER_CONNECTOR_SERVICE;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
-import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.NgAutoLogContext;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EntityReference;
-import io.harness.beans.FeatureName;
 import io.harness.beans.ScopeLevel;
 import io.harness.connector.CombineCcmK8sConnectorResponseDTO;
 import io.harness.connector.ConnectorActivityDetails;
@@ -54,8 +52,6 @@ import io.harness.connector.services.ConnectorHeartbeatService;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.stats.ConnectorStatistics;
 import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
-import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.eventsframework.EventsFrameworkConstants;
@@ -180,22 +176,9 @@ public class ConnectorServiceImpl implements ConnectorService {
       ConnectorInfoDTO connectorInfoDTO = connectorDTO.getConnectorInfo();
       VaultConnectorDTO vaultConnectorDTO = (VaultConnectorDTO) connectorInfoDTO.getConnectorConfig();
       if (AccessType.APP_ROLE.equals(vaultConnectorDTO.getAccessType())) {
-        vaultConnectorDTO.setRenewAppRoleToken(
-            !ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.DO_NOT_RENEW_APPROLE_TOKEN));
+        vaultConnectorDTO.setRenewAppRoleToken(false);
         connectorInfoDTO.setConnectorConfig(vaultConnectorDTO);
         connectorDTO.setConnectorInfo(connectorInfoDTO);
-      }
-    }
-  }
-
-  private void applyRefreshTokenAuthFFCheckForServiceNowConnector(ConnectorDTO connectorDTO, String accountIdentifier) {
-    if (connectorDTO.getConnectorInfo().getConnectorConfig() instanceof ServiceNowConnectorDTO) {
-      ConnectorInfoDTO connectorInfoDTO = connectorDTO.getConnectorInfo();
-      ServiceNowConnectorDTO serviceNowConnectorDTO = (ServiceNowConnectorDTO) connectorInfoDTO.getConnectorConfig();
-      if (!isNull(serviceNowConnectorDTO.getAuth())
-          && ServiceNowAuthType.REFRESH_TOKEN.equals(serviceNowConnectorDTO.getAuth().getAuthType())
-          && !ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.CDS_SERVICENOW_REFRESH_TOKEN_AUTH)) {
-        throw new InvalidRequestException("Unsupported servicenow auth type provided : Refresh Token Grant");
       }
     }
   }
@@ -203,7 +186,6 @@ public class ConnectorServiceImpl implements ConnectorService {
   private ConnectorResponseDTO createInternal(
       ConnectorDTO connectorDTO, String accountIdentifier, ChangeType gitChangeType) {
     skipAppRoleRenewalForVaultConnector(connectorDTO, accountIdentifier);
-    applyRefreshTokenAuthFFCheckForServiceNowConnector(connectorDTO, accountIdentifier);
     PerpetualTaskId connectorHeartbeatTaskId = null;
     try (AutoLogContext ignore1 = new NgAutoLogContext(connectorDTO.getConnectorInfo().getProjectIdentifier(),
              connectorDTO.getConnectorInfo().getOrgIdentifier(), accountIdentifier, OVERRIDE_ERROR);
@@ -308,7 +290,6 @@ public class ConnectorServiceImpl implements ConnectorService {
   @Override
   public ConnectorResponseDTO update(ConnectorDTO connectorDTO, String accountIdentifier, ChangeType gitChangeType) {
     skipAppRoleRenewalForVaultConnector(connectorDTO, accountIdentifier);
-    applyRefreshTokenAuthFFCheckForServiceNowConnector(connectorDTO, accountIdentifier);
     try (AutoLogContext ignore1 = new NgAutoLogContext(connectorDTO.getConnectorInfo().getProjectIdentifier(),
              connectorDTO.getConnectorInfo().getOrgIdentifier(), accountIdentifier, OVERRIDE_ERROR);
          AutoLogContext ignore2 =

@@ -13,6 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
@@ -24,4 +26,5 @@ public class NativeHelmDeploymentReleaseData {
   private LinkedHashSet<String> namespaces;
   private String releaseName;
   HelmChartInfo helmChartInfo;
+  private Map<String, List<String>> workloadLabelSelectors;
 }

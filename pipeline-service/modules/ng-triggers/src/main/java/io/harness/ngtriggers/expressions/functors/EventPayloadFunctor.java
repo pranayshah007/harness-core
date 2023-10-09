@@ -10,8 +10,8 @@ package io.harness.ngtriggers.expressions.functors;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
-import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.expression.LateBindingValue;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -19,6 +19,7 @@ import io.harness.yaml.utils.JsonPipelineUtils;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 
 @OwnedBy(PIPELINE)
 public class EventPayloadFunctor implements LateBindingValue {
@@ -32,18 +33,22 @@ public class EventPayloadFunctor implements LateBindingValue {
 
   @Override
   public Object bind() {
+    PlanExecutionMetadata planExecutionMetadata =
+        planExecutionMetadataService.findByPlanExecutionId(ambiance.getPlanExecutionId())
+            .orElseThrow(()
+                             -> new IllegalStateException(
+                                 "PlanExecution metadata null for planExecutionId " + ambiance.getPlanExecutionId()));
     try {
-      PlanExecutionMetadata planExecutionMetadata =
-          planExecutionMetadataService.findByPlanExecutionId(ambiance.getPlanExecutionId())
-              .orElseThrow(()
-                               -> new IllegalStateException(
-                                   "PlanExecution metadata null for planExecutionId " + ambiance.getPlanExecutionId()));
-      if (planExecutionMetadata.getTriggerJsonPayload() == null) {
+      if (EmptyPredicate.isEmpty(planExecutionMetadata.getTriggerJsonPayload())) {
         return null;
       }
       return JsonPipelineUtils.read(planExecutionMetadata.getTriggerJsonPayload(), HashMap.class);
     } catch (IOException e) {
-      throw new InvalidRequestException("Event payload could not be converted to a hashmap");
+      try {
+        return JsonPipelineUtils.read(planExecutionMetadata.getTriggerJsonPayload(), List.class);
+      } catch (IOException toListEx) {
+        return planExecutionMetadata.getTriggerJsonPayload();
+      }
     }
   }
 }

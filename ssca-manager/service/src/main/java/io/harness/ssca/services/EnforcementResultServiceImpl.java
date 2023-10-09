@@ -139,7 +139,7 @@ public class EnforcementResultServiceImpl implements EnforcementResultService {
     for (Supplier supplier : suppliers) {
       if (supplier.getName() == null) {
         allowedSuppliers.add(supplier.getSupplier());
-      } else if (supplier.getName() == packageName) {
+      } else if (supplier.getName().equals(packageName)) {
         if (supplier.getSupplier().contains("!")) {
           String deniedSupplier = Strings.split(supplier.getSupplier(), '!').get(1);
           return String.format("Supplier for %s should not be %s", packageName, deniedSupplier);
@@ -159,7 +159,7 @@ public class EnforcementResultServiceImpl implements EnforcementResultService {
     for (AllowLicense license : licenses) {
       if (license.getName() == null) {
         allowedLicenses.add(license.getLicense());
-      } else if (license.getName() == packageName) {
+      } else if (license.getName().equals(packageName)) {
         if (license.getLicense().contains("!")) {
           String deniedLicense = Strings.split(license.getLicense(), '!').get(1);
           return String.format("License for %s should not be %s", packageName, deniedLicense);

@@ -23,6 +23,7 @@ import io.harness.gitsync.gitxwebhooks.dtos.ListGitXWebhookResponseDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.UpdateGitXWebhookCriteriaDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.UpdateGitXWebhookRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.UpdateGitXWebhookResponseDTO;
+import io.harness.gitsync.gitxwebhooks.entity.GitXWebhook;
 
 import java.util.Optional;
 
@@ -32,6 +33,8 @@ public interface GitXWebhookService {
   CreateGitXWebhookResponseDTO createGitXWebhook(CreateGitXWebhookRequestDTO createGitXWebhookRequestDTO);
 
   Optional<GetGitXWebhookResponseDTO> getGitXWebhook(GetGitXWebhookRequestDTO getGitXWebhookRequestDTO);
+
+  Optional<GitXWebhook> getGitXWebhook(String accountIdentifier, String webhookIdentifier, String repoName);
 
   UpdateGitXWebhookResponseDTO updateGitXWebhook(UpdateGitXWebhookCriteriaDTO updateGitXWebhookCriteriaDTO,
       UpdateGitXWebhookRequestDTO updateGitXWebhookRequestDTO);

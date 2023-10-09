@@ -50,6 +50,12 @@ tags:
   - name: Project Rancher Infrastructure
     description: This contains APIs for Rancher infra entities for project level.
     x-displayName: 'Project Rancher Infrastructure [Beta]'
+  - name: K8s Release Service Mapping
+    description: This contains APIs for Fetching Release details regarding a pod.
+    x-displayName: K8s Release Service Mapping
+  - name: EULA
+    description: This contains APIs for EULA.
+    x-displayName: 'EULA [Beta]'
 paths:
   '/v1/orgs/{org}/projects/{project}/services/{service}':
     get:
@@ -1616,7 +1622,32 @@ paths:
             format: int64
           in: query
           name: event_end_time
+        - schema:
+            type: string
+          in: query
+          name: repo_name
+        - schema:
+            type: string
+          in: query
+          name: file_path
       x-internal: true
+  /v1/kubernetes/releases/service-mapping:
+    get:
+      summary: List service and environment details using namespace and releasename
+      tags:
+        - K8s Release Service Mapping
+      responses:
+        '200':
+          $ref: '#/components/responses/ReleaseDetailsResponse'
+      operationId: get-v1-releaseDetails
+      description: Return details of service and environment mapped to pods namespace and release-name for a given account.
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
+      requestBody:
+        $ref: '#/components/requestBodies/BatchReleaseDetailsRequest'
+    parameters: []
 components:
   schemas:
     Service:
@@ -1880,6 +1911,7 @@ components:
         - GOVERNANCE
         - CHAOS
         - CET
+        - IDP
     FavoritesResourceType:
       type: string
       enum:
@@ -2784,6 +2816,148 @@ components:
         event_trigger_time:
           type: integer
           format: int64
+        repo_name:
+          type: string
+    ReleaseDetailsResponse:
+      title: ReleaseDetailsResponse
+      x-stoplight:
+        id: jer5x0wuenbdp
+      type: object
+      x-examples:
+        Example 1:
+          _id: {}
+          account: account
+          org: org
+          project: project
+          release_key: release_key
+          service_details:
+            service_id: k8sservice
+            service_name: k8s service
+            org: orgid
+            project: projectid
+          environment_details:
+            env_id: k8senv
+            env_name: k8s env
+            org: orgid
+            project: projectid
+            connector_ref: string
+            infra_name: infra_name
+            infra_id: infra_id
+            infrastructure_kind: K8sDirect
+      description: Response model of single release details
+      properties:
+        _id:
+          type: object
+        account:
+          type: string
+        org:
+          type: string
+        project:
+          type: string
+        release_key:
+          type: string
+        service_details:
+          $ref: '#/components/schemas/ReleaseServiceDetails'
+        environment_details:
+          $ref: '#/components/schemas/ReleaseEnvDetails'
+    BatchReleaseDetailsResponse:
+      title: BatchReleaseDetailsResponse
+      x-stoplight:
+        id: h5kuwv0xl7r47
+      type: array
+      items:
+        $ref: '#/components/schemas/ReleaseDetailsResponse'
+      x-examples:
+        Example 1:
+          - _id: {}
+            account: account
+            org: org
+            project: project
+            release_key: release_key
+            service_details:
+              service_id: k8sservice
+              service_name: k8s service
+              org: orgid
+              project: projectid
+            environment_details:
+              env_id: k8senv
+              env_name: k8s env
+              org: orgid
+              project: projectid
+              connector_ref: string
+              infra_name: infra_name
+              infra_id: infra_id
+              infrastructure_kind: K8sDirect
+      description: Response model of Batch release details
+    ReleaseServiceDetails:
+      title: ReleaseServiceDetails
+      x-stoplight:
+        id: z6zv3c6d1qrjg
+      type: object
+      x-examples:
+        Example 1:
+          service_id: serviceid
+          service_name: k8sManifestService
+          org: orgid
+          project: projectid
+      description: Response model of service release details
+      properties:
+        service_id:
+          type: string
+        service_name:
+          type: string
+        org:
+          type: string
+        project:
+          type: string
+    ReleaseEnvDetails:
+      title: ReleaseEnvDetails
+      x-stoplight:
+        id: oz7mvl402rnj0
+      type: object
+      description: Response model of environment release details
+      x-examples:
+        Example 1:
+          env_id: env1
+          env_name: envname
+          org: org
+          project: project
+          connector_ref: k8sDirectConnector
+          infra_name: infra1
+          infra_id: infraid
+          infrastructureKind: K8sDirect
+      properties:
+        env_id:
+          type: string
+        env_name:
+          type: string
+        org:
+          type: string
+        project:
+          type: string
+        connector_ref:
+          type: string
+        infra_name:
+          type: string
+        infra_id:
+          type: string
+        infrastructure_kind:
+          type: string
+    ReleaseDetailsRequest:
+      title: ReleaseDetailsRequest
+      x-stoplight:
+        id: 8lzkkdw088lig
+      type: object
+      description: Contains information regarding a single release details required
+      x-examples:
+        Example 1:
+          namespace: default
+          release_name: release-pre-deployment-todolist
+      properties:
+        namespace:
+          type: string
+        release_name:
+          type: string
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -3362,6 +3536,39 @@ components:
           schema:
             type: integer
           description: Maximum page size in Paginated response.
+    ReleaseDetailsResponse:
+      description: Batch Release Details response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/BatchReleaseDetailsResponse'
+          examples:
+            Example 1:
+              value:
+                - - _id: {}
+                    account: account
+                    org: org
+                    project: project
+                    release_key: release_key
+                    service_details:
+                      service_id: k8sservice
+                      service_name: k8s service
+                      org: orgid
+                      project: projectid
+                    environment_details:
+                      env_id: k8senv
+                      env_name: k8s env
+                      org: orgid
+                      project: projectid
+                      connector_ref: string
+                      infra_name: infra_name
+                      infra_id: infra_id
+                      infrastructure_kind: K8sDirect
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/BatchReleaseDetailsResponse'
     ManifestsResponseDTO:
       description: Response containing a list of eligible manifest identifiers that can be applied as primary manifest.
       content:
@@ -4014,6 +4221,19 @@ components:
           schema:
             $ref: '#/components/schemas/UpdateGitXWebhookRequest'
       description: Update GitX webhook request
+    BatchReleaseDetailsRequest:
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ReleaseDetailsRequest'
+          examples:
+            Example 1:
+              value:
+                - namespace: default
+                  release_name: release-pre-deployment-todolist
+      description: Batch Release Details request body
   parameters:
     Page:
       name: page

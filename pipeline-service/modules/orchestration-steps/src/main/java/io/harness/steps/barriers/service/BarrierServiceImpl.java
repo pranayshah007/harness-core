@@ -8,6 +8,7 @@
 package io.harness.steps.barriers.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.distribution.barrier.Barrier.State;
 import static io.harness.distribution.barrier.Barrier.State.STANDING;
 import static io.harness.distribution.barrier.Barrier.builder;
@@ -39,13 +40,17 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
 import io.harness.iterator.PersistenceIteratorFactory;
+import io.harness.lock.AcquiredLock;
+import io.harness.lock.PersistentLocker;
 import io.harness.mongo.iterator.IteratorConfig;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.filter.SpringFilterExpander;
 import io.harness.mongo.iterator.provider.SpringPersistenceProvider;
+import io.harness.plancreator.steps.barrier.BarrierStepNode;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.BarrierNodeRepository;
@@ -59,6 +64,7 @@ import io.harness.steps.barriers.beans.BarrierPositionInfo.BarrierPosition.Barri
 import io.harness.steps.barriers.beans.BarrierResponseData;
 import io.harness.steps.barriers.beans.BarrierResponseData.BarrierError;
 import io.harness.steps.barriers.beans.BarrierSetupInfo;
+import io.harness.steps.barriers.beans.StageDetail;
 import io.harness.steps.barriers.beans.StageDetail.StageDetailKeys;
 import io.harness.steps.barriers.service.visitor.BarrierVisitor;
 import io.harness.waiter.WaitNotifyEngine;
@@ -68,6 +74,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -91,10 +98,13 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
   private static final String STEP_GROUP = "stepGroup";
   private static final String STEP = "step";
   private static final String PLAN_EXECUTION_ID = "planExecutionId";
+  private static final String BARRIER_UPSERT_LOCK = "BARRIER_UPSERT_LOCK_";
 
+  @Inject private PersistentLocker persistentLocker;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private BarrierNodeRepository barrierNodeRepository;
   @Inject private MongoTemplate mongoTemplate;
+  @Inject private MongoTemplate hMongoTemplate;
   @Inject private PlanExecutionService planExecutionService;
   @Inject private NodeExecutionService nodeExecutionService;
   @Inject private WaitNotifyEngine waitNotifyEngine;
@@ -140,6 +150,22 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
   @Override
   public BarrierExecutionInstance findByIdentifierAndPlanExecutionId(String identifier, String planExecutionId) {
     return barrierNodeRepository.findByIdentifierAndPlanExecutionId(identifier, planExecutionId);
+  }
+
+  @Override
+  public List<BarrierExecutionInstance> findManyByPlanExecutionIdAndStrategySetupId(
+      String planExecutionId, String strategySetupId) {
+    /* This method is used by `BarrierWithinStrategyExpander` for fetching all BarrierExecutionInstances which
+       have positions that are children of a given strategy node. */
+    return barrierNodeRepository.findManyByPlanExecutionIdAndSetupInfo_StrategySetupIds(
+        planExecutionId, strategySetupId);
+  }
+
+  @Override
+  public boolean existsByPlanExecutionIdAndStrategySetupId(String planExecutionId, String strategySetupId) {
+    /* This method is used by `BarrierWithinStrategyExpander` for fetching all BarrierExecutionInstances which
+       have positions that are children of a given strategy node. */
+    return barrierNodeRepository.existsByPlanExecutionIdAndSetupInfo_StrategySetupIds(planExecutionId, strategySetupId);
   }
 
   @Override
@@ -201,12 +227,14 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
   }
 
   @Override
-  public List<BarrierExecutionInstance> updatePosition(
-      String planExecutionId, BarrierPositionType positionType, String positionSetupId, String positionExecutionId) {
+  public List<BarrierExecutionInstance> updatePosition(String planExecutionId, BarrierPositionType positionType,
+      String positionSetupId, String positionExecutionId, String stageExecutionId, String stepGroupExecutionId,
+      boolean isNewBarrierUpdateFlow) {
     List<BarrierExecutionInstance> barrierExecutionInstances =
         findByPosition(planExecutionId, positionType, positionSetupId);
 
-    Update update = obtainRuntimeIdUpdate(positionType, positionSetupId, positionExecutionId);
+    Update update = obtainRuntimeIdUpdate(positionType, positionSetupId, positionExecutionId, stageExecutionId,
+        stepGroupExecutionId, isNewBarrierUpdateFlow);
 
     // mongo does not support multiple documents atomic update, let's update one by one
     barrierExecutionInstances.forEach(instance
@@ -220,37 +248,100 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
     return barrierExecutionInstances;
   }
 
-  private Update obtainRuntimeIdUpdate(
-      BarrierPositionType positionType, String positionSetupId, String positionExecutionId) {
+  @Override
+  public void upsert(BarrierExecutionInstance barrierExecutionInstance) {
+    Update update = obtainInstanceUpdate(barrierExecutionInstance);
+    hMongoTemplate.upsert(query(Criteria.where(BarrierExecutionInstanceKeys.identifier)
+                                    .is(barrierExecutionInstance.getIdentifier())
+                                    .and(BarrierExecutionInstanceKeys.planExecutionId)
+                                    .is(barrierExecutionInstance.getPlanExecutionId())),
+        update, BarrierExecutionInstance.class);
+  }
+
+  @Override
+  public void updateBarrierPositionInfoList(
+      String barrierIdentifier, String planExecutionId, List<BarrierPositionInfo.BarrierPosition> barrierPositions) {
+    Update update = obtainBarrierPositionInfoUpdate(barrierPositions);
+    hMongoTemplate.findAndModify(query(Criteria.where(BarrierExecutionInstanceKeys.identifier)
+                                           .is(barrierIdentifier)
+                                           .and(BarrierExecutionInstanceKeys.planExecutionId)
+                                           .is(planExecutionId)),
+        update, BarrierExecutionInstance.class);
+  }
+
+  private Update obtainRuntimeIdUpdate(BarrierPositionType positionType, String positionSetupId,
+      String positionExecutionId, String stageExecutionId, String stepGroupExecutionId,
+      boolean isNewBarrierUpdateFlow) {
     String position = "position";
     final String positions = BarrierExecutionInstanceKeys.positions + ".$[" + position + "].";
     Update update;
     switch (positionType) {
       case STAGE:
-        update =
-            new Update()
-                .set(positions.concat(BarrierPositionKeys.stageRuntimeId), positionExecutionId)
-                .filterArray(
-                    Criteria.where(position.concat(".").concat(BarrierPositionKeys.stageSetupId)).is(positionSetupId));
+        Criteria stageCriteria =
+            Criteria.where(position.concat(".").concat(BarrierPositionKeys.stageSetupId)).is(positionSetupId);
+        if (isNewBarrierUpdateFlow) {
+          stageCriteria = stageCriteria.and(position.concat(".").concat(BarrierPositionKeys.strategyNodeType)).isNull();
+        }
+        update = new Update()
+                     .set(positions.concat(BarrierPositionKeys.stageRuntimeId), positionExecutionId)
+                     .filterArray(stageCriteria);
         break;
       case STEP_GROUP:
+        Criteria stepGroupCriteria =
+            Criteria.where(position.concat(".").concat(BarrierPositionKeys.stepGroupSetupId)).is(positionSetupId);
+        if (isNewBarrierUpdateFlow) {
+          stepGroupCriteria = stepGroupCriteria.and(position.concat(".").concat(BarrierPositionKeys.strategyNodeType))
+                                  .in(BarrierPositionType.STAGE, null);
+        }
         update = new Update()
                      .set(positions.concat(BarrierPositionKeys.stepGroupRuntimeId), positionExecutionId)
-                     .filterArray(Criteria.where(position.concat(".").concat(BarrierPositionKeys.stepGroupSetupId))
-                                      .is(positionSetupId));
+                     .filterArray(stepGroupCriteria);
         break;
       case STEP:
-        update =
-            new Update()
-                .set(positions.concat(BarrierPositionKeys.stepRuntimeId), positionExecutionId)
-                .filterArray(
-                    Criteria.where(position.concat(".").concat(BarrierPositionKeys.stepSetupId)).is(positionSetupId));
+        Criteria stepCriteria =
+            Criteria.where(position.concat(".").concat(BarrierPositionKeys.stepSetupId)).is(positionSetupId);
+        if (isNewBarrierUpdateFlow) {
+          stepCriteria = stepCriteria.and(position.concat(".").concat(BarrierPositionKeys.stageRuntimeId))
+                             .is(stageExecutionId)
+                             .and(position.concat(".").concat(BarrierPositionKeys.stepGroupRuntimeId))
+                             .is(stepGroupExecutionId);
+        }
+        update = new Update()
+                     .set(positions.concat(BarrierPositionKeys.stepRuntimeId), positionExecutionId)
+                     .filterArray(stepCriteria);
         break;
       default:
         throw new InvalidRequestException(String.format("%s position type is not implemented", positionType));
     }
 
     return update;
+  }
+
+  private Update obtainInstanceUpdate(BarrierExecutionInstance barrierExecutionInstance) {
+    Update update =
+        new Update()
+            .set(BarrierExecutionInstanceKeys.name, barrierExecutionInstance.getName())
+            .set(BarrierExecutionInstanceKeys.identifier, barrierExecutionInstance.getIdentifier())
+            .set(BarrierExecutionInstanceKeys.planExecutionId, barrierExecutionInstance.getPlanExecutionId())
+            .set(BarrierExecutionInstanceKeys.barrierState, STANDING)
+            .set(BarrierExecutionInstanceKeys.setupInfoName, barrierExecutionInstance.getSetupInfo().getName())
+            .set(BarrierExecutionInstanceKeys.setupInfoIdentifier,
+                barrierExecutionInstance.getSetupInfo().getIdentifier())
+            .addToSet(BarrierExecutionInstanceKeys.stages)
+            .each(barrierExecutionInstance.getSetupInfo().getStages())
+            .set(BarrierExecutionInstanceKeys.positionInfoPlanExecutionId,
+                barrierExecutionInstance.getPositionInfo().getPlanExecutionId())
+            .addToSet(BarrierExecutionInstanceKeys.positions)
+            .each(barrierExecutionInstance.getPositionInfo().getBarrierPositionList());
+    if (barrierExecutionInstance.getSetupInfo().getStrategySetupIds() != null) {
+      update.addToSet(BarrierExecutionInstanceKeys.strategySetupIds)
+          .each(barrierExecutionInstance.getSetupInfo().getStrategySetupIds());
+    }
+    return update;
+  }
+
+  private Update obtainBarrierPositionInfoUpdate(List<BarrierPositionInfo.BarrierPosition> barrierPositions) {
+    return new Update().set(BarrierExecutionInstanceKeys.positions, barrierPositions);
   }
 
   /**
@@ -425,5 +516,66 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
     return PersistenceUtils.getRetryPolicy(failedAttemptMessage, failureMessage);
+  }
+
+  public void upsertBarrierExecutionInstance(BarrierStepNode field, String planExecutionId,
+      String parentInfoStrategyNodeType, String stageId, String stepGroupId, String strategyId) {
+    String setupId = field.getUuid();
+    String barrierId = field.getBarrierStepInfo().getIdentifier();
+    BarrierPositionType strategyNodeType =
+        getStrategyNodeType(parentInfoStrategyNodeType, setupId, barrierId, planExecutionId);
+    BarrierExecutionInstance barrierExecutionInstance = getBarrierExecutionInstance(
+        field, barrierId, planExecutionId, stageId, stepGroupId, strategyId, strategyNodeType);
+    try (AcquiredLock<?> ignore = persistentLocker.waitToAcquireLock(
+             BARRIER_UPSERT_LOCK + barrierId, Duration.ofSeconds(10), Duration.ofSeconds(30))) {
+      upsert(barrierExecutionInstance);
+    }
+  }
+
+  private BarrierPositionType getStrategyNodeType(
+      String parentInfoStrategyNodeType, String stepSetupId, String barrierId, String planExecutionId) {
+    BarrierPositionType strategyNodeType = null;
+    if (isNotEmpty(parentInfoStrategyNodeType)) {
+      if (YAMLFieldNameConstants.STAGE.equals(parentInfoStrategyNodeType)) {
+        strategyNodeType = BarrierPositionType.STAGE;
+      } else if (YAMLFieldNameConstants.STEP_GROUP.equals(parentInfoStrategyNodeType)) {
+        strategyNodeType = BarrierPositionType.STEP_GROUP;
+      } else {
+        log.warn(
+            "parentInfoStrategyNodeType [{}] for Barrier Step with setupId: [{}], barrierId: [{}], planExecutionId: [{}], is neither stage or stepGroup."
+                + " Setting strategyNodeType to null.",
+            parentInfoStrategyNodeType, stepSetupId, barrierId, planExecutionId);
+      }
+    }
+    return strategyNodeType;
+  }
+
+  private BarrierExecutionInstance getBarrierExecutionInstance(BarrierStepNode field, String barrierId,
+      String planExecutionId, String stageId, String stepGroupId, String strategyId,
+      BarrierPositionType strategyNodeType) {
+    return BarrierExecutionInstance.builder()
+        .setupInfo(BarrierSetupInfo.builder()
+                       .name(field.getBarrierStepInfo().getName())
+                       .identifier(barrierId)
+                       .stages(Set.of(StageDetail.builder().identifier(stageId).build()))
+                       .strategySetupIds(isNotEmpty(strategyId) ? Set.of(strategyId) : null)
+                       .build())
+        .positionInfo(
+            BarrierPositionInfo.builder()
+                .planExecutionId(planExecutionId)
+                .barrierPositionList(List.of(BarrierPositionInfo.BarrierPosition.builder()
+                                                 .stageSetupId(stageId)
+                                                 .stepGroupSetupId(isNotEmpty(stepGroupId) ? stepGroupId : null)
+                                                 .strategySetupId(isNotEmpty(strategyId) ? strategyId : null)
+                                                 .strategyNodeType(strategyNodeType)
+                                                 .stepSetupId(field.getUuid())
+                                                 .stepGroupRollback(false)
+                                                 .build()))
+                .build())
+        .name(field.getBarrierStepInfo().getName())
+        .barrierState(Barrier.State.STANDING)
+        .identifier(field.getBarrierStepInfo().getIdentifier())
+        .planExecutionId(planExecutionId)
+        .build();
   }
 }

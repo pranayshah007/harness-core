@@ -26,7 +26,6 @@ import software.wings.beans.ApiKeyEntry;
 import software.wings.beans.ApprovalAuthorization;
 import software.wings.beans.ApprovalDetails;
 import software.wings.beans.ArtifactVariable;
-import software.wings.beans.AwsLambdaExecutionSummary;
 import software.wings.beans.BuildExecutionSummary;
 import software.wings.beans.CountsByStatuses;
 import software.wings.beans.ElementExecutionSummary;
@@ -39,16 +38,17 @@ import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.PipelineStageGroupedInfo;
 import software.wings.beans.RequiredExecutionArgs;
-import software.wings.beans.StateExecutionElement;
 import software.wings.beans.StateExecutionInterrupt;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.approval.PreviousApprovalDetails;
+import software.wings.beans.aws.AwsLambdaExecutionSummary;
 import software.wings.beans.baseline.WorkflowExecutionBaseline;
 import software.wings.beans.concurrency.ConcurrentExecutionResponse;
 import software.wings.beans.deployment.DeploymentMetadata;
 import software.wings.beans.deployment.WorkflowVariablesMetadata;
+import software.wings.beans.execution.StateExecutionElement;
 import software.wings.beans.execution.WorkflowExecutionInfo;
 import software.wings.beans.trigger.Trigger;
 import software.wings.infra.InfrastructureDefinition;
@@ -384,4 +384,6 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
 
   void checkDeploymentFreezeRejectedExecution(
       String accountId, PreDeploymentChecker deploymentFreezeChecker, WorkflowExecution workflowExecution);
+
+  Integer getDeploymentCount();
 }

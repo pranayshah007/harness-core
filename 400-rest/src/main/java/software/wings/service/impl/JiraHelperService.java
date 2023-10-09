@@ -167,7 +167,7 @@ public class JiraHelperService {
       } else {
         jiraExecutionData = getApprovalStatus(entity); // doing a sync task
         ExecutionStatus issueStatus = jiraExecutionData.getExecutionStatus();
-        log.info("Issue: {} Status from JIRA: {} Current Status {} for approvalId: {}, workflowExecutionId: {} ",
+        log.debug("Issue: {} Status from JIRA: {} Current Status {} for approvalId: {}, workflowExecutionId: {} ",
             issueId, issueStatus, jiraExecutionData.getCurrentStatus(), approvalId, workflowExecutionId);
 
         ApprovalStateExecutionData approvalStateExecutionData = ApprovalStateExecutionData.builder()

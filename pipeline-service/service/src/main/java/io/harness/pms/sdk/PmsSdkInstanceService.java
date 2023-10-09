@@ -96,7 +96,6 @@ public class PmsSdkInstanceService extends PmsServiceImplBase {
         throw new InitializeSdkException("Could not acquire lock");
       }
       saveSdkInstance(request);
-      schemaFetcher.invalidateAllCache();
       ephemeralCacheService.getDistributedSet(SDK_STEP_SET_NAME).clear();
     } catch (Exception ex) {
       log.error(String.format("Exception occurred while registering sdk with name: [%s]", request.getName()), ex);

@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 57
+version: 60
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -1617,3 +1617,97 @@ permissions:
       - account
       - organization
       - project
+  - identifier: sei_seiconfigurationsettings_view
+    name: SEI view configuration settings
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: sei_seiconfigurationsettings_edit
+    name: SEI edit configuration settings
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: sei_seiconfigurationsettings_delete
+    name: SEI delete configuration settings
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: sei_seicollections_create
+    name: SEI create collections
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sei_seicollections_view
+    name: SEI view collections
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sei_seicollections_edit
+    name: SEI edit collections
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sei_seicollections_delete
+    name: SEI delete collections
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sei_seiinsights_create
+    name: SEI create insights
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sei_seiinsights_view
+    name: SEI view insights
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sei_seiinsights_edit
+    name: SEI edit insights
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sei_seiinsights_delete
+    name: SEI delete insights
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: ccm_anomalies_view
+    name: View CCM Anomalies
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_recommendations_view
+    name: View CCM Recommendations
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account

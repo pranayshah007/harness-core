@@ -1037,8 +1037,8 @@ public class YamlGitServiceImpl implements YamlGitService {
       }
 
     } catch (Exception ex) {
-      log.error(format(GIT_YAML_LOG_PREFIX + "Unexpected error while processing git->harness change set [%s]",
-                    yamlChangeSet.getUuid()),
+      log.warn(format(GIT_YAML_LOG_PREFIX + "Unexpected error while processing git->harness change set [%s]",
+                   yamlChangeSet.getUuid()),
           ex);
       yamlChangeSetService.updateStatus(accountId, yamlChangeSet.getUuid(), Status.SKIPPED);
     }

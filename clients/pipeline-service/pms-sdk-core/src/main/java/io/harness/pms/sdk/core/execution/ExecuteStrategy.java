@@ -25,4 +25,10 @@ public interface ExecuteStrategy {
   default void progress(ProgressPackage progressPackage) {
     throw new UnsupportedOperationException();
   };
+
+  void abort(InterruptPackage interruptPackage);
+
+  void expire(InterruptPackage interruptPackage);
+
+  void failure(InterruptPackage interruptPackage);
 }

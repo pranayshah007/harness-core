@@ -40,9 +40,11 @@ import io.harness.pms.events.base.PmsEventCategory;
 import io.harness.pms.exception.PmsExceptionUtils;
 import io.harness.pms.plan.creation.validator.PlanCreationValidator;
 import io.harness.pms.sdk.PmsSdkHelper;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
+import io.harness.pms.sdk.core.plan.creation.creators.PlanCreatorServiceHelper;
 import io.harness.pms.utils.CompletableFutures;
 import io.harness.pms.utils.PmsGrpcClientUtils;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
@@ -142,10 +144,10 @@ public class PlanCreatorMergeService {
 
       YamlField pipelineField;
       switch (version) {
-        case PipelineVersion.V1:
+        case HarnessYamlVersion.V1:
           pipelineField = YamlUtils.readTree(planExecutionMetadata.getProcessedYaml());
           break;
-        case PipelineVersion.V0:
+        case HarnessYamlVersion.V0:
           pipelineField = YamlUtils.extractPipelineField(planExecutionMetadata.getProcessedYaml());
           break;
         default:
@@ -183,7 +185,7 @@ public class PlanCreatorMergeService {
       String projectIdentifier, ExecutionMetadata metadata, PlanExecutionMetadata planExecutionMetadata) {
     String pipelineVersion = metadata != null && EmptyPredicate.isNotEmpty(metadata.getHarnessVersion())
         ? metadata.getHarnessVersion()
-        : PipelineVersion.V0;
+        : HarnessYamlVersion.V0;
     // TODO(BRIJESH): Remove the isExecutionInputEnabled field from PlanCreationContextValue. Once the change to remove
     // its usages is deployed in all services.
     Map<String, PlanCreationContextValue> planCreationContextMap = new HashMap<>();
@@ -252,10 +254,9 @@ public class PlanCreatorMergeService {
       PlanCreationBlobResponse.Builder responseBuilder, YamlField fullYamlField, String harnessVersion) {
     PlanCreationBlobResponse.Builder currIterationResponseBuilder = PlanCreationBlobResponse.newBuilder();
     CompletableFutures<PlanCreationResponse> completableFutures = new CompletableFutures<>(executor);
-    PlanCreationContextValue metadata = responseBuilder.getContextMap().get("metadata");
 
-    try (AutoLogContext ignore = PlanCreatorUtils.autoLogContext(metadata.getMetadata(),
-             metadata.getAccountIdentifier(), metadata.getOrgIdentifier(), metadata.getProjectIdentifier())) {
+    PlanCreationContext ctx = PlanCreationContext.builder().globalContext(responseBuilder.getContextMap()).build();
+    try (AutoLogContext ignore = PlanCreatorServiceHelper.autoLogContext(ctx)) {
       long start = System.currentTimeMillis();
       Map<Map.Entry<String, PlanCreatorServiceInfo>, List<Map.Entry<String, String>>> serviceToDependencyMap =
           new HashMap<>();
@@ -382,10 +383,9 @@ public class PlanCreatorMergeService {
   private void executeDependenciesAsync(CompletableFutures<PlanCreationResponse> completableFutures,
       Map.Entry<String, PlanCreatorServiceInfo> serviceInfo, Dependencies batchDependency,
       Map<String, String> batchServiceAffinityMap, Map<String, PlanCreationContextValue> contextMap) {
-    PlanCreationContextValue metadata = contextMap.get("metadata");
+    PlanCreationContext ctx = PlanCreationContext.builder().globalContext(contextMap).build();
     completableFutures.supplyAsync(() -> {
-      try (AutoLogContext ignore = PlanCreatorUtils.autoLogContext(metadata.getMetadata(),
-               metadata.getAccountIdentifier(), metadata.getOrgIdentifier(), metadata.getProjectIdentifier())) {
+      try (AutoLogContext ignore = PlanCreatorServiceHelper.autoLogContext(ctx)) {
         try {
           return PmsGrpcClientUtils.retryAndProcessException(serviceInfo.getValue().getPlanCreationClient()::createPlan,
               PlanCreationBlobRequest.newBuilder()

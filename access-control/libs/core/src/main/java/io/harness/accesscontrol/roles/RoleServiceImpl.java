@@ -10,6 +10,9 @@ package io.harness.accesscontrol.roles;
 import static io.harness.accesscontrol.common.filter.ManagedFilter.ONLY_CUSTOM;
 import static io.harness.accesscontrol.common.filter.ManagedFilter.ONLY_MANAGED;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.accesscontrol.common.filter.ManagedFilter;
 import io.harness.accesscontrol.permissions.Permission;
@@ -21,8 +24,14 @@ import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.roleassignments.RoleAssignment;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentService;
+import io.harness.accesscontrol.roles.events.RoleCreateEvent;
+import io.harness.accesscontrol.roles.events.RoleDeleteEvent;
+import io.harness.accesscontrol.roles.events.RoleUpdateEvent;
 import io.harness.accesscontrol.roles.filter.RoleFilter;
 import io.harness.accesscontrol.roles.persistence.RoleDao;
+import io.harness.accesscontrol.scopes.ScopeDTO;
+import io.harness.accesscontrol.scopes.core.Scope;
+import io.harness.accesscontrol.scopes.core.ScopeDTOMapper;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidArgumentsException;
@@ -30,11 +39,13 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
+import io.harness.outbox.api.OutboxService;
 import io.harness.springdata.PersistenceUtils;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -59,6 +70,10 @@ public class RoleServiceImpl implements RoleService {
   private final ScopeService scopeService;
   private final RoleAssignmentService roleAssignmentService;
   private final TransactionTemplate transactionTemplate;
+  private final TransactionTemplate outboxTransactionTemplate;
+  private final OutboxService outboxService;
+  private static final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
+
   private static final RetryPolicy<Object> removeRoleTransactionPolicy = PersistenceUtils.getRetryPolicy(
       "[Retrying]: Failed to remove role assignments for the role and remove the role; attempt: {}",
       "[Failed]: Failed to remove role assignments for the role and remove the role; attempt: {}");
@@ -72,12 +87,15 @@ public class RoleServiceImpl implements RoleService {
 
   @Inject
   public RoleServiceImpl(RoleDao roleDao, PermissionService permissionService, ScopeService scopeService,
-      RoleAssignmentService roleAssignmentService, TransactionTemplate transactionTemplate) {
+      RoleAssignmentService roleAssignmentService, TransactionTemplate transactionTemplate,
+      @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate outboxTransactionTemplate, OutboxService outboxService) {
     this.roleDao = roleDao;
     this.permissionService = permissionService;
     this.scopeService = scopeService;
     this.roleAssignmentService = roleAssignmentService;
     this.transactionTemplate = transactionTemplate;
+    this.outboxTransactionTemplate = outboxTransactionTemplate;
+    this.outboxService = outboxService;
   }
 
   @Override
@@ -85,7 +103,13 @@ public class RoleServiceImpl implements RoleService {
     validateScopes(role);
     validatePermissions(role);
     addCompulsoryPermissions(role);
-    return roleDao.create(role);
+    Optional<ScopeDTO> scopeDTO = getScopeDTO(role);
+    return Failsafe.with(transactionRetryPolicy).get(() -> outboxTransactionTemplate.execute(status -> {
+      Role createdRole = roleDao.create(role);
+      outboxService.save(
+          new RoleCreateEvent(getAccountId(scopeDTO), RoleMapper.toDTO(createdRole), scopeDTO.orElse(null)));
+      return createdRole;
+    }));
   }
 
   @Override
@@ -154,7 +178,7 @@ public class RoleServiceImpl implements RoleService {
   }
 
   @Override
-  public RoleUpdateResult update(Role roleUpdate) {
+  public Role update(Role roleUpdate) {
     ManagedFilter managedFilter = roleUpdate.isManaged() ? ONLY_MANAGED : ONLY_CUSTOM;
     Optional<Role> currentRoleOptional =
         get(roleUpdate.getIdentifier(), roleUpdate.getScopeIdentifier(), managedFilter);
@@ -171,21 +195,35 @@ public class RoleServiceImpl implements RoleService {
     roleUpdate.setVersion(currentRole.getVersion());
     roleUpdate.setCreatedAt(currentRole.getCreatedAt());
     roleUpdate.setLastModifiedAt(currentRole.getLastModifiedAt());
-    Role updatedRole =
-        Failsafe.with(removeRoleScopeLevelsTransactionPolicy).get(() -> transactionTemplate.execute(status -> {
-          if (areScopeLevelsUpdated(currentRole, roleUpdate) && roleUpdate.isManaged()) {
-            Set<String> removedScopeLevels =
-                Sets.difference(currentRole.getAllowedScopeLevels(), roleUpdate.getAllowedScopeLevels());
-            roleAssignmentService.deleteMulti(RoleAssignmentFilter.builder()
-                                                  .roleFilter(Collections.singleton(roleUpdate.getIdentifier()))
-                                                  .scopeFilter("/")
-                                                  .includeChildScopes(true)
-                                                  .scopeLevelFilter(removedScopeLevels)
-                                                  .build());
-          }
-          return roleDao.update(roleUpdate);
-        }));
-    return RoleUpdateResult.builder().originalRole(currentRole).updatedRole(updatedRole).build();
+    Optional<ScopeDTO> scopeDTO = getScopeDTO(currentRole);
+    return Failsafe.with(removeRoleScopeLevelsTransactionPolicy).get(() -> outboxTransactionTemplate.execute(status -> {
+      if (areScopeLevelsUpdated(currentRole, roleUpdate) && roleUpdate.isManaged()) {
+        Set<String> removedScopeLevels =
+            Sets.difference(currentRole.getAllowedScopeLevels(), roleUpdate.getAllowedScopeLevels());
+        roleAssignmentService.deleteMulti(RoleAssignmentFilter.builder()
+                                              .roleFilter(Collections.singleton(roleUpdate.getIdentifier()))
+                                              .scopeFilter("/")
+                                              .includeChildScopes(true)
+                                              .scopeLevelFilter(removedScopeLevels)
+                                              .build());
+      }
+      Role updatedRole = roleDao.update(roleUpdate);
+      outboxService.save(new RoleUpdateEvent(
+          getAccountId(scopeDTO), RoleMapper.toDTO(currentRole), RoleMapper.toDTO(updatedRole), scopeDTO.orElse(null)));
+      return updatedRole;
+    }));
+  }
+
+  private String getAccountId(Optional<ScopeDTO> scopeDTOOptional) {
+    return scopeDTOOptional.map(ScopeDTO::getAccountIdentifier).orElse(null);
+  }
+
+  private Optional<ScopeDTO> getScopeDTO(Role role) {
+    if (isNotEmpty(role.getScopeIdentifier())) {
+      Scope scope = scopeService.buildScopeFromScopeIdentifier(role.getScopeIdentifier());
+      return Optional.of(ScopeDTOMapper.toDTO(scope));
+    }
+    return Optional.empty();
   }
 
   private boolean areScopeLevelsUpdated(Role currentRole, Role roleUpdate) {
@@ -221,6 +259,9 @@ public class RoleServiceImpl implements RoleService {
     return deleteManagedRole(identifier);
   }
 
+  // NOTE: This method should be used only for deleting roles on scope deletion.
+  // Here ACL processing using outbox event is not needed as Role assignments would be deleted on Scope deletion and so
+  // associated ACLs would be deleted as well.
   @Override
   public long deleteMulti(RoleFilter roleFilter) {
     if (!roleFilter.getManagedFilter().equals(ONLY_CUSTOM)) {
@@ -243,7 +284,7 @@ public class RoleServiceImpl implements RoleService {
   }
 
   private Role deleteCustomRole(String identifier, String scopeIdentifier) {
-    return Failsafe.with(removeRoleTransactionPolicy).get(() -> transactionTemplate.execute(status -> {
+    return Failsafe.with(removeRoleTransactionPolicy).get(() -> outboxTransactionTemplate.execute(status -> {
       Optional<Role> roleOptional = roleDao.delete(identifier, scopeIdentifier, false);
       if (roleOptional.isPresent()) {
         roleAssignmentService.deleteMulti(RoleAssignmentFilter.builder()
@@ -251,10 +292,14 @@ public class RoleServiceImpl implements RoleService {
                                               .roleFilter(Collections.singleton(identifier))
                                               .build());
       }
-      return roleOptional.orElseThrow(
+      Role deletedRole = roleOptional.orElseThrow(
           ()
               -> new UnexpectedException(
                   String.format("Failed to delete the role %s in the scope %s", identifier, scopeIdentifier)));
+      Optional<ScopeDTO> scopeDTO = getScopeDTO(deletedRole);
+      outboxService.save(
+          new RoleDeleteEvent(getAccountId(scopeDTO), RoleMapper.toDTO(deletedRole), scopeDTO.orElse(null)));
+      return deletedRole;
     }));
   }
 

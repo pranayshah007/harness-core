@@ -66,6 +66,9 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
+import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
+import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -98,6 +101,7 @@ import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesResponseDTOV2;
 import io.harness.ng.core.serviceoverridev2.mappers.ServiceOverridesMapperV2;
 import io.harness.ng.core.serviceoverridev2.service.ServiceOverridesServiceV2;
+import io.harness.ng.core.utils.GitXUtils;
 import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
 import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
 import io.harness.ng.overview.service.CDOverviewDashboardService;
@@ -134,6 +138,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -237,9 +242,15 @@ public class EnvironmentResourceV2 {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = "Specify whether Environment is deleted or not") @QueryParam(
-          NGCommonEntityConstants.DELETED_KEY) @DefaultValue("false") boolean deleted) {
-    Optional<Environment> environment =
-        environmentService.get(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, deleted);
+          NGCommonEntityConstants.DELETED_KEY) @DefaultValue("false") boolean deleted,
+      @Parameter(description = "This contains details of Git Entity like Git Branch info",
+          hidden = true) @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @Parameter(description = "Specifies whether to load the entity from cache", hidden = true) @HeaderParam(
+          "Load-From-Cache") @DefaultValue("false") String loadFromCache,
+      @Parameter(description = "Specifies whether to load the entity from fallback branch", hidden = true) @QueryParam(
+          "loadFromFallbackBranch") @DefaultValue("false") boolean loadFromFallbackBranch) {
+    Optional<Environment> environment = environmentService.get(accountId, orgIdentifier, projectIdentifier,
+        environmentIdentifier, deleted, GitXUtils.parseLoadFromCacheHeaderParam(loadFromCache), loadFromFallbackBranch);
     if (environment.isPresent()) {
       if (EmptyPredicate.isEmpty(environment.get().getYaml())) {
         NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment.get());
@@ -267,8 +278,10 @@ public class EnvironmentResourceV2 {
   public ResponseDTO<EnvironmentResponse>
   create(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @Parameter(description = "Details of the Environment to be created")
-      @Valid EnvironmentRequestDTO environmentRequestDTO) throws IOException {
+      @Parameter(
+          description = "Details of the Environment to be created") @Valid EnvironmentRequestDTO environmentRequestDTO,
+      @Parameter(description = "This contains details of Git Entity like Git Branch, Git Repository to be created",
+          hidden = true) @BeanParam GitEntityCreateInfoDTO gitEntityCreateInfo) throws IOException {
     throwExceptionForNoRequestDTO(environmentRequestDTO);
     validateEnvironmentScope(environmentRequestDTO);
 
@@ -369,8 +382,10 @@ public class EnvironmentResourceV2 {
   update(@HeaderParam(IF_MATCH) String ifMatch,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @Parameter(description = "Details of the Environment to be updated")
-      @Valid EnvironmentRequestDTO environmentRequestDTO) throws IOException {
+      @Parameter(
+          description = "Details of the Environment to be updated") @Valid EnvironmentRequestDTO environmentRequestDTO,
+      @Parameter(description = "This contains details of Git Entity like Git Branch information to be updated",
+          hidden = true) @BeanParam GitEntityUpdateInfoDTO gitEntityInfo) throws IOException {
     throwExceptionForNoRequestDTO(environmentRequestDTO);
     validateEnvironmentScope(environmentRequestDTO);
     Map<String, String> environmentAttributes = new HashMap<>();
@@ -580,9 +595,11 @@ public class EnvironmentResourceV2 {
           description =
               "Specify true if all accessible environments are to be included. Returns environments at account/org/project level.")
       @QueryParam(NGResourceFilterConstants.INCLUDE_ALL_ACCESSIBLE_AT_SCOPE) @DefaultValue(
-          "false") boolean includeAllAccessibleAtScope) {
+          "false") boolean includeAllAccessibleAtScope,
+      @Parameter(description = "Specifies the repo name of the entity", hidden = true) @QueryParam(
+          "repoName") String repoName) {
     Criteria criteria = environmentFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier,
-        false, searchTerm, filterIdentifier, filterProperties, includeAllAccessibleAtScope);
+        false, searchTerm, filterIdentifier, filterProperties, includeAllAccessibleAtScope, repoName);
 
     if (isNotEmpty(envIdentifiers)) {
       criteria.and(EnvironmentKeys.identifier).in(envIdentifiers);
@@ -645,7 +662,7 @@ public class EnvironmentResourceV2 {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, UNAUTHORIZED_TO_LIST_ENVIRONMENTS_MESSAGE);
     Criteria criteria = environmentFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier,
-        false, searchTerm, filterIdentifier, filterProperties, includeAllAccessibleAtScope);
+        false, searchTerm, filterIdentifier, filterProperties, includeAllAccessibleAtScope, StringUtils.EMPTY);
 
     if (isNotEmpty(envIdentifiers)) {
       criteria.and(EnvironmentKeys.identifier).in(envIdentifiers);

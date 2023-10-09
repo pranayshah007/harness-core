@@ -1,0 +1,51 @@
+identifier: grafana
+name: Grafana
+description: Associate alerts and dashboards to components.
+createdBy: K-Phoen
+category: Monitoring
+source: https://github.com/K-Phoen/backstage-plugin-grafana/
+iconUrl: https://avatars.githubusercontent.com/u/7195757?s=200&v=4
+imageUrl: ''
+documentation: https://developer.harness.io/docs/internal-developer-portal/plugins/available-plugins/grafana/
+config: |-
+  proxy:
+    '/grafana/api':
+      target: https://<grafana-url>
+      pathRewrite:
+        'api/proxy/grafana/api/?': '/'
+      headers:
+        Authorization: Bearer ${GRAFANA_TOKEN}
+  
+  grafana:
+    domain: https://<grafana-monitoring-url>
+    unifiedAlerting: false
+environmentVariables:
+  - GRAFANA_TOKEN
+exports:
+  defaultEntityTypes:
+    - service
+  exportDetails:
+    - type: CARD
+      name: EntityGrafanaDashboardsCard
+      addByDefault: true
+      layoutSchemaSpecs:
+        component: EntityGrafanaDashboardsCard
+        specs:
+          gridProps:
+            md: 6
+    - type: CARD
+      name: EntityGrafanaAlertsCard
+      addByDefault: true
+      layoutSchemaSpecs:
+        component: EntityGrafanaAlertsCard
+        specs:
+          gridProps:
+            md: 6
+    - type: CARD
+      name: EntityOverviewDashboardViewer
+      addByDefault: false
+      layoutSchemaSpecs:
+        component: EntityOverviewDashboardViewer
+        specs:
+          gridProps:
+            md: 6

@@ -7,6 +7,7 @@
 
 package io.harness.ci.execution.integrationstage;
 
+import static io.harness.beans.FeatureName.CI_DLITE_DISTRIBUTED;
 import static io.harness.beans.FeatureName.QUEUE_CI_EXECUTIONS_CONCURRENCY;
 import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment;
 import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment.CI_MANAGER;
@@ -50,6 +51,7 @@ import io.harness.beans.steps.nodes.InitializeStepNode;
 import io.harness.beans.steps.nodes.PluginStepNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
+import io.harness.beans.yaml.extended.cache.CachePolicy;
 import io.harness.beans.yaml.extended.cache.Caching;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
@@ -74,6 +76,10 @@ import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 import io.harness.yaml.core.failurestrategy.NGFailureType;
 import io.harness.yaml.core.failurestrategy.OnFailureConfig;
 import io.harness.yaml.core.failurestrategy.ignore.IgnoreFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.markFailure.MarkAsFailFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.retry.OnRetryFailureConfig;
+import io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.retry.RetryFailureSpecConfig;
 import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.utils.JsonPipelineUtils;
@@ -107,6 +113,8 @@ public class CIStepGroupUtils {
   private static final String TEN_K_SECONDS = "10000s";
   private static final String ONE_HOUR = "1h";
   private static final String IMPLICIT_CACHE_STEP = "implicit_restore_cache";
+  private static final String INITIALISE_RETRY_WAITTIME = "10s";
+  private static final int INITIALISE_RETRY_COUNT = 1;
 
   public List<ExecutionWrapperConfig> createExecutionWrapperWithInitializeStep(IntegrationStageNode stageNode,
       CIExecutionArgs ciExecutionArgs, CodeBase ciCodebase, Infrastructure infrastructure, String accountId) {
@@ -126,13 +134,21 @@ public class CIStepGroupUtils {
     List<ExecutionWrapperConfig> initializeExecutionSections = new ArrayList<>();
     boolean gitClone = RunTimeInputHandler.resolveGitClone(integrationStageConfig.getCloneCodebase());
     Caching caching = integrationStageConfig.getCaching();
-    boolean saveCache = caching != null && RunTimeInputHandler.resolveBooleanParameter(caching.getEnabled(), false);
+    boolean useCacheIntel = caching != null && RunTimeInputHandler.resolveBooleanParameter(caching.getEnabled(), false);
     boolean isHosted = infrastructure.getType().equals(Infrastructure.Type.HOSTED_VM);
+    boolean enableCacheIntel = useCacheIntel && isHosted;
+    CachePolicy cachePolicy = CachePolicy.PULL_PUSH;
+    if (caching != null) {
+      cachePolicy = RunTimeInputHandler.resolveCachePolicy(caching.getPolicy());
+    }
+    boolean pushCache =
+        enableCacheIntel && (cachePolicy.equals(CachePolicy.PUSH) || cachePolicy.equals(CachePolicy.PULL_PUSH));
+    boolean pullCache =
+        enableCacheIntel && (cachePolicy.equals(CachePolicy.PULL) || cachePolicy.equals(CachePolicy.PULL_PUSH));
     if (gitClone) {
       initializeExecutionSections.add(getGitCloneStep(ciExecutionArgs, ciCodebase, accountId, infrastructure));
     }
-    boolean enableCacheIntel = saveCache && isHosted;
-    if (enableCacheIntel) {
+    if (pullCache) {
       initializeExecutionSections.add(getRestoreCacheStep(caching, accountId));
     }
     if (featureFlagService.isEnabled(FeatureName.SSCA_SLSA_COMPLIANCE, accountId)
@@ -142,7 +158,7 @@ public class CIStepGroupUtils {
     }
     initializeExecutionSections.addAll(executionSections);
 
-    if (enableCacheIntel) {
+    if (pushCache) {
       initializeExecutionSections.add(getSaveCacheStep(caching, accountId));
     }
     if (isNotEmpty(initializeExecutionSections)) {
@@ -177,6 +193,29 @@ public class CIStepGroupUtils {
         ExecutionElementConfig.builder().uuid(generateUuid()).steps(liteEngineExecutionSections).build(), ciCodebase,
         integrationStage, ciExecutionArgs, infrastructure, accountId);
 
+    ParameterField<List<FailureStrategyConfig>> failureStrategy = ParameterField.ofNull();
+    if (infrastructure != null && infrastructure.getType() == Infrastructure.Type.HOSTED_VM
+        && featureFlagService.isEnabled(CI_DLITE_DISTRIBUTED, accountId)) {
+      failureStrategy = ParameterField.createValueField(List.of(
+          FailureStrategyConfig.builder()
+              .onFailure(
+                  OnFailureConfig.builder()
+                      .errors(Collections.singletonList(NGFailureType.ALL_ERRORS))
+                      .action(RetryFailureActionConfig.builder()
+                                  .specConfig(
+                                      RetryFailureSpecConfig.builder()
+                                          .retryCount(ParameterField.createValueField(INITIALISE_RETRY_COUNT))
+                                          .retryIntervals(ParameterField.createValueField(
+                                              List.of(Timeout.fromString(INITIALISE_RETRY_WAITTIME))))
+                                          .onRetryFailure(OnRetryFailureConfig.builder()
+                                                              .action(MarkAsFailFailureActionConfig.builder().build())
+                                                              .build())
+                                          .build())
+                                  .build())
+                      .build())
+              .build()));
+    }
+
     try {
       String uuid = generateUuid();
       String jsonString = JsonPipelineUtils.writeJsonString(InitializeStepNode.builder()
@@ -186,6 +225,7 @@ public class CIStepGroupUtils {
                                                                 .type(InitializeStepNode.StepType.liteEngineTask)
                                                                 .timeout(getTimeout(infrastructure, accountId))
                                                                 .initializeStepInfo(initializeStepInfo)
+                                                                .failureStrategies(failureStrategy)
                                                                 .build());
       JsonNode jsonNode = JsonPipelineUtils.getMapper().readTree(jsonString);
       return ExecutionWrapperConfig.builder().uuid(uuid).step(jsonNode).build();
@@ -416,8 +456,12 @@ public class CIStepGroupUtils {
     List<String> entrypoint = ciExecutionServiceConfig.getStepConfig().getCacheGCSConfig().getEntrypoint();
 
     setCacheEnvVariables(envVariables, caching, accountId);
-    // We will override cache for cache intel for now. Might need to surface it as an option
-    envVariables.put(PLUGIN_OVERRIDE, ParameterField.createValueField(STRING_TRUE));
+    ParameterField<String> cacheOverrideString = ParameterField.createValueField(
+        String.valueOf(RunTimeInputHandler.resolveBooleanParameter(caching.getOverride(), true)));
+    if (featureFlagService.isEnabled(FeatureName.CI_CACHE_OVERRIDE_FALSE, accountId)) {
+      cacheOverrideString = ParameterField.createValueField(STRING_FALSE);
+    }
+    envVariables.put(PLUGIN_OVERRIDE, cacheOverrideString);
     envVariables.put(PLUGIN_REBUILD, ParameterField.createValueField(STRING_TRUE));
 
     PluginStepInfo step = PluginStepInfo.builder()

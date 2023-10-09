@@ -3,10 +3,10 @@ kind: ConfigMap
 metadata:
   name: template-service
   namespace: {{ .Release.Namespace }}
+  {{- if .Values.global.commonLabels }}
   labels:
-    {{- if .Values.global.commonLabels }}
     {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
-    {{- end }}
+  {{- end }}
   {{- if .Values.global.commonAnnotations }}
   annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
   {{- end }}
@@ -18,6 +18,10 @@ data:
   CACHE_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   DEPLOY_MODE: KUBERNETES_ONPREM
   LOGGING_LEVEL: {{ .Values.appLogLevel }}
+  LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  LOCK_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
+  LOCK_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
   STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
   MEMORY: {{ .Values.java.memory | quote }}
   MANAGER_TARGET: harness-manager:9879
@@ -42,6 +46,11 @@ data:
   PMS_GRPC_TARGET: pipeline-service:12011
   MANAGER_CLIENT_BASEURL: 'http://harness-manager:9090/api/'
   ALLOWED_ORIGINS: '{{ .Values.allowedOrigins | default .Values.global.loadbalancerURL }}'
+  {{- if .Values.global.opa.enabled }}
+  OPA_SERVER_BASEURL: 'http://policy-mgmt.{{ .Release.Namespace }}.svc.cluster.local:3000/'
+  OPA_SERVER_SECRET: 'dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq'
+  OPA_CONNECTIVITY_ENABLED: 'true'
+  {{- end }}
   PIPELINE_SERVICE_CLIENT_BASEURL: http://pipeline-service.{{ .Release.Namespace }}.svc.cluster.local:12001/api/
   {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
   {{- if .Values.additionalConfigs }}

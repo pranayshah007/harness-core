@@ -18,6 +18,7 @@ import io.harness.security.TokenGenerator;
 import io.harness.security.X509KeyManagerBuilder;
 import io.harness.security.X509SslContextBuilder;
 import io.harness.security.X509TrustManagerBuilder;
+import io.harness.security.delegate.DelegateAuthInterceptor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;

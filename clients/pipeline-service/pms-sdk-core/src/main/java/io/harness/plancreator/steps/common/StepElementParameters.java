@@ -14,11 +14,11 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.policy.PolicyConfig;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
-import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.when.beans.StepWhenCondition;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
+import java.util.LinkedList;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -54,34 +54,10 @@ public class StepElementParameters implements StepBaseParameters {
   OnFailRollbackParameters rollbackParameters;
 
   @Override
-  public String toViewJson() {
-    if (spec != null && spec.getViewJsonObject() != spec) {
-      StepElementParameters stepElementParameters = cloneParameters(false, false);
-      stepElementParameters.setSpec(spec.getViewJsonObject());
-      return RecastOrchestrationUtils.toJson(stepElementParameters);
-    }
-    return DEFAULT;
-  }
-
-  @Override
   public List<String> excludeKeysFromStepInputs() {
-    return spec.stepInputsKeyExclude();
-  }
-
-  public StepElementParameters cloneParameters(boolean includeUuid, boolean includeSpec) {
-    return StepElementParameters.builder()
-        .uuid(includeUuid ? this.uuid : null)
-        .type(this.type)
-        .name(this.name)
-        .spec(includeSpec ? this.spec : null)
-        .description(this.description)
-        .identifier(this.identifier)
-        .timeout(this.timeout)
-        .enforce(this.enforce)
-        .failureStrategies(this.failureStrategies)
-        .when(this.when)
-        .skipCondition(this.skipCondition)
-        .delegateSelectors(this.delegateSelectors)
-        .build();
+    if (spec != null) {
+      return spec.stepInputsKeyExclude();
+    }
+    return new LinkedList<>();
   }
 }

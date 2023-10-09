@@ -15,10 +15,10 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(HarnessTeam.IDP)
 public class DataPoints {
-  // Github
-  public static final String GITHUB_PULL_REQUEST_MEAN_TIME_TO_MERGE = "meanTimeToMerge";
-  public static final String GITHUB_IS_BRANCH_PROTECTED = "isBranchProtected";
-  public static final String GITHUB_IS_FILE_EXISTS = "isFileExists";
+  // Github, Bitbucket, Gitlab
+  public static final String PULL_REQUEST_MEAN_TIME_TO_MERGE = "meanTimeToMerge";
+  public static final String IS_BRANCH_PROTECTED = "isBranchProtected";
+  public static final String IS_FILE_EXISTS = "isFileExists";
 
   // Catalog
   public static final String CATALOG_TECH_DOCS = "techDocsAnnotationExists";
@@ -31,8 +31,29 @@ public class DataPoints {
   public static final String PERCENTAGE_OF_CI_PIPELINE_FAILING_IN_SEVEN_DAYS =
       "PercentageOfCIPipelinePassingInPastSevenDays";
   public static final String PIPELINE_TEST_FAILING_IN_CI_IS_ZERO = "noTestsFailingInCiPipeline";
+
+  // PagerDuty
+  public static final String IS_ON_CALL_SET = "isOnCallSet";
+  public static final String IS_ESCALATION_POLICY_SET = "isEscalationPolicySet";
+  public static final String NO_OF_INCIDENTS_IN_LAST_THIRTY_DAYS = "noOfIncidentsInLastThirtyDays";
+  public static final String AVG_RESOLVED_TIME_FOR_LAST_TEN_RESOLVED_INCIDENTS_IN_MINUTES =
+      "avgResolvedTimeForLastTenResolvedIncidentsInMinutes";
   public static final String INVALID_BRANCH_NAME_ERROR = "Invalid branch name provided";
+  public static final String SOURCE_LOCATION_ANNOTATION_ERROR =
+      "Invalid or missing source-location annotation in the catalog info YAML";
+  public static final String PROJECT_KEY_ANNOTATION_ERROR =
+      "Invalid or missing jira/project-key annotation in the catalog info YAML";
   public static final String NO_PULL_REQUESTS_FOUND = "No pull requests found for branch: %s";
   public static final String INVALID_FILE_NAME_ERROR = "Invalid file name provided";
   public static final String GITHUB_ADMIN_PERMISSION_ERROR = "Github Connector does not have Admin permission";
+
+  // Kubernetes
+  public static final String REPLICAS = "replicas";
+  public static final String DAYS_SINCE_LAST_DEPLOYED = "daysSinceLastDeployed";
+
+  // Jira
+  public static final String MEAN_TIME_TO_RESOLVE = "meanTimeToResolve";
+  public static final String ISSUES_COUNT = "issuesCount";
+  public static final String ISSUES_OPEN_CLOSE_RATIO = "issuesOpenCloseRatio";
+  public static final String NO_ISSUES_FOUND = "No issues found";
 }

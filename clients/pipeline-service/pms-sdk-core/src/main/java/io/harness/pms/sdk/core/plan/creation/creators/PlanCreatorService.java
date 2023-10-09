@@ -50,7 +50,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.variables.VariableCreatorService;
 import io.harness.pms.utils.CompletableFutures;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 
@@ -110,12 +110,11 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
              PlanCreatorServiceHelper.autoLogContextFromPlanCreationContextValue(planCreationContextValue)) {
       io.harness.pms.contracts.plan.PlanCreationResponse planCreationResponse;
       long start = System.currentTimeMillis();
-      PlanCreationContextValue metadata = request.getContextMap().get("metadata");
-      try (AutoLogContext ignore = PlanCreatorUtils.autoLogContextWithRandomRequestId(metadata.getMetadata(),
-               metadata.getAccountIdentifier(), metadata.getOrgIdentifier(), metadata.getProjectIdentifier())) {
+      PlanCreationContext ctx = PlanCreationContext.builder().globalContext(request.getContextMap()).build();
+      try (AutoLogContext ignore = PlanCreatorServiceHelper.autoLogContextWithRandomRequestId(ctx)) {
         try {
-          MergePlanCreationResponse finalResponse = createPlanForDependenciesRecursive(
-              request.getDeps(), request.getContextMap(), request.getServiceAffinityMap());
+          MergePlanCreationResponse finalResponse =
+              createPlanForDependenciesRecursive(request.getDeps(), ctx, request.getServiceAffinityMap());
           planCreationResponse = getPlanCreationResponseFromFinalResponse(finalResponse);
         } catch (Exception ex) {
           log.error(ExceptionUtils.getMessage(ex), ex);
@@ -137,8 +136,8 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
     }
   }
 
-  private MergePlanCreationResponse createPlanForDependenciesRecursive(Dependencies initialDependencies,
-      Map<String, PlanCreationContextValue> context, Map<String, String> serviceAffinityMap) {
+  private MergePlanCreationResponse createPlanForDependenciesRecursive(
+      Dependencies initialDependencies, PlanCreationContext ctx, Map<String, String> serviceAffinityMap) {
     // TODO: Add patch version before sending the response back
     MergePlanCreationResponse finalResponse =
         MergePlanCreationResponse.builder().serviceAffinityMap(serviceAffinityMap).build();
@@ -146,7 +145,6 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
       return finalResponse;
     }
 
-    PlanCreationContext ctx = PlanCreationContext.builder().globalContext(context).build();
     long start = System.currentTimeMillis();
     try (PmsGitSyncBranchContextGuard ignore =
              pmsGitSyncHelper.createGitSyncBranchContextGuardFromBytes(ctx.getGitSyncBranchContext(), true)) {
@@ -290,7 +288,7 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
         Class<?> cls = planCreator.getFieldClass();
         String executionInputTemplate = "";
         // ExecutionInput is supported for V0 YAML only. Not supported with YAML simplification.
-        if (PipelineVersion.V0.equals(ctx.getYamlVersion())) {
+        if (HarnessYamlVersion.V0.equals(ctx.getYamlVersion())) {
           executionInputTemplate = planCreator.getExecutionInputTemplateAndModifyYamlField(field);
         }
         Object obj = YamlField.class.isAssignableFrom(cls) ? field : YamlUtils.read(field.getNode().toString(), cls);
@@ -329,7 +327,7 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
   private String getYamlVersion(PlanCreationContext ctx, Dependency dependency) {
     String yamlVersion = ctx.getYamlVersion();
     // If the yamlVersion is V0 then do v0 only.
-    if (!PipelineVersion.V0.equals(yamlVersion)) {
+    if (!HarnessYamlVersion.V0.equals(yamlVersion)) {
       if (dependency != null && dependency.getParentInfo().getDataMap().containsKey(YAML_VERSION)) {
         yamlVersion = dependency.getParentInfo().getDataMap().get(YAML_VERSION).getStringValue();
       }

@@ -44,4 +44,23 @@ public class RecordMetricsJob {
       log.error("Exception while instantiating an instance of MetricsPublisher", ex);
     }
   }
+
+  public void scheduleMetricsTasks(int recordPeriodIntervalInSeconds) {
+    long initialDelay = new SecureRandom().nextInt(60);
+    Set<Class<? extends MetricsPublisher>> classes = HarnessReflections.get().getSubTypesOf(MetricsPublisher.class);
+
+    try {
+      classes.forEach(subClass -> {
+        try {
+          MetricsPublisher publisher = injector.getInstance(subClass);
+          executorService.scheduleAtFixedRate(
+              () -> publisher.recordMetrics(), initialDelay, recordPeriodIntervalInSeconds, TimeUnit.SECONDS);
+        } catch (Exception e) {
+          log.error("Exception while creating a scheduled metrics recorder", e);
+        }
+      });
+    } catch (Exception ex) {
+      log.error("Exception while instantiating an instance of MetricsPublisher", ex);
+    }
+  }
 }

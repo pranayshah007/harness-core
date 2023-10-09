@@ -46,6 +46,7 @@ import io.harness.pms.contracts.execution.events.OrchestrationEventType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.springdata.TransactionHelper;
+import io.harness.utils.ExecutionModeUtils;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
@@ -184,7 +185,8 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
 
   @Override
   public void endNodeExecution(Ambiance ambiance) {
-    Status status = planExecutionService.calculateStatus(ambiance.getPlanExecutionId());
+    Status status = planExecutionService.calculateStatus(
+        ambiance.getPlanExecutionId(), ExecutionModeUtils.isRollbackMode(ambiance.getMetadata().getExecutionMode()));
     PlanExecution planExecution = planExecutionService.updateStatus(
         ambiance.getPlanExecutionId(), status, ops -> ops.set(PlanExecutionKeys.endTs, System.currentTimeMillis()));
     if (planExecution == null) {

@@ -12,11 +12,16 @@ import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_NUMBER_LABEL_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_VALUE;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_HELM_CHART_NAME_KEY;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_HELM_CHART_REPO_URL_KEY;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_HELM_CHART_SUB_CHART_PATH_KEY;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_HELM_CHART_VERSION_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_RELEASE_BG_ENVIRONMENT_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_RELEASE_COLOR_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_RELEASE_MANIFEST_HASH_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_STATUS_LABEL_KEY;
 import static io.harness.rule.OwnerRule.ABHINAV2;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -85,6 +90,9 @@ public class K8sReleaseSecretHelperTest extends CategoryTest {
 
     V1Secret secret = K8sReleaseSecretHelper.putLabelsItem(createSecret("1", "status"), "k1", "v1");
     assertThat(secret.getMetadata().getLabels()).containsEntry("k1", "v1");
+    assertThat(secret.getMetadata().getAnnotations()).isNull();
+    secret = K8sReleaseSecretHelper.putAnnotationsItem(createSecret("1", "status"), "annotation1", "v1");
+    assertThat(secret.getMetadata().getAnnotations()).containsEntry("annotation1", "v1");
   }
 
   @Test
@@ -104,5 +112,29 @@ public class K8sReleaseSecretHelperTest extends CategoryTest {
                           .withLabels(Map.of(RELEASE_NUMBER_LABEL_KEY, releaseNumber, RELEASE_STATUS_LABEL_KEY, status))
                           .build())
         .build();
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testAnnotationsForHelmChart() {
+    V1Secret release = createSecret("1", "Status");
+    String helmRepoUrl = "repoUrl";
+    String helmChartVersion = "1.0.2";
+    String helmChartName = "chartName";
+    String helmSubChartPath = "subChartPath";
+    release.getMetadata()
+        .putAnnotationsItem(RELEASE_SECRET_HELM_CHART_NAME_KEY, helmChartName)
+        .putAnnotationsItem(RELEASE_SECRET_HELM_CHART_VERSION_KEY, helmChartVersion)
+        .putAnnotationsItem(RELEASE_SECRET_HELM_CHART_SUB_CHART_PATH_KEY, helmSubChartPath)
+        .putAnnotationsItem(RELEASE_SECRET_HELM_CHART_REPO_URL_KEY, helmRepoUrl);
+    HelmChartInfoDTO helmChartInfoDTO = HelmChartInfoDTO.builder()
+                                            .subChartPath(helmSubChartPath)
+                                            .name(helmChartName)
+                                            .version(helmChartVersion)
+                                            .repoUrl(helmRepoUrl)
+                                            .build();
+    assertThat(K8sReleaseSecretHelper.getHelmChartInfo(release)).isEqualTo(helmChartInfoDTO);
+    assertThat(K8sReleaseSecretHelper.getHelmChartInfo(new V1Secret())).isNull();
   }
 }

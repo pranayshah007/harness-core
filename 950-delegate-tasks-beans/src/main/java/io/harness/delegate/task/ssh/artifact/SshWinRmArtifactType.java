@@ -27,5 +27,6 @@ public enum SshWinRmArtifactType {
   ACR,
   GCR,
   DOCKER,
-  GITHUB_PACKAGE
+  GITHUB_PACKAGE,
+  GCS
 }

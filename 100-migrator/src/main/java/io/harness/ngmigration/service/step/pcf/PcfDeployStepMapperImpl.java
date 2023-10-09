@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.service.step.pcf;
-
 import static software.wings.beans.InstanceUnitType.PERCENTAGE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.tas.TasAppResizeStepInfo;
 import io.harness.cdng.tas.TasAppResizeStepNode;
@@ -32,6 +34,7 @@ import software.wings.sm.states.pcf.PcfDeployState;
 
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class PcfDeployStepMapperImpl extends PcfAbstractStepMapper {
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {
@@ -55,9 +58,10 @@ public class PcfDeployStepMapperImpl extends PcfAbstractStepMapper {
     PcfDeployState deployState = (PcfDeployState) state;
     Integer timeoutIntervalInMinutes = deployState.getTimeoutIntervalInMinutes();
     if (null != timeoutIntervalInMinutes) {
-      return MigratorUtility.getTimeout(timeoutIntervalInMinutes * 60 * 1000);
+      return MigratorUtility.getTimeout(timeoutIntervalInMinutes * 60 * 1000L);
     } else {
-      return MigratorUtility.getTimeout(state.getTimeoutMillis());
+      Integer timeoutMillis = state.getTimeoutMillis();
+      return MigratorUtility.getTimeout(timeoutMillis != null ? timeoutMillis.longValue() : null);
     }
   }
 

@@ -19,6 +19,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.TENANT_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.WORKSPACE_ID;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.beans.entities.VariablesRepo;
 import io.harness.beans.entities.Workspace;
 import io.harness.beans.entities.WorkspaceVariables;
 import io.harness.beans.steps.CIStepInfoType;
@@ -82,6 +83,14 @@ public class IACMStepsUtils {
     return iacmServiceUtils.GetTerraformEndpointsData(account, org, project, workspaceId);
   }
 
+  private String getHarnessInfracostKey() {
+    return iacmServiceUtils.getCostEstimationToken();
+  }
+
+  private String getInfracostAPIEndpoint() {
+    return iacmServiceUtils.getCostEstimationAPIEndpoint();
+  }
+
   public void createExecution(Ambiance ambiance, String workspaceId) {
     iacmServiceUtils.createIACMExecution(ambiance, workspaceId);
   }
@@ -129,7 +138,15 @@ public class IACMStepsUtils {
     pluginEnvs.put("PLUGIN_CONNECTOR_REF", workspaceInfo.getProvider_connector());
     pluginEnvs.put("PLUGIN_PROVISIONER", workspaceInfo.getProvisioner());
     pluginEnvs.put("PLUGIN_ENDPOINT_VARIABLES", getTerraformEndpointsInfo(accountId, org, projectId, workspaceID));
+    pluginEnvs.put("PLUGIN_HARNESS_INFRACOST_KEY", getHarnessInfracostKey());
+    pluginEnvs.put("PLUGIN_PRICING_API_ENDPOINT", getInfracostAPIEndpoint());
 
+    if (workspaceInfo.getTf_var_files() != null) {
+      for (VariablesRepo variablesRepo : workspaceInfo.getTf_var_files()) {
+        pluginEnvs.put(
+            "PLUGIN_VARIABLE_CONNECTOR_" + variablesRepo.getRepository(), variablesRepo.getRepository_path());
+      }
+    }
     for (WorkspaceVariables variable : variables) {
       switch (variable.getKind()) {
         case ENV_VARIABLE:

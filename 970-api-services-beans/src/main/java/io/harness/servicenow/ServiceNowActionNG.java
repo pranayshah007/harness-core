@@ -9,9 +9,14 @@ package io.harness.servicenow;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 @OwnedBy(CDC)
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_APPROVALS})
 public enum ServiceNowActionNG {
   VALIDATE_CREDENTIALS("Validate Credentials"),
   GET_TICKET_CREATE_METADATA("Get Ticket Create Metadata"),
@@ -20,10 +25,13 @@ public enum ServiceNowActionNG {
   UPDATE_TICKET("Update ticket"),
   GET_METADATA("Get Metadata"),
   GET_TEMPLATE("Get Template"),
+  GET_STANDARD_TEMPLATE("Get Standard Template"),
   IMPORT_SET("Import Set"),
   GET_IMPORT_SET_STAGING_TABLES("Get Import Set Staging Tables"),
   GET_TICKET_TYPES("Get Ticket Types"),
+  GET_STANDARD_TEMPLATES_READONLY_FIELDS("Get read only fields for standard templates"),
   GET_METADATA_V2("Get Metadata V2");
+
   private final String displayName;
 
   ServiceNowActionNG(String s) {

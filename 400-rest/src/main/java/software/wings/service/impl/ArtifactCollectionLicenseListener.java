@@ -8,7 +8,7 @@
 package software.wings.service.impl;
 
 import software.wings.beans.Account;
-import software.wings.beans.AccountStatus;
+import software.wings.beans.account.AccountStatus;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.account.AccountLicenseObserver;

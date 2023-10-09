@@ -35,6 +35,7 @@ import io.harness.cdng.ecs.beans.EcsRunTaskS3FileConfigs;
 import io.harness.cdng.ecs.beans.EcsS3FetchFailurePassThroughData;
 import io.harness.cdng.ecs.beans.EcsS3FetchPassThroughData;
 import io.harness.cdng.ecs.beans.EcsS3ManifestFileConfigs;
+import io.harness.cdng.ecs.beans.EcsServiceDeployConfig;
 import io.harness.cdng.ecs.beans.EcsStepExceptionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
 import io.harness.cdng.expressions.CDExpressionResolver;
@@ -51,6 +52,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.service.steps.sweepingoutput.EcsServiceCustomSweepingOutput;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.TaskData;
@@ -1884,12 +1886,32 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     String prodTargetGroupArn = null;
     String stageTargetGroupArn = null;
 
+    String ecsTaskDefinitionFileContent = ecsStepPassThroughData.getEcsTaskDefinitionManifestContent();
+
+    String ecsServiceDefinitionFileContent = ecsStepPassThroughData.getEcsServiceDefinitionManifestContent();
+
+    List<String> ecsScalableTargetManifestContentList =
+        ecsStepPassThroughData.getEcsScalableTargetManifestContentList();
+
+    List<String> ecsScalingPolicyManifestContentList = ecsStepPassThroughData.getEcsScalingPolicyManifestContentList();
+
     if (ecsStepExecutor instanceof EcsBlueGreenCreateServiceStep) {
+      EcsBlueGreenCreateServiceStepParameters ecsBlueGreenCreateServiceStepParameters =
+          (EcsBlueGreenCreateServiceStepParameters) stepElementParameters.getSpec();
+      boolean enableAutoscalingInSwapStep = ParameterFieldHelper.getBooleanParameterFieldValue(
+          ecsBlueGreenCreateServiceStepParameters.getEnableAutoScalingInSwapStep());
       EcsBlueGreenPrepareRollbackDataResult ecsBlueGreenPrepareRollbackDataResult =
           ecsBlueGreenPrepareRollbackDataResponse.getEcsBlueGreenPrepareRollbackDataResult();
 
       prodTargetGroupArn = ecsBlueGreenPrepareRollbackDataResult.getEcsLoadBalancerConfig().getProdTargetGroupArn();
       stageTargetGroupArn = ecsBlueGreenPrepareRollbackDataResult.getEcsLoadBalancerConfig().getStageTargetGroupArn();
+
+      EcsServiceDeployConfig ecsServiceDeployConfig =
+          EcsServiceDeployConfig.builder()
+              .enableAutoscalingInSwapStep(enableAutoscalingInSwapStep)
+              .ecsScalableTargetManifestContentList(ecsScalableTargetManifestContentList)
+              .ecsScalingPolicyManifestContentList(ecsScalingPolicyManifestContentList)
+              .build();
 
       EcsBlueGreenPrepareRollbackDataOutcome ecsBlueGreenPrepareRollbackDataOutcome =
           EcsBlueGreenPrepareRollbackDataOutcome.builder()
@@ -1919,6 +1941,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
               .greenServiceScalingPolicyRequestBuilderStrings(
                   ecsBlueGreenPrepareRollbackDataResult.getGreenServiceScalingPolicyRequestBuilderStrings())
               .greenServiceRollbackDataExist(ecsBlueGreenPrepareRollbackDataResult.isGreenServiceRollbackDataExist())
+              .ecsBGServiceDeployConfig(ecsServiceDeployConfig)
               .build();
 
       executionSweepingOutputService.consume(ambiance,
@@ -1931,15 +1954,6 @@ public class EcsStepCommonHelper extends EcsStepUtils {
             .infrastructure(ecsStepPassThroughData.getInfrastructureOutcome())
             .lastActiveUnitProgressData(ecsBlueGreenPrepareRollbackDataResponse.getUnitProgressData())
             .build();
-
-    String ecsTaskDefinitionFileContent = ecsStepPassThroughData.getEcsTaskDefinitionManifestContent();
-
-    String ecsServiceDefinitionFileContent = ecsStepPassThroughData.getEcsServiceDefinitionManifestContent();
-
-    List<String> ecsScalableTargetManifestContentList =
-        ecsStepPassThroughData.getEcsScalableTargetManifestContentList();
-
-    List<String> ecsScalingPolicyManifestContentList = ecsStepPassThroughData.getEcsScalingPolicyManifestContentList();
 
     EcsStepExecutorParams ecsStepExecutorParams =
         EcsStepExecutorParams.builder()

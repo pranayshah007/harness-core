@@ -327,6 +327,10 @@ public class K8InitializeStepUtilsHelper {
         ExecutionWrapperConfig.builder().step(getRunStepElementConfigWithVariables()).build());
   }
 
+  public static List<ExecutionWrapperConfig> getExecutionWrapperConfigForNullStageExecution() throws Exception {
+    return newArrayList(ExecutionWrapperConfig.builder().step(getSingleRunStepAsJsonNode()).build());
+  }
+
   public static JsonNode getBackgroundStepElementConfigAsJsonNode() {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode stepElementConfig = mapper.createObjectNode();

@@ -1726,7 +1726,32 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
     initialPermissions.add(PosixFilePermission.OTHERS_READ);
     Files.setPosixFilePermissions(configFilePath, initialPermissions);
 
-    kubernetesContainerService.modifyConfigFileReadableProperties(workingDir.toString());
+    kubernetesContainerService.modifyKubeConfigReadableProperties(workingDir.toString());
+
+    try {
+      // Check if group and others read permissions are removed
+      Set<PosixFilePermission> updatedPermissions = Files.getPosixFilePermissions(configFilePath);
+      assertThat(updatedPermissions.contains(PosixFilePermission.GROUP_READ)).isFalse();
+      assertThat(updatedPermissions.contains(PosixFilePermission.OTHERS_READ)).isFalse();
+    } catch (Exception e) {
+      Assertions.fail("Exception thrown while checking permissions: " + e.getMessage());
+    }
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testKubeConfigFilePermissionsWithFile() throws Exception {
+    FileIo.createDirectoryIfDoesNotExist(workingDir);
+    Files.createFile(configFilePath);
+    Set<PosixFilePermission> initialPermissions = new HashSet<>();
+    initialPermissions.add(PosixFilePermission.OWNER_READ);
+    initialPermissions.add(PosixFilePermission.OWNER_WRITE);
+    initialPermissions.add(PosixFilePermission.GROUP_READ);
+    initialPermissions.add(PosixFilePermission.OTHERS_READ);
+    Files.setPosixFilePermissions(configFilePath, initialPermissions);
+
+    kubernetesContainerService.modifyFileReadableProperties(configFilePath.toString());
 
     try {
       // Check if group and others read permissions are removed

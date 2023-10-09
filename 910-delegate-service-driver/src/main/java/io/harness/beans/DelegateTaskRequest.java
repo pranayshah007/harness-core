@@ -46,4 +46,7 @@ public class DelegateTaskRequest {
   private String stageId;
   private String baseLogKey;
   private boolean shouldSkipOpenStream;
+
+  // enable only for UI facing task to show selection logs
+  private boolean selectionLogsTrackingEnabled;
 }

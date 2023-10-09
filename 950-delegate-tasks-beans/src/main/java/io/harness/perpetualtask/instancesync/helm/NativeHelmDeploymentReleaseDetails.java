@@ -15,6 +15,8 @@ import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.perpetualtask.instancesync.DeploymentDetails;
 import io.harness.perpetualtask.instancesync.k8s.KubernetesCloudClusterConfig;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -34,4 +36,5 @@ public class NativeHelmDeploymentReleaseDetails extends DeploymentDetails {
   HelmChartInfo helmChartInfo;
   KubernetesCloudClusterConfig k8sCloudClusterConfig;
   String helmVersion;
+  Map<String, List<String>> workloadLabelSelectors;
 }

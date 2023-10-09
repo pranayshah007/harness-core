@@ -70,7 +70,7 @@ public interface AccountService {
 
   boolean isNextGenEnabled(String accountId);
 
-  Boolean updateNextGenEnabled(String accountId, boolean enabled);
+  Boolean updateNextGenEnabled(String accountId, boolean isNextGenEnabled, boolean isAdmin);
 
   Boolean syncNextgenWithCG(String accountId);
 
@@ -295,7 +295,7 @@ public interface AccountService {
 
   Boolean updateIsSmpAccount(String customerAccountId, boolean isSmpAccount);
 
-  Account updateDefaultExperience(String accountIdentifier, DefaultExperience defaultExperience);
+  Boolean updateHarnessSupportAccess(String accountIdentifier, boolean isHarnessSupportAccessAllowed);
 
   Account updateCrossGenerationAccessEnabled(
       String accountIdentifier, boolean isCrossGenerationAccessEnabled, boolean isNextGen);
@@ -303,4 +303,8 @@ public interface AccountService {
   boolean getPublicAccessEnabled(String accountId);
 
   void setPublicAccessEnabled(String accountId, boolean publicAccessEnabled);
+
+  Account updateDefaultExperience(String accountIdentifier, DefaultExperience defaultExperience);
+
+  List<Account> listAccountsMarkedForDeletion(int limit);
 }

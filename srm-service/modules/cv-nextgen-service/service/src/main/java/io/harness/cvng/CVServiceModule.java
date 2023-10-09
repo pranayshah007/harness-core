@@ -182,6 +182,7 @@ import io.harness.cvng.core.services.api.demo.CVNGDemoPerpetualTaskService;
 import io.harness.cvng.core.services.api.demo.ChangeSourceDemoDataGenerator;
 import io.harness.cvng.core.services.api.demo.ChiDemoService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
+import io.harness.cvng.core.services.api.monitoredService.ErrorTrackingNotificationService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MSHealthReportService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
@@ -270,6 +271,7 @@ import io.harness.cvng.core.services.impl.demo.changesource.CDNGChangeSourceDemo
 import io.harness.cvng.core.services.impl.demo.changesource.KubernetesChangeSourceDemoDataGenerator;
 import io.harness.cvng.core.services.impl.demo.changesource.PagerdutyChangeSourceDemoDataGenerator;
 import io.harness.cvng.core.services.impl.monitoredService.ChangeSourceServiceImpl;
+import io.harness.cvng.core.services.impl.monitoredService.ErrorTrackingNotificationServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.HealthSourceServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.MSHealthReportServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.MonitoredServiceServiceImpl;
@@ -467,6 +469,7 @@ import io.harness.govern.ProviderMethodInterceptor;
 import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
 import io.harness.lock.DistributedLockImplementation;
+import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.MongoPersistence;
 import io.harness.opaclient.OpaClientModule;
 import io.harness.outbox.TransactionOutboxModule;
@@ -558,6 +561,9 @@ public class CVServiceModule extends AbstractModule {
                 .setUncaughtExceptionHandler((t, e) -> log.error("error while processing task", e))
                 .build()));
     install(PrimaryVersionManagerModule.getInstance());
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("taskPollExecutor"))
+        .toInstance(new ManagedScheduledExecutorService("TaskPoll-Thread"));
     install(new TemplateResourceClientModule(verificationConfiguration.getTemplateServiceClientConfig(),
         verificationConfiguration.getTemplateServiceSecret(), AuthorizationServiceHeader.CV_NEXT_GEN.getServiceId()));
     install(new AccountClientModule(getManagerClientConfig(verificationConfiguration.getManagerClientConfig()),
@@ -1016,6 +1022,7 @@ public class CVServiceModule extends AbstractModule {
     bind(SumoLogicService.class).to(SumoLogicServiceImpl.class);
     bind(HealthSourceService.class).to(HealthSourceServiceImpl.class);
     bind(MonitoredServiceService.class).to(MonitoredServiceServiceImpl.class);
+    bind(ErrorTrackingNotificationService.class).to(ErrorTrackingNotificationServiceImpl.class);
     bind(MSHealthReportService.class).to(MSHealthReportServiceImpl.class);
     bind(EntityDisabledTimeService.class).to(EntityDisabledTimeServiceImpl.class);
     bind(ServiceDependencyService.class).to(ServiceDependencyServiceImpl.class);

@@ -24,7 +24,6 @@ import static io.harness.logging.LogLevel.INFO;
 import static io.harness.shell.AuthenticationScheme.HTTP_PASSWORD;
 import static io.harness.shell.AuthenticationScheme.KERBEROS;
 import static io.harness.shell.SshSessionFactory.generateTGTUsingSshConfig;
-import static io.harness.shell.SshSessionFactory.getSSHSession;
 
 import static software.wings.beans.yaml.YamlConstants.GIT_DEFAULT_LOG_PREFIX;
 import static software.wings.beans.yaml.YamlConstants.GIT_HELM_LOG_PREFIX;
@@ -63,6 +62,7 @@ import io.harness.logging.NoopExecutionCallback;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.ssh.SshFactory;
 import io.harness.shell.ssh.client.jsch.JschConnection;
+import io.harness.shell.ssh.exception.SshClientException;
 
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitOperationContext;
@@ -1326,10 +1326,11 @@ public class GitClientImpl implements GitClient {
       protected Session createSession(Host hc, String user, String host, int port, FS fs) throws JSchException {
         SshSessionConfig sshSessionConfig = createSshSessionConfig(settingAttribute, host);
         sshSessionConfig.setPort(port); // use port from repo URL
-        if (sshSessionConfig.isUseSshClient() || sshSessionConfig.isVaultSSH()) {
+
+        try {
           return ((JschConnection) SshFactory.getSshClient(sshSessionConfig).getConnection()).getSession();
-        } else {
-          return getSSHSession(sshSessionConfig);
+        } catch (SshClientException sshClientException) {
+          throw new JSchException(sshClientException.getMessage());
         }
       }
 

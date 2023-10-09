@@ -13,6 +13,8 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 
+import software.wings.beans.account.AccountEventType;
+
 import java.util.Map;
 import lombok.Builder;
 import lombok.Value;

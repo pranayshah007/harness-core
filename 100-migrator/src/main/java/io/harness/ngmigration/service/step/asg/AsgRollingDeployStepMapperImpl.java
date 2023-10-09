@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.service.step.asg;
-
 import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_FIELD;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.aws.asg.AsgBlueGreenDeployStepInfo;
 import io.harness.cdng.aws.asg.AsgBlueGreenDeployStepNode;
 import io.harness.cdng.aws.asg.AsgRollingDeployStepInfo;
@@ -17,10 +19,11 @@ import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.utils.CaseFormat;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.yaml.core.timeout.Timeout;
 
 import software.wings.beans.GraphNode;
 import software.wings.sm.State;
@@ -28,7 +31,18 @@ import software.wings.sm.states.AwsAmiServiceSetup;
 
 import java.util.Map;
 
-public class AsgRollingDeployStepMapperImpl extends StepMapper {
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
+public class AsgRollingDeployStepMapperImpl extends AsgBaseStepMapper {
+  @Override
+  public ParameterField<Timeout> getTimeout(State state) {
+    if (state instanceof AwsAmiServiceSetup) {
+      AwsAmiServiceSetup asgState = (AwsAmiServiceSetup) state;
+      if (asgState.getAutoScalingSteadyStateTimeout() > 0) {
+        return MigratorUtility.getTimeout((long) asgState.getAutoScalingSteadyStateTimeout());
+      }
+    }
+    return MigratorUtility.getTimeout(null);
+  }
   @Override
   public String getStepType(GraphNode stepYaml) {
     AwsAmiServiceSetup state = (AwsAmiServiceSetup) getState(stepYaml);

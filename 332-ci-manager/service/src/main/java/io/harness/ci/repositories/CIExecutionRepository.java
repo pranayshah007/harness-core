@@ -20,14 +20,11 @@ import org.springframework.data.repository.CrudRepository;
 @OwnedBy(HarnessTeam.CI)
 public interface CIExecutionRepository
     extends CrudRepository<CIExecutionMetadata, String>, CIExecutionRepositoryCustom {
-  long countByAccountId(String AccountID);
-
+  long countByAccountId(String accountID);
   int countByAccountIdAndStatusIn(String accountId, List<String> status);
   long countByAccountIdAndStatus(String accountID, String status);
-  long countByAccountIdAndBuildType(String AccountID, OSType BuildType);
-
+  long countByAccountIdAndBuildTypeAndStatusIn(String accountID, OSType buildType, List<String> status);
   CIExecutionMetadata findByStageExecutionId(String stageExecutionId);
-
   void deleteByStageExecutionId(String stageExecutionId);
   void deleteAllByAccountId(String accountId);
 }

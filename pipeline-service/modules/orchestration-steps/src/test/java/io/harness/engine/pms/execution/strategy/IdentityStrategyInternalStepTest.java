@@ -264,8 +264,18 @@ public class IdentityStrategyInternalStepTest extends CategoryTest {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testHandleChildrenResponse() {
-    StepResponse stepResponse = identityStrategyInternalStep.handleChildrenResponse(null, null, new HashMap<>());
+    String originalNodeExecutionId = "originalNodeExecutionId";
+    NodeExecution originalNodeExecution =
+        NodeExecution.builder()
+            .uuid(originalNodeExecutionId)
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId("ORIGINAL_PLAN_EXECUTION_ID").build())
+            .status(Status.ABORTED)
+            .build();
+    doReturn(originalNodeExecution).when(nodeExecutionService).getWithFieldsIncluded(any(), any());
+    StepResponse stepResponse = identityStrategyInternalStep.handleChildrenResponse(null,
+        IdentityStepParameters.builder().originalNodeExecutionId(originalNodeExecutionId).build(), new HashMap<>());
     assertNotNull(stepResponse);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.ABORTED);
   }
 
   private void assertChildrenResponse(ChildrenExecutableResponse childrenExecutableResponse, List<Node> identityNodes,

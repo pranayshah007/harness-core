@@ -171,6 +171,9 @@ public class BuildSourceCallback implements OldNotifyCallback {
         if (isUnstable
             && (artifactStream.getFailedCronAttempts() == 0
                 || featureFlagService.isEnabled(FeatureName.TRIGGER_FOR_ALL_ARTIFACTS, accountId))) {
+          log.warn(
+              "ASYNC_ARTIFACT_COLLECTION: Unstable to trigger execution after collect artifacts [artifactStreamId={}]",
+              artifactStreamId);
           updatePermit(artifactStream, false);
           return;
         }

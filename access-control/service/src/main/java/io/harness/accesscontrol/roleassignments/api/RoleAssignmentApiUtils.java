@@ -40,10 +40,10 @@ import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupCon
 import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupService;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupService;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.RoleAssignmentDBOKeys;
+import io.harness.accesscontrol.scopes.HarnessScopeLevel;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeLevel;
 import io.harness.accesscontrol.scopes.core.ScopeService;
-import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeService;
 import io.harness.annotations.dev.OwnedBy;

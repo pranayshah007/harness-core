@@ -24,7 +24,6 @@ import io.harness.delegate.beans.ci.pod.SecretVariableDTO;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
-import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.exception.ngexception.CIStageExecutionUserException;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
@@ -155,8 +154,6 @@ public class SecretVariableUtilsTest extends CIExecutionTestBase {
 
     assertThatThrownBy(() -> secretUtils.getSecretVariableDetails(ngAccess, secretVariableFile))
         .isInstanceOf(CIStageExecutionUserException.class);
-    assertThatThrownBy(() -> secretUtils.getSecretVariableDetails(ngAccess, secretVariableFile))
-        .isInstanceOf(CIStageExecutionException.class);
   }
 
   @Test

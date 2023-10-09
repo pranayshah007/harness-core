@@ -18,6 +18,7 @@ import lombok.Value;
 @Value
 @Builder
 public class SRMAnalysisStepInstanceDetails extends SecondaryEventDetails {
+  String stepName;
   Duration analysisDuration;
   SRMAnalysisStatus analysisStatus;
 
