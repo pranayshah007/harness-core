@@ -67,6 +67,8 @@ const (
      // 2. Run the task script
      e.addonLogger.Infow("Task params written, executing task command now", e.command[0])
      cmd := exec.Command(e.command[0])
+     cmd.stdout = e.procWriter
+     cmd.stderr = e.procWriter
      _, err = cmd.CombinedOutput()
      if err != nil {
          e.log.Errorw("unable to run the task script", zap.Error(err))
