@@ -1,2 +1,0 @@
-subject: Delegate Expired
-body: Delegate ${delegateId} is expired, please upgrade to latest version

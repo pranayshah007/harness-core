@@ -76,7 +76,6 @@ public enum ResourceType {
   SEI_INSIGHTS(ResourceTypeConstants.SEI_INSIGHTS),
   CET_SAVED_FILTER(ResourceTypeConstants.CET_SAVED_FILTER);
 
-
   ResourceType(String resourceType) {
     if (!this.name().equals(resourceType)) {
       throw new IllegalArgumentException(
