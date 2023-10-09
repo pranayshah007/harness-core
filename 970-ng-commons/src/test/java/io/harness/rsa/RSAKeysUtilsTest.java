@@ -5,13 +5,15 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.oidc;
+package io.harness.rsa;
 
-import static io.harness.oidc.RSAKeysUtils.PRIVATE_KEY;
-import static io.harness.oidc.RSAKeysUtils.PUBLIC_KEY;
+import static io.harness.rsa.RSAKeysUtils.PRIVATE_KEY;
+import static io.harness.rsa.RSAKeysUtils.PUBLIC_KEY;
 import static io.harness.rule.OwnerRule.TEJAS;
 
-import static junit.framework.TestCase.*;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertTrue;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -31,7 +33,7 @@ public class RSAKeysUtilsTest extends CategoryTest {
   private final String END_PRIVATE_KEY = "-----END PRIVATE KEY-----\n";
   private final String BEGIN_PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----";
   private final String END_PUBLIC_KEY = "-----END PUBLIC KEY-----\n";
-  RSAKeysUtils rsaKeysUtils;
+  io.harness.rsa.RSAKeysUtils rsaKeysUtils;
 
   @Before
   public void setup() {
@@ -42,7 +44,7 @@ public class RSAKeysUtilsTest extends CategoryTest {
   @Owner(developers = TEJAS)
   @Category(UnitTests.class)
   public void testKeyPairPEMGeneration() {
-    RSAKeyPairPEM rsaKeyPairPEM = rsaKeysUtils.generateKeyPairPEM();
+    io.harness.rsa.RSAKeyPairPEM rsaKeyPairPEM = rsaKeysUtils.generateKeyPairPEM();
 
     String publicKeyPEM = rsaKeyPairPEM.getPublicKeyPem();
     assertTrue(StringUtils.isNotEmpty(publicKeyPEM));
