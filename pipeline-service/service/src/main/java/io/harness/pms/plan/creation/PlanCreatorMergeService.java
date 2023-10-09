@@ -7,6 +7,7 @@
 
 package io.harness.pms.plan.creation;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.async.plan.PlanNotifyEventConsumer.PMS_PLAN_CREATION;
 
@@ -183,9 +184,8 @@ public class PlanCreatorMergeService {
   @VisibleForTesting
   Map<String, PlanCreationContextValue> createInitialPlanCreationContext(String accountId, String orgIdentifier,
       String projectIdentifier, ExecutionMetadata metadata, PlanExecutionMetadata planExecutionMetadata) {
-    String pipelineVersion = metadata != null && EmptyPredicate.isNotEmpty(metadata.getHarnessVersion())
-        ? metadata.getHarnessVersion()
-        : HarnessYamlVersion.V0;
+    String pipelineVersion = metadata != null && isNotEmpty(metadata.getHarnessVersion()) ? metadata.getHarnessVersion()
+                                                                                          : HarnessYamlVersion.V0;
     // TODO(BRIJESH): Remove the isExecutionInputEnabled field from PlanCreationContextValue. Once the change to remove
     // its usages is deployed in all services.
     Map<String, PlanCreationContextValue> planCreationContextMap = new HashMap<>();
@@ -224,8 +224,7 @@ public class PlanCreatorMergeService {
         createInitialPlanCreationContext(accountId, orgIdentifier, projectIdentifier, metadata, planExecutionMetadata));
 
     try {
-      for (int i = 0; i < MAX_DEPTH && EmptyPredicate.isNotEmpty(finalResponseBuilder.getDeps().getDependenciesMap());
-           i++) {
+      for (int i = 0; i < MAX_DEPTH && isNotEmpty(finalResponseBuilder.getDeps().getDependenciesMap()); i++) {
         String version = metadata.getHarnessVersion();
         YamlField fullYamlField = YamlUtils.readTree(finalResponseBuilder.getDeps().getYaml());
         PlanCreationBlobResponse currIterationResponse =
@@ -236,7 +235,7 @@ public class PlanCreatorMergeService {
         PlanCreationBlobResponseUtils.mergeLayoutNodeInfo(finalResponseBuilder, currIterationResponse);
         PlanCreationBlobResponseUtils.mergePreservedNodesInRollbackMode(finalResponseBuilder, currIterationResponse);
         PlanCreationBlobResponseUtils.mergeServiceAffinityMap(finalResponseBuilder, currIterationResponse);
-        if (EmptyPredicate.isNotEmpty(finalResponseBuilder.getDeps().getDependenciesMap())) {
+        if (isNotEmpty(finalResponseBuilder.getDeps().getDependenciesMap())) {
           throw new InvalidRequestException(
               PmsExceptionUtils.getUnresolvedDependencyPathsErrorMessage(finalResponseBuilder.getDeps()));
         }
@@ -339,6 +338,28 @@ public class PlanCreatorMergeService {
       Map<Map.Entry<String, PlanCreatorServiceInfo>, List<Map.Entry<String, String>>> serviceToDependencyMap,
       String harnessVersion) {
     for (Map.Entry<String, String> dependencyEntry : responseBuilder.getDeps().getDependenciesMap().entrySet()) {
+      if (isNotEmpty(responseBuilder.getDeps().getDependencyMetadataMap())
+          && responseBuilder.getDeps().getDependencyMetadataMap().get(dependencyEntry.getKey()) != null
+          && isNotEmpty(responseBuilder.getDeps()
+                            .getDependencyMetadataMap()
+                            .get(dependencyEntry.getKey())
+                            .getParentInfo()
+                            .getDataMap())
+          && responseBuilder.getDeps()
+                  .getDependencyMetadataMap()
+                  .get(dependencyEntry.getKey())
+                  .getParentInfo()
+                  .getDataMap()
+                  .get("yamlVersion")
+              != null) {
+        harnessVersion = responseBuilder.getDeps()
+                             .getDependencyMetadataMap()
+                             .get(dependencyEntry.getKey())
+                             .getParentInfo()
+                             .getDataMap()
+                             .get("yamlVersion")
+                             .getStringValue();
+      }
       // Always first check  -
       // 1. Affinity service
       // 2. pipeline-service dependencies
