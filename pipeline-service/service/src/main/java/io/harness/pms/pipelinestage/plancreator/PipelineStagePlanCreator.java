@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.pipelinestage.plancreator;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -23,7 +24,6 @@ import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
@@ -87,8 +87,8 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
         YAMLFieldNameConstants.STAGE, Collections.singleton(StepSpecTypeConstants.PIPELINE_STAGE));
   }
 
-  public PipelineStageStepParameters getStepParameter(PipelineStageConfig config, YamlField pipelineInputs,
-      String stageNodeId, String childPipelineVersion, String accountIdentifier) {
+  public PipelineStageStepParameters getStepParameter(
+      PipelineStageConfig config, YamlField pipelineInputs, String stageNodeId, String childPipelineVersion) {
     return PipelineStageStepParameters.builder()
         .pipeline(config.getPipeline())
         .org(config.getOrg())
@@ -100,13 +100,13 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
         .build();
   }
 
-  public void setSourcePrincipal(PlanCreationContextValue executionMetadata) {
-    Principal principal = PmsSecurityContextGuardUtils.getPrincipal(executionMetadata.getAccountIdentifier(),
-        executionMetadata.getMetadata().getPrincipalInfo(),
-        executionMetadata.getMetadata().getTriggerInfo().getTriggeredBy());
+  public void setSourcePrincipal(PlanCreationContext ctx) {
+    Principal principal = PmsSecurityContextGuardUtils.getPrincipal(
+        ctx.getAccountIdentifier(), ctx.getPrincipalInfo(), ctx.getTriggerInfo().getTriggeredBy());
     SourcePrincipalContextBuilder.setSourcePrincipal(principal);
     SecurityContextBuilder.setContext(principal);
   }
+
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, PipelineStageNode stageNode) {
     PipelineStageConfig config = stageNode.getPipelineStageConfig();
@@ -116,7 +116,7 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
     // Principal is added to fetch Git Entity. GitContext is to set GitContext for child pipeline. This was missed where
     // parent pipeline is in non-default branch. With this change, chained pipeline will be executed with same branch as
     // that of parent pipeline branch
-    setSourcePrincipal(ctx.getMetadata());
+    setSourcePrincipal(ctx);
     setGitContextForChildPipeline(ctx);
 
     try (AutoLogContext ignore = GitAwareContextHelper.autoLogContext()) {
@@ -166,7 +166,7 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
                       .getField(YAMLFieldNameConstants.SPEC)
                       .getNode()
                       .getField(YAMLFieldNameConstants.INPUTS),
-                  planNodeId, childPipelineEntity.get().getHarnessVersion(), ctx.getAccountIdentifier()))
+                  planNodeId, childPipelineEntity.get().getHarnessVersion()))
               .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
               .whenCondition(RunInfoUtils.getRunConditionForStage(stageNode.getWhen()))
               .facilitatorObtainment(
