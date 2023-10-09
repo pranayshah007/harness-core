@@ -136,7 +136,7 @@ allowedOrigins: ""
 appLogLevel: "INFO"
 image:
   registry: docker.io
-  repository: harness/ng-manager
+  repository: harness/ng-manager-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "80909"
