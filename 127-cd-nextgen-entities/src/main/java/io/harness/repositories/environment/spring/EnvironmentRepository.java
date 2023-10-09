@@ -17,11 +17,9 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 @HarnessRepo
 public interface EnvironmentRepository
     extends PagingAndSortingRepository<Environment, String>, EnvironmentRepositoryCustom {
-  Optional<Environment> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
-      String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier, boolean notDeleted);
-
-  void deleteByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
-      String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier);
+  Optional<Environment> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(String accountId,
+      String orgIdentifier, String projectIdentifier, String environmentIdentifier, boolean notDeleted,
+      boolean loadFromCache, boolean loadFromFallbackBranch, boolean getMetadataOnly);
 
   Optional<Environment> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
       String accountId, String orgIdentifier, String projectIdentifier, String envId);

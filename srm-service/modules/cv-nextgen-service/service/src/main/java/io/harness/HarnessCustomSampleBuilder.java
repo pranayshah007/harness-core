@@ -19,10 +19,12 @@ public class HarnessCustomSampleBuilder implements SampleBuilder {
   public Collector.MetricFamilySamples.Sample createSample(String dropwizardName, String nameSuffix,
       List<String> additionalLabelNames, List<String> additionalLabelValues, double value) {
     String dropwizardNameWithPrefix = CVNG_METRICS_PREFIX + dropwizardName;
-    additionalLabelNames.addAll(CVNGPrometheusExporterUtils.contextLabels.keySet());
-    additionalLabelValues.addAll(CVNGPrometheusExporterUtils.contextLabels.values());
+    List<String> allLabelNames = new ArrayList<>(additionalLabelNames);
+    List<String> allLabelValues = new ArrayList<>(additionalLabelValues);
+    allLabelNames.addAll(CVNGPrometheusExporterUtils.contextLabels.keySet());
+    allLabelValues.addAll(CVNGPrometheusExporterUtils.contextLabels.values());
     final String suffix = nameSuffix == null ? "" : nameSuffix;
-    return new Collector.MetricFamilySamples.Sample(Collector.sanitizeMetricName(dropwizardNameWithPrefix + suffix),
-        new ArrayList<>(additionalLabelNames), new ArrayList<>(additionalLabelValues), value);
+    return new Collector.MetricFamilySamples.Sample(
+        Collector.sanitizeMetricName(dropwizardNameWithPrefix + suffix), allLabelNames, allLabelValues, value);
   }
 }

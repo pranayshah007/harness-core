@@ -14,10 +14,41 @@ rspec test
 package ruby
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
+// WriteHelperFile writes the rspec helper file needed to attach agent.
+// If no rspec helper file fond in this pattern or any error happens,
+// will print a message ask for manual writeand continue
+func WriteHelperFile(repoPath string) error {
+	pattern := "**/*spec_helper*.rb"
+
+	matches, err := filepath.Glob(pattern)
+	if err != nil {
+		return err
+	}
+	if len(matches) == 0 {
+		return errors.New("cannot find rspec helper file. Please make change manually to enable TI")
+	}
+
+	f, err := os.OpenFile(findRootMostPath(matches), os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	scriptPath := filepath.Join(repoPath, "test_intelligence.rb")
+	_, err = f.WriteString(fmt.Sprintf("\nrequire '%s'", scriptPath))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// WriteGemFile writes the Ruby Gem file needed to attach agent.
+// If no Gemfile found we will creat the Gemfile
 func WriteGemFile(repoPath string) error {
 	f, err := os.OpenFile("Gemfile", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -29,4 +60,15 @@ func WriteGemFile(repoPath string) error {
 		return err
 	}
 	return nil
+}
+
+// findRootMostPath helper funtion to find shortest file path
+func findRootMostPath(paths []string) string {
+	rootmost := paths[0]
+	for _, path := range paths[1:] {
+		if len(path) < len(rootmost) {
+			rootmost = path
+		}
+	}
+	return rootmost
 }

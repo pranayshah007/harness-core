@@ -6,11 +6,13 @@
  */
 
 package io.harness.ngmigration;
-
 import static io.harness.authorization.AuthorizationServiceHeader.MIGRATOR;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.environment.EnvironmentResourceClientModule;
 import io.harness.infrastructure.InfrastructureResourceClientModule;
 import io.harness.pipeline.remote.PipelineRemoteClientModule;
@@ -25,6 +27,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class MigratorModule extends AbstractModule {

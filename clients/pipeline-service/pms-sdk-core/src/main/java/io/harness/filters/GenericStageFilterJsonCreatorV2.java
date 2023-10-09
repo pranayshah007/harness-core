@@ -112,7 +112,7 @@ public abstract class GenericStageFilterJsonCreatorV2<T extends AbstractStageNod
     return visitor.getEntityReferenceSet();
   }
 
-  private Set<EntityDetailProtoDTO> extractSecretRefs(FilterCreationContext context) {
+  protected Set<EntityDetailProtoDTO> extractSecretRefs(FilterCreationContext context) {
     String accountId = context.getSetupMetadata().getAccountId();
     String orgId = context.getSetupMetadata().getOrgId();
     String projectId = context.getSetupMetadata().getProjectId();

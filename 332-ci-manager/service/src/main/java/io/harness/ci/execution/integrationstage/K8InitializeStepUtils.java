@@ -312,6 +312,7 @@ public class K8InitializeStepUtils {
       case ECR:
       case ACR:
       case GCR:
+      case GAR:
       case SAVE_CACHE_S3:
       case RESTORE_CACHE_S3:
       case RESTORE_CACHE_GCS:
@@ -356,6 +357,7 @@ public class K8InitializeStepUtils {
       case DOCKER:
       case ECR:
       case ACR:
+      case GAR:
       case GCR:
         throw new CIStageExecutionException(format("%s step not allowed in windows kubernetes builds", stepType));
       default:
@@ -1056,6 +1058,7 @@ public class K8InitializeStepUtils {
         return ((RunTestsStepInfo) ciStepInfo).getResources();
       case GCR:
       case ECR:
+      case GAR:
       case ACR:
       case DOCKER:
       case UPLOAD_ARTIFACTORY:
@@ -1269,6 +1272,7 @@ public class K8InitializeStepUtils {
       case ECR:
       case ACR:
       case GCR:
+      case GAR:
       case SAVE_CACHE_S3:
       case RESTORE_CACHE_S3:
       case RESTORE_CACHE_GCS:

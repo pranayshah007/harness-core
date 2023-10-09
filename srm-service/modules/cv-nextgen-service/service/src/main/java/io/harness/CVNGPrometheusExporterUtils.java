@@ -13,13 +13,13 @@ import io.prometheus.client.dropwizard.DropwizardExports;
 import io.prometheus.client.dropwizard.samplebuilder.CustomMappingSampleBuilder;
 import io.prometheus.client.dropwizard.samplebuilder.MapperConfig;
 import io.prometheus.client.dropwizard.samplebuilder.SampleBuilder;
+import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import lombok.experimental.UtilityClass;
-import org.apache.commons.lang3.StringUtils;
 
 @UtilityClass
 public class CVNGPrometheusExporterUtils {
@@ -33,6 +33,9 @@ public class CVNGPrometheusExporterUtils {
   private static final String RESOURCE_LABEL = "resource";
   private static final String METHOD_LABEL = "method";
   private static final String STATUS_CODE_LABEL = "statusCode";
+  public static final String MUTABLE_SERVLET_CONTEXT_HANDLER = "io.dropwizard.jetty.MutableServletContextHandler";
+
+  private static final String METRIC_NAME_FOR_RESOURCES = "io.harness.cvng.resources";
 
   static {
     if (StringUtils.isNotEmpty(NAMESPACE_VALUE)) {
@@ -48,16 +51,16 @@ public class CVNGPrometheusExporterUtils {
 
   public static void registerPrometheusExporter(
       String modulePackagePath, String resourceName, MetricRegistry metricRegistry) {
-    MapperConfig mapperConfig = getMapperConfig(modulePackagePath, ".*.*", "");
-    MapperConfig mapperConfigForRequest =
-        getMapperConfig(modulePackagePath, ".*.*.request.filtering", ".request.filtering");
-    MapperConfig mapperConfigForResponse =
-        getMapperConfig(modulePackagePath, ".*.*.response.filtering", ".response.filtering");
-    MapperConfig mapperConfigForTotal = getMapperConfig(modulePackagePath, ".*.*.total", ".total");
-    MapperConfig mapperConfigForExceptions = getMapperConfig(modulePackagePath, ".*.*.exceptions", ".exceptions");
-    List<MapperConfig> mapperConfigList = new ArrayList<>(Arrays.asList(mapperConfigForRequest, mapperConfigForResponse,
-        mapperConfigForTotal, mapperConfigForExceptions, mapperConfig));
-    mapperConfigList.addAll(getMapperConfigForStatusCode(modulePackagePath));
+    Map<String, String> metricFilterPathNaming = new HashMap<>();
+    metricFilterPathNaming.put(".*.*.request.filtering", ".request.filtering");
+    metricFilterPathNaming.put(".*.*.response.filtering", ".response.filtering");
+    metricFilterPathNaming.put(".*.*.total", ".total");
+    metricFilterPathNaming.put(".*.*.exceptions", ".exceptions");
+    metricFilterPathNaming.put(".*.*", "");
+    List<MapperConfig> mapperConfigList = new ArrayList<>(getMapperConfigForStatusCode(modulePackagePath));
+    for (Map.Entry<String, String> entry : metricFilterPathNaming.entrySet()) {
+      mapperConfigList.add(getMapperConfigForResource(modulePackagePath, entry.getKey(), entry.getValue()));
+    }
     SampleBuilder sampleBuilder = new CustomMappingSampleBuilder(mapperConfigList);
     new DropwizardExports(
         metricRegistry, MetricFilter.startsWith(modulePackagePath + "." + resourceName), sampleBuilder)
@@ -67,12 +70,33 @@ public class CVNGPrometheusExporterUtils {
   public static void registerJVMMetrics(MetricRegistry metricRegistry) {
     new DropwizardExports(metricRegistry, MetricFilter.startsWith("jvm"), new HarnessCustomSampleBuilder()).register();
   }
-  private static MapperConfig getMapperConfig(String modulePackagePath, String metricFilterPath, String metricName) {
+
+  public static void registerWebServerMetrics(MetricRegistry metricRegistry) {
+    List<MapperConfig> mapperConfigList = new ArrayList<>();
+    List<String> methodList = new ArrayList<>(
+        List.of("put", "get", "post", "delete", "head", "other", "options", "trace", "move", "connect"));
+    for (String method : methodList) {
+      MapperConfig mapperConfig = new MapperConfig();
+      mapperConfig.setMatch(MUTABLE_SERVLET_CONTEXT_HANDLER + "." + method + "-requests");
+      mapperConfig.setName("io.harness.cvng." + MUTABLE_SERVLET_CONTEXT_HANDLER + "."
+          + "requests");
+      mapperConfigList.add(mapperConfig);
+      Map<String, String> labels = new HashMap<>();
+      mapperConfig.setLabels(labels);
+      addCommonLabels(labels);
+      labels.put(METHOD_LABEL, method);
+    }
+    SampleBuilder sampleBuilder = new CustomMappingSampleBuilder(mapperConfigList);
+    new DropwizardExports(metricRegistry, MetricFilter.startsWith(MUTABLE_SERVLET_CONTEXT_HANDLER), sampleBuilder)
+        .register();
+  }
+  private static MapperConfig getMapperConfigForResource(
+      String modulePackagePath, String metricFilterPath, String metricName) {
     MapperConfig requestConfig = new MapperConfig();
     // The match field in MapperConfig is a simplified glob expression that only allows * wildcard.
     requestConfig.setMatch(modulePackagePath + metricFilterPath);
     // The new Sample's template name.
-    requestConfig.setName(modulePackagePath + metricName);
+    requestConfig.setName(METRIC_NAME_FOR_RESOURCES + metricName);
     Map<String, String> labels = getRESTMetricLabels();
     requestConfig.setLabels(labels);
     return requestConfig;
@@ -94,13 +118,12 @@ public class CVNGPrometheusExporterUtils {
       MapperConfig requestConfig = new MapperConfig();
       requestConfig.setMatch(modulePackagePath + ".*.*." + code + "-responses");
       // The new Sample's template name.
-      requestConfig.setName(modulePackagePath + ".responses");
+      requestConfig.setName(METRIC_NAME_FOR_RESOURCES + ".responses");
       Map<String, String> labels = getRESTMetricLabels();
       labels.put(STATUS_CODE_LABEL, code);
       requestConfig.setLabels(labels);
       mapperConfigList.add(requestConfig);
     }
-
     return mapperConfigList;
   }
 

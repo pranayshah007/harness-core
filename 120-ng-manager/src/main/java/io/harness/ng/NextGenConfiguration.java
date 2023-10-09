@@ -37,6 +37,7 @@ import io.harness.hsqs.client.model.QueueServiceClientConfig;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.mongo.MongoConfig;
+import io.harness.ng.core.service.ServiceGitXThreadConfiguration;
 import io.harness.ng.support.client.CannyConfig;
 import io.harness.notification.NotificationClientConfiguration;
 import io.harness.opaclient.OpaServiceConfiguration;
@@ -183,6 +184,8 @@ public class NextGenConfiguration extends Configuration {
   private static final String TERRAGRUNT_RESOURCE_PACKAGE = "io.harness.ng.core.terragrunt.resources";
   private static final String GITX_WEBHOOKS_PACKAGE = "io.harness.ng.gitxwebhook";
 
+  private static final String OIDC_CORE_RESOURCE = "io.harness.ng.core.oidc";
+
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
 
   @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
@@ -291,6 +294,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("awsServiceEndpointUrls") private CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig;
   private boolean useQueueServiceForWebhookTriggers;
   @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;
+  @JsonProperty("serviceGitXThreadConfig") @ConfigSecret private ServiceGitXThreadConfiguration serviceGitXThreadConfig;
 
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database
   //  @JsonProperty("secondary-mongo") MongoConfig secondaryMongoConfig;
@@ -354,7 +358,7 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.FAVORITES_PACKAGE, NextGenConfiguration.SERVICE_DISCOVERY_PACKAGE,
                 NextGenConfiguration.SUPPORT_PACKAGE, NextGenConfiguration.EULA_PACKAGE,
                 NextGenConfiguration.TERRAGRUNT_RESOURCE_PACKAGE, NextGenConfiguration.GITX_WEBHOOKS_PACKAGE,
-                NextGenConfiguration.K8S_RELEASE_DETAILS_PACKAGE))
+                NextGenConfiguration.K8S_RELEASE_DETAILS_PACKAGE, NextGenConfiguration.OIDC_CORE_RESOURCE))
         .collect(Collectors.toSet());
   }
 

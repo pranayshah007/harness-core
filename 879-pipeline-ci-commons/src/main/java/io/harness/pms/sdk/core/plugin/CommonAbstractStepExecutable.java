@@ -86,6 +86,7 @@ import io.harness.product.ci.engine.proto.PluginStep;
 import io.harness.product.ci.engine.proto.RunStep;
 import io.harness.product.ci.engine.proto.RunTestsStep;
 import io.harness.product.ci.engine.proto.UnitStep;
+import io.harness.repositories.CILogKeyRepository;
 import io.harness.repositories.CIStageOutputRepository;
 import io.harness.steps.StepUtils;
 import io.harness.tasks.ResponseData;
@@ -129,12 +130,16 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
 
   @Inject protected CIFeatureFlagService featureFlagService;
   @Inject private CiStepParametersUtils ciStepParametersUtils;
+  @Inject private CILogKeyRepository ciLogKeyRepository;
 
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     String runtimeId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     String logKey = getLogKey(ambiance);
+    // Check and add log key to execution ID if not exists
+    ciLogKeyRepository.appendLogKeys(ambiance.getStageExecutionId(), List.of(logKey));
+
     String stepGroupIdentifier = AmbianceUtils.obtainStepGroupIdentifier(ambiance);
     String stepIdentifier = AmbianceUtils.obtainStepIdentifier(ambiance);
     String completeStepIdentifier = getCompleteStepIdentifier(ambiance, stepIdentifier);

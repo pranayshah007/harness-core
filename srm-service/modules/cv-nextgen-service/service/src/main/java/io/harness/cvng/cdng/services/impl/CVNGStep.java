@@ -475,7 +475,7 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
           break;
         case ABORTED:
           status = Status.FAILED;
-          errorCode = ErrorCode.ABORT_ALL_ALREADY;
+          errorCode = ErrorCode.ABORT_ALL_ALREADY_NG;
           failureType = FailureType.USER_MARKED_FAILURE;
           failureMessage = "Verification could not complete due to it being aborted";
           break;

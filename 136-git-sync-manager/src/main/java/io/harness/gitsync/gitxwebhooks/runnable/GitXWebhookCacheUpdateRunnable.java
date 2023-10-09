@@ -55,10 +55,10 @@ public class GitXWebhookCacheUpdateRunnable implements Runnable {
           gitXCacheUpdateRunnableRequestDTO.getAccountIdentifier(),
           gitXCacheUpdateRunnableRequestDTO.getEventIdentifier()));
     } catch (Exception exception) {
-      gitXWebhookEventService.updateEvent(gitXCacheUpdateRunnableRequestDTO.getAccountIdentifier(), eventIdentifier,
-          GitXEventUpdateRequestDTO.builder().gitXWebhookEventStatus(GitXWebhookEventStatus.FAILED).build());
       log.error("Faced exception while submitting background task for updating the git cache for event: {} ",
           eventIdentifier, exception);
+      gitXWebhookEventService.updateEvent(gitXCacheUpdateRunnableRequestDTO.getAccountIdentifier(), eventIdentifier,
+          GitXEventUpdateRequestDTO.builder().gitXWebhookEventStatus(GitXWebhookEventStatus.FAILED).build());
     }
   }
 

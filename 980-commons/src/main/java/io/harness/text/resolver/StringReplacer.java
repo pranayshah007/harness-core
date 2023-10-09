@@ -274,7 +274,7 @@ public class StringReplacer {
   }
 
   private boolean skipNonCriticalCharacters(char c) {
-    return c == ' ' || c == '(' || c == ')' || c == ';';
+    return c == ' ' || c == '(' || c == ')' || c == ';' || c == '\n';
   }
 
   private static boolean isMatch(char ch, StringBuffer buf, int bufStart, int bufEnd) {

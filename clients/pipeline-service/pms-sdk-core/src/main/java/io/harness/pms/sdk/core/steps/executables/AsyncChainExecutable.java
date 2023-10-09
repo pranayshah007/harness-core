@@ -13,6 +13,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncChainExecutableResponse;
 import io.harness.pms.sdk.core.steps.Step;
+import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -45,10 +46,10 @@ public interface AsyncChainExecutable<T extends StepParameters> extends Step<T> 
   AsyncChainExecutableResponse startChainLink(Ambiance ambiance, T stepParameters, StepInputPackage inputPackage);
 
   AsyncChainExecutableResponse executeNextLink(Ambiance ambiance, T stepParameters, StepInputPackage inputPackage,
-      ThrowingSupplier<ResponseData> responseSupplier) throws Exception;
+      PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier) throws Exception;
 
-  StepResponse finalizeExecution(
-      Ambiance ambiance, T stepParameters, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception;
+  StepResponse finalizeExecution(Ambiance ambiance, T stepParameters, PassThroughData passThroughData,
+      ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception;
 
   default void handleAbort(
       Ambiance ambiance, T stepParameters, AsyncChainExecutableResponse executableResponse, boolean userMarked) {

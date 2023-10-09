@@ -35,7 +35,7 @@ const (
 )
 
 func RefreshToken(ctx context.Context, request *pb.RefreshTokenRequest, log *zap.SugaredLogger) (out *pb.RefreshTokenResponse, err error) {
-	log.Infow("RefreshToken starting:", request.Endpoint, "ClientID:", request.ClientID)
+	log.Infow("RefreshToken starting:", "Endpoint:", request.Endpoint, "ClientID:", request.ClientID)
 
 	before := &scm.Token{
 		Refresh: request.RefreshToken,
@@ -51,12 +51,12 @@ func RefreshToken(ctx context.Context, request *pb.RefreshTokenRequest, log *zap
 	after, err := r.Token(ctx)
 
 	if err != nil {
-		log.Errorw("RefreshToken failure:", request.Endpoint, "Error:", err)
+		log.Errorw("RefreshToken failure:", "Endpoint", request.Endpoint, "Error:", err)
 		return nil, err
 	}
 
 	if after == nil {
-		log.Errorw("RefreshToken failure result:", request.Endpoint)
+		log.Errorw("RefreshToken failure result:", "Endpoint", request.Endpoint)
 		return nil, err
 	}
 
@@ -594,7 +594,7 @@ func CompareCommits(ctx context.Context, request *pb.CompareCommitsRequest, log 
 
 func GetAuthenticatedUser(ctx context.Context, request *pb.GetAuthenticatedUserRequest, log *zap.SugaredLogger) (out *pb.GetAuthenticatedUserResponse, err error) {
 	start := time.Now()
-	log.Infow("GetAuthenticatedUser starting")
+	log.Infow("GetAuthenticatedUser starting", "provider", request.GetProvider())
 
 	client, err := gitclient.GetGitClient(*request.GetProvider(), log)
 	if err != nil {
@@ -627,7 +627,7 @@ func GetAuthenticatedUser(ctx context.Context, request *pb.GetAuthenticatedUserR
 
 func GetUserRepos(ctx context.Context, request *pb.GetUserReposRequest, log *zap.SugaredLogger) (out *pb.GetUserReposResponse, err error) {
 	start := time.Now()
-	log.Infow("GetUserRepos starting")
+	log.Infow("GetUserRepos starting", "provider", request.GetProvider())
 
 	client, err := gitclient.GetGitClient(*request.GetProvider(), log)
 

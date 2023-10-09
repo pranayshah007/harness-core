@@ -664,11 +664,17 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testFetchSecretV2() throws IOException {
-    Map<String, Object> data = Map.of("key-1", "value-1", "key-2", Map.of("key-21", "value-21"), "key-3",
+    Map<String, Object> data = Map.of("key.with.dot", "value-for-key-with-dot");
+
+    EncryptedRecord encryptedRecord = setupJsonResponseMockingV2(data, "key.with.dot");
+    char[] value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo("value-for-key-with-dot");
+
+    data = Map.of("key-1", "value-1", "key-2", Map.of("key-21", "value-21"), "key-3",
         Map.of("key-31", Map.of("key-311", "value-311")));
 
-    EncryptedRecord encryptedRecord = setupJsonResponseMockingV2(data, "key-1");
-    char[] value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    encryptedRecord = setupJsonResponseMockingV2(data, "key-1");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
     assertThat(valueOf(value)).isEqualTo("value-1");
 
     encryptedRecord = setupJsonResponseMockingV2(data, "key-2");

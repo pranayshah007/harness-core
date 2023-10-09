@@ -10,8 +10,11 @@ package io.harness.cdng.provision.terraform;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.provision.terraform.TerraformExecutionDataParameters.TerraformExecutionDataParametersBuilder;
 import io.harness.data.structure.EmptyPredicate;
@@ -35,6 +38,8 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Data
 @NoArgsConstructor
 @OwnedBy(HarnessTeam.CDP)
@@ -51,6 +56,8 @@ public class TerraformExecutionData {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<String>> targets;
   List<NGVariable> environmentVariables;
+
+  @JsonProperty("providerCredential") TerraformProviderCredential providerCredential;
 
   public TerraformExecutionDataParameters toStepParameters() {
     validateParams();
@@ -77,6 +84,7 @@ public class TerraformExecutionData {
     }
     builder.varFiles(varFiles);
     builder.isTerraformCloudCli(ParameterField.createValueField(false));
+    builder.providerCredential(providerCredential);
     return builder.build();
   }
 

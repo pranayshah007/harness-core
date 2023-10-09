@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -23,6 +24,7 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters.ServiceNowTaskNGParametersBuilder;
+import io.harness.exception.InvalidRequestException;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
@@ -115,6 +117,28 @@ public class ServiceNowUpdateStepTest extends CategoryTest {
   @Test
   @Owner(developers = RAFAEL)
   @Category(UnitTests.class)
+  public void testObtainTaskAfterRbacMultipleTaskInvalid() {
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .putSetupAbstractions("accountId", accountId)
+                            .putSetupAbstractions("orgIdentifier", orgIdentifier)
+                            .putSetupAbstractions("projectIdentifier", projectIdentifier)
+                            .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
+                            .build();
+    doReturn(logStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(any());
+    StepElementParameters parameters = getStepMultipleTaskElementParametersInvalid();
+    parameters.setTimeout(ParameterField.createValueField(CONNECTOR));
+    TaskRequest taskRequest = TaskRequest.newBuilder().build();
+    when(serviceNowStepHelperService.prepareTaskRequest(any(ServiceNowTaskNGParametersBuilder.class),
+             any(Ambiance.class), anyString(), anyString(), anyString(), eq(TASK_SELECTORS)))
+        .thenReturn(taskRequest);
+
+    assertThatThrownBy(() -> serviceNowUpdateStep.obtainTaskAfterRbac(ambiance, parameters, null))
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
   public void testObtainTaskAfterRbacMultipleTask() {
     Ambiance ambiance = Ambiance.newBuilder()
                             .putSetupAbstractions("accountId", accountId)
@@ -185,6 +209,22 @@ public class ServiceNowUpdateStepTest extends CategoryTest {
         .build();
   }
 
+  private StepElementParameters getStepMultipleTaskElementParametersInvalid() {
+    return StepElementParameters.builder()
+        .type("SERVICENOW_UPDATE")
+        .spec(
+            ServiceNowUpdateSpecParameters.builder()
+                .connectorRef(ParameterField.<String>builder().value(CONNECTOR).build())
+                .templateName(ParameterField.<String>builder().value(TEMPLATE_NAME).build())
+                .useServiceNowTemplate(ParameterField.createValueField(true))
+                .ticketType(ParameterField.createValueField("invalid"))
+                .updateMultiple(
+                    UpdateMultipleTaskNode.builder().type(UpdateMultipleSpecType.CHANGE_TASK).spec(changeTask).build())
+                .delegateSelectors(DELEGATE_SELECTORS_PARAMETER)
+                .build())
+        .build();
+  }
+
   private StepElementParameters getStepMultipleTaskElementParameters() {
     return StepElementParameters.builder()
         .type("SERVICENOW_UPDATE")
@@ -193,6 +233,7 @@ public class ServiceNowUpdateStepTest extends CategoryTest {
                 .connectorRef(ParameterField.<String>builder().value(CONNECTOR).build())
                 .templateName(ParameterField.<String>builder().value(TEMPLATE_NAME).build())
                 .useServiceNowTemplate(ParameterField.createValueField(true))
+                .ticketType(ParameterField.createValueField("change_task"))
                 .updateMultiple(
                     UpdateMultipleTaskNode.builder().type(UpdateMultipleSpecType.CHANGE_TASK).spec(changeTask).build())
                 .delegateSelectors(DELEGATE_SELECTORS_PARAMETER)

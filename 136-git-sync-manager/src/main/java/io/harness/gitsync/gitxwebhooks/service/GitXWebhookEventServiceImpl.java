@@ -205,8 +205,13 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
         .payload(webhookDTO.getJsonPayload())
         .afterCommitId(webhookDTO.getParsedResponse().getPush().getAfter())
         .beforeCommitId(webhookDTO.getParsedResponse().getPush().getBefore())
-        .branch(webhookDTO.getParsedResponse().getPush().getRepo().getBranch())
+        .branch(getBranch(webhookDTO))
         .build();
+  }
+
+  private String getBranch(WebhookDTO webhookDTO) {
+    String ref = webhookDTO.getParsedResponse().getPush().getRef();
+    return ref.replaceFirst("^refs/heads/", "");
   }
 
   private Author buildAuthor(WebhookDTO webhookDTO) {

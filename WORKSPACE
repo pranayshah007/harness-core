@@ -3946,6 +3946,13 @@ go_repository(
     version = "v9.0.3",
 )
 
+go_repository(
+    name = "com_google_cloud_go_logging",
+    importpath = "cloud.google.com/go/logging",
+    sum = "h1:CJYxlNNNNAMkHp9em/YEXcfJg+rPDg7YfwoRpMU+t5I=",
+    version = "v1.7.0",
+)
+
 rust_repositories(
     edition = "2018",
     version = "1.49.0",
@@ -5187,7 +5194,7 @@ plain_artifacts = [
     "org.codehaus.janino:commons-compiler:3.0.6",
     "org.codehaus.janino:janino:3.0.6",
     "org.codehaus.mojo:animal-sniffer-annotations:1.18",
-    "org.codehaus.plexus:plexus-utils:3.0.20",
+    "org.codehaus.plexus:plexus-utils:4.0.0",
     "org.codehaus.woodstox:stax2-api:4.2",
     "org.conscrypt:conscrypt-openjdk-uber:2.5.1",
     "org.coursera:metrics-datadog:1.1.13",

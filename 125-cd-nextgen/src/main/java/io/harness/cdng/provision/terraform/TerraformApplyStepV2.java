@@ -298,7 +298,8 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
         .useOptimizedTfPlan(true)
         .isTerraformCloudCli(isTerraformCloudCli)
         .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
-        .skipTerraformRefresh(skipRefreshCommand);
+        .skipTerraformRefresh(skipRefreshCommand)
+        .providerCredentialInfo(helper.getProviderCredentialInfo(spec.getProviderCredential(), ambiance));
     return builder;
   }
 

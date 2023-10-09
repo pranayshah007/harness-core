@@ -44,6 +44,7 @@ import io.harness.yaml.utils.JsonPipelineUtils;
 import software.wings.beans.GraphNode;
 import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.PhaseStep;
+import software.wings.beans.Variable;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase;
 import software.wings.ngmigration.CgEntityId;
@@ -177,6 +178,10 @@ public abstract class StepMapper {
       WorkflowPhase phase, GraphNode graphNode, NGYamlFile templateFile, JsonNode templateInputs) {}
 
   public abstract boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2);
+
+  public List<Variable> getCustomVariables(GraphNode stepYaml) {
+    return new ArrayList<>();
+  }
 
   public ParameterField<Timeout> getTimeout(GraphNode stepYaml) {
     Map<String, Object> properties = getProperties(stepYaml);

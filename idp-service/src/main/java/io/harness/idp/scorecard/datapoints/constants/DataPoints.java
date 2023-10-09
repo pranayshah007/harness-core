@@ -15,7 +15,7 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(HarnessTeam.IDP)
 public class DataPoints {
-  // Github, Bitbucket
+  // Github, Bitbucket, Gitlab
   public static final String PULL_REQUEST_MEAN_TIME_TO_MERGE = "meanTimeToMerge";
   public static final String IS_BRANCH_PROTECTED = "isBranchProtected";
   public static final String IS_FILE_EXISTS = "isFileExists";

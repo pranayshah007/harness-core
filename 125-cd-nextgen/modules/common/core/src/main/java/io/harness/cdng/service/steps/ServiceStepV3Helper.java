@@ -20,9 +20,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.common.VariablesSweepingOutput;
+import io.harness.cdng.configfile.ConfigFilesOutcome;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
+import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
@@ -44,7 +47,10 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.merger.helpers.MergeHelper;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
@@ -81,6 +87,7 @@ public class ServiceStepV3Helper {
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
   @Inject private EnvironmentEntityYamlSchemaHelper environmentEntityYamlSchemaHelper;
   @Inject private CDExpressionResolver expressionResolver;
+  @Inject private ServiceStepOverrideHelper serviceStepOverrideHelper;
   @Inject private ServiceStepsHelper serviceStepsHelper;
 
   public void processServiceAndEnvironmentVariables(Ambiance ambiance, ServicePartResponse servicePartResponse,
@@ -371,6 +378,30 @@ public class ServiceStepV3Helper {
       }
     }
     serviceStepsHelper.checkForAccessOrThrow(ambiance, secretNGVariables);
+  }
+
+  public void addManifestsOutputToStepOutcome(Ambiance ambiance, List<StepResponse.StepOutcome> stepOutcomes) {
+    final OptionalSweepingOutput manifestsOutput = sweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.MANIFESTS));
+    if (manifestsOutput.isFound()) {
+      stepOutcomes.add(StepResponse.StepOutcome.builder()
+                           .name(OutcomeExpressionConstants.MANIFESTS)
+                           .outcome((ManifestsOutcome) manifestsOutput.getOutput())
+                           .group(StepCategory.STAGE.name())
+                           .build());
+    }
+  }
+
+  public void addConfigFilesOutputToStepOutcome(Ambiance ambiance, List<StepResponse.StepOutcome> stepOutcomes) {
+    final OptionalSweepingOutput configFilesOutput = sweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.CONFIG_FILES));
+    if (configFilesOutput.isFound()) {
+      stepOutcomes.add(StepResponse.StepOutcome.builder()
+                           .name(OutcomeExpressionConstants.CONFIG_FILES)
+                           .outcome((ConfigFilesOutcome) configFilesOutput.getOutput())
+                           .group(StepCategory.STAGE.name())
+                           .build());
+    }
   }
 
   @Data

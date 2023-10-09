@@ -10,9 +10,9 @@ package io.harness.ng.overview.service;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.dashboards.DeploymentCount;
+import io.harness.dashboards.LandingPageDeploymentCount;
 
 @OwnedBy(PIPELINE)
 public interface CDLandingPageService {
-  DeploymentCount getDeploymentCount();
+  LandingPageDeploymentCount getDeploymentCount();
 }

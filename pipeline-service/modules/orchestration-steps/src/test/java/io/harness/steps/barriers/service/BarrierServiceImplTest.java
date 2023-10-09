@@ -30,6 +30,8 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
+import io.harness.plancreator.steps.barrier.BarrierStepInfo;
+import io.harness.plancreator.steps.barrier.BarrierStepNode;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.repositories.BarrierNodeRepository;
 import io.harness.rule.Owner;
@@ -925,6 +927,43 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
         .containsExactlyInAnyOrder(BarrierPositionType.STAGE);
   }
 
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+
+  public void testUpsertBarrierExecutionInstance() {
+    BarrierStepNode barrierField = new BarrierStepNode();
+    barrierField.setUuid("barrierStepId");
+    barrierField.setBarrierStepInfo(BarrierStepInfo.builder().identifier("barrierId").name("barrierName").build());
+
+    barrierService.upsertBarrierExecutionInstance(
+        barrierField, "executionId", "stepGroup", "stageId", "stepGroupId", "stepGroupId");
+    List<BarrierExecutionInstance> result =
+        barrierService.findByPosition("executionId", BarrierPositionType.STEP, "barrierStepId");
+    assertThat(result).isNotNull();
+    assertThat(result).isNotEmpty();
+    assertThat(result.size()).isEqualTo(1);
+    BarrierExecutionInstance barrierExecutionInstance = result.get(0);
+    assertThat(barrierExecutionInstance.getName()).isEqualTo("barrierName");
+    assertThat(barrierExecutionInstance.getIdentifier()).isEqualTo("barrierId");
+    assertThat(barrierExecutionInstance.getSetupInfo().getName()).isEqualTo("barrierName");
+    assertThat(barrierExecutionInstance.getSetupInfo().getIdentifier()).isEqualTo("barrierId");
+    assertThat(barrierExecutionInstance.getSetupInfo().getStages().size()).isEqualTo(1);
+    assertThat(barrierExecutionInstance.getSetupInfo()
+                   .getStages()
+                   .stream()
+                   .map(StageDetail::getIdentifier)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder("stageId");
+    assertThat(barrierExecutionInstance.getPositionInfo().getBarrierPositionList().size()).isEqualTo(1);
+    BarrierPosition barrierPosition = barrierExecutionInstance.getPositionInfo().getBarrierPositionList().get(0);
+    assertThat(barrierPosition.getStepSetupId()).isEqualTo("barrierStepId");
+    assertThat(barrierPosition.getStepGroupSetupId()).isEqualTo("stepGroupId");
+    assertThat(barrierPosition.getStageSetupId()).isEqualTo("stageId");
+    assertThat(barrierPosition.getStrategySetupId()).isEqualTo("stepGroupId");
+    assertThat(barrierPosition.getStrategyNodeType()).isEqualTo(BarrierPositionType.STEP_GROUP);
+  }
+
   private BarrierExecutionInstance obtainBarrierExecutionInstance() {
     String identifier = generateUuid();
     String planExecutionId = generateUuid();
@@ -939,12 +978,12 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
         .barrierState(STANDING)
         .positionInfo(BarrierPositionInfo.builder()
                           .planExecutionId(planExecutionId)
-                          .barrierPositionList(ImmutableList.of(BarrierPosition.builder()
-                                                                    .stageSetupId(stageSetupId)
-                                                                    .stageRuntimeId(stageExecutionId)
-                                                                    .stepSetupId(stepSetupId)
-                                                                    .stepRuntimeId(stepExecutionId)
-                                                                    .build()))
+                          .barrierPositionList(List.of(BarrierPosition.builder()
+                                                           .stageSetupId(stageSetupId)
+                                                           .stageRuntimeId(stageExecutionId)
+                                                           .stepSetupId(stepSetupId)
+                                                           .stepRuntimeId(stepExecutionId)
+                                                           .build()))
                           .build())
         .build();
   }

@@ -57,12 +57,12 @@ if [[ $DEPLOY_MODE == "KUBERNETES" ]]; then
   ALPN_BOOT_JAR_BASE_PATH=$JVM_URL_BASE_PATH/public/shared
 fi
 
-if [ "$JRE_VERSION" != "" ] && [ "$JRE_VERSION" != "11.0.19" ]; then
-  echo Unsupported JRE version $JRE_VERSION - using 11.0.19 instead
+if [ "$JRE_VERSION" != "" ] && [ "$JRE_VERSION" != "17.0.7" ]; then
+  echo Unsupported JRE version $JRE_VERSION - using 17.0.7 instead
 fi
 
-JRE_DIR=jdk-11.0.19+7-jre
-JVM_URL=$JVM_URL_BASE_PATH/jre/openjdk-11.0.19_7/OpenJDK11U-jre_x64_linux_hotspot_11.0.19_7.tar.gz
+JRE_DIR=jdk-17.0.7+7-jre
+JVM_URL=$JVM_URL_BASE_PATH/jre/openjdk-17.0.7+7/OpenJDK11U-jre_x64_linux_hotspot_17.0.7+7.tar.gz
 
 JRE_BINARY=$JRE_DIR/bin/java
 
@@ -234,7 +234,7 @@ export CAPSULE_CACHE_DIR="$DIR/.cache"
 
 if [[ $DEPLOY_MODE != "KUBERNETES" ]]; then
   echo "Starting delegate - version $REMOTE_DELEGATE_VERSION"
-  $JRE_BINARY $PROXY_SYS_PROPS -Xbootclasspath/p:alpn-boot-8.1.13.v20181017.jar $OVERRIDE_TMP_PROPS -DACCOUNT_ID="${accountId}" -DMANAGER_HOST_AND_PORT="${MANAGER_HOST_AND_PORT}" -Ddelegatesourcedir="$DIR" ${delegateXmx} -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true -DLANG=en_US.UTF-8 $JAVA_OPTS -jar delegate.jar config-delegate.yml watched $1
+  $JRE_BINARY $PROXY_SYS_PROPS -Xbootclasspath/p:alpn-boot-8.1.13.v20181017.jar $OVERRIDE_TMP_PROPS -DACCOUNT_ID="${accountId}" -DMANAGER_HOST_AND_PORT="${MANAGER_HOST_AND_PORT}" -Ddelegatesourcedir="$DIR" ${delegateXmx} -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 -Dcom.sun.jndi.ldap.object.disableEndpointIdentification=true -DLANG=en_US.UTF-8 --illegal-access=debug --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens java.base/java.time=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.base/java.lang.invoke=ALL-UNNAMED --add-opens java.base/java.math=ALL-UNNAMED --add-opens java.base/java.nio.file=ALL-UNNAMED --add-opens java.base/java.util.concurrent=ALL-UNNAMED --add-opens java.xml/com.sun.org.apache.xpath.internal=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-exports java.xml/com.sun.org.apache.xerces.internal.parsers=ALL-UNNAMED --add-exports java.base/sun.nio.ch=ALL-UNNAMED $JAVA_OPTS -jar delegate.jar config-delegate.yml watched $1
 fi
 
 sleep 3

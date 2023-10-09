@@ -197,37 +197,58 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     }
   }
 
-  String getDuplicateServiceExistsErrorMessage(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
+  String getDuplicateEnvironmentExistsErrorMessage(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String environmentIdentifier) {
     if (EmptyPredicate.isEmpty(orgIdentifier)) {
-      return String.format(DUP_KEY_EXP_FORMAT_STRING_FOR_ACCOUNT, serviceIdentifier, accountIdentifier);
+      return String.format(DUP_KEY_EXP_FORMAT_STRING_FOR_ACCOUNT, environmentIdentifier, accountIdentifier);
     } else if (EmptyPredicate.isEmpty(projectIdentifier)) {
-      return String.format(DUP_KEY_EXP_FORMAT_STRING_FOR_ORG, serviceIdentifier, orgIdentifier, accountIdentifier);
+      return String.format(DUP_KEY_EXP_FORMAT_STRING_FOR_ORG, environmentIdentifier, orgIdentifier, accountIdentifier);
     }
-    return String.format(
-        DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT, serviceIdentifier, projectIdentifier, orgIdentifier, accountIdentifier);
+    return String.format(DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT, environmentIdentifier, projectIdentifier, orgIdentifier,
+        accountIdentifier);
   }
 
   @Override
-  public Optional<Environment> get(
-      String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, boolean deleted) {
-    checkArgument(isNotEmpty(accountId), "accountId must be present");
-
-    return getEnvironmentByRef(accountId, orgIdentifier, projectIdentifier, environmentRef, deleted);
+  public Optional<Environment> get(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String environmentRef, boolean deleted) {
+    checkArgument(isNotEmpty(accountIdentifier), "accountId must be present");
+    // default behavior to not load from cache and fallback branch
+    return getEnvironmentByRef(
+        accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, deleted, false, false, false);
   }
 
-  private Optional<Environment> getEnvironmentByRef(
-      String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, boolean deleted) {
+  @Override
+  public Optional<Environment> get(String accountId, String orgIdentifier, String projectIdentifier,
+      String environmentRef, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+
+    return getEnvironmentByRef(accountId, orgIdentifier, projectIdentifier, environmentRef, deleted, loadFromCache,
+        loadFromFallbackBranch, false);
+  }
+
+  @Override
+  public Optional<Environment> getMetadata(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String environmentRef, boolean deleted) {
+    // includeMetadataOnly fetches the entity from db so source code params are not needed
+    return getEnvironmentByRef(
+        accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, deleted, false, false, true);
+  }
+
+  private Optional<Environment> getEnvironmentByRef(String accountId, String orgIdentifier, String projectIdentifier,
+      String environmentRef, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch,
+      boolean getMetadataOnly) {
     String[] envRefSplit = StringUtils.split(environmentRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
     if (envRefSplit == null || envRefSplit.length == 1) {
       return environmentRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
-          accountId, orgIdentifier, projectIdentifier, environmentRef, !deleted);
+          accountId, orgIdentifier, projectIdentifier, environmentRef, !deleted, loadFromCache, loadFromFallbackBranch,
+          getMetadataOnly);
     } else {
       IdentifierRef envIdentifierRef =
           IdentifierRefHelper.getIdentifierRef(environmentRef, accountId, orgIdentifier, projectIdentifier);
       return environmentRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
           envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
-          envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier(), !deleted);
+          envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier(), !deleted, loadFromCache,
+          loadFromFallbackBranch, getMetadataOnly);
     }
   }
 
@@ -238,17 +259,18 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     Criteria criteria = getEnvironmentEqualityCriteria(requestEnvironment, requestEnvironment.getDeleted());
     Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(requestEnvironment);
     Optional<Environment> environmentOptional =
-        get(requestEnvironment.getAccountId(), requestEnvironment.getOrgIdentifier(),
+        getMetadata(requestEnvironment.getAccountId(), requestEnvironment.getOrgIdentifier(),
             requestEnvironment.getProjectIdentifier(), requestEnvironment.getIdentifier(), false);
+
     if (environmentOptional.isPresent()) {
       Environment updatedResult =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
             Environment tempResult = environmentRepository.update(criteria, requestEnvironment);
             if (tempResult == null) {
-              throw new InvalidRequestException(String.format(
-                  "Environment [%s] under Project[%s], Organization [%s] couldn't be updated or doesn't exist.",
-                  requestEnvironment.getIdentifier(), requestEnvironment.getProjectIdentifier(),
-                  requestEnvironment.getOrgIdentifier()));
+              throw new InvalidRequestException(
+                  format("Environment [%s] under Project[%s], Organization [%s] couldn't be updated or doesn't exist.",
+                      requestEnvironment.getIdentifier(), requestEnvironment.getProjectIdentifier(),
+                      requestEnvironment.getOrgIdentifier()));
             }
             outboxService.save(EnvironmentUpdatedEvent.builder()
                                    .accountIdentifier(requestEnvironment.getAccountId())
@@ -268,9 +290,9 @@ public class EnvironmentServiceImpl implements EnvironmentService {
           EventsFrameworkMetadataConstants.UPDATE_ACTION);
       return updatedResult;
     } else {
-      throw new InvalidRequestException(String.format(
-          "Environment [%s] under Project[%s], Organization [%s] doesn't exist.", requestEnvironment.getIdentifier(),
-          requestEnvironment.getProjectIdentifier(), requestEnvironment.getOrgIdentifier()));
+      throw new InvalidRequestException(format("Environment [%s] under Project[%s], Organization [%s] doesn't exist.",
+          requestEnvironment.getIdentifier(), requestEnvironment.getProjectIdentifier(),
+          requestEnvironment.getOrgIdentifier()));
     }
   }
 
@@ -937,7 +959,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
             accountId, orgIdentifier, projectIdentifier, environmentIdentifier);
     if (environment.isPresent()) {
       throw new DuplicateFieldException(
-          getDuplicateServiceExistsErrorMessage(accountId, orgIdentifier, projectIdentifier, environmentIdentifier),
+          getDuplicateEnvironmentExistsErrorMessage(accountId, orgIdentifier, projectIdentifier, environmentIdentifier),
           USER_SRE);
     }
   }
