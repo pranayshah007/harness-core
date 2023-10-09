@@ -87,7 +87,7 @@ image:
   repository: harness/ng-dashboard-aggregator-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "80211"
+  tag: "80909"
   digest: ""
   imagePullSecrets: []
 

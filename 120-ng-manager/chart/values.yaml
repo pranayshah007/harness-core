@@ -136,10 +136,10 @@ allowedOrigins: ""
 appLogLevel: "INFO"
 image:
   registry: us.gcr.io
-  repository: platform-205701/ng-manager
+  repository: harness/ng-manager
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "1.16.25"
+  tag: "80909"
   digest: ""
   imagePullSecrets: []
 initContainer:
