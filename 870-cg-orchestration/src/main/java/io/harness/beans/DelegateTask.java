@@ -294,5 +294,6 @@ public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware
     public static final String data_timeout = data + "." + TaskDataKeys.timeout;
     public static final String data_async = data + "." + TaskDataKeys.async;
     public static final String delegateTaskFailIteration = "delegateTaskFailIteration";
+    public static final String delegateTaskRebroadcastIteration = "delegateTaskFailIteration";
   }
 }
