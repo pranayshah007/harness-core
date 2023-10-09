@@ -780,7 +780,7 @@ public class ServiceResourceV2 {
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
-    List<ServiceEntity> serviceEntities = serviceEntityService.getServices(
+    List<ServiceEntity> serviceEntities = serviceEntityService.getMetadata(
         accountId, orgIdentifier, projectIdentifier, servicesYamlMetadataApiInput.getServiceIdentifiers());
 
     List<ServiceV2YamlMetadata> serviceV2YamlMetadataList = new ArrayList<>();
@@ -815,8 +815,8 @@ public class ServiceResourceV2 {
     // scoped service refs
     List<String> serviceRefs = new ArrayList<>(serviceRefBranchMap.keySet());
 
-    List<ServiceEntity> serviceEntities =
-        serviceEntityService.getServices(accountId, orgIdentifier, projectIdentifier, serviceRefs);
+    List<ServiceEntity> serviceEntities = serviceEntityService.getServices(accountId, orgIdentifier, projectIdentifier,
+        serviceRefs, serviceRefBranchMap, GitXUtils.parseLoadFromCacheHeaderParam(loadFromCache));
 
     List<ServiceV2YamlMetadata> serviceV2YamlMetadataList = new ArrayList<>();
     serviceEntities.forEach(serviceEntity -> serviceV2YamlMetadataList.add(createServiceV2YamlMetadata(serviceEntity)));

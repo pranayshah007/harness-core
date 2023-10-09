@@ -215,6 +215,8 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
     StepType stepType = StepType.newBuilder().setStepCategory(StepCategory.STEP).build();
     String prevExecId = "prevExecId";
 
+    String planNodeIdentifier = "planNode";
+    String nodeExecutionIdentifier = "nodeExecution";
     PlanNode stageNode = PlanNode.builder()
                              .uuid("s1")
                              .stageFqn("pipeline.stages.s1")
@@ -224,6 +226,8 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
 
     PlanNode toBeReplaced = PlanNode.builder()
                                 .uuid("uuid1")
+                                .identifier(planNodeIdentifier)
+                                .name(planNodeIdentifier)
                                 .stageFqn("pipeline.stages.s1")
                                 .stepType(stepType)
                                 .advisorObtainmentsForExecutionMode(Collections.singletonMap(POST_EXECUTION_ROLLBACK,
@@ -234,6 +238,8 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
     NodeExecution nodeExecutionForUuid1 = NodeExecution.builder()
                                               .nodeId(toBeReplaced.getUuid())
                                               .stepType(stepType)
+                                              .name(nodeExecutionIdentifier)
+                                              .identifier(nodeExecutionIdentifier)
                                               .ambiance(Ambiance.newBuilder().setPlanId("planId1").build())
                                               .uuid("nodeExecForUuid1")
                                               .build();
@@ -249,7 +255,7 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
     doReturn(iterator)
         .when(nodeExecutionService)
         .fetchNodeExecutionsForGivenStageFQNs(prevExecId, Collections.singletonList("pipeline.stages.s1"),
-            NodeProjectionUtils.fieldsForIdentityNodeCreation);
+            NodeProjectionUtils.fieldsForRollbackIdentityNodeCreation);
 
     when(planService.fetchNode("planId1", toBeReplaced.getUuid())).thenReturn(toBeReplaced);
     Plan transformedPlan = rollbackModeExecutionHelper.transformPlanForRollbackMode(createdPlan, prevExecId,
@@ -266,6 +272,8 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
     assertThat(identityNode.getSkipGraphType()).isEqualTo(SkipType.SKIP_NODE);
     assertThat(identityNode.getAdviserObtainments()).hasSize(1);
     assertThat(identityNode.getUseAdviserObtainments()).isTrue();
+    assertThat(identityNode.getName()).isEqualTo(nodeExecutionIdentifier);
+    assertThat(identityNode.getIdentifier()).isEqualTo(nodeExecutionIdentifier);
   }
 
   @Test

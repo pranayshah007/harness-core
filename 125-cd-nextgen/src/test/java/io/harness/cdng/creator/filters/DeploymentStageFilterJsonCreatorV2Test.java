@@ -97,6 +97,7 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
                                                   .orgIdentifier("orgId")
                                                   .projectIdentifier("projectId")
                                                   .name("my-service")
+                                                  .type(KUBERNETES)
                                                   .yaml("service:\n"
                                                       + "    name: my-service\n"
                                                       + "    identifier: service-id\n"
@@ -143,7 +144,7 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
         .get("accountId", "orgId", "projectId", "service-id", false);
     doReturn(List.of(serviceEntity))
         .when(serviceEntityService)
-        .getServices("accountId", "orgId", "projectId", List.of("service-id"));
+        .getMetadata("accountId", "orgId", "projectId", List.of("service-id"));
     doReturn(Optional.of(envEntity)).when(environmentService).get("accountId", "orgId", "projectId", "env-id", false);
     doReturn(Optional.of(infra)).when(infraService).get("accountId", "orgId", "projectId", "env-id", "infra-id");
     doReturn(Lists.newArrayList(infra))

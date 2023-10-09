@@ -110,12 +110,11 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
              PlanCreatorServiceHelper.autoLogContextFromPlanCreationContextValue(planCreationContextValue)) {
       io.harness.pms.contracts.plan.PlanCreationResponse planCreationResponse;
       long start = System.currentTimeMillis();
-      PlanCreationContextValue metadata = request.getContextMap().get("metadata");
-      try (AutoLogContext ignore = PlanCreatorUtils.autoLogContextWithRandomRequestId(metadata.getMetadata(),
-               metadata.getAccountIdentifier(), metadata.getOrgIdentifier(), metadata.getProjectIdentifier())) {
+      PlanCreationContext ctx = PlanCreationContext.builder().globalContext(request.getContextMap()).build();
+      try (AutoLogContext ignore = PlanCreatorServiceHelper.autoLogContextWithRandomRequestId(ctx)) {
         try {
-          MergePlanCreationResponse finalResponse = createPlanForDependenciesRecursive(
-              request.getDeps(), request.getContextMap(), request.getServiceAffinityMap());
+          MergePlanCreationResponse finalResponse =
+              createPlanForDependenciesRecursive(request.getDeps(), ctx, request.getServiceAffinityMap());
           planCreationResponse = getPlanCreationResponseFromFinalResponse(finalResponse);
         } catch (Exception ex) {
           log.error(ExceptionUtils.getMessage(ex), ex);
@@ -137,8 +136,8 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
     }
   }
 
-  private MergePlanCreationResponse createPlanForDependenciesRecursive(Dependencies initialDependencies,
-      Map<String, PlanCreationContextValue> context, Map<String, String> serviceAffinityMap) {
+  private MergePlanCreationResponse createPlanForDependenciesRecursive(
+      Dependencies initialDependencies, PlanCreationContext ctx, Map<String, String> serviceAffinityMap) {
     // TODO: Add patch version before sending the response back
     MergePlanCreationResponse finalResponse =
         MergePlanCreationResponse.builder().serviceAffinityMap(serviceAffinityMap).build();
@@ -146,7 +145,6 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
       return finalResponse;
     }
 
-    PlanCreationContext ctx = PlanCreationContext.builder().globalContext(context).build();
     long start = System.currentTimeMillis();
     try (PmsGitSyncBranchContextGuard ignore =
              pmsGitSyncHelper.createGitSyncBranchContextGuardFromBytes(ctx.getGitSyncBranchContext(), true)) {

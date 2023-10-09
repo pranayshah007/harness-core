@@ -581,3 +581,10 @@ awsServiceEndpointUrls:
 
 
 streamPerServiceConfiguration: ${PIE_STREAM_PER_SERVICE:- false}
+
+serviceGitXThreadConfig:
+  threadPoolConfig:
+    corePoolSize: ${SERVICE_GITX_POOL_CORE_SIZE:-1}
+    maxPoolSize: ${SERVICE_GITX_POOL_MAX_SIZE:-10}
+    idleTime: ${SERVICE_GITX_POOL_IDLE_TIME:-30}
+    timeUnit: ${SERVICE_GITX_POOL_TIME_UNIT:-SECONDS}
