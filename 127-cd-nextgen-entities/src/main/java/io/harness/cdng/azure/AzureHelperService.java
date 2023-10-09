@@ -32,6 +32,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.utils.ConnectorUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.azure.AcrResponseDTO;
@@ -49,6 +50,7 @@ import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
+import io.harness.eventsframework.schemas.entity.EntityUsageDetailProto;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.InvalidArgumentsException;
@@ -66,9 +68,12 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.secretusage.SecretRuntimeUsageService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.walktree.visitor.entityreference.beans.VisitedSecretReference;
 
 import software.wings.beans.TaskType;
 
@@ -82,6 +87,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
@@ -98,6 +104,8 @@ public class AzureHelperService {
   @Inject private FileStoreService fileStoreService;
   @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private NGEncryptedDataService ngEncryptedDataService;
+  @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
+  @Inject private SecretRuntimeUsageService secretRuntimeUsageService;
   @Inject ExceptionManager exceptionManager;
   @VisibleForTesting static final int defaultTimeoutInSecs = 30;
 
@@ -253,11 +261,23 @@ public class AzureHelperService {
       StoreConfigWrapper storeConfigWrapper, Ambiance ambiance, String entityType) {
     cdExpressionResolver.updateStoreConfigExpressions(ambiance, storeConfigWrapper);
     StoreConfig storeConfig = storeConfigWrapper.getSpec();
+    publishSecretRuntimeUsage(ambiance, storeConfig);
     String storeKind = storeConfig.getKind();
     if (HARNESS_STORE_TYPE.equals(storeKind)) {
       validateSettingsFileRefs((HarnessStore) storeConfig, ambiance, entityType);
     } else {
       validateSettingsConnectorByRef(storeConfig, ambiance, entityType);
+    }
+  }
+
+  private void publishSecretRuntimeUsage(Ambiance ambiance, StoreConfig storeConfig) {
+    Set<VisitedSecretReference> secretReferences =
+        storeConfig == null ? Set.of() : entityReferenceExtractorUtils.extractReferredSecrets(ambiance, storeConfig);
+
+    if (EmptyPredicate.isNotEmpty(secretReferences)) {
+      secretReferences.forEach(secretReference
+          -> secretRuntimeUsageService.createSecretRuntimeUsage(secretReference.getSecretRef(),
+              secretReference.getReferredBy(), EntityUsageDetailProto.newBuilder().build()));
     }
   }
 
