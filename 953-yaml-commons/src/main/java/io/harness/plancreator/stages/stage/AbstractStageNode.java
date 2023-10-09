@@ -8,6 +8,7 @@
 package io.harness.plancreator.stages.stage;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.onlyRuntimeInputAllowed;
 
@@ -96,4 +97,19 @@ public abstract class AbstractStageNode {
 
   @JsonIgnore public abstract String getType();
   @JsonIgnore public abstract StageInfoConfig getStageInfoConfig();
+  String id;
+
+  public String getIdentifier() {
+    if (isNotEmpty(identifier)) {
+      return identifier;
+    }
+    return id;
+  }
+
+  public String getName() {
+    if (isNotEmpty(name)) {
+      return name;
+    }
+    return getIdentifier();
+  }
 }
