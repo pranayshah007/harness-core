@@ -19,21 +19,10 @@ import lombok.Value;
 @Builder
 @OwnedBy(IACM)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Workspace {
-  Long created;
-  String name;
-  String account;
-  String org;
-  String project;
-  String identifier;
-  Long updated;
-  String provisioner;
-  String provisioner_version;
-  String provider_connector;
+public class VariablesRepo {
   String repository;
   String repository_branch;
   String repository_connector;
   String repository_path;
   String repository_commit;
-  VariablesRepo[] tf_var_files;
 }

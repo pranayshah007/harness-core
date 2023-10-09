@@ -16,6 +16,7 @@ import static io.harness.yaml.extended.ci.codebase.CodeBase.CodeBaseBuilder;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.build.BuildStatusUpdateParameter;
+import io.harness.beans.entities.VariablesRepo;
 import io.harness.beans.entities.Workspace;
 import io.harness.beans.execution.BranchWebhookEvent;
 import io.harness.beans.execution.ExecutionSource;
@@ -25,6 +26,8 @@ import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.stages.IACMStageNode;
 import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.IACMStepSpecTypeConstants;
+import io.harness.beans.steps.nodes.GitCloneStepNode;
+import io.harness.beans.steps.stepinfo.GitCloneStepInfo;
 import io.harness.ci.execution.buildstate.ConnectorUtils;
 import io.harness.ci.execution.integrationstage.CIIntegrationStageModifier;
 import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
@@ -80,8 +83,10 @@ import io.harness.yaml.extended.ci.codebase.impl.PRBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -131,12 +136,14 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     YamlField executionField = specField.getNode().getField(EXECUTION);
     YamlNode parentNode = executionField.getNode().getParentNode();
     String childNodeId = executionField.getNode().getUuid();
-    String workspace = parentNode.getField("workspace").getNode().getCurrJsonNode().asText();
+    String workspaceId = parentNode.getField("workspace").getNode().getCurrJsonNode().asText();
+    Workspace workspace = serviceUtils.getIACMWorkspaceInfo(
+        ctx.getOrgIdentifier(), ctx.getProjectIdentifier(), ctx.getAccountIdentifier(), workspaceId);
 
     // Force the stage execution to clone the codebase
     stageNode.getIacmStageConfig().setCloneCodebase(ParameterField.<Boolean>builder().value(true).build());
 
-    CodeBase codeBase = getIACMCodebase(ctx, workspace);
+    CodeBase codeBase = getIACMCodebase(ctx, workspaceId);
 
     // Add the CODEBASE task. This task is required to be able to get the sweeping output for the clone step
     String codeBaseNodeUUID =
@@ -154,8 +161,10 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     ExecutionElementConfig modifiedExecutionPlan =
         modifyYAMLWithImplicitSteps(ctx, executionSource, executionField, stageNode, codeBase);
 
+    modifiedExecutionPlan = addExtraGitCloneSteps(modifiedExecutionPlan, workspace);
+
     ExecutionElementConfig modifiedExecutionPlanWithWorkspace =
-        addWorkspaceToIACMSteps(ctx, modifiedExecutionPlan, workspace);
+        addWorkspaceToIACMSteps(ctx, modifiedExecutionPlan, workspaceId);
     // Retrieve the Modified Plan execution where the InitialTask and Git Clone step have been injected. Then retrieve
     // the steps from the plan to the level of steps->spec->stageElementConfig->execution->steps. Here, we can inject
     // any step and that step will be available in the InitialTask step in the path:
@@ -164,7 +173,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
         executionField, planCreationResponseMap, modifiedExecutionPlanWithWorkspace, parentNode);
 
     BuildStatusUpdateParameter buildStatusUpdateParameter =
-        obtainBuildStatusUpdateParameter(ctx, stageNode, executionSource, workspace);
+        obtainBuildStatusUpdateParameter(ctx, stageNode, executionSource, workspaceId);
 
     PlanNode specPlanNode = getSpecPlanNode(specField,
         IACMIntegrationStageStepParametersPMS.getStepParameters(
@@ -174,6 +183,96 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
 
     log.info("Successfully created plan for security stage {}", stageNode.getIdentifier());
     return planCreationResponseMap;
+  }
+
+  private ExecutionElementConfig addExtraGitCloneSteps(
+      ExecutionElementConfig modifiedExecutionPlan, Workspace workspace) {
+    if (workspace.getTf_var_files() == null) {
+      return modifiedExecutionPlan;
+    }
+    List<ExecutionWrapperConfig> steps = modifiedExecutionPlan.getSteps();
+    int index = 2; // Steps 0 and 1 and initialise and clone codebase
+    int stepIndex = 0;
+    List<String> processedRepos = new ArrayList<>();
+    List<ExecutionWrapperConfig> innerSteps = new ArrayList<>();
+    for (VariablesRepo variablesRepo : workspace.getTf_var_files()) {
+      // If the connector is the same as where the main repo is, then it means that we do not need to clone the repo
+      // again
+      if (Objects.equals(variablesRepo.getRepository_connector(), workspace.getRepository_connector())) {
+        continue;
+      }
+      // if the connector has been already processed, skip it
+      if (processedRepos.contains(variablesRepo.getRepository_connector())) {
+        continue;
+      }
+      BuildBuilder buildObject = builder();
+      if (!Objects.equals(variablesRepo.getRepository_branch(), "")) {
+        buildObject.type(BuildType.BRANCH);
+        buildObject.spec(
+            BranchBuildSpec.builder()
+                .branch(ParameterField.<String>builder().value(variablesRepo.getRepository_branch()).build())
+                .build());
+      } else {
+        buildObject.type(BuildType.TAG);
+        buildObject.spec(TagBuildSpec.builder()
+                             .tag(ParameterField.<String>builder().value(variablesRepo.getRepository_commit()).build())
+                             .build());
+      }
+      GitCloneStepInfo gitCloneStepInfo =
+          GitCloneStepInfo.builder()
+              .connectorRef(ParameterField.<String>builder().value(variablesRepo.getRepository_connector()).build())
+              .depth(ParameterField.<Integer>builder().value(50).build())
+              .build(ParameterField.<Build>builder().value(buildObject.build()).build())
+              .repoName(ParameterField.<String>builder().value(variablesRepo.getRepository()).build())
+              .build();
+      String uuid = generateUuid();
+      try {
+        String jsonString = JsonPipelineUtils.writeJsonString(GitCloneStepNode.builder()
+                                                                  .identifier("clone_tf_vars_" + stepIndex)
+                                                                  .name("clone_tf_vars_" + stepIndex)
+                                                                  .uuid(uuid)
+                                                                  .type(GitCloneStepNode.StepType.GitClone)
+                                                                  .gitCloneStepInfo(gitCloneStepInfo)
+                                                                  .build());
+        JsonNode jsonNode = JsonPipelineUtils.getMapper().readTree(jsonString);
+        ExecutionWrapperConfig stepWrapper = ExecutionWrapperConfig.builder().uuid(uuid).step(jsonNode).build();
+        innerSteps.add(stepWrapper); // Store the stepWrapper for later
+        steps.add(index, stepWrapper);
+        processedRepos.add(variablesRepo.getRepository_connector());
+        index++;
+        stepIndex++;
+
+      } catch (JsonProcessingException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    try {
+      // Now, we need to add the same steps to the InitialiseStep, which contains a copy of the steps in the
+      // executionElementConfig used by the k8s delegate.
+      ObjectMapper mapper = new ObjectMapper();
+      JsonNode originalArray =
+          mapper.readTree(steps.get(0).getStep().get("spec").get("executionElementConfig").get("steps").toString());
+      ArrayNode newArray = mapper.createArrayNode();
+      newArray.add(originalArray.get(0));
+      for (ExecutionWrapperConfig node : innerSteps) {
+        newArray.add(mapper.convertValue(node, JsonNode.class));
+      }
+      for (int i = 1; i < originalArray.size(); i++) {
+        newArray.add(originalArray.get(i));
+      }
+      JsonNode stepsNode = steps.get(0).getStep().get("spec").get("executionElementConfig");
+      ObjectNode stepsObjectNode = (ObjectNode) stepsNode;
+      stepsObjectNode.set("steps", newArray);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
+
+    return ExecutionElementConfig.builder()
+        .uuid(modifiedExecutionPlan.getUuid())
+        .rollbackSteps(modifiedExecutionPlan.getRollbackSteps())
+        .steps(steps)
+        .build();
   }
 
   /*
