@@ -80,8 +80,7 @@ public class InputsFunctor implements LateBindingValue {
     // Generate the Map of default values from the inputsYamlNode of pipeline yaml.
     Map<String, Object> inputsMap = getDefaultValuesMap(inputsYamlNode);
     // Generate map for inputSet values provided by user in execute API.
-    Map<String, Object> inputSetMap =
-        JsonPipelineUtils.jsonNodeToMap(inputSetJsonNode.get(YAMLFieldNameConstants.INPUTS));
+    Map<String, Object> inputSetMap = JsonPipelineUtils.jsonNodeToMap(inputSetJsonNode);
 
     if (!EmptyPredicate.isEmpty(inputSetMap)) {
       inputsMap.putAll(inputSetMap);
