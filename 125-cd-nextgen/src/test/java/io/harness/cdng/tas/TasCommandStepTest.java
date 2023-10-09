@@ -272,7 +272,7 @@ public class TasCommandStepTest extends CDNGTestBase {
         .saveServerInstancesIntoSweepingOutput(ambiance, Arrays.asList(tasServerInstanceInfo));
 
     StepResponse stepResponse1 = tasCommandStep.finalizeExecutionWithSecurityContext(
-        ambiance, stepElementParameters, TasStepPassThroughData.builder().build(), () -> responseData);
+        ambiance, stepElementParameters, TasExecutionPassThroughData.builder().build(), () -> responseData);
     assertThat(stepResponse1.getStatus()).isEqualTo(Status.SUCCEEDED);
   }
 
@@ -327,7 +327,7 @@ public class TasCommandStepTest extends CDNGTestBase {
         .saveServerInstancesIntoSweepingOutput(ambiance, Arrays.asList(tasServerInstanceInfo));
 
     StepResponse stepResponse1 = tasCommandStep.finalizeExecutionWithSecurityContext(
-        ambiance, stepElementParameters, TasStepPassThroughData.builder().build(), () -> responseData);
+        ambiance, stepElementParameters, TasExecutionPassThroughData.builder().build(), () -> responseData);
     assertThat(stepResponse1.getStatus()).isEqualTo(Status.FAILED);
   }
 
