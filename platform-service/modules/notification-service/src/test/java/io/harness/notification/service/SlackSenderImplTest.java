@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.NotificationProcessingResponse;
+import io.harness.notification.helper.NotificationSettingsHelper;
 import io.harness.notification.senders.SlackSenderImpl;
 import io.harness.rule.Owner;
 
@@ -40,11 +41,13 @@ import org.junit.experimental.categories.Category;
 public class SlackSenderImplTest extends CategoryTest {
   private SlackSenderImpl slackSender;
   private OkHttpClient okHttpClient;
+  private NotificationSettingsHelper notificationSettingsHelper;
 
   @Before
   public void setUp() throws Exception {
     okHttpClient = mock(OkHttpClient.class);
-    slackSender = new SlackSenderImpl(okHttpClient);
+    notificationSettingsHelper = mock(NotificationSettingsHelper.class);
+    slackSender = new SlackSenderImpl(okHttpClient, notificationSettingsHelper);
   }
 
   @SneakyThrows
@@ -75,6 +78,7 @@ public class SlackSenderImplTest extends CategoryTest {
     Call call = mock(Call.class);
     when(call.execute()).thenReturn(responseSuccess).thenReturn(responseFailure);
     when(okHttpClient.newCall(any())).thenReturn(call);
+    when(notificationSettingsHelper.getRecipientsWithValidDomain(any(), any(), any())).thenReturn(slackWekbhookUrl);
 
     NotificationProcessingResponse notificationProcessingResponse =
         slackSender.send(slackWekbhookUrl, message, notificationId, null);

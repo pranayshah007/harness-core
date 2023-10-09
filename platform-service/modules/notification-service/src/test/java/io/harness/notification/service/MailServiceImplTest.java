@@ -78,6 +78,7 @@ public class MailServiceImplTest extends CategoryTest {
   @Mock private Call<ResponseDTO<Boolean>> responseTrue;
   @Mock private Call<ResponseDTO<Boolean>> responseFalse;
   @Mock private NotificationSettingsHelper notificationSettingsHelper;
+  @Mock private io.harness.notification.helper.NotificationSettingsHelper notificationSettingDelHelper;
   private MockedStatic<NGRestUtils> restUtilsMockedStatic;
   private MailServiceImpl mailService;
   private String accountId = "accountId";
@@ -96,7 +97,8 @@ public class MailServiceImplTest extends CategoryTest {
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
     mailService = new MailServiceImpl(notificationSettingsService, notificationTemplateService, yamlUtils,
-        smtpConfigDefault, mailSender, delegateGrpcClientWrapper, notificationSettingsHelper, userNGClient);
+        smtpConfigDefault, mailSender, delegateGrpcClientWrapper, notificationSettingsHelper,
+        notificationSettingDelHelper, userNGClient);
     emailTemplate.setBody("this is test mail");
     emailTemplate.setSubject("test notification");
     restUtilsMockedStatic = mockStatic(NGRestUtils.class);
@@ -187,6 +189,8 @@ public class MailServiceImplTest extends CategoryTest {
     when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
     when(notificationSettingsService.getSmtpConfigResponse(eq(accountId))).thenReturn(new SmtpConfigResponse());
+    when(notificationSettingDelHelper.getRecipientsWithValidDomain(any(), any(), any()))
+        .thenReturn(Collections.singletonList(emailAdress));
 
     NotificationProcessingResponse notificationProcessingResponse = mailService.send(notificationRequest);
     assertTrue(notificationProcessingResponse.equals(NotificationProcessingResponse.trivialResponseWithNoRetries));
@@ -232,6 +236,8 @@ public class MailServiceImplTest extends CategoryTest {
     when(mailSender.send(any(), any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
     when(notificationSettingsService.getSmtpConfigResponse(eq(accountId))).thenReturn(new SmtpConfigResponse());
+    when(notificationSettingDelHelper.getRecipientsWithValidDomain(any(), any(), any()))
+        .thenReturn(Collections.singletonList(emailAdress));
 
     NotificationProcessingResponse notificationProcessingResponse = mailService.send(notificationRequest);
     assertEquals(notificationProcessingResponse, NotificationProcessingResponse.trivialResponseWithNoRetries);

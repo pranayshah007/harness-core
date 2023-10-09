@@ -17,16 +17,16 @@ import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.remote.client.NGRestUtils;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(PL)
-@UtilityClass
+@Singleton
 public class NotificationSettingsHelper {
   @Inject private NGSettingsClient ngSettingsClient;
 

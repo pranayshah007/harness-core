@@ -18,15 +18,18 @@ import com.github.dikhan.pagerduty.client.events.domain.Payload;
 import com.github.dikhan.pagerduty.client.events.domain.TriggerIncident;
 import com.github.dikhan.pagerduty.client.events.domain.TriggerIncident.TriggerIncidentBuilder;
 import com.github.dikhan.pagerduty.client.events.exceptions.NotifyEventException;
+import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class PagerDutySenderImpl {
+  @Inject private NotificationSettingsHelper notificationSettingsHelper;
+
   public NotificationProcessingResponse send(
       List<String> pagerDutyKeys, Payload payload, List<LinkContext> links, String notificationId, String accountId) {
-    pagerDutyKeys = NotificationSettingsHelper.getRecipientsWithValidDomain(
+    pagerDutyKeys = notificationSettingsHelper.getRecipientsWithValidDomain(
         pagerDutyKeys, accountId, SettingIdentifiers.PAGERDUTY_NOTIFICATION_INTEGRATION_KEYS_ALLOWLIST);
     List<Boolean> results = new ArrayList<>();
     PagerDutyEventsClient pagerDutyEventsClient = PagerDutyEventsClient.create();

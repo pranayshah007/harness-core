@@ -84,6 +84,7 @@ public class MailServiceImpl implements ChannelService {
   private final MailSenderImpl mailSender;
   private final DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   private final NotificationSettingsHelper notificationSettingsHelper;
+  private final io.harness.notification.helper.NotificationSettingsHelper notificationSettingDelHelper;
 
   @Inject private UserNGClient userNGClient;
 
@@ -373,7 +374,7 @@ public class MailServiceImpl implements ChannelService {
           emailDetails.getUserGroupList(), NotificationChannelType.EMAIL, notificationRequest.getAccountId(), 0L);
       recipients.addAll(resolvedRecipients);
     }
-    return io.harness.notification.helper.NotificationSettingsHelper.getRecipientsWithValidDomain(
+    return notificationSettingDelHelper.getRecipientsWithValidDomain(
         recipients, notificationRequest.getAccountId(), SettingIdentifiers.EMAIL_NOTIFICATION_DOMAIN_ALLOWLIST);
   }
 

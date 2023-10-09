@@ -14,6 +14,7 @@ import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.notification.helper.NotificationSettingsHelper;
 
+import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,8 @@ public class MSTeamsSenderImpl {
   private final OkHttpClient okHttpClient = new OkHttpClient.Builder().retryOnConnectionFailure(true).build();
 
   private static final MediaType APPLICATION_JSON_VALUE = MediaType.parse(APPLICATION_JSON);
+
+  @Inject private NotificationSettingsHelper notificationSettingsHelper;
 
   public int sendMessage(String message, String webhookUrl) {
     try {
@@ -49,7 +52,7 @@ public class MSTeamsSenderImpl {
 
   public NotificationProcessingResponse send(
       List<String> microsoftTeamsWebhookUrls, String message, String notificationId, String accountId) {
-    microsoftTeamsWebhookUrls = NotificationSettingsHelper.getRecipientsWithValidDomain(
+    microsoftTeamsWebhookUrls = notificationSettingsHelper.getRecipientsWithValidDomain(
         microsoftTeamsWebhookUrls, accountId, SettingIdentifiers.MSTEAM_NOTIFICATION_ENDPOINTS_ALLOWLIST);
     List<Boolean> results = new ArrayList<>();
     for (String microsoftTeamsWebhookUrl : microsoftTeamsWebhookUrls) {
