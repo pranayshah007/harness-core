@@ -23,7 +23,9 @@ import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -348,7 +350,7 @@ public class ServiceResourceV2Test extends CategoryTest {
 
     doReturn(Arrays.asList(service1, service2))
         .when(serviceEntityService)
-        .getServices(anyString(), anyString(), anyString(), anyList());
+        .getMetadata(anyString(), anyString(), anyString(), anyList());
     doReturn("input-set1", "input-set2").when(serviceEntityService).createServiceInputsYaml(anyString(), anyString());
 
     when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.CDS_ARTIFACTORY_REPOSITORY_URL_MANDATORY))
@@ -397,7 +399,7 @@ public class ServiceResourceV2Test extends CategoryTest {
 
     doReturn(Arrays.asList(service1, service2))
         .when(serviceEntityService)
-        .getServices(anyString(), anyString(), anyString(), anyList());
+        .getServices(anyString(), anyString(), anyString(), anyList(), anyMap(), anyBoolean());
     doReturn("input-set1", "input-set2").when(serviceEntityService).createServiceInputsYaml(anyString(), anyString());
 
     when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.CDS_ARTIFACTORY_REPOSITORY_URL_MANDATORY))

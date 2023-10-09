@@ -154,6 +154,7 @@ import io.harness.lock.PersistentLockModule;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.logstreaming.LogStreamingServiceRestClient;
 import io.harness.logstreaming.NGLogStreamingClientFactory;
+import io.harness.manage.ManagedExecutorService;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.metrics.impl.DelegateMetricsServiceImpl;
 import io.harness.metrics.intfc.DelegateMetricsService;
@@ -644,6 +645,18 @@ public class NextGenModule extends AbstractModule {
         new ThreadFactoryBuilder().setNameFormat("log-client-pool-%d").build());
   }
 
+  // this should be used with a managed executor service
+  private ThreadPoolExecutor serviceGitXThreadPool() {
+    ThreadPoolConfig threadPoolConfig = appConfig != null && appConfig.getServiceGitXThreadConfig() != null
+            && appConfig.getServiceGitXThreadConfig().getThreadPoolConfig() != null
+        ? appConfig.getServiceGitXThreadConfig().getThreadPoolConfig()
+        : ThreadPoolConfig.builder().corePoolSize(1).maxPoolSize(10).idleTime(30).timeUnit(TimeUnit.SECONDS).build();
+
+    return ThreadPool.create(threadPoolConfig.getCorePoolSize(), threadPoolConfig.getMaxPoolSize(),
+        threadPoolConfig.getIdleTime(), threadPoolConfig.getTimeUnit(),
+        new ThreadFactoryBuilder().setNameFormat("service-gitx-pool-%d").build());
+  }
+
   @Provides
   @Singleton
   @Named("webhookBranchHookEventHsqsDequeueConfig")
@@ -1009,6 +1022,10 @@ public class NextGenModule extends AbstractModule {
                 .build()));
 
     bind(CDGitXService.class).to(CDGitXServiceImpl.class).in(Singleton.class);
+
+    bind(ExecutorService.class)
+        .annotatedWith(Names.named("service-gitx-executor"))
+        .toInstance(new ManagedExecutorService(serviceGitXThreadPool()));
 
     MapBinder<SCMType, SourceCodeManagerMapper> sourceCodeManagerMapBinder =
         MapBinder.newMapBinder(binder(), SCMType.class, SourceCodeManagerMapper.class);

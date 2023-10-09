@@ -22,6 +22,7 @@ import io.harness.spec.server.ng.v1.model.ManifestsResponseDTO;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
@@ -108,8 +109,11 @@ public interface ServiceEntityService {
 
   // Avoid using this method,as it  allows clients to access unbounded amount of data
   @Deprecated
-  List<ServiceEntity> getServices(
+  List<ServiceEntity> getMetadata(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> serviceIdentifiers);
+
+  List<ServiceEntity> getServices(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      List<String> serviceRefs, Map<String, String> servicesMetadataWithGitInfo, boolean loadFromCache);
 
   boolean isServiceField(String fieldName, JsonNode value);
 
