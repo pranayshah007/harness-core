@@ -20,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.common.beans.StepDelegateInfo;
 import io.harness.cdng.configfile.ConfigFileAttributes;
 import io.harness.cdng.configfile.ConfigFileOutcome;
@@ -47,6 +48,7 @@ import io.harness.delegate.task.gitcommon.GitFetchFilesResult;
 import io.harness.delegate.task.gitcommon.GitRequestFileConfig;
 import io.harness.delegate.task.gitcommon.GitTaskNGRequest;
 import io.harness.delegate.task.gitcommon.GitTaskNGResponse;
+import io.harness.eventsframework.schemas.entity.EntityUsageDetailProto;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
@@ -69,12 +71,15 @@ import io.harness.pms.sdk.core.steps.executables.SyncExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.secretusage.SecretRuntimeUsageService;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.tasks.ResponseData;
 import io.harness.validation.JavaxValidator;
+import io.harness.walktree.visitor.entityreference.beans.VisitedSecretReference;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
@@ -122,6 +127,8 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
   @Inject private CDStepHelper cdStepHelper;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject private ConfigGitFilesMapper configGitFilesMapper;
+  @Inject private SecretRuntimeUsageService secretRuntimeUsageService;
+  @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StrategyHelper strategyHelper;
   @Override
@@ -149,6 +156,8 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
       return StepResponse.builder().status(Status.SKIPPED).build();
     }
     cdExpressionResolver.updateExpressions(ambiance, configFiles);
+
+    publishRuntimeSecretUsage(ambiance, configFiles);
 
     JavaxValidator.validateBeanOrThrow(new ConfigFileValidatorDTO(configFiles));
     checkForAccessOrThrow(ambiance, configFiles);
@@ -186,6 +195,8 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
     cdExpressionResolver.updateExpressions(ambiance, configFiles);
     JavaxValidator.validateBeanOrThrow(new ConfigFileValidatorDTO(configFiles));
     checkForAccessOrThrow(ambiance, configFiles);
+
+    publishRuntimeSecretUsage(ambiance, configFiles);
 
     List<ConfigFileOutcome> gitConfigFilesOutcome = new ArrayList<>();
     List<ConfigFileOutcome> harnessConfigFilesOutcome = new ArrayList<>();
@@ -250,6 +261,20 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
               "Values for following parameters for config file %s are either empty or not provided: {%s}. This may result in failure of deployment.",
               identifier, invalidParameters.stream().collect(Collectors.joining(","))),
           LogLevel.WARN);
+    }
+  }
+
+  private void publishRuntimeSecretUsage(Ambiance ambiance, List<ConfigFileWrapper> configFiles) {
+    for (ConfigFileWrapper configFile : configFiles) {
+      Set<VisitedSecretReference> secretReferences =
+          configFile == null ? Set.of() : entityReferenceExtractorUtils.extractReferredSecrets(ambiance, configFile);
+
+      if (EmptyPredicate.isNotEmpty(secretReferences)) {
+        secretReferences.forEach(secretReference -> {
+          secretRuntimeUsageService.createSecretRuntimeUsage(secretReference.getSecretRef(),
+              secretReference.getReferredBy(), EntityUsageDetailProto.newBuilder().build());
+        });
+      }
     }
   }
 
