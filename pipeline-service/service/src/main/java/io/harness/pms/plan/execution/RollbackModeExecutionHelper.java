@@ -15,6 +15,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
+import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.StagesExecutionMetadata;
@@ -34,6 +35,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.helpers.PrincipalInfoHelper;
+import io.harness.pms.plan.utils.PlanResourceUtility;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -261,5 +263,16 @@ public class RollbackModeExecutionHelper {
     // previous execution. Previous execution's advisor response would be setting next step as something we dont want in
     // rollback mode. We want the new advisors set in the Plan Node to be used
     return Arrays.asList(StepCategory.FORK, StepCategory.STRATEGY).contains(stepCategory);
+  }
+
+  public void checkAndThrowExceptionIfExecutionOlderThanOneMonthForPostProdRollback(
+      Long createdAt, ExecutionMode executionMode) {
+    if (executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK) {
+      boolean inTimeLimit = PlanResourceUtility.validateInTimeLimitForRetry(createdAt);
+      if (!inTimeLimit) {
+        throw new InvalidRequestException(
+            "This instance cannot be rolled back as the execution where this instance was deployed is already 30 or more days old");
+      }
+    }
   }
 }
