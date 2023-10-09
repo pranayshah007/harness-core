@@ -43,6 +43,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -181,8 +182,8 @@ public class RollbackModeExecutionHelper {
   Map<String, Node> buildIdentityNodes(String previousExecutionId, List<Node> createdPlanNodes) {
     Map<String, Node> planNodeIDToUpdatedNodes = new HashMap<>();
 
-    CloseableIterator<NodeExecution> nodeExecutions =
-        getNodeExecutionsWithOnlyRequiredFields(previousExecutionId, createdPlanNodes);
+    CloseableIterator<NodeExecution> nodeExecutions = getNodeExecutionsWithProjections(
+        previousExecutionId, createdPlanNodes, NodeProjectionUtils.fieldsForRollbackIdentityNodeCreation);
 
     while (nodeExecutions.hasNext()) {
       NodeExecution nodeExecution = nodeExecutions.next();
@@ -199,22 +200,21 @@ public class RollbackModeExecutionHelper {
         planNodeIDToUpdatedNodes.put(planNodeIdFromNodeExec, previouslyAddedNode);
       } else {
         Node node = planService.fetchNode(nodeExecution.getPlanId(), nodeExecution.getNodeId());
-        IdentityPlanNode identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNode(
-            node, nodeExecution.getStepType(), nodeExecution.getUuid(), true);
+        IdentityPlanNode identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNodeWithSkipAsTrue(node.getUuid(),
+            node, nodeExecution.getIdentifier(), nodeExecution.getName(), node.getStepType(), nodeExecution.getUuid());
         planNodeIDToUpdatedNodes.put(planNodeIdFromNodeExec, identityPlanNode);
       }
     }
     return planNodeIDToUpdatedNodes;
   }
 
-  CloseableIterator<NodeExecution> getNodeExecutionsWithOnlyRequiredFields(
-      String previousExecutionId, List<Node> createdPlanNodes) {
+  CloseableIterator<NodeExecution> getNodeExecutionsWithProjections(
+      String previousExecutionId, List<Node> createdPlanNodes, Set<String> projections) {
     List<String> stageFQNs = createdPlanNodes.stream()
                                  .filter(n -> n.getStepCategory() == StepCategory.STAGE)
                                  .map(Node::getStageFqn)
                                  .collect(Collectors.toList());
-    return nodeExecutionService.fetchNodeExecutionsForGivenStageFQNs(
-        previousExecutionId, stageFQNs, NodeProjectionUtils.fieldsForIdentityNodeCreation);
+    return nodeExecutionService.fetchNodeExecutionsForGivenStageFQNs(previousExecutionId, stageFQNs, projections);
   }
 
   void addAdvisorsToIdentityNodes(Plan createdPlan, Map<String, Node> planNodeIDToUpdatedPlanNodes,
