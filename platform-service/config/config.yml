@@ -287,10 +287,3 @@ segmentConfiguration:
   url: "segment_url_place_holder"
   apiKey: "segment_api_key"
   certValidationRequired: false
-
-policyManagerSecret: secret
-
-opaClientConfig:
-  baseUrl: http://localhost:3000
-  connectTimeOutSeconds: 15
-  readTimeOutSeconds: 15
