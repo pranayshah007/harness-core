@@ -92,7 +92,7 @@ image:
   repository: harness/template-service-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "1.12.1"
+  tag: "1.16.3"
   digest: ""
   imagePullSecrets: []
 
