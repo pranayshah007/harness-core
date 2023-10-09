@@ -52,7 +52,6 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(ManifestType.HelmRepoOverride)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
-// check
 @TypeAlias("helmRepoOverrideManifest")
 @RecasterAlias("io.harness.cdng.manifest.yaml.kinds.HelmRepoOverrideManifest")
 public class HelmRepoOverrideManifest implements ManifestAttributes, Visitable, WithConnectorRef {
