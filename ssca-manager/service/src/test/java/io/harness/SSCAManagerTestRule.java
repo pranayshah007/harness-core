@@ -11,6 +11,7 @@ import static org.mockito.Mockito.mock;
 
 import io.harness.factory.ClosingFactory;
 import io.harness.govern.ProviderModule;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.HPersistence;
@@ -130,6 +131,12 @@ public class SSCAManagerTestRule implements InjectorRuleMixin, MethodRule, Mongo
         return ImmutableSet.<Class<? extends TypeConverter>>builder()
             .addAll(SSCAManagerModuleRegistrars.morphiaConverters)
             .build();
+      }
+
+      @Provides
+      @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
       }
 
       @Provides

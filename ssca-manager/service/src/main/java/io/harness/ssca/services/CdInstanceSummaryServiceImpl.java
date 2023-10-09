@@ -27,13 +27,15 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @Slf4j
 public class CdInstanceSummaryServiceImpl implements CdInstanceSummaryService {
   @Inject CdInstanceSummaryRepo cdInstanceSummaryRepo;
-
   @Inject ArtifactService artifactService;
 
   @Override
   public boolean upsertInstance(Instance instance) {
-    if (Objects.isNull(instance.getPrimaryArtifact().getArtifactIdentity())
+    if (Objects.isNull(instance.getPrimaryArtifact())
+        || Objects.isNull(instance.getPrimaryArtifact().getArtifactIdentity())
         || Objects.isNull(instance.getPrimaryArtifact().getArtifactIdentity().getImage())) {
+      log.info(
+          String.format("Instance skipped because of missing artifact identity, {InstanceId: %s}", instance.getId()));
       return true;
     }
 
@@ -49,6 +51,8 @@ public class CdInstanceSummaryServiceImpl implements CdInstanceSummaryService {
           artifactService.getArtifactByCorrelationId(instance.getAccountIdentifier(), instance.getOrgIdentifier(),
               instance.getProjectIdentifier(), instance.getPrimaryArtifact().getArtifactIdentity().getImage());
       if (Objects.isNull(artifact)) {
+        log.info(String.format(
+            "Instance skipped because of missing correlated artifactEntity, {InstanceId: %s}", instance.getId()));
         return true;
       }
       cdInstanceSummaryRepo.save(createInstanceSummary(instance));

@@ -35,7 +35,7 @@ public class ArtifactApiImpl implements ArtifactApi {
     Pageable pageable = PageResponseUtils.getPageable(page, limit, sort, order);
     Page<ArtifactComponentViewResponse> artifactComponentViewResponses =
         artifactService.getArtifactComponentView(harnessAccount, org, project, artifact, tag, body, pageable);
-    return PageResponseUtils.getPagedResponse(artifactComponentViewResponses, page, limit);
+    return PageResponseUtils.getPagedResponse(artifactComponentViewResponses);
   }
 
   @Override
@@ -45,7 +45,7 @@ public class ArtifactApiImpl implements ArtifactApi {
     Pageable pageable = PageResponseUtils.getPageable(page, limit, sort, order);
     Page<ArtifactDeploymentViewResponse> artifactDeploymentViewResponses =
         artifactService.getArtifactDeploymentView(harnessAccount, org, project, artifact, tag, body, pageable);
-    return PageResponseUtils.getPagedResponse(artifactDeploymentViewResponses, page, limit);
+    return PageResponseUtils.getPagedResponse(artifactDeploymentViewResponses);
   }
 
   @Override
@@ -54,7 +54,7 @@ public class ArtifactApiImpl implements ArtifactApi {
     Pageable pageable = PageResponseUtils.getPageable(page, limit, sort, order);
     Page<ArtifactListingResponse> artifactEntities =
         artifactService.listArtifacts(harnessAccount, org, project, null, pageable);
-    return PageResponseUtils.getPagedResponse(artifactEntities, page, limit);
+    return PageResponseUtils.getPagedResponse(artifactEntities);
   }
 
   @Override
@@ -63,6 +63,6 @@ public class ArtifactApiImpl implements ArtifactApi {
     Pageable pageable = PageResponseUtils.getPageable(page, limit, sort, order);
     Page<ArtifactListingResponse> artifactEntities =
         artifactService.listLatestArtifacts(harnessAccount, org, project, pageable);
-    return PageResponseUtils.getPagedResponse(artifactEntities, page, limit);
+    return PageResponseUtils.getPagedResponse(artifactEntities);
   }
 }

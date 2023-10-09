@@ -138,9 +138,9 @@ public class ArtifactServiceImpl implements ArtifactService {
                             .is(orgIdentifier)
                             .and(ArtifactEntityKeys.projectId)
                             .is(projectIdentifier)
-                            .and(ArtifactEntityKeys.artifactId)
-                            .is(artifactCorrelationId)
                             .and(ArtifactEntityKeys.artifactCorrelationId)
+                            .is(artifactCorrelationId)
+                            .and(ArtifactEntityKeys.invalid)
                             .is(false);
     return artifactRepository.findOne(criteria);
   }
@@ -249,7 +249,7 @@ public class ArtifactServiceImpl implements ArtifactService {
                    .name(entity.getPackageName())
                    .license(String.join(", ", entity.getPackageLicense()))
                    .packageManager(entity.getPackageManager())
-                   .supplier(entity.getPackageSupplierName())
+                   .supplier(entity.getPackageOriginatorName())
                    .purl(entity.getPurl())
                    .version(entity.getPackageVersion()));
   }
@@ -313,9 +313,14 @@ public class ArtifactServiceImpl implements ArtifactService {
     List<ArtifactListingResponse> responses = new ArrayList<>();
     for (ArtifactEntity artifact : artifactEntities) {
       List<CdInstanceSummary> deploymentSummary = new ArrayList<>();
+      EnforcementSummaryEntity enforcementSummary = EnforcementSummaryEntity.builder().build();
 
       if (artifactDeploymentMap.containsKey(artifact.getArtifactCorrelationId())) {
         deploymentSummary = artifactDeploymentMap.get(artifact.getArtifactCorrelationId());
+      }
+
+      if (enforcementSummaryEntityMap.containsKey(artifact.getOrchestrationId())) {
+        enforcementSummary = enforcementSummaryEntityMap.get(artifact.getOrchestrationId());
       }
 
       responses.add(
@@ -324,10 +329,8 @@ public class ArtifactServiceImpl implements ArtifactService {
               .artifactName(artifact.getName())
               .tag(artifact.getTag())
               .componentsCount((int) artifact.getComponentsCount())
-              .allowListViolationCount(
-                  enforcementSummaryEntityMap.get(artifact.getOrchestrationId()).getAllowListViolationCount())
-              .denyListViolationCount(
-                  enforcementSummaryEntityMap.get(artifact.getOrchestrationId()).getDenyListViolationCount())
+              .allowListViolationCount(enforcementSummary.getAllowListViolationCount())
+              .denyListViolationCount(enforcementSummary.getDenyListViolationCount())
               .activity(Objects.isNull(deploymentSummary) ? ActivityEnum.GENERATED : ActivityEnum.DEPLOYED)
               .updatedAt(String.format("%d", artifact.getLastUpdatedAt()))
               .prodEnvCount((int) deploymentSummary.stream()

@@ -29,6 +29,7 @@ public class CyclonedxDTO extends SbomDTO {
   }
 
   @Data
+  @Builder
   public class Metadata {
     String timestamp;
     List<CycloneDXVersion> tools;
@@ -36,6 +37,7 @@ public class CyclonedxDTO extends SbomDTO {
   }
 
   @Data
+  @Builder
   private class CycloneDXVersion {
     String vendor;
     String name;
@@ -43,6 +45,7 @@ public class CyclonedxDTO extends SbomDTO {
   }
 
   @Data
+  @Builder
   public class Component {
     String bomRef;
     String type;
@@ -59,11 +62,13 @@ public class CyclonedxDTO extends SbomDTO {
     Swid swid;
 
     @Data
+    @Builder
     public class License {
       InternalLicence license;
       String expression;
 
       @Data
+      @Builder
       public class InternalLicence {
         String name;
         String id;
@@ -71,18 +76,21 @@ public class CyclonedxDTO extends SbomDTO {
     }
 
     @Data
+    @Builder
     private class ExternalReference {
       String uRL;
       String type;
     }
 
     @Data
+    @Builder
     private class Property {
       String name;
       String value;
     }
 
     @Data
+    @Builder
     private class Swid {
       String tagId;
       String name;

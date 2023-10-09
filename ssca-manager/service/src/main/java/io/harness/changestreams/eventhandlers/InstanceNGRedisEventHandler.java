@@ -11,7 +11,6 @@ import io.harness.entities.Instance;
 import io.harness.eventHandler.DebeziumAbstractRedisEventHandler;
 import io.harness.ssca.services.CdInstanceSummaryService;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
@@ -19,10 +18,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 
 @Slf4j
 public class InstanceNGRedisEventHandler extends DebeziumAbstractRedisEventHandler {
-  private final ObjectMapper objectMapper = new ObjectMapper();
-
   @Inject MongoTemplate mongoTemplate;
-
   @Inject CdInstanceSummaryService cdInstanceSummaryService;
 
   private Instance createEntity(String value) {
