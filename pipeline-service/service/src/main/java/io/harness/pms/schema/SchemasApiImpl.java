@@ -15,26 +15,19 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.pipeline.api.PipelinesApiUtils;
 import io.harness.pms.pipeline.service.PMSYamlSchemaService;
-import io.harness.serializer.JsonUtils;
 import io.harness.spec.server.pipeline.v1.SchemasApi;
 import io.harness.spec.server.pipeline.v1.model.IndividualSchemaResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineInputSchemaDetailsResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineInputsSchemaRequestBody;
 import io.harness.yaml.schema.inputs.beans.YamlInputDetails;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.io.Resources;
 import com.google.inject.Inject;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Objects;
 import javax.validation.Valid;
 import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
@@ -45,21 +38,14 @@ import lombok.extern.slf4j.Slf4j;
 public class SchemasApiImpl implements SchemasApi {
   private final PMSYamlSchemaService pmsYamlSchemaService;
 
-  @SneakyThrows
   @Override
   public Response getIndividualStaticSchema(
       String harnessAccount, String nodeGroup, String nodeType, String nodeGroupDifferentiator, String version) {
-    ObjectNode schema = (ObjectNode) fetchFile("static-schema/v1/pipeline.json");
+    ObjectNode schema =
+        pmsYamlSchemaService.getStaticSchemaForAllEntities(nodeGroup, nodeType, nodeGroupDifferentiator, version);
     IndividualSchemaResponseBody responseBody = new IndividualSchemaResponseBody();
     responseBody.setData(schema);
     return Response.ok().entity(responseBody).build();
-  }
-
-  JsonNode fetchFile(String filePath) throws IOException {
-    ClassLoader classLoader = this.getClass().getClassLoader();
-    String staticJson =
-        Resources.toString(Objects.requireNonNull(classLoader.getResource(filePath)), StandardCharsets.UTF_8);
-    return JsonUtils.asObject(staticJson, JsonNode.class);
   }
 
   @Override
