@@ -80,6 +80,12 @@ public class DelegateGrpcClientWrapper {
         holdFor, delegateTaskRequest.isSelectionLogsTrackingEnabled());
   }
 
+  public String submitAsyncTaskV2(
+      DelegateTaskRequest delegateTaskRequest, Duration holdFor, boolean delegateSelectionLogEnabled) {
+    return delegateServiceGrpcClient.submitAsyncTaskV2(
+        delegateTaskRequest, delegateCallbackTokenSupplier.get(), holdFor, delegateSelectionLogEnabled);
+  }
+
   public boolean isTaskTypeSupported(AccountId accountId, TaskType taskType) {
     return delegateServiceGrpcClient.isTaskTypeSupported(accountId, taskType);
   }
