@@ -24,3 +24,5 @@ public enum NotificationEntity {
     return notificationEntity.name();
   }
 }
+
+enum NotificationModule { PLATFORM, CCM, CHAOS, CD, CI }

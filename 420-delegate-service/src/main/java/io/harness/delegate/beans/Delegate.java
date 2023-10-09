@@ -138,8 +138,6 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
 
   @FdIndex Long delegateDisconnectDetectorNextIteration;
 
-  @FdIndex Long delegateExpiryAlertNextIteration;
-
   Long lastExpiredEventHeartbeatTime;
 
   private String delegateTokenName;
@@ -150,19 +148,12 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
 
   private boolean mtls;
 
-  private long expireOn;
-
   @Transient private Integer numberOfTaskAssigned;
 
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {
     if (DelegateKeys.delegateDisconnectDetectorNextIteration.equals(fieldName)) {
       this.delegateDisconnectDetectorNextIteration = nextIteration;
-      return;
-    }
-
-    if (DelegateKeys.delegateExpiryAlertNextIteration.equals(fieldName)) {
-      this.delegateExpiryAlertNextIteration = nextIteration;
       return;
     }
 
@@ -174,10 +165,6 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
     if (DelegateKeys.delegateDisconnectDetectorNextIteration.equals(fieldName)) {
       return this.delegateDisconnectDetectorNextIteration;
     }
-    if (DelegateKeys.delegateExpiryAlertNextIteration.equals(fieldName)) {
-      return this.delegateExpiryAlertNextIteration;
-    }
-
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 

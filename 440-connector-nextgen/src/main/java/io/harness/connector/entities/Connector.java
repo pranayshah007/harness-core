@@ -24,9 +24,7 @@ import io.harness.data.validator.NGEntityName;
 import io.harness.data.validator.Trimmed;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.gitsync.persistance.GitSyncableEntity;
-import io.harness.iterator.PersistentIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
-import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
@@ -73,7 +71,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
         ConnectorKeys.identifier, ConnectorKeys.name, ConnectorKeys.scope, ConnectorKeys.createdAt,
         ConnectorKeys.createdBy, ConnectorKeys.lastUpdatedBy, ConnectorKeys.type, ConnectorKeys.categories},
     handler = "Connectors")
-public abstract class Connector implements PersistentEntity, NGAccountAccess, GitSyncableEntity, PersistentIterable {
+public abstract class Connector implements PersistentEntity, NGAccountAccess, GitSyncableEntity {
   @Id @dev.morphia.annotations.Id String id;
   @NotEmpty @EntityIdentifier String identifier;
   @NotEmpty @NGEntityName String name;
@@ -107,8 +105,6 @@ public abstract class Connector implements PersistentEntity, NGAccountAccess, Gi
   @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) Boolean isEntityInvalid;
   String invalidYamlString; // TODO: remove this field after RenameInvalidYamlStringToYamlMigration runs
   String yaml;
-
-  @FdIndex Long connectorDisconnectDetectorNextIteration;
 
   public void setEntityInvalid(boolean isEntityInvalid) {
     this.isEntityInvalid = isEntityInvalid;
@@ -223,13 +219,5 @@ public abstract class Connector implements PersistentEntity, NGAccountAccess, Gi
                  .descSortField(ConnectorKeys.lastModifiedAt)
                  .build())
         .build();
-  }
-
-  @Override
-  public Long obtainNextIteration(String fieldName) {
-    if (ConnectorKeys.connectorDisconnectDetectorNextIteration.equals(fieldName)) {
-      return this.connectorDisconnectDetectorNextIteration;
-    }
-    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 }

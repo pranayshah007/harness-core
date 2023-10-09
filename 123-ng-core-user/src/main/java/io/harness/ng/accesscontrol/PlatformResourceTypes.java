@@ -23,5 +23,4 @@ public class PlatformResourceTypes {
   public static final String USER = "USER";
   public static final String AUTHSETTING = "AUTHSETTING";
   public static final String SERVICEACCOUNT = "SERVICEACCOUNT";
-  public static final String NOTIFICATION = "NOTIFICATION";
 }

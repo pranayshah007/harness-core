@@ -86,5 +86,4 @@ public class ResourceTypeConstants {
   public static final String SEI_INSIGHTS = "SEI_INSIGHTS";
   public static final String IDP_APP_CONFIGS = "IDP_APP_CONFIGS";
   public static final String IDP_CONFIG_ENV_VARIABLES = "IDP_CONFIG_ENV_VARIABLES";
-  public static final String NOTIFICATION = "NOTIFICATION";
 }

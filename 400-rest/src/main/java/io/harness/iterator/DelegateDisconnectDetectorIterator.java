@@ -7,7 +7,6 @@
 
 package io.harness.iterator;
 
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_DELETE_EVENT;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.HEARTBEAT_DISCONNECTED;
@@ -29,10 +28,6 @@ import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
 import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
-import io.harness.notification.NotificationEntity;
-import io.harness.notification.NotificationEvent;
-import io.harness.notification.NotificationTriggerRequest;
-import io.harness.notification.notificationserviceclient.intfc.NotificationServiceClient;
 import io.harness.observer.Subject;
 
 import software.wings.service.impl.DelegateDao;
@@ -44,8 +39,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Clock;
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -67,7 +60,6 @@ public class DelegateDisconnectDetectorIterator
   @Inject private DelegateMetricsService delegateMetricsService;
   @Inject protected Clock clock;
   @Inject private DelegateHeartBeatMetricsHelper delegateHeartBeatMetricsHelper;
-  @Inject private NotificationServiceClient notificationServiceClient;
 
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
 
@@ -148,38 +140,11 @@ public class DelegateDisconnectDetectorIterator
       delegateDao.delegateDisconnected(delegate.getAccountId(), delegate.getUuid());
       delegateService.updateLastExpiredEventHeartbeatTime(
           delegate.getLastHeartBeat(), delegate.getUuid(), delegate.getAccountId());
-      triggerNotificationRequest(delegate);
     }
   }
 
   private boolean isDelegateExpiryCheckDoneAlready(Delegate delegate) {
     return delegate.getLastExpiredEventHeartbeatTime() != null
         && delegate.getLastExpiredEventHeartbeatTime() == delegate.getLastHeartBeat();
-  }
-
-  private void triggerNotificationRequest(Delegate delegate) {
-    String notificationTriggerRequestId = generateUuid();
-    String orgId = delegate.getOwner() != null
-        ? DelegateEntityOwnerHelper.extractOrgIdFromOwnerIdentifier(delegate.getOwner().getIdentifier())
-        : "";
-    String projectId = delegate.getOwner() != null
-        ? DelegateEntityOwnerHelper.extractProjectIdFromOwnerIdentifier(delegate.getOwner().getIdentifier())
-        : "";
-
-    Map<String, String> templateData = new HashMap<>();
-    templateData.put("DELEGATE_HOST", delegate.getDelegateGroupName());
-    templateData.put("DELEGATE_NAME", delegate.getHostName());
-    templateData.put("TEMPLATE_IDENTIFIER", "email_test");
-    NotificationTriggerRequest.Builder notificationTriggerRequestBuilder =
-        NotificationTriggerRequest.newBuilder()
-            .setId(notificationTriggerRequestId)
-            .setAccountId(delegate.getAccountId())
-            .setOrgId(orgId)
-            .setProjectId(projectId)
-            .setEventEntity(NotificationEntity.DELEGATE.name())
-            .setEvent(NotificationEvent.DELEGATE_DOWN.name())
-            .putAllTemplateData(templateData);
-    log.info("Sending delegate disconnect notifictaion for {}", delegate.getUuid());
-    notificationServiceClient.sendNotification(notificationTriggerRequestBuilder.build());
   }
 }
