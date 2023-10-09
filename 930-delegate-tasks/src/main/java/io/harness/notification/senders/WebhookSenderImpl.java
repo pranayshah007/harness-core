@@ -14,6 +14,7 @@ import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.notification.helper.NotificationSettingsHelper;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,12 +31,14 @@ import okhttp3.Response;
 public class WebhookSenderImpl {
   public static final MediaType APPLICATION_JSON = MediaType.parse("application/json; charset=utf-8");
   private final OkHttpClient client;
+  @Inject private NotificationSettingsHelper notificationSettingsHelper;
 
   public static final String CONTENT_TYPE_HEADER_KEY = "Content-Type";
   public static final String ACCEPT_HEADER_KEY = "Accept";
 
-  public WebhookSenderImpl(OkHttpClient client) {
+  public WebhookSenderImpl(OkHttpClient client, NotificationSettingsHelper notificationSettingsHelper) {
     this.client = client;
+    this.notificationSettingsHelper = notificationSettingsHelper;
   }
 
   public WebhookSenderImpl() {
@@ -44,7 +47,7 @@ public class WebhookSenderImpl {
 
   public NotificationProcessingResponse send(
       List<String> webhookUrls, String message, String notificationId, Map<String, String> headers, String accountId) {
-    webhookUrls = NotificationSettingsHelper.getRecipientsWithValidDomain(
+    webhookUrls = notificationSettingsHelper.getRecipientsWithValidDomain(
         webhookUrls, accountId, SettingIdentifiers.WEBHOOK_NOTIFICATION_ENDPOINTS_ALLOWLIST);
     List<Boolean> results = new ArrayList<>();
     for (String webhookUrl : webhookUrls) {

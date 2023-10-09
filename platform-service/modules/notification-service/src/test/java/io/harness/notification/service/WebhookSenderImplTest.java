@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.NotificationProcessingResponse;
+import io.harness.notification.helper.NotificationSettingsHelper;
 import io.harness.notification.senders.WebhookSenderImpl;
 import io.harness.rule.Owner;
 
@@ -46,11 +47,13 @@ import org.junit.experimental.categories.Category;
 public class WebhookSenderImplTest extends CategoryTest {
   private WebhookSenderImpl webhookSender;
   private OkHttpClient okHttpClient;
+  private NotificationSettingsHelper notificationSettingsHelper;
 
   @Before
   public void setUp() throws Exception {
     okHttpClient = mock(OkHttpClient.class);
-    webhookSender = new WebhookSenderImpl(okHttpClient);
+    notificationSettingsHelper = mock(NotificationSettingsHelper.class);
+    webhookSender = new WebhookSenderImpl(okHttpClient, notificationSettingsHelper);
   }
 
   @SneakyThrows
@@ -81,6 +84,7 @@ public class WebhookSenderImplTest extends CategoryTest {
     Call call = mock(Call.class);
     when(call.execute()).thenReturn(responseSuccess).thenReturn(responseFailure);
     when(okHttpClient.newCall(any())).thenReturn(call);
+    when(notificationSettingsHelper.getRecipientsWithValidDomain(any(), any(), any())).thenReturn(wekbhookUrl);
 
     NotificationProcessingResponse notificationProcessingResponse =
         webhookSender.send(wekbhookUrl, message, notificationId, null, null);
