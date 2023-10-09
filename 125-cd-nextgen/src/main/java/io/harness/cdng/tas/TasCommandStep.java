@@ -8,6 +8,7 @@
 package io.harness.cdng.tas;
 
 import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -17,6 +18,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.FileData;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -57,6 +59,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
@@ -95,7 +98,7 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
   @Inject private StepHelper stepHelper;
   @Inject private OutcomeService outcomeService;
   @Inject private TasEntityHelper tasEntityHelper;
-  @Inject private io.harness.cdng.expressions.CDExpressionResolver cdExpressionResolver;
+  @Inject private CDExpressionResolver cdExpressionResolver;
   public static final String TANZU_COMMAND = "TanzuCommand";
 
   @Override
@@ -162,30 +165,36 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
                     .getUnitProgresses())
             .build();
       }
-      TasCommandStepParameters tasCommandStepParameters = (TasCommandStepParameters) stepParameters.getSpec();
-      return StepResponse.builder()
-          .status(Status.SUCCEEDED)
-          .stepOutcome(StepResponse.StepOutcome.builder()
-                           .name(OutputExpressionConstants.OUTPUT)
-                           .outcome(prepareTanzuCommandOutcome(
-                               response.getOutputVariables(), tasCommandStepParameters.getOutputVariables()))
-                           .build())
-          .unitProgressList(response.getUnitProgressData().getUnitProgresses())
-          .build();
+      TasExecutionPassThroughData executionPassThroughData = (TasExecutionPassThroughData) passThroughData;
+      StepResponseBuilder stepResponseBuilder =
+          StepResponse.builder()
+              .status(Status.SUCCEEDED)
+              .unitProgressList(response.getUnitProgressData().getUnitProgresses());
+      TanzuCommandOutcome tanzuCommandOutcome = prepareTanzuCommandOutcome(
+          response.getOutputVariables(), executionPassThroughData.getResolvedOutputVariables());
+      if (!isNull(tanzuCommandOutcome)) {
+        stepResponseBuilder.stepOutcome(StepResponse.StepOutcome.builder()
+                                            .name(OutputExpressionConstants.OUTPUT)
+                                            .outcome(tanzuCommandOutcome)
+                                            .build());
+      }
+      return stepResponseBuilder.build();
     } finally {
       tasStepHelper.closeLogStream(ambiance);
     }
   }
 
   private TanzuCommandOutcome prepareTanzuCommandOutcome(
-      Map<String, String> response, Map<String, Object> outputVariables) {
+      Map<String, String> response, Map<String, String> outputVariables) {
     if (outputVariables == null || response == null) {
       return null;
     }
     Map<String, String> resolvedOutputVariables = new HashMap<>();
     outputVariables.keySet().forEach(name -> {
-      Object value = ((ParameterField<?>) outputVariables.get(name)).getValue();
-      resolvedOutputVariables.put(name, response.get(value));
+      String value = outputVariables.get(name);
+      if (!isNull(value)) {
+        resolvedOutputVariables.put(name, response.get(value));
+      }
     });
     return TanzuCommandOutcome.builder().outputVariables(resolvedOutputVariables).build();
   }
@@ -221,7 +230,7 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
 
     String accountId = AmbianceUtils.getAccountId(ambiance);
     int timeout = CDStepHelper.getTimeoutInMin(stepParameters);
-
+    Map<String, String> resolvedOutputVariables = new HashMap<>();
     CfRunPluginCommandRequestNG cfRunPluginCommandRequestNG =
         CfRunPluginCommandRequestNG.builder()
             .cfCliVersion(tasStepHelper.cfCliVersionNGMapper(cfCliVersion))
@@ -237,7 +246,7 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
             .renderedScriptString(executionPassThroughData.getRawScript())
             .useCfCLI(true)
             .inputVariables(getInputVariables(tasCommandStepParameters.getInputVariables(), ambiance))
-            .outputVariables(getOutputVars(tasCommandStepParameters.getOutputVariables()))
+            .outputVariables(getOutputVars(tasCommandStepParameters.getOutputVariables(), resolvedOutputVariables))
             .build();
 
     TaskData taskData = TaskData.builder()
@@ -246,7 +255,7 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
                             .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
                             .async(true)
                             .build();
-
+    executionPassThroughData.setResolvedOutputVariables(resolvedOutputVariables);
     final TaskRequest taskRequest =
         TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
             executionPassThroughData.getCommandUnits(), TaskType.TANZU_COMMAND.getDisplayName(),
@@ -300,7 +309,7 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
     return res;
   }
 
-  public List<String> getOutputVars(Map<String, Object> outputVariables) {
+  public List<String> getOutputVars(Map<String, Object> outputVariables, Map<String, String> resolvedOutputVariables) {
     if (EmptyPredicate.isEmpty(outputVariables)) {
       return emptyList();
     }
@@ -312,8 +321,10 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
           throw new InvalidRequestException(String.format("Output variable [%s] value found to be empty", key));
         }
         outputVars.add(((ParameterField<?>) val).getValue().toString());
+        resolvedOutputVariables.put(key, ((ParameterField<?>) val).getValue().toString());
       } else if (val instanceof String) {
         outputVars.add((String) val);
+        resolvedOutputVariables.put(key, (String) val);
       } else {
         log.error(String.format(
             "Value other than String or ParameterField found for output variable [%s]. value: [%s]", key, val));
