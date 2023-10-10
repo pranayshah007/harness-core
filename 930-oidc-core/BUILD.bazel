@@ -9,6 +9,7 @@ java_library(
     name = "module",
     visibility = ["//visibility:public"],
     exports = [
-        "//950-oidc-core/src/main/java/io/harness/oidc/gcp:module",
+        "//930-oidc-core/src/main/java/io/harness/oidc/entities:module",
+        "//930-oidc-core/src/main/java/io/harness/oidc/gcp:module",
     ],
 )

@@ -99,7 +99,7 @@ authTokens {"name": "createdAt_1", "background": true} {"createdAt": 1}
 authTokens {"name": "userId_1", "background": true} {"userId": 1}
 authTokens {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 barrierInstances {"name": "accountId_1", "background": true} {"accountId": 1}
-barrierInstances {"name": "appId_1", "background": true} {"appId": 1}
+barrierInstances {"name": "appId_state", "background": true} {"appId": 1, "state": 1}
 barrierInstances {"name": "next", "background": true} {"state": 1, "nextIteration": 1}
 barrierInstances {"name": "search2", "unique": true} {"name": 1, "pipeline.executionId": 1, "pipeline.parallelIndex": 1}
 barrierInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}

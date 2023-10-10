@@ -339,6 +339,7 @@ public class PlanCreatorMergeService {
       Map<Map.Entry<String, PlanCreatorServiceInfo>, List<Map.Entry<String, String>>> serviceToDependencyMap,
       String harnessVersion) {
     for (Map.Entry<String, String> dependencyEntry : responseBuilder.getDeps().getDependenciesMap().entrySet()) {
+      harnessVersion = getYamlVersionForDependencyEntry(harnessVersion, dependencyEntry, responseBuilder);
       // Always first check  -
       // 1. Affinity service
       // 2. pipeline-service dependencies
@@ -405,5 +406,26 @@ public class PlanCreatorMergeService {
         }
       }
     });
+  }
+
+  private String getYamlVersionForDependencyEntry(String harnessVersion, Map.Entry<String, String> dependencyEntry,
+      PlanCreationBlobResponse.Builder responseBuilder) {
+    if (responseBuilder.getDeps().getDependencyMetadataMap().get(dependencyEntry.getKey()) != null
+        && responseBuilder.getDeps()
+                .getDependencyMetadataMap()
+                .get(dependencyEntry.getKey())
+                .getParentInfo()
+                .getDataMap()
+                .get(PlanCreatorConstants.YAML_VERSION)
+            != null) {
+      harnessVersion = responseBuilder.getDeps()
+                           .getDependencyMetadataMap()
+                           .get(dependencyEntry.getKey())
+                           .getParentInfo()
+                           .getDataMap()
+                           .get(PlanCreatorConstants.YAML_VERSION)
+                           .getStringValue();
+    }
+    return harnessVersion;
   }
 }

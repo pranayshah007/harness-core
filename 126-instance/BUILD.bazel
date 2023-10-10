@@ -15,6 +15,7 @@ shared_dependencies = [
     "//400-rest:module",
     "//958-migration-sdk:module",
     "//980-commons:module",
+    "//970-api-services-beans/src/main/java/io/harness/k8s/model:module",
     "//970-ng-commons:module",
     "@maven//:com_fasterxml_jackson_core_jackson_annotations",
     "@maven//:com_fasterxml_jackson_core_jackson_core",

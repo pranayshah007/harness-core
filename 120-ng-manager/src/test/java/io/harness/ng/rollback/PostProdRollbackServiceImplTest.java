@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
@@ -24,8 +25,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.dtos.rollback.K8sPostProdRollbackInfo;
 import io.harness.dtos.rollback.PostProdRollbackCheckDTO;
 import io.harness.dtos.rollback.PostProdRollbackResponseDTO;
+import io.harness.dtos.rollback.PostProdRollbackSwimLaneInfo;
 import io.harness.entities.Instance;
 import io.harness.entities.InstanceType;
 import io.harness.entities.RollbackStatus;
@@ -49,11 +52,11 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
 @OwnedBy(HarnessTeam.CDP)
-public class PostProdRollbackServiceTest extends CategoryTest {
+public class PostProdRollbackServiceImplTest extends CategoryTest {
   @Mock private InstanceRepository instanceRepository;
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Mock private PipelineServiceClient pipelineServiceClient;
-
+  @Mock private PostProdRollbackHelperUtils postProdRollbackHelperUtils;
   @InjectMocks @Spy private PostProdRollbackServiceImpl postProdRollbackService;
   String instanceKey = "instanceUuid";
   String infraMappingId = "instanceUuid";
@@ -116,17 +119,21 @@ public class PostProdRollbackServiceTest extends CategoryTest {
     response = postProdRollbackService.checkIfRollbackAllowed(accountId, instanceKey, infraMappingId);
     assertThat(response.isRollbackAllowed()).isFalse();
 
-    doReturn(Instance.builder()
-                 .stageStatus(Status.SUCCEEDED)
-                 .instanceType(InstanceType.K8S_INSTANCE)
-                 .instanceKey(instanceKey)
-                 .rollbackStatus(RollbackStatus.NOT_STARTED)
-                 .infrastructureMappingId(infraMappingId)
-                 .build())
+    Instance instance = Instance.builder()
+                            .stageStatus(Status.SUCCEEDED)
+                            .instanceType(InstanceType.K8S_INSTANCE)
+                            .instanceKey(instanceKey)
+                            .rollbackStatus(RollbackStatus.NOT_STARTED)
+                            .infrastructureMappingId(infraMappingId)
+                            .build();
+    doReturn(instance)
         .when(instanceRepository)
         .getInstanceByInstanceKeyAndInfrastructureMappingId(instanceKey, infraMappingId);
+    PostProdRollbackSwimLaneInfo postProdRollbackSwimLaneInfo = K8sPostProdRollbackInfo.builder().build();
+    doReturn(postProdRollbackSwimLaneInfo).when(postProdRollbackHelperUtils).getSwimlaneInfo(eq(instance));
     response = postProdRollbackService.checkIfRollbackAllowed(accountId, instanceKey, infraMappingId);
     assertThat(response.isRollbackAllowed()).isTrue();
+    assertThat(response.getSwimLaneInfo()).isEqualTo(postProdRollbackSwimLaneInfo);
   }
 
   @Test
@@ -157,19 +164,21 @@ public class PostProdRollbackServiceTest extends CategoryTest {
     doReturn(null)
         .when(pipelineServiceClient)
         .triggerPostExecutionRollback(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
-    doReturn(Instance.builder()
-                 .accountIdentifier(accountId)
-                 .orgIdentifier(orgId)
-                 .projectIdentifier(projectId)
-                 .stageNodeExecutionId(stageNodeExecutionId)
-                 .lastPipelineExecutionId(planExecutionId)
-                 .stageStatus(Status.SUCCEEDED)
-                 .instanceType(InstanceType.K8S_INSTANCE)
-                 .instanceKey(instanceKey)
-                 .infrastructureMappingId(infraMappingId)
-                 .build())
+    Instance instance = Instance.builder()
+                            .accountIdentifier(accountId)
+                            .orgIdentifier(orgId)
+                            .projectIdentifier(projectId)
+                            .stageNodeExecutionId(stageNodeExecutionId)
+                            .lastPipelineExecutionId(planExecutionId)
+                            .stageStatus(Status.SUCCEEDED)
+                            .instanceType(InstanceType.K8S_INSTANCE)
+                            .instanceKey(instanceKey)
+                            .infrastructureMappingId(infraMappingId)
+                            .build();
+    doReturn(instance)
         .when(instanceRepository)
         .getInstanceByInstanceKeyAndInfrastructureMappingId(instanceKey, infraMappingId);
+    doReturn(null).when(postProdRollbackHelperUtils).getSwimlaneInfo(eq(instance));
     PostProdRollbackResponseDTO response =
         postProdRollbackService.triggerRollback(accountId, instanceKey, infraMappingId);
 

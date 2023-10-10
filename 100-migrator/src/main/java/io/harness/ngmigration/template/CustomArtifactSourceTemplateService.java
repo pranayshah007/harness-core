@@ -102,6 +102,7 @@ public class CustomArtifactSourceTemplateService implements NgTemplateService {
                   -> StringNGVariable.builder()
                          .name(isEmpty(attribute.getMappedAttribute()) ? PLEASE_FIX_ME : attribute.getMappedAttribute())
                          .value(ParameterField.createValueField(attribute.getRelativePath()))
+                         .type(NGVariableType.STRING)
                          .build())
               .collect(Collectors.toList());
     }

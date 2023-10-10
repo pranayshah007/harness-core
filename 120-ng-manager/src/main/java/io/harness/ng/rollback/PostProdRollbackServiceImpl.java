@@ -16,9 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
-import io.harness.dtos.rollback.K8sPostProdRollbackInfo;
 import io.harness.dtos.rollback.PostProdRollbackCheckDTO;
-import io.harness.dtos.rollback.PostProdRollbackCheckDTO.PostProdRollbackCheckDTOBuilder;
 import io.harness.dtos.rollback.PostProdRollbackResponseDTO;
 import io.harness.dtos.rollback.PostProdRollbackSwimLaneInfo;
 import io.harness.entities.Instance;
@@ -47,6 +45,7 @@ public class PostProdRollbackServiceImpl implements PostProdRollbackService {
   @Inject private PipelineServiceClient pipelineServiceClient;
   @Inject private InstanceRepository instanceRepository;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Inject private PostProdRollbackHelperUtils postProdRollbackHelperUtils;
   @Override
   public PostProdRollbackCheckDTO checkIfRollbackAllowed(
       String accountIdentifier, String instanceKey, String infraMappingId) {
@@ -55,7 +54,9 @@ public class PostProdRollbackServiceImpl implements PostProdRollbackService {
           "PostProd rollback Feature-flag %s is disabled. Please contact harness support for enabling the feature-flag",
           POST_PROD_ROLLBACK.name()));
     }
-    PostProdRollbackCheckDTOBuilder rollbackCheckDTO = PostProdRollbackCheckDTO.builder().isRollbackAllowed(true);
+
+    boolean isRollbackAllowed = true;
+    String message = null;
     Instance instance =
         instanceRepository.getInstanceByInstanceKeyAndInfrastructureMappingId(instanceKey, infraMappingId);
     if (instance == null) {
@@ -63,26 +64,34 @@ public class PostProdRollbackServiceImpl implements PostProdRollbackService {
           "Could not find the instance for InstanceKey %s and infraMappingId %s", instanceKey, infraMappingId));
     }
     if (instance.getStageStatus() != Status.SUCCEEDED) {
-      rollbackCheckDTO.isRollbackAllowed(false);
-      rollbackCheckDTO.message(String.format(
-          "The deployment stage was not successful in latest execution %s", instance.getLastPipelineExecutionId()));
+      isRollbackAllowed = false;
+      message = String.format(
+          "The deployment stage was not successful in latest execution %s", instance.getLastPipelineExecutionId());
     } else if (!INSTANCE_TYPE_TO_FF_MAP.containsKey(instance.getInstanceType())
         || !cdFeatureFlagHelper.isEnabled(accountIdentifier, INSTANCE_TYPE_TO_FF_MAP.get(instance.getInstanceType()))) {
-      rollbackCheckDTO.isRollbackAllowed(false);
-      rollbackCheckDTO.message(
-          String.format("The given instanceType %s is not supported for rollback.", instance.getInstanceType().name()));
+      isRollbackAllowed = false;
+      message =
+          String.format("The given instanceType %s is not supported for rollback.", instance.getInstanceType().name());
     }
     if (instance.getRollbackStatus() == null) {
-      rollbackCheckDTO.isRollbackAllowed(false);
-      rollbackCheckDTO.message("Unable to determine rollback status for given Instance");
+      isRollbackAllowed = false;
+      message = "Unable to determine rollback status for given Instance";
     } else if (!ALLOWED_ROLLBACK_START_STATUSES.contains(instance.getRollbackStatus())) {
-      rollbackCheckDTO.isRollbackAllowed(false);
-      rollbackCheckDTO.message(String.format(
+      isRollbackAllowed = false;
+      message = String.format(
           "Can not start the Rollback. Rollback has already been triggered and the previous rollback status is: %s",
-          instance.getRollbackStatus()));
+          instance.getRollbackStatus());
     }
-    PostProdRollbackSwimLaneInfo swimLaneInfo = getSwimlaneInfo(instance);
-    return rollbackCheckDTO.swimLaneInfo(swimLaneInfo).build();
+
+    PostProdRollbackSwimLaneInfo swimLaneInfo = null;
+    if (isRollbackAllowed) {
+      swimLaneInfo = postProdRollbackHelperUtils.getSwimlaneInfo(instance);
+    }
+    return PostProdRollbackCheckDTO.builder()
+        .isRollbackAllowed(isRollbackAllowed)
+        .message(message)
+        .swimLaneInfo(swimLaneInfo)
+        .build();
   }
 
   @Override
@@ -121,14 +130,5 @@ public class PostProdRollbackServiceImpl implements PostProdRollbackService {
         .infraMappingId(infraMappingId)
         .planExecutionId(planExecutionId)
         .build();
-  }
-
-  public PostProdRollbackSwimLaneInfo getSwimlaneInfo(Instance instance) {
-    switch (instance.getInstanceType()) {
-      case K8S_INSTANCE:
-        return K8sPostProdRollbackInfo.builder().build();
-      default:
-        return null;
-    }
   }
 }
