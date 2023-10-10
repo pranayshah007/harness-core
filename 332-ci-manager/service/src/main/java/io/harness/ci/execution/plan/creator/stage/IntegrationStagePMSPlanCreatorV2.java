@@ -39,8 +39,10 @@ import io.harness.plancreator.stages.AbstractStagePlanCreator;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.StageElementParameters.StageElementParametersBuilder;
 import io.harness.plancreator.strategy.StrategyUtils;
+import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepType;
@@ -206,6 +208,8 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
+    List<AdviserObtainment> adviserObtainments =
+        StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, true);
     SdkTimeoutObtainment sdkTimeoutObtainment = StageTimeoutUtils.getStageTimeoutObtainment(stageNode);
     PlanNodeBuilder planNodeBuilder =
         PlanNode.builder()
@@ -221,8 +225,9 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                     .build())
-            .adviserObtainments(StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, true));
-
+            .advisorObtainmentForExecutionMode(ExecutionMode.PIPELINE_ROLLBACK, adviserObtainments)
+            .advisorObtainmentForExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK, adviserObtainments)
+            .adviserObtainments(adviserObtainments);
     if (!EmptyPredicate.isEmpty(ctx.getExecutionInputTemplate())) {
       planNodeBuilder.executionInputTemplate(ctx.getExecutionInputTemplate());
     }

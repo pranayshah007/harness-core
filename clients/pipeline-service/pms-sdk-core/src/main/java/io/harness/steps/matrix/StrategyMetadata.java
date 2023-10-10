@@ -22,4 +22,5 @@ public class StrategyMetadata {
   String strategyNodeName;
   String strategyNodeIdentifier;
   Boolean shouldProceedIfFailed;
+  Boolean addAdviserForExecutionModes;
 }

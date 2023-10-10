@@ -201,7 +201,7 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
       Map<String, YamlField> dependenciesNodeMap, Map<String, ByteString> metadataMap) {
     StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, stageNode.getUuid(),
         stageNode.getIdentifier(), stageNode.getName(), dependenciesNodeMap, metadataMap,
-        StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false));
+        StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false), true);
   }
 
   // This is for graph view of strategy execution

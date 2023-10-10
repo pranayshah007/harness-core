@@ -85,7 +85,7 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
       Map<String, YamlField> dependenciesNodeMap, Map<String, ByteString> metadataMap) {
     StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getIdentifier(),
         field.getName(), dependenciesNodeMap, metadataMap,
-        StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false));
+        StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false), true);
   }
 
   public PlanNodeBuilder setStageTimeoutObtainment(
@@ -119,6 +119,6 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, Map<String, ByteString> metadataMap) {
     StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, field.getUuid(), field.getName(),
         field.getIdentifier(), planCreationResponseMap, metadataMap,
-        StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false));
+        StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, false), true);
   }
 }

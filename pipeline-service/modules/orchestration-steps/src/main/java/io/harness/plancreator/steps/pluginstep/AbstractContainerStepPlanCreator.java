@@ -197,7 +197,7 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
   private void addStrategyFieldDependencyIfPresent(KryoSerializer kryoSerializer, PlanCreationContext ctx, String uuid,
       String name, String identifier, LinkedHashMap<String, PlanCreationResponse> responseMap) {
     StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, uuid, name, identifier, responseMap,
-        new HashMap<>(), getAdviserObtainmentFromMetaData(ctx.getCurrentField(), false), false);
+        new HashMap<>(), getAdviserObtainmentFromMetaData(ctx.getCurrentField(), false), false, false);
   }
 
   private List<AdviserObtainment> getAdviserObtainmentFromMetaData(YamlField currentField, boolean checkForStrategy) {

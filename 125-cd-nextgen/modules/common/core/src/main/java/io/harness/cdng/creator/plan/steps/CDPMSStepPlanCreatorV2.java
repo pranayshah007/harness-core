@@ -114,7 +114,7 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
     // Adds the strategy field as dependency if present
     StrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, stepElement.getUuid(),
         stepElement.getIdentifier(), stepElement.getName(), dependenciesNodeMap, metadataMap,
-        StrategyUtils.getAdviserObtainmentFromMetaDataForStep(kryoSerializer, ctx.getCurrentField()));
+        StrategyUtils.getAdviserObtainmentFromMetaDataForStep(kryoSerializer, ctx.getCurrentField()), true);
     // We are swapping the uuid with strategy node if present.
 
     PlanNode stepPlanNode =

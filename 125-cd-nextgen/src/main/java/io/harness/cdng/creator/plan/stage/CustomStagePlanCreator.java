@@ -32,6 +32,7 @@ import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
@@ -112,6 +113,10 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                     .build())
+            .advisorObtainmentForExecutionMode(ExecutionMode.PIPELINE_ROLLBACK,
+                getAdviserObtainmentFromMetaData(ctx.getCurrentField(), ctx.getDependency()))
+            .advisorObtainmentForExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK,
+                getAdviserObtainmentFromMetaData(ctx.getCurrentField(), ctx.getDependency()))
             .adviserObtainments(getAdviserObtainmentFromMetaData(ctx.getCurrentField(), ctx.getDependency()));
     if (!EmptyPredicate.isEmpty(ctx.getExecutionInputTemplate())) {
       builder.executionInputTemplate(ctx.getExecutionInputTemplate());

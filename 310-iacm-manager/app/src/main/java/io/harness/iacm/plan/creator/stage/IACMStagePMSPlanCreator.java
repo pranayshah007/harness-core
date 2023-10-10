@@ -48,8 +48,10 @@ import io.harness.plancreator.stages.AbstractStagePlanCreator;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.StageElementParameters.StageElementParametersBuilder;
 import io.harness.plancreator.strategy.StrategyUtils;
+import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.contracts.steps.SkipType;
@@ -466,6 +468,8 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
+    List<AdviserObtainment> adviserObtainments =
+        StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, true);
     PlanNodeBuilder planNodeBuilder =
         PlanNode.builder()
             .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid()))
@@ -480,7 +484,9 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                     .build())
-            .adviserObtainments(StrategyUtils.getAdviserObtainments(ctx.getCurrentField(), kryoSerializer, true));
+            .advisorObtainmentForExecutionMode(ExecutionMode.PIPELINE_ROLLBACK, adviserObtainments)
+            .advisorObtainmentForExecutionMode(ExecutionMode.POST_EXECUTION_ROLLBACK, adviserObtainments)
+            .adviserObtainments(adviserObtainments);
     SdkTimeoutObtainment sdkTimeoutObtainment = StageTimeoutUtils.getStageTimeoutObtainment(stageNode);
     planNodeBuilder = setStageTimeoutObtainment(sdkTimeoutObtainment, planNodeBuilder);
     return planNodeBuilder.build();
