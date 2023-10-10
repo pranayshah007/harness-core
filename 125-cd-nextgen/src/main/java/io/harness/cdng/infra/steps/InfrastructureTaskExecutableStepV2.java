@@ -372,18 +372,14 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     Set<VisitedSecretReference> secretReferences =
         infraSpec == null ? Set.of() : entityReferenceExtractorUtils.extractReferredSecrets(ambiance, infraSpec);
 
-    if (EmptyPredicate.isNotEmpty(secretReferences)) {
-      secretReferences.forEach(secretReference
-          -> secretRuntimeUsageService.createSecretRuntimeUsage(secretReference.getSecretRef(),
-              secretReference.getReferredBy(),
-              EntityUsageDetailProto.newBuilder()
-                  .setPipelineExecutionUsageData(PipelineExecutionUsageDataProto.newBuilder()
-                                                     .setPlanExecutionId(ambiance.getPlanExecutionId())
-                                                     .setStageExecutionId(ambiance.getStageExecutionId())
-                                                     .build())
-                  .setUsageType(PIPELINE_EXECUTION)
-                  .build()));
-    }
+    secretRuntimeUsageService.createSecretRuntimeUsage(secretReferences,
+        EntityUsageDetailProto.newBuilder()
+            .setPipelineExecutionUsageData(PipelineExecutionUsageDataProto.newBuilder()
+                                               .setPlanExecutionId(ambiance.getPlanExecutionId())
+                                               .setStageExecutionId(ambiance.getStageExecutionId())
+                                               .build())
+            .setUsageType(PIPELINE_EXECUTION)
+            .build());
   }
 
   private void publishOutput(Infrastructure infrastructure, Ambiance ambiance) {

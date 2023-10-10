@@ -8,6 +8,7 @@
 package io.harness.secretusage;
 
 import io.harness.beans.IdentifierRef;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.events.SecretRuntimeUsageEventProducer;
 import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
@@ -18,8 +19,10 @@ import io.harness.eventsframework.schemas.entityactivity.EntityActivityCreateDTO
 import io.harness.ng.core.activityhistory.NGActivityStatus;
 import io.harness.ng.core.activityhistory.NGActivityType;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.walktree.visitor.entityreference.beans.VisitedSecretReference;
 
 import com.google.inject.Inject;
+import java.util.Set;
 
 public class SecretRuntimeUsageServiceImpl implements SecretRuntimeUsageService {
   private final SecretRuntimeUsageEventProducer secretRuntimeUsageEventProducer;
@@ -49,6 +52,15 @@ public class SecretRuntimeUsageServiceImpl implements SecretRuntimeUsageService 
         createRuntimeUsageDTOForSecret(accountIdentifier, identifierRefProtoDTO, referredByEntity, usageDetail);
     secretRuntimeUsageEventProducer.publishEvent(
         accountIdentifier, secretDTOV2.getIdentifier(), entityActivityCreateDTO);
+  }
+
+  @Override
+  public void createSecretRuntimeUsage(
+      Set<VisitedSecretReference> secretReferences, EntityUsageDetailProto usageDetail) {
+    if (EmptyPredicate.isNotEmpty(secretReferences)) {
+      secretReferences.forEach(secretReference
+          -> createSecretRuntimeUsage(secretReference.getSecretRef(), secretReference.getReferredBy(), usageDetail));
+    }
   }
 
   private EntityActivityCreateDTO createRuntimeUsageDTOForSecret(String accountIdentifier,

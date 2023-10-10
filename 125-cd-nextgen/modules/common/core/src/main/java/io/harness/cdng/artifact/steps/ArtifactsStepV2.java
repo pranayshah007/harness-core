@@ -305,18 +305,14 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
     Set<VisitedSecretReference> secretReferences =
         artifacts == null ? Set.of() : entityReferenceExtractorUtils.extractReferredSecrets(ambiance, artifacts);
 
-    if (EmptyPredicate.isNotEmpty(secretReferences)) {
-      secretReferences.forEach(secretReference
-          -> secretRuntimeUsageService.createSecretRuntimeUsage(secretReference.getSecretRef(),
-              secretReference.getReferredBy(),
-              EntityUsageDetailProto.newBuilder()
-                  .setPipelineExecutionUsageData(PipelineExecutionUsageDataProto.newBuilder()
-                                                     .setPlanExecutionId(ambiance.getPlanExecutionId())
-                                                     .setStageExecutionId(ambiance.getStageExecutionId())
-                                                     .build())
-                  .setUsageType(PIPELINE_EXECUTION)
-                  .build()));
-    }
+    secretRuntimeUsageService.createSecretRuntimeUsage(secretReferences,
+        EntityUsageDetailProto.newBuilder()
+            .setPipelineExecutionUsageData(PipelineExecutionUsageDataProto.newBuilder()
+                                               .setPlanExecutionId(ambiance.getPlanExecutionId())
+                                               .setStageExecutionId(ambiance.getStageExecutionId())
+                                               .build())
+            .setUsageType(PIPELINE_EXECUTION)
+            .build());
   }
 
   private void resolveExpressions(Ambiance ambiance, ArtifactListConfig artifacts) {

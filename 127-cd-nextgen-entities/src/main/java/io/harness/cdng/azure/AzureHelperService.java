@@ -33,7 +33,6 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.utils.ConnectorUtils;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.azure.AcrResponseDTO;
@@ -263,7 +262,6 @@ public class AzureHelperService {
       StoreConfigWrapper storeConfigWrapper, Ambiance ambiance, String entityType) {
     cdExpressionResolver.updateStoreConfigExpressions(ambiance, storeConfigWrapper);
     StoreConfig storeConfig = storeConfigWrapper.getSpec();
-    publishSecretRuntimeUsage(ambiance, storeConfig);
     String storeKind = storeConfig.getKind();
     if (HARNESS_STORE_TYPE.equals(storeKind)) {
       validateSettingsFileRefs((HarnessStore) storeConfig, ambiance, entityType);
@@ -272,22 +270,18 @@ public class AzureHelperService {
     }
   }
 
-  private void publishSecretRuntimeUsage(Ambiance ambiance, StoreConfig storeConfig) {
+  public void publishSecretRuntimeUsage(Ambiance ambiance, StoreConfigWrapper storeConfig) {
     Set<VisitedSecretReference> secretReferences =
         storeConfig == null ? Set.of() : entityReferenceExtractorUtils.extractReferredSecrets(ambiance, storeConfig);
 
-    if (EmptyPredicate.isNotEmpty(secretReferences)) {
-      secretReferences.forEach(secretReference
-          -> secretRuntimeUsageService.createSecretRuntimeUsage(secretReference.getSecretRef(),
-              secretReference.getReferredBy(),
-              EntityUsageDetailProto.newBuilder()
-                  .setPipelineExecutionUsageData(PipelineExecutionUsageDataProto.newBuilder()
-                                                     .setPlanExecutionId(ambiance.getPlanExecutionId())
-                                                     .setStageExecutionId(ambiance.getStageExecutionId())
-                                                     .build())
-                  .setUsageType(PIPELINE_EXECUTION)
-                  .build()));
-    }
+    secretRuntimeUsageService.createSecretRuntimeUsage(secretReferences,
+        EntityUsageDetailProto.newBuilder()
+            .setPipelineExecutionUsageData(PipelineExecutionUsageDataProto.newBuilder()
+                                               .setPlanExecutionId(ambiance.getPlanExecutionId())
+                                               .setStageExecutionId(ambiance.getStageExecutionId())
+                                               .build())
+            .setUsageType(PIPELINE_EXECUTION)
+            .build());
   }
 
   private LinkedHashMap<String, String> createLogStreamingAbstractions(BaseNGAccess ngAccess, Ambiance ambiance) {

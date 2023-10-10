@@ -274,18 +274,14 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
       Set<VisitedSecretReference> secretReferences =
           configFile == null ? Set.of() : entityReferenceExtractorUtils.extractReferredSecrets(ambiance, configFile);
 
-      if (EmptyPredicate.isNotEmpty(secretReferences)) {
-        secretReferences.forEach(secretReference
-            -> secretRuntimeUsageService.createSecretRuntimeUsage(secretReference.getSecretRef(),
-                secretReference.getReferredBy(),
-                EntityUsageDetailProto.newBuilder()
-                    .setPipelineExecutionUsageData(PipelineExecutionUsageDataProto.newBuilder()
-                                                       .setPlanExecutionId(ambiance.getPlanExecutionId())
-                                                       .setStageExecutionId(ambiance.getStageExecutionId())
-                                                       .build())
-                    .setUsageType(PIPELINE_EXECUTION)
-                    .build()));
-      }
+      secretRuntimeUsageService.createSecretRuntimeUsage(secretReferences,
+          EntityUsageDetailProto.newBuilder()
+              .setPipelineExecutionUsageData(PipelineExecutionUsageDataProto.newBuilder()
+                                                 .setPlanExecutionId(ambiance.getPlanExecutionId())
+                                                 .setStageExecutionId(ambiance.getStageExecutionId())
+                                                 .build())
+              .setUsageType(PIPELINE_EXECUTION)
+              .build());
     }
   }
 
