@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.GTM;
 import static io.harness.beans.FeatureName.AUTO_FREE_MODULE_LICENSE;
 import static io.harness.configuration.DeployMode.DEPLOY_MODE;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.remote.client.CGRestUtils.getResponse;
 import static io.harness.remote.client.CGRestUtils.getRetryPolicy;
@@ -41,6 +42,7 @@ import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.licensing.Edition;
 import io.harness.licensing.services.LicenseService;
+import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.user.SignupAction;
 import io.harness.ng.core.user.UserInfo;
@@ -319,6 +321,84 @@ public class SignupServiceImpl implements SignupService {
     return true;
   }
 
+  @Override
+  public SignupVerificationToken verifySignupInvite(
+      String token, String referer, String gaClientId, String visitorToken) {
+    if (DeployVariant.isCommunity(deployVersion)) {
+      throw new InvalidRequestException("You are not allowed to complete a signup invite with community edition");
+    }
+
+    Optional<SignupVerificationToken> verificationTokenOptional = verificationTokenRepository.findByToken(token);
+
+    if (!verificationTokenOptional.isPresent()) {
+      throw new InvalidRequestException("Email token doesn't exist");
+    }
+
+    SignupVerificationToken verificationToken = verificationTokenOptional.get();
+
+    if (verificationToken.getValidUntil() == null || verificationToken.getUserId() != null) {
+      throw new InvalidRequestException("Verification token is invalid.");
+    }
+
+    if (verificationToken.getValidUntil() < Instant.now().toEpochMilli()) {
+      throw new InvalidRequestException("Verification token expired, please resend verify email");
+    }
+    return verificationToken;
+  }
+
+  @Override
+  public UserInfo createAccountAndUserInCluster(String email, AccountDTO accountDTO) {
+    UserInfo userInfo = null;
+    try {
+      userInfo = getResponse(userClient.completeSignupInvite(email, accountDTO));
+      return userInfo;
+    } catch (Exception e) {
+      sendFailedTelemetryEvent(
+          email, userInfo != null ? userInfo.getUtmInfo() : null, e, null, "Complete Signup Invite");
+      throw e;
+    }
+  }
+
+  @Override
+  public UserInfo cleanUpVerificationTokenAndSendTelemetry(UserInfo userInfo, SignupVerificationToken verificationToken,
+      String token, String referer, String gaClientId, String visitorToken) {
+    try {
+      verificationTokenRepository.delete(verificationToken);
+      sendSucceedTelemetryEvent(userInfo.getEmail(), userInfo.getUtmInfo(), userInfo.getDefaultAccountId(), userInfo,
+          SignupType.SIGNUP_FORM_FLOW, userInfo.getAccounts().get(0).getAccountName(), referer, gaClientId,
+          visitorToken);
+
+      UserInfo finalUserInfo = userInfo;
+      executorService.submit(() -> {
+        try {
+          String url = generateLoginUrl(finalUserInfo.getDefaultAccountId());
+          signupNotificationHelper.sendSignupNotification(
+              finalUserInfo, EmailType.CONFIRM, PredefinedTemplate.SIGNUP_CONFIRMATION.getIdentifier(), url);
+        } catch (URISyntaxException e) {
+          log.error("Failed to generate login url", e);
+        }
+      });
+
+      log.info("Waiting on RBAC setup for the account with id {}", userInfo.getDefaultAccountId());
+      waitForRbacSetup(userInfo.getDefaultAccountId(), userInfo.getUuid(), userInfo.getEmail());
+
+      if (featureFlagService.isGlobalEnabled(AUTO_FREE_MODULE_LICENSE)) {
+        enableModuleLicense(
+            !userInfo.getIntent().equals("") ? ModuleType.valueOf(userInfo.getIntent().toUpperCase()) : null,
+            userInfo.getEdition() != null ? Edition.valueOf(userInfo.getEdition()) : null,
+            userInfo.getSignupAction() != null ? SignupAction.valueOf(userInfo.getSignupAction()) : null,
+            userInfo.getDefaultAccountId(), referer, gaClientId);
+      }
+
+      log.info("Completed NG signup for {}", userInfo.getEmail());
+      return userInfo;
+    } catch (Exception e) {
+      sendFailedTelemetryEvent(verificationToken.getEmail(), userInfo != null ? userInfo.getUtmInfo() : null, e, null,
+          "Complete Signup Invite");
+      throw e;
+    }
+  }
+
   /**
    * Complete Signup in email verification blocking flow
    */
@@ -425,10 +505,23 @@ public class SignupServiceImpl implements SignupService {
   }
 
   private AccountDTO createAccount(SignupDTO dto) {
+    return createAccount(dto, null);
+  }
+  private AccountDTO createAccount(SignupDTO dto, String accountId) {
+    String username = dto.getEmail().split("@")[0];
+    AccountDTO accountDTO = AccountDTO.builder()
+                                .name(username)
+                                .companyName(username)
+                                .defaultExperience(DefaultExperience.NG)
+                                .isProductLed(true)
+                                .build();
+    if (isNotEmpty(accountId)) {
+      accountDTO.setIdentifier(accountId);
+    }
     try {
-      return accountService.createAccount(dto);
+      return accountService.createAccount(accountDTO);
     } catch (Exception e) {
-      sendFailedTelemetryEvent(dto.getEmail(), dto.getUtmInfo(), e, null, "Account creation");
+      sendFailedTelemetryEvent(dto.getEmail(), dto.getUtmInfo(), e, accountDTO, "Account creation");
       throw e;
     }
   }

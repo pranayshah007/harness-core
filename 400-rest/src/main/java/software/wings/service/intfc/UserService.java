@@ -21,6 +21,7 @@ import io.harness.event.model.EventType;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.common.beans.Generation;
 import io.harness.ng.core.common.beans.UserSource;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.dto.UserInviteDTO;
 import io.harness.ng.core.invites.dto.InviteOperationResponse;
 import io.harness.ng.core.switchaccount.RestrictedSwitchAccountInfo;
@@ -110,10 +111,12 @@ public interface UserService extends OwnedByAccount {
    */
   UserInvite createNewSignupInvite(SignupInviteDTO user);
 
+  User completeNewSignupInvite(UserInvite userInvite);
+
   /**
    * Used for NG signup to finish provisioning of account, user etc.
    */
-  User completeNewSignupInvite(UserInvite userInvite);
+  User completeNewSignupInvite(UserInvite userInvite, AccountDTO accountDTO);
 
   /**
    * Used for NG community edition to finish provisioning of account, user etc.

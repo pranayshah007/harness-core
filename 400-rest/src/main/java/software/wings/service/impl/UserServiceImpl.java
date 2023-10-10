@@ -130,6 +130,7 @@ import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.account.OauthProviderType;
 import io.harness.ng.core.common.beans.Generation;
 import io.harness.ng.core.common.beans.UserSource;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.dto.UserInviteDTO;
 import io.harness.ng.core.invites.dto.InviteDTO;
 import io.harness.ng.core.invites.dto.InviteOperationResponse;
@@ -692,26 +693,36 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public User completeNewSignupInvite(UserInvite userInvite) {
+    return completeNewSignupInvite(userInvite, null);
+  }
+  @Override
+  public User completeNewSignupInvite(UserInvite userInvite, AccountDTO accountDTO) {
     User existingUser = getUserByEmail(userInvite.getEmail());
     if (existingUser != null) {
       throw new UserRegistrationException(EXC_USER_ALREADY_REGISTERED, ErrorCode.USER_ALREADY_REGISTERED, USER);
     }
 
     // create account
-    String username = userInvite.getEmail().split("@")[0];
+
     Account account = Account.Builder.anAccount()
-                          .withAccountName(username)
-                          .withCompanyName(username)
                           .withDefaultExperience(DefaultExperience.NG)
                           .withCreatedFromNG(true)
                           .withIsProductLed(true)
                           .withAppId(GLOBAL_APP_ID)
                           .build();
+
     account.setLicenseInfo(LicenseInfo.builder()
                                .accountType(AccountType.TRIAL)
                                .accountStatus(AccountStatus.ACTIVE)
                                .licenseUnits(50)
                                .build());
+    String username = userInvite.getEmail().split("@")[0];
+    if (null != accountDTO) {
+      username = accountDTO.getName();
+      account.setUuid(accountDTO.getIdentifier());
+    }
+    account.setAccountName(username);
+    account.setCompanyName(username);
 
     Account createdAccount = accountService.save(account, false);
 

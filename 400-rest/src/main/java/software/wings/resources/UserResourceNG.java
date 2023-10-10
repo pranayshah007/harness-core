@@ -34,6 +34,7 @@ import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.mappers.AccountMapper;
 import io.harness.ng.core.common.beans.UserSource;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.dto.UserInviteDTO;
 import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.PasswordChangeDTO;
@@ -144,6 +145,33 @@ public class UserResourceNG {
   public RestResponse<SignupInviteDTO> createSignupInvite(SignupInviteDTO request) {
     UserInvite userInvite = userService.createNewSignupInvite(request);
     return new RestResponse<>(convertUserInviteToSignupInviteDTO(userInvite));
+  }
+
+  @PUT
+  @Path("/signup-invite-with-account")
+  public RestResponse<UserInfo> completeSignupInvite(@QueryParam("email") String email, AccountDTO accountDTO) {
+    UserInvite userInviteInDB = signupService.getUserInviteByEmail(email);
+    if (userInviteInDB == null || !userInviteInDB.isCreatedFromNG()) {
+      throw new InvalidRequestException("Can't complete signup, due to invalid user invite");
+    }
+
+    User createdUser = userService.completeNewSignupInvite(userInviteInDB, accountDTO);
+    UserInfo userInfo = convertUserToNgUser(createdUser);
+    userInfo.setIntent(userInviteInDB.getIntent());
+
+    if (isNotEmpty(userInviteInDB.getSignupAction())) {
+      userInfo.setSignupAction(userInviteInDB.getSignupAction());
+    }
+
+    if (isNotEmpty(userInviteInDB.getEdition())) {
+      userInfo.setEdition(userInviteInDB.getEdition());
+    }
+
+    if (isNotEmpty(userInviteInDB.getBillingFrequency())) {
+      userInfo.setBillingFrequency(userInviteInDB.getBillingFrequency());
+    }
+
+    return new RestResponse<>(userInfo);
   }
 
   @PUT

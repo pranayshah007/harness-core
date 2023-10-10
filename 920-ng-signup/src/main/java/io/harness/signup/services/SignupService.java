@@ -11,10 +11,12 @@ import static io.harness.annotations.dev.HarnessTeam.GTM;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.WingsException;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.signup.dto.OAuthSignupDTO;
 import io.harness.signup.dto.SignupDTO;
 import io.harness.signup.dto.VerifyTokenResponseDTO;
+import io.harness.signup.entities.SignupVerificationToken;
 
 import javax.annotation.Nullable;
 
@@ -27,6 +29,13 @@ public interface SignupService {
   UserInfo marketplaceSignup(SignupDTO dto, String inviteId, String marketPlaceToken) throws WingsException;
 
   boolean createSignupInvite(SignupDTO dto, String captchaToken);
+
+  SignupVerificationToken verifySignupInvite(String token, String referer, String gaClientId, String visitorToken);
+
+  UserInfo createAccountAndUserInCluster(String email, AccountDTO accountDTO);
+
+  UserInfo cleanUpVerificationTokenAndSendTelemetry(UserInfo userInfo, SignupVerificationToken verificationToken,
+      String token, String referer, String gaClientId, String visitorToken);
 
   UserInfo completeSignupInvite(
       String token, @Nullable String referer, @Nullable String gaClientId, @Nullable String visitorToken);

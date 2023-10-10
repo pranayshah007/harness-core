@@ -13,6 +13,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.PageResponse;
 import io.harness.ng.core.common.beans.UserSource;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.UserInviteDTO;
@@ -50,6 +51,7 @@ public interface UserClient {
   String USERS_AGGREGATE_API = "user";
   String USERS_API_OAUTH = "ng/user/oauth";
   String USERS_SIGNUP_INVITE_API = "ng/user/signup-invite";
+  String USERS_SIGNUP_INVITE__WITH_ACCOUNT_API = "ng/user/signup-invite-with-account";
   String USER_SIGNUP_COMMUNITY = "ng/user/signup-invite/community";
   String USER_SIGNUP_MARKETPLACE = "ng/user/signup-invite/marketplace";
   String USER_BATCH_LIST_API = "ng/user/batch";
@@ -89,6 +91,8 @@ public interface UserClient {
   Call<RestResponse<Boolean>> checkUserLimit(@Query("accountId") String accountId, @Query("email") String email);
 
   @PUT(USERS_SIGNUP_INVITE_API) Call<RestResponse<UserInfo>> completeSignupInvite(@Query("email") String email);
+  @PUT(USERS_SIGNUP_INVITE__WITH_ACCOUNT_API)
+  Call<RestResponse<UserInfo>> completeSignupInvite(@Query("email") String email, @Body AccountDTO accountDTO);
 
   @PUT(SCIM_USER_PATCH_UPDATE)
   Call<RestResponse<ScimUser>> scimUserPatchUpdate(
@@ -128,6 +132,9 @@ public interface UserClient {
   @GET(USERS_API + "/email/{emailId}")
   Call<RestResponse<Optional<UserInfo>>> getUserByEmailId(@Path("emailId") String emailId);
 
+  @GET(USERS_API + "/email/{emailId}/preference")
+  Call<RestResponse<Optional<UserInfo>>> getUserWithPreferenceDataByEmailId(
+      @Path("emailId") String emailId, @Query("accountId") String accountId);
   @POST(USER_BATCH_LIST_API)
   Call<RestResponse<List<UserInfo>>> listUsers(@Query("accountId") String accountId, @Body UserFilterNG userFilterNG);
 

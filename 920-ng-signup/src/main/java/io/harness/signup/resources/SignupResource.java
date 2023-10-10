@@ -13,6 +13,7 @@ import static java.lang.Boolean.TRUE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.licensing.NGLicensingEntityConstants;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -22,6 +23,7 @@ import io.harness.security.annotations.PublicApi;
 import io.harness.signup.dto.OAuthSignupDTO;
 import io.harness.signup.dto.SignupDTO;
 import io.harness.signup.dto.VerifyTokenResponseDTO;
+import io.harness.signup.entities.SignupVerificationToken;
 import io.harness.signup.services.SignupService;
 
 import com.google.inject.Inject;
@@ -33,6 +35,7 @@ import io.swagger.v3.oas.annotations.Hidden;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -42,6 +45,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 @Api("signup")
@@ -111,6 +115,54 @@ public class SignupResource {
       log.error("Signup completion failed. {} at {}", e.getMessage(), e.getStackTrace());
       throw e;
     }
+  }
+
+  @GET
+  @Path("/ds/verify/{token}")
+  @PublicApi
+  public RestResponse<String> verifySignupInvite(@PathParam("token") String token,
+      @QueryParam("referer") String referer, @QueryParam(NGLicensingEntityConstants.GA_CLIENT_ID) String gaClientId,
+      @QueryParam(NGLicensingEntityConstants.VISITOR_TOKEN) String visitorToken) {
+    try {
+      return new RestResponse<>(signupService.verifySignupInvite(token, referer, gaClientId, visitorToken).getEmail());
+    } catch (Exception e) {
+      log.error("Signup completion failed. {} at {}", e.getMessage(), e.getStackTrace());
+      throw e;
+    }
+  }
+
+  @PUT
+  @Path("/ds/account/create/{email}")
+  @PublicApi
+  public RestResponse<UserInfo> createAccountAndUserInCluster(@PathParam("email") String email, AccountDTO accountDTO) {
+    try {
+      return new RestResponse<>(signupService.createAccountAndUserInCluster(email, accountDTO));
+    } catch (Exception e) {
+      log.error("Signup completion failed. {} at {}", e.getMessage(), e.getStackTrace());
+      throw e;
+    }
+  }
+
+  @PUT
+  @Path("/ds/complete/{token}")
+  @PublicApi
+  public RestResponse<UserInfo> cleanUpVerificationTokenAndSendTelemetry(CleanupSignupDTO cleanupSignupDTO,
+      @PathParam("token") String token, @QueryParam("referer") String referer,
+      @QueryParam(NGLicensingEntityConstants.GA_CLIENT_ID) String gaClientId,
+      @QueryParam(NGLicensingEntityConstants.VISITOR_TOKEN) String visitorToken) {
+    try {
+      return new RestResponse<>(signupService.cleanUpVerificationTokenAndSendTelemetry(cleanupSignupDTO.getUserInfo(),
+          cleanupSignupDTO.getVerificationToken(), token, referer, gaClientId, visitorToken));
+    } catch (Exception e) {
+      log.error("Signup completion failed. {} at {}", e.getMessage(), e.getStackTrace());
+      throw e;
+    }
+  }
+
+  @Data
+  private static class CleanupSignupDTO {
+    private final UserInfo userInfo;
+    private final SignupVerificationToken verificationToken;
   }
 
   @PUT
