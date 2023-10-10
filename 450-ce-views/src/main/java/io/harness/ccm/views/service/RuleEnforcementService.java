@@ -28,5 +28,6 @@ public interface RuleEnforcementService {
   EnforcementCount getCount(String accountId, EnforcementCountRequest enforcementCountRequest);
   ExecutionDetails getDetails(String accountId, ExecutionDetailRequest executionDetailRequest);
   List<RuleEnforcement> listEnforcementsWithGivenRule(String accountId, String ruleId);
+  List<RuleEnforcement> listEnforcementsWithGivenTargetAccount(String accountId, String targetAccountId);
   RuleEnforcement removeRuleFromEnforcement(RuleEnforcement ruleEnforcement, String ruleId);
 }

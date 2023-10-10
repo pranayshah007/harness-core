@@ -202,6 +202,15 @@ public class RuleEnforcementDAO {
         .asList();
   }
 
+  public List<RuleEnforcement> listEnforcementsWithGivenTargetAccount(String accountId, String targetAccountId) {
+    return hPersistence.createQuery(RuleEnforcement.class)
+        .field(RuleEnforcementId.accountId)
+        .equal(accountId)
+        .field(RuleEnforcementId.targetAccounts)
+        .contains(targetAccountId)
+        .asList();
+  }
+
   public RuleEnforcement get(String uuid) {
     return hPersistence.createQuery(RuleEnforcement.class).field(RuleEnforcementId.uuid).equal(uuid).get();
   }
