@@ -39,14 +39,16 @@ import io.harness.pms.contracts.plan.PlanCreationResponse;
 import io.harness.pms.events.base.PmsEventCategory;
 import io.harness.pms.exception.PmsExceptionUtils;
 import io.harness.pms.plan.creation.validator.PlanCreationValidator;
+import io.harness.pms.plan.utils.PlanExecutionContextMapper;
 import io.harness.pms.sdk.PmsSdkHelper;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
+import io.harness.pms.sdk.core.plan.creation.creators.PlanCreatorServiceHelper;
 import io.harness.pms.utils.CompletableFutures;
 import io.harness.pms.utils.PmsGrpcClientUtils;
 import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
-import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -80,7 +82,6 @@ public class PlanCreatorMergeService {
   PmsEventSender pmsEventSender;
   PlanCreationValidator planCreationValidator;
   private final Integer planCreatorMergeServiceDependencyBatch;
-  private final PmsFeatureFlagService pmsFeatureFlagService;
   private final KryoSerializer kryoSerializer;
 
   @Inject
@@ -88,14 +89,13 @@ public class PlanCreatorMergeService {
       WaitNotifyEngine waitNotifyEngine, PlanCreationValidator planCreationValidator,
       @Named("PlanCreatorMergeExecutorService") Executor executor,
       @Named("planCreatorMergeServiceDependencyBatch") Integer planCreatorMergeServiceDependencyBatch,
-      PmsFeatureFlagService pmsFeatureFlagService, KryoSerializer kryoSerializer) {
+      KryoSerializer kryoSerializer) {
     this.pmsSdkHelper = pmsSdkHelper;
     this.pmsEventSender = pmsEventSender;
     this.waitNotifyEngine = waitNotifyEngine;
     this.planCreationValidator = planCreationValidator;
     this.executor = executor;
     this.planCreatorMergeServiceDependencyBatch = planCreatorMergeServiceDependencyBatch;
-    this.pmsFeatureFlagService = pmsFeatureFlagService;
     this.kryoSerializer = kryoSerializer;
   }
 
@@ -194,6 +194,7 @@ public class PlanCreatorMergeService {
                                                    .setIsExecutionInputEnabled(true);
     if (metadata != null) {
       builder.setMetadata(metadata);
+      builder.setExecutionContext(PlanExecutionContextMapper.toExecutionContext(metadata));
     }
     if (planExecutionMetadata != null) {
       if (planExecutionMetadata.getTriggerPayload() != null) {
@@ -252,10 +253,9 @@ public class PlanCreatorMergeService {
       PlanCreationBlobResponse.Builder responseBuilder, YamlField fullYamlField, String harnessVersion) {
     PlanCreationBlobResponse.Builder currIterationResponseBuilder = PlanCreationBlobResponse.newBuilder();
     CompletableFutures<PlanCreationResponse> completableFutures = new CompletableFutures<>(executor);
-    PlanCreationContextValue metadata = responseBuilder.getContextMap().get("metadata");
 
-    try (AutoLogContext ignore = PlanCreatorUtils.autoLogContext(metadata.getMetadata(),
-             metadata.getAccountIdentifier(), metadata.getOrgIdentifier(), metadata.getProjectIdentifier())) {
+    PlanCreationContext ctx = PlanCreationContext.builder().globalContext(responseBuilder.getContextMap()).build();
+    try (AutoLogContext ignore = PlanCreatorServiceHelper.autoLogContext(ctx)) {
       long start = System.currentTimeMillis();
       Map<Map.Entry<String, PlanCreatorServiceInfo>, List<Map.Entry<String, String>>> serviceToDependencyMap =
           new HashMap<>();
@@ -338,6 +338,7 @@ public class PlanCreatorMergeService {
       Map<Map.Entry<String, PlanCreatorServiceInfo>, List<Map.Entry<String, String>>> serviceToDependencyMap,
       String harnessVersion) {
     for (Map.Entry<String, String> dependencyEntry : responseBuilder.getDeps().getDependenciesMap().entrySet()) {
+      harnessVersion = getYamlVersionForDependencyEntry(harnessVersion, dependencyEntry, responseBuilder);
       // Always first check  -
       // 1. Affinity service
       // 2. pipeline-service dependencies
@@ -382,10 +383,9 @@ public class PlanCreatorMergeService {
   private void executeDependenciesAsync(CompletableFutures<PlanCreationResponse> completableFutures,
       Map.Entry<String, PlanCreatorServiceInfo> serviceInfo, Dependencies batchDependency,
       Map<String, String> batchServiceAffinityMap, Map<String, PlanCreationContextValue> contextMap) {
-    PlanCreationContextValue metadata = contextMap.get("metadata");
+    PlanCreationContext ctx = PlanCreationContext.builder().globalContext(contextMap).build();
     completableFutures.supplyAsync(() -> {
-      try (AutoLogContext ignore = PlanCreatorUtils.autoLogContext(metadata.getMetadata(),
-               metadata.getAccountIdentifier(), metadata.getOrgIdentifier(), metadata.getProjectIdentifier())) {
+      try (AutoLogContext ignore = PlanCreatorServiceHelper.autoLogContext(ctx)) {
         try {
           return PmsGrpcClientUtils.retryAndProcessException(serviceInfo.getValue().getPlanCreationClient()::createPlan,
               PlanCreationBlobRequest.newBuilder()
@@ -405,5 +405,26 @@ public class PlanCreatorMergeService {
         }
       }
     });
+  }
+
+  private String getYamlVersionForDependencyEntry(String harnessVersion, Map.Entry<String, String> dependencyEntry,
+      PlanCreationBlobResponse.Builder responseBuilder) {
+    if (responseBuilder.getDeps().getDependencyMetadataMap().get(dependencyEntry.getKey()) != null
+        && responseBuilder.getDeps()
+                .getDependencyMetadataMap()
+                .get(dependencyEntry.getKey())
+                .getParentInfo()
+                .getDataMap()
+                .get(PlanCreatorConstants.YAML_VERSION)
+            != null) {
+      harnessVersion = responseBuilder.getDeps()
+                           .getDependencyMetadataMap()
+                           .get(dependencyEntry.getKey())
+                           .getParentInfo()
+                           .getDataMap()
+                           .get(PlanCreatorConstants.YAML_VERSION)
+                           .getStringValue();
+    }
+    return harnessVersion;
   }
 }

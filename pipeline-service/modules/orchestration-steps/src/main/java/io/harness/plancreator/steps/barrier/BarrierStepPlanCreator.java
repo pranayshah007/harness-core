@@ -41,7 +41,7 @@ public class BarrierStepPlanCreator extends PMSStepPlanCreatorV2<BarrierStepNode
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, BarrierStepNode field) {
     if (featureFlagService.isEnabled(
             ctx.getAccountIdentifier(), FeatureName.CDS_NG_BARRIER_STEPS_WITHIN_LOOPING_STRATEGIES)) {
-      String planExecutionId = ctx.getMetadata().getMetadata().getExecutionUuid();
+      String planExecutionId = ctx.getExecutionUuid();
       String parentInfoStrategyNodeType =
           PlanCreatorUtilsCommon.getFromParentInfo(PlanCreatorConstants.STRATEGY_NODE_TYPE, ctx).getStringValue();
       String stageId = PlanCreatorUtilsCommon.getFromParentInfo(PlanCreatorConstants.STAGE_ID, ctx).getStringValue();

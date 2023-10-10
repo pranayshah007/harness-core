@@ -100,6 +100,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
@@ -245,6 +246,9 @@ public class CDNGEntitiesTestRule implements InjectorRuleMixin, MethodRule, Mong
         bind(AccountClient.class).annotatedWith(Names.named("PRIVILEGED")).toInstance(mock(AccountClient.class));
         bind(OrganizationService.class).toInstance(mock(OrganizationService.class));
         bind(ProjectService.class).toInstance(mock(ProjectService.class));
+        bind(ExecutorService.class)
+            .annotatedWith(Names.named("service-gitx-executor"))
+            .toInstance(mock(ExecutorService.class));
       }
     });
     modules.add(TimeModule.getInstance());

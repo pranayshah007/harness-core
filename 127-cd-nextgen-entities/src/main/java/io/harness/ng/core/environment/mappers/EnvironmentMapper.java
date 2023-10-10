@@ -158,7 +158,10 @@ public class EnvironmentMapper {
 
   private EntityGitDetails getEntityGitDetails(Environment environment) {
     if (environment.getStoreType() == StoreType.REMOTE) {
-      return GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata();
+      EntityGitDetails entityGitDetails = GitAwareContextHelper.getEntityGitDetails(environment);
+
+      // add additional details from scm metadata
+      return GitAwareContextHelper.updateEntityGitDetailsFromScmGitMetadata(entityGitDetails);
     }
     return null; // Default if storeType is not remote
   }

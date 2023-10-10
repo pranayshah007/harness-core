@@ -74,6 +74,7 @@ public class RoleAssignmentChangeConsumerImplTest extends AggregatorTestBase {
   private UserGroup userGroup;
   private String user;
   private InMemoryPermissionRepository inMemoryPermissionRepository;
+  @Inject @Named("batchSizeForACLCreation") private int batchSizeForACLCreation;
 
   @Before
   public void setup() {
@@ -85,8 +86,9 @@ public class RoleAssignmentChangeConsumerImplTest extends AggregatorTestBase {
     roleAssignmentRepository = mock(RoleAssignmentRepository.class);
     inMemoryPermissionRepository = mock(InMemoryPermissionRepository.class);
     when(inMemoryPermissionRepository.isPermissionCompatibleWithResourceSelector(any(), any())).thenReturn(true);
-    ACLGeneratorService changeConsumerService = new ACLGeneratorServiceImpl(roleService, userGroupService,
-        resourceGroupService, scopeService, new HashMap<>(), aclRepository, inMemoryPermissionRepository);
+    ACLGeneratorService changeConsumerService =
+        new ACLGeneratorServiceImpl(roleService, userGroupService, resourceGroupService, scopeService, new HashMap<>(),
+            aclRepository, inMemoryPermissionRepository, batchSizeForACLCreation);
     roleAssignmentChangeConsumer = new RoleAssignmentChangeConsumerImpl(
         aclRepository, roleAssignmentRepository, changeConsumerService, roleAssignmentCRUDEventHandler);
     scopeIdentifier =

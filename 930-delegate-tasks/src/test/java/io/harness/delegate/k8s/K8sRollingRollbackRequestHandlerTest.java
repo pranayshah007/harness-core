@@ -12,6 +12,7 @@ import static io.harness.delegate.k8s.K8sRollingRollbackBaseHandler.ResourceRecr
 import static io.harness.delegate.k8s.K8sRollingRollbackBaseHandler.ResourceRecreationStatus.RESOURCE_CREATION_SUCCESSFUL;
 import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
@@ -35,10 +36,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.k8s.beans.K8sRollingRollbackHandlerConfig;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
+import io.harness.delegate.task.k8s.K8sRollingDeployRollbackResponse;
 import io.harness.delegate.task.k8s.K8sRollingRollbackDeployRequest;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.InvalidArgumentsException;
@@ -46,6 +49,8 @@ import io.harness.exception.KubernetesTaskException;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResourceId;
+import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.K8sLegacyRelease;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
@@ -76,15 +81,25 @@ public class K8sRollingRollbackRequestHandlerTest extends CategoryTest {
   private K8sRollingRollbackHandlerConfig rollbackHandlerConfig;
   private K8sRollingRollbackDeployRequest k8sRollingRollbackDeployRequest;
   private K8sDelegateTaskParams k8sDelegateTaskParams;
-
+  private HelmChartInfo helmChartInfo;
   private final Integer releaseNumber = 2;
   private final Integer timeoutIntervalInMin = 10;
   private final String releaseName = "releaseName";
   private final String workingDirectory = "/tmp";
+  private final String helmRepoUrl = "repoUrl";
+  private final String helmChartVersion = "1.0.2";
+  private final String helmChartName = "chartName";
+  private final String helmSubChartPath = "subChartPath";
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
+    helmChartInfo = HelmChartInfo.builder()
+                        .repoUrl(helmRepoUrl)
+                        .version(helmChartVersion)
+                        .name(helmChartName)
+                        .subChartPath(helmSubChartPath)
+                        .build();
     doReturn(logCallback)
         .when(k8sTaskHelperBase)
         .getLogCallback(eq(logStreamingTaskClient), anyString(), anyBoolean(), any());
@@ -110,6 +125,32 @@ public class K8sRollingRollbackRequestHandlerTest extends CategoryTest {
         k8sRollingRollbackDeployRequest, k8sDelegateTaskParams, logStreamingTaskClient, null);
 
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(rollbackHandlerConfig.getKubernetesConfig()).isSameAs(kubernetesConfig);
+    assertThat(rollbackHandlerConfig.getClient()).isNotNull();
+    verify(k8sRollingRollbackBaseHandler).init(rollbackHandlerConfig, releaseName, logCallback);
+    verify(k8sRollingRollbackBaseHandler)
+        .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), true, null);
+    verify(k8sRollingRollbackBaseHandler)
+        .steadyStateCheck(rollbackHandlerConfig, k8sDelegateTaskParams, timeoutIntervalInMin, logCallback);
+    verify(k8sRollingRollbackBaseHandler).postProcess(rollbackHandlerConfig, releaseName);
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testRollbackSuccessHelm() throws Exception {
+    IK8sRelease release = K8sLegacyRelease.builder()
+                              .helmChartName(helmChartName)
+                              .helmChartVersion(helmChartVersion)
+                              .helmChartRepoUrl(helmRepoUrl)
+                              .helmChartSubChartPath(helmSubChartPath)
+                              .build();
+    rollbackHandlerConfig.setPreviousRollbackEligibleRelease(release);
+    K8sDeployResponse response = k8sRollingRollbackRequestHandler.executeTaskInternal(
+        k8sRollingRollbackDeployRequest, k8sDelegateTaskParams, logStreamingTaskClient, null);
+    assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(((K8sRollingDeployRollbackResponse) response.getK8sNGTaskResponse()).getHelmChartInfo())
+        .isEqualTo(helmChartInfo);
     assertThat(rollbackHandlerConfig.getKubernetesConfig()).isSameAs(kubernetesConfig);
     assertThat(rollbackHandlerConfig.getClient()).isNotNull();
     verify(k8sRollingRollbackBaseHandler).init(rollbackHandlerConfig, releaseName, logCallback);

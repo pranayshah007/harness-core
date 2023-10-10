@@ -63,9 +63,9 @@ import io.harness.cdng.manifest.yaml.summary.HelmChartManifestSummary;
 import io.harness.cdng.manifestConfigs.ManifestConfigurations;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
-import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.cdng.utilities.NGLogCallbackUtility;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.TaskData;
@@ -137,7 +137,6 @@ public class ManifestsStepV2Test extends CategoryTest {
   @Mock EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Mock private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Mock private PipelineRbacHelper pipelineRbacHelper;
-  @Mock private ServiceStepsHelper serviceStepsHelper;
   @Mock private NGLogCallback logCallback;
   @Mock NGFeatureFlagHelperService featureFlagHelperService;
   @Mock private NGSettingsClient ngSettingsClient;
@@ -147,6 +146,7 @@ public class ManifestsStepV2Test extends CategoryTest {
   @Mock private StrategyHelper strategyHelper;
   @Mock private KryoSerializer referenceFalseKryoSerializer;
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Mock private NGLogCallbackUtility ngLogCallbackUtility;
 
   @InjectMocks private ManifestsStepV2 step = new ManifestsStepV2();
 
@@ -163,7 +163,7 @@ public class ManifestsStepV2Test extends CategoryTest {
                              .build()))
         .when(connectorService)
         .get(anyString(), anyString(), anyString(), anyString());
-    doReturn(logCallback).when(serviceStepsHelper).getServiceLogCallback(any(), anyBoolean(), anyString());
+    doReturn(logCallback).when(ngLogCallbackUtility).getLogCallback(any(), anyBoolean());
   }
 
   @After

@@ -17,11 +17,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureFlag.Scope;
 
 import lombok.Getter;
+
 /**
  * Add your feature name here. When the feature is fully launched and no longer needs to be flagged,
  * delete the feature name.
  */
-
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
   // Sorted using https://github.com/google/keep-sorted/blob/main/README.md
@@ -552,7 +552,6 @@ public enum FeatureName {
   PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION,
   PIPELINE_ROLLBACK("Flag to enable/disable Pipeline Rollback", HarnessTeam.PIPELINE),
   PLG_ENABLE_CROSS_GENERATION_ACCESS("Enables cross generation access", GTM),
-  PL_AUDIT_LOG_STREAMING_ENABLED("Enables AuditLogStreaming tab on AuditTrails page in account scope", HarnessTeam.PL),
   PL_CG_SHOW_MEMBER_ID_COUNT(
       "Shows memberId count instead of member names on CG UserGroupListing page", HarnessTeam.PL),
   PL_DISCOVERY_ENABLE(
@@ -589,8 +588,6 @@ public enum FeatureName {
   PL_USER_ACCOUNT_LEVEL_DATA_MIGRATION(
       "Enables Migration to create user account level data map for this account", HarnessTeam.PL),
   PL_USER_DELETION_V2("Modularising user deletion flows separately for CG and NG ", HarnessTeam.PL),
-  PL_USE_CREDENTIALS_FROM_DELEGATE_FOR_GCP_SM(
-      "Enables the use of credentials from Delegate in GCP Secret Manager", HarnessTeam.PL),
   PL_AI_SUPPORT_CHATBOT("Enable Harness Support Bot for an account", HarnessTeam.PL),
   PL_EULA_ENABLED("Enable End User License Agreement Setting in Default Settings", HarnessTeam.PL),
   POST_PROD_ROLLBACK("Flag to enable/disable PostProd Rollback", HarnessTeam.PIPELINE),
@@ -854,6 +851,7 @@ public enum FeatureName {
   CDS_SERVICENOW_FETCH_FIELDS("FF to fetch service now fields", HarnessTeam.CDC),
   CDS_ENABLE_LOAD_FROM_CACHE_FOR_RETRY_FORM("Used for enabling load from cache on retry form", PIPELINE),
   CDS_DISABLE_FIRST_GEN_CD("Used to disable/block customer access to CG after the migration cut-over", SPG),
+  CDS_CG_REDUCED_EXPORT_LOG_LIMIT("Decrease to 5 deployments per export operation in CG", HarnessTeam.CDC),
   CDS_DISABLE_ALL_CG_TRIGGERS(
       "Used to disable/block triggers to accept webhooks or pooling artifact sources on CG after the migration cut-over",
       HarnessTeam.CDC),
@@ -909,10 +907,16 @@ public enum FeatureName {
       "Allows to set Public Access of Resources on Authentication page under account settings", HarnessTeam.PL),
   CDS_SCOPE_INFRA_TO_SERVICES("This flag enables the scoping of Infrastructure to specific Services.", HarnessTeam.CDP),
   PIE_SIMPLIFY_LOG_BASE_KEY("FF to simplify log base key", PIPELINE),
+
+  SRM_OPTIMISE_CHANGE_EVENTS_API_RESPONSE(
+      "When enabled, this reduces the response size of the change-events list API", HarnessTeam.CV),
   CDS_NG_DISABLE_SPECIAL_CHARS_ESCAPE_OF_WINRM_ENV_VARS(
       "This flag disables WinRm special character escaping for environment variables usage", HarnessTeam.CDP),
   CDS_NG_K8S_SERVICE_RELEASE_NAME(
       "This flag enables the usage of release name in service configuration for K8s & Helm service types.",
+      HarnessTeam.CDP),
+  CDS_NG_K8S_PASS_RELEASE_METADATA(
+      "This flag enables warnings in execution logs if conflicting service/infra are found while performing K8s deployments.",
       HarnessTeam.CDP),
   CDS_K8S_EKS_LIST_CLUSTERS_ADD_REGION(
       "Allow the user to specify the region to be used for listing EKS clusters.", HarnessTeam.CDP),

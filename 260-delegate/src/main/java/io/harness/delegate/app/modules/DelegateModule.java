@@ -117,6 +117,8 @@ import io.harness.delegate.cf.PcfRouteUpdateCommandTaskHandler;
 import io.harness.delegate.cf.PcfRunPluginCommandTaskHandler;
 import io.harness.delegate.cf.PcfValidationCommandTaskHandler;
 import io.harness.delegate.configuration.DelegateConfiguration;
+import io.harness.delegate.ecs.EcsBasicPrepareRollbackTaskHandler;
+import io.harness.delegate.ecs.EcsBasicRollbackTaskHandler;
 import io.harness.delegate.ecs.EcsBlueGreenCreateServiceCommandTaskHandler;
 import io.harness.delegate.ecs.EcsBlueGreenPrepareRollbackCommandTaskHandler;
 import io.harness.delegate.ecs.EcsBlueGreenRollbackCommandTaskHandler;
@@ -129,9 +131,11 @@ import io.harness.delegate.ecs.EcsRollingDeployCommandTaskHandler;
 import io.harness.delegate.ecs.EcsRollingRollbackCommandTaskHandler;
 import io.harness.delegate.ecs.EcsRunTaskArnCommandTaskHandler;
 import io.harness.delegate.ecs.EcsRunTaskCommandTaskHandler;
+import io.harness.delegate.ecs.EcsServiceSetupTaskHandler;
 import io.harness.delegate.ecs.EcsTaskArnBlueGreenCreateServiceCommandTaskHandler;
 import io.harness.delegate.ecs.EcsTaskArnCanaryDeployCommandTaskHandler;
 import io.harness.delegate.ecs.EcsTaskArnRollingDeployCommandTaskHandler;
+import io.harness.delegate.ecs.EcsUpgradeContainerTaskHandler;
 import io.harness.delegate.exceptionhandler.handler.AmazonClientExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.AmazonServiceExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.AuthenticationExceptionHandler;
@@ -2098,6 +2102,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V4).toInstance(TerraformTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V5).toInstance(TerraformTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V6).toInstance(TerraformTaskNG.class);
+    mapBinder.addBinding(TaskType.TERRAFORM_TASK_NG_V7).toInstance(TerraformTaskNG.class);
     mapBinder.addBinding(TaskType.SCM_PUSH_TASK).toInstance(ScmPushTask.class);
     mapBinder.addBinding(TaskType.SCM_PATH_FILTER_EVALUATION_TASK).toInstance(ScmPathFilterEvaluationTask.class);
     mapBinder.addBinding(TaskType.SCM_GIT_REF_TASK).toInstance(ScmGitRefTask.class);
@@ -2163,6 +2168,14 @@ public class DelegateModule extends AbstractModule {
         .to(EcsTaskArnCanaryDeployCommandTaskHandler.class);
     ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_TASK_ARN_BLUE_GREEN_CREATE_SERVICE.name())
         .to(EcsTaskArnBlueGreenCreateServiceCommandTaskHandler.class);
+    ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_BASIC_PREPARE_ROLLBACK.name())
+        .to(EcsBasicPrepareRollbackTaskHandler.class);
+    ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_SERVICE_SETUP.name())
+        .to(EcsServiceSetupTaskHandler.class);
+    ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_UPGRADE_CONTAINER.name())
+        .to(EcsUpgradeContainerTaskHandler.class);
+    ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_BASIC_ROLLBACK.name())
+        .to(EcsBasicRollbackTaskHandler.class);
 
     mapBinder.addBinding(TaskType.ECS_GIT_FETCH_TASK_NG).toInstance(EcsGitFetchTask.class);
     mapBinder.addBinding(TaskType.ECS_GIT_FETCH_RUN_TASK_NG).toInstance(EcsGitFetchRunTask.class);

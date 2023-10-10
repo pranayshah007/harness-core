@@ -197,8 +197,9 @@ public class K8sRollingRollbackStep extends CdTaskExecutable<K8sDeployResponse> 
                       : null)
               .build();
 
-      StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(
-          ambiance, K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(response.getK8sPodList(), null));
+      StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance,
+          K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(
+              response.getK8sPodList(), response.getHelmChartInfo()));
 
       stepResponse = stepResponseBuilder.status(Status.SUCCEEDED)
                          .stepOutcome(stepOutcome)

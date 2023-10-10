@@ -41,7 +41,7 @@ public class NGTemplateSchemaResourceImpl implements NGTemplateSchemaResource {
       String projectIdentifier, String orgIdentifier, Scope scope, @NotNull String accountIdentifier,
       String templateChildType) {
     JsonNode schema =
-        ngTemplateSchemaService.getIndividualStaticSchema(getNodeGroupFromEntityType(templateEntityType), "", "v0");
+        ngTemplateSchemaService.getIndividualStaticSchema(templateEntityType.getNodeGroup(), templateChildType, "v0");
     return ResponseDTO.newResponse(schema);
   }
 
@@ -55,9 +55,5 @@ public class NGTemplateSchemaResourceImpl implements NGTemplateSchemaResource {
     return staticJson != null ? ResponseDTO.newResponse(staticJson)
                               : getTemplateSchema(templateEntityType, projectIdentifier, orgIdentifier, scope,
                                   templateChildType, accountIdentifier);
-  }
-
-  private String getNodeGroupFromEntityType(TemplateEntityType templateEntityType) {
-    return templateEntityType.name().toLowerCase();
   }
 }

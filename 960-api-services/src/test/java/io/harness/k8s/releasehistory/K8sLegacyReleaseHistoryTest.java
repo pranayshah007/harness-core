@@ -155,11 +155,15 @@ public class K8sLegacyReleaseHistoryTest extends CategoryTest {
     ReleaseHistory releaseHistory = createNewBGRelease();
     releaseHistory.setReleaseStatus(IK8sRelease.Status.Succeeded);
     K8sLegacyRelease release = releaseHistory.getBlueGreenStageRelease();
+    HelmChartInfoDTO helmChartInfoDTO =
+        HelmChartInfoDTO.builder().repoUrl("https://test").version("1.2.3").name("helmChartName").build();
     release.setManifestHash("sampleManifestHash");
+    release.setHelmChartInfo(helmChartInfoDTO);
     assertThat(release).isNotNull();
     assertThat(release.getStatus()).isEqualTo(IK8sRelease.Status.InProgress);
     assertThat(release.getBgEnvironment()).isEqualTo(HarnessLabelValues.bgStageEnv);
     assertThat(release.getManifestHash()).isEqualTo("sampleManifestHash");
+    assertThat(release.getHelmChartInfo()).isEqualTo(helmChartInfoDTO);
     K8sLegacyRelease k8sLegacyRelease = K8sLegacyRelease.builder()
                                             .bgEnvironment(HarnessLabelValues.bgStageEnv)
                                             .manifestHash("differentManifestHash")
@@ -190,6 +194,7 @@ public class K8sLegacyReleaseHistoryTest extends CategoryTest {
     assertThat(newk8sLegacyRelease).isNotNull();
     assertThat(newk8sLegacyRelease.getStatus()).isEqualTo(IK8sRelease.Status.Succeeded);
     assertThat(newk8sLegacyRelease.getBgEnvironment()).isEqualTo(HarnessLabelValues.bgStageEnv);
+    assertThat(newk8sLegacyRelease.getHelmChartInfo()).isNull();
     assertThat(releaseHistory.getBlueGreenStageRelease()).isEqualTo(newk8sLegacyRelease);
 
     newk8sLegacyRelease.setBgEnvironment(HarnessLabelValues.bgPrimaryEnv);

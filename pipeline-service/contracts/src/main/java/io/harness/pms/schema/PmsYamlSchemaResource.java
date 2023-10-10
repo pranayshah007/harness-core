@@ -53,6 +53,7 @@ public interface PmsYamlSchemaResource {
   @GET
   @ApiOperation(value = "Get Yaml Schema", nickname = "getSchemaYaml")
   @Deprecated
+  // Used by UI in local env - DO NOT REMOVE WITHOUT CHECKING WITH UI
   ResponseDTO<JsonNode> getYamlSchema(@QueryParam("entityType") @NotNull EntityType entityType,
       @QueryParam(PROJECT_KEY) String projectIdentifier, @QueryParam(ORG_KEY) String orgIdentifier,
       @QueryParam("scope") Scope scope, @QueryParam(IDENTIFIER_KEY) String identifier,

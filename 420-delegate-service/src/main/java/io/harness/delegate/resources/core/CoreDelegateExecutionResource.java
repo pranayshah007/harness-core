@@ -12,24 +12,23 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.security.PermissionAttribute.ResourceType.DELEGATE;
 
+import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
-import io.harness.delegate.InitializeExecutionInfraResponse;
 import io.harness.delegate.beans.DelegateTaskResponse;
+import io.harness.delegate.beans.scheduler.InitializeExecutionInfraResponse;
+import io.harness.delegate.core.beans.ResponseCode;
 import io.harness.delegate.core.beans.SetupInfraResponse;
 import io.harness.delegate.task.tasklogging.ExecutionLogContext;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.delegate.utils.DelegateTaskMigrationHelper;
-import io.harness.exception.InvalidArgumentsException;
 import io.harness.executionInfra.ExecutionInfrastructureService;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
-import io.harness.observer.RemoteObserverInformer;
-import io.harness.observer.Subject;
 import io.harness.persistence.HPersistence;
 import io.harness.security.annotations.DelegateAuth;
-import io.harness.service.intfc.DelegateTaskRetryObserver;
 import io.harness.service.intfc.DelegateTaskService;
 
 import software.wings.security.annotations.Scope;
@@ -54,7 +53,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
 
 @Api("/executions")
 @Path("/executions")
@@ -65,11 +63,9 @@ import org.apache.commons.lang3.tuple.Pair;
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 public class CoreDelegateExecutionResource {
   private final DelegateTaskServiceClassic delegateTaskServiceClassic;
-  private final ExecutionInfrastructureService executionInfrastructureService;
+  private final ExecutionInfrastructureService infraService;
   private final HPersistence persistence;
   private final DelegateTaskMigrationHelper delegateTaskMigrationHelper;
-  private Subject<DelegateTaskRetryObserver> retryObserverSubject = new Subject<>();
-  private final RemoteObserverInformer remoteObserverInformer;
   private final DelegateTaskService delegateTaskService;
 
   @DelegateAuth
@@ -86,7 +82,7 @@ public class CoreDelegateExecutionResource {
          AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       final var optionalDelegateTask =
           delegateTaskServiceClassic.acquireTask(accountId, delegateId, executionId, delegateInstanceId);
-      if (!optionalDelegateTask.isPresent()) {
+      if (optionalDelegateTask.isEmpty()) {
         return Response.status(Response.Status.NOT_FOUND).build();
       }
       return Response.ok(optionalDelegateTask.get()).build();
@@ -98,41 +94,53 @@ public class CoreDelegateExecutionResource {
 
   @DelegateAuth
   @POST
-  @Path("response/{executionId}/executionInfra")
+  @Path("response/{executionId}/execution-infra")
   @Consumes(ProtocolBufferMediaType.APPLICATION_PROTOBUF)
   @Timed
   @ExceptionMetered
   public Response handleSetupExecutionInfraResponse(@QueryParam("delegateId") final String delegateId,
       @PathParam("executionId") final String executionId, @QueryParam("accountId") @NotEmpty final String accountId,
-      SetupInfraResponse response) {
+      final SetupInfraResponse response) {
     try (AutoLogContext ignore1 = new ExecutionLogContext(executionId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       if (response == null) {
-        throw new InvalidArgumentsException(Pair.of("args", "response cannot be null"));
+        log.warn("Null response from delegate {} for execution {}", delegateId, executionId);
+        return Response.status(BAD_REQUEST).build();
       }
-      Query<DelegateTask> taskQuery =
+
+      if (response.getResponseCode() != ResponseCode.RESPONSE_OK) {
+        log.error("Error response from delegate {} for execution {}. {}", delegateId, executionId,
+            response.getErrorMessage());
+        return Response.ok().build();
+      }
+
+      final Query<DelegateTask> taskQuery =
           persistence
               .createQuery(DelegateTask.class, delegateTaskMigrationHelper.isMigrationEnabledForTask(executionId))
               .filter(DelegateTaskKeys.accountId, accountId)
               .filter(DelegateTaskKeys.uuid, executionId);
-      DelegateTask task = taskQuery.get();
+      final DelegateTask task = taskQuery.first();
       if (Objects.isNull(task)) {
-        log.error("When processing response from delegate {}, task not found.", delegateId);
+        log.error("Task not found when processing infra setup response from delegate {}", delegateId);
         return Response.serverError().build();
       }
-      final String uuid =
-          executionInfrastructureService.addExecutionInfrastructure(task, delegateId, response.getLocation());
 
-      delegateTaskService.handleResponse(task, taskQuery,
+      final var updated =
+          infraService.updateDelegateInfo(task.getUuid(), delegateId, response.getLocation().getDelegateName());
+      if (!updated) {
+        log.error("Error updating delegate info for account {} and execution {}", accountId, executionId);
+        return Response.serverError().build();
+      }
+
+      delegateTaskService.handleResponseV2(task, taskQuery,
           DelegateTaskResponse.builder()
-              .response(InitializeExecutionInfraResponse.builder().executionInfraReferenceId(uuid).build())
+              .response(InitializeExecutionInfraResponse.builder().executionInfraReferenceId(task.getUuid()).build())
               .accountId(task.getAccountId())
               .build());
       return Response.ok().build();
     } catch (final Exception e) {
-      log.error(
-          "Exception adding new execution infra entry in manager account_id: %s, delegate_id: %s, execution_id: %s.",
-          accountId, delegateId, executionId);
+      log.error("Exception updating execution infra for account {}, with delegate details {}, for execution {}",
+          accountId, delegateId, executionId, e);
       return Response.serverError().build();
     }
   }

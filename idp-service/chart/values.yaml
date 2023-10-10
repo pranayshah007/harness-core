@@ -28,7 +28,7 @@ global:
     objects:
       annotations: {}
     hosts:
-      - 'my-host.example.org'
+      - my-host.example.org
     tls:
       enabled: false
       secretName: harness-cert

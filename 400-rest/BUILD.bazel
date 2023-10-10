@@ -103,6 +103,7 @@ java_library(
         "//920-delegate-service-beans:module",
         "//930-delegate-tasks:module",
         "//930-ng-core-clients:module",
+        "//930-oidc-core/src/main/java/io/harness/oidc/entities:module",
         "//931-encryption-service/src/java/software/wings/service/impl/security:module",
         "//940-feature-flag:module",
         "//940-secret-manager-client:module",

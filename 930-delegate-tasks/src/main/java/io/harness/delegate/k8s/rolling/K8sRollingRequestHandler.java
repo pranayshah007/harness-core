@@ -10,6 +10,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.k8s.K8sRollingBaseHandler.HARNESS_TRACK_STABLE_SELECTOR;
+import static io.harness.delegate.k8s.utils.HelmChartInfoMapper.toHelmChartInfoDTO;
 import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
 import static io.harness.k8s.K8sCommandUnitConstants.Apply;
 import static io.harness.k8s.K8sCommandUnitConstants.FetchFiles;
@@ -163,6 +164,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
     if (k8sRollingDeployRequest.getManifestDelegateConfig() instanceof HelmChartManifestDelegateConfig) {
       helmChartInfo = k8sTaskHelperBase.getHelmChartDetails(
           k8sRollingDeployRequest.getManifestDelegateConfig(), manifestFilesDirectory);
+      release.setHelmChartInfo(toHelmChartInfoDTO(helmChartInfo));
     }
     List<KubernetesResource> allWorkloads = ListUtils.union(managedWorkloads, customWorkloads);
     List<K8sPod> existingPodList = k8sRollingBaseHandler.getExistingPods(

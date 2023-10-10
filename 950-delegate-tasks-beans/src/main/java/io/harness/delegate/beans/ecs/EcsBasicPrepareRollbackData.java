@@ -23,6 +23,8 @@ public class EcsBasicPrepareRollbackData {
   List<String> registerScalableTargetRequestYaml;
   List<String> registerScalingPolicyRequestYaml;
   boolean isFirstDeployment;
-  String newServiceName;
   Integer currentServiceInstanceCount;
+  Integer newServiceThresholdInstanceCount;
+  String servicePrefix;
+  int nextRevision;
 }

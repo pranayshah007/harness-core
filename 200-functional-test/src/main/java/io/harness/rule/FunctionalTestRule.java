@@ -422,7 +422,8 @@ public class FunctionalTestRule implements MethodRule, InjectorRuleMixin, MongoR
       }
     });
     modules.add(new GrpcServiceConfigurationModule(((MainConfiguration) configuration).getGrpcServerConfig(),
-        ((MainConfiguration) configuration).getPortal().getJwtNextGenManagerSecret()));
+        ((MainConfiguration) configuration).getPortal().getJwtNextGenManagerSecret(),
+        ((MainConfiguration) configuration).getLogStreamingServiceConfig().getServiceToken()));
     modules.add(new AbstractCfModule() {
       @Override
       public CfClientConfig cfClientConfig() {

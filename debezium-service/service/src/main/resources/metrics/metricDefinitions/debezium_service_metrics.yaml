@@ -1,0 +1,48 @@
+name: Debezium Service Metrics
+identifier: debeziumServiceMetrics
+metricGroup: debeziumServiceMetricsGroup
+metrics:
+  - metricName: io_dropwizard_jetty_MutableServletContextHandler_4xx_responses_count
+    metricDefinition: Total number of 4xx error responses
+    type: LastValue
+    unit: count
+  - metricName: io_dropwizard_jetty_MutableServletContextHandler_5xx_responses_count
+    metricDefinition: Total number of 5xx error responses
+    type: LastValue
+    unit: count
+  - metricName: jvm_memory_total_max
+    metricDefinition: JVM Memory - Max
+    type: LastValue
+    unit: count
+  - metricName: jvm_memory_total_committed
+    metricDefinition: JVM Memory - Total Committed
+    type: LastValue
+    unit: count
+  - metricName: jvm_memory_total_used
+    metricDefinition: JVM Memory - Used Memory
+    type: LastValue
+    unit: count
+  - metricName: jvm_memory_non_heap_max
+    metricDefinition: JVM Memory - Max Non-Heap Memory
+    type: LastValue
+    unit: count
+  - metricName: jvm_memory_non_heap_committed
+    metricDefinition: JVM Memory - Committed Non-Heap Memory
+    type: LastValue
+    unit: count
+  - metricName: jvm_memory_non_heap_used
+    metricDefinition: JVM Memory - Non-Heap Memory Usage
+    type: LastValue
+    unit: count
+  - metricName: jvm_memory_heap_max
+    metricDefinition: JVM Memory - Max Heap Memory
+    type: LastValue
+    unit: count
+  - metricName: jvm_memory_heap_committed
+    metricDefinition: JVM Memory - Committed Heap Memory
+    type: LastValue
+    unit: count
+  - metricName: jvm_memory_heap_used
+    metricDefinition: JVM Memory - Heap Memory Usage
+    type: LastValue
+    unit: count

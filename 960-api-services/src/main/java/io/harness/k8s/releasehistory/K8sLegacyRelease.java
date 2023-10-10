@@ -7,6 +7,7 @@
 
 package io.harness.k8s.releasehistory;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -36,6 +37,11 @@ public class K8sLegacyRelease implements IK8sRelease {
   private KubernetesResourceId managedWorkload;
   private String managedWorkloadRevision;
   private String manifestHash;
+
+  private String helmChartName;
+  private String helmChartVersion;
+  private String helmChartRepoUrl;
+  private String helmChartSubChartPath;
 
   @Builder.Default private List<KubernetesResourceIdRevision> managedWorkloads = new ArrayList();
   @Builder.Default private List<KubernetesResource> customWorkloads = new ArrayList<>();
@@ -80,6 +86,29 @@ public class K8sLegacyRelease implements IK8sRelease {
       this.setResources(resources.stream().map(KubernetesResource::getResourceId).collect(Collectors.toList()));
     }
     return this;
+  }
+
+  @Override
+  public void setHelmChartInfo(HelmChartInfoDTO helmChartInfo) {
+    if (helmChartInfo != null) {
+      this.helmChartName = helmChartInfo.getName();
+      this.helmChartRepoUrl = helmChartInfo.getRepoUrl();
+      this.helmChartVersion = helmChartInfo.getVersion();
+      this.helmChartSubChartPath = helmChartInfo.getSubChartPath();
+    }
+  }
+
+  @Override
+  public HelmChartInfoDTO getHelmChartInfo() {
+    if (isNotEmpty(helmChartVersion) || isNotEmpty(helmChartName)) {
+      return HelmChartInfoDTO.builder()
+          .version(helmChartVersion)
+          .name(helmChartName)
+          .repoUrl(helmChartRepoUrl)
+          .subChartPath(helmChartSubChartPath)
+          .build();
+    }
+    return null;
   }
 
   @Override

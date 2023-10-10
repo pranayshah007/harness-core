@@ -149,8 +149,8 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
           projectId, entityYamlNode, templateCacheMap, 0, loadFromCache, appendInputSetValidator, yamlVersion);
 
     } else {
-      mergeTemplateInputsInObject = templateMergeServiceHelper.mergeTemplateInputsInObjectAlongWithOpaPolicy(
-          accountId, orgId, projectId, entityYamlNode, templateCacheMap, 0, loadFromCache, appendInputSetValidator);
+      mergeTemplateInputsInObject = templateMergeServiceHelper.mergeTemplateInputsInObjectAlongWithOpaPolicy(accountId,
+          orgId, projectId, entityYamlNode, templateCacheMap, 0, loadFromCache, appendInputSetValidator, yamlVersion);
     }
     resMap = mergeTemplateInputsInObject.getResMap();
     processedYamlVersion = mergeTemplateInputsInObject.getProcessedYamlVersion();

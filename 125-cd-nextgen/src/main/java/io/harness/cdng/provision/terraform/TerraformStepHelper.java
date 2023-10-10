@@ -110,6 +110,9 @@ import io.harness.delegate.task.terraform.TerraformTaskNGParameters.TerraformTas
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.delegate.task.terraform.TerraformVarFileInfo;
 import io.harness.delegate.task.terraform.cleanup.TerraformSecretCleanupTaskParameters;
+import io.harness.delegate.task.terraform.provider.TerraformAwsProviderCredentialDelegateInfo;
+import io.harness.delegate.task.terraform.provider.TerraformProviderCredentialDelegateInfo;
+import io.harness.delegate.task.terraform.provider.TerraformProviderType;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -373,6 +376,38 @@ public class TerraformStepHelper {
       return manifestFileDirectory.getPath();
     }
     return null;
+  }
+
+  @Nullable
+  public TerraformProviderCredentialDelegateInfo getProviderCredentialInfo(
+      TerraformProviderCredential providerCredential, Ambiance ambiance) {
+    if (providerCredential == null || providerCredential.getSpec() == null) {
+      return null;
+    }
+    List<EncryptedDataDetail> encryptedDataDetails;
+
+    if (TerraformProviderType.AWS.equals(providerCredential.getType())) {
+      AWSIAMRoleCredentialSpec spec = (AWSIAMRoleCredentialSpec) providerCredential.getSpec();
+      ConnectorInfoDTO connectorDTO =
+          cdStepHelper.getConnector(getParameterFieldValue(spec.getConnectorRef()), ambiance);
+      if (!(connectorDTO.getConnectorConfig() instanceof AwsConnectorDTO)) {
+        throw new InvalidRequestException("Connector provided for terraform Aws provider must be of type AWS");
+      }
+
+      NGAccess basicNGAccessObject = AmbianceUtils.getNgAccess(ambiance);
+      encryptedDataDetails = secretManagerClientService.getEncryptionDetails(
+          basicNGAccessObject, ((AwsConnectorDTO) connectorDTO.getConnectorConfig()).getCredential().getConfig());
+
+      return TerraformAwsProviderCredentialDelegateInfo.builder()
+          .encryptedDataDetails(encryptedDataDetails)
+          .connectorDTO(connectorDTO)
+          .roleArn(getParameterFieldValue(spec.getRoleArn()))
+          .region(getParameterFieldValue(spec.getRegion()))
+          .build();
+    } else {
+      throw new InvalidRequestException(
+          "Explicit provider credentials are not supported for provider type" + providerCredential.getType());
+    }
   }
 
   public FileStoreFetchFilesConfig getFileStoreFetchFilesConfig(
@@ -991,6 +1026,9 @@ public class TerraformStepHelper {
         .workspace(getParameterFieldValue(spec.getWorkspace()))
         .targets(getParameterFieldValue(spec.getTargets()))
         .isTerraformCloudCli(getParameterFieldValue(spec.getIsTerraformCloudCli()));
+    if (spec.getProviderCredential() != null) {
+      builder.providerCredentialConfig(toTerraformProviderCredentialConfig(spec.getProviderCredential()));
+    }
 
     terraformConfigDAL.saveTerraformConfig(builder.build());
   }
@@ -1222,6 +1260,20 @@ public class TerraformStepHelper {
       return varFileInfo;
     }
     return Collections.emptyList();
+  }
+
+  public TerraformProviderCredentialConfig toTerraformProviderCredentialConfig(
+      TerraformProviderCredential providerCredential) {
+    if (TerraformProviderType.AWS.equals(providerCredential.getType())) {
+      AWSIAMRoleCredentialSpec awsIamRoleCredentialSpec = (AWSIAMRoleCredentialSpec) providerCredential.getSpec();
+      return TerraformAwsProviderCredentialConfig.builder()
+          .connectorRef(getParameterFieldValue(awsIamRoleCredentialSpec.getConnectorRef()))
+          .region(getParameterFieldValue(awsIamRoleCredentialSpec.getRegion()))
+          .roleArn(getParameterFieldValue(awsIamRoleCredentialSpec.getRoleArn()))
+          .type(providerCredential.getType())
+          .build();
+    }
+    return null;
   }
 
   public TerraformBackendConfigFileConfig toTerraformBackendConfigFileConfig(

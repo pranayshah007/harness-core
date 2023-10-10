@@ -12,6 +12,7 @@ import static io.harness.delegate.k8s.K8sTestHelper.deployment;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static java.util.Collections.emptyList;
@@ -38,7 +39,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
+import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.K8sManifestDelegateConfig;
@@ -98,7 +101,10 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
   @Mock private IK8sReleaseHistory releaseHistory;
   @Mock private IK8sRelease release;
   final String workingDirectory = "./repo/k8s";
-
+  private final String helmRepoUrl = "repoUrl";
+  private final String helmChartVersion = "1.0.2";
+  private final String helmChartName = "chartName";
+  private final String helmSubChartPath = "subChartPath";
   @Before
   public void setup() throws Exception {
     MockitoAnnotations.initMocks(this);
@@ -143,6 +149,49 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
         rollingDeployRequest, delegateTaskParams, logStreamingTaskClient, commandUnitsProgress);
     assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
     assertThat(response.getK8sNGTaskResponse()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testExecuteTaskHelm() throws Exception {
+    K8sRollingDeployRequest rollingDeployRequest =
+        K8sRollingDeployRequest.builder()
+            .releaseName("releaseName")
+            .k8sInfraDelegateConfig(mock(K8sInfraDelegateConfig.class))
+            .manifestDelegateConfig(
+                HelmChartManifestDelegateConfig.builder().chartName("chart").chartVersion("1.2.0").build())
+            .useDeclarativeRollback(true)
+            .build();
+    K8sDelegateTaskParams delegateTaskParams =
+        K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).build();
+
+    doReturn(singletonList(deployment()))
+        .when(taskHelperBase)
+        .readManifestAndOverrideLocalSecrets(anyList(), eq(logCallback), anyBoolean());
+    doReturn(true)
+        .when(taskHelperBase)
+        .doStatusCheckForAllCustomResources(
+            any(Kubectl.class), anyList(), any(K8sDelegateTaskParams.class), eq(logCallback), eq(true), anyLong());
+
+    K8sDeployResponse response = rollingRequestHandler.executeTask(
+        rollingDeployRequest, delegateTaskParams, logStreamingTaskClient, commandUnitsProgress);
+    assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
+    assertThat(response.getK8sNGTaskResponse()).isNotNull();
+    assertThat(((K8sRollingDeployResponse) (response.getK8sNGTaskResponse())).getHelmChartInfo()).isNull();
+    HelmChartInfo helmChartInfo = HelmChartInfo.builder()
+                                      .repoUrl(helmRepoUrl)
+                                      .version(helmChartVersion)
+                                      .name(helmChartName)
+                                      .subChartPath(helmSubChartPath)
+                                      .build();
+    doReturn(helmChartInfo).when(taskHelperBase).getHelmChartDetails(any(), anyString());
+    response = rollingRequestHandler.executeTask(
+        rollingDeployRequest, delegateTaskParams, logStreamingTaskClient, commandUnitsProgress);
+    assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
+    assertThat(response.getK8sNGTaskResponse()).isNotNull();
+    assertThat(((K8sRollingDeployResponse) (response.getK8sNGTaskResponse())).getHelmChartInfo())
+        .isEqualTo(helmChartInfo);
   }
 
   @Test

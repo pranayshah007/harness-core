@@ -9,9 +9,6 @@ package io.harness.gitsync.gitxwebhooks.service;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.exception.WingsException.USER_SRE;
-
-import static java.lang.String.format;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -19,7 +16,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
-import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InternalServerErrorException;
 import io.harness.gitsync.common.beans.GitXWebhookEventStatus;
 import io.harness.gitsync.gitxwebhooks.dtos.GitXEventDTO;
@@ -32,6 +28,7 @@ import io.harness.gitsync.gitxwebhooks.entity.Author;
 import io.harness.gitsync.gitxwebhooks.entity.GitXWebhook;
 import io.harness.gitsync.gitxwebhooks.entity.GitXWebhookEvent;
 import io.harness.gitsync.gitxwebhooks.entity.GitXWebhookEvent.GitXWebhookEventKeys;
+import io.harness.gitsync.gitxwebhooks.loggers.GitXWebhookEventLogContext;
 import io.harness.gitsync.gitxwebhooks.loggers.GitXWebhookLogContext;
 import io.harness.gitsync.gitxwebhooks.utils.GitXWebhookUtils;
 import io.harness.repositories.gitxwebhook.GitXWebhookEventsRepository;
@@ -42,7 +39,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -55,9 +51,6 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
   @Inject GitXWebhookEventsRepository gitXWebhookEventsRepository;
   @Inject GitXWebhookService gitXWebhookService;
 
-  private static final String DUP_KEY_EXP_FORMAT_STRING =
-      "GitX Webhook event with event identifier [%s] already exists in the account [%s].";
-
   private static final String WEBHOOK_FAILURE_ERROR_MESSAGE =
       "Unexpected error occurred while [%s] git webhook. Please contact Harness Support.";
 
@@ -65,24 +58,25 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
 
   @Override
   public void processEvent(WebhookDTO webhookDTO) {
-    try {
-      GitXWebhook gitXWebhook =
-          fetchGitXWebhook(webhookDTO.getAccountId(), webhookDTO.getParsedResponse().getPush().getRepo().getName());
-      if (gitXWebhook == null) {
-        log.info(String.format("Skipping processing of event [%s] as no GitX Webhook found.", webhookDTO.getEventId()));
-        return;
+    try (GitXWebhookEventLogContext context = new GitXWebhookEventLogContext(webhookDTO)) {
+      try {
+        GitXWebhook gitXWebhook =
+            fetchGitXWebhook(webhookDTO.getAccountId(), webhookDTO.getParsedResponse().getPush().getRepo().getName());
+        if (gitXWebhook == null) {
+          log.info(
+              String.format("Skipping processing of event [%s] as no GitX Webhook found.", webhookDTO.getEventId()));
+          return;
+        }
+        GitXWebhookEvent gitXWebhookEvent = buildGitXWebhookEvent(webhookDTO, gitXWebhook.getIdentifier());
+        GitXWebhookEvent createdGitXWebhookEvent = gitXWebhookEventsRepository.create(gitXWebhookEvent);
+        updateGitXWebhook(gitXWebhook, webhookDTO.getTime());
+        log.info(
+            String.format("Successfully created the webhook event %s", createdGitXWebhookEvent.getEventIdentifier()));
+      } catch (Exception exception) {
+        log.error("Failed to process the webhook event {}", webhookDTO.getEventId(), exception);
+        throw new InternalServerErrorException(
+            String.format("Failed to process the webhook event [%s].", webhookDTO.getEventId()));
       }
-      GitXWebhookEvent gitXWebhookEvent = buildGitXWebhookEvent(webhookDTO, gitXWebhook.getIdentifier());
-      GitXWebhookEvent createdGitXWebhookEvent = gitXWebhookEventsRepository.create(gitXWebhookEvent);
-      updateGitXWebhook(gitXWebhook, webhookDTO.getTime());
-      log.info(
-          String.format("Successfully created the webhook event %s", createdGitXWebhookEvent.getEventIdentifier()));
-    } catch (DuplicateKeyException ex) {
-      throw new DuplicateFieldException(
-          format(DUP_KEY_EXP_FORMAT_STRING, webhookDTO.getEventId(), webhookDTO.getAccountId()), USER_SRE, ex);
-    } catch (Exception exception) {
-      throw new InternalServerErrorException(
-          String.format("Failed to parse the webhook event [%s].", webhookDTO.getEventId()));
     }
   }
 
@@ -205,8 +199,13 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
         .payload(webhookDTO.getJsonPayload())
         .afterCommitId(webhookDTO.getParsedResponse().getPush().getAfter())
         .beforeCommitId(webhookDTO.getParsedResponse().getPush().getBefore())
-        .branch(webhookDTO.getParsedResponse().getPush().getRepo().getBranch())
+        .branch(getBranch(webhookDTO))
         .build();
+  }
+
+  private String getBranch(WebhookDTO webhookDTO) {
+    String ref = webhookDTO.getParsedResponse().getPush().getRef();
+    return ref.replaceFirst("^refs/heads/", "");
   }
 
   private Author buildAuthor(WebhookDTO webhookDTO) {

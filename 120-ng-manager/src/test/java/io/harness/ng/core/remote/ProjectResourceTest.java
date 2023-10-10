@@ -93,10 +93,12 @@ public class ProjectResourceTest extends CategoryTest {
   @Owner(developers = KARAN)
   @Category(UnitTests.class)
   public void testCreate() {
+    String parentId = randomAlphabetic(10);
     ProjectDTO projectDTO = getProjectDTO(orgIdentifier, identifier, name);
     ProjectRequest projectRequestWrapper = ProjectRequest.builder().project(projectDTO).build();
     Project project = toProject(projectDTO);
     project.setVersion((long) 0);
+    project.setParentId(parentId);
 
     when(projectService.create(accountIdentifier, orgIdentifier, projectDTO)).thenReturn(project);
     when(favoritesService.getFavorites(anyString(), any(), any(), anyString(), anyString()))

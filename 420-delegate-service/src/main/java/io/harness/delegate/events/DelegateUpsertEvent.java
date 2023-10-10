@@ -31,6 +31,7 @@ import lombok.experimental.SuperBuilder;
 public class DelegateUpsertEvent extends AbstractDelegateConfigurationEvent {
   private DelegateSetupDetails delegateSetupDetails;
   private String delegateGroupIdentifier;
+  private DelegateSetupDetails delegateSetupDetailsOld;
 
   @Override
   public Resource getResource() {

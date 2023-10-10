@@ -8,20 +8,25 @@
 package io.harness.cvng.metrics.services.impl;
 
 import static io.harness.cvng.analysis.entities.LearningEngineTask.ExecutionStatus.QUEUED;
+import static io.harness.cvng.analysis.entities.LearningEngineTask.ExecutionStatus.RUNNING;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ANSUMAN;
+import static io.harness.rule.OwnerRule.DHRUVX;
 import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
+import io.harness.cvng.analysis.beans.LogClusterLevel;
 import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.analysis.entities.LearningEngineTask.ExecutionStatus;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskKeys;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
+import io.harness.cvng.analysis.entities.LogClusterLearningEngineTask;
 import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
 import io.harness.cvng.analysis.services.api.LearningEngineTaskService;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
@@ -117,6 +122,65 @@ public class CVNGMetricsPublisherTest extends CvNextGenTestBase {
         .recordMetric(eq("learning_engine_service_health_max_queued_time_localhost"), eq(0.0d));
   }
 
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testSendLETaskStatusMetrics() {
+    LearningEngineTask deploymentLearningEngineTaskQueued = LogClusterLearningEngineTask.builder()
+                                                                .clusterLevel(LogClusterLevel.L1)
+                                                                .host("host")
+                                                                .testDataUrl("testDataUrl")
+                                                                .build();
+    deploymentLearningEngineTaskQueued.setTaskStatus(QUEUED);
+    deploymentLearningEngineTaskQueued.setAnalysisType(LearningEngineTaskType.CV_LOG_CLUSTER);
+
+    LearningEngineTask serviceHealthLearningEngineTaskQueued = LogClusterLearningEngineTask.builder()
+                                                                   .clusterLevel(LogClusterLevel.L1)
+                                                                   .host("host")
+                                                                   .testDataUrl("testDataUrl")
+                                                                   .build();
+    serviceHealthLearningEngineTaskQueued.setTaskStatus(QUEUED);
+    serviceHealthLearningEngineTaskQueued.setAnalysisType(LearningEngineTaskType.LOG_CLUSTER);
+
+    LearningEngineTask deploymentLearningEngineTaskRunning = LogClusterLearningEngineTask.builder()
+                                                                 .clusterLevel(LogClusterLevel.L1)
+                                                                 .host("host")
+                                                                 .testDataUrl("testDataUrl")
+                                                                 .build();
+    deploymentLearningEngineTaskRunning.setTaskStatus(RUNNING);
+    deploymentLearningEngineTaskRunning.setAnalysisType(LearningEngineTaskType.CV_LOG_CLUSTER);
+
+    LearningEngineTask serviceHealthLearningEngineTaskRunning = LogClusterLearningEngineTask.builder()
+                                                                    .clusterLevel(LogClusterLevel.L1)
+                                                                    .host("host")
+                                                                    .testDataUrl("testDataUrl")
+                                                                    .build();
+    serviceHealthLearningEngineTaskRunning.setTaskStatus(RUNNING);
+    serviceHealthLearningEngineTaskRunning.setAnalysisType(LearningEngineTaskType.LOG_CLUSTER);
+
+    hPersistence.save(deploymentLearningEngineTaskQueued);
+    hPersistence.save(serviceHealthLearningEngineTaskQueued);
+    hPersistence.save(deploymentLearningEngineTaskRunning);
+    hPersistence.save(serviceHealthLearningEngineTaskRunning);
+    cvngMetricsPublisher.recordMetrics();
+    verify(metricService).recordMetric("learning_engine_service_health_task_non_final_status_count", 2.0);
+    verify(metricService).recordMetric("learning_engine_deployment_task_non_final_status_count", 2.0);
+
+    verify(metricService).recordMetric("learning_engine_deployment_task_running_count", 1.0);
+    verify(metricService).recordMetric("learning_engine_service_health_task_running_count", 1.0);
+
+    verify(metricService).recordMetric("learning_engine_deployment_task_queued_count", 1.0);
+    verify(metricService).recordMetric("learning_engine_service_health_task_queued_count", 1.0);
+
+    verify(metricService).recordMetric("learning_engine_service_health_task_non_final_status_localhost_count", 2.0);
+    verify(metricService).recordMetric("learning_engine_deployment_task_non_final_status_localhost_count", 2.0);
+
+    verify(metricService).recordMetric("learning_engine_deployment_task_running_localhost_count", 1.0);
+    verify(metricService).recordMetric("learning_engine_service_health_task_running_localhost_count", 1.0);
+
+    verify(metricService).recordMetric("learning_engine_deployment_task_queued_localhost_count", 1.0);
+    verify(metricService).recordMetric("learning_engine_service_health_task_queued_localhost_count", 1.0);
+  }
   private CanaryLogAnalysisLearningEngineTask canaryLogAnalysisLearningEngineTask(
       Clock clock, String verificationTaskId) {
     return CanaryLogAnalysisLearningEngineTask.builder()
