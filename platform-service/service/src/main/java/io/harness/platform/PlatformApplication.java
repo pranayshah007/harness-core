@@ -50,7 +50,9 @@ import io.harness.request.RequestContextFilter;
 import io.harness.resourcegroup.eventframework.ResourceGroupConsumerService;
 import io.harness.secret.ConfigSecretUtils;
 import io.harness.security.InternalApiAuthFilter;
+import io.harness.security.MyObject;
 import io.harness.security.NextGenAuthenticationFilter;
+import io.harness.security.TestFilter;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.PublicApi;
 import io.harness.swagger.SwaggerBundleConfigurationFactory;
@@ -88,6 +90,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
+import javax.enterprise.context.RequestScoped;
 import javax.servlet.DispatcherType;
 import javax.servlet.FilterRegistration;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -95,6 +98,7 @@ import javax.ws.rs.container.ResourceInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
+import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.model.Resource;
 
@@ -195,6 +199,14 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
     registerOasResource(appConfig, environment, godInjector.get(PLATFORM_SERVICE));
     createConsumerThreadsToListenToEvents(environment, godInjector.get(AUDIT_SERVICE));
     createConsumerThreadsToListenToNotificationEvents(environment, godInjector.get(NOTIFICATION_SERVICE));
+
+    environment.jersey().getResourceConfig().register(new AbstractBinder() {
+      @Override
+      protected void configure() {
+        bindFactory(MyObjectFactory.class).to(MyObject.class);
+      }
+    });
+
     new NotificationServiceSetup().setup(
         appConfig.getNotificationServiceConfig(), environment, godInjector.get(NOTIFICATION_SERVICE));
 
@@ -303,6 +315,7 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
     serviceToSecretMapping.put(DEFAULT.getServiceId(), configuration.getPlatformSecrets().getNgManagerServiceSecret());
     environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
         injector.get(PLATFORM_SERVICE).getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED")))));
+    environment.jersey().register(new TestFilter());
   }
 
   private void registerInternalApiAuthFilter(PlatformConfiguration configuration, Environment environment) {

@@ -19,6 +19,7 @@ import io.harness.health.HealthException;
 import io.harness.health.HealthService;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rest.RestResponse;
+import io.harness.security.MyObject;
 import io.harness.security.annotations.PublicApi;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
@@ -32,6 +33,8 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 
@@ -56,7 +59,7 @@ public class HealthResource {
   @Timed
   @ExceptionMetered
   @Operation(hidden = true)
-  public ResponseDTO<String> get() throws Exception {
+  public ResponseDTO<String> get(@Context MyObject myObject) throws Exception {
     if (getMaintenanceFlag()) {
       log.info("In maintenance mode. Throwing exception to prevent traffic.");
       throw NoResultFoundException.newBuilder()
