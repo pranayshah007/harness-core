@@ -10,6 +10,7 @@ package io.harness.cdng.configfile.steps;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_STEP_COMMAND_UNIT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.entityusageactivity.EntityUsageTypes.CONFIG_FILES_CONNECTOR;
 
 import static java.lang.String.format;
 
@@ -20,7 +21,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.cdng.CDStepHelper;
-import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.common.beans.StepDelegateInfo;
 import io.harness.cdng.configfile.ConfigFileAttributes;
 import io.harness.cdng.configfile.ConfigFileOutcome;
@@ -265,15 +265,19 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
   }
 
   private void publishRuntimeSecretUsage(Ambiance ambiance, List<ConfigFileWrapper> configFiles) {
+    if (EmptyPredicate.isEmpty(configFiles)) {
+      return;
+    }
+
     for (ConfigFileWrapper configFile : configFiles) {
       Set<VisitedSecretReference> secretReferences =
           configFile == null ? Set.of() : entityReferenceExtractorUtils.extractReferredSecrets(ambiance, configFile);
 
       if (EmptyPredicate.isNotEmpty(secretReferences)) {
-        secretReferences.forEach(secretReference -> {
-          secretRuntimeUsageService.createSecretRuntimeUsage(secretReference.getSecretRef(),
-              secretReference.getReferredBy(), EntityUsageDetailProto.newBuilder().build());
-        });
+        secretReferences.forEach(secretReference
+            -> secretRuntimeUsageService.createSecretRuntimeUsage(secretReference.getSecretRef(),
+                secretReference.getReferredBy(),
+                EntityUsageDetailProto.newBuilder().setUsageType(CONFIG_FILES_CONNECTOR).build()));
       }
     }
   }

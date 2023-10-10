@@ -14,6 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.logging.LogCallbackUtils.saveExecutionLogSafely;
+import static io.harness.ng.core.entityusageactivity.EntityUsageTypes.INFRA_CONNECTOR;
 
 import static software.wings.beans.LogColor.Green;
 import static software.wings.beans.LogColor.Red;
@@ -373,7 +374,8 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     if (EmptyPredicate.isNotEmpty(secretReferences)) {
       secretReferences.forEach(secretReference
           -> secretRuntimeUsageService.createSecretRuntimeUsage(secretReference.getSecretRef(),
-              secretReference.getReferredBy(), EntityUsageDetailProto.newBuilder().build()));
+              secretReference.getReferredBy(),
+              EntityUsageDetailProto.newBuilder().setUsageType(INFRA_CONNECTOR).build()));
     }
   }
 

@@ -12,6 +12,7 @@ import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNES
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.ng.core.entityusageactivity.EntityUsageTypes.AZURE_CONNECTOR;
 
 import static java.lang.String.format;
 
@@ -277,7 +278,8 @@ public class AzureHelperService {
     if (EmptyPredicate.isNotEmpty(secretReferences)) {
       secretReferences.forEach(secretReference
           -> secretRuntimeUsageService.createSecretRuntimeUsage(secretReference.getSecretRef(),
-              secretReference.getReferredBy(), EntityUsageDetailProto.newBuilder().build()));
+              secretReference.getReferredBy(),
+              EntityUsageDetailProto.newBuilder().setUsageType(AZURE_CONNECTOR).build()));
     }
   }
 

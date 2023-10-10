@@ -9,4 +9,8 @@ package io.harness.ng.core.entityusageactivity;
 
 public class EntityUsageTypes {
   public static String TEST_CONNECTION = "Test Connection";
+  public static String ARTIFACTS_CONNECTOR = "Artifacts Connector";
+  public static String INFRA_CONNECTOR = "Infra Connector";
+  public static String CONFIG_FILES_CONNECTOR = "Config files Connector";
+  public static String AZURE_CONNECTOR = "Azure Connector";
 }

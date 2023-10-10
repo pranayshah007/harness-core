@@ -12,6 +12,7 @@ import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVI
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.entityusageactivity.EntityUsageTypes.ARTIFACTS_CONNECTOR;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -306,7 +307,8 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
     if (EmptyPredicate.isNotEmpty(secretReferences)) {
       secretReferences.forEach(secretReference
           -> secretRuntimeUsageService.createSecretRuntimeUsage(secretReference.getSecretRef(),
-              secretReference.getReferredBy(), EntityUsageDetailProto.newBuilder().build()));
+              secretReference.getReferredBy(),
+              EntityUsageDetailProto.newBuilder().setUsageType(ARTIFACTS_CONNECTOR).build()));
     }
   }
 
