@@ -43,6 +43,7 @@ public class AuditEventMapper {
         .auditResource(Resource.builder()
                            .identifier(auditEvent.getResource().getIdentifier())
                            .type(auditEvent.getResource().getType())
+                           .uniqueId(auditEvent.getResource().getUniqueId())
                            .build())
         .auditResourceScope(ResourceScope.builder()
                                 .accountIdentifier(auditEvent.getResourceScope().getAccountIdentifier())

@@ -40,6 +40,7 @@ public class ResourceDTO {
   @Schema(description = "Resource Type")
   String type;
   @NotNull @NotBlank @Schema(description = "Resource Identifier") String identifier;
+  String uniqueId;
   @Size(max = 5) @Schema(description = "Map of additional information about the Resource.") Map<String, String> labels;
 
   public static ResourceDTO fromResource(Resource resource) {
@@ -50,6 +51,7 @@ public class ResourceDTO {
         .type(resource.getType())
         .identifier(resource.getIdentifier())
         .labels(resource.getLabels())
+        .uniqueId(resource.getUniqueId())
         .build();
   }
 }

@@ -19,4 +19,5 @@ import lombok.experimental.FieldDefaults;
 public class Resource {
   @NotBlank String type;
   @NotBlank String identifier;
+  String uniqueId;
 }

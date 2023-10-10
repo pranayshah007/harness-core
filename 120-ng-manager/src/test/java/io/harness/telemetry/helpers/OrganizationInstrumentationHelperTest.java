@@ -51,7 +51,7 @@ public class OrganizationInstrumentationHelperTest {
     OrganizationDTO organizationDTO = createOrganizationDTO(randomAlphabetic(10));
     Organization organization = toOrganization(organizationDTO);
     CompletableFuture telemetryTask =
-        instrumentationHelper.sendOrganizationCreateEvent(organization, accountIdentifier);
+        instrumentationHelper.sendOrganizationCreateEvent(organization, accountIdentifier,organizationDTO.getUniqueId());
     telemetryTask.join();
     assertTrue(telemetryTask.isDone());
   }

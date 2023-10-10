@@ -28,7 +28,12 @@ public class ResourceMapper {
     if (isEmpty(labels)) {
       labels = null;
     }
-    return Resource.builder().type(dto.getType()).identifier(dto.getIdentifier()).labels(labels).build();
+    return Resource.builder()
+        .type(dto.getType())
+        .identifier(dto.getIdentifier())
+        .uniqueId(dto.getUniqueId())
+        .labels(labels)
+        .build();
   }
 
   public static ResourceDTO toDTO(Resource dbo) {
@@ -36,6 +41,11 @@ public class ResourceMapper {
     if (isEmpty(labels)) {
       labels = null;
     }
-    return ResourceDTO.builder().type(dbo.getType()).identifier(dbo.getIdentifier()).labels(labels).build();
+    return ResourceDTO.builder()
+        .type(dbo.getType())
+        .identifier(dbo.getIdentifier())
+        .uniqueId(dbo.getUniqueId())
+        .labels(labels)
+        .build();
   }
 }

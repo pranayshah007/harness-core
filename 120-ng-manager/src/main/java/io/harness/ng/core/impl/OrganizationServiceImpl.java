@@ -128,7 +128,8 @@ public class OrganizationServiceImpl implements OrganizationService {
       setupOrganization(Scope.of(accountIdentifier, organizationDTO.getIdentifier(), null));
       log.info(
           String.format("Organization with identifier [%s] was successfully created", organization.getIdentifier()));
-      instrumentationHelper.sendOrganizationCreateEvent(organization, accountIdentifier);
+      instrumentationHelper.sendOrganizationCreateEvent(
+          organization, accountIdentifier, savedOrganization.getUniqueId());
       return savedOrganization;
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(
@@ -241,9 +242,8 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
     return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
       Organization savedOrganization = organizationRepository.save(organization);
-      OrganizationDTO organizationDTO = OrganizationMapper.writeDto(savedOrganization);
-      organizationDTO.setUniqueId(savedOrganization.getUniqueId());
-      outboxService.save(new OrganizationCreateEvent(organization.getAccountIdentifier(), organizationDTO));
+      outboxService.save(new OrganizationCreateEvent(organization.getAccountIdentifier(),
+          OrganizationMapper.writeDto(savedOrganization), savedOrganization.getUniqueId()));
       if (DEFAULT_ORG_IDENTIFIER.equalsIgnoreCase(organization.getIdentifier())) {
         log.info("[AccountSetup]: Default Organization created Successfully");
       }

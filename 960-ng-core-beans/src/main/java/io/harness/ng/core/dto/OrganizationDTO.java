@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Map;
 import javax.validation.constraints.Size;
@@ -44,7 +43,7 @@ public class OrganizationDTO {
   @EntityIdentifier(allowBlank = false)
   @Schema(description = OrganizationConstants.IDENTIFIER)
   String identifier;
-  @Schema(hidden = true, description = "Unique Identifier for Organization") String uniqueId;
+  @Schema(hidden = true, description = "UniqueId of Organization") String uniqueId;
   @ApiModelProperty(required = true) @NGEntityName @Schema(description = OrganizationConstants.NAME) String name;
   @Size(max = 1024) @Schema(description = "Description of the Organization.") String description;
   @Size(max = 128) @Schema(description = "Tags for the Organization.") Map<String, String> tags;

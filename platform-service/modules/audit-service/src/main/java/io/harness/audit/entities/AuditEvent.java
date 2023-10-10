@@ -89,6 +89,7 @@ public class AuditEvent {
                  .field(AuditEventKeys.ACCOUNT_IDENTIFIER_KEY)
                  .field(AuditEventKeys.RESOURCE_TYPE_KEY)
                  .field(AuditEventKeys.RESOURCE_IDENTIFIER_KEY)
+                 .field(AuditEventKeys.RESOURCE_UNIQUE_ID_KEY)
                  .field(AuditEventKeys.timestamp)
                  .build())
         .add(CompoundMongoIndex.builder()
@@ -98,6 +99,7 @@ public class AuditEvent {
                  .field(AuditEventKeys.ORG_IDENTIFIER_KEY)
                  .field(AuditEventKeys.RESOURCE_TYPE_KEY)
                  .field(AuditEventKeys.RESOURCE_IDENTIFIER_KEY)
+                 .field(AuditEventKeys.RESOURCE_UNIQUE_ID_KEY)
                  .build())
         .add(CompoundMongoIndex.builder()
                  .name("ngAuditTimeAccountOrgProjectResourceIdx")
@@ -107,6 +109,7 @@ public class AuditEvent {
                  .field(AuditEventKeys.PROJECT_IDENTIFIER_KEY)
                  .field(AuditEventKeys.RESOURCE_TYPE_KEY)
                  .field(AuditEventKeys.RESOURCE_IDENTIFIER_KEY)
+                 .field(AuditEventKeys.RESOURCE_UNIQUE_ID_KEY)
                  .build())
         .add(SortCompoundMongoIndex.builder()
                  .name("ngAuditCreatedAtIdx")
@@ -153,5 +156,6 @@ public class AuditEvent {
         AuditEventKeys.resource + "." + ResourceKeys.labels + "." + KeyValuePairKeys.key;
     public static final String RESOURCE_LABEL_VALUES_KEY =
         AuditEventKeys.resource + "." + ResourceKeys.labels + "." + KeyValuePairKeys.value;
+    public static final String RESOURCE_UNIQUE_ID_KEY = AuditEventKeys.resource + "." + ResourceKeys.uniqueId;
   }
 }
