@@ -28,6 +28,7 @@ import static org.apache.commons.lang3.StringUtils.isNumeric;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
+import io.harness.ScopeInfo;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.ResourceIdentifier;
@@ -79,6 +80,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -130,8 +132,8 @@ public class OrganizationResource {
   public ResponseDTO<OrganizationResponse>
   create(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @RequestBody(required = true,
-          description = "Details of the Organization to create") @NotNull @Valid OrganizationRequest organizationDTO) {
+      @RequestBody(required = true, description = "Details of the Organization to create") @NotNull
+      @Valid OrganizationRequest organizationDTO, @Context ScopeInfo scopeInfo) {
     if (DEFAULT_ORG_IDENTIFIER.equals(organizationDTO.getOrganization().getIdentifier())) {
       throw new InvalidRequestException(
           String.format("%s cannot be used as org identifier", DEFAULT_ORG_IDENTIFIER), USER);
@@ -182,7 +184,7 @@ public class OrganizationResource {
           description =
               "This would be used to filter Organizations. Any Organization having the specified string in its Name, ID and Tag would be filtered.")
       @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
-      @BeanParam PageRequest pageRequest) {
+      @BeanParam PageRequest pageRequest, @Context ScopeInfo scopeInfo) {
     OrganizationFilterDTO organizationFilterDTO =
         OrganizationFilterDTO.builder().searchTerm(searchTerm).identifiers(identifiers).build();
     if (isEmpty(pageRequest.getSortOrders())) {
@@ -236,7 +238,8 @@ public class OrganizationResource {
       @RequestBody(required = true,
           description =
               "This is the updated Organization. Please provide values for all fields, not just the fields you are updating")
-      @NotNull @Valid OrganizationRequest organizationDTO) {
+      @NotNull @Valid OrganizationRequest organizationDTO,
+      @Context ScopeInfo scopeInfo) {
     if (DEFAULT_ORG_IDENTIFIER.equals(identifier)) {
       throw new InvalidRequestException(
           String.format(

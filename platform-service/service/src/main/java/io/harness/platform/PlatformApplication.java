@@ -50,9 +50,7 @@ import io.harness.request.RequestContextFilter;
 import io.harness.resourcegroup.eventframework.ResourceGroupConsumerService;
 import io.harness.secret.ConfigSecretUtils;
 import io.harness.security.InternalApiAuthFilter;
-import io.harness.security.MyObject;
 import io.harness.security.NextGenAuthenticationFilter;
-import io.harness.security.TestFilter;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.PublicApi;
 import io.harness.swagger.SwaggerBundleConfigurationFactory;
@@ -200,13 +198,6 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
     createConsumerThreadsToListenToEvents(environment, godInjector.get(AUDIT_SERVICE));
     createConsumerThreadsToListenToNotificationEvents(environment, godInjector.get(NOTIFICATION_SERVICE));
 
-    environment.jersey().getResourceConfig().register(new AbstractBinder() {
-      @Override
-      protected void configure() {
-        bindFactory(MyObjectFactory.class).to(MyObject.class);
-      }
-    });
-
     new NotificationServiceSetup().setup(
         appConfig.getNotificationServiceConfig(), environment, godInjector.get(NOTIFICATION_SERVICE));
 
@@ -315,7 +306,6 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
     serviceToSecretMapping.put(DEFAULT.getServiceId(), configuration.getPlatformSecrets().getNgManagerServiceSecret());
     environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
         injector.get(PLATFORM_SERVICE).getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED")))));
-    environment.jersey().register(new TestFilter());
   }
 
   private void registerInternalApiAuthFilter(PlatformConfiguration configuration, Environment environment) {

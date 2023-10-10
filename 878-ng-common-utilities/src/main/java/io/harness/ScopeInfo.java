@@ -5,11 +5,20 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.security;
+package io.harness;
 
-import java.util.Date;
+import io.harness.beans.ScopeLevel;
 
-public class MyObject {
-  final Date d = new Date();
-  public MyObject() {}
+import javax.validation.constraints.NotEmpty;
+import lombok.Builder;
+import lombok.Data;
+
+@Data
+@Builder
+public class ScopeInfo {
+  @NotEmpty String accountIdentifier;
+  String orgIdentifier;
+  String projectIdentifier;
+  String uniqueId;
+  ScopeLevel scopeType;
 }

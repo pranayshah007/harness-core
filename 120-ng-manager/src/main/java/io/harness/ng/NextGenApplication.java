@@ -33,6 +33,8 @@ import io.harness.ModuleType;
 import io.harness.NgIteratorsConfig;
 import io.harness.PipelineServiceUtilityModule;
 import io.harness.SCMGrpcClientModule;
+import io.harness.ScopeInfo;
+import io.harness.ScopeInfoFilter;
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.accesscontrol.filter.NGScopeAccessCheckFilter;
@@ -141,8 +143,7 @@ import io.harness.ng.core.handler.freezeHandlers.NgDeploymentFreezeActivationHan
 import io.harness.ng.core.migration.NGBeanMigrationProvider;
 import io.harness.ng.core.migration.ProjectMigrationProvider;
 import io.harness.ng.core.migration.UserGroupMigrationProvider;
-import io.harness.ng.core.remote.UserGroupRestrictionUsageImpl;
-import io.harness.ng.core.remote.UsersRestrictionUsageImpl;
+import io.harness.ng.core.remote.*;
 import io.harness.ng.core.remote.licenserestriction.ApiKeyRestrictionsUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.ApiTokenRestrictionUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.CloudCostK8sConnectorRestrictionsUsageImpl;
@@ -304,6 +305,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
+import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.server.model.Resource;
@@ -491,6 +493,13 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     initializeEnforcementService(injector, appConfig);
     initializeEnforcementSdk(injector);
     initializeCdMonitoring(appConfig, injector);
+    environment.jersey().getResourceConfig().register(new AbstractBinder() {
+      @Override
+      protected void configure() {
+        bindFactory(ScopeInfoFactory.class).to(ScopeInfo.class);
+      }
+    });
+
     SettingsCreationJob settingsCreationJob = injector.getInstance(SettingsCreationJob.class);
     settingsCreationJob.run();
 
@@ -1055,6 +1064,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     serviceToSecretMapping.put(DEFAULT.getServiceId(), configuration.getNextGenConfig().getNgManagerServiceSecret());
     environment.jersey().register(
         new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping, tokenClient));
+    environment.jersey().register(new ScopeInfoFilter());
   }
 
   private void registerAPIAuthTelemetryFilter(Environment environment, Injector injector) {
