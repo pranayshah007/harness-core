@@ -5333,7 +5333,7 @@ plain_artifacts = [
     "org.projectlombok:lombok:1.18.26",
     "org.projectlombok:lombok-mapstruct-binding:0.2.0",
     "org.quartz-scheduler:quartz:2.3.2",
-    "org.reactivestreams:reactive-streams:1.0.2",
+    "org.reactivestreams:reactive-streams:1.0.4",
     "org.redisson:redisson:3.13.3",
     "org.reflections:reflections:0.9.12-SNAPSHOT",
     "org.slf4j:jcl-over-slf4j:1.7.30",
