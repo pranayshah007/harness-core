@@ -28,6 +28,7 @@ import io.harness.ccm.commons.entities.billing.CECloudAccount;
 import io.harness.ccm.service.intf.AWSBucketPolicyHelperService;
 import io.harness.ccm.service.intf.AWSOrganizationHelperService;
 import io.harness.ccm.service.intf.AwsEntityChangeEventService;
+import io.harness.ccm.service.intf.GovernanceEntityChangeEventService;
 import io.harness.configuration.DeployMode;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
@@ -70,20 +71,20 @@ public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventServ
   @Inject AwsClient awsClient;
   @Inject AWSConnectorToBucketMappingDao awsConnectorToBucketMappingDao;
   @Inject BigQueryService bigQueryService;
+  @Inject GovernanceEntityChangeEventService governanceEntityChangeEventService;
 
   @Override
   public boolean processAWSEntityChangeEvent(EntityChangeDTO entityChangeDTO, String action) {
     String identifier = entityChangeDTO.getIdentifier().getValue();
     String accountIdentifier = entityChangeDTO.getAccountIdentifier().getValue();
     AwsConfig awsConfig = configuration.getAwsConfig();
-    CEAwsConnectorDTO ceAwsConnectorDTO;
+    CEAwsConnectorDTO ceAwsConnectorDTO =
+        (CEAwsConnectorDTO) getConnectorConfigDTO(accountIdentifier, identifier).getConnectorConfig();
     String destinationBucket = getDestinationBucketName(awsConfig);
     ArrayList<ImmutableMap<String, String>> entityChangeEvents = new ArrayList<>();
     log.info("processAWSEntityChangeEvent action: {}", action);
     switch (action) {
       case CREATE_ACTION:
-        ceAwsConnectorDTO =
-            (CEAwsConnectorDTO) getConnectorConfigDTO(accountIdentifier, identifier).getConnectorConfig();
         lightwingAutocudDc(CREATE_ACTION, accountIdentifier, ceAwsConnectorDTO, lightwingClient, configuration);
         // Update Bucket Policy
         if (isBillingFeatureEnabled(ceAwsConnectorDTO) && validateResourcesExists(awsConfig, ceAwsConnectorDTO)) {
@@ -109,8 +110,6 @@ public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventServ
         updateCECloudAccountMongoCollection(accountIdentifier, identifier, ceAwsConnectorDTO, awsConfig);
         break;
       case UPDATE_ACTION:
-        ceAwsConnectorDTO =
-            (CEAwsConnectorDTO) getConnectorConfigDTO(accountIdentifier, identifier).getConnectorConfig();
         lightwingAutocudDc(UPDATE_ACTION, accountIdentifier, ceAwsConnectorDTO, lightwingClient, configuration);
         // Update Bucket Policy
         if (isBillingFeatureEnabled(ceAwsConnectorDTO) && validateResourcesExists(awsConfig, ceAwsConnectorDTO)) {
@@ -136,6 +135,8 @@ public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventServ
         updateCECloudAccountMongoCollection(accountIdentifier, identifier, ceAwsConnectorDTO, awsConfig);
         break;
       case DELETE_ACTION:
+        governanceEntityChangeEventService.processConnectorDeleteEvent(
+            accountIdentifier, ceAwsConnectorDTO.getAwsAccountId());
         updateEventData(action, identifier, accountIdentifier, "", "", "", entityChangeEvents);
         EntityChangeEventServiceHelper.publishMessage(entityChangeEvents,
             configuration.getGcpConfig().getGcpProjectId(),

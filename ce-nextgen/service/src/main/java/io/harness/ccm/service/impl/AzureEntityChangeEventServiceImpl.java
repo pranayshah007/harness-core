@@ -20,6 +20,7 @@ import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.LightwingClient;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.service.intf.AzureEntityChangeEventService;
+import io.harness.ccm.service.intf.GovernanceEntityChangeEventService;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
@@ -49,6 +50,7 @@ public class AzureEntityChangeEventServiceImpl implements AzureEntityChangeEvent
   @Inject CENextGenConfiguration configuration;
   @Inject BigQueryService bigQueryService;
   @Inject LightwingClient lightwingClient;
+  @Inject GovernanceEntityChangeEventService governanceEntityChangeEventService;
 
   @Override
   public boolean processAzureEntityCreateEvent(EntityChangeDTO entityChangeDTO) {
@@ -100,6 +102,8 @@ public class AzureEntityChangeEventServiceImpl implements AzureEntityChangeEvent
 
     CEAzureConnectorDTO ceAzureConnectorDTO =
         (CEAzureConnectorDTO) getConnectorConfigDTO(accountIdentifier, identifier).getConnectorConfig();
+    governanceEntityChangeEventService.processConnectorDeleteEvent(
+        accountIdentifier, ceAzureConnectorDTO.getSubscriptionId());
     updateEventData(DELETE_ACTION, identifier, accountIdentifier, ceAzureConnectorDTO.getTenantId(),
         ceAzureConnectorDTO.getSubscriptionId(), entityChangeEvents);
     EntityChangeEventServiceHelper.publishMessage(entityChangeEvents, configuration.getGcpConfig().getGcpProjectId(),
