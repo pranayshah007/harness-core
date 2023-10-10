@@ -55,7 +55,7 @@ public class ProxyApiKeyResourceImpl implements Resource {
 
   @Override
   public String getType() {
-    return "PROXYAPIKEY";
+    return "FF_PROXYAPIKEY";
   }
 
   @Override

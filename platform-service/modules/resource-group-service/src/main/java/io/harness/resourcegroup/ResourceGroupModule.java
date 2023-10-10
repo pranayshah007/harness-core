@@ -187,7 +187,7 @@ public class ResourceGroupModule extends AbstractModule {
         ServiceHttpClientConfig.builder().baseUrl(resourceClients.getCeNextGen().getBaseUrl()).build(),
         resourceClients.getCeNextGen().getSecret(), RESOUCE_GROUP_SERVICE.toString(), ClientMode.PRIVILEGED));
     install(new ProxyApiKeyClientModule(
-            ServiceHttpClientConfig.builder().baseUrl(resourceClients.getCeNextGen().getBaseUrl()).build(),
-            resourceClients.getCeNextGen().getSecret(), RESOUCE_GROUP_SERVICE.toString(), ClientMode.PRIVILEGED));
+            ServiceHttpClientConfig.builder().baseUrl(resourceClients.getCode().getBaseUrl()).build(),
+            resourceClients.getCode().getSecret(), RESOUCE_GROUP_SERVICE.toString(), ClientMode.PRIVILEGED));
   }
 }
