@@ -103,7 +103,8 @@ public class K8SLiteRunner implements Runner {
       final var taskSecrets = k8sInfra.getStepsList().stream().collect(
           groupingBy(K8SStep::getId, flatMapping(task -> createTaskSecrets(taskGroupId, task), toList())));
 
-      final var loggingToken = k8sInfra.getLogToken();
+      //      final var loggingToken = k8sInfra.getLogToken();
+      String loggingToken = "ZSe4p2ttcHlTbVVJU2ltb1JySkw2Tkw3M3dtWeCoo-0YboonvvA0zcVd-fyaWrJxGIe2qpXBQguXFg";
       final V1Secret loggingSecret =
           createLoggingSecret(taskGroupId, config.getLogServiceUrl(), loggingToken, k8sInfra.getLogPrefix());
 
@@ -151,7 +152,8 @@ public class K8SLiteRunner implements Runner {
   }
 
   @Override
-  public void execute(final String taskGroupId, final InputData tasks, final Context context) {
+  public void execute(String taskGroupId, final InputData tasks, final Context context) {
+    taskGroupId = "tQpMZH1JRumECmDSs188gg-DEL";
     ExecuteStep executeStep = ExecuteStep.newBuilder()
                                   .setTaskParameters(tasks.getBinaryData())
                                   .addAllExecuteCommand(List.of("./start.sh"))
@@ -185,8 +187,8 @@ public class K8SLiteRunner implements Runner {
 
     final var namespace = config.getNamespace();
 
-    String target = K8SService.buildK8sServiceUrl(taskGroupId, namespace, Integer.toString(RESERVED_LE_PORT));
-    // String target = format("%s:%d", "127.0.0.1", RESERVED_LE_PORT);
+    //  String target = K8SService.buildK8sServiceUrl(taskGroupId, namespace, Integer.toString(RESERVED_LE_PORT));
+    String target = format("%s:%d", "127.0.0.1", RESERVED_LE_PORT);
     ManagedChannelBuilder managedChannelBuilder = ManagedChannelBuilder.forTarget(target).usePlaintext();
     ManagedChannel channel = managedChannelBuilder.build();
 
