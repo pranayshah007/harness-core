@@ -82,12 +82,15 @@ import io.kubernetes.client.openapi.models.V1VolumeBuilder;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1VolumeMountBuilder;
 import io.kubernetes.client.util.Watch;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -175,7 +178,8 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
         V1Pod pod = podSpecBuilder.createSpec(podParams).build();
         updatePodWithDelegateVolumes(coreV1Api, namespace, pod);
 
-        log.info("Creating pod with spec: {}", pod);
+        String base64ConvertedPod = convertObjectToBase64(pod);
+        log.info("Creating pod with spec: {}", base64ConvertedPod);
         cik8JavaClientHandler.createOrReplacePodWithRetries(coreV1Api, pod, namespace);
         Watch<CoreV1Event> watch =
             k8EventHandler.startAsyncPodEventWatch(kubernetesConfig, namespace, podName, logStreamingTaskClient);
@@ -625,5 +629,22 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
     secretEnvVars.put(HARNESS_SECRETS_LIST, secret);
     secretEnvVars.put(HARNESS_LE_DELEGATE_LOG_URL, System.getenv().get("LOG_STREAMING_SERVICE_URL"));
     secretEnvVars.put(HARNESS_LE_DELEGATE_TI_URL, System.getenv().get("TI_SERVICE_URL"));
+  }
+  private String convertObjectToBase64(Object object) {
+    try {
+      ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+      ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+
+      objectOutputStream.writeObject(object);
+      objectOutputStream.close();
+
+      byte[] objectBytes = byteArrayOutputStream.toByteArray();
+      String base64EncodedObject = Base64.getEncoder().encodeToString(objectBytes);
+      return base64EncodedObject;
+
+    } catch (Exception e) {
+      e.printStackTrace();
+      return null;
+    }
   }
 }
