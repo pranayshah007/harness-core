@@ -30,7 +30,7 @@ public class EcsBasicRollbackRequest implements EcsCommandRequest, NestedAnnotat
   EcsCommandTypeNG commandType;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
-  Integer timeoutIntervalInMin;
+  long timeoutIntervalInMillis;
   @NonFinal @Expression(ALLOW_SECRETS) EcsInfraConfig infraConfig;
   @NonFinal @Expression(ALLOW_SECRETS) String createServiceRequestYaml;
   @NonFinal @Expression(ALLOW_SECRETS) List<String> registerScalableTargetRequestYaml;

@@ -276,17 +276,17 @@ public class TemplateMergeServiceHelper {
    * replaceTemplateOccurrenceWithTemplateSpecYaml() to get the actual template.spec in template yaml.
    */
   public MergeTemplateInputsInObject mergeTemplateInputsInObjectWithVersion(String accountId, String orgId,
-      String projectId, YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, int depth,
+      String projectId, YamlNode currentYamlNode, Map<String, TemplateEntity> templateCacheMap, int depth,
       boolean loadFromCache, boolean appendInputSetValidator, String currentYamlVersion) {
     Map<String, Object> resMap = new LinkedHashMap<>();
     TemplateEntity templateEntity = null;
-    for (YamlField childYamlField : yamlNode.fields()) {
+    for (YamlField childYamlField : currentYamlNode.fields()) {
       String fieldName = childYamlField.getName();
       JsonNode value = childYamlField.getNode().getCurrJsonNode();
-      boolean isTemplatePresent = isTemplatePresent(fieldName, yamlNode.getCurrJsonNode());
+      boolean isTemplatePresent = isTemplatePresent(fieldName, currentYamlNode.getCurrJsonNode());
       if (isTemplatePresent) {
         Pair<TemplateEntity, JsonNode> entry = replaceTemplateOccurrenceWithTemplateSpecYaml(accountId, orgId,
-            projectId, getTemplateJsonNode(currentYamlVersion, value, yamlNode), templateCacheMap, loadFromCache,
+            projectId, getTemplateJsonNode(currentYamlVersion, value, currentYamlNode), templateCacheMap, loadFromCache,
             appendInputSetValidator, currentYamlVersion);
         value = entry.getValue();
         templateEntity = entry.getKey();
@@ -619,19 +619,19 @@ public class TemplateMergeServiceHelper {
    * This method Provides all the information from mergeTemplateInputsInObject method along with template references.
    */
   public MergeTemplateInputsInObject mergeTemplateInputsInObjectAlongWithOpaPolicy(String accountId, String orgId,
-      String projectId, YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, int depth,
+      String projectId, YamlNode currentYamlNode, Map<String, TemplateEntity> templateCacheMap, int depth,
       boolean loadFromCache, boolean appendInputSetValidator, String currentYamlVersion) {
     Map<String, Object> resMap = new LinkedHashMap<>();
     Map<String, Object> resMapWithTemplateRef = new LinkedHashMap<>();
     TemplateEntity templateEntity = null;
-    for (YamlField childYamlField : yamlNode.fields()) {
+    for (YamlField childYamlField : currentYamlNode.fields()) {
       String fieldName = childYamlField.getName();
       JsonNode value = childYamlField.getNode().getCurrJsonNode();
-      boolean isTemplatePresent = isTemplatePresent(fieldName, yamlNode.getCurrJsonNode());
+      boolean isTemplatePresent = isTemplatePresent(fieldName, currentYamlNode.getCurrJsonNode());
       if (isTemplatePresent) {
         resMapWithTemplateRef.put(fieldName, JsonUtils.jsonNodeToMap(value));
         Pair<TemplateEntity, JsonNode> entry = replaceTemplateOccurrenceWithTemplateSpecYaml(accountId, orgId,
-            projectId, getTemplateJsonNode(currentYamlVersion, value, yamlNode), templateCacheMap, loadFromCache,
+            projectId, getTemplateJsonNode(currentYamlVersion, value, currentYamlNode), templateCacheMap, loadFromCache,
             appendInputSetValidator, currentYamlVersion);
         value = entry.getValue();
         templateEntity = entry.getKey();
@@ -672,10 +672,11 @@ public class TemplateMergeServiceHelper {
     return getMergeTemplateInputsInObject(currentYamlVersion, templateEntity, resMap, resMapWithTemplateRef);
   }
 
-  private JsonNode getTemplateJsonNode(String currentYamlVersion, JsonNode value, YamlNode yamlNode) {
-    JsonNode templateJsonNode = value;
+  private JsonNode getTemplateJsonNode(
+      String currentYamlVersion, JsonNode currentFieldValue, YamlNode currentYamlNode) {
+    JsonNode templateJsonNode = currentFieldValue;
     if (HarnessYamlVersion.isV1(currentYamlVersion)) {
-      templateJsonNode = yamlNode.getCurrJsonNode();
+      templateJsonNode = currentYamlNode.getCurrJsonNode();
     }
     return templateJsonNode;
   }

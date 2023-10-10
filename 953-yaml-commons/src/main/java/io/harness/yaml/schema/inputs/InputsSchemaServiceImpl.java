@@ -30,9 +30,11 @@ import io.harness.yaml.utils.JsonFieldUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -46,13 +48,15 @@ public class InputsSchemaServiceImpl implements InputsSchemaService {
     Map<InputDetails, List<InputFieldMetadata>> inputToSpecFieldDependencyMap = new HashMap<>();
 
     List<InputDetails> inputDetailsList = YamlInputUtils.getYamlInputList(yaml);
-    Map<String, InputDetails> yamlInputExpressionToYamlInputMap =
+    Map<Set<String>, InputDetails> yamlInputExpressionToYamlInputMap =
         YamlInputUtils.prepareYamlInputExpressionToYamlInputMap(inputDetailsList);
     Map<String, List<FQN>> FQNsForAllInputs = YamlInputUtils.parseFQNsForAllInputsInYaml(
         yamlConfig.getFqnToValueMap(), yamlInputExpressionToYamlInputMap.keySet());
 
-    yamlInputExpressionToYamlInputMap.forEach((inputExpression, inputDetails) -> {
-      List<FQN> FQNList = FQNsForAllInputs.get(inputExpression);
+    yamlInputExpressionToYamlInputMap.forEach((inputExpressionList, inputDetails) -> {
+      List<FQN> FQNList = new ArrayList<>();
+      inputExpressionList.forEach(
+          inputExpression -> FQNList.addAll(FQNsForAllInputs.getOrDefault(inputExpression, Collections.emptyList())));
       InputMetadata inputMetadata = null;
       if (isNotEmpty(FQNList)) {
         inputMetadata = new InputMetadata();

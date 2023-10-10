@@ -61,11 +61,11 @@ openapi_repositories(
 # Download the Go rules
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "6dc2da7ab4cf5d7bfc7c949776b1b7c733f05e56edc4bcd9022bb249d2e2a996",
+    sha256 = "a8e6375bf881ecc33100ccad4574408a80087eff5e238256b5506eeefe9dd9ee",
+    strip_prefix = "rules_go-c8f0fd7735132144dcdf4d51e927a8607af6774c",
     urls = [
-        "https://%s.harness.io/artifactory/rules-go-github/download/v0.39.1/rules_go-v0.39.1.zip" % REPOSITORY,
-        #"https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
-        #"https://github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
+        # "https://%s.harness.io/artifactory/rules-go-github/archive/c8f0fd7735132144dcdf4d51e927a8607af6774c.tar.gz" % REPOSITORY,
+        "https://github.com/bazelbuild/rules_go/archive/c8f0fd7735132144dcdf4d51e927a8607af6774c.tar.gz",
     ],
 )
 
@@ -4636,7 +4636,7 @@ go_repository(
 
 go_rules_dependencies()
 
-go_register_toolchains(version = "1.20.5")
+go_register_toolchains(version = "1.21.1")
 
 gazelle_dependencies()
 
@@ -5114,6 +5114,7 @@ plain_artifacts = [
     "net.sf.opencsv:opencsv:2.3",
     "net.shibboleth.utilities:java-support:7.5.0",
     "net.sourceforge.argparse4j:argparse4j:0.8.1",
+    "no.entur.mapstruct.spi:protobuf-spi-impl:1.44",
     "org.antlr:antlr4-runtime:4.7.2",
     "org.apache.avro:avro:1.9.2",
     "org.apache.avro:avro:1.9.2",
@@ -5223,9 +5224,9 @@ plain_artifacts = [
     "org.eclipse.jetty:jetty-util:9.4.51.v20230217",
     "org.eclipse.jetty:jetty-webapp:9.4.51.v20230217",
     "org.eclipse.jetty:jetty-xml:9.4.51.v20230217",
-    "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:jar:5.13.0.202109080827-r",
-    "org.eclipse.jgit:org.eclipse.jgit.http.apache:5.13.0.202109080827-r",
-    "org.eclipse.jgit:org.eclipse.jgit:5.13.0.202109080827-r",
+    "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:jar:6.6.1.202309021850-r",
+    "org.eclipse.jgit:org.eclipse.jgit.http.apache:6.6.1.202309021850-r",
+    "org.eclipse.jgit:org.eclipse.jgit:6.6.1.202309021850-r",
     "org.elasticsearch.client:elasticsearch-rest-client:7.17.7",
     "org.elasticsearch.client:elasticsearch-rest-high-level-client:7.17.7",
     "org.elasticsearch.plugin:aggs-matrix-stats-client:7.17.7",
@@ -5299,6 +5300,8 @@ plain_artifacts = [
     "org.ldaptive:ldaptive:1.2.3",
     "org.lz4:lz4-java:1.6.0",
     "org.lz4:lz4-java:1.6.0",
+    "org.mapstruct:mapstruct:1.5.5.Final",
+    "org.mapstruct:mapstruct-processor:1.5.5.Final",
     "org.mindrot:jbcrypt:0.4",
     "org.modelmapper:modelmapper:0.7.5",
     "dev.morphia.morphia:core:1.6.1",
@@ -5328,6 +5331,7 @@ plain_artifacts = [
     "org.passay:passay:1.3.1",
     "org.postgresql:postgresql:42.2.25",
     "org.projectlombok:lombok:1.18.26",
+    "org.projectlombok:lombok-mapstruct-binding:0.2.0",
     "org.quartz-scheduler:quartz:2.3.2",
     "org.reactivestreams:reactive-streams:1.0.2",
     "org.redisson:redisson:3.13.3",

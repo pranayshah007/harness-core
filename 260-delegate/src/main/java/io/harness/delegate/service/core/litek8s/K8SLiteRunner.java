@@ -144,7 +144,7 @@ public class K8SLiteRunner implements Runner {
     } catch (ApiException e) {
       log.error("Failed to create the task {}. {}", taskGroupId, ApiExceptionLogger.format(e), e);
     } catch (InvalidProtocolBufferException e) {
-      log.error("Failed to parse protobuf data {}", e);
+      log.error("Failed to parse protobuf data {}", taskGroupId, e);
     } catch (Exception e) {
       log.error("Failed to create the task {}", taskGroupId, e);
       throw e;

@@ -32,17 +32,17 @@ public class EcsServiceSetupRequest implements EcsCommandRequest, NestedAnnotati
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
   @NonFinal @Expression(ALLOW_SECRETS) EcsInfraConfig infraConfig;
-  Integer timeoutIntervalInMin;
+  long timeoutIntervalInMillis;
   @NonFinal @Expression(ALLOW_SECRETS) String taskDefinitionManifestContent;
   @NonFinal @Expression(ALLOW_SECRETS) String serviceDefinitionManifestContent;
   @NonFinal @Expression(ALLOW_SECRETS) List<String> scalableTargetManifestContentList;
   @NonFinal @Expression(ALLOW_SECRETS) List<String> scalingPolicyManifestContentList;
   @NonFinal @Expression(ALLOW_SECRETS) String taskDefinitionArn;
   boolean useTaskDefinitionArn;
-  boolean sameAsAlreadyRunningInstances;
   EcsResizeStrategy resizeStrategy;
   @NonFinal @Expression(ALLOW_SECRETS) String oldServiceName;
   @NonFinal @Expression(ALLOW_SECRETS) String newServiceName;
+  boolean firstTimeDeployment;
 
   @Override
   public EcsCommandTypeNG getEcsCommandType() {

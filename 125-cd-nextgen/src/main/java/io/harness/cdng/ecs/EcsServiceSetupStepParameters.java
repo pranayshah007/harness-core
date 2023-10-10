@@ -37,6 +37,6 @@ public class EcsServiceSetupStepParameters extends EcsServiceSetupBaseStepInfo i
   }
   public List<String> getCommandUnits() {
     return Arrays.asList(EcsCommandUnitConstants.fetchManifests.toString(),
-        EcsCommandUnitConstants.prepareRollbackData.toString(), EcsCommandUnitConstants.deploy.toString());
+        EcsCommandUnitConstants.prepareRollbackData.toString(), EcsCommandUnitConstants.serviceSetup.toString());
   }
 }

@@ -22,7 +22,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -55,18 +57,22 @@ public class YamlInputUtils {
     return inputDetails;
   }
 
-  public String prepareYamlInputExpression(InputDetails inputDetails) {
-    return "<+inputs." + inputDetails.getName() + ">";
-  }
-
-  public Map<String, InputDetails> prepareYamlInputExpressionToYamlInputMap(List<InputDetails> inputDetailsList) {
-    Map<String, InputDetails> yamlInputMap = new HashMap<>();
-    inputDetailsList.forEach(inputDetails -> yamlInputMap.put(prepareYamlInputExpression(inputDetails), inputDetails));
+  public Map<Set<String>, InputDetails> prepareYamlInputExpressionToYamlInputMap(List<InputDetails> inputDetailsList) {
+    Map<Set<String>, InputDetails> yamlInputMap = new LinkedHashMap<>();
+    inputDetailsList.forEach(inputDetails -> {
+      Set<String> possibleExpressions = new HashSet<>();
+      possibleExpressions.add("<+inputs." + inputDetails.getName() + ">");
+      possibleExpressions.add("<+inputs.get(\\\"" + inputDetails.getName() + "\\\")>");
+      yamlInputMap.put(possibleExpressions, inputDetails);
+    });
     return yamlInputMap;
   }
 
   public Map<String, List<FQN>> parseFQNsForAllInputsInYaml(
-      Map<FQN, Object> fqnToValueMap, Set<String> inputExpressionsList) {
+      Map<FQN, Object> fqnToValueMap, Set<Set<String>> inputExpressionsList) {
+    Set<String> allInputExpressions = new HashSet<>();
+    inputExpressionsList.forEach(allInputExpressions::addAll);
+
     Map<String, List<FQN>> FQNListForEachInput = new HashMap<>();
     fqnToValueMap.forEach((fqn, v) -> {
       String value = v.toString();
@@ -77,7 +83,7 @@ public class YamlInputUtils {
       if (value.charAt(value.length() - 1) == '"') {
         value = value.substring(0, value.length() - 1);
       }
-      if (inputExpressionsList.contains(value)) {
+      if (allInputExpressions.contains(value)) {
         if (!FQNListForEachInput.containsKey(fqn)) {
           FQNListForEachInput.put(value, new ArrayList<>());
         }

@@ -6,6 +6,12 @@
  */
 
 package io.harness.cdng.aws.sam;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
+import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static org.apache.commons.lang3.StringUtils.SPACE;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
@@ -24,6 +30,7 @@ import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepMapOutput;
 import io.harness.delegate.task.stepstatus.StepOutput;
 import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
+import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plugin.GitCloneStep;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -44,6 +51,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.tasks.ResponseData;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -53,7 +61,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @Slf4j
@@ -163,21 +170,35 @@ public class AwsSamDownloadManifestsStepHelper {
       ValuesManifestOutcome valuesManifestOutcome,
       AwsSamValuesYamlDataOutcomeBuilder awsSamValuesYamlDataOutcomeBuilder, StepOutput stepOutput) {
     if (stepOutput instanceof StepMapOutput) {
-      String valuesYamlPath = awsSamStepHelper.getValuesPathFromValuesManifestOutcome(valuesManifestOutcome);
-
       StepMapOutput stepMapOutput = (StepMapOutput) stepOutput;
       if (EmptyPredicate.isNotEmpty(stepMapOutput.getMap())) {
-        String valuesYamlContentBase64 = stepMapOutput.getMap().get(valuesYamlPath);
-        String valuesYamlContent = new String(Base64.getDecoder().decode(valuesYamlContentBase64));
-        valuesYamlContent = engineExpressionService.renderExpression(ambiance, valuesYamlContent);
+        String valuesYamlPath = awsSamStepHelper.getValuesPathFromValuesManifestOutcome(valuesManifestOutcome);
+        String valuesYamlContent = getValuesManifestContent(stepMapOutput, valuesYamlPath);
 
-        if (!StringUtils.isEmpty(valuesYamlPath) && !StringUtils.isEmpty(valuesYamlContent)) {
+        if (!isEmpty(valuesYamlPath) && !isEmpty(valuesYamlContent)) {
+          valuesYamlContent = engineExpressionService.renderExpression(ambiance, valuesYamlContent);
           awsSamValuesYamlDataOutcomeBuilder.valuesYamlPath(valuesYamlPath);
           awsSamValuesYamlDataOutcomeBuilder.valuesYamlContent(valuesYamlContent);
           executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.AWS_SAM_VALUES_YAML_DATA_OUTCOME,
               awsSamValuesYamlDataOutcomeBuilder.build(), StepOutcomeGroup.STEP.name());
         }
       }
+    }
+  }
+
+  @VisibleForTesting
+  String getValuesManifestContent(StepMapOutput stepMapOutput, String valuesYamlPath) {
+    String valuesYamlContentBase64 = stepMapOutput.getMap().get(valuesYamlPath);
+    if (isEmpty(valuesYamlContentBase64)) {
+      return EMPTY;
+    }
+
+    // fixing yaml base64 content because github.com/joho/godotenv.Read() can't parse == while fetching env variables
+    String fixedValuesYamlContentBase64 = valuesYamlContentBase64.replace("-", "=").replace(SPACE, EMPTY);
+    try {
+      return new String(Base64.getDecoder().decode(fixedValuesYamlContentBase64));
+    } catch (Exception ex) {
+      throw new InvalidRequestException(format("Unable to fetch values YAML, valuesYamlPath: %s", valuesYamlPath), ex);
     }
   }
 
@@ -189,7 +210,7 @@ public class AwsSamDownloadManifestsStepHelper {
       cdAbstractStepNode = YamlUtils.read(stepJsonNode, CdAbstractStepNode.class);
     } catch (IOException e) {
       throw new ContainerPluginParseException(
-          String.format("Error in parsing CD step for step type [%s]", request.getType()), e);
+          format("Error in parsing CD step for step type [%s]", request.getType()), e);
     }
 
     List<PluginCreationResponseWrapper> pluginCreationResponseWrapperList = new ArrayList<>();

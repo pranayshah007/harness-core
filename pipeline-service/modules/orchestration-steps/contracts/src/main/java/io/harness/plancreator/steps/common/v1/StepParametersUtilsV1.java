@@ -24,7 +24,7 @@ public class StepParametersUtilsV1 {
     StepElementParametersV1Builder stepBuilder = StepElementParametersV1.builder();
     stepBuilder.name(stepElementConfig.getName());
     stepBuilder.id(stepElementConfig.getId());
-    stepBuilder.delegateSelectors(stepElementConfig.getDelegateSelectors());
+    stepBuilder.delegateSelectors(stepElementConfig.getDelegate());
     stepBuilder.desc(stepElementConfig.getDesc());
     stepBuilder.failure(stepElementConfig.getFailure() != null ? stepElementConfig.getFailure().getValue() : null);
     stepBuilder.timeout(ParameterField.createValueField(TimeoutUtils.getTimeoutString(stepElementConfig.getTimeout())));

@@ -397,11 +397,11 @@
         "data_source_identifier": "jira",
         "data_point_identifier": "issuesCount",
         "conditional_input_value": "\"issuetype in (Epic, 'New Feature') AND resolved >= -90d\"",
-        "operator": "<",
+        "operator": ">",
         "value": "5"
       }
     ],
-    "expression": "jira.issuesCount < 5",
+    "expression": "jira.issuesCount > 5",
     "tags": ["Development maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Features delivered in last 90 days is less than 5"

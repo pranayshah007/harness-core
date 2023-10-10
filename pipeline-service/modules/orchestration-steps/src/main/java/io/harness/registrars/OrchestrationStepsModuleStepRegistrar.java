@@ -37,6 +37,7 @@ import io.harness.steps.customstage.CustomStageStep;
 import io.harness.steps.email.EmailStep;
 import io.harness.steps.group.GroupStepV1;
 import io.harness.steps.http.HttpStep;
+import io.harness.steps.http.v1.HttpStepV1;
 import io.harness.steps.jira.create.JiraCreateStep;
 import io.harness.steps.jira.update.JiraUpdateStep;
 import io.harness.steps.policy.step.PolicyStep;
@@ -71,6 +72,7 @@ public class OrchestrationStepsModuleStepRegistrar {
     engineSteps.put(JiraUpdateStep.STEP_TYPE, JiraUpdateStep.class);
 
     engineSteps.put(HttpStep.STEP_TYPE, HttpStep.class);
+    engineSteps.put(HttpStepV1.STEP_TYPE, HttpStepV1.class);
     engineSteps.put(EmailStep.STEP_TYPE, EmailStep.class);
     engineSteps.put(ShellScriptStep.STEP_TYPE, ShellScriptStep.class);
     engineSteps.put(ServiceNowApprovalStep.STEP_TYPE, ServiceNowApprovalStep.class);
