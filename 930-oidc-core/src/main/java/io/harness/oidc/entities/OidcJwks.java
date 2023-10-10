@@ -12,9 +12,9 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.DbAliases;
-import io.harness.oidc.RsaKeyPair;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
+import io.harness.rsa.RsaKeyPair;
 
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
