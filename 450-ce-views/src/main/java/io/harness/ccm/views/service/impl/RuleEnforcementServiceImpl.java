@@ -207,6 +207,11 @@ public class RuleEnforcementServiceImpl implements RuleEnforcementService {
   }
 
   @Override
+  public List<RuleEnforcement> listEnforcementsWithGivenTargetAccount(String accountId, String targetAccountId) {
+    return ruleEnforcementDAO.listEnforcementsWithGivenTargetAccount(accountId, targetAccountId);
+  }
+
+  @Override
   public RuleEnforcement removeRuleFromEnforcement(RuleEnforcement ruleEnforcement, String ruleId) {
     List<String> rules = ruleEnforcement.getRuleIds();
     rules.remove(ruleId);
