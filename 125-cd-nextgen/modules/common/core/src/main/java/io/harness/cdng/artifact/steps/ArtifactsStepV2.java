@@ -12,7 +12,7 @@ import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVI
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.ng.core.entityusageactivity.EntityUsageTypes.ARTIFACTS_CONNECTOR;
+import static io.harness.ng.core.entityusageactivity.EntityUsageTypes.PIPELINE_EXECUTION;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -50,6 +50,7 @@ import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityUsageDetailProto;
+import io.harness.eventsframework.schemas.entity.PipelineExecutionUsageDataProto;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
@@ -308,7 +309,13 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
       secretReferences.forEach(secretReference
           -> secretRuntimeUsageService.createSecretRuntimeUsage(secretReference.getSecretRef(),
               secretReference.getReferredBy(),
-              EntityUsageDetailProto.newBuilder().setUsageType(ARTIFACTS_CONNECTOR).build()));
+              EntityUsageDetailProto.newBuilder()
+                  .setPipelineExecutionUsageData(PipelineExecutionUsageDataProto.newBuilder()
+                                                     .setPlanExecutionId(ambiance.getPlanExecutionId())
+                                                     .setStageExecutionId(ambiance.getStageExecutionId())
+                                                     .build())
+                  .setUsageType(PIPELINE_EXECUTION)
+                  .build()));
     }
   }
 

@@ -12,7 +12,7 @@ import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNES
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
-import static io.harness.ng.core.entityusageactivity.EntityUsageTypes.AZURE_CONNECTOR;
+import static io.harness.ng.core.entityusageactivity.EntityUsageTypes.PIPELINE_EXECUTION;
 
 import static java.lang.String.format;
 
@@ -52,6 +52,7 @@ import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.eventsframework.schemas.entity.EntityUsageDetailProto;
+import io.harness.eventsframework.schemas.entity.PipelineExecutionUsageDataProto;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.InvalidArgumentsException;
@@ -279,7 +280,13 @@ public class AzureHelperService {
       secretReferences.forEach(secretReference
           -> secretRuntimeUsageService.createSecretRuntimeUsage(secretReference.getSecretRef(),
               secretReference.getReferredBy(),
-              EntityUsageDetailProto.newBuilder().setUsageType(AZURE_CONNECTOR).build()));
+              EntityUsageDetailProto.newBuilder()
+                  .setPipelineExecutionUsageData(PipelineExecutionUsageDataProto.newBuilder()
+                                                     .setPlanExecutionId(ambiance.getPlanExecutionId())
+                                                     .setStageExecutionId(ambiance.getStageExecutionId())
+                                                     .build())
+                  .setUsageType(PIPELINE_EXECUTION)
+                  .build()));
     }
   }
 

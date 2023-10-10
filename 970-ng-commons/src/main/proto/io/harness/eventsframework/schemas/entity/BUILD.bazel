@@ -21,6 +21,7 @@ proto_library(
         "scope.proto",
         "template_reference.proto",
         "trigger_reference.proto",
+        "pipeline_execution_usage_data.proto",
     ],
     visibility = ["//visibility:public"],
     deps = [

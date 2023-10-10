@@ -10,7 +10,7 @@ package io.harness.cdng.configfile.steps;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_STEP_COMMAND_UNIT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.ng.core.entityusageactivity.EntityUsageTypes.CONFIG_FILES_CONNECTOR;
+import static io.harness.ng.core.entityusageactivity.EntityUsageTypes.PIPELINE_EXECUTION;
 
 import static java.lang.String.format;
 
@@ -49,6 +49,7 @@ import io.harness.delegate.task.gitcommon.GitRequestFileConfig;
 import io.harness.delegate.task.gitcommon.GitTaskNGRequest;
 import io.harness.delegate.task.gitcommon.GitTaskNGResponse;
 import io.harness.eventsframework.schemas.entity.EntityUsageDetailProto;
+import io.harness.eventsframework.schemas.entity.PipelineExecutionUsageDataProto;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
@@ -277,7 +278,13 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
         secretReferences.forEach(secretReference
             -> secretRuntimeUsageService.createSecretRuntimeUsage(secretReference.getSecretRef(),
                 secretReference.getReferredBy(),
-                EntityUsageDetailProto.newBuilder().setUsageType(CONFIG_FILES_CONNECTOR).build()));
+                EntityUsageDetailProto.newBuilder()
+                    .setPipelineExecutionUsageData(PipelineExecutionUsageDataProto.newBuilder()
+                                                       .setPlanExecutionId(ambiance.getPlanExecutionId())
+                                                       .setStageExecutionId(ambiance.getStageExecutionId())
+                                                       .build())
+                    .setUsageType(PIPELINE_EXECUTION)
+                    .build()));
       }
     }
   }

@@ -14,7 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.logging.LogCallbackUtils.saveExecutionLogSafely;
-import static io.harness.ng.core.entityusageactivity.EntityUsageTypes.INFRA_CONNECTOR;
+import static io.harness.ng.core.entityusageactivity.EntityUsageTypes.PIPELINE_EXECUTION;
 
 import static software.wings.beans.LogColor.Green;
 import static software.wings.beans.LogColor.Red;
@@ -65,6 +65,7 @@ import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
 import io.harness.eraro.Level;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityUsageDetailProto;
+import io.harness.eventsframework.schemas.entity.PipelineExecutionUsageDataProto;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -375,7 +376,13 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
       secretReferences.forEach(secretReference
           -> secretRuntimeUsageService.createSecretRuntimeUsage(secretReference.getSecretRef(),
               secretReference.getReferredBy(),
-              EntityUsageDetailProto.newBuilder().setUsageType(INFRA_CONNECTOR).build()));
+              EntityUsageDetailProto.newBuilder()
+                  .setPipelineExecutionUsageData(PipelineExecutionUsageDataProto.newBuilder()
+                                                     .setPlanExecutionId(ambiance.getPlanExecutionId())
+                                                     .setStageExecutionId(ambiance.getStageExecutionId())
+                                                     .build())
+                  .setUsageType(PIPELINE_EXECUTION)
+                  .build()));
     }
   }
 
