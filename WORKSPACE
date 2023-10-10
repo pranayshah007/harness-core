@@ -5051,7 +5051,7 @@ plain_artifacts = [
     "io.projectreactor.netty:reactor-netty:1.0.24",
     "io.projectreactor.netty:reactor-netty-core:1.0.24",
     "io.projectreactor.netty:reactor-netty-http:1.0.24",
-    "io.projectreactor:reactor-core:3.4.18",
+    "io.projectreactor:reactor-core:3.4.26",
     "io.prometheus:simpleclient:0.16.0",
     "io.prometheus:simpleclient_common:0.16.0",
     "io.prometheus:simpleclient_dropwizard:0.16.0",
