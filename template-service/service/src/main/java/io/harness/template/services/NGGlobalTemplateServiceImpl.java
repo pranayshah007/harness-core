@@ -321,6 +321,11 @@ public class NGGlobalTemplateServiceImpl implements NGGlobalTemplateService {
     return ngGlobalTemplateRepository.findAllGlobalTemplateAndDeletedNot(notDeleted, getMetadataOnly, pageable);
   }
 
+  /*
+  The Method will take the Global Template Yaml as Input.
+  We are merging the scope of template to the Yaml like adding orgIdentifier or projectIdentifier
+  to Yaml depends on the scope customer selected.
+   */
   @Override
   public String importTemplateFromGlobalTemplateMarketPlace(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String templateYaml) {

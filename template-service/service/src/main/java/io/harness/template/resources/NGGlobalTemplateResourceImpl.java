@@ -109,6 +109,7 @@ public class NGGlobalTemplateResourceImpl implements NGGlobalTemplateResource {
   @Override
   public ResponseDTO<TemplateWrapperResponseDTO> importTemplate(@NotNull String accountId, @OrgIdentifier String orgId,
       @ProjectIdentifier String projectId, @NotNull String templateYaml, boolean setDefaultTemplate, String comments) {
+    // Here we are merging the scope of template in global templateYaml and using it to create new template for the user
     templateYaml =
         ngGlobalTemplateService.importTemplateFromGlobalTemplateMarketPlace(accountId, orgId, projectId, templateYaml);
     TemplateEntity templateEntity = NGTemplateDtoMapper.toTemplateEntity(accountId, orgId, projectId, templateYaml);
