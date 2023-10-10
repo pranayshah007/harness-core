@@ -300,12 +300,14 @@ public class GitStatusCheckHelper {
             .build();
     String accountId = gitStatusCheckParams.getOwner();
     String[] repoSplit = gitStatusCheckParams.getRepo().split("/");
-    if (repoSplit.length != 3) {
+    int len = repoSplit.length;
+    if (len < 3 || len > 5) {
       throw new InvalidRequestException(String.format("incorrect repo provided: %s", gitStatusCheckParams.getRepo()));
     }
-    String orgId = repoSplit[0];
-    String projectId = repoSplit[1];
-    String repoId = repoSplit[2];
+
+    String orgId = repoSplit[len - 3];
+    String projectId = repoSplit[len - 2];
+    String repoId = repoSplit[len - 1];
     log.info("Sending status {} for sha {} and repo {}", harnessCodePayload.getStatus(), gitStatusCheckParams.getSha(),
         gitStatusCheckParams.getRepo());
     return NGRestUtils.getGeneralResponse(codeResourceClient.sendStatus(

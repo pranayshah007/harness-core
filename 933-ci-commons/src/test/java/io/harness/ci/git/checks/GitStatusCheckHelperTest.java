@@ -327,6 +327,8 @@ public class GitStatusCheckHelperTest extends CategoryTest {
     doReturn(call).when(codeResourceClient).sendStatus(any(), any(), any(), any(), any(), any());
     mockStatic(NGRestUtils.class);
     when(NGRestUtils.getGeneralResponse(call)).thenReturn(StatusCreationResponse.builder().build());
+    // Gitness repo is expected to be either "git/account/org/project/repo" or "account/org/project/repo"
+    // depending on subdomain we use.
     boolean actual = gitStatusCheckHelper.sendStatus(GitStatusCheckParams.builder()
                                                          .sha(SHA)
                                                          .identifier(IDENTIFIER)
@@ -341,6 +343,51 @@ public class GitStatusCheckHelperTest extends CategoryTest {
                                                          .connectorDetails(connectorDetails)
                                                          .build());
 
-    assertThat(actual).isEqualTo(true);
+    assertThat(actual).isTrue();
+
+    boolean actual_1 = gitStatusCheckHelper.sendStatus(GitStatusCheckParams.builder()
+                                                           .sha(SHA)
+                                                           .identifier(IDENTIFIER)
+                                                           .buildNumber(BUILD_NUMBER)
+                                                           .gitSCMType(GitSCMType.HARNESS)
+                                                           .owner(OWNER)
+                                                           .repo("ACCOUNT/ORG/PROJECT/" + REPO)
+                                                           .state(STATE)
+                                                           .title(TITLE)
+                                                           .target_url(TARGET_URL)
+                                                           .desc(DESC)
+                                                           .connectorDetails(connectorDetails)
+                                                           .build());
+    assertThat(actual_1).isTrue();
+
+    boolean actual_2 = gitStatusCheckHelper.sendStatus(GitStatusCheckParams.builder()
+                                                           .sha(SHA)
+                                                           .identifier(IDENTIFIER)
+                                                           .buildNumber(BUILD_NUMBER)
+                                                           .gitSCMType(GitSCMType.HARNESS)
+                                                           .owner(OWNER)
+                                                           .repo("git/ACCOUNT/ORG/PROJECT/" + REPO)
+                                                           .state(STATE)
+                                                           .title(TITLE)
+                                                           .target_url(TARGET_URL)
+                                                           .desc(DESC)
+                                                           .connectorDetails(connectorDetails)
+                                                           .build());
+    assertThat(actual_2).isTrue();
+
+    boolean actual_3 = gitStatusCheckHelper.sendStatus(GitStatusCheckParams.builder()
+                                                           .sha(SHA)
+                                                           .identifier(IDENTIFIER)
+                                                           .buildNumber(BUILD_NUMBER)
+                                                           .gitSCMType(GitSCMType.HARNESS)
+                                                           .owner(OWNER)
+                                                           .repo("random/git/ACCOUNT/ORG/PROJECT/" + REPO)
+                                                           .state(STATE)
+                                                           .title(TITLE)
+                                                           .target_url(TARGET_URL)
+                                                           .desc(DESC)
+                                                           .connectorDetails(connectorDetails)
+                                                           .build());
+    assertThat(actual_3).isFalse();
   }
 }
