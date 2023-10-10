@@ -19,6 +19,7 @@ import io.harness.repositories.CdInstanceSummaryRepo;
 import io.harness.rule.Owner;
 import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.CdInstanceSummary;
+import io.harness.ssca.entities.CdInstanceSummary.CdInstanceSummaryBuilder;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -86,7 +87,7 @@ public class CdInstanceSummaryServiceImplTest extends SSCAManagerTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testGetCdInstanceSummaries() {
-    CdInstanceSummary.CdInstanceSummaryBuilder builder = builderFactory.getCdInstanceSummaryBuilder();
+    CdInstanceSummaryBuilder builder = builderFactory.getCdInstanceSummaryBuilder();
     Page<CdInstanceSummary> entities =
         new PageImpl<>(List.of(builder.envIdentifier("env1").build(), builder.envIdentifier("env2").build(),
                            builder.envIdentifier("env3").build()),

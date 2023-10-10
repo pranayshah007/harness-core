@@ -7,17 +7,23 @@
 
 package io.harness.changestreams.redisconsumers;
 
+import static io.harness.annotations.dev.HarnessTeam.SSCA;
 import static io.harness.eventsframework.EventsFrameworkConstants.INSTANCE_NG_SSCA_REDIS_EVENT_CONSUMER;
 
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.changestreams.eventhandlers.InstanceNGRedisEventHandler;
 import io.harness.debezium.redisconsumer.DebeziumAbstractRedisConsumer;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.queue.QueueController;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import javax.cache.Cache;
-import javax.inject.Named;
-
+import lombok.extern.slf4j.Slf4j;
+@Slf4j
+@OwnedBy(SSCA)
+@Singleton
 public class InstanceNGRedisEventConsumer extends DebeziumAbstractRedisConsumer {
   @Inject
   public InstanceNGRedisEventConsumer(@Named(INSTANCE_NG_SSCA_REDIS_EVENT_CONSUMER) Consumer redisConsumer,

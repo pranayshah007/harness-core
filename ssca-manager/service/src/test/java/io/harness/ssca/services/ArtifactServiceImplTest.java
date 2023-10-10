@@ -25,7 +25,9 @@ import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewResponse.Attes
 import io.harness.spec.server.ssca.v1.model.ArtifactListingResponse;
 import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.CdInstanceSummary;
+import io.harness.ssca.entities.CdInstanceSummary.CdInstanceSummaryBuilder;
 import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
+import io.harness.ssca.entities.NormalizedSBOMComponentEntity.NormalizedSBOMComponentEntityBuilder;
 
 import com.google.inject.Inject;
 import java.time.Instant;
@@ -316,8 +318,7 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
   public void testGetArtifactComponentView_noFilter() {
     Mockito.when(artifactRepository.findOne(Mockito.any()))
         .thenReturn(builderFactory.getArtifactEntityBuilder().build());
-    NormalizedSBOMComponentEntity.NormalizedSBOMComponentEntityBuilder builder =
-        builderFactory.getNormalizedSBOMComponentBuilder();
+    NormalizedSBOMComponentEntityBuilder builder = builderFactory.getNormalizedSBOMComponentBuilder();
     Page<NormalizedSBOMComponentEntity> entities =
         new PageImpl<>(List.of(builder.build(), builder.build()), Pageable.ofSize(2).withPage(0), 5);
 
@@ -344,7 +345,7 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
   public void testGetArtifactDeploymentView_noFilter() {
     Mockito.when(artifactRepository.findOne(Mockito.any()))
         .thenReturn(builderFactory.getArtifactEntityBuilder().build());
-    CdInstanceSummary.CdInstanceSummaryBuilder builder = builderFactory.getCdInstanceSummaryBuilder();
+    CdInstanceSummaryBuilder builder = builderFactory.getCdInstanceSummaryBuilder();
     Page<CdInstanceSummary> entities =
         new PageImpl<>(List.of(builder.envIdentifier("env1").build(), builder.envIdentifier("env2").build()),
             Pageable.ofSize(2).withPage(0), 5);

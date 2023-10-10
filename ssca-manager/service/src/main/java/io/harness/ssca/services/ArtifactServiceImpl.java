@@ -333,12 +333,11 @@ public class ArtifactServiceImpl implements ArtifactService {
               .activity(Objects.isNull(deploymentSummary) ? ActivityEnum.GENERATED : ActivityEnum.DEPLOYED)
               .updatedAt(String.format("%d", artifact.getLastUpdatedAt()))
               .prodEnvCount((int) deploymentSummary.stream()
-                                .filter(cdInstanceSummary -> (cdInstanceSummary.getEnvType() == EnvType.Production))
+                                .filter(cdInstanceSummary -> cdInstanceSummary.getEnvType() == EnvType.Production)
                                 .count())
-              .nonProdEnvCount(
-                  (int) deploymentSummary.stream()
-                      .filter(cdInstanceSummary -> (cdInstanceSummary.getEnvType() == EnvType.PreProduction))
-                      .count()));
+              .nonProdEnvCount((int) deploymentSummary.stream()
+                                   .filter(cdInstanceSummary -> cdInstanceSummary.getEnvType() == EnvType.PreProduction)
+                                   .count()));
     }
     return responses;
   }
