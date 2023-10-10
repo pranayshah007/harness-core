@@ -60,13 +60,15 @@ public class ACLGeneratorServiceImpl implements ACLGeneratorService {
   private final Map<Pair<ScopeLevel, Boolean>, Set<String>> implicitPermissionsByScope;
   private final ACLRepository aclRepository;
   private final InMemoryPermissionRepository inMemoryPermissionRepository;
+  private int batchSizeForACLCreation;
 
   @Inject
   public ACLGeneratorServiceImpl(RoleService roleService, UserGroupService userGroupService,
       ResourceGroupService resourceGroupService, ScopeService scopeService,
       Map<Pair<ScopeLevel, Boolean>, Set<String>> implicitPermissionsByScope,
       @Named(ACL.PRIMARY_COLLECTION) ACLRepository aclRepository,
-      InMemoryPermissionRepository inMemoryPermissionRepository) {
+      InMemoryPermissionRepository inMemoryPermissionRepository,
+      @Named("batchSizeForACLCreation") int batchSizeForACLCreation) {
     this.roleService = roleService;
     this.userGroupService = userGroupService;
     this.resourceGroupService = resourceGroupService;
@@ -74,6 +76,7 @@ public class ACLGeneratorServiceImpl implements ACLGeneratorService {
     this.implicitPermissionsByScope = implicitPermissionsByScope;
     this.aclRepository = aclRepository;
     this.inMemoryPermissionRepository = inMemoryPermissionRepository;
+    this.batchSizeForACLCreation = batchSizeForACLCreation;
   }
 
   @Override
@@ -158,7 +161,7 @@ public class ACLGeneratorServiceImpl implements ACLGeneratorService {
             acls.add(buildACL(permission, Principal.of(USER, principalIdentifier), roleAssignmentDBO, resourceSelector,
                 false, isEnabled(roleAssignmentDBO)));
           }
-          if (acls.size() >= 50000) {
+          if (acls.size() >= batchSizeForACLCreation) {
             numberOfACLsCreated += aclRepository.insertAllIgnoringDuplicates(acls);
             acls.clear();
           }

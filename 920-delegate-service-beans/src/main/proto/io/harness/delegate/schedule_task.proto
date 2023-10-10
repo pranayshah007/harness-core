@@ -19,15 +19,25 @@ option go_package = "920_delegate_service_beans";
 
 // Setup An Execution Infrastructure
 message SetupExecutionInfrastructureRequest {
-  ExecutionInfrastructure infra = 1;
-  Secrets secrets = 2;
-  SchedulingConfig config = 3;
+  ExecutionInfrastructure infra = 1;  // Execution Infrastructure definition
+  Secrets secrets = 2;                // Infrastructure secrets
+  SchedulingConfig config = 3;        // Config related to where and how the task should be scheduled
+}
+
+message SetupExecutionInfrastructureResponse {
+  TaskId task_id = 1;                     // Task ID for the setup infra task
+  string infra_ref_id = 2;                // Infrastructure reference
+  map<string, string> step_task_ids = 3;  // Step ID to task ID map
 }
 
 message ScheduleTaskRequest {
   Execution execution = 1;
   Secrets secrets = 2;
   SchedulingConfig config = 3;
+}
+
+message ScheduleTaskResponse {
+  TaskId task_id = 1;  // Task ID for the task being scheduled
 }
 
 message SchedulingConfig {
@@ -45,9 +55,9 @@ message SchedulingConfig {
   // Routing related
   repeated TaskSelector selectors = 3;
   // Runner's type
-  string runnerType = 4;
+  string runner_type = 4;
 
-  bool selectionTrackingLogEnabled = 5;
+  bool selection_tracking_log_enabled = 5;
   string account_id = 6;
   string org_id = 7;
   string project_id = 8;

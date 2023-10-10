@@ -8,7 +8,7 @@
 package io.harness.cvng;
 
 import static io.harness.CVNGPrometheusExporterUtils.registerJVMMetrics;
-import static io.harness.CVNGPrometheusExporterUtils.registerPrometheusExporter;
+import static io.harness.CVNGPrometheusExporterUtils.registerPrometheusExporterForResource;
 import static io.harness.CVNGPrometheusExporterUtils.registerWebServerMetrics;
 import static io.harness.NGConstants.X_API_KEY;
 import static io.harness.authorization.AuthorizationServiceHeader.BEARER;
@@ -16,7 +16,6 @@ import static io.harness.authorization.AuthorizationServiceHeader.CV_NEXT_GEN;
 import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
 import static io.harness.authorization.AuthorizationServiceHeader.IDENTITY_SERVICE;
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
-import static io.harness.cvng.CVConstants.ENVIRONMENT;
 import static io.harness.cvng.cdng.services.impl.CVNGNotifyEventListener.CVNG_ORCHESTRATION;
 import static io.harness.cvng.migration.beans.CVNGSchema.CVNGMigrationStatus.RUNNING;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
@@ -29,6 +28,7 @@ import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 
 import io.harness.AccessControlClientModule;
+import io.harness.CVNGPrometheusExporterUtils;
 import io.harness.Microservice;
 import io.harness.ModuleType;
 import io.harness.PipelineServiceUtilityModule;
@@ -682,13 +682,13 @@ public class VerificationApplication extends Application<VerificationConfigurati
 
   private void initializeMetrics(Injector injector) {
     injector.getInstance(RecordMetricsJob.class).scheduleMetricsTasks();
-    CVConstants.CUSTOM_METRIC_LIST.forEach(metricName -> registerGaugeMetric(metricName, null));
+    CVConstants.CUSTOM_METRIC_LIST.forEach(this::registerGaugeMetric);
     registerJVMMetrics(metricRegistry);
     registerWebServerMetrics(metricRegistry);
-    registerPrometheusExporter("io.harness.cvng.core.resources", "MonitoredServiceResource", metricRegistry);
-    registerPrometheusExporter(
+    registerPrometheusExporterForResource("io.harness.cvng.core.resources", "MonitoredServiceResource", metricRegistry);
+    registerPrometheusExporterForResource(
         "io.harness.cvng.servicelevelobjective.resources", "SLODashboardResource", metricRegistry);
-    registerPrometheusExporter(
+    registerPrometheusExporterForResource(
         "io.harness.cvng.servicelevelobjective.resources", "ServiceLevelObjectiveV2Resource", metricRegistry);
   }
 
@@ -1481,9 +1481,9 @@ public class VerificationApplication extends Application<VerificationConfigurati
         .collect(Collectors.toSet());
   }
 
-  private void registerGaugeMetric(String metricName, String[] labels) {
-    harnessMetricRegistry.registerGaugeMetric(metricName, labels, "Metrics from CVNG for LE");
-    harnessMetricRegistry.registerGaugeMetric(ENVIRONMENT + "_" + metricName, labels, "Metrics from CVNG for LE");
+  private void registerGaugeMetric(String metricName) {
+    harnessMetricRegistry.registerGaugeMetric(metricName,
+        CVNGPrometheusExporterUtils.contextLabels.keySet().toArray(new String[0]), "Metrics from CVNG for LE");
   }
 
   private void initializeSrmMonitoring(VerificationConfiguration configuration, Injector injector) {

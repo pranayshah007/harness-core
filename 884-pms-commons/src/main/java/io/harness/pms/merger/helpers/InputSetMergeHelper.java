@@ -20,7 +20,6 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -82,14 +81,7 @@ public class InputSetMergeHelper {
       return null;
     }
     JsonNode mergedInputSetNode = getMergedInputSetNodeWithJsonNode(inputSetJsonNodeList);
-    Map<String, Object> inputsMap = new HashMap<>();
-    if (mergedInputSetNode.get(YAMLFieldNameConstants.INPUTS) != null) {
-      inputsMap.put(YAMLFieldNameConstants.INPUTS, mergedInputSetNode.get(YAMLFieldNameConstants.INPUTS));
-    }
-    if (mergedInputSetNode.get(YAMLFieldNameConstants.OPTIONS) != null) {
-      inputsMap.put(YAMLFieldNameConstants.OPTIONS, mergedInputSetNode.get(YAMLFieldNameConstants.OPTIONS));
-    }
-    return JsonUtils.asTree(inputsMap);
+    return mergedInputSetNode != null ? mergedInputSetNode.get(YAMLFieldNameConstants.SPEC) : JsonUtils.readTree("{}");
   }
 
   private JsonNode getMergedInputSetNodeWithJsonNode(List<JsonNode> inputSetJsonNodeList) {

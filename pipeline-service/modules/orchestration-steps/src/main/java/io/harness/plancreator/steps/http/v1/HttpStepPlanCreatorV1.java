@@ -33,7 +33,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.StepSpecTypeConstantsV1;
 import io.harness.steps.http.v1.HttpStepNodeV1;
 import io.harness.timeout.trackers.absolute.AbsoluteTimeoutTrackerFactory;
 import io.harness.utils.TimeoutUtils;
@@ -58,7 +58,7 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
 
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
-    return Collections.singletonMap(STEP, Sets.newHashSet(StepSpecTypeConstants.HTTP));
+    return Collections.singletonMap(STEP, Sets.newHashSet(StepSpecTypeConstantsV1.HTTP));
   }
 
   @SneakyThrows
@@ -73,7 +73,7 @@ public class HttpStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
             .uuid(StrategyUtilsV1.getSwappedPlanNodeId(ctx, stepNode.getUuid()))
             .name(StrategyUtilsV1.getIdentifierWithExpression(ctx, field.getNodeName()))
             .identifier(StrategyUtilsV1.getIdentifierWithExpression(ctx, field.getId()))
-            .stepType(StepSpecTypeConstants.HTTP_STEP_TYPE)
+            .stepType(StepSpecTypeConstantsV1.HTTP_STEP_TYPE)
             .group(StepOutcomeGroup.STEP.name())
             // TODO: send rollback parameters to this method which can be extracted from dependency
             .stepParameters(stepNode.getStepParameters(ctx))

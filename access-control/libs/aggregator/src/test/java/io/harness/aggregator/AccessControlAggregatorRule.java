@@ -56,6 +56,7 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
+import com.google.inject.name.Names;
 import dev.morphia.converters.TypeConverter;
 import io.serializer.HObjectMapper;
 import java.io.Closeable;
@@ -121,6 +122,7 @@ public class AccessControlAggregatorRule implements MethodRule, InjectorRuleMixi
         implicitPermissionsByScope.addBinding(Pair.of(TEST_SCOPE, false))
             .toInstance(Collections.singleton("test_permission_1"));
         bind(ACLGeneratorService.class).to(ACLGeneratorServiceImpl.class);
+        bind(Integer.class).annotatedWith(Names.named("batchSizeForACLCreation")).toInstance(50000);
       }
     });
 
