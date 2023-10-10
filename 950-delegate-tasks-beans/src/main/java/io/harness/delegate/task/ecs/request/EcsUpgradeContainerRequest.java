@@ -19,6 +19,7 @@ import io.harness.delegate.task.ecs.EcsUpgradeContainerServiceData;
 import io.harness.expression.Expression;
 import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.NonFinal;
@@ -32,10 +33,13 @@ public class EcsUpgradeContainerRequest implements EcsCommandRequest, NestedAnno
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
   @NonFinal @Expression(ALLOW_SECRETS) EcsInfraConfig infraConfig;
-  Integer timeoutIntervalInMin;
+  long timeoutIntervalInMillis;
   EcsResizeStrategy resizeStrategy;
   @NonFinal @Expression(ALLOW_SECRETS) EcsUpgradeContainerServiceData oldServiceData;
   @NonFinal @Expression(ALLOW_SECRETS) EcsUpgradeContainerServiceData newServiceData;
+  @NonFinal @Expression(ALLOW_SECRETS) List<String> scalableTargetManifestContentList;
+  @NonFinal @Expression(ALLOW_SECRETS) List<String> scalingPolicyManifestContentList;
+  boolean firstTimeDeployment;
 
   @Override
   public EcsCommandTypeNG getEcsCommandType() {

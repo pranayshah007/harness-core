@@ -70,6 +70,7 @@ import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.dto.ActiveProjectsCountDTO;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.dto.ProjectFilterDTO;
+import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.entities.Project.ProjectKeys;
 import io.harness.ng.core.events.ProjectCreateEvent;
@@ -179,6 +180,12 @@ public class ProjectServiceImpl implements ProjectService {
     project.setModules(ModuleType.getModules());
     project.setOrgIdentifier(orgIdentifier);
     project.setAccountIdentifier(accountIdentifier);
+    Optional<Organization> parentOrgOptional = organizationService.get(accountIdentifier, orgIdentifier);
+    parentOrgOptional.ifPresent(organization -> {
+      if (isNotEmpty(organization.getUniqueId())) {
+        project.setParentId(organization.getUniqueId());
+      }
+    });
     try {
       validate(project);
       Project createdProject = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
@@ -437,6 +444,7 @@ public class ProjectServiceImpl implements ProjectService {
       project.setCreatedAt(existingProject.getCreatedAt() == null ? existingProject.getLastModifiedAt()
                                                                   : existingProject.getCreatedAt());
       project.setUniqueId(existingProject.getUniqueId());
+      project.setParentId(existingProject.getParentId());
       if (project.getVersion() == null) {
         project.setVersion(existingProject.getVersion());
       }

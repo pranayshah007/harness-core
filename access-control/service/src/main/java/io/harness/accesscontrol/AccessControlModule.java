@@ -428,5 +428,8 @@ public class AccessControlModule extends AbstractModule {
     bind(boolean.class)
         .annotatedWith(Names.named("enableAclProcessingThroughOutbox"))
         .toInstance(config.isEnableAclProcessingThroughOutbox());
+    bind(Integer.class)
+        .annotatedWith(Names.named("batchSizeForACLCreation"))
+        .toInstance(config.getBatchSizeForACLCreation());
   }
 }

@@ -384,8 +384,8 @@ public class HelmChartServiceImplTest extends CategoryTest {
       String chartName, List<EncryptedDataDetail> encryptedDataDetailList, String region) {
     return EcrHelmApiListTagsTaskParams.builder()
         .encryptionDetails(encryptedDataDetailList)
-        .chartName("/" + chartName)
-        .pageSize(1000)
+        .chartName(chartName)
+        .pageSize(100000)
         .awsConnectorDTO((AwsConnectorDTO) connectorConfigDTO)
         .region(region)
         .registryId(null)

@@ -23,10 +23,10 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.aws.beans.EcrImageDetailConfig;
 import io.harness.aws.util.AwsCallTracker;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
@@ -74,9 +74,12 @@ import com.amazonaws.services.ec2.model.AmazonEC2Exception;
 import com.amazonaws.services.ecr.AmazonECRClient;
 import com.amazonaws.services.ecr.AmazonECRClientBuilder;
 import com.amazonaws.services.ecr.model.AmazonECRException;
+import com.amazonaws.services.ecr.model.DescribeImagesRequest;
+import com.amazonaws.services.ecr.model.DescribeImagesResult;
 import com.amazonaws.services.ecr.model.DescribeRepositoriesRequest;
 import com.amazonaws.services.ecr.model.DescribeRepositoriesResult;
 import com.amazonaws.services.ecr.model.GetAuthorizationTokenRequest;
+import com.amazonaws.services.ecr.model.ImageDetail;
 import com.amazonaws.services.ecr.model.Repository;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagement;
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClient;
@@ -128,6 +131,7 @@ public class AwsClientImpl implements AwsClient {
   @Inject AwsApiHelperService awsApiHelperService;
 
   private static final Regions DEFAULT_REGION = Regions.US_EAST_1;
+  private static final int MAX_RESULTS = 1000;
 
   @Override
   public void validateAwsAccountCredential(AwsConfig awsConfig, @NotNull String region) {
@@ -589,7 +593,57 @@ public class AwsClientImpl implements AwsClient {
     } catch (Exception e) {
       throw new InvalidRequestException(
           "Please input a valid AWS Connector and corresponding region. Check if permissions are scoped for the authenticated user",
-          new ArtifactServerException(ExceptionUtils.getMessage(e), e, WingsException.USER));
+          new InvalidRequestException(ExceptionUtils.getMessage(e), e, WingsException.USER));
+    }
+    return Optional.empty();
+  }
+
+  @Override
+  public EcrImageDetailConfig listEcrImageTags(
+      AwsInternalConfig awsConfig, String registryId, String region, String imageName, int pageSize, String lastTag) {
+    Optional<EcrImageDetailConfig> ecrImageDetailConfigOptional =
+        getImageTags(awsConfig, registryId, region, imageName, pageSize, lastTag);
+    if (ecrImageDetailConfigOptional.isPresent()) {
+      return ecrImageDetailConfigOptional.get();
+    }
+    throw new InvalidRequestException(String.format(
+        "Unable to fetch the ECR repository. Please verify the input configurations %n Image Name: %s, Region: %s, RegistryId: %s",
+        imageName, region, registryId));
+  }
+
+  private Optional<EcrImageDetailConfig> getImageTags(AwsInternalConfig awsConfig, String registryId, String region,
+      String repositoryName, int pageSize, String lastTag) {
+    try {
+      DescribeImagesRequest describeImagesRequest = new DescribeImagesRequest();
+      if (isNotEmpty(registryId)) {
+        describeImagesRequest.setRegistryId(registryId);
+      }
+      describeImagesRequest.setRepositoryName(repositoryName);
+      describeImagesRequest.setMaxResults(Math.min(pageSize, MAX_RESULTS));
+      List<ImageDetail> imageDetails = new ArrayList<>();
+      String nextToken = isNotEmpty(lastTag) ? lastTag : null;
+      int imageTagsRetrieved = 0;
+      do {
+        describeImagesRequest.setNextToken(nextToken);
+        tracker.trackECRCall("List Images");
+        DescribeImagesResult describeImagesResult =
+            awsApiHelperService.describeEcrImages(awsConfig, region, describeImagesRequest);
+        nextToken = describeImagesResult.getNextToken();
+        List<ImageDetail> imageDetailList = describeImagesResult.getImageDetails();
+        if (isNotEmpty(imageDetailList)) {
+          imageDetails.addAll(imageDetailList);
+          imageTagsRetrieved += imageDetailList.stream().map(ImageDetail::getImageTags).mapToLong(List::size).sum();
+        }
+      } while (nextToken != null && imageTagsRetrieved + describeImagesRequest.getMaxResults() < pageSize);
+      EcrImageDetailConfig ecrImageDetailConfig =
+          EcrImageDetailConfig.builder().imageDetails(imageDetails).nextToken(nextToken).build();
+      return Optional.of(ecrImageDetailConfig);
+    } catch (AmazonECRException e) {
+      handleExceptionWhileFetchingRepositories(e.getStatusCode(), e.getErrorMessage());
+    } catch (Exception e) {
+      throw new InvalidRequestException(
+          "Please input a valid AWS Connector and corresponding region. Check if permissions are scoped for the authenticated user",
+          new InvalidRequestException(ExceptionUtils.getMessage(e), e, WingsException.USER));
     }
     return Optional.empty();
   }

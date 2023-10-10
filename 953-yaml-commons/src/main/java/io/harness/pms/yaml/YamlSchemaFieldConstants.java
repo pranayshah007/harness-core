@@ -16,6 +16,8 @@ public enum YamlSchemaFieldConstants {
   PIPELINE("pipeline"),
   TEMPLATE("template"),
   INPUTS("inputs"),
+  VERSION("version"),
+  SPEC("spec"),
 
   ;
 

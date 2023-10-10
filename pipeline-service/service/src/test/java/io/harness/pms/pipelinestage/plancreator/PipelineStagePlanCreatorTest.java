@@ -112,7 +112,7 @@ public class PipelineStagePlanCreatorTest {
     doReturn(null).when(pipelineStageHelper).getInputSetJsonNode(yamlField, HarnessYamlVersion.V0);
 
     PipelineStageStepParameters stepParameters =
-        pipelineStagePlanCreator.getStepParameter(config, yamlField, "planNodeId", HarnessYamlVersion.V0, "acc");
+        pipelineStagePlanCreator.getStepParameter(config, yamlField, "planNodeId", HarnessYamlVersion.V0);
     assertThat(stepParameters.getPipeline()).isEqualTo(PIPELINE);
     assertThat(stepParameters.getOrg()).isEqualTo(ORG);
     assertThat(stepParameters.getProject()).isEqualTo(PROJ);

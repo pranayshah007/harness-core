@@ -38,6 +38,7 @@ import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.contracts.execution.events.SpawnChildrenRequest;
 import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.PostExecutionRollbackInfo;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.PlanExecutionProjectionConstants;
 import io.harness.utils.PmsFeatureFlagService;
@@ -50,6 +51,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -200,21 +202,27 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
           o -> strategyMetadataMap.put(o.getPostExecutionRollbackStageId(), o.getRollbackStageStrategyMetadata()));
       String parentNodeId = AmbianceUtils.obtainCurrentSetupId(ambiance);
       List<Child> filteredChild = new LinkedList<>();
-      for (Child child : children) {
-        StrategyMetadata strategyMetadata = child.hasStrategyMetadata() ? child.getStrategyMetadata() : null;
-        // If the parentNodeId is present in the list of stages being rolledBack. Then initiate the child only if its
-        // strategyMetadata matches the strategyMetadata of stage being rolledBack.
-        if (strategyMetadataMap.containsKey(parentNodeId)
-            && !strategyMetadataMap.get(parentNodeId).contains(child.getStrategyMetadata())) {
-          continue;
+      // If the parentNodeId is present in the list of stages being rolledBack. Then initiate  we will select the first
+      // child and replace the strategyMetaData of the child with the strategyMetadata in postExecutionRollbackInfo
+      if (AmbianceUtils.getCurrentStepType(ambiance).getStepCategory() == StepCategory.STRATEGY) {
+        if (strategyMetadataMap.containsKey(parentNodeId)) {
+          Collection<StrategyMetadata> strategyMetadataList = strategyMetadataMap.get(parentNodeId);
+          int count = 0;
+          for (StrategyMetadata strategyMetadata : strategyMetadataList) {
+            filteredChild.add(Child.newBuilder()
+                                  .setChildNodeId(children.get(count).getChildNodeId())
+                                  .setStrategyMetadata(strategyMetadata)
+                                  .build());
+            count++;
+            if (count == children.size()) {
+              break;
+            }
+          }
         }
-
-        if (!strategyMetadataMap.containsKey(parentNodeId) && strategyMetadata != null) {
-          continue;
-        }
-        filteredChild.add(child);
+        return filteredChild;
+      } else {
+        return children;
       }
-      return filteredChild;
     }
     return children;
   }

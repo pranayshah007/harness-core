@@ -8,6 +8,7 @@
 package io.harness.aws;
 
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.aws.beans.EcrImageDetailConfig;
 import io.harness.remote.CEAwsServiceEndpointConfig;
 import io.harness.remote.CEProxyConfig;
 
@@ -74,4 +75,7 @@ public interface AwsClient {
   Map<String, String> listIAMRoles(AwsInternalConfig awsInternalConfig);
 
   String getEcrImageUrl(AwsInternalConfig awsConfig, String registryId, String region, String imageName);
+
+  EcrImageDetailConfig listEcrImageTags(
+      AwsInternalConfig awsConfig, String registryId, String region, String imageName, int pageSize, String lastTag);
 }

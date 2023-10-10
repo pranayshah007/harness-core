@@ -38,4 +38,6 @@ public interface IK8sRelease {
   String getManifestHash();
   void setBgEnvironment(@NotNull String bgEnvironment);
   void setManifestHash(@NotNull String manifestHash);
+  void setHelmChartInfo(@NotNull HelmChartInfoDTO helmChartInfo);
+  HelmChartInfoDTO getHelmChartInfo();
 }

@@ -48,5 +48,8 @@ public interface ServiceRepositoryCustom {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
       boolean notDeleted, boolean loadFromCache, boolean loadFromFallbackBranch, boolean getMetadataOnly);
 
+  ServiceEntity getRemoteServiceWithYaml(
+      ServiceEntity savedEntity, boolean loadFromCache, boolean loadFromFallbackBranch);
+
   List<String> getListOfDistinctRepos(Criteria criteria);
 }

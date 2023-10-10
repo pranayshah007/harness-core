@@ -14,7 +14,6 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
-import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
@@ -92,10 +91,9 @@ public class StrategyConfigPlanCreator extends ChildrenPlanCreator<StrategyConfi
                                         .shouldProceedIfFailed(metadata.getShouldProceedIfFailed())
                                         .build();
     YamlNode currentNode = ctx.getCurrentField().getNode();
-    ExecutionMetadata executionMetadata = ctx.getGlobalContext().get("metadata").getMetadata();
     SkipType skipType = YamlUtils.getGivenYamlNodeFromParentPath(currentNode, STEPS) != null
             && YamlUtils.findParentNode(currentNode, ROLLBACK_STEPS) == null
-            && ExecutionModeUtils.isRollbackMode(executionMetadata.getExecutionMode())
+            && ExecutionModeUtils.isRollbackMode(ctx.getExecutionMode())
         ? SkipType.SKIP_TREE
         : SkipType.NOOP;
 

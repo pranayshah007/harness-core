@@ -30,7 +30,6 @@ import io.harness.tasks.ResponseData;
 import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.inject.Inject;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -88,7 +87,7 @@ public class AwsCdkSynthStep extends AbstractContainerStepV2<StepElementParamete
       stepOutput.getMap().forEach((key, value) -> {
         if (key.endsWith("template.json")) {
           try {
-            processedOutput.put(key, new String(Base64.getDecoder().decode(value.replace("-", "="))));
+            processedOutput.put(key.split("\\.")[0], awsCdkStepHelper.getDecodedOutput(value));
           } catch (Exception e) {
             log.error("Failed to decode: {} :", key, e);
           }

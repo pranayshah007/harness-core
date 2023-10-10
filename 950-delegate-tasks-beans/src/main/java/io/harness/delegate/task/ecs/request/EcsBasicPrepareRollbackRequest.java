@@ -31,7 +31,7 @@ public class EcsBasicPrepareRollbackRequest implements EcsCommandRequest, Nested
   EcsCommandTypeNG commandType;
   @NonFinal @Expression(ALLOW_SECRETS) String serviceDefinitionManifestContent;
   @NonFinal @Expression(ALLOW_SECRETS) EcsInfraConfig infraConfig;
-  Integer timeoutIntervalInMin;
+  long timeoutIntervalInMillis;
 
   @Override
   public EcsCommandTypeNG getEcsCommandType() {

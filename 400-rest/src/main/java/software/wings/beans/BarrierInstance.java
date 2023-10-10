@@ -62,11 +62,16 @@ public class BarrierInstance implements PersistentEntity, UuidAware, PersistentR
                  .field(BarrierInstanceKeys.state)
                  .field(BarrierInstanceKeys.nextIteration)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("appId_state")
+                 .field(BarrierInstanceKeys.appId)
+                 .field(BarrierInstanceKeys.state)
+                 .build())
         .build();
   }
 
   @Id private String uuid;
-  @FdIndex @NotNull protected String appId;
+  @NotNull protected String appId;
 
   private String name;
   private String state;

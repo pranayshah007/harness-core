@@ -13,6 +13,10 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_NUMBER_LABEL_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_PRUNING_ENABLED_KEY;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_HELM_CHART_NAME_KEY;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_HELM_CHART_REPO_URL_KEY;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_HELM_CHART_SUB_CHART_PATH_KEY;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_HELM_CHART_VERSION_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_RELEASE_BG_ENVIRONMENT_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_RELEASE_MANIFEST_HASH_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_STATUS_LABEL_KEY;
@@ -150,6 +154,25 @@ public class K8sRelease implements IK8sRelease {
   @Override
   public void setManifestHash(@NotNull String manifestHash) {
     K8sReleaseSecretHelper.putLabelsItem(releaseSecret, RELEASE_SECRET_RELEASE_MANIFEST_HASH_KEY, manifestHash);
+  }
+
+  @Override
+  public void setHelmChartInfo(HelmChartInfoDTO helmChartInfo) {
+    if (helmChartInfo != null) {
+      K8sReleaseSecretHelper.putAnnotationsItem(
+          releaseSecret, RELEASE_SECRET_HELM_CHART_NAME_KEY, helmChartInfo.getName());
+      K8sReleaseSecretHelper.putAnnotationsItem(
+          releaseSecret, RELEASE_SECRET_HELM_CHART_VERSION_KEY, helmChartInfo.getVersion());
+      K8sReleaseSecretHelper.putAnnotationsItem(
+          releaseSecret, RELEASE_SECRET_HELM_CHART_REPO_URL_KEY, helmChartInfo.getRepoUrl());
+      K8sReleaseSecretHelper.putAnnotationsItem(
+          releaseSecret, RELEASE_SECRET_HELM_CHART_SUB_CHART_PATH_KEY, helmChartInfo.getSubChartPath());
+    }
+  }
+
+  @Override
+  public HelmChartInfoDTO getHelmChartInfo() {
+    return K8sReleaseSecretHelper.getHelmChartInfo(releaseSecret);
   }
 
   private byte[] getCompressedYaml(List<KubernetesResource> resources) throws IOException {

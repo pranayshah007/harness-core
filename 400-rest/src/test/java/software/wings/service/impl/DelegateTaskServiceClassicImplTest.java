@@ -12,6 +12,9 @@ import static io.harness.rule.OwnerRule.JENNY;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.Mockito.when;
 
 import io.harness.beans.DelegateTask;
 import io.harness.category.element.UnitTests;
@@ -21,9 +24,13 @@ import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.TaskDataV2;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
+import io.harness.service.intfc.DelegateCache;
 
 import software.wings.WingsBaseTest;
+import software.wings.app.MainConfiguration;
+import software.wings.app.PortalConfig;
 import software.wings.beans.TaskType;
+import software.wings.delegatetasks.cv.RateLimitExceededException;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
@@ -35,16 +42,31 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 
 public class DelegateTaskServiceClassicImplTest extends WingsBaseTest {
-  @Inject private DelegateTaskServiceClassicImpl delegateTaskServiceClassic;
+  @Inject @InjectMocks private DelegateTaskServiceClassicImpl delegateTaskServiceClassic;
   @Inject private HPersistence persistence;
+  @Mock private DelegateCache delegateCache;
+  @Mock private MainConfiguration mainConfiguration;
+  @Rule public ExpectedException thrown = ExpectedException.none();
 
   private static final String VERSION = "1.0.0";
   private static final String DELEGATE_TYPE = "dockerType";
   private static final List<String> supportedTasks = Arrays.stream(TaskType.values()).map(Enum::name).collect(toList());
+
+  @Before
+  public void setup() {
+    PortalConfig portalConfig = new PortalConfig();
+    portalConfig.setParkedDelegateTaskRejectAtLimit(5000);
+    when(mainConfiguration.getPortal()).thenReturn(portalConfig);
+  }
 
   @Test
   @Owner(developers = JENNY)
@@ -222,6 +244,20 @@ public class DelegateTaskServiceClassicImplTest extends WingsBaseTest {
     assertThat(Sets.of(delegate3.getUuid(), delegate4.getUuid(), delegate5.getUuid())).contains(sortedList.get(2));
     assertThat(Sets.of(delegate6.getUuid(), delegate7.getUuid(), delegate8.getUuid(), delegate9.getUuid()))
         .contains(sortedList.get(5));
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testCheckParkedTaskRateLimit() {
+    String accountId = generateUuid();
+    DelegateTask delegateTask = DelegateTask.builder().accountId(accountId).status(DelegateTask.Status.PARKED).build();
+    when(delegateCache.getParkedTasksCount(accountId)).thenReturn(Integer.toUnsignedLong(5000));
+    assertThatExceptionOfType(RateLimitExceededException.class)
+        .isThrownBy(() -> delegateTaskServiceClassic.checkParkedTaskRateLimit(delegateTask));
+    // lower task count
+    when(delegateCache.getParkedTasksCount(accountId)).thenReturn(Integer.toUnsignedLong(4000));
+    assertThatCode(() -> delegateTaskServiceClassic.checkParkedTaskRateLimit(delegateTask)).doesNotThrowAnyException();
   }
 
   private Delegate createDelegate(String accountId, String des) {

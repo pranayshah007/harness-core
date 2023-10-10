@@ -8,6 +8,7 @@
 package io.harness.cdng;
 
 import static io.harness.beans.FeatureName.CDS_GITHUB_APP_AUTHENTICATION;
+import static io.harness.beans.FeatureName.CDS_NG_K8S_PASS_RELEASE_METADATA;
 import static io.harness.beans.FeatureName.OPTIMIZED_GIT_FETCH_FILES;
 import static io.harness.cdng.ReleaseNameAutoCorrector.isDnsCompliant;
 import static io.harness.cdng.ReleaseNameAutoCorrector.makeDnsCompliant;
@@ -325,6 +326,10 @@ public class CDStepHelper {
                 || isGitlabTokenAuth((ScmConnector) connectorDTO.getConnectorConfig()))
             || (isAzureRepoTokenAuth((ScmConnector) connectorDTO.getConnectorConfig()))
             || (isBitbucketTokenAuth((ScmConnector) connectorDTO.getConnectorConfig())));
+  }
+
+  public boolean shouldPassReleaseMetadata(String accountId) {
+    return cdFeatureFlagHelper.isEnabled(accountId, CDS_NG_K8S_PASS_RELEASE_METADATA);
   }
 
   public void addApiAuthIfRequired(ScmConnector scmConnector) {
@@ -709,14 +714,18 @@ public class CDStepHelper {
   }
 
   private Optional<String> getReleaseNameFromService(Ambiance ambiance) {
-    ServiceStepOutcome serviceStepOutcome = (ServiceStepOutcome) outcomeService.resolve(
-        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
+    ServiceStepOutcome serviceStepOutcome = getServiceStepOutcome(ambiance);
     if (serviceStepOutcome != null && serviceStepOutcome.getRelease() != null
         && serviceStepOutcome.getRelease().getName() != null) {
       String rawReleaseName = serviceStepOutcome.getRelease().getName();
       return Optional.ofNullable(resolveReleaseName(ambiance, rawReleaseName));
     }
     return Optional.empty();
+  }
+
+  public ServiceStepOutcome getServiceStepOutcome(Ambiance ambiance) {
+    return (ServiceStepOutcome) outcomeService.resolve(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
   }
 
   public String getFileContentAsBase64(Ambiance ambiance, String scopedFilePath, long allowedBytesFileSize) {

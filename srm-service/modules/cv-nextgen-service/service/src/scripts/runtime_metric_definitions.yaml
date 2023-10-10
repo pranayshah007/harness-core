@@ -121,3 +121,45 @@ metrics:
   unit: "1"
   measure: null
   view: null
+- metricName: "learning_engine_deployment_task_non_final_status_count"
+  metricDefinition: "learning_engine_deployment_task non final status count"
+  type: "LastValue"
+  distribution: null
+  unit: "1"
+  measure: null
+  view: null
+- metricName: "learning_engine_service_health_task_non_final_status_count"
+  metricDefinition: "learning_engine_service_health_task non final status count"
+  type: "LastValue"
+  distribution: null
+  unit: "1"
+  measure: null
+  view: null
+- metricName: "learning_engine_deployment_task_running_count"
+  metricDefinition: "learning_engine_deployment_task RUNNING count"
+  type: "LastValue"
+  distribution: null
+  unit: "1"
+  measure: null
+  view: null
+- metricName: "learning_engine_service_health_task_running_count"
+  metricDefinition: "learning_engine_service_health_task RUNNING count"
+  type: "LastValue"
+  distribution: null
+  unit: "1"
+  measure: null
+  view: null
+- metricName: "learning_engine_deployment_task_queued_count"
+  metricDefinition: "learning_engine_deployment_task QUEUED count"
+  type: "LastValue"
+  distribution: null
+  unit: "1"
+  measure: null
+  view: null
+- metricName: "learning_engine_service_health_task_queued_count"
+  metricDefinition: "learning_engine_service_health_task QUEUED count"
+  type: "LastValue"
+  distribution: null
+  unit: "1"
+  measure: null
+  view: null

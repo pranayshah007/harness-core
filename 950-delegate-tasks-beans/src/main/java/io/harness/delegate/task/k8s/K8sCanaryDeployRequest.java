@@ -11,7 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 import static io.harness.expression.Expression.DISALLOW_SECRETS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.NGInstanceUnitType;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.expression.Expression;
@@ -26,6 +29,7 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(CDP)
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_K8S})
 public class K8sCanaryDeployRequest implements K8sDeployRequest {
   NGInstanceUnitType instanceUnitType;
   Integer instances;
@@ -53,4 +57,5 @@ public class K8sCanaryDeployRequest implements K8sDeployRequest {
   @Expression(ALLOW_SECRETS) List<ServiceHookDelegateConfig> serviceHooks;
   boolean enabledSupportHPAAndPDB;
   boolean disableFabric8;
+  ReleaseMetadata releaseMetadata;
 }

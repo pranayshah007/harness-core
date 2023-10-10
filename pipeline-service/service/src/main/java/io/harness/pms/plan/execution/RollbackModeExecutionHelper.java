@@ -15,6 +15,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
+import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.StagesExecutionMetadata;
@@ -34,6 +35,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.helpers.PrincipalInfoHelper;
+import io.harness.pms.plan.utils.PlanResourceUtility;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -43,6 +45,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -181,8 +184,8 @@ public class RollbackModeExecutionHelper {
   Map<String, Node> buildIdentityNodes(String previousExecutionId, List<Node> createdPlanNodes) {
     Map<String, Node> planNodeIDToUpdatedNodes = new HashMap<>();
 
-    CloseableIterator<NodeExecution> nodeExecutions =
-        getNodeExecutionsWithOnlyRequiredFields(previousExecutionId, createdPlanNodes);
+    CloseableIterator<NodeExecution> nodeExecutions = getNodeExecutionsWithProjections(
+        previousExecutionId, createdPlanNodes, NodeProjectionUtils.fieldsForRollbackIdentityNodeCreation);
 
     while (nodeExecutions.hasNext()) {
       NodeExecution nodeExecution = nodeExecutions.next();
@@ -199,22 +202,21 @@ public class RollbackModeExecutionHelper {
         planNodeIDToUpdatedNodes.put(planNodeIdFromNodeExec, previouslyAddedNode);
       } else {
         Node node = planService.fetchNode(nodeExecution.getPlanId(), nodeExecution.getNodeId());
-        IdentityPlanNode identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNode(
-            node, nodeExecution.getStepType(), nodeExecution.getUuid(), true);
+        IdentityPlanNode identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNodeWithSkipAsTrue(node.getUuid(),
+            node, nodeExecution.getIdentifier(), nodeExecution.getName(), node.getStepType(), nodeExecution.getUuid());
         planNodeIDToUpdatedNodes.put(planNodeIdFromNodeExec, identityPlanNode);
       }
     }
     return planNodeIDToUpdatedNodes;
   }
 
-  CloseableIterator<NodeExecution> getNodeExecutionsWithOnlyRequiredFields(
-      String previousExecutionId, List<Node> createdPlanNodes) {
+  CloseableIterator<NodeExecution> getNodeExecutionsWithProjections(
+      String previousExecutionId, List<Node> createdPlanNodes, Set<String> projections) {
     List<String> stageFQNs = createdPlanNodes.stream()
                                  .filter(n -> n.getStepCategory() == StepCategory.STAGE)
                                  .map(Node::getStageFqn)
                                  .collect(Collectors.toList());
-    return nodeExecutionService.fetchNodeExecutionsForGivenStageFQNs(
-        previousExecutionId, stageFQNs, NodeProjectionUtils.fieldsForIdentityNodeCreation);
+    return nodeExecutionService.fetchNodeExecutionsForGivenStageFQNs(previousExecutionId, stageFQNs, projections);
   }
 
   void addAdvisorsToIdentityNodes(Plan createdPlan, Map<String, Node> planNodeIDToUpdatedPlanNodes,
@@ -261,5 +263,16 @@ public class RollbackModeExecutionHelper {
     // previous execution. Previous execution's advisor response would be setting next step as something we dont want in
     // rollback mode. We want the new advisors set in the Plan Node to be used
     return Arrays.asList(StepCategory.FORK, StepCategory.STRATEGY).contains(stepCategory);
+  }
+
+  public void checkAndThrowExceptionIfExecutionOlderThanOneMonthForPostProdRollback(
+      Long createdAt, ExecutionMode executionMode) {
+    if (executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK) {
+      boolean inTimeLimit = PlanResourceUtility.validateInTimeLimitForRetry(createdAt);
+      if (!inTimeLimit) {
+        throw new InvalidRequestException(
+            "This instance cannot be rolled back as the execution where this instance was deployed is already 30 or more days old");
+      }
+    }
   }
 }

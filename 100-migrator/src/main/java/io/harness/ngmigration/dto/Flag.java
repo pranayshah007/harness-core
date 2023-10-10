@@ -6,5 +6,11 @@
  */
 
 package io.harness.ngmigration.dto;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
-public enum Flag { HELM_INFRA_WITH_STAGE_VAR }
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
+public enum Flag {
+  HELM_INFRA_WITH_STAGE_VAR
+}

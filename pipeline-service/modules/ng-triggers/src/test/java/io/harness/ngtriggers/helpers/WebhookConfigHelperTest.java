@@ -213,7 +213,7 @@ public class WebhookConfigHelperTest extends CategoryTest {
   public void testGetGithubPRAction() {
     assertThat(
         WebhookConfigHelper.getGithubPRAction().stream().map(GithubPRAction::getValue).collect(Collectors.toList()))
-        .containsOnly("Close", "Edit", "Open", "Reopen", "Label", "Unlabel", "Synchronize");
+        .containsOnly("Close", "Edit", "Open", "Reopen", "Label", "Unlabel", "Synchronize", "ReadyForReview");
   }
 
   @Test

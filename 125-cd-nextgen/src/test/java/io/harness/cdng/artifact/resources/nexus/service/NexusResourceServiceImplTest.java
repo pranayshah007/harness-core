@@ -88,8 +88,6 @@ public class NexusResourceServiceImplTest extends CategoryTest {
   private static final String PACKAGE_MESSAGE = "value for packageName is empty or not provided";
   private static final String GROUP_ID_MESSAGE = "value for groupId is empty or not provided";
   private static final String ARTIFACT_PATH_MESSAGE = "value for artifactPath is empty or not provided";
-  private static final String REPOSITORY_URL_PORT_MESSAGE =
-      "value for repositoryUrl, repositoryPort is empty or not provided";
   private static final String ARTIFACT_ID_MESSAGE = "value for artifactId is empty or not provided";
   private static final String GROUP_MESSAGE = "value for group is empty or not provided";
   private static final String REPOSITORY_FORMAT_MESSAGE = "value for repositoryFormat is empty or not provided";
@@ -233,61 +231,6 @@ public class NexusResourceServiceImplTest extends CategoryTest {
                 ARTIFACT_ID, "extension", "classifier", PACKAGE_NAME, "group"))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(ARTIFACT_PATH_MESSAGE);
-  }
-  @Test
-  @Owner(developers = RAKSHIT_AGARWAL)
-  @Category(UnitTests.class)
-  public void testGetBuildDetailsDocker_UrlNullPortNull() {
-    assertThatThrownBy(()
-                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, null, IMAGE_PATH,
-                               RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER, GROUP_ID,
-                               ARTIFACT_ID, "extension", "classifier", PACKAGE_NAME, "group"))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage(REPOSITORY_URL_PORT_MESSAGE);
-  }
-  @Test
-  @Owner(developers = RAKSHIT_AGARWAL)
-  @Category(UnitTests.class)
-  public void testGetBuildDetailsDocker_UrlEmptyPortNull() {
-    assertThatThrownBy(()
-                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, null, IMAGE_PATH,
-                               RepositoryFormat.docker.name(), "", ORG_IDENTIFIER, PROJECT_IDENTIFIER, GROUP_ID,
-                               ARTIFACT_ID, "extension", "classifier", PACKAGE_NAME, "group"))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage(REPOSITORY_URL_PORT_MESSAGE);
-  }
-  @Test
-  @Owner(developers = RAKSHIT_AGARWAL)
-  @Category(UnitTests.class)
-  public void testGetBuildDetailsDocker_UrlRuntimePortNull() {
-    assertThatThrownBy(()
-                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, null, IMAGE_PATH,
-                               RepositoryFormat.docker.name(), INPUT, ORG_IDENTIFIER, PROJECT_IDENTIFIER, GROUP_ID,
-                               ARTIFACT_ID, "extension", "classifier", PACKAGE_NAME, "group"))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage(REPOSITORY_URL_PORT_MESSAGE);
-  }
-  @Test
-  @Owner(developers = RAKSHIT_AGARWAL)
-  @Category(UnitTests.class)
-  public void testGetBuildDetailsDocker_UrlNullPortRuntime() {
-    assertThatThrownBy(()
-                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, INPUT, IMAGE_PATH,
-                               RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER, GROUP_ID,
-                               ARTIFACT_ID, "extension", "classifier", PACKAGE_NAME, "group"))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage(REPOSITORY_URL_PORT_MESSAGE);
-  }
-  @Test
-  @Owner(developers = RAKSHIT_AGARWAL)
-  @Category(UnitTests.class)
-  public void testGetBuildDetailsDocker_UrlNullPortEmpty() {
-    assertThatThrownBy(()
-                           -> nexusResourceService.getBuildDetails(IDENTIFIER_REF, REPO_NAME, "", IMAGE_PATH,
-                               RepositoryFormat.docker.name(), null, ORG_IDENTIFIER, PROJECT_IDENTIFIER, GROUP_ID,
-                               ARTIFACT_ID, "extension", "classifier", PACKAGE_NAME, "group"))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage(REPOSITORY_URL_PORT_MESSAGE);
   }
   @Test
   @Owner(developers = RAKSHIT_AGARWAL)

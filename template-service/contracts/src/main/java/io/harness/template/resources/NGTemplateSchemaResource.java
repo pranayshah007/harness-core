@@ -90,6 +90,7 @@ public interface NGTemplateSchemaResource {
       })
   @Hidden
   @Deprecated
+  // Used by UI in local env - DO NOT REMOVE WITHOUT CHECKING WITH UI
   ResponseDTO<JsonNode>
   getTemplateSchema(@QueryParam("templateEntityType") @NotNull TemplateEntityType templateEntityType,
       @QueryParam(PROJECT_KEY) String projectIdentifier, @QueryParam(ORG_KEY) String orgIdentifier,
