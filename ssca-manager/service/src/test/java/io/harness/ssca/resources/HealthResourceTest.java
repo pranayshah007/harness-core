@@ -34,6 +34,6 @@ public class HealthResourceTest extends SSCAManagerTestBase {
   @Category(UnitTests.class)
   public void testGet() throws Exception {
     RestResponse response = healthResource.get();
-    Assertions.assertThat(response.getResponseMessages().get(0)).isEqualTo("ok");
+    Assertions.assertThat(response.getResource().toString()).isEqualTo("ok");
   }
 }

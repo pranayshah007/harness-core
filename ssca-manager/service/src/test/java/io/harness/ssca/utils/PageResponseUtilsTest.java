@@ -39,7 +39,7 @@ public class PageResponseUtilsTest extends SSCAManagerTestBase {
     Pageable pageable = PageResponseUtils.getPageable(0, 5, "name", "ASC");
     assertThat(pageable.getPageNumber()).isEqualTo(0);
     assertThat(pageable.getPageSize()).isEqualTo(5);
-    assertThat(pageable.getSort()).isEqualTo(Sort.by("ASC", "name"));
+    assertThat(pageable.getSort()).isEqualTo(Sort.by("name").ascending());
   }
 
   @Test
@@ -49,8 +49,8 @@ public class PageResponseUtilsTest extends SSCAManagerTestBase {
     Page<String> page =
         new PageImpl<>(Arrays.asList("item1", "item2", "item3", "item4", "item5"), Pageable.ofSize(2).withPage(1), 5);
     Response pageResponse = PageResponseUtils.getPagedResponse(page);
-    assertThat(pageResponse.getHeaders().get("X-Total-Elements")).isEqualTo(5);
-    assertThat(pageResponse.getHeaders().get("X-Page-Number")).isEqualTo(1);
-    assertThat(pageResponse.getHeaders().get("X-Page-Size")).isEqualTo(2);
+    assertThat(pageResponse.getHeaders().get("X-Total-Elements").get(0)).isEqualTo(5L);
+    assertThat(pageResponse.getHeaders().get("X-Page-Number").get(0)).isEqualTo(1L);
+    assertThat(pageResponse.getHeaders().get("X-Page-Size").get(0)).isEqualTo(2L);
   }
 }

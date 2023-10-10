@@ -75,7 +75,6 @@ public class ArtifactServiceImpl implements ArtifactService {
   @Inject EnforcementSummaryRepo enforcementSummaryRepo;
   @Inject NormalisedSbomComponentService normalisedSbomComponentService;
   @Inject CdInstanceSummaryRepo cdInstanceSummaryRepo;
-
   @Inject CdInstanceSummaryService cdInstanceSummaryService;
 
   private final String GCP_REGISTRY_HOST = "grc.io";

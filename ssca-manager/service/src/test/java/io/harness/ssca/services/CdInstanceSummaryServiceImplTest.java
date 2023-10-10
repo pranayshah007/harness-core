@@ -73,12 +73,12 @@ public class CdInstanceSummaryServiceImplTest extends SSCAManagerTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testRemoveInstance() {
-    Boolean response = cdInstanceSummaryService.upsertInstance(builderFactory.getInstanceNGEntityBuilder().build());
+    Boolean response = cdInstanceSummaryService.removeInstance(builderFactory.getInstanceNGEntityBuilder().build());
     assertThat(response).isEqualTo(true);
     Mockito.when(cdInstanceSummaryRepo.findOne(Mockito.any()))
         .thenReturn(builderFactory.getCdInstanceSummaryBuilder().build());
 
-    response = cdInstanceSummaryService.upsertInstance(builderFactory.getInstanceNGEntityBuilder().build());
+    response = cdInstanceSummaryService.removeInstance(builderFactory.getInstanceNGEntityBuilder().build());
     assertThat(response).isEqualTo(true);
   }
 
@@ -100,7 +100,8 @@ public class CdInstanceSummaryServiceImplTest extends SSCAManagerTestBase {
             ArtifactEntity.builder().build(), null, Pageable.ofSize(3).withPage(0));
     List<CdInstanceSummary> cdInstanceSummaryList = cdInstanceSummaryPage.get().collect(Collectors.toList());
     assertThat(cdInstanceSummaryList.size()).isEqualTo(3);
-    assertThat(cdInstanceSummaryList.get(0)).isEqualTo(builderFactory.getCdInstanceSummaryBuilder().build());
+    assertThat(cdInstanceSummaryList.get(0))
+        .isEqualTo(builderFactory.getCdInstanceSummaryBuilder().envIdentifier("env1").build());
   }
 
   @Test

@@ -28,8 +28,8 @@ public class PageResponseUtils {
 
   public static <T> Response getPagedResponse(Page<T> entities) {
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(
-        responseBuilder, entities.getTotalElements(), entities.getNumber(), entities.getNumber());
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, entities.getTotalElements(), entities.getNumber(), entities.getSize());
     return responseBuilderWithLinks.entity(entities.getContent()).build();
   }
 }

@@ -10,8 +10,6 @@ package io.harness;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 
 import io.harness.cdng.artifact.bean.ArtifactCorrelationDetails;
-import io.harness.cvng.core.beans.params.ProjectParams;
-import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.entities.ArtifactDetails;
 import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceBuilder;
@@ -39,7 +37,9 @@ import io.harness.ssca.entities.NormalizedSBOMComponentEntity.NormalizedSBOMComp
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.AccessLevel;
@@ -56,7 +56,20 @@ public class BuilderFactory {
   @Getter @Setter(AccessLevel.PRIVATE) private Context context;
 
   public static BuilderFactory getDefault() {
-    return BuilderFactory.builder().unsafeBuild();
+    return BuilderFactory.builder().build();
+  }
+
+  public static class BuilderFactoryBuilder {
+    public BuilderFactory build() {
+      BuilderFactory builder = unsafeBuild();
+      if (builder.clock == null) {
+        builder.setClock(Clock.fixed(Instant.parse("2020-04-22T10:02:06Z"), ZoneOffset.UTC));
+      }
+      if (builder.getContext() == null) {
+        builder.setContext(BuilderFactory.Context.defaultContext());
+      }
+      return builder;
+    }
   }
 
   @Data
@@ -72,13 +85,11 @@ public class BuilderFactory {
       return serviceIdentifier + "_" + envIdentifier;
     }
 
-    public static io.harness.cvng.BuilderFactory.Context defaultContext() {
-      return io.harness.cvng.BuilderFactory.Context.builder()
-          .projectParams(ProjectParams.builder()
-                             .accountIdentifier(randomAlphabetic(20))
-                             .orgIdentifier(randomAlphabetic(20))
-                             .projectIdentifier(randomAlphabetic(20))
-                             .build())
+    public static BuilderFactory.Context defaultContext() {
+      return Context.builder()
+          .accountId(randomAlphabetic(20))
+          .orgIdentifier(randomAlphabetic(20))
+          .projectIdentifier(randomAlphabetic(20))
           .envIdentifier(randomAlphabetic(20))
           .serviceIdentifier(randomAlphabetic(20))
           .build();
@@ -104,15 +115,6 @@ public class BuilderFactory {
     }
     public void setProjectIdentifier(String projectIdentifier) {
       this.projectIdentifier = projectIdentifier;
-    }
-    public ServiceEnvironmentParams getServiceEnvironmentParams() {
-      return ServiceEnvironmentParams.builder()
-          .accountIdentifier(accountId)
-          .orgIdentifier(orgIdentifier)
-          .projectIdentifier(projectIdentifier)
-          .serviceIdentifier(serviceIdentifier)
-          .environmentIdentifier(envIdentifier)
-          .build();
     }
   }
 
@@ -196,7 +198,11 @@ public class BuilderFactory {
   }
 
   public CdInstanceSummaryBuilder getCdInstanceSummaryBuilder() {
+    Set<String> instanceIdSet = new HashSet<>();
+    instanceIdSet.add("instance1");
+    instanceIdSet.add("instance2");
     return CdInstanceSummary.builder()
+        .artifactCorrelationId("artifactCorrelationId")
         .accountIdentifier(context.accountId)
         .orgIdentifier(context.orgIdentifier)
         .projectIdentifier(context.projectIdentifier)
@@ -208,7 +214,7 @@ public class BuilderFactory {
         .envIdentifier("envId")
         .envName("envName")
         .envType(EnvType.Production)
-        .instanceIds(Set.of("instance1, instance2"));
+        .instanceIds(instanceIdSet);
   }
 
   public NormalizedSBOMComponentEntityBuilder getNormalizedSBOMComponentBuilder() {

@@ -21,6 +21,7 @@ import io.harness.repositories.SBOMComponentRepo;
 import io.harness.rule.Owner;
 import io.harness.spec.server.ssca.v1.model.ArtifactComponentViewResponse;
 import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewResponse;
+import io.harness.spec.server.ssca.v1.model.ArtifactDeploymentViewResponse.AttestedStatusEnum;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingResponse;
 import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.CdInstanceSummary;
@@ -54,6 +55,8 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
   @Mock ArtifactRepository artifactRepository;
   @Mock EnforcementSummaryRepo enforcementSummaryRepo;
   @Mock CdInstanceSummaryRepo cdInstanceSummaryRepo;
+
+  @Inject CdInstanceSummaryService cdInstanceSummaryService;
   private BuilderFactory builderFactory;
 
   @Before
@@ -63,6 +66,9 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
     FieldUtils.writeField(artifactService, "enforcementSummaryRepo", enforcementSummaryRepo, true);
     FieldUtils.writeField(artifactService, "cdInstanceSummaryRepo", cdInstanceSummaryRepo, true);
     FieldUtils.writeField(normalisedSbomComponentService, "sbomComponentRepo", sbomComponentRepo, true);
+    FieldUtils.writeField(artifactService, "normalisedSbomComponentService", normalisedSbomComponentService, true);
+    FieldUtils.writeField(cdInstanceSummaryService, "cdInstanceSummaryRepo", cdInstanceSummaryRepo, true);
+    FieldUtils.writeField(artifactService, "cdInstanceSummaryService", cdInstanceSummaryService, true);
     builderFactory = BuilderFactory.getDefault();
   }
 
@@ -79,9 +85,9 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
                                               + "test/image")
                                               .getBytes())
                        .toString());
-    assertThat(artifact.getOrchestrationId()).isEqualTo("stepExecutionId");
+    assertThat(artifact.getOrchestrationId()).isEqualTo("stepExecution-1");
     assertThat(artifact.getArtifactCorrelationId()).isEqualTo("index.docker.com/test/image:tag");
-    assertThat(artifact.getUrl()).isEqualTo("sbomUrl");
+    assertThat(artifact.getUrl()).isEqualTo("https://index.docker.com");
     assertThat(artifact.getName()).isEqualTo("test/image");
     assertThat(artifact.getType()).isEqualTo("image/repo");
     assertThat(artifact.getTag()).isEqualTo("tag");
@@ -98,7 +104,12 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
     assertThat(artifact.isAttested()).isEqualTo(true);
     assertThat(artifact.getAttestedFileUrl()).isEqualTo("www.google.com");
     assertThat(artifact.getSbom())
-        .isEqualTo(ArtifactEntity.Sbom.builder().sbomFormat("spdx_json").tool("syft").sbomVersion("3.0"));
+        .isEqualTo(ArtifactEntity.Sbom.builder()
+                       .sbomFormat("spdx_json")
+                       .tool("syft")
+                       .sbomVersion("3.0")
+                       .toolVersion("2.0")
+                       .build());
   }
 
   @Test
@@ -192,15 +203,11 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
   public void testListLatestArtifacts() {
     List<ArtifactEntity> artifactEntities = Arrays.asList(builderFactory.getArtifactEntityBuilder()
                                                               .artifactId("artifactId")
-                                                              .artifactCorrelationId("artifactCorrelation1")
+                                                              .artifactCorrelationId("artifactCorrelationId")
                                                               .build(),
         builderFactory.getArtifactEntityBuilder()
             .artifactId("artifact2")
             .artifactCorrelationId("artifactCorrelation2")
-            .build(),
-        builderFactory.getArtifactEntityBuilder()
-            .artifactId("artifact3")
-            .artifactCorrelationId("artifactCorrelation3")
             .build());
     Mockito.when(artifactRepository.findAll(Mockito.any(Aggregation.class))).thenReturn(artifactEntities);
 
@@ -222,14 +229,14 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
     assertThat(artifactEntityPage.getTotalPages()).isEqualTo(2);
     assertThat(artifactListingResponses.size()).isEqualTo(2);
 
-    assertThat(artifactListingResponses.get(0).getArtifactId()).isEqualTo("artifact1");
+    assertThat(artifactListingResponses.get(0).getArtifactId()).isEqualTo("artifactId");
     assertThat(artifactListingResponses.get(0).getArtifactName()).isEqualTo("test/image");
     assertThat(artifactListingResponses.get(0).getTag()).isEqualTo("tag");
-    assertThat(artifactListingResponses.get(0).getAllowListViolationCount()).isEqualTo("0");
-    assertThat(artifactListingResponses.get(0).getDenyListViolationCount()).isEqualTo("0");
+    assertThat(artifactListingResponses.get(0).getAllowListViolationCount()).isEqualTo(0);
+    assertThat(artifactListingResponses.get(0).getDenyListViolationCount()).isEqualTo(0);
     assertThat(artifactListingResponses.get(0).getComponentsCount()).isEqualTo(35);
     assertThat(artifactListingResponses.get(0).getNonProdEnvCount()).isEqualTo(0);
-    assertThat(artifactListingResponses.get(0).getProdEnvCount()).isEqualTo(0);
+    assertThat(artifactListingResponses.get(0).getProdEnvCount()).isEqualTo(1);
     // assertThat(artifactListingResponses.get(0).getSbomUrl()).isEqualTo("artifact1");
     assertThat(artifactListingResponses.get(0).getUpdatedAt())
         .isLessThanOrEqualTo(String.format("%d", Instant.now().toEpochMilli()));
@@ -237,8 +244,8 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
     assertThat(artifactListingResponses.get(1).getArtifactId()).isEqualTo("artifact2");
     assertThat(artifactListingResponses.get(1).getArtifactName()).isEqualTo("test/image");
     assertThat(artifactListingResponses.get(1).getTag()).isEqualTo("tag");
-    assertThat(artifactListingResponses.get(1).getAllowListViolationCount()).isEqualTo("0");
-    assertThat(artifactListingResponses.get(1).getDenyListViolationCount()).isEqualTo("0");
+    assertThat(artifactListingResponses.get(1).getAllowListViolationCount()).isEqualTo(0);
+    assertThat(artifactListingResponses.get(1).getDenyListViolationCount()).isEqualTo(0);
     assertThat(artifactListingResponses.get(1).getComponentsCount()).isEqualTo(35);
     assertThat(artifactListingResponses.get(1).getNonProdEnvCount()).isEqualTo(0);
     assertThat(artifactListingResponses.get(1).getProdEnvCount()).isEqualTo(0);
@@ -253,15 +260,11 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
   public void testListArtifacts() {
     List<ArtifactEntity> artifactEntities = Arrays.asList(builderFactory.getArtifactEntityBuilder()
                                                               .artifactId("artifactId")
-                                                              .artifactCorrelationId("artifactCorrelation1")
+                                                              .artifactCorrelationId("artifactCorrelationId")
                                                               .build(),
         builderFactory.getArtifactEntityBuilder()
             .artifactId("artifact2")
             .artifactCorrelationId("artifactCorrelation2")
-            .build(),
-        builderFactory.getArtifactEntityBuilder()
-            .artifactId("artifact3")
-            .artifactCorrelationId("artifactCorrelation3")
             .build());
     Mockito.when(artifactRepository.findAll(Mockito.any(), Mockito.any()))
         .thenReturn(new PageImpl<>(artifactEntities, Pageable.ofSize(2).withPage(0), 3));
@@ -272,9 +275,9 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
     Mockito.when(cdInstanceSummaryRepo.findAll(Mockito.any(Criteria.class)))
         .thenReturn(List.of(builderFactory.getCdInstanceSummaryBuilder().build()));
 
-    Page<ArtifactListingResponse> artifactEntityPage = artifactService.listLatestArtifacts(
+    Page<ArtifactListingResponse> artifactEntityPage = artifactService.listArtifacts(
         builderFactory.getContext().getAccountId(), builderFactory.getContext().getOrgIdentifier(),
-        builderFactory.getContext().getProjectIdentifier(), Pageable.ofSize(2).withPage(0));
+        builderFactory.getContext().getProjectIdentifier(), null, Pageable.ofSize(2).withPage(0));
 
     List<ArtifactListingResponse> artifactListingResponses = artifactEntityPage.toList();
 
@@ -282,14 +285,14 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
     assertThat(artifactEntityPage.getTotalPages()).isEqualTo(2);
     assertThat(artifactListingResponses.size()).isEqualTo(2);
 
-    assertThat(artifactListingResponses.get(0).getArtifactId()).isEqualTo("artifact1");
+    assertThat(artifactListingResponses.get(0).getArtifactId()).isEqualTo("artifactId");
     assertThat(artifactListingResponses.get(0).getArtifactName()).isEqualTo("test/image");
     assertThat(artifactListingResponses.get(0).getTag()).isEqualTo("tag");
-    assertThat(artifactListingResponses.get(0).getAllowListViolationCount()).isEqualTo("0");
-    assertThat(artifactListingResponses.get(0).getDenyListViolationCount()).isEqualTo("0");
+    assertThat(artifactListingResponses.get(0).getAllowListViolationCount()).isEqualTo(0);
+    assertThat(artifactListingResponses.get(0).getDenyListViolationCount()).isEqualTo(0);
     assertThat(artifactListingResponses.get(0).getComponentsCount()).isEqualTo(35);
     assertThat(artifactListingResponses.get(0).getNonProdEnvCount()).isEqualTo(0);
-    assertThat(artifactListingResponses.get(0).getProdEnvCount()).isEqualTo(0);
+    assertThat(artifactListingResponses.get(0).getProdEnvCount()).isEqualTo(1);
     // assertThat(artifactListingResponses.get(0).getSbomUrl()).isEqualTo("artifact1");
     assertThat(artifactListingResponses.get(0).getUpdatedAt())
         .isLessThanOrEqualTo(String.format("%d", Instant.now().toEpochMilli()));
@@ -297,8 +300,8 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
     assertThat(artifactListingResponses.get(1).getArtifactId()).isEqualTo("artifact2");
     assertThat(artifactListingResponses.get(1).getArtifactName()).isEqualTo("test/image");
     assertThat(artifactListingResponses.get(1).getTag()).isEqualTo("tag");
-    assertThat(artifactListingResponses.get(1).getAllowListViolationCount()).isEqualTo("0");
-    assertThat(artifactListingResponses.get(1).getDenyListViolationCount()).isEqualTo("0");
+    assertThat(artifactListingResponses.get(1).getAllowListViolationCount()).isEqualTo(0);
+    assertThat(artifactListingResponses.get(1).getDenyListViolationCount()).isEqualTo(0);
     assertThat(artifactListingResponses.get(1).getComponentsCount()).isEqualTo(35);
     assertThat(artifactListingResponses.get(1).getNonProdEnvCount()).isEqualTo(0);
     assertThat(artifactListingResponses.get(1).getProdEnvCount()).isEqualTo(0);
@@ -311,10 +314,12 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testGetArtifactComponentView_noFilter() {
+    Mockito.when(artifactRepository.findOne(Mockito.any()))
+        .thenReturn(builderFactory.getArtifactEntityBuilder().build());
     NormalizedSBOMComponentEntity.NormalizedSBOMComponentEntityBuilder builder =
         builderFactory.getNormalizedSBOMComponentBuilder();
     Page<NormalizedSBOMComponentEntity> entities =
-        new PageImpl<>(List.of(builder.build(), builder.build(), builder.build()), Pageable.ofSize(2).withPage(0), 5);
+        new PageImpl<>(List.of(builder.build(), builder.build()), Pageable.ofSize(2).withPage(0), 5);
 
     Mockito.when(sbomComponentRepo.findAll(Mockito.any(), Mockito.any())).thenReturn(entities);
 
@@ -337,10 +342,11 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testGetArtifactDeploymentView_noFilter() {
+    Mockito.when(artifactRepository.findOne(Mockito.any()))
+        .thenReturn(builderFactory.getArtifactEntityBuilder().build());
     CdInstanceSummary.CdInstanceSummaryBuilder builder = builderFactory.getCdInstanceSummaryBuilder();
     Page<CdInstanceSummary> entities =
-        new PageImpl<>(List.of(builder.envIdentifier("env1").build(), builder.envIdentifier("env2").build(),
-                           builder.envIdentifier("env3").build()),
+        new PageImpl<>(List.of(builder.envIdentifier("env1").build(), builder.envIdentifier("env2").build()),
             Pageable.ofSize(2).withPage(0), 5);
 
     Mockito.when(cdInstanceSummaryRepo.findAll(Mockito.any(), Mockito.any())).thenReturn(entities);
@@ -356,6 +362,6 @@ public class ArtifactServiceImplTest extends SSCAManagerTestBase {
     assertThat(responseList.get(0).getPipelineId()).isEqualTo("K8sDeploy");
     assertThat(responseList.get(0).getPipelineExecutionId()).isEqualTo("lastExecutionId");
     assertThat(responseList.get(0).getTriggeredBy()).isEqualTo("username");
-    assertThat(responseList.get(0).getAttestedStatus()).isEqualTo(true);
+    assertThat(responseList.get(0).getAttestedStatus()).isEqualTo(AttestedStatusEnum.PASS);
   }
 }
