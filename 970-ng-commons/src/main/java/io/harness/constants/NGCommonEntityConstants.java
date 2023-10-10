@@ -228,4 +228,5 @@ public class NGCommonEntityConstants {
   public static final String APPLY_GITX_REPO_ALLOW_LIST_FILTER = "applyGitXRepoAllowListFilter";
   public static final String ACTIVITY_TYPES = "activityTypes";
   public static final String SCOPE_FILTER = "scopeFilter";
+  public static final String TEMPLATE = "template";
 }

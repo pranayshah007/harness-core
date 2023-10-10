@@ -31,4 +31,6 @@ public interface NGGlobalTemplateService {
   Page<GlobalTemplateEntity> getAllGlobalTemplate(boolean notDeleted, boolean getMetadataOnly, Pageable pageable);
   Optional<GlobalTemplateEntity> getGlobalTemplateWithVersionLabel(String templateIdentifier, String versionLabel,
       boolean deleted, boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch);
+  String importTemplateFromGlobalTemplateMarketPlace(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String yaml);
 }

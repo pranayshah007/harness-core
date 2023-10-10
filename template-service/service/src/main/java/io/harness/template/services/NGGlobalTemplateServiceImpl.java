@@ -24,6 +24,7 @@ import static io.harness.template.resources.beans.NGTemplateConstants.REPOSITORY
 import static java.lang.String.format;
 
 import io.harness.EntityType;
+import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -77,6 +78,10 @@ import io.harness.template.utils.TemplateUtils;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.utils.PageUtils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -90,6 +95,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
@@ -97,6 +103,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.Yaml;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY, HarnessModuleComponent.CDS_GITX,
@@ -300,18 +308,46 @@ public class NGGlobalTemplateServiceImpl implements NGGlobalTemplateService {
     return oldTemplateEntity;
   }
 
+  @Override
   public Optional<GlobalTemplateEntity> getGlobalTemplateWithVersionLabel(String templateIdentifier,
       String versionLabel, boolean deleted, boolean getMetadataOnly, boolean loadFromCache,
       boolean loadFromFallbackBranch) {
     return ngGlobalTemplateRepository.getGlobalEntityUsingVersionLabel(null, null, null, templateIdentifier,
         versionLabel, !deleted, getMetadataOnly, loadFromCache, loadFromFallbackBranch);
   }
-
+  @Override
   public Page<GlobalTemplateEntity> getAllGlobalTemplate(
       boolean notDeleted, boolean getMetadataOnly, Pageable pageable) {
     return ngGlobalTemplateRepository.findAllGlobalTemplateAndDeletedNot(notDeleted, getMetadataOnly, pageable);
   }
 
+  @Override
+  public String importTemplateFromGlobalTemplateMarketPlace(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String templateYaml) {
+    try {
+      ObjectMapper objectMapper = new YAMLMapper();
+      Map<String, Object> importYamlObject = objectMapper.readValue(templateYaml, new TypeReference<>() {});
+      Map<String, Object> templateNode = (Map<String, Object>) importYamlObject.get(NGCommonEntityConstants.TEMPLATE);
+      if (isEmpty(orgIdentifier) && isEmpty(projectIdentifier) && isEmpty(accountIdentifier)) {
+        throw new InvalidRequestException("AccountId, OrgIdentifier and ProjectIdentifier not provided. "
+            + "Template can not be created as scope of the template is not defined.");
+      }
+      if (isNotEmpty(orgIdentifier)) {
+        templateNode.put(NGCommonEntityConstants.ORG_KEY, orgIdentifier);
+      }
+      if (isNotEmpty(projectIdentifier)) {
+        templateNode.put(NGCommonEntityConstants.PROJECT_KEY, projectIdentifier);
+      }
+      importYamlObject.put(NGCommonEntityConstants.TEMPLATE, templateNode);
+      DumperOptions options = new DumperOptions();
+      options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+      options.setPrettyFlow(true);
+      Yaml yaml = new Yaml(options);
+      return yaml.dump(importYamlObject);
+    } catch (JsonProcessingException exception) {
+      throw new NotFoundException("Failed to process the template yaml", exception);
+    }
+  }
   /*
   Read the list contains newly added filePath
   Get the Git content and call create method.
