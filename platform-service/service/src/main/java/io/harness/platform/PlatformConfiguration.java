@@ -117,8 +117,6 @@ public class PlatformConfiguration extends Configuration {
   @JsonProperty(value = "accessControlClient")
   @ConfigSecret
   private AccessControlClientConfiguration accessControlClientConfig;
-  @JsonProperty("policyManagerSecret") @ConfigSecret private String policyManagerSecret;
-  @JsonProperty("opaClientConfig") private ServiceHttpClientConfig opaClientConfig;
   @JsonProperty("enforcementClientConfiguration") private EnforcementClientConfiguration enforcementClientConfiguration;
   @JsonProperty("secretsConfiguration") private SecretsConfiguration secretsConfiguration;
   @JsonProperty("hostname") String hostname = "localhost";
