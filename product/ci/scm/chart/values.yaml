@@ -12,11 +12,11 @@ maxSurge: 1
 maxUnavailable: 0
 
 image:
-  registry: docker.io
-  repository: harness/ci-scm-signed
+  registry: us.gcr.io
+  repository: platform-205701/harness/feature-ci-scm-openjdk-8u242
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: release-161-ubi
+  tag: sto-onprem
   digest: ""
   imagePullSecrets: []
 
