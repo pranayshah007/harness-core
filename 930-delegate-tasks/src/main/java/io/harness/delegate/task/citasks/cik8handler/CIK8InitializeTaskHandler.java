@@ -639,9 +639,7 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
       objectOutputStream.close();
 
       byte[] objectBytes = byteArrayOutputStream.toByteArray();
-      String base64EncodedObject = Base64.getEncoder().encodeToString(objectBytes);
-      return base64EncodedObject;
-
+      return Base64.getEncoder().encodeToString(objectBytes);
     } catch (Exception e) {
       e.printStackTrace();
       return null;
