@@ -151,3 +151,5 @@ resourceTypes:
     permissionKey: anomalies
   - identifier: CCM_RECOMMENDATIONS
     permissionKey: recommendations
+  - identifier: INPUT_SET
+    permissionKey: inputset

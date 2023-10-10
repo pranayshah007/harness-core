@@ -46,6 +46,7 @@ public final class EventsFrameworkMetadataConstants {
   public static final String VARIABLE_ENTITY = "variable";
   public static final String USER_ENTITY = "user";
   public static final String PIPELINE_ENTITY = "pipeline";
+  public static final String INPUTSET_ENTITY = "inputset";
   public static final String DELEGATE_ENTITY = "delegate";
   public static final String DELEGATE_CONFIGURATION_ENTITY = "delegateconfiguration";
   public static final String FILE_ENTITY = "file";
