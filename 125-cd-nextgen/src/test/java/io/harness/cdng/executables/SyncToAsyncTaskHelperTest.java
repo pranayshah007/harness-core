@@ -10,7 +10,6 @@ package io.harness.cdng.executables;
 import static io.harness.rule.OwnerRule.BUHA;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -51,6 +50,7 @@ public class SyncToAsyncTaskHelperTest extends CategoryTest {
   private AutoCloseable mocks;
 
   private static final String PARAMS = "PARAMS";
+  private static final String JSON_PARAMS = "{name : value}";
 
   @Before
   public void setUp() throws Exception {
@@ -80,6 +80,26 @@ public class SyncToAsyncTaskHelperTest extends CategoryTest {
 
     assertThat(taskData.getParameters()[0]).isEqualTo(PARAMS);
     assertThat(taskData.getData()).isEqualTo(PARAMS.getBytes());
+    assertThat(taskData.getTaskType()).isEqualTo("SOME_TYPE");
+    assertThat(taskData.getTimeout()).isEqualTo(3000);
+    assertThat(taskData.isAsync()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testExtractTaskRequestWithJsonPrams() {
+    TaskDetails taskDetails = TaskDetails.newBuilder()
+                                  .setJsonParameters(ByteString.copyFrom(JSON_PARAMS.getBytes()))
+                                  .setType(TaskType.newBuilder().setType("SOME_TYPE").build())
+                                  .setExecutionTimeout(Duration.newBuilder().setSeconds(3).build())
+                                  .setMode(TaskMode.ASYNC)
+                                  .build();
+
+    TaskData taskData = syncToAsyncTaskHelper.extractTaskRequest(taskDetails);
+
+    assertThat(taskData.getParameters()).isNull();
+    assertThat(taskData.getData()).isEqualTo(JSON_PARAMS.getBytes());
     assertThat(taskData.getTaskType()).isEqualTo("SOME_TYPE");
     assertThat(taskData.getTimeout()).isEqualTo(3000);
     assertThat(taskData.isAsync()).isTrue();
@@ -131,7 +151,7 @@ public class SyncToAsyncTaskHelperTest extends CategoryTest {
     assertThat(delegateTaskRequest.isEmitEvent()).isFalse();
     assertThat(delegateTaskRequest.getStageId()).isEqualTo("stageId");
     assertThat(delegateTaskRequest.getTaskSelectors().size()).isEqualTo(2);
-    assertTrue(delegateTaskRequest.getTaskParameters() instanceof K8sApplyTaskParameters);
+    assertThat(delegateTaskRequest.getTaskParameters()).isInstanceOf(K8sApplyTaskParameters.class);
     assertThat(delegateTaskRequest.getTaskType()).isEqualTo("SOME_TYPE");
     assertThat(delegateTaskRequest.isParked()).isFalse();
     assertThat(delegateTaskRequest.getExecutionTimeout().getSeconds()).isEqualTo(3);

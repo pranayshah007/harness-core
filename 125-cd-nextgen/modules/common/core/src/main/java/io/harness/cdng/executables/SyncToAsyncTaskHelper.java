@@ -15,7 +15,6 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.delegate.SubmitTaskRequest;
 import io.harness.delegate.TaskDetails;
-import io.harness.delegate.TaskMode;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.InvalidRequestException;
@@ -52,7 +51,7 @@ public class SyncToAsyncTaskHelper {
         .data(data)
         .taskType(taskDetails.getType().getType())
         .timeout(taskDetails.getExecutionTimeout().getSeconds() * 1000)
-        .async(TaskMode.ASYNC == taskDetails.getMode())
+        .async(true)
         .build();
   }
 
