@@ -158,5 +158,6 @@ public class SyncToAsyncTaskHelperTest extends CategoryTest {
     assertThat(delegateTaskRequest.getExpressionFunctorToken()).isEqualTo(23);
     assertThat(delegateTaskRequest.getBaseLogKey()).isEqualTo("baseLogKey");
     assertThat(delegateTaskRequest.isShouldSkipOpenStream()).isTrue();
+    assertThat(delegateTaskRequest.isSelectionLogsTrackingEnabled()).isTrue();
   }
 }

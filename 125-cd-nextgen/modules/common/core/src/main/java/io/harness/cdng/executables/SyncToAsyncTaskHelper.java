@@ -76,6 +76,7 @@ public class SyncToAsyncTaskHelper {
         .stageId(submitTaskRequest.getStageId())
         .baseLogKey(baseLogKey)
         .shouldSkipOpenStream(shouldSkipOpenStream)
+        .selectionLogsTrackingEnabled(true)
         .build();
   }
 }
