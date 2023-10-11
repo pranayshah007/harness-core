@@ -259,7 +259,7 @@ public class AzureVaultEncryptor implements VaultEncryptor {
       // DELETE_SECRET task which again would not guarantee that timeout will not occur simply because of Azure's
       // system as well as UI needs to be updated to support async reactive nature of this call.
       SyncPoller<DeletedSecret, Void> syncPoller = keyVaultClient.beginDeleteSecret(existingRecord.getName());
-      syncPoller.waitUntil(Duration.ofSeconds(45), LongRunningOperationStatus.IN_PROGRESS);
+      syncPoller.waitUntil(Duration.ofSeconds(30), LongRunningOperationStatus.IN_PROGRESS);
       try {
         while (true) {
           // if the secret is unobtainable/unretrievable this will throw an exception
