@@ -15,9 +15,9 @@ import static io.harness.rule.OwnerRule.KANHAIYA;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -240,11 +240,12 @@ public class CVNGStepTaskServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = ANSHIKA)
   @Category(UnitTests.class)
-  public void testGetDeploymentActivityLogAnalysisClusters(){
+  public void testGetDeploymentActivityLogAnalysisClusters() {
     String accountId = generateUuid();
     String callbackId = generateUuid();
     DeploymentLogAnalysisFilter deploymentLogAnalysisFilter = new DeploymentLogAnalysisFilter();
-    LogAnalysisClusterChartDTO mockClusterDTO = LogAnalysisClusterChartDTO.builder()
+    LogAnalysisClusterChartDTO mockClusterDTO =
+        LogAnalysisClusterChartDTO.builder()
             .label(1)
             .text("text")
             .hostName("hostName")
@@ -255,14 +256,15 @@ public class CVNGStepTaskServiceImplTest extends CvNextGenTestBase {
             .build();
     List<LogAnalysisClusterChartDTO> expectedClusters = new ArrayList<>();
     expectedClusters.add(mockClusterDTO);
-    when(deploymentLogAnalysisService.getLogAnalysisClusters(anyString(), anyString(), any(DeploymentLogAnalysisFilter.class)))
-            .thenReturn(expectedClusters);
-    List<LogAnalysisClusterChartDTO> resultClusters = deploymentLogAnalysisService.getLogAnalysisClusters(accountId, callbackId, deploymentLogAnalysisFilter);
+    when(deploymentLogAnalysisService.getLogAnalysisClusters(
+             anyString(), anyString(), any(DeploymentLogAnalysisFilter.class)))
+        .thenReturn(expectedClusters);
+    List<LogAnalysisClusterChartDTO> resultClusters =
+        deploymentLogAnalysisService.getLogAnalysisClusters(accountId, callbackId, deploymentLogAnalysisFilter);
     assertThat(resultClusters)
-            .extracting("label", "text", "hostName", "risk", "x", "y", "clusterType")
-            .containsExactly(
-                    tuple(1, "text", "hostName", Risk.HEALTHY, 10.0, 20.0, DeploymentLogAnalysisDTO.ClusterType.NO_BASELINE_AVAILABLE)
-            );
+        .extracting("label", "text", "hostName", "risk", "x", "y", "clusterType")
+        .containsExactly(tuple(1, "text", "hostName", Risk.HEALTHY, 10.0, 20.0,
+            DeploymentLogAnalysisDTO.ClusterType.NO_BASELINE_AVAILABLE));
   }
 
   @Test
