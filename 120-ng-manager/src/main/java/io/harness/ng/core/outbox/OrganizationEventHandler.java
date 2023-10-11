@@ -93,18 +93,17 @@ public class OrganizationEventHandler implements OutboxEventHandler {
         accountIdentifier, outboxEvent.getResource().getIdentifier(), EventsFrameworkMetadataConstants.CREATE_ACTION);
     OrganizationCreateEvent organizationCreateEvent =
         objectMapper.readValue(outboxEvent.getEventData(), OrganizationCreateEvent.class);
-    AuditEntry auditEntry = AuditEntry.builder()
-                                .action(Action.CREATE)
-                                .module(ModuleType.CORE)
-                                .newYaml(getYamlString(OrganizationRequest.builder()
-                                                           .organization(organizationCreateEvent.getOrganization())
-                                                           .uniqueId(organizationCreateEvent.getUniqueId())
-                                                           .build()))
-                                .timestamp(outboxEvent.getCreatedAt())
-                                .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
-                                .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
-                                .insertId(outboxEvent.getId())
-                                .build();
+    AuditEntry auditEntry =
+        AuditEntry.builder()
+            .action(Action.CREATE)
+            .module(ModuleType.CORE)
+            .newYaml(getYamlString(
+                OrganizationRequest.builder().organization(organizationCreateEvent.getOrganization()).build()))
+            .timestamp(outboxEvent.getCreatedAt())
+            .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
+            .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
+            .insertId(outboxEvent.getId())
+            .build();
     Principal principal = null;
     if (globalContext.get(PRINCIPAL_CONTEXT) == null
         && DEFAULT_ORG_IDENTIFIER.equals(outboxEvent.getResource().getIdentifier())) {

@@ -23,5 +23,4 @@ import lombok.Data;
 @Builder
 public class ProjectRequest implements YamlDTO {
   @Valid @NotNull @JsonProperty("project") private ProjectDTO project;
-  String uniqueId;
 }

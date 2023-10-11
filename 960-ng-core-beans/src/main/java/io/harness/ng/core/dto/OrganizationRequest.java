@@ -25,5 +25,4 @@ import lombok.Data;
 @Schema(description = "This contains details of the Organization.")
 public class OrganizationRequest implements YamlDTO {
   @Valid @NotNull @JsonProperty("organization") private OrganizationDTO organization;
-  private String uniqueId;
 }
