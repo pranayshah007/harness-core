@@ -24,6 +24,9 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+import io.harness.yaml.core.VariableExpression;
+import io.harness.yaml.core.variables.NGVariable;
+import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -54,9 +57,15 @@ public class TasCommandStepInfo extends TasCommandBaseStepInfo implements CDAbst
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
+  List<NGVariable> inputVariables;
+  @VariableExpression(skipVariableExpression = true) List<NGVariable> outputVariables;
+
   @Builder(builderMethodName = "infoBuilder")
-  public TasCommandStepInfo(TasCommandScript script, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+  public TasCommandStepInfo(TasCommandScript script, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      List<NGVariable> inputVariables, List<NGVariable> outputVariables) {
     super(script, delegateSelectors);
+    this.inputVariables = inputVariables;
+    this.outputVariables = outputVariables;
   }
 
   @Override
@@ -74,6 +83,8 @@ public class TasCommandStepInfo extends TasCommandBaseStepInfo implements CDAbst
     return TasCommandStepParameters.infoBuilder()
         .script(this.script)
         .delegateSelectors(this.getDelegateSelectors())
+        .inputVariables(NGVariablesUtils.getMapOfVariables(inputVariables, 0L))
+        .outputVariables(NGVariablesUtils.getMapOfVariablesWithoutSecretExpression(outputVariables))
         .build();
   }
 

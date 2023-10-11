@@ -16,9 +16,11 @@ import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.logging.CommandExecutionStatus;
 
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.NonFinal;
+
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_PCF})
 @Data
 @Builder
@@ -28,6 +30,7 @@ public class TasRunPluginResponse implements CfCommandResponseNG {
   @NonFinal UnitProgressData unitProgressData;
   CommandExecutionStatus commandExecutionStatus;
   String errorMessage;
+  Map<String, String> outputVariables;
 
   @Override
   public void setCommandUnitsProgress(UnitProgressData unitProgressData) {
