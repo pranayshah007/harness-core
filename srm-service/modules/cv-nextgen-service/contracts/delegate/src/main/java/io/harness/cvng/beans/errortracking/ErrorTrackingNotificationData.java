@@ -24,4 +24,5 @@ public class ErrorTrackingNotificationData {
   List<Scorecard> scorecards;
   Timestamp to;
   Timestamp from;
+  SavedFilter savedFilter;
 }

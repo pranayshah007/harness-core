@@ -34,6 +34,8 @@ public class ErrorTrackingTemplateDataGenerator
   public static final String EVENT_STATUS = "EVENT_STATUS";
   public static final String NOTIFICATION_EVENT_TRIGGER_LIST = "NOTIFICATION_EVENT_TRIGGER_LIST";
 
+  public static final String ARC_SCREEN_URL = "ARC_SCREEN_URL";
+
   // Email template variables
   public static final String EMAIL_MONITORED_SERVICE_NAME_HYPERLINK = "EMAIL_MONITORED_SERVICE_NAME_HYPERLINK";
   public static final String EMAIL_FORMATTED_VERSION_LIST = "EMAIL_FORMATTED_VERSION_LIST";

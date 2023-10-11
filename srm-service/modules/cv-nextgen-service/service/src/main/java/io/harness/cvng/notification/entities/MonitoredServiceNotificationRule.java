@@ -81,6 +81,10 @@ public class MonitoredServiceNotificationRule extends NotificationRule {
     public final NotificationRuleConditionType type = NotificationRuleConditionType.CODE_ERRORS;
     @NonNull List<ErrorTrackingEventType> errorTrackingEventTypes;
     @NonNull List<ErrorTrackingEventStatus> errorTrackingEventStatus;
+    Boolean aggregated;
+    Long savedFilterId;
+    Integer volumeThresholdCount;
+    Integer volumeThresholdMinutes;
   }
 
   public static class MonitoredServiceNotificationRuleUpdatableEntity

@@ -7,6 +7,7 @@
 
 package io.harness.cvng.client;
 
+import io.harness.cvng.beans.errortracking.ErrorTrackingHitSummary;
 import io.harness.cvng.beans.errortracking.ErrorTrackingNotificationData;
 import io.harness.cvng.notification.beans.ErrorTrackingEventStatus;
 import io.harness.cvng.notification.beans.ErrorTrackingEventType;
@@ -16,5 +17,12 @@ import java.util.List;
 public interface ErrorTrackingService {
   ErrorTrackingNotificationData getNotificationData(String orgIdentifier, String accountId, String projectIdentifier,
       String serviceIdentifier, String environmentIdentifier, List<ErrorTrackingEventStatus> eventStatus,
-      List<ErrorTrackingEventType> eventTypes, String notificationId);
+      List<ErrorTrackingEventType> eventTypes, String notificationId, Integer volumeThresholdCount);
+
+  ErrorTrackingNotificationData getNotificationSavedFilterData(String orgIdentifier, String accountId,
+      String projectIdentifier, String serviceIdentifier, String environmentIdentifier, Long savedFilterId,
+      Integer volumeThresholdCount, String notificationId);
+
+  List<ErrorTrackingHitSummary> getNotificationNewData(String orgIdentifier, String accountId, String projectIdentifier,
+      String serviceIdentifier, String environmentIdentifier);
 }

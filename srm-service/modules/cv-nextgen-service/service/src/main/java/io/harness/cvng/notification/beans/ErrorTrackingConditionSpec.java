@@ -24,6 +24,10 @@ import lombok.experimental.SuperBuilder;
 public class ErrorTrackingConditionSpec extends NotificationRuleConditionSpec {
   @NonNull List<ErrorTrackingEventType> errorTrackingEventTypes;
   @NonNull List<ErrorTrackingEventStatus> errorTrackingEventStatus;
+  Boolean aggregated;
+  Long savedFilterId;
+  Integer volumeThresholdCount;
+  Integer volumeThresholdMinutes;
 
   @Override
   public NotificationRuleConditionType getType() {

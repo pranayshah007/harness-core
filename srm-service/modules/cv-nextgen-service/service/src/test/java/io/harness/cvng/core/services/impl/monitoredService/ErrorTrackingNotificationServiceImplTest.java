@@ -10,6 +10,7 @@ import static io.harness.cvng.core.utils.FeatureFlagNames.SRM_CODE_ERROR_NOTIFIC
 import static io.harness.rule.OwnerRule.JAMES_RICKS;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -140,8 +141,8 @@ public class ErrorTrackingNotificationServiceImplTest extends CvNextGenTestBase 
                                                                       .to(Timestamp.from(clock.instant()))
                                                                       .scorecards(scorecards)
                                                                       .build();
-    when(errorTrackingService.getNotificationData(
-             anyString(), anyString(), anyString(), anyString(), anyString(), anyList(), anyList(), anyString()))
+    when(errorTrackingService.getNotificationData(anyString(), anyString(), anyString(), anyString(), anyString(),
+             anyList(), anyList(), anyString(), anyInt()))
         .thenReturn(errorTrackingNotificationData);
 
     NotificationRuleDTO notificationRuleDTO =

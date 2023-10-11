@@ -6,6 +6,7 @@
  */
 package io.harness.cvng.notification.utils;
 
+import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.ARC_SCREEN_URL;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.EMAIL_FORMATTED_VERSION_LIST;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.EMAIL_HORIZONTAL_LINE_DIV;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.EMAIL_LINK_BEGIN;
@@ -15,9 +16,11 @@ import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDa
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.SLACK_FORMATTED_VERSION_LIST;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.CET_MODULE_NAME;
 
+import io.harness.cvng.beans.errortracking.ErrorTrackingHitSummary;
 import io.harness.cvng.beans.errortracking.ErrorTrackingNotificationData;
 import io.harness.cvng.beans.errortracking.Scorecard;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
+import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.notification.beans.ErrorTrackingEventStatus;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -34,9 +37,52 @@ public class ErrorTrackingNotificationRuleUtils {
   public static final String NEW_EVENT_LABEL = "New Events ";
   public static final String CRITICAL_EVENT_LABEL = "Critical Events ";
   public static final String RESURFACED_EVENT_LABEL = "Resurfaced Events ";
+  public static final String BEGIN_CODE_BLOCK_SLACK = "<codeBlock>";
+  public static final String END_CODE_BLOCK_SLACK = "<endCodeBlock>";
+  public static final String BEGIN_CODE_BLOCK_EMAIL = "<codeBlockEmail>";
+  public static final String END_CODE_BLOCK_EMAIL = "<endCodeBlockEmail>";
 
   private ErrorTrackingNotificationRuleUtils() {
     throw new IllegalStateException("Utility classes cannot be instantiated.");
+  }
+
+  public static Map<String, String> getCodeErrorHitSummaryTemplateData(ErrorTrackingHitSummary errorTrackingHitSummary,
+      MonitoredService monitoredService, String environmentId, String baseLinkUrl) {
+    Map<String, String> notificationDataMap = new HashMap<>();
+
+    long firstSeen = errorTrackingHitSummary.getFirstSeen().getTime() / 1000;
+
+    // Subtract and add 30 seconds to simulate a 1 minute window with the firstSeen date in the middle for the arc
+    // screen
+    long fromTime = firstSeen - 30;
+    long toTime = firstSeen + 30;
+
+    String arcScreenUrl = buildArcScreenUrlWithParameters(baseLinkUrl, monitoredService.getAccountId(),
+        monitoredService.getOrgIdentifier(), monitoredService.getProjectIdentifier(),
+        errorTrackingHitSummary.getRequestId(), environmentId, monitoredService.getServiceIdentifier(),
+        errorTrackingHitSummary.getVersionId(), String.valueOf(fromTime), String.valueOf(toTime));
+
+    notificationDataMap.put(ARC_SCREEN_URL, arcScreenUrl);
+
+    StackTraceEvent stackTraceEvent = StackTraceEvent.builder()
+                                          .version(errorTrackingHitSummary.getVersionId())
+                                          .stackTrace(String.join("", errorTrackingHitSummary.getStackTrace()))
+                                          .build();
+
+    final String slackStackTraceEvent = stackTraceEvent.toSlackString();
+    final String emailStackTraceEvent = stackTraceEvent.toEmailString();
+
+    notificationDataMap.put(SLACK_FORMATTED_VERSION_LIST, slackStackTraceEvent);
+    notificationDataMap.put(EMAIL_FORMATTED_VERSION_LIST, emailStackTraceEvent);
+
+    return notificationDataMap;
+  }
+
+  public static String buildArcScreenUrlWithParameters(String baseLinkUrl, String account, String org, String project,
+      Integer request, String env, String service, String deployment, String from, String to) {
+    return String.format(
+        "%s/account/%s/%s/orgs/%s/projects/%s/eventsummary/events/arc?request=%s&environment=%s&harnessService=%s&dep=%s&fromTimestamp=%s&toTimestamp=%s",
+        baseLinkUrl, account, CET_MODULE_NAME, org, project, request, env, service, deployment, from, to);
   }
 
   public static Map<String, String> getCodeErrorTemplateData(List<ErrorTrackingEventStatus> errorTrackingEventStatus,
@@ -48,13 +94,13 @@ public class ErrorTrackingNotificationRuleUtils {
 
     final List<Scorecard> scorecards = errorTrackingNotificationData.getScorecards();
     if (scorecards != null) {
-      List<ErrorTrackingEvent> errorTrackingEvents =
+      List<AggregatedEvents> aggregatedEvents =
           getErrorTrackingEventsRecursive(errorTrackingEventStatus, scorecards, baseLinkUrl, from, to);
 
       final String slackVersionList =
-          errorTrackingEvents.stream().map(ErrorTrackingEvent::toSlackString).collect(Collectors.joining("\n"));
+          aggregatedEvents.stream().map(AggregatedEvents::toSlackString).collect(Collectors.joining("\n"));
       final String emailVersionList =
-          errorTrackingEvents.stream().map(ErrorTrackingEvent::toEmailString).collect(Collectors.joining());
+          aggregatedEvents.stream().map(AggregatedEvents::toEmailString).collect(Collectors.joining());
 
       notificationDataMap.put(SLACK_FORMATTED_VERSION_LIST, slackVersionList);
       notificationDataMap.put(EMAIL_FORMATTED_VERSION_LIST, emailVersionList);
@@ -62,10 +108,10 @@ public class ErrorTrackingNotificationRuleUtils {
     return notificationDataMap;
   }
 
-  public static List<ErrorTrackingEvent> getErrorTrackingEventsRecursive(
+  public static List<AggregatedEvents> getErrorTrackingEventsRecursive(
       List<ErrorTrackingEventStatus> errorTrackingEventStatus, List<Scorecard> scorecards, String baseLinkUrl,
       String from, String to) {
-    List<ErrorTrackingEvent> urlsByVersion = new ArrayList<>();
+    List<AggregatedEvents> urlsByVersion = new ArrayList<>();
     for (Scorecard scorecard : scorecards) {
       if (scorecard.getChildren() == null) {
         if (scorecard.getVersionIdentifier() != null
@@ -75,15 +121,15 @@ public class ErrorTrackingNotificationRuleUtils {
               scorecard.getAccountIdentifier(), scorecard.getOrganizationIdentifier(), scorecard.getProjectIdentifier(),
               scorecard.getEnvironmentIdentifier(), scorecard.getServiceIdentifier(), scorecard.getVersionIdentifier(),
               from, to);
-          ErrorTrackingEvent errorTrackingEvent = ErrorTrackingEvent.builder()
-                                                      .version(scorecard.getVersionIdentifier())
-                                                      .url(eventListUrlWithParameters)
-                                                      .newCount(scorecard.getNewHitCount())
-                                                      .criticalCount(scorecard.getCriticalHitCount())
-                                                      .resurfacedCount(scorecard.getResurfacedHitCount())
-                                                      .errorTrackingEventStatus(errorTrackingEventStatus)
-                                                      .build();
-          urlsByVersion.add(errorTrackingEvent);
+          AggregatedEvents aggregatedEvents = AggregatedEvents.builder()
+                                                  .version(scorecard.getVersionIdentifier())
+                                                  .url(eventListUrlWithParameters)
+                                                  .newCount(scorecard.getNewHitCount())
+                                                  .criticalCount(scorecard.getCriticalHitCount())
+                                                  .resurfacedCount(scorecard.getResurfacedHitCount())
+                                                  .errorTrackingEventStatus(errorTrackingEventStatus)
+                                                  .build();
+          urlsByVersion.add(aggregatedEvents);
         }
       } else {
         urlsByVersion.addAll(
@@ -107,7 +153,7 @@ public class ErrorTrackingNotificationRuleUtils {
 
   @Builder
   @Slf4j
-  public static class ErrorTrackingEvent {
+  public static class AggregatedEvents {
     private static final String EVENT_STATUS_PARAM = "&eventStatus=";
     private static final String NEW_EVENT_NAME;
     private static final String CRITICAL_EVENT_NAME;
@@ -218,6 +264,30 @@ public class ErrorTrackingNotificationRuleUtils {
           log.warn("The Error Tracking Event Status type is not a status type which is handled for the count");
           return 0;
       }
+    }
+  }
+
+  @Builder
+  @Slf4j
+  public static class StackTraceEvent {
+    private String version;
+    private String stackTrace;
+    private String arcScreenUrl;
+
+    public String toSlackString() {
+      StringBuilder slack = new StringBuilder(EVENT_VERSION_LABEL + "*" + version + "*\n");
+      slack.append(BEGIN_CODE_BLOCK_SLACK).append(stackTrace).append(END_CODE_BLOCK_SLACK);
+      return slack.toString();
+    }
+
+    public String toEmailString() {
+      StringBuilder email = new StringBuilder("<div style=\"margin-bottom: 16px\">");
+      email.append("<span>" + EVENT_VERSION_LABEL + "<span style=\"font-weight: bold;\">" + version + "</span></span>");
+      email.append("<div style =\"margin-top: 4px;\">");
+      email.append("<span>");
+      email.append(BEGIN_CODE_BLOCK_EMAIL).append(stackTrace).append(END_CODE_BLOCK_EMAIL);
+      email.append("</span>").append("</div>").append("</div>");
+      return email.toString();
     }
   }
 }
