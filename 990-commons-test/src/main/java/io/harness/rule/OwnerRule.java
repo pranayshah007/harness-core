@@ -339,6 +339,8 @@ public class OwnerRule implements TestRule {
 
   public static final String EOIN_MCAFEE = "eoin.mcafee";
 
+  public static final String VINIT_KUMAR = "vinit.kumar";
+
   @Deprecated public static final String UNKNOWN = "unknown";
 
   private static UserInfoBuilder defaultUserInfo(String user) {
@@ -600,6 +602,7 @@ public class OwnerRule implements TestRule {
           .put(ANINDITAA, defaultUserInfo(ANINDITAA).slack("U04PE4ZSEBB").build())
           .put(SAHITHI, defaultUserInfo(SAHITHI).slack("U05H8CUM2LR").team(CI).build())
           .put(ANSHIKA, defaultUserInfo(ANSHIKA).slack("U05LMLVA9FE").team(CV).build())
+          .put(VINIT_KUMAR, defaultUserInfo(VINIT_KUMAR).slack("U05N86G3PFY").team(CDC).build())
           .build();
 
   private static String prDeveloperId = findDeveloperId(System.getenv(GHPRB_PULL_AUTHOR_EMAIL));

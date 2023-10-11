@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.ARPITJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.harness.BuilderFactory;
 import io.harness.SSCAManagerTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.repositories.SBOMComponentRepo;
@@ -20,7 +21,6 @@ import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.NormalizedSBOMComponentEntity;
 
 import com.google.inject.Inject;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -39,56 +39,24 @@ import org.springframework.data.domain.Pageable;
 
 public class NormalisedSbomComponentServiceImplTest extends SSCAManagerTestBase {
   @Inject NormalisedSbomComponentService normalisedSbomComponentService;
-
   @Mock ArtifactService artifactService;
   @Mock SBOMComponentRepo sbomComponentRepo;
+
+  private BuilderFactory builderFactory;
 
   @Before
   public void setup() throws IllegalAccessException {
     MockitoAnnotations.initMocks(this);
     FieldUtils.writeField(normalisedSbomComponentService, "sbomComponentRepo", sbomComponentRepo, true);
     FieldUtils.writeField(normalisedSbomComponentService, "artifactService", artifactService, true);
+    builderFactory = BuilderFactory.getDefault();
   }
 
   @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testListNormalizedSbomComponent() {
-    NormalizedSBOMComponentEntity entity = NormalizedSBOMComponentEntity.builder()
-                                               .packageManager("packageManager")
-                                               .packageNamespace("packageNamespace")
-                                               .purl("purl")
-                                               .patchVersion(1)
-                                               .minorVersion(2)
-                                               .majorVersion(3)
-                                               .artifactUrl("artifactUrl")
-                                               .accountId("accountId")
-                                               .orgIdentifier("orgIdentifier")
-                                               .projectIdentifier("projectIdentifier")
-                                               .artifactId("artifactId")
-                                               .artifactName("artifactName")
-                                               .createdOn(Instant.ofEpochMilli(1000l))
-                                               .orchestrationId("orchestrationId")
-                                               .originatorType("originatorType")
-                                               .packageCpe("packageCPE")
-                                               .packageDescription("packageDescription")
-                                               .packageId("packageId")
-                                               .packageLicense(Arrays.asList("license1", "license2"))
-                                               .packageName("packageName")
-                                               .packageOriginatorName("packageOriginatorName")
-                                               .packageProperties("packageProperties")
-                                               .packageSourceInfo("packageSourceInfo")
-                                               .packageSupplierName("packageSupplierName")
-                                               .packageType("packageType")
-                                               .packageVersion("packageVersion")
-                                               .sbomVersion("sbomVersion")
-                                               .pipelineIdentifier("pipelineidentifier")
-                                               .sequenceId("sequenceId")
-                                               .tags(Arrays.asList("tag1", "tag2"))
-                                               .toolName("toolName")
-                                               .toolVendor("toolVendor")
-                                               .toolVersion("toolVersion")
-                                               .build();
+    NormalizedSBOMComponentEntity entity = builderFactory.getNormalizedSBOMComponentBuilder().build();
     List<NormalizedSBOMComponentEntity> entityList = Arrays.asList(entity, entity, entity, entity, entity);
     Pageable page = PageRequest.of(1, 2);
     Page<NormalizedSBOMComponentEntity> entities = new PageImpl<>(entityList, page, entityList.size());

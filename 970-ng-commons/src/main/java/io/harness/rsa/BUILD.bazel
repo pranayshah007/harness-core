@@ -25,15 +25,4 @@ java_library(
     ],
 )
 
-java_library(
-    name = "tests",
-    testonly = True,
-    srcs = glob(["src/test/**/*.java"]),
-    visibility = ["//visibility:public"],
-    deps = [
-        ":module",
-        "@maven//:org_mockito_mockito_core",
-    ],
-)
-
 run_analysis_per_module()
