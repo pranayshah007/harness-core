@@ -432,7 +432,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
                     .repoName(REPO_NAME)
                     .basePath("helm/")
                     .repoDisplayName(REPO_DISPLAY_NAME)
-                    .connectorConfigDTO(
+                    .ociHelmConnector(
                         OciHelmConnectorDTO.builder()
                             .helmRepoUrl(repoUrl)
                             .auth(OciHelmAuthenticationDTO.builder()
@@ -491,7 +491,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
                     .repoName(REPO_NAME)
                     .basePath("helm/")
                     .repoDisplayName(REPO_DISPLAY_NAME)
-                    .connectorConfigDTO(
+                    .ociHelmConnector(
                         OciHelmConnectorDTO.builder()
                             .helmRepoUrl(repoUrl)
                             .auth(OciHelmAuthenticationDTO.builder().authType(OciHelmAuthType.ANONYMOUS).build())
@@ -537,7 +537,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
                 OciHelmStoreDelegateConfig.builder()
                     .repoName(REPO_NAME)
                     .repoDisplayName(REPO_DISPLAY_NAME)
-                    .connectorConfigDTO(
+                    .ociHelmConnector(
                         OciHelmConnectorDTO.builder()
                             .helmRepoUrl(repoUrl)
                             .auth(OciHelmAuthenticationDTO.builder()

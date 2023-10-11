@@ -12,7 +12,6 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.convertBase64UuidToCanonicalForm;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.GCS_HELM;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.HTTP_HELM;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.OCI_HELM;
@@ -63,7 +62,6 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.chartmuseum.ChartMuseumServer;
 import io.harness.chartmuseum.ChartmuseumClient;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
-import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmAuthType;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
@@ -761,8 +759,11 @@ public class HelmTaskHelperBase {
 
     String cacheDir = getCacheDir(manifest, storeDelegateConfig.getRepoName(), HelmVersion.V380);
 
-    // create registry-config per deployment and pass this along to getRepoName
-    String registryConfigFilePath = getRegFileConfigPath();
+    String registryConfigFilePath = null;
+    if (storeDelegateConfig.getOciHelmConnector() != null) {
+      // create registry-config per deployment and pass this along to getRepoName for generic config case
+      registryConfigFilePath = getRegFileConfigPath();
+    }
 
     try {
       String repoName = getRepoName(storeDelegateConfig, timeoutInMillis, destinationDirectory, registryConfigFilePath);
@@ -779,7 +780,9 @@ public class HelmTaskHelperBase {
         }
       }
       // delete registry-config file
-      FileIo.deleteFileIfExists(registryConfigFilePath);
+      if (registryConfigFilePath != null) {
+        FileIo.deleteFileIfExists(registryConfigFilePath);
+      }
     }
   }
 
@@ -794,13 +797,12 @@ public class HelmTaskHelperBase {
 
   private String getRepoName(OciHelmStoreDelegateConfig ociHelmStoreDelegateConfig, long timeoutInMillis,
       String destinationDirectory, String registryConfigFilePath) throws Exception {
-    ConnectorConfigDTO connectorConfigDTO = ociHelmStoreDelegateConfig.getConnectorConfigDTO();
-    if (connectorConfigDTO instanceof OciHelmConnectorDTO) {
-      return getOciHelmGenericRepoName((OciHelmConnectorDTO) connectorConfigDTO,
+    if (ociHelmStoreDelegateConfig.getOciHelmConnector() != null) {
+      return getOciHelmGenericRepoName(ociHelmStoreDelegateConfig.getOciHelmConnector(),
           ociHelmStoreDelegateConfig.getBasePath(), timeoutInMillis, destinationDirectory, registryConfigFilePath);
     }
 
-    if (connectorConfigDTO instanceof AwsConnectorDTO) {
+    if (ociHelmStoreDelegateConfig.getAwsConnectorDTO() != null) {
       return getOciHelmEcrRepoName(ociHelmStoreDelegateConfig, timeoutInMillis, destinationDirectory);
     }
 
@@ -830,7 +832,7 @@ public class HelmTaskHelperBase {
     ociHelmStoreDelegateConfig.setRepoUrl(repositoryUrl);
     String uri = repositoryUrl.split(PATH_DELIMITER)[0];
     String[] usernamePassword = getEcrAuthCredentials(ociHelmStoreDelegateConfig.getEncryptedDataDetails(),
-        (AwsConnectorDTO) ociHelmStoreDelegateConfig.getConnectorConfigDTO(), repositoryUrl.split(DOT_DELIMITER)[0],
+        ociHelmStoreDelegateConfig.getAwsConnectorDTO(), repositoryUrl.split(DOT_DELIMITER)[0],
         ociHelmStoreDelegateConfig.getRegion());
     if (usernamePassword.length != 2) {
       throw new InvalidArgumentsException(
@@ -844,7 +846,7 @@ public class HelmTaskHelperBase {
 
   private String getEcrRepoUrl(OciHelmStoreDelegateConfig ociHelmStoreDelegateConfig) {
     AwsInternalConfig awsInternalConfig =
-        awsNgConfigMapper.createAwsInternalConfig((AwsConnectorDTO) ociHelmStoreDelegateConfig.getConnectorConfigDTO());
+        awsNgConfigMapper.createAwsInternalConfig(ociHelmStoreDelegateConfig.getAwsConnectorDTO());
     return awsClient.getEcrImageUrl(awsInternalConfig, ociHelmStoreDelegateConfig.getRegistryId(),
         ociHelmStoreDelegateConfig.getRegion(), ociHelmStoreDelegateConfig.getRepoName());
   }
@@ -1028,8 +1030,7 @@ public class HelmTaskHelperBase {
             (OciHelmStoreDelegateConfig) manifestDelegateConfig.getStoreDelegateConfig();
         repoDisplayName = ociStoreDelegateConfig.getRepoDisplayName();
         basePath = ociStoreDelegateConfig.getBasePath();
-        ConnectorConfigDTO connectorConfigDTO = ociStoreDelegateConfig.getConnectorConfigDTO();
-        if (connectorConfigDTO instanceof AwsConnectorDTO) {
+        if (ociStoreDelegateConfig.getAwsConnectorDTO() != null) {
           region = ociStoreDelegateConfig.getRegion();
         }
         chartRepoUrl = ociStoreDelegateConfig.getRepoUrl();
@@ -1631,11 +1632,23 @@ public class HelmTaskHelperBase {
         break;
       case OCI_HELM:
         OciHelmStoreDelegateConfig ociHelmStoreConfig = (OciHelmStoreDelegateConfig) helmStoreDelegateConfig;
-        ConnectorConfigDTO connectorConfigDTO = ociHelmStoreConfig.getConnectorConfigDTO();
-        for (DecryptableEntity entity : connectorConfigDTO.getDecryptableEntities()) {
-          decryptionService.decrypt(entity, ociHelmStoreConfig.getEncryptedDataDetails());
-          ExceptionMessageSanitizer.storeAllSecretsForSanitizing(entity, ociHelmStoreConfig.getEncryptedDataDetails());
+        ConnectorConfigDTO connectorConfigDTO = null;
+        if (ociHelmStoreConfig.getOciHelmConnector() != null) {
+          connectorConfigDTO = ociHelmStoreConfig.getOciHelmConnector();
         }
+
+        if (ociHelmStoreConfig.getAwsConnectorDTO() != null) {
+          connectorConfigDTO = ociHelmStoreConfig.getAwsConnectorDTO();
+        }
+
+        if (connectorConfigDTO != null) {
+          for (DecryptableEntity entity : connectorConfigDTO.getDecryptableEntities()) {
+            decryptionService.decrypt(entity, ociHelmStoreConfig.getEncryptedDataDetails());
+            ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+                entity, ociHelmStoreConfig.getEncryptedDataDetails());
+          }
+        }
+
         break;
       default:
         throw new InvalidRequestException(
