@@ -313,7 +313,7 @@ fi
 
 replace_key_value ngManagerClientConfig.baseUrl "$NG_MANAGER_CLIENT_BASEURL"
 
-replace_key_value resourceGroupServiceConfig.resourceclients.policyManagerSecret "$OPA_SERVER_SECRET"
+replace_key_value resourceGroupServiceConfig.resourceClients.policyManagerSecret "$OPA_SERVER_SECRET"
 replace_key_value resourceGroupServiceConfig.resourceClients.opaClientConfig.baseUrl "$OPA_SERVER_BASEURL"
 replace_key_value resourceGroupServiceConfig.resourceClients.opaClientConfig.connectTimeOutSeconds "$OPA_CONNECT_TIMEOUT"
 replace_key_value resourceGroupServiceConfig.resourceClients.opaClientConfig.readTimeOutSeconds "$OPA_READ_TIMEOUT"

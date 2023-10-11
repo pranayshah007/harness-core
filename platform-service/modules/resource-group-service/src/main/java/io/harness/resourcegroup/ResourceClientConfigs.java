@@ -34,7 +34,7 @@ public class ResourceClientConfigs {
 
   @JsonProperty("code") @ConfigSecret ServiceConfig code;
   @JsonProperty("policyManagerSecret") @ConfigSecret private String policyManagerSecret;
-  @JsonProperty("opaClientConfig") private ServiceHttpClientConfig opaClientConfig;
+  @JsonProperty("opaClientConfig") @ConfigSecret private ServiceHttpClientConfig opaClientConfig;
 
   @Value
   @Builder

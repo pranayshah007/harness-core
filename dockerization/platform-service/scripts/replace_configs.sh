@@ -430,11 +430,11 @@ replace_key_value segmentConfiguration.url "$SEGMENT_URL"
 replace_key_value segmentConfiguration.apiKey "$SEGMENT_APIKEY"
 replace_key_value segmentConfiguration.certValidationRequired "$SEGMENT_VERIFY_CERT"
 
-replace_key_value resourceGroupServiceConfig.resourceclients.policyManagerSecret "$OPA_SERVER_SECRET"
-replace_key_value resourceGroupServiceConfig.resourceclients.opaClientConfig.baseUrl "$OPA_SERVER_BASEURL"
+replace_key_value resourceGroupServiceConfig.resourceClients.policyManagerSecret "$OPA_SERVER_SECRET"
+replace_key_value resourceGroupServiceConfig.resourceClients.opaClientConfig.baseUrl "$OPA_SERVER_BASEURL"
 if [[ "" != "$OPA_CONNECT_TIMEOUT" ]]; then
-  replace_key_value resourceGroupServiceConfig.resourceclients.opaClientConfig.connectTimeOutSeconds "$OPA_CONNECT_TIMEOUT"
+  replace_key_value resourceGroupServiceConfig.resourceClients.opaClientConfig.connectTimeOutSeconds "$OPA_CONNECT_TIMEOUT"
 fi
 if [[ "" != "$OPA_READ_TIMEOUT" ]]; then
-  replace_key_value resourceGroupServiceConfig.resourceclients.opaClientConfig.readTimeOutSeconds "$OPA_READ_TIMEOUT"
+  replace_key_value resourceGroupServiceConfig.resourceClients.opaClientConfig.readTimeOutSeconds "$OPA_READ_TIMEOUT"
 fi
