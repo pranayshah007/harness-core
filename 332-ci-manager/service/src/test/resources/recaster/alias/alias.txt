@@ -21,7 +21,7 @@ io.harness.ci.pipeline.executions.beans.CIScmDetails
 io.harness.beans.sweepingoutputs.CodeBaseConnectorRefSweepingOutput
 io.harness.yaml.core.failurestrategy.FailureStrategyConfig
 io.harness.beans.steps.nodes.ArtifactoryUploadNode
-io.harness.beans.steps.stepinfo.security.FossaStepInfo
+io.harness.beans.steps.stepinfo.security.FossaStepInfo1
 io.harness.beans.steps.stepinfo.security.SemgrepStepInfo
 io.harness.plancreator.steps.common.StageElementParameters
 io.harness.yaml.core.failurestrategy.ignore.IgnoreFailureActionConfig
@@ -543,3 +543,5 @@ io.harness.delegate.beans.instancesync.NativeHelmDeploymentOutcomeMetadata
 io.harness.beans.steps.nodes.BuildAndPushGARNode
 io.harness.beans.steps.stepinfo.GARStepInfo
 io.harness.beans.yaml.extended.cache.CachePolicy
+io.harness.beans.steps.nodes.security.AnchoreScanNode
+io.harness.beans.steps.stepinfo.security.AnchoreStepInfo
