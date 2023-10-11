@@ -107,7 +107,7 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
     String parkedTaskId = taskExecutor.queueParkedDelegateTask(ambiance, timeout, accountId, delegateSelectors);
     TaskData runStepTaskData = containerRunStepHelper.getRunStepTask(ambiance, containerStepInfo,
         AmbianceUtils.getAccountId(ambiance), getLogPrefix(ambiance), timeout, parkedTaskId);
-    String liteEngineTaskId = taskExecutor.queueTask(ambiance, runStepTaskData, accountId);
+    String liteEngineTaskId = taskExecutor.queueTask(ambiance, runStepTaskData, accountId, delegateSelectors);
     log.info("Created parked task {} and lite engine task {} for  step {}", parkedTaskId, liteEngineTaskId,
         containerStepInfo.getIdentifier());
 
