@@ -5,7 +5,7 @@
 
 # To be used when building in CIE
 
-FROM us.gcr.io/platform-205701/ubi/cie-agents/java-go-cie-agent:java-17.0.7_7 as builder
+FROM us.gcr.io/platform-205701/ubi/cie-agents/java-go-cie-agent:java17test as builder
 
 RUN mkdir -p /app
 ARG GCP_KEY
