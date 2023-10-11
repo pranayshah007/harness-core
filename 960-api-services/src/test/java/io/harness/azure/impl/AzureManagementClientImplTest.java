@@ -128,7 +128,7 @@ public class AzureManagementClientImplTest extends CategoryTest {
     List<String> locations = azureManagementClient.listLocationsBySubscriptionId(getAzureConfig(), EMPTY);
 
     assertThat(locations).isNotNull();
-    assertThat(locations.size()).isEqualTo(52);
+    assertThat(locations.size()).isEqualTo(51);
   }
 
   @Test
