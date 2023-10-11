@@ -28,9 +28,12 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.K8sHelmCommonStepHelper;
+import io.harness.cdng.common.beans.StepDelegateInfo;
+import io.harness.cdng.common.beans.StepDetailsDelegateInfo;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
@@ -62,6 +65,8 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.helper.EncryptionHelper;
+import io.harness.data.structure.CollectionUtils;
+import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
@@ -89,6 +94,7 @@ import io.harness.logging.LogCallback;
 import io.harness.manifest.CustomSourceFile;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -105,6 +111,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
@@ -115,6 +122,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -151,7 +159,7 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
   @Inject private EncryptionHelper encryptionHelper;
   @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @Inject private AccountClient accountClient;
-
+  @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   public TaskChainResponse queueK8sTask(StepBaseParameters stepElementParameters, K8sDeployRequest k8sDeployRequest,
       Ambiance ambiance, K8sExecutionPassThroughData executionPassThroughData, TaskType taskType) {
     TaskData taskData = TaskData.builder()
@@ -1027,6 +1035,14 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
     if (isNotEmpty(releaseName)) {
       sdkGraphVisualizationDataService.publishStepDetailInformation(
           ambiance, K8sReleaseDetailsInfo.builder().releaseName(releaseName).build(), RELEASE_NAME);
+    }
+  }
+
+  public void publishStepDelegateInfoStepDetails(
+      Ambiance ambiance, List<StepDelegateInfo> stepDelegateInfos, String stepName) {
+    if (isNotEmpty(stepDelegateInfos)) {
+      sdkGraphVisualizationDataService.publishStepDetailInformation(
+          ambiance, StepDetailsDelegateInfo.builder().stepDelegateInfos(stepDelegateInfos).build(), stepName);
     }
   }
 

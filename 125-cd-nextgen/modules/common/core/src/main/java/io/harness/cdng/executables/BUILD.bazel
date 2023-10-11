@@ -19,6 +19,7 @@ java_library(
     deps = [
         "//:lombok",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/execution/service:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng:module",
         "//878-ng-common-utilities:module",
         "//950-opa-client:module",
         "//980-commons/src/main/java/io/harness/tasks:module",
