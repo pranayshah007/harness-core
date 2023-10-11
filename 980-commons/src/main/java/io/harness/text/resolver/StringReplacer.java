@@ -299,8 +299,11 @@ public class StringReplacer {
     String expression = buf.substring(expressionStartPos, expressionEndPos);
     if (expressionStartPos > 0 && buf.charAt(expressionStartPos - 1) == '\"' && expressionEndPos < buf.length()
         && buf.charAt(expressionEndPos) == '\"') {
-      log.info("[String Replacer] expression: {}, unescaped expression: {}", expression,
-          StringEscapeUtils.unescapeJson(expression));
+      String unescapedExpression = StringEscapeUtils.unescapeJson(expression);
+      if (!expression.equals(unescapedExpression)) {
+        log.info("[String Replacer] expression: {}, unescaped expression: {}", expression,
+            StringEscapeUtils.unescapeJson(expression));
+      }
     }
     return expression;
   }
