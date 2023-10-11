@@ -280,7 +280,6 @@ events {"name": "createdAt_1", "background": true} {"createdAt": 1}
 events {"name": "eventConfigId_1", "background": true} {"eventConfigId": 1}
 events {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
 events {"name": "status_1", "background": true} {"status": 1}
-executionInfraLocation {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 executionInterruptTimeSeriesEventQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 executionInterruptTimeSeriesEventQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 executionInterrupts {"name": "accountId_lastUpdatedAt", "background": true} {"accountId": 1, "lastUpdatedAt": 1}

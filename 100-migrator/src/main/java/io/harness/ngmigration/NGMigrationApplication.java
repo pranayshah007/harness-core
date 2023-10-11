@@ -581,9 +581,8 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
         return configuration.getGrpcServerConfig();
       }
     });
-    modules.add(new GrpcServiceConfigurationModule(configuration.getGrpcServerConfig(),
-        configuration.getPortal().getJwtNextGenManagerSecret(),
-        configuration.getLogStreamingServiceConfig().getServiceToken()));
+    modules.add(new GrpcServiceConfigurationModule(
+        configuration.getGrpcServerConfig(), configuration.getPortal().getJwtNextGenManagerSecret()));
     modules.add(new ProviderModule() {
       @Provides
       @Singleton

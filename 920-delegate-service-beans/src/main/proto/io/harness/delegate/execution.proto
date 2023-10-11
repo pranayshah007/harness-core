@@ -12,7 +12,7 @@ option go_package = "920_delegate_service_beans";
 
 message Execution {
   ExecutionInput input = 1;  // Input data to tasks
-  string infra_ref_id = 2;   // execution infra reference id created by calling SetupExecutionInfrastructureRequest
+  string infraRefId = 2;     // execution infra id created by calling SetupExecutionInfrastructureRequest
 }
 message ExecutionInput {
   bytes data = 1;  // binary task data input. The same data will be directly passed to task container

@@ -39,8 +39,10 @@ message TaskPayload {
   // execute the task.
   string eventType = 2;
   string runnerType = 3;
-  InputData task_data = 4;        // binary data for task inputs.
-  InputData infra_data = 5;       // binary data for infra config
-  string execution_infra_id = 6;  // Id for the execution infra to use
-  repeated Secret secrets = 7;    // Secrets to be decrypted
+  string log_token =
+      4;  // Token for log stream. It's not in the payload data because log token is assigned when acquire
+  InputData task_data = 5;        // binary data for task inputs.
+  InputData infra_data = 6;       // binary data for infra config
+  string execution_infra_id = 7;  // Id for the execution infra to use
+  repeated Secret secrets = 8;    // Secrets to be decrypted
 }

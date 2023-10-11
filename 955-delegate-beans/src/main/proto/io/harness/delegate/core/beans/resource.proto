@@ -35,7 +35,7 @@ message EmptyDirVolume {
 message HostPathVolume {
   string name = 1;
   string path = 2;
-  string host_path = 3;
+  string hostPath = 3;
   string type = 4;
 }
 

@@ -16,13 +16,13 @@ option go_package = "920_delegate_service_beans";
     privileged = false; runAsUser = 0 (root); runAsNonRoot = false;
  */
 message SecurityContext {
-  bool allow_privilege_escalation = 1;
+  bool allowPrivilegeEscalation = 1;
   bool privileged = 2;
-  string proc_mount = 3;
-  bool read_only_root_filesystem = 4;
-  bool run_as_non_root = 5;
-  int64 run_as_group = 6;
-  int64 run_as_user = 7;
+  string procMount = 3;
+  bool readOnlyRootFilesystem = 4;
+  bool runAsNonRoot = 5;
+  int64 runAsGroup = 6;
+  int64 runAsUser = 7;
   repeated string add_capability = 8;
   repeated string drop_capability = 9;
 }

@@ -7,6 +7,9 @@
 
 package io.harness.delegate.service.core.litek8s;
 
+import io.harness.delegate.core.beans.ContainerSpec;
+import io.harness.delegate.core.beans.K8SInfra;
+import io.harness.delegate.core.beans.K8SStep;
 import io.harness.delegate.core.beans.ResourceRequirements;
 import io.harness.delegate.core.beans.SecurityContext;
 import io.harness.delegate.core.beans.StepRuntime;
@@ -21,6 +24,7 @@ import io.kubernetes.client.openapi.models.V1CapabilitiesBuilder;
 import io.kubernetes.client.openapi.models.V1ContainerBuilder;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1ContainerPortBuilder;
+import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1ResourceRequirementsBuilder;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
@@ -77,13 +81,13 @@ public class ContainerFactory {
                                                     .withArgs(List.of(ADDON_RUN_ARGS_FORMAT, String.valueOf(port)))
                                                     .withPorts(getPort(port))
                                                     .withEnv(K8SEnvVar.fromMap(envVars.build()))
-                                                    .withResources(getResources(containerRuntime.getCompute().getCpu(),
-                                                        containerRuntime.getCompute().getMemory()))
+                                                    .withResources(getResources(containerRuntime.getResource().getCpu(),
+                                                        containerRuntime.getResource().getMemory()))
                                                     .withImagePullPolicy("Always");
 
-    if (containerRuntime.hasCompute()) {
+    if (containerRuntime.hasResource()) {
       containerBuilder.withResources(
-          getResources(containerRuntime.getCompute().getCpu(), containerRuntime.getCompute().getMemory()));
+          getResources(containerRuntime.getResource().getCpu(), containerRuntime.getResource().getMemory()));
     }
 
     if (containerRuntime.hasSecurityContext()) {
@@ -99,7 +103,7 @@ public class ContainerFactory {
     return containerBuilder;
   }
 
-  public V1ContainerBuilder createAddonInitContainer() {
+  public V1ContainerBuilder createAddonInitContainer(K8SInfra k8SInfra) {
     final var envVars = ImmutableMap.<String, String>builder();
     envVars.put(HARNESS_ACCOUNT_ID_VARIABLE, config.getAccountId());
     return new V1ContainerBuilder()
