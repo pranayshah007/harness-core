@@ -37,6 +37,10 @@ spec:
   ingressClassName: {{ .Values.global.ingress.className }}
   {{- end }}
   tls:
+    - hosts:
+        {{- range .Values.global.ingress.hosts }}
+        - {{ . | quote }}
+        {{- end }}
   rules:
     - http:
         paths:
@@ -208,4 +212,7 @@ spec:
                 name: {{.Values.name}}
                 port:
                   number: 12003
+    {{- range .Values.global.ingress.hosts }}
+      host: {{ . | quote }}
+    {{- end }}
 {{- end }}

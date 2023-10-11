@@ -733,6 +733,40 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ArrayNGVariableV1": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/NGVariableV1"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "__uuid": {
+              "type": "string",
+              "readOnly": true
+            },
+            "default": {
+              "type": "array",
+              "readOnly": true,
+              "items": {
+                "type": "object"
+              }
+            },
+            "validator": {
+              "$ref": "#/definitions/ArrayValidator"
+            },
+            "value": {
+              "$ref": "#/definitions/ParameterFieldListObject"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ArrayValidator": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "Attestation": {
       "type": "object",
       "properties": {
@@ -2662,6 +2696,142 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "GARStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "host",
+            "imageName",
+            "projectID",
+            "tags"
+          ],
+          "properties": {
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "buildArgs": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheFrom": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheTo": {
+              "type": "string"
+            },
+            "caching": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "connectorRef": {
+              "type": "string"
+            },
+            "context": {
+              "type": "string"
+            },
+            "dockerfile": {
+              "type": "string"
+            },
+            "host": {
+              "type": "string"
+            },
+            "imageName": {
+              "type": "string"
+            },
+            "labels": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "optimize": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "projectID": {
+              "type": "string"
+            },
+            "remoteCacheImage": {
+              "type": "string"
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "tags": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "GCRStepInfo": {
       "allOf": [
         {
@@ -3227,6 +3397,55 @@
             },
             "url": {
               "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "HttpStepInfoV1": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "assertion": {
+              "$ref": "#/definitions/ParameterFieldString"
+            },
+            "body": {
+              "$ref": "#/definitions/ParameterFieldString"
+            },
+            "cert": {
+              "$ref": "#/definitions/ParameterFieldString"
+            },
+            "cert_key": {
+              "$ref": "#/definitions/ParameterFieldString"
+            },
+            "delegate": {
+              "$ref": "#/definitions/ParameterFieldListTaskSelectorYaml"
+            },
+            "headers": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/HttpHeaderConfig"
+              }
+            },
+            "input_vars": {
+              "$ref": "#/definitions/NGVariableV1Wrapper"
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "method": {
+              "$ref": "#/definitions/ParameterFieldString"
+            },
+            "output_vars": {
+              "$ref": "#/definitions/NGVariableV1Wrapper"
+            },
+            "url": {
+              "$ref": "#/definitions/ParameterFieldString"
             }
           }
         }
@@ -3805,6 +4024,48 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "NGVariableV1": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "desc": {
+          "type": "string"
+        },
+        "execution_input": {
+          "type": "boolean"
+        },
+        "metadata": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "string",
+            "number",
+            "secret",
+            "array",
+            "object",
+            "boolean"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "NGVariableV1Wrapper": {
+      "type": "object",
+      "properties": {
+        "map": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/NGVariableV1"
+          }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "NumberNGVariable": {
       "allOf": [
         {
@@ -3845,6 +4106,69 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "NumberNGVariableV1": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/NGVariableV1"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "__uuid": {
+              "type": "string",
+              "readOnly": true
+            },
+            "default": {
+              "type": "number",
+              "format": "double",
+              "readOnly": true
+            },
+            "validator": {
+              "$ref": "#/definitions/NumberValidator"
+            },
+            "value": {
+              "$ref": "#/definitions/ParameterFieldDouble"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "NumberValidator": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ObjectNGVariableV1": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/NGVariableV1"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "__uuid": {
+              "type": "string",
+              "readOnly": true
+            },
+            "default": {
+              "type": "object",
+              "readOnly": true
+            },
+            "validator": {
+              "$ref": "#/definitions/ObjectValidator"
+            },
+            "value": {
+              "$ref": "#/definitions/ParameterFieldObject"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ObjectValidator": {
+      "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "OnFailureConfig": {
@@ -4001,6 +4325,80 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ParameterFieldDouble": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "type": "number",
+          "format": "double"
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ParameterFieldListObject": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ParameterFieldListString": {
       "type": "object",
       "properties": {
@@ -4035,6 +4433,45 @@
           "type": "array",
           "items": {
             "type": "string"
+          }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ParameterFieldListTaskSelectorYaml": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TaskSelectorYaml"
+          }
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TaskSelectorYaml"
           }
         }
       },
@@ -4147,6 +4584,72 @@
         },
         "value": {
           "$ref": "#/definitions/MatrixConfigInterface"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ParameterFieldObject": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "type": "object"
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "object"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ParameterFieldSecretRefData": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "$ref": "#/definitions/SecretRefData"
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "$ref": "#/definitions/SecretRefData"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -5923,6 +6426,57 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "SecretNGVariableV1": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/NGVariableV1"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "__uuid": {
+              "type": "string",
+              "readOnly": true
+            },
+            "default": {
+              "readOnly": true,
+              "$ref": "#/definitions/SecretRefData"
+            },
+            "value": {
+              "$ref": "#/definitions/ParameterFieldSecretRefData"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SecretRefData": {
+      "type": "object",
+      "properties": {
+        "decryptedValue": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "identifier": {
+          "type": "string"
+        },
+        "null": {
+          "type": "boolean"
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "account",
+            "org",
+            "project",
+            "unknown"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "SecurityContext": {
       "type": "object",
       "properties": {
@@ -6989,6 +7543,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "BuildAndPushGAR"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GARStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "BuildAndPushGCR"
               }
             }
@@ -7533,6 +8103,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "http"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/HttpStepInfoV1"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "plugin"
               }
             }
@@ -7871,6 +8457,37 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "StringNGVariableV1": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/NGVariableV1"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "__uuid": {
+              "type": "string",
+              "readOnly": true
+            },
+            "default": {
+              "type": "string",
+              "readOnly": true
+            },
+            "validator": {
+              "$ref": "#/definitions/StringValidator"
+            },
+            "value": {
+              "$ref": "#/definitions/ParameterFieldString"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "StringValidator": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "SyftSbomOrchestration": {
       "allOf": [
         {
@@ -7908,6 +8525,18 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TaskSelectorYaml": {
+      "type": "object",
+      "properties": {
+        "delegateSelectors": {
+          "type": "string"
+        },
+        "origin": {
+          "type": "string"
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "TemplateLinkConfig": {

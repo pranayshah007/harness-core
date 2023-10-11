@@ -62,6 +62,10 @@ public class AmazonS3ArtifactConfig implements ArtifactConfig, Visitable, WithCo
    * Region.
    */
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> region;
+  /**
+   * FileFilter.
+   */
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> fileFilter;
 
   /**
    * Bucket name.

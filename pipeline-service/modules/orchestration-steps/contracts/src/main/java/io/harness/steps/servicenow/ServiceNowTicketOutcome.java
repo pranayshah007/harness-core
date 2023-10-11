@@ -42,4 +42,6 @@ public class ServiceNowTicketOutcome implements Outcome {
 
   Map<String, String> fields;
   List<MultipleOutcome> multipleOutcomeList;
+
+  String message;
 }

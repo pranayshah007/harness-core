@@ -6,11 +6,13 @@
  */
 
 package io.harness.ngmigration.service;
-
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.beans.MigratedEntityMapping.MigratedEntityMappingKeys;
 import io.harness.data.structure.EmptyPredicate;
@@ -28,6 +30,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public class MigratorMappingService {
   @Inject private NgMigrationFactory ngMigrationFactory;

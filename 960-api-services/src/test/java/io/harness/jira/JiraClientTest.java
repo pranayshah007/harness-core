@@ -26,6 +26,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.HttpResponseException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.JiraClientException;
 import io.harness.rule.Owner;
 
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
@@ -600,5 +601,40 @@ public class JiraClientTest extends CategoryTest {
     assertThatThrownBy(() -> jiraClient.setUserTypeCustomFieldsIfPresent(metadataFields, fields))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Found no jira users with exact match for this query : [userquery]");
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testFindIssueTransitionWhenStatusAndTransitionNotMatch() {
+    stubFor(
+        get(urlMatching("^/rest/api/2/issue/TJI-123/editmeta")).willReturn(aResponse().withStatus(200).withBody("{}")));
+    stubFor(get(urlMatching("^/rest/api/2/issue/TJI-123/transitions"))
+                .willReturn(aResponse().withStatus(200).withBody("{\n"
+                    + "    \"expand\": \"transitions\",\n"
+                    + "    \"transitions\": [\n"
+                    + "        {\n"
+                    + "            \"id\": \"1\",\n"
+                    + "            \"name\": \"To Do\",\n"
+                    + "            \"to\": {\n"
+                    + "                \"name\": \"To Do\",\n"
+                    + "                \"id\": \"10000\",\n"
+                    + "                \"statusCategory\": {\n"
+                    + "                    \"id\": 2,\n"
+                    + "                    \"key\": \"new\",\n"
+                    + "                    \"name\": \"To Do\"\n"
+                    + "                }\n"
+                    + "            },\n"
+                    + "            \"isAvailable\": true\n"
+                    + "        }\n"
+                    + " ]\n"
+                    + "}  ")));
+    Map<String, JiraFieldNG> metadataFields = new HashMap<>();
+    assertThatThrownBy(() -> jiraClient.updateIssue(ISSUE_KEY, "status", "transitionName", new HashMap<>(), false))
+        .isInstanceOf(JiraClientException.class)
+        .hasMessage("Invalid transition [transitionName] to status status");
+    assertThatThrownBy(() -> jiraClient.updateIssue(ISSUE_KEY, "status", "", new HashMap<>(), false))
+        .isInstanceOf(JiraClientException.class)
+        .hasMessage("Invalid transition to status: status");
   }
 }

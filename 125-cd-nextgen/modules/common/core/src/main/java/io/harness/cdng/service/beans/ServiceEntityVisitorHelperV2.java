@@ -119,9 +119,9 @@ public class ServiceEntityVisitorHelperV2 implements ConfigValidator, EntityRefe
               .build();
       result.add(entityDetail);
 
-      Optional<ServiceEntity> serviceEntity =
-          serviceEntityService.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceRefString, false);
-      if (!serviceEntity.isPresent()) {
+      Optional<ServiceEntity> serviceEntity = serviceEntityService.get(
+          accountIdentifier, orgIdentifier, projectIdentifier, serviceRefString, false, true, false);
+      if (serviceEntity.isEmpty()) {
         return result;
       }
 

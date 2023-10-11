@@ -6,6 +6,7 @@
  */
 
 package software.wings.beans;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.CodePulse;
@@ -514,7 +515,12 @@ public enum TaskType {
   DLITE_CI_VM_EXECUTE_TASK_V2(TaskGroup.CI, true),
   DLITE_CI_VM_CLEANUP_TASK_V2(TaskGroup.CI, true),
   COMMAND_TASK_NG_WITH_GCS_ARTIFACT(
-      TaskGroup.COMMAND_TASK_NG, "Task to handle GCS artifact type with SSH/WinRm deployments");
+      TaskGroup.COMMAND_TASK_NG, "Task to handle GCS artifact type with SSH/WinRm deployments"),
+  ECS_BASIC_PREPARE_ROLLBACK_TASK_NG(TaskGroup.ECS, "ECS Basic Prepare Rollback Task"),
+  ECS_SERVICE_SETUP_TASK_NG(TaskGroup.ECS, "ECS Service Setup Task"),
+  ECS_UPGRADE_CONTAINER_TASK_NG(TaskGroup.ECS, "ECS Upgrade Container Task"),
+  ECS_BASIC_ROLLBACK_TASK_NG(TaskGroup.ECS, "ECS Basic Rollback Task"),
+  TERRAFORM_TASK_NG_V7(TaskGroup.TERRAFORM_NG, "Terraform Task NG V7");
 
   private final TaskGroup taskGroup;
   private final String displayName;

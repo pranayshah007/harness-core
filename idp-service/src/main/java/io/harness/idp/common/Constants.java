@@ -61,6 +61,7 @@ public class Constants {
 
   public static final String HARNESS_IDENTIFIER = "harness";
   public static final String GITHUB_IDENTIFIER = "github";
+  public static final String GITLAB_IDENTIFIER = "gitlab";
   public static final String BITBUCKET_IDENTIFIER = "bitbucket";
   public static final String CATALOG_IDENTIFIER = "catalog";
   public static final String KUBERNETES_IDENTIFIER = "kubernetes";
@@ -71,6 +72,7 @@ public class Constants {
   public static final String DATA_POINT_VALUE_KEY = "value";
   public static final String ERROR_MESSAGE_KEY = "error_messages";
   public static final String ERROR_MESSAGES_KEY = "errorMessages";
+  public static final String ERRORS = "errors";
   public static final String MESSAGE_KEY = "message";
 
   public static final String QA_HOST = "qa.harness.io";

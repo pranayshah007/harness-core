@@ -42,6 +42,7 @@ import io.harness.ccm.views.dto.PerspectiveQueryDTO;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewCondition;
 import io.harness.ccm.views.entities.ViewField;
+import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.entities.ViewVisualization;
@@ -321,6 +322,25 @@ public class PerspectiveToAnomalyQueryHelper {
     }
 
     return convertedRuleFilters;
+  }
+  public boolean isLabelPerspective(@NonNull CEView perspective) {
+    if (perspective.getViewRules() != null) {
+      for (ViewRule ruleCheck : perspective.getViewRules()) {
+        boolean labelPresent = false;
+        for (ViewCondition conditionCheck : ruleCheck.getViewConditions()) {
+          ViewIdCondition viewIdConditionCheck = (ViewIdCondition) conditionCheck;
+          if ((viewIdConditionCheck.getViewField().getIdentifier().getDisplayName())
+              == ViewFieldIdentifier.LABEL.getDisplayName()) {
+            labelPresent = true;
+            break;
+          }
+        }
+        if (labelPresent == false) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   private CCMFilter combineFilters(List<CCMFilter> filters) {

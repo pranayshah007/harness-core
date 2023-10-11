@@ -10,6 +10,7 @@ package io.harness.cdng.ecs;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.ecs.EcsResizeStrategy;
 import io.harness.ecs.EcsCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
@@ -36,6 +37,6 @@ public class EcsServiceSetupStepParameters extends EcsServiceSetupBaseStepInfo i
   }
   public List<String> getCommandUnits() {
     return Arrays.asList(EcsCommandUnitConstants.fetchManifests.toString(),
-        EcsCommandUnitConstants.prepareRollbackData.toString(), EcsCommandUnitConstants.deploy.toString());
+        EcsCommandUnitConstants.prepareRollbackData.toString(), EcsCommandUnitConstants.serviceSetup.toString());
   }
 }

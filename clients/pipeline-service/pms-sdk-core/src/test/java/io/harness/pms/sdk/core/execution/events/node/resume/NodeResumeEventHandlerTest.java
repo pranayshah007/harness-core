@@ -7,6 +7,7 @@
 
 package io.harness.pms.sdk.core.execution.events.node.resume;
 
+import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.SAHIL;
 
@@ -270,6 +271,47 @@ public class NodeResumeEventHandlerTest extends PmsSdkCoreTestBase {
     when(mockedKryoSerializer.asInflatedObject(byteString.toByteArray())).thenReturn(notifyData);
     ExecutableProcessor executableProcessor = mock(ExecutableProcessor.class);
     when(executableProcessorFactory.obtainProcessor(ExecutionMode.TASK_CHAIN)).thenReturn(executableProcessor);
+    nodeResumeEventHandler.handleEventWithContext(childChainResumeEvent);
+    ArgumentCaptor<ResumePackage> resumePackageArgumentCaptor = ArgumentCaptor.forClass(ResumePackage.class);
+    verify(executableProcessor).handleResume(resumePackageArgumentCaptor.capture());
+
+    ResumePackage resumePackage = resumePackageArgumentCaptor.getValue();
+
+    assertThat(resumePackage.getChainDetails()).isNotNull();
+    io.harness.pms.sdk.core.execution.ChainDetails chainDetails = resumePackage.getChainDetails();
+    assertThat(chainDetails.isShouldEnd()).isTrue();
+    assertThat(chainDetails.getPassThroughData()).isNotNull();
+    assertThat(chainDetails.getPassThroughData()).isInstanceOf(TestPassThroughData.class);
+    assertThat(((TestPassThroughData) chainDetails.getPassThroughData()).getData()).isEqualTo("SOME_DATA");
+    assertThat(chainDetails.getPassThroughBytes()).isNull();
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testHandleEventWithContextForAsyncChain() {
+    StepResponseNotifyData notifyData = StepResponseNotifyData.builder().status(Status.RUNNING).build();
+    Map<String, ByteString> responseDataMap = new HashMap<>();
+    ByteString byteString = ByteString.copyFrom(kryoSerializer1.asDeflatedBytes(notifyData));
+    responseDataMap.put("response", byteString);
+    ByteString passThroughData =
+        ByteString.copyFrom(RecastOrchestrationUtils.toBytes(TestPassThroughData.builder().data("SOME_DATA").build()));
+
+    ByteString stepParameters =
+        ByteString.copyFrom(RecastOrchestrationUtils.toBytes(TestStepParameters.builder().data("SOME_DATA").build()));
+    NodeResumeEvent childChainResumeEvent =
+        NodeResumeEvent.newBuilder()
+            .setExecutionMode(ExecutionMode.ASYNC_CHAIN)
+            .setAmbiance(ambiance)
+            .setAsyncError(false)
+            .putAllResponse(responseDataMap)
+            .setStepParameters(stepParameters)
+            .setChainDetails(ChainDetails.newBuilder().setIsEnd(true).setPassThroughData(passThroughData).build())
+            .build();
+
+    when(mockedKryoSerializer.asInflatedObject(byteString.toByteArray())).thenReturn(notifyData);
+    ExecutableProcessor executableProcessor = mock(ExecutableProcessor.class);
+    when(executableProcessorFactory.obtainProcessor(ExecutionMode.ASYNC_CHAIN)).thenReturn(executableProcessor);
     nodeResumeEventHandler.handleEventWithContext(childChainResumeEvent);
     ArgumentCaptor<ResumePackage> resumePackageArgumentCaptor = ArgumentCaptor.forClass(ResumePackage.class);
     verify(executableProcessor).handleResume(resumePackageArgumentCaptor.capture());

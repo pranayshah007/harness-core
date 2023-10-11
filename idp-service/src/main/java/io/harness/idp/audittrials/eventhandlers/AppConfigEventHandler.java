@@ -6,8 +6,8 @@
  */
 package io.harness.idp.audittrials.eventhandlers;
 
-import static io.harness.idp.configmanager.events.AppConfigCreateEvent.APP_CONFIG_CREATED;
-import static io.harness.idp.configmanager.events.AppConfigUpdateEvent.APP_CONFIG_UPDATED;
+import static io.harness.idp.configmanager.events.appconfigs.AppConfigCreateEvent.APP_CONFIG_CREATED;
+import static io.harness.idp.configmanager.events.appconfigs.AppConfigUpdateEvent.APP_CONFIG_UPDATED;
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 
@@ -20,8 +20,8 @@ import io.harness.audit.client.api.AuditClientService;
 import io.harness.context.GlobalContext;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.idp.audittrials.eventhandlers.dtos.ConfigDTO;
-import io.harness.idp.configmanager.events.AppConfigCreateEvent;
-import io.harness.idp.configmanager.events.AppConfigUpdateEvent;
+import io.harness.idp.configmanager.events.appconfigs.AppConfigCreateEvent;
+import io.harness.idp.configmanager.events.appconfigs.AppConfigUpdateEvent;
 import io.harness.ng.core.utils.NGYamlUtils;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;

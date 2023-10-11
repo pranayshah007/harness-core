@@ -117,6 +117,8 @@ public final class EventsFrameworkConstants {
   public static final String PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER =
       "PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER";
   public static final String MODULE_LICENSES_REDIS_EVENT_CONSUMER = "MODULE_LICENSES_REDIS_EVENT_CONSUMER";
+
+  public static final String INSTANCE_NG_SSCA_REDIS_EVENT_CONSUMER = "INSTANCE_NG_SSCA_REDIS_EVENT_CONSUMER";
   public static final String PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER_CD =
       "PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER_CD";
   public static final String PIPELINE_EXECUTION_SUMMARY_SNAPSHOT_REDIS_EVENT_CONSUMER =
@@ -203,6 +205,7 @@ public final class EventsFrameworkConstants {
   public static final Duration GIT_PR_EVENT_STREAM_MAX_PROCESSING_TIME = Duration.ofSeconds(20);
   public static final Duration GIT_BRANCH_HOOK_EVENT_STREAM_MAX_PROCESSING_TIME = Duration.ofSeconds(20);
   public static final Duration USERMEMBERSHIP_MAX_PROCESSING_TIME = Duration.ofMinutes(10);
+  public static final Duration MODULE_LICENSE_MAX_PROCESSING_TIME = Duration.ofMinutes(20);
   public static final Duration SETUP_USAGE_MAX_PROCESSING_TIME = Duration.ofSeconds(20);
   public static final Duration ENTITY_ACTIVITY_MAX_PROCESSING_TIME = Duration.ofSeconds(20);
   public static final Duration HARNESS_TO_GIT_PUSH_MAX_PROCESSING_TIME = Duration.ofSeconds(50);
@@ -221,6 +224,7 @@ public final class EventsFrameworkConstants {
   public static final int NG_ACCOUNT_SETUP_READ_BATCH_SIZE = 50;
   public static final int ORCHESTRATION_LOG_READ_BATCH_SIZE = 200;
   public static final int USERMEMBERSHIP_READ_BATCH_SIZE = 50;
+  public static final int MODULE_LICENSE_READ_BATCH_SIZE = 50;
   public static final int SETUP_USAGE_READ_BATCH_SIZE = 50;
   public static final int ENTITY_ACTIVITY_READ_BATCH_SIZE = 50;
   public static final int HARNESS_TO_GIT_PUSH_READ_BATCH_SIZE = 50;

@@ -64,9 +64,6 @@ public class BuildJobEnvInfoBuilder {
 
     ParameterField<String> timeout = k8sDirectInfraYaml.getSpec().getInitTimeout();
     int timeoutInMillis = InitializeStepInfo.DEFAULT_TIMEOUT;
-    if (queueEnabled) {
-      timeoutInMillis = InitializeStepInfo.DEFAULT_TIMEOUT_WITH_QUEUE;
-    }
 
     OSType os = resolveOSType(k8sDirectInfraYaml.getSpec().getOs());
     if (os == OSType.Windows && !queueEnabled) {
@@ -75,6 +72,12 @@ public class BuildJobEnvInfoBuilder {
 
     if (timeout != null && timeout.fetchFinalValue() != null && isNotEmpty((String) timeout.fetchFinalValue())) {
       timeoutInMillis = (int) Timeout.fromString((String) timeout.fetchFinalValue()).getTimeoutInMillis();
+    }
+
+    // if  this queue feature flag is enabled then the final timeout must be more as every pipeline in the queue should
+    // run without timeout error
+    if (queueEnabled) {
+      timeoutInMillis = InitializeStepInfo.DEFAULT_TIMEOUT_WITH_QUEUE;
     }
     return timeoutInMillis;
   }

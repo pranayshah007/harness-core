@@ -30,7 +30,6 @@ import io.harness.cdng.service.steps.constants.ServiceSectionStepConstants;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
-import io.harness.exception.UnsupportedOperationException;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.EntityDetail;
@@ -156,7 +155,6 @@ public class ServiceStepsHelper {
   public NGLogCallback getServiceLogCallback(Ambiance ambiance, boolean shouldOpenStream) {
     return getServiceLogCallback(prepareServiceAmbiance(ambiance), shouldOpenStream, null);
   }
-
   public NGLogCallback getServiceLogCallback(Ambiance ambiance, boolean shouldOpenStream, String commandUnit) {
     return new NGLogCallback(
         logStreamingStepClientFactory, prepareServiceAmbiance(ambiance), commandUnit, shouldOpenStream);

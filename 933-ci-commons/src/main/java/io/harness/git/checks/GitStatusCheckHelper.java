@@ -59,7 +59,7 @@ public class GitStatusCheckHelper {
   @Inject private BitbucketService bitbucketService;
   @Inject private GitlabService gitlabService;
   @Inject private AzureRepoService azureRepoService;
-  @Inject private CodeResourceClient codeResourceClient;
+  @Inject(optional = true) private CodeResourceClient codeResourceClient;
   @Inject private GitTokenRetriever gitTokenRetriever;
   private static final String DESC = "description";
   private static final String STATE = "state";

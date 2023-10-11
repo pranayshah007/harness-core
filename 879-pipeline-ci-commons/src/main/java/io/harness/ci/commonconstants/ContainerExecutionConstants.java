@@ -34,6 +34,8 @@ public class ContainerExecutionConstants {
   public static final String SHARED_VOLUME_PREFIX = "shared-";
   public static final String VOLUME_PREFIX = "volume-";
 
+  public static final Integer POD_WAIT_BUFFER_SECONDS = 10;
+
   // Container constants for setting up addon binary
   public static final String SETUP_ADDON_CONTAINER_NAME = "setup-addon";
   public static final String UNIX_SETUP_ADDON_ARGS =

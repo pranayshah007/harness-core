@@ -9,7 +9,7 @@ package io.harness.ng.overview.resource;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.dashboards.DeploymentCount;
+import io.harness.dashboards.LandingPageDeploymentCount;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -47,7 +47,7 @@ public class CDLandingPageResource {
   @GET
   @Path("/deploymentCount")
   @ApiOperation(value = "Get Total of Deployments", nickname = "getDeploymentCount")
-  public ResponseDTO<DeploymentCount> getDeploymentCount() {
+  public ResponseDTO<LandingPageDeploymentCount> getDeploymentCount() {
     log.info("Getting total of deployments");
     return ResponseDTO.newResponse(cdLandingPageService.getDeploymentCount());
   }

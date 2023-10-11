@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.core.environment.services;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
@@ -26,8 +27,20 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public interface EnvironmentService {
   Environment create(Environment environment);
 
-  Optional<Environment> get(
-      String accountId, String orgIdentifier, String projectIdentifier, String environmentIdentifier, boolean deleted);
+  Optional<Environment> get(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String environmentIdentifier, boolean deleted);
+
+  /**
+   * this method will return the environment entity as stored in the MongoDB
+   * database itself. No additional data (YAML) will be fetched from the source code repository.
+   * @return An Optional containing the retrieved or fetched Environment, or an empty Optional if
+   *         no matching entity is found.
+   */
+  Optional<Environment> getMetadata(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String environmentIdentifier, boolean deleted);
+
+  Optional<Environment> get(String accountId, String orgIdentifier, String projectIdentifier,
+      String environmentIdentifier, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch);
 
   // TODO(archit): make it transactional
   Environment update(Environment requestEnvironment);

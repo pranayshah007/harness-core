@@ -6,12 +6,15 @@
  */
 
 package io.harness.ngmigration.expressions.step;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ngmigration.beans.StepOutput;
 
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class HttpStepFunctor extends StepExpressionFunctor {
   private StepOutput stepOutput;
   public HttpStepFunctor(StepOutput stepOutput) {

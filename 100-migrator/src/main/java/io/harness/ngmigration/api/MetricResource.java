@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.api;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ClientType;
 import io.harness.metrics.HarnessMetricRegistry;
 import io.harness.security.annotations.HarnessApiKeyAuth;
@@ -31,6 +33,8 @@ import lombok.extern.slf4j.Slf4j;
  *
  * Created by Pranjal on 11/23/2018
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Api("metrics")
 @Path("/metrics")
 @Consumes(MediaType.APPLICATION_JSON)

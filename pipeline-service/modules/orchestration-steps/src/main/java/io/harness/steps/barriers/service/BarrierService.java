@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.distribution.barrier.Barrier.State;
+import io.harness.plancreator.steps.barrier.BarrierStepNode;
 import io.harness.steps.barriers.beans.BarrierExecutionInstance;
 import io.harness.steps.barriers.beans.BarrierPositionInfo;
 import io.harness.steps.barriers.beans.BarrierSetupInfo;
@@ -45,6 +46,9 @@ public interface BarrierService {
   void upsert(BarrierExecutionInstance barrierExecutionInstance);
   void updateBarrierPositionInfoList(
       String barrierIdentifier, String planExecutionId, List<BarrierPositionInfo.BarrierPosition> barrierPositions);
+  boolean existsByPlanExecutionIdAndStrategySetupId(String planExecutionId, String strategySetupId);
   List<BarrierExecutionInstance> findManyByPlanExecutionIdAndStrategySetupId(
       String planExecutionId, String strategySetupId);
+  void upsertBarrierExecutionInstance(BarrierStepNode field, String planExecutionId, String parentInfoStrategyNodeType,
+      String stageId, String stepGroupId, String strategyId);
 }

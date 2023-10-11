@@ -95,6 +95,7 @@ public class OrgProjectApiImplTest extends CategoryTest {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testOrgScopedProjectCreate() {
+    final String parentId = randomAlphabetic(10);
     CreateProjectRequest request = new CreateProjectRequest();
     io.harness.spec.server.ng.v1.model.ProjectRequest proj = new io.harness.spec.server.ng.v1.model.ProjectRequest();
     proj.setIdentifier(identifier);
@@ -106,6 +107,7 @@ public class OrgProjectApiImplTest extends CategoryTest {
     project.setOrgIdentifier(org);
     project.setVersion(0L);
     project.setUniqueId(randomAlphabetic(10));
+    project.setParentId(parentId);
 
     when(projectService.create(account, org, projectDTO)).thenReturn(project);
 

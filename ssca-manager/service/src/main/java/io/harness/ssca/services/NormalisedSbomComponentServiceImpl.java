@@ -69,11 +69,11 @@ public class NormalisedSbomComponentServiceImpl implements NormalisedSbomCompone
                             .and(NormalizedSBOMEntityKeys.orchestrationId)
                             .is(artifact.getOrchestrationId());
 
-    if (Objects.nonNull(filterBody.getPackageManager())) {
+    if (Objects.nonNull(filterBody) && Objects.nonNull(filterBody.getPackageManager())) {
       Pattern pattern = Pattern.compile("[.]*" + filterBody.getPackageManager() + "[.]*");
       criteria.and(NormalizedSBOMEntityKeys.packageManager).regex(pattern);
     }
-    if (Objects.nonNull(filterBody.getSupplier())) {
+    if (Objects.nonNull(filterBody) && Objects.nonNull(filterBody.getSupplier())) {
       Pattern pattern = Pattern.compile("[.]*" + filterBody.getSupplier() + "[.]*");
       criteria.and(NormalizedSBOMEntityKeys.packageSupplierName).regex(pattern);
     }

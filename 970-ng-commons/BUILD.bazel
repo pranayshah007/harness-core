@@ -81,6 +81,7 @@ java_library(
         "//970-ng-commons/src/main/java/io/harness/remote:module",
         "//970-ng-commons/src/main/java/io/harness/remote/client:module",
         "//970-ng-commons/src/main/java/io/harness/request:module",
+        "//970-ng-commons/src/main/java/io/harness/rsa:module",
         "//970-ng-commons/src/main/java/io/harness/scope:module",
         "//970-ng-commons/src/main/java/io/harness/secrets:module",
         "//970-ng-commons/src/main/java/io/harness/security/annotations:module",

@@ -20,7 +20,6 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.steps.barriers.beans.BarrierExecutionInstance;
 import io.harness.steps.barriers.beans.BarrierPositionInfo.BarrierPosition.BarrierPositionType;
 import io.harness.steps.barriers.service.BarrierService;
-import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -36,7 +35,6 @@ import lombok.extern.slf4j.Slf4j;
 public class BarrierPositionHelperEventHandler implements AsyncInformObserver, NodeStatusUpdateObserver {
   @Inject @Named("OrchestrationVisualizationExecutorService") ExecutorService executorService;
   @Inject BarrierService barrierService;
-  @Inject PmsFeatureFlagService featureFlagService;
 
   @Override
   public void onNodeStatusUpdate(NodeUpdateInfo nodeUpdateInfo) {
@@ -54,8 +52,8 @@ public class BarrierPositionHelperEventHandler implements AsyncInformObserver, N
         positionType = BarrierPositionType.STEP;
       }
       if (positionType != null) {
-        String accountId = AmbianceUtils.getAccountId(nodeExecution.getAmbiance());
-        if (featureFlagService.isEnabled(accountId, FeatureName.CDS_NG_BARRIER_STEPS_WITHIN_LOOPING_STRATEGIES)) {
+        if (AmbianceUtils.checkIfFeatureFlagEnabled(nodeUpdateInfo.getNodeExecution().getAmbiance(),
+                FeatureName.CDS_NG_BARRIER_STEPS_WITHIN_LOOPING_STRATEGIES.name())) {
           updatePosition(planExecutionId, positionType, nodeExecution);
         } else {
           updatePositionWithoutFiltersForLoopingStrategy(planExecutionId, positionType, nodeExecution);

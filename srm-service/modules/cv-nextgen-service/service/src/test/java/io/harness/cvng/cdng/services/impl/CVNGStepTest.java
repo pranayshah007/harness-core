@@ -644,7 +644,7 @@ public class CVNGStepTest extends CvNextGenTestBase {
             .build());
     StepResponse stepResponse = cvngStep.handleAsyncResponseInternal(ambiance, stepElementParameters, responseDataMap);
     FailureData failureData = FailureData.newBuilder()
-                                  .setCode(ErrorCode.ABORT_ALL_ALREADY.name())
+                                  .setCode(ErrorCode.ABORT_ALL_ALREADY_NG.name())
                                   .setLevel(io.harness.eraro.Level.ERROR.name())
                                   .addFailureTypes(FailureType.USER_MARKED_FAILURE)
                                   .setMessage("Verification could not complete due to it being aborted")

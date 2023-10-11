@@ -121,9 +121,10 @@ public interface K8sDeployRequest extends TaskParameters, ExecutionCapabilityDem
               criteria = ociHelmStoreConfig.getRepoName() + ":" + ociHelmStoreConfig.getRegion();
               capabilities.addAll(
                   AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorConfigDTO, maskingEvaluator));
-            } else if (connectorConfigDTO instanceof OciHelmConnectorDTO) {
+            } else if (connectorConfigDTO instanceof OciHelmConnectorDTO
+                || ociHelmStoreConfig.getOciHelmConnector() != null) {
               criteria = ociHelmStoreConfig.getRepoUrl();
-              OciHelmConnectorDTO ociHelmConnector = (OciHelmConnectorDTO) connectorConfigDTO;
+              OciHelmConnectorDTO ociHelmConnector = ociHelmStoreConfig.getOciHelmConnector();
               populateDelegateSelectorCapability(capabilities, ociHelmConnector.getDelegateSelectors());
             }
             if (isNotEmpty(criteria)) {
