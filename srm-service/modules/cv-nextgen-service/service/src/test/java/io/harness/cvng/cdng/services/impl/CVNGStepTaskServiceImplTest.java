@@ -13,8 +13,11 @@ import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KANHAIYA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -23,7 +26,9 @@ import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO.DeploymentVerificationJobInstanceSummary;
+import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO;
 import io.harness.cvng.analysis.beans.LogAnalysisClusterChartDTO;
+import io.harness.cvng.analysis.beans.Risk;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
 import io.harness.cvng.beans.activity.ActivityStatusDTO;
@@ -47,6 +52,7 @@ import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -234,42 +240,70 @@ public class CVNGStepTaskServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = ANSHIKA)
   @Category(UnitTests.class)
-  public void testGetDeployementActivityLogAnalysisClusters() {
+  public void testGetDeploymentActivityLogAnalysisClusters(){
+    String accountId = generateUuid();
+    String callbackId = generateUuid();
+    DeploymentLogAnalysisFilter deploymentLogAnalysisFilter = new DeploymentLogAnalysisFilter();
+    LogAnalysisClusterChartDTO mockClusterDTO = LogAnalysisClusterChartDTO.builder()
+            .label(1)
+            .text("text")
+            .hostName("hostName")
+            .risk(Risk.HEALTHY)
+            .x(10.0)
+            .y(20.0)
+            .clusterType(DeploymentLogAnalysisDTO.ClusterType.NO_BASELINE_AVAILABLE)
+            .build();
+    List<LogAnalysisClusterChartDTO> expectedClusters = new ArrayList<>();
+    expectedClusters.add(mockClusterDTO);
+    when(deploymentLogAnalysisService.getLogAnalysisClusters(anyString(), anyString(), any(DeploymentLogAnalysisFilter.class)))
+            .thenReturn(expectedClusters);
+    List<LogAnalysisClusterChartDTO> resultClusters = deploymentLogAnalysisService.getLogAnalysisClusters(accountId, callbackId, deploymentLogAnalysisFilter);
+    assertThat(resultClusters)
+            .extracting("label", "text", "hostName", "risk", "x", "y", "clusterType")
+            .containsExactly(
+                    tuple(1, "text", "hostName", Risk.HEALTHY, 10.0, 20.0, DeploymentLogAnalysisDTO.ClusterType.NO_BASELINE_AVAILABLE)
+            );
+  }
+
+  @Test
+  @Owner(developers = ANSHIKA)
+  @Category(UnitTests.class)
+  public void testGetDeployementActivityLogAnalysisClustersEmpty() {
     String accountId = generateUuid();
     String callbackId = generateUuid();
     DeploymentLogAnalysisFilter deploymentLogAnalysisFilter = new DeploymentLogAnalysisFilter();
     String verificationJobInstanceId = generateUuid();
-    List<LogAnalysisClusterChartDTO> expectedClusters = new ArrayList<>();
+    List<LogAnalysisClusterChartDTO> emptyClusters = Collections.emptyList();
     when(deploymentLogAnalysisService.getLogAnalysisClusters(
              accountId, verificationJobInstanceId, deploymentLogAnalysisFilter))
-        .thenReturn(expectedClusters);
+        .thenReturn(emptyClusters);
     List<LogAnalysisClusterChartDTO> resultClusters =
         deploymentLogAnalysisService.getLogAnalysisClusters(accountId, callbackId, deploymentLogAnalysisFilter);
-    assertThat(expectedClusters).isEqualTo(resultClusters);
+    assertThat(emptyClusters).isEqualTo(resultClusters);
   }
 
   @Test
   @Owner(developers = ANSHIKA)
   @Category(UnitTests.class)
-  public void testGetTransactionNames() {
+  public void testGetTransactionNamesEmpty() {
     String accountId = generateUuid();
     String callbackId = generateUuid();
     String verificationJobInstanceId = generateUuid();
-    List<String> expectedTransactionNames = new ArrayList<>();
+    List<String> emptyTransactionNames = Collections.emptyList();
     when(deploymentTimeSeriesAnalysisService.getTransactionNames(accountId, verificationJobInstanceId))
-        .thenReturn(expectedTransactionNames);
+        .thenReturn(emptyTransactionNames);
     List<String> resultTransactionNames =
         deploymentTimeSeriesAnalysisService.getTransactionNames(accountId, callbackId);
-    assertThat(expectedTransactionNames).isEqualTo(resultTransactionNames);
+    assertThat(resultTransactionNames).isEqualTo(emptyTransactionNames);
   }
 
   @Test
   @Owner(developers = ANSHIKA)
   @Category(UnitTests.class)
-  public void testGetExecutionLogs() {
+  public void testGetExecutionLogsEmpty() {
     String callbackId = generateUuid();
     String verificationJobInstanceId = generateUuid();
-    List<VerificationJobInstance.ProgressLog> expectedExecutionLogs = new ArrayList<>();
+    List<VerificationJobInstance.ProgressLog> expectedExecutionLogs = Collections.emptyList();
     when(verificationJobInstanceService.getProgressLogs(verificationJobInstanceId)).thenReturn(expectedExecutionLogs);
     List<VerificationJobInstance.ProgressLog> resultExecutionLogs =
         verificationJobInstanceService.getProgressLogs(callbackId);
