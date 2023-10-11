@@ -6,15 +6,17 @@
 package handler
 
 import (
-	"github.com/harness/harness-core/product/log-service/stackdriver"
 	"io"
 	"net/http"
 	"net/http/pprof"
+
+	"github.com/harness/harness-core/product/log-service/stackdriver"
 
 	"github.com/harness/harness-core/product/platform/client"
 
 	"github.com/go-chi/chi"
 
+	gcputils "github.com/harness/harness-core/commons/go/lib/gcputils"
 	"github.com/harness/harness-core/product/log-service/cache"
 	"github.com/harness/harness-core/product/log-service/config"
 	"github.com/harness/harness-core/product/log-service/logger"
@@ -25,7 +27,7 @@ import (
 
 // Handler returns an http.Handler that exposes the
 // service resources.
-func Handler(queue queue.Queue, cache cache.Cache, stream stream.Stream, store store.Store, stackdriver *stackdriver.Stackdriver, config config.Config, ngClient *client.HTTPClient) http.Handler {
+func Handler(queue queue.Queue, cache cache.Cache, stream stream.Stream, store store.Store, stackdriver *stackdriver.Stackdriver, config config.Config, ngClient *client.HTTPClient, gcsClient gcputils.GCS) http.Handler {
 	r := chi.NewRouter()
 	r.Use(logger.Middleware)
 
@@ -174,7 +176,7 @@ func Handler(queue queue.Queue, cache cache.Cache, stream stream.Stream, store s
 			With(RequiredQueryParams(accountIDParam, usePrefixParam)).
 			With(ValidatePrefixRequest()).
 			With(CacheRequest(cache)).
-			Post("/", HandleZipLinkPrefix(queue, store, cache, config))
+			Post("/", HandleZipLinkPrefix(queue, store, cache, config, gcsClient))
 
 		return sr
 	}())

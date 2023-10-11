@@ -10,10 +10,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
-	gcputils "github.com/harness/harness-core/commons/go/lib/gcputils/gcs.go"
-	"google.golang.org/api/option"
+	gcputils "github.com/harness/harness-core/commons/go/lib/gcputils"
 
 	"github.com/harness/harness-core/product/log-service/cache"
 	"github.com/harness/harness-core/product/log-service/config"
@@ -200,7 +201,7 @@ func HandleInternalDelete(store store.Store) http.HandlerFunc {
 	}
 }
 
-func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config.Config) http.HandlerFunc {
+func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config.Config, gcsClient gcputils.GCS) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		st := time.Now()
 		h := w.Header()
@@ -221,7 +222,38 @@ func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config
 			WriteNotFound(w, err)
 			return
 		}
+		// link, err = SignedURL(cfg.S3.Bucket, zipPrefix, cfg.S3.CustomHost)
+		link, err = gcsClient.SignURL(cfg.S3.Bucket, zipPrefix, cfg.S3.CustomHost)
+		if err != nil {
+			logger.FromRequest(r).
+				WithError(err).
+				WithField(usePrefixParam, prefix).
+				Errorln("api: cannot Sign the download url")
+			WriteNotFound(w, err)
+			return
+		}
 
+		lstring := strings.Split(link, "harness-download")
+
+		if len(lstring) < 2 {
+			logger.FromRequest(r).
+				WithError(err).
+				WithField(usePrefixParam, prefix).
+				WithField("url", lstring).
+				Errorln("api: cannot parse Unescaped Signed url")
+			WriteNotFound(w, fmt.Errorf("cannot parse Unescaped Signed url"))
+			return
+		}
+		link, err = url.PathUnescape(lstring[0])
+		link = link + "harness-download" + lstring[1]
+		if err != nil {
+			logger.FromRequest(r).
+				WithError(err).
+				WithField(usePrefixParam, prefix).
+				Errorln("api: cannot Unescape the  Signed url")
+			WriteNotFound(w, err)
+			return
+		}
 		out, err := s.ListBlobPrefix(ctx, CreateAccountSeparatedKey(accountID, prefix), cfg.Zip.LIMIT_FILES)
 		if err != nil || len(out) == 0 {
 			logger.FromRequest(r).
@@ -302,11 +334,11 @@ func HandleExists(store store.Store) http.HandlerFunc {
 }
 
 func SignedURL(bucketName, objectName, customHost string) (string, error) {
-	client, err := gcputils.NewGCSClient(context.Background(), nil, nil, option.WithCredentialsFile("Downloads/gcp-ci-play-vm.json"))
+	client, err := gcputils.NewGCSClient(context.Background(), nil, nil, gcputils.WithGCSCredentialsFile("/Users/soumyajitdas/Downloads/gcp-ci-play-vm.json"))
 	if err != nil {
 		return "", err
 	}
-	url, err := gcputils.SignURL(bucketName, objectName, customHost, client)
+	url, err := client.SignURL(bucketName, objectName, customHost)
 	if err != nil {
 		return "", nil
 	}

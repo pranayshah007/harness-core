@@ -48,6 +48,8 @@ type Config struct {
 		Region          string `envconfig:"LOG_SERVICE_S3_REGION"`
 		AccessKeyID     string `envconfig:"LOG_SERVICE_S3_ACCESS_KEY_ID" secret:"true"`
 		AccessKeySecret string `envconfig:"LOG_SERVICE_S3_SECRET_ACCESS_KEY" secret:"true"`
+		CustomHost      string `envconfig:"LOG_SERVICE_S3_CUSTOM_HOST" default:"app.harness.io/storage/harness-download"`
+		CredentialsPath string `envconfig:"LOG_SERVICE_S3_CREDENTIALS_PATH"`
 	}
 
 	Redis struct {
