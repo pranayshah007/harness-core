@@ -51,6 +51,7 @@ import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.microsoft.aad.msal4j.MsalException;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -80,8 +81,8 @@ public class AzureVaultEncryptor implements VaultEncryptor {
       String name = secretText.getName();
       try {
         SecretClient keyVaultClient = getAzureVaultSecretsClient(azureConfig);
-        return HTimeLimiter.callInterruptible21(
-            timeLimiter, ofSeconds(15), () -> upsertInternal(accountId, secretText, null, azureConfig, keyVaultClient));
+        return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(15),
+            () -> upsertInternal(accountId, secretText, null, azureConfig, keyVaultClient));
       } catch (KeyVaultErrorException e) {
         // Key Vault Error Exception is non-retryable
         throw new SecretManagementDelegateException(
@@ -117,7 +118,7 @@ public class AzureVaultEncryptor implements VaultEncryptor {
     while (true) {
       try {
         SecretClient keyVaultClient = getAzureVaultSecretsClient(azureConfig);
-        return HTimeLimiter.callInterruptible21(timeLimiter, ofSeconds(15),
+        return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(15),
             () -> upsertInternal(accountId, secretText, existingRecord, azureConfig, keyVaultClient));
       } catch (KeyVaultErrorException e) {
         // Key Vault Error Exception is non-retryable
@@ -156,7 +157,7 @@ public class AzureVaultEncryptor implements VaultEncryptor {
     while (true) {
       try {
         SecretClient keyVaultClient = getAzureVaultSecretsClient(azureConfig);
-        return HTimeLimiter.callInterruptible21(timeLimiter, ofSeconds(15),
+        return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(15),
             () -> renameSecretInternal(accountId, secretText, existingRecord, azureConfig, keyVaultClient));
       } catch (KeyVaultErrorException e) {
         // Key Vault Error Exception is non-retryable
@@ -297,8 +298,8 @@ public class AzureVaultEncryptor implements VaultEncryptor {
       try {
         SecretClient keyVaultClient = getAzureVaultSecretsClient(azureConfig);
         log.info("Trying to decrypt record {} by {}", encryptedRecord.getEncryptionKey(), azureConfig.getVaultName());
-        return HTimeLimiter.callInterruptible21(
-            timeLimiter, ofSeconds(15), () -> fetchSecretValueInternal(encryptedRecord, azureConfig, keyVaultClient));
+        return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(15),
+            () -> fetchSecretValueInternal(encryptedRecord, azureConfig, keyVaultClient));
       } catch (KeyVaultErrorException e) {
         throw new SecretManagementDelegateException(
             AZURE_KEY_VAULT_OPERATION_ERROR, prepareKeyVaultErrorMessage(e, accountId, azureConfig.getName()), e, USER);
