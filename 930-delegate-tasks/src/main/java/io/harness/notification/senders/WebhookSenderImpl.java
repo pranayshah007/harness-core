@@ -10,7 +10,6 @@ package io.harness.notification.senders;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.delegate.beans.NotificationProcessingResponse;
-import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.notification.helper.NotificationSettingsHelper;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -42,10 +41,9 @@ public class WebhookSenderImpl {
     client = new OkHttpClient();
   }
 
-  public NotificationProcessingResponse send(
-      List<String> webhookUrls, String message, String notificationId, Map<String, String> headers, String accountId) {
-    webhookUrls = NotificationSettingsHelper.getRecipientsWithValidDomain(
-        webhookUrls, accountId, SettingIdentifiers.WEBHOOK_NOTIFICATION_ENDPOINTS_ALLOWLIST);
+  public NotificationProcessingResponse send(List<String> webhookUrls, String message, String notificationId,
+      Map<String, String> headers, List<String> webhookDomainAllowlist) {
+    webhookUrls = NotificationSettingsHelper.getRecipientsWithValidDomain(webhookUrls, webhookDomainAllowlist);
     List<Boolean> results = new ArrayList<>();
     for (String webhookUrl : webhookUrls) {
       boolean ret = sendJSONMessage(message, webhookUrl, headers);
