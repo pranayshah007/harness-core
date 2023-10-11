@@ -85,16 +85,18 @@ public class ProjectEventHandler implements OutboxEventHandler {
         EventsFrameworkMetadataConstants.CREATE_ACTION);
     ProjectCreateEvent projectCreateEvent =
         objectMapper.readValue(outboxEvent.getEventData(), ProjectCreateEvent.class);
-    AuditEntry auditEntry =
-        AuditEntry.builder()
-            .action(Action.CREATE)
-            .module(ModuleType.CORE)
-            .newYaml(getYamlString(ProjectRequest.builder().project(projectCreateEvent.getProject()).build()))
-            .timestamp(outboxEvent.getCreatedAt())
-            .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
-            .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
-            .insertId(outboxEvent.getId())
-            .build();
+    AuditEntry auditEntry = AuditEntry.builder()
+                                .action(Action.CREATE)
+                                .module(ModuleType.CORE)
+                                .newYaml(getYamlString(ProjectRequest.builder()
+                                                           .project(projectCreateEvent.getProject())
+                                                           .uniqueId(projectCreateEvent.getUniqueId())
+                                                           .build()))
+                                .timestamp(outboxEvent.getCreatedAt())
+                                .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
+                                .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
+                                .insertId(outboxEvent.getId())
+                                .build();
     return publishedToRedis && auditClientService.publishAudit(auditEntry, globalContext);
   }
 

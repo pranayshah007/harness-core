@@ -183,15 +183,14 @@ public class ProjectServiceImpl implements ProjectService {
       validate(project);
       Project createdProject = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         Project savedProject = projectRepository.save(project);
-        ProjectDTO projectdto = ProjectMapper.writeDTO(savedProject);
-        projectdto.setUniqueId(savedProject.getUniqueId());
-        outboxService.save(new ProjectCreateEvent(project.getAccountIdentifier(), projectdto));
+        outboxService.save(new ProjectCreateEvent(
+            project.getAccountIdentifier(), ProjectMapper.writeDTO(savedProject), savedProject.getUniqueId()));
         return savedProject;
       }));
       setupProject(Scope.of(accountIdentifier, orgIdentifier, projectDTO.getIdentifier()));
       log.info(String.format("Project with identifier [%s] and orgIdentifier [%s] was successfully created",
           project.getIdentifier(), projectDTO.getOrgIdentifier()));
-      instrumentationHelper.sendProjectCreateEvent(createdProject, accountIdentifier);
+      instrumentationHelper.sendProjectCreateEvent(createdProject, accountIdentifier, createdProject.getUniqueId());
       return createdProject;
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(
