@@ -10,7 +10,9 @@ package io.harness.pcf.cfcli.client;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.logging.LogLevel.ERROR;
+import static io.harness.logging.LogLevel.WARN;
 import static io.harness.pcf.PcfUtils.logCliCommand;
 import static io.harness.pcf.PcfUtils.logCliCommandFailure;
 import static io.harness.pcf.model.PcfConstants.CF_DOCKER_CREDENTIALS;
@@ -37,9 +39,11 @@ import static software.wings.beans.LogWeight.Bold;
 import static java.lang.String.format;
 import static java.lang.String.join;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toSet;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.kubectl.Utils;
@@ -62,8 +66,13 @@ import io.harness.pcf.model.PcfRouteInfo.PcfRouteInfoBuilder;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -78,6 +87,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.cloudfoundry.operations.domains.Domain;
 import org.jetbrains.annotations.NotNull;
 import org.zeroturnaround.exec.ProcessExecutor;
@@ -630,6 +640,150 @@ public class CfCliClientImpl implements CfCliClient {
     if (exitCode != 0) {
       throw new PivotalClientApiException("Exception occurred while running pcf plugin script"
           + ", Error: Plugin Script process ExitCode:  " + exitCode);
+    }
+  }
+
+  @Override
+  public Map<String, String> runPcfPluginScriptWithEnvironmentVarInputsAndOutputs(
+      CfRunPluginScriptRequestData cfRunPluginScriptRequestData, LogCallback logCallback,
+      Map<String, String> inputVariables, List<String> outputVariables) throws PivotalClientApiException {
+    CfRequestConfig pcfRequestConfig = cfRunPluginScriptRequestData.getCfRequestConfig();
+    String randomUUID = UUIDGenerator.generateUuid();
+    String envVariablesFilename = "harness-" + randomUUID + ".out";
+    String startToken = "harness_start_token_" + randomUUID;
+    String endToken = "harness_end_token_" + randomUUID;
+    Map<String, String> envVariablesMap = new HashMap<>();
+    File envVariablesOutputFile = null;
+    int exitCode = -1;
+    try {
+      logCallback.saveExecutionLog("# Final Script to execute :");
+      logCallback.saveExecutionLog("# ------------------------------------------ \n");
+      logCallback.saveExecutionLog(cfRunPluginScriptRequestData.getFinalScriptString());
+      logCallback.saveExecutionLog("\n# ------------------------------------------ ");
+      logCallback.saveExecutionLog("\n# CF_HOME value: " + cfRunPluginScriptRequestData.getWorkingDirectory());
+      String finalScriptString = cfRunPluginScriptRequestData.getFinalScriptString();
+      if (!isNull(outputVariables) && !outputVariables.isEmpty()) {
+        envVariablesOutputFile = new File(cfRunPluginScriptRequestData.getWorkingDirectory(), envVariablesFilename);
+        finalScriptString = addEnvVariablesCollector(
+            finalScriptString, outputVariables, envVariablesOutputFile.getAbsolutePath(), startToken, endToken);
+      }
+      final String pcfPluginHome = PcfUtils.resolvePcfPluginHome();
+      logCallback.saveExecutionLog("# CF_PLUGIN_HOME value: " + pcfPluginHome);
+      boolean loginSuccessful =
+          doLogin(pcfRequestConfig, logCallback, cfRunPluginScriptRequestData.getWorkingDirectory());
+      if (loginSuccessful) {
+        logCallback.saveExecutionLog("# Executing pcf plugin script :");
+        Map<String, String> envMap = getEnvironmentMapForPluginScript(pcfRequestConfig.getEndpointUrl(),
+            cfRunPluginScriptRequestData.getWorkingDirectory(), pcfPluginHome, pcfRequestConfig.getCfCliPath());
+        if (!isNull(inputVariables)) {
+          envMap.putAll(inputVariables);
+        }
+        ProcessResult processResult =
+            getProcessResult(finalScriptString, envMap, pcfRequestConfig.getTimeOutIntervalInMins(), logCallback);
+        exitCode = processResult.getExitValue();
+        if (exitCode == 0) {
+          logCallback.saveExecutionLog(format(SUCCESS, Bold, Green));
+          if (envVariablesOutputFile != null) {
+            try (BufferedReader br = new BufferedReader(
+                     new InputStreamReader(new FileInputStream(envVariablesOutputFile), StandardCharsets.UTF_8))) {
+              processScriptOutputFile(envVariablesMap, br, startToken, endToken, logCallback);
+              validateExportedVariables(envVariablesMap, logCallback);
+            } catch (FileNotFoundException e) {
+              log.error("Error in processing script output: ", e);
+              logCallback.saveExecutionLog(
+                  "Error while reading variables to process Script Output. Avoid exiting from script early. IOException: "
+                      + e,
+                  ERROR);
+            } catch (IOException e) {
+              log.error("Error in processing script output: ", e);
+              logCallback.saveExecutionLog("IOException:" + e, ERROR);
+            }
+          }
+        } else {
+          logCallback.saveExecutionLog(format(processResult.outputUTF8(), Bold, Red), ERROR);
+        }
+      }
+    } catch (Exception e) {
+      throw new PivotalClientApiException("Exception occurred while running pcf plugin script", e);
+    }
+    if (exitCode != 0) {
+      throw new PivotalClientApiException("Exception occurred while running pcf plugin script"
+          + ", Error: Plugin Script process ExitCode:  " + exitCode);
+    }
+    return envVariablesMap;
+  }
+
+  protected String addEnvVariablesCollector(String command, List<String> envVariablesToCollect,
+      String envVariablesOutputFilePath, String startToken, String endToken) {
+    StringBuilder wrapperCommand = new StringBuilder(command);
+    wrapperCommand.append('\n');
+    String redirect = ">";
+    for (String env : envVariablesToCollect) {
+      wrapperCommand.append("echo ")
+          .append(startToken)
+          .append(' ')
+          .append(env)
+          .append("=\"$")
+          .append(env)
+          .append("\" ")
+          .append(endToken)
+          .append(' ')
+          .append(redirect)
+          .append(envVariablesOutputFilePath)
+          .append('\n');
+      redirect = ">>";
+    }
+    return wrapperCommand.toString();
+  }
+
+  protected void processScriptOutputFile(@NotNull Map<String, String> envVariablesMap, @NotNull BufferedReader br,
+      String startToken, String endToken, LogCallback logCallback) throws IOException {
+    logCallback.saveExecutionLog("Script Output: ");
+    StringBuilder sb = new StringBuilder();
+    String line;
+    while ((line = br.readLine()) != null) {
+      sb.append(line);
+      sb.append('\n');
+      if (line.endsWith(endToken)) {
+        String envVar = sb.toString();
+        envVar = StringUtils.substringBetween(envVar, startToken, endToken);
+        int index = envVar.indexOf('=');
+        if (index != -1) {
+          String key = envVar.substring(0, index).trim();
+          String value = envVar.substring(index + 1).trim();
+          if (StringUtils.isNotBlank(key)) {
+            envVariablesMap.put(key, value);
+            logCallback.saveExecutionLog(key + "=" + value);
+          }
+          sb = new StringBuilder();
+        }
+      }
+    }
+  }
+
+  protected void validateExportedVariables(@NotNull Map<String, String> envVariablesMap, LogCallback logCallback) {
+    StringBuilder emptySb = new StringBuilder();
+    StringBuilder hyphenSb = new StringBuilder();
+
+    for (Map.Entry<String, String> variable : envVariablesMap.entrySet()) {
+      if (isEmpty(variable.getValue())) {
+        emptySb.append(variable.getKey()).append(',');
+      }
+      if (variable.getKey().contains("-")) {
+        hyphenSb.append(variable.getKey()).append(',');
+      }
+    }
+
+    if (isNotEmpty(emptySb.toString())) {
+      logCallback.saveExecutionLog("Warning: following variables have resolved to empty values: "
+              + emptySb.substring(0, emptySb.length() - 1) + "\nCheck if these are assigned correctly in the script.",
+          WARN, RUNNING);
+    }
+
+    if (isNotEmpty(hyphenSb.toString())) {
+      logCallback.saveExecutionLog("Warning: following variables have hyphens in variable values: "
+              + hyphenSb.substring(0, hyphenSb.length() - 1) + "\nBash does not support hyphen(-) in variable names.",
+          WARN, RUNNING);
     }
   }
 
