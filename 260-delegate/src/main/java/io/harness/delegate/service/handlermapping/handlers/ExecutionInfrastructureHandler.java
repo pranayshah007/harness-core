@@ -49,8 +49,8 @@ public class ExecutionInfrastructureHandler implements Handler {
       log.error("init infra by runner {} failed with exception ", runner, e);
       response = SetupInfraResponse.newBuilder().setResponseCode(ResponseCode.RESPONSE_FAILED).build();
     }
-    var call = managerClient.sendSetupInfraResponse(
-        taskPayload.getId(), context.get(Context.DELEGATE_ID), "kmpySmUISimoRrJL6NL73w", response);
+    var call = managerClient.sendSetupInfraResponse(taskPayload.getId(), context.get(Context.DELEGATE_ID),
+        context.get(delegateConfiguration.getAccountId()), response);
     String failureMessage = String.format("Failed to send init infra response by runner %s", runnerType);
     ManagerCallHelper.executeCallWithBackOffRetry(call, 5, failureMessage);
   }

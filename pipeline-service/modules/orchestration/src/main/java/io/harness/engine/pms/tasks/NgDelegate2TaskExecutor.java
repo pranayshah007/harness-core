@@ -21,7 +21,6 @@ import io.harness.delegate.AccountId;
 import io.harness.delegate.CancelTaskRequest;
 import io.harness.delegate.CancelTaskResponse;
 import io.harness.delegate.ComputingResource;
-import io.harness.delegate.ContainerSpec;
 import io.harness.delegate.DelegateServiceGrpc.DelegateServiceBlockingStub;
 import io.harness.delegate.Execution;
 import io.harness.delegate.ExecutionInfrastructure;

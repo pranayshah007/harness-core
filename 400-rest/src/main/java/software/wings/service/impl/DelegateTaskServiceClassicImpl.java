@@ -992,14 +992,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       // Mark task as assigned
       log.debug("Acquiring delegate task");
       DelegateTask delegateTask = getUnassignedDelegateTask(accountId, taskId, delegateInstanceId);
-
-      try {
-        String logStreamingAccountToken = logStreamingAccountTokenCache.get(delegateTask.getAccountId());
-        log.info("value of logging token is {}", logStreamingAccountToken);
-      } catch (Exception ex) {
-        log.info("anything exception");
-      }
-      //
       if (delegateTask == null) {
         return Optional.empty();
       }
