@@ -6,7 +6,8 @@
  */
 
 package io.harness.engine.pms.resume.publisher;
-import static io.harness.execution.NodeExecution.*;
+
+import static io.harness.execution.NodeExecution.NodeExecutionKeys;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -109,22 +110,23 @@ public class RedisNodeResumeEventPublisher implements NodeResumeEventPublisher {
           // TODO: Hacking this in 1.47 for the race condition where callback get fired before the executableResponse
           // get processed
 
-          int attempts = 0;
-          while (attempts < 5) {
-            attempts++;
-            NodeExecution execution = nodeExecutionService.getWithFieldsIncluded(
-                resumeMetadata.getNodeExecutionUuid(), Set.of(NodeExecutionKeys.executableResponses));
-            if (execution.obtainLatestExecutableResponse() != null) {
-              log.info("Resume metadata was null but fetched in attempt: {}", attempts);
-              resumeMetadata.setLatestExecutableResponse(execution.obtainLatestExecutableResponse());
-              break;
+          if (resumeMetadata.getLatestExecutableResponse() == null) {
+            int attempts = 0;
+            while (attempts < 5) {
+              attempts++;
+              NodeExecution execution = nodeExecutionService.getWithFieldsIncluded(
+                  resumeMetadata.getNodeExecutionUuid(), Set.of(NodeExecutionKeys.executableResponses));
+              if (execution.obtainLatestExecutableResponse() != null) {
+                log.info("Resume metadata was null but fetched in attempt: {}", attempts);
+                resumeMetadata.setLatestExecutableResponse(execution.obtainLatestExecutableResponse());
+                break;
+              }
+              long exponentialSleepMs = (1L << (attempts - 1)) * 1000L;
+              Morpheus.quietSleep(Duration.ofMillis(Math.min(exponentialSleepMs, MAX_DELAY_MS_FOR_RETRY)));
             }
-            long exponentialSleepMs = (1L << (attempts - 1)) * 1000L;
-            Morpheus.quietSleep(Duration.ofMillis(Math.min(exponentialSleepMs, MAX_DELAY_MS_FOR_RETRY)));
           }
 
           // TODO:  Still letting it throw NPE for now
-
           AsyncChainExecutableResponse asyncChainExecutableResponse =
               Objects.requireNonNull(resumeMetadata.getLatestExecutableResponse()).getAsyncChain();
           return ChainDetails.newBuilder()
