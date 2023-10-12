@@ -6,7 +6,6 @@
  */
 
 package software.wings.delegatetasks.k8s.taskhandler;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.exception.ExceptionUtils.getMessage;
 import static io.harness.k8s.K8sCommandUnitConstants.DeleteFailedReleaseResources;
@@ -23,8 +22,11 @@ import static io.harness.logging.LogLevel.WARN;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.k8s.K8sRollingRollbackBaseHandler;
 import io.harness.delegate.k8s.K8sRollingRollbackBaseHandler.ResourceRecreationStatus;
@@ -52,6 +54,7 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @NoArgsConstructor
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)

@@ -63,9 +63,9 @@ import io.harness.cdng.manifest.yaml.summary.HelmChartManifestSummary;
 import io.harness.cdng.manifestConfigs.ManifestConfigurations;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
-import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.cdng.utilities.ServiceEnvironmentsLogCallbackUtility;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.TaskData;
@@ -137,7 +137,6 @@ public class ManifestsStepV2Test extends CategoryTest {
   @Mock EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Mock private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Mock private PipelineRbacHelper pipelineRbacHelper;
-  @Mock private ServiceStepsHelper serviceStepsHelper;
   @Mock private NGLogCallback logCallback;
   @Mock NGFeatureFlagHelperService featureFlagHelperService;
   @Mock private NGSettingsClient ngSettingsClient;
@@ -147,6 +146,7 @@ public class ManifestsStepV2Test extends CategoryTest {
   @Mock private StrategyHelper strategyHelper;
   @Mock private KryoSerializer referenceFalseKryoSerializer;
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Mock private ServiceEnvironmentsLogCallbackUtility serviceEnvironmentsLogUtility;
 
   @InjectMocks private ManifestsStepV2 step = new ManifestsStepV2();
 
@@ -163,7 +163,7 @@ public class ManifestsStepV2Test extends CategoryTest {
                              .build()))
         .when(connectorService)
         .get(anyString(), anyString(), anyString(), anyString());
-    doReturn(logCallback).when(serviceStepsHelper).getServiceLogCallback(any(), anyBoolean(), anyString());
+    doReturn(logCallback).when(serviceEnvironmentsLogUtility).getLogCallback(any(), anyBoolean());
   }
 
   @After
@@ -310,7 +310,7 @@ public class ManifestsStepV2Test extends CategoryTest {
     doReturn(listEntityDetail)
         .when(entityDetailProtoToRestMapper)
         .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
-    verify(stageExecutionInfoService, times(0)).updateStageExecutionInfo(any(), any());
+    verify(stageExecutionInfoService, times(0)).upsertStageExecutionInfo(any(), any());
 
     T response = executeMethod.get();
 
@@ -363,7 +363,7 @@ public class ManifestsStepV2Test extends CategoryTest {
     T response = executeMethod.get();
 
     ArgumentCaptor<StageExecutionInfoUpdateDTO> captor = ArgumentCaptor.forClass(StageExecutionInfoUpdateDTO.class);
-    verify(stageExecutionInfoService, times(1)).updateStageExecutionInfo(any(), captor.capture());
+    verify(stageExecutionInfoService, times(1)).upsertStageExecutionInfo(any(), captor.capture());
     StageExecutionInfoUpdateDTO stageExecutionInfoUpdateDTO = captor.getValue();
     ServiceExecutionSummaryDetails.ManifestsSummary manifestsSummary =
         stageExecutionInfoUpdateDTO.getManifestsSummary();
@@ -427,7 +427,7 @@ public class ManifestsStepV2Test extends CategoryTest {
     doReturn(listEntityDetail)
         .when(entityDetailProtoToRestMapper)
         .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
-    verify(stageExecutionInfoService, times(0)).updateStageExecutionInfo(any(), any());
+    verify(stageExecutionInfoService, times(0)).upsertStageExecutionInfo(any(), any());
 
     T response = executeMethod.get();
 

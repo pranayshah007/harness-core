@@ -6,10 +6,12 @@
  */
 
 package io.harness.service;
-
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.entities.InstanceSyncPerpetualTaskMappingService;
 import io.harness.entities.InstanceSyncPerpetualTaskMappingServiceImpl;
 import io.harness.instancesyncmonitoring.module.InstanceSyncMonitoringModule;
@@ -50,6 +52,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.atmosphere.cpr.BroadcasterFactory;
 import org.atmosphere.cpr.DefaultBroadcasterFactory;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(DX)
 public class InstanceModule extends AbstractModule {
   private static final AtomicReference<InstanceModule> instanceRef = new AtomicReference<>();

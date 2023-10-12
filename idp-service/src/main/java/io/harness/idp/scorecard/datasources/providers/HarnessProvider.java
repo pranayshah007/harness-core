@@ -49,10 +49,6 @@ public class HarnessProvider extends DataSourceProvider {
     Map<String, String> authHeaders = this.getAuthHeaders(accountIdentifier, null);
     replaceableHeaders.put(HARNESS_ACCOUNT, accountIdentifier);
     replaceableHeaders.putAll(authHeaders);
-    log.info(
-        "Harness provider is called - account -{}, entity - {}, data points and input values - {} replace headers - {} body replaceable - {} url replaceable -{}",
-        accountIdentifier, entity, dataPointsAndInputValues, replaceableHeaders, new HashMap<>(),
-        prepareUrlReplaceablePairs(env));
 
     return processOut(accountIdentifier, entity, dataPointsAndInputValues, replaceableHeaders, new HashMap<>(),
         prepareUrlReplaceablePairs(env));

@@ -14,7 +14,6 @@ import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENVIR
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.OVERRIDE_IN_REVERSE_PRIORITY;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_OVERRIDES;
-import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_STEP_COMMAND_UNIT;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -55,9 +54,9 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.summary.ManifestSummary;
 import io.harness.cdng.manifestConfigs.ManifestConfigurations;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
-import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.cdng.utilities.ServiceEnvironmentsLogCallbackUtility;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorModule;
 import io.harness.connector.ConnectorResponseDTO;
@@ -144,8 +143,6 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
   @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
-  @Inject private ServiceStepsHelper serviceStepsHelper;
-
   @Inject private NGSettingsClient ngSettingsClient;
 
   @Inject NGFeatureFlagHelperService featureFlagHelperService;
@@ -155,7 +152,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
   @Inject private CDStepHelper cdStepHelper;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject private StrategyHelper strategyHelper;
-
+  @Inject private ServiceEnvironmentsLogCallbackUtility serviceEnvironmentsLogUtility;
   private static final String OVERRIDE_PROJECT_SETTING_IDENTIFIER = "service_override_v2";
 
   @Override
@@ -166,8 +163,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
   @Override
   public AsyncExecutableResponse executeAsync(Ambiance ambiance, EmptyStepParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
-    final NGLogCallback logCallback =
-        serviceStepsHelper.getServiceLogCallback(ambiance, false, SERVICE_STEP_COMMAND_UNIT);
+    final NGLogCallback logCallback = serviceEnvironmentsLogUtility.getLogCallback(ambiance, false);
     Optional<ManifestsOutcome> manifestsOutcome = resolveManifestsOutcome(ambiance, logCallback);
 
     List<String> callbackIds = new ArrayList<>();
@@ -219,8 +215,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
   @Deprecated // Can be removed with next releases
   public StepResponse executeSync(Ambiance ambiance, EmptyStepParameters stepParameters, StepInputPackage inputPackage,
       PassThroughData passThroughData) {
-    final NGLogCallback logCallback =
-        serviceStepsHelper.getServiceLogCallback(ambiance, false, SERVICE_STEP_COMMAND_UNIT);
+    final NGLogCallback logCallback = serviceEnvironmentsLogUtility.getLogCallback(ambiance, false);
     Optional<ManifestsOutcome> manifestsOutcome = resolveManifestsOutcome(ambiance, logCallback);
 
     manifestsOutcome.ifPresent(outcome -> saveManifestsOutcome(ambiance, outcome, new HashMap<>()));
@@ -310,7 +305,8 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
 
       if (isNoManifestConfiguredV2(svcManifests, manifestsFromOverride)) {
         logCallback.saveExecutionLog(
-            "No manifests configured in the service. manifest expressions will not work", LogLevel.WARN);
+            "No manifests configured in the service or in overrides. manifest expressions will not work",
+            LogLevel.WARN);
 
         return Optional.empty();
       }
@@ -322,7 +318,8 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
 
       if (noManifestsConfigured(finalSvcManifestsMapV1)) {
         logCallback.saveExecutionLog(
-            "No manifests configured in the service. manifest expressions will not work", LogLevel.WARN);
+            "No manifests configured in the service or in overrides. manifest expressions will not work",
+            LogLevel.WARN);
 
         return Optional.empty();
       }
@@ -412,14 +409,16 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
   private List<ManifestConfigWrapper> aggregateManifestsFromAllLocations(
       @NonNull Map<String, List<ManifestConfigWrapper>> finalSvcManifestsMap) {
     List<ManifestConfigWrapper> manifests = new ArrayList<>();
-    if (isNotEmpty(finalSvcManifestsMap.get(SERVICE))) {
-      manifests.addAll(finalSvcManifestsMap.get(SERVICE));
-    }
-    if (isNotEmpty(finalSvcManifestsMap.get(ENVIRONMENT_GLOBAL_OVERRIDES))) {
-      manifests.addAll(finalSvcManifestsMap.get(ENVIRONMENT_GLOBAL_OVERRIDES));
-    }
-    if (isNotEmpty(finalSvcManifestsMap.get(SERVICE_OVERRIDES))) {
-      manifests.addAll(finalSvcManifestsMap.get(SERVICE_OVERRIDES));
+    if (isNotEmpty(finalSvcManifestsMap)) {
+      if (isNotEmpty(finalSvcManifestsMap.get(SERVICE))) {
+        manifests.addAll(finalSvcManifestsMap.get(SERVICE));
+      }
+      if (isNotEmpty(finalSvcManifestsMap.get(ENVIRONMENT_GLOBAL_OVERRIDES))) {
+        manifests.addAll(finalSvcManifestsMap.get(ENVIRONMENT_GLOBAL_OVERRIDES));
+      }
+      if (isNotEmpty(finalSvcManifestsMap.get(SERVICE_OVERRIDES))) {
+        manifests.addAll(finalSvcManifestsMap.get(SERVICE_OVERRIDES));
+      }
     }
 
     overrideHelmRepoConnectorIfHelmChartExists(finalSvcManifestsMap, manifests);
@@ -466,8 +465,10 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
 
   private void useHelmRepoOverrideIfExists(String overrideType, ManifestConfigWrapper svcHelmChart,
       Map<String, List<ManifestConfigWrapper>> finalSvcManifestsMap) {
+    if (isEmpty(finalSvcManifestsMap)) {
+      return;
+    }
     List<ManifestConfigWrapper> overrides = finalSvcManifestsMap.get(overrideType);
-
     if (isNotEmpty(overrides)) {
       List<ManifestConfigWrapper> helmOverrides = extractHelmRepoOverrides(overrides);
       if (!helmOverrides.isEmpty()) {
@@ -478,6 +479,9 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
 
   private void useHelmRepoOverrideIfExistsV2(ServiceOverridesType overrideType, ManifestConfigWrapper svcHelmChart,
       Map<ServiceOverridesType, List<ManifestConfigWrapper>> finalSvcManifestsMap) {
+    if (isEmpty(finalSvcManifestsMap)) {
+      return;
+    }
     List<ManifestConfigWrapper> overrides = finalSvcManifestsMap.get(overrideType);
 
     if (isNotEmpty(overrides)) {
@@ -621,7 +625,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
     try {
       List<ManifestSummary> manifestsSummary = mapManifestOutcomeToSummary(manifestsOutcome);
       if (isNotEmpty(manifestsSummary)) {
-        stageExecutionInfoService.updateStageExecutionInfo(ambiance,
+        stageExecutionInfoService.upsertStageExecutionInfo(ambiance,
             StageExecutionInfoUpdateDTO.builder()
                 .manifestsSummary(ServiceExecutionSummaryDetails.ManifestsSummary.builder()
                                       .manifestSummaries(manifestsSummary)
@@ -670,6 +674,9 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
 
   private List<ManifestConfigWrapper> filterServiceManifest(
       List<ManifestConfigWrapper> svcManifests, String primaryManifestId, boolean isMultipleManifestEnabled) {
+    if (isEmpty(svcManifests)) {
+      return svcManifests;
+    }
     if (!isMultipleManifestEnabled) {
       return svcManifests;
     }

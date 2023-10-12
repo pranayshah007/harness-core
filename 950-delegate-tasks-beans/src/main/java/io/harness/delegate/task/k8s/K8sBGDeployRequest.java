@@ -54,4 +54,5 @@ public class K8sBGDeployRequest implements K8sDeployRequest {
   boolean enabledSupportHPAAndPDB;
   boolean skipUnchangedManifest;
   boolean storeReleaseHash;
+  ReleaseMetadata releaseMetadata;
 }

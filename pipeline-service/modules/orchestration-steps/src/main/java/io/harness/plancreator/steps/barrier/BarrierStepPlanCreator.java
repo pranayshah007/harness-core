@@ -6,7 +6,9 @@
  */
 
 package io.harness.plancreator.steps.barrier;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.plancreator.steps.internal.PMSStepPlanCreatorV2;
 import io.harness.pms.plan.creation.PlanCreatorConstants;
@@ -22,6 +24,7 @@ import com.google.inject.Inject;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 public class BarrierStepPlanCreator extends PMSStepPlanCreatorV2<BarrierStepNode> {
   @Inject private BarrierService barrierService;
@@ -41,7 +44,7 @@ public class BarrierStepPlanCreator extends PMSStepPlanCreatorV2<BarrierStepNode
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, BarrierStepNode field) {
     if (featureFlagService.isEnabled(
             ctx.getAccountIdentifier(), FeatureName.CDS_NG_BARRIER_STEPS_WITHIN_LOOPING_STRATEGIES)) {
-      String planExecutionId = ctx.getMetadata().getMetadata().getExecutionUuid();
+      String planExecutionId = ctx.getExecutionUuid();
       String parentInfoStrategyNodeType =
           PlanCreatorUtilsCommon.getFromParentInfo(PlanCreatorConstants.STRATEGY_NODE_TYPE, ctx).getStringValue();
       String stageId = PlanCreatorUtilsCommon.getFromParentInfo(PlanCreatorConstants.STAGE_ID, ctx).getStringValue();

@@ -143,6 +143,8 @@ public enum FeatureName {
   CDS_MULTI_SERVICE_PROPAGATION("FF for enabling multi service propagation for CD", HarnessTeam.CDP),
   CDS_NG_TRIGGER_EXECUTION_REFACTOR(
       "Refactor trigger execution to use same logic used in manual execution", HarnessTeam.SPG),
+  CDS_NG_SECRET_RUNTIME_USAGE_EVENT_GENERATION(
+      "FF to enable secret runtime usage event generation for ng", HarnessTeam.CDC),
   CDS_NG_SERVICE_PRINCIPAL_FOR_CUSTOM_WEBHOOK(
       "Makes authenticated custom webhook calls use service principal instead of the principal inherited from the API key",
       HarnessTeam.CDC),
@@ -552,7 +554,6 @@ public enum FeatureName {
   PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION,
   PIPELINE_ROLLBACK("Flag to enable/disable Pipeline Rollback", HarnessTeam.PIPELINE),
   PLG_ENABLE_CROSS_GENERATION_ACCESS("Enables cross generation access", GTM),
-  PL_AUDIT_LOG_STREAMING_ENABLED("Enables AuditLogStreaming tab on AuditTrails page in account scope", HarnessTeam.PL),
   PL_CG_SHOW_MEMBER_ID_COUNT(
       "Shows memberId count instead of member names on CG UserGroupListing page", HarnessTeam.PL),
   PL_DISCOVERY_ENABLE(
@@ -589,8 +590,6 @@ public enum FeatureName {
   PL_USER_ACCOUNT_LEVEL_DATA_MIGRATION(
       "Enables Migration to create user account level data map for this account", HarnessTeam.PL),
   PL_USER_DELETION_V2("Modularising user deletion flows separately for CG and NG ", HarnessTeam.PL),
-  PL_USE_CREDENTIALS_FROM_DELEGATE_FOR_GCP_SM(
-      "Enables the use of credentials from Delegate in GCP Secret Manager", HarnessTeam.PL),
   PL_AI_SUPPORT_CHATBOT("Enable Harness Support Bot for an account", HarnessTeam.PL),
   PL_EULA_ENABLED("Enable End User License Agreement Setting in Default Settings", HarnessTeam.PL),
   POST_PROD_ROLLBACK("Flag to enable/disable PostProd Rollback", HarnessTeam.PIPELINE),
@@ -918,6 +917,9 @@ public enum FeatureName {
   CDS_NG_K8S_SERVICE_RELEASE_NAME(
       "This flag enables the usage of release name in service configuration for K8s & Helm service types.",
       HarnessTeam.CDP),
+  CDS_NG_K8S_PASS_RELEASE_METADATA(
+      "This flag enables warnings in execution logs if conflicting service/infra are found while performing K8s deployments.",
+      HarnessTeam.CDP),
   CDS_K8S_EKS_LIST_CLUSTERS_ADD_REGION(
       "Allow the user to specify the region to be used for listing EKS clusters.", HarnessTeam.CDP),
   CDS_SHELL_VARIABLES_EXPORT("Export shell script output variables to different scopes", HarnessTeam.CDC),
@@ -930,7 +932,10 @@ public enum FeatureName {
   CDS_NOT_SUPPORT_SECRETS_BASE64_EXPRESSION(
       "This flag to not support secrets in files which content will be used in configFile.getAsBase64 and fileStore.getAsBase64 expressions",
       HarnessTeam.CDP),
-  CDS_INFRA_GITX("Onboard Infrastructure entity to GitX", HarnessTeam.CDC);
+  CDS_INFRA_GITX("Onboard Infrastructure entity to GitX", HarnessTeam.CDC),
+  CDS_MERGE_PIPELINE_EXECUTION_SUMMARY_UPDATE_FLOW(
+      "Merge the different flows to update pipeline execution summary to avoid write conflicts in mongo", PIPELINE),
+  PIE_SECRETS_OBSERVER("Secrets Runtime Usages Observer", PIPELINE);
 
   // keep-sorted end
 

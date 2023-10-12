@@ -595,9 +595,11 @@ public class EnvironmentResourceV2 {
           description =
               "Specify true if all accessible environments are to be included. Returns environments at account/org/project level.")
       @QueryParam(NGResourceFilterConstants.INCLUDE_ALL_ACCESSIBLE_AT_SCOPE) @DefaultValue(
-          "false") boolean includeAllAccessibleAtScope) {
+          "false") boolean includeAllAccessibleAtScope,
+      @Parameter(description = "Specifies the repo name of the entity", hidden = true) @QueryParam(
+          "repoName") String repoName) {
     Criteria criteria = environmentFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier,
-        false, searchTerm, filterIdentifier, filterProperties, includeAllAccessibleAtScope);
+        false, searchTerm, filterIdentifier, filterProperties, includeAllAccessibleAtScope, repoName);
 
     if (isNotEmpty(envIdentifiers)) {
       criteria.and(EnvironmentKeys.identifier).in(envIdentifiers);
@@ -660,7 +662,7 @@ public class EnvironmentResourceV2 {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, UNAUTHORIZED_TO_LIST_ENVIRONMENTS_MESSAGE);
     Criteria criteria = environmentFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier,
-        false, searchTerm, filterIdentifier, filterProperties, includeAllAccessibleAtScope);
+        false, searchTerm, filterIdentifier, filterProperties, includeAllAccessibleAtScope, StringUtils.EMPTY);
 
     if (isNotEmpty(envIdentifiers)) {
       criteria.and(EnvironmentKeys.identifier).in(envIdentifiers);

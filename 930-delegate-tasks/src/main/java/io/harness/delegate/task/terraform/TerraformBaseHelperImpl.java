@@ -6,6 +6,7 @@
  */
 
 package io.harness.delegate.task.terraform;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -137,6 +138,7 @@ import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClient;
 import com.amazonaws.services.securitytoken.model.AssumeRoleRequest;
 import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.io.ByteArrayInputStream;
@@ -897,17 +899,32 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
   public Map<String, String> getAwsAuthEnvVariables(TerraformTaskNGParameters taskParameters) {
     Map<String, String> awsAuthEnvVariables = new HashMap<>();
 
-    if (taskParameters.getProviderCredentialInfo() != null) {
-      if (TerraformProviderType.AWS.equals(taskParameters.getProviderCredentialInfo().getType())) {
+    if (taskParameters.getProviderCredentialDelegateInfo() != null) {
+      if (TerraformProviderType.AWS.equals(taskParameters.getProviderCredentialDelegateInfo().getType())) {
         try {
           awsAuthEnvVariables = getAwsAuthVariablesInternal(
-              (TerraformAwsProviderCredentialDelegateInfo) taskParameters.getProviderCredentialInfo());
+              (TerraformAwsProviderCredentialDelegateInfo) taskParameters.getProviderCredentialDelegateInfo());
         } catch (Exception e) {
           throw new InvalidRequestException(ExceptionMessageSanitizer.sanitizeException(e).getMessage());
         }
       }
     }
     return awsAuthEnvVariables;
+  }
+
+  @Override
+  @NonNull
+  public ImmutableMap<String, String> getEnvironmentVariables(TerraformTaskNGParameters taskParameters) {
+    Map<String, String> awsAuthEnvVariables = getAwsAuthEnvVariables(taskParameters);
+    ImmutableMap.Builder<String, String> envVars = ImmutableMap.builder();
+    if (isNotEmpty(taskParameters.getEnvironmentVariables())) {
+      envVars.putAll(taskParameters.getEnvironmentVariables());
+    }
+
+    if (isNotEmpty(awsAuthEnvVariables)) {
+      envVars.putAll(awsAuthEnvVariables);
+    }
+    return envVars.build();
   }
 
   private Map<String, String> getAwsAuthVariablesInternal(

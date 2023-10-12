@@ -6,12 +6,14 @@
  */
 
 package io.harness.pms.ngpipeline.inputset.api;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.pipeline.api.PipelinesApiUtils.getMoveConfigType;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
@@ -48,6 +50,7 @@ import java.util.Set;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.PIPELINE)

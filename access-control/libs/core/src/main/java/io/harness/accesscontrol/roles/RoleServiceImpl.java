@@ -209,7 +209,7 @@ public class RoleServiceImpl implements RoleService {
       }
       Role updatedRole = roleDao.update(roleUpdate);
       outboxService.save(new RoleUpdateEvent(
-          getAccountId(scopeDTO), RoleMapper.toDTO(currentRole), RoleMapper.toDTO(updatedRole), scopeDTO.orElse(null)));
+          getAccountId(scopeDTO), RoleMapper.toDTO(updatedRole), RoleMapper.toDTO(currentRole), scopeDTO.orElse(null)));
       return updatedRole;
     }));
   }

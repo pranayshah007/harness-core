@@ -8,6 +8,7 @@
 package io.harness.cdng.buckets.resources.s3;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.VED;
 
@@ -259,6 +260,43 @@ public class S3ResourceServiceImplTest extends CategoryTest {
     assertThat(awsTaskParams.getRegion()).isEqualTo(region);
     assertThat(awsTaskParams.getAwsTaskType()).isEqualTo(AwsTaskType.GET_BUILDS);
     assertThat(awsTaskParams.getAwsConnector().getDelegateSelectors()).contains("proj-delegate");
+    assertThat(awsTaskParams.getFilePathRegex()).isEqualTo(filePathRegex);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetFilePathsNotAcceptAll() {
+    List<BuildDetails> builds = new ArrayList<>();
+
+    S3BuildsResponse expectedBuilds = S3BuildsResponse.builder()
+                                          .builds(builds)
+                                          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                          .delegateMetaInfo(null)
+                                          .build();
+
+    doReturn(expectedBuilds)
+        .when(serviceHelper)
+        .getResponseData(eq(baseNGAccess), nullable(AwsTaskParams.class), eq(TaskType.NG_AWS_TASK.name()));
+
+    List<BuildDetails> buildResponse =
+        s3ResourceServiceImpl.getFilePaths(awsConnectorRef, region, bucket, "abc", orgIdentifier, projectIdentifier);
+
+    assertThat(buildResponse).isSameAs(builds);
+
+    ArgumentCaptor<AwsTaskParams> awsTaskParamsCaptor = ArgumentCaptor.forClass(AwsTaskParams.class);
+
+    verify(serviceHelper, times(1))
+        .getResponseData(eq(baseNGAccess), awsTaskParamsCaptor.capture(), eq(TaskType.NG_AWS_TASK.name()));
+
+    AwsTaskParams awsTaskParams = awsTaskParamsCaptor.getValue();
+
+    assertThat(awsTaskParams).isNotNull();
+    assertThat(awsTaskParams.getAwsConnector()).isNotNull();
+    assertThat(awsTaskParams.getRegion()).isEqualTo(region);
+    assertThat(awsTaskParams.getAwsTaskType()).isEqualTo(AwsTaskType.GET_BUILDS);
+    assertThat(awsTaskParams.getAwsConnector().getDelegateSelectors()).contains("proj-delegate");
+    assertThat(awsTaskParams.getFilePathRegex()).isEqualTo("abc");
   }
 
   @Test
@@ -362,7 +400,7 @@ public class S3ResourceServiceImplTest extends CategoryTest {
     builds.add(build5);
 
     S3BuildsResponse expectedBuilds = S3BuildsResponse.builder()
-                                          .builds(new ArrayList<>())
+                                          .builds(builds)
                                           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                           .delegateMetaInfo(null)
                                           .build();
@@ -374,8 +412,14 @@ public class S3ResourceServiceImplTest extends CategoryTest {
     List<BuildDetails> buildResponse =
         s3ResourceServiceImpl.getFilePaths(awsConnectorRef, region, bucket, null, orgIdentifier, projectIdentifier);
 
-    assertThat(buildResponse).isNotNull();
-    assertThat(buildResponse).isEmpty();
+    assertThat(buildResponse).isSameAs(builds);
+    ArgumentCaptor<AwsTaskParams> awsTaskParamsCaptor = ArgumentCaptor.forClass(AwsTaskParams.class);
+
+    verify(serviceHelper, times(1))
+        .getResponseData(eq(baseNGAccess), awsTaskParamsCaptor.capture(), eq(TaskType.NG_AWS_TASK.name()));
+
+    AwsTaskParams awsTaskParams = awsTaskParamsCaptor.getValue();
+    assertThat(awsTaskParams.getFilePathRegex()).isEqualTo(filePathRegex);
   }
 
   @Test

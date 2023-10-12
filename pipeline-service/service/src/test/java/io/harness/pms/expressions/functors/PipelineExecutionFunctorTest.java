@@ -23,6 +23,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.retry.RetryExecutionMetadata;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.TriggerType;
@@ -166,6 +168,8 @@ public class PipelineExecutionFunctorTest extends CategoryTest {
             .planExecutionId(generateUuid())
             .allowStagesExecution(false)
             .runSequence(32)
+            .storeType(StoreType.REMOTE)
+            .entityGitDetails(EntityGitDetails.builder().branch("main").repoName("test").build())
             .executionTriggerInfo(ExecutionTriggerInfo.newBuilder()
                                       .setTriggerType(TriggerType.WEBHOOK)
                                       .setTriggeredBy(TriggeredBy.newBuilder()
@@ -194,7 +198,9 @@ public class PipelineExecutionFunctorTest extends CategoryTest {
     assertEquals(triggeredByMap.get("triggerIdentifier"), "triggerIdentifier");
     assertEquals(response.get("resumedExecutionId"),
         pipelineExecutionSummaryEntity.getRetryExecutionMetadata().getRootExecutionId());
-
+    assertEquals(response.get("storeType"), StoreType.REMOTE);
+    assertEquals(response.get("branchName"), "main");
+    assertEquals(response.get("repoName"), "test");
     pipelineExecutionSummaryEntity =
         PipelineExecutionSummaryEntity.builder()
             .allowStagesExecution(false)

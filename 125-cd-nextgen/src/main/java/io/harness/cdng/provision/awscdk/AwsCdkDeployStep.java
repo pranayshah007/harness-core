@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.provision.awscdk;
-
 import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.DEPLOY;
 import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_ACTION;
 import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_STACK_NAMES;
@@ -16,8 +15,11 @@ import static io.harness.cdng.provision.awscdk.AwsCdkHelper.LATEST_SUCCESSFUL_PR
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.cdng.provision.ProvisionerOutputHelper;
 import io.harness.cdng.provision.awscdk.beans.AwsCdkConfig;
@@ -50,6 +52,8 @@ import java.util.Map;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class AwsCdkDeployStep extends AbstractContainerStepV2<StepElementParameters> {

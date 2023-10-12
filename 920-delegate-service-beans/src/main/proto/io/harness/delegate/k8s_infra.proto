@@ -14,22 +14,21 @@ option go_package = "920_delegate_service_beans";
 option java_multiple_files = true;
 
 message K8sInfraSpec {
-  repeated ContainerSpec tasks = 1;        // Container specs for task containers
-  map<string, string> env = 2;             // Any global env variables. These envs will be applied to all containers
+  repeated StepSpec steps = 1;             // Step specs for task containers
+  map<string, string> env = 2;             // Any global env variables. These envs will be applied to all steps
   repeated Resource resources = 3;         // Any global resources like shared volumes
-  ComputingResource compute_resource = 4;  // Global resource setting for k8s infra. This is optional. The sum of task
-                                           // container resources will be used if this field is not set.
-  SecurityContext security_context = 5;    // Optional field to set global security context
+  ComputingResource compute_resource = 4;  // Global resource setting for k8s infra. The sum of task compute resources
+                                           // will be used if this field is not set.
+  SecurityContext security_context = 5;    // Global security context which applies to all steps
 }
 
-message ContainerSpec {
-  string image = 1;                // Docker image tag
-  repeated int64 port = 2;         // Port exposed for the container
-  ComputingResource resource = 3;  // Resource requirements for infra types that need it (e.g. K8S CPU/Mem). It is
-                                   // required to provide task level resources
-
-  map<string, string> env = 4;           // Env variables
-  repeated string command = 5;           // Commands to be executed
-  repeated string args = 6;              // Args to be passed
-  SecurityContext security_context = 7;  // Optional field to set container security context
+message StepSpec {
+  string step_id = 1;                      // Step ID unique for each execution of the Step
+  string image = 2;                        // Image to be used for the step
+  repeated int64 ports = 3;                // Ports exposed for the step
+  ComputingResource compute_resource = 4;  // Resource requirements for infra types that need it (e.g. K8S CPU/Mem).
+  map<string, string> env = 5;             // Env variables
+  repeated string commands = 6;            // Commands to be executed
+  repeated string args = 7;                // Args to be passed
+  SecurityContext security_context = 8;    // Container specific security context which overrides the global settings
 }

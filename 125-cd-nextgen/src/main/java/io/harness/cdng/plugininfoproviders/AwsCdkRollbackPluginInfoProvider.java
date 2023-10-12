@@ -6,12 +6,14 @@
  */
 
 package io.harness.cdng.plugininfoproviders;
-
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.provision.awscdk.AwsCdkConfigDAL;
@@ -33,6 +35,8 @@ import com.google.inject.Inject;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(HarnessTeam.CDP)
 public class AwsCdkRollbackPluginInfoProvider extends AbstractPluginInfoProvider {
   @Inject private AwsCdkConfigDAL awsCdkConfigDAL;

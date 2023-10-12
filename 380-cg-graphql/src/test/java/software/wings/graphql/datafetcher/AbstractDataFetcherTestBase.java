@@ -6,12 +6,14 @@
  */
 
 package software.wings.graphql.datafetcher;
-
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import static software.wings.beans.Account.Builder.anAccount;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.ExecutionStatus;
@@ -78,6 +80,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(DX)
 public abstract class AbstractDataFetcherTestBase extends WingsBaseTest {
   public static final String TAG_TEAM = "TEAM";

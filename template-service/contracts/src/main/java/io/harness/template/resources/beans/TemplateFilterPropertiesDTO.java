@@ -6,11 +6,13 @@
  */
 
 package io.harness.template.resources.beans;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.filter.FilterConstants.TEMPLATE_FILTER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterPropertiesDTO;
 import io.harness.ng.core.template.ListingScope;
@@ -29,6 +31,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)

@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
@@ -44,6 +45,7 @@ import io.harness.delegate.task.pcf.request.CfRunPluginCommandRequestNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.delegate.task.pcf.response.TasRunPluginResponse;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogCallback;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.pcf.model.CfCliVersion;
@@ -66,6 +68,7 @@ import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -93,6 +96,7 @@ public class TasCommandStepTest extends CDNGTestBase {
   @Mock private InstanceInfoService instanceInfoService;
   @Mock private OutcomeService outcomeService;
   @Mock private TasEntityHelper tasEntityHelper;
+  @Mock private LogCallback mockLogCallback;
   @InjectMocks private TasCommandStep tasCommandStep;
 
   private final TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome =
@@ -114,6 +118,7 @@ public class TasCommandStepTest extends CDNGTestBase {
     logStreamingStepClient = mock(ILogStreamingStepClient.class);
     when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(logStreamingStepClient);
     doReturn(infrastructureOutcome).when(cdStepHelper).getInfrastructureOutcome(ambiance);
+    doReturn(mockLogCallback).when(cdStepHelper).getLogCallback(anyString(), eq(ambiance), anyBoolean());
 
     doReturn(EnvironmentType.PROD).when(stepHelper).getEnvironmentType(ambiance);
   }
@@ -178,7 +183,7 @@ public class TasCommandStepTest extends CDNGTestBase {
     TasExecutionPassThroughData tasExecutionPassThroughData =
         TasExecutionPassThroughData.builder().allFilesFetched(allFilesFetched).cfCliVersion(cliVersionNG).build();
     TasInfraConfig tasInfraConfig = TasInfraConfig.builder().build();
-    UnitProgressData unitProgressData = UnitProgressData.builder().build();
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(new ArrayList<>()).build();
     doReturn(tasInfraConfig).when(cdStepHelper).getTasInfraConfig(infrastructureOutcome, ambiance);
     doReturn(cfCliVersion).when(tasStepHelper).cfCliVersionNGMapper(cliVersionNG);
 
@@ -272,7 +277,7 @@ public class TasCommandStepTest extends CDNGTestBase {
         .saveServerInstancesIntoSweepingOutput(ambiance, Arrays.asList(tasServerInstanceInfo));
 
     StepResponse stepResponse1 = tasCommandStep.finalizeExecutionWithSecurityContext(
-        ambiance, stepElementParameters, TasStepPassThroughData.builder().build(), () -> responseData);
+        ambiance, stepElementParameters, TasExecutionPassThroughData.builder().build(), () -> responseData);
     assertThat(stepResponse1.getStatus()).isEqualTo(Status.SUCCEEDED);
   }
 
@@ -327,7 +332,7 @@ public class TasCommandStepTest extends CDNGTestBase {
         .saveServerInstancesIntoSweepingOutput(ambiance, Arrays.asList(tasServerInstanceInfo));
 
     StepResponse stepResponse1 = tasCommandStep.finalizeExecutionWithSecurityContext(
-        ambiance, stepElementParameters, TasStepPassThroughData.builder().build(), () -> responseData);
+        ambiance, stepElementParameters, TasExecutionPassThroughData.builder().build(), () -> responseData);
     assertThat(stepResponse1.getStatus()).isEqualTo(Status.FAILED);
   }
 

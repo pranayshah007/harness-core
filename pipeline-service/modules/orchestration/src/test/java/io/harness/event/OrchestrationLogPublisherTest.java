@@ -11,6 +11,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.FERNANDOD;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -203,6 +204,26 @@ public class OrchestrationLogPublisherTest extends OrchestrationTestBase {
     assertThat(eventLog.getPlanExecutionId()).isEqualTo(planExecutionId);
     assertThat(eventLog.getOrchestrationEventType()).isEqualTo(OrchestrationEventType.NODE_EXECUTION_STATUS_UPDATE);
     verify(producer, times(0)).send(any());
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void onPipelineInfoUpdate() {
+    OrchestrationEventLog orchestrationEventLog = getOrchestrationEventLog(OrchestrationEventType.PIPELINE_INFO_UPDATE);
+    when(repository.save(any())).thenReturn(orchestrationEventLog);
+    publisher.onPipelineInfoUpdate(planExecutionId);
+    shouldTestOnNodeInternally(OrchestrationEventType.PIPELINE_INFO_UPDATE);
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void onStageInfoUpdate() {
+    OrchestrationEventLog orchestrationEventLog = getOrchestrationEventLog(OrchestrationEventType.STAGE_INFO_UPDATE);
+    when(repository.save(any())).thenReturn(orchestrationEventLog);
+    publisher.onStageInfoUpdate(planExecutionId, nodeExecutionId);
+    shouldTestOnNodeInternally(OrchestrationEventType.STAGE_INFO_UPDATE);
   }
 
   private void shouldTestOnNodeInternally(OrchestrationEventType eventType) {

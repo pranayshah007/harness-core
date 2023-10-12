@@ -6,7 +6,6 @@
  */
 
 package io.harness;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.DUMMY_GROUP_NAME;
@@ -17,7 +16,10 @@ import static io.harness.eventsframework.EventsFrameworkConstants.PLAN_NOTIFY_EV
 import static io.harness.eventsframework.EventsFrameworkConstants.PMS_ORCHESTRATION_NOTIFY_EVENT;
 import static io.harness.eventsframework.EventsFrameworkConstants.WEBHOOK_REQUEST_PAYLOAD_DETAILS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.eventsframework.EventsFrameworkConstants;
@@ -44,6 +46,7 @@ import javax.cache.expiry.Duration;
 import lombok.AllArgsConstructor;
 import org.redisson.api.RedissonClient;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @AllArgsConstructor
 @OwnedBy(PIPELINE)
 public class PipelineServiceEventsFrameworkModule extends AbstractModule {

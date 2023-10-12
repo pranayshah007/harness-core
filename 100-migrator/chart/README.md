@@ -1,6 +1,6 @@
 # migrator
 
-![Version: 0.8.1](https://img.shields.io/badge/Version-0.8.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.100440](https://img.shields.io/badge/AppVersion-0.0.100440-informational?style=flat-square)
+![Version: 0.11.2](https://img.shields.io/badge/Version-0.11.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.100578](https://img.shields.io/badge/AppVersion-0.0.100578-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -76,30 +76,14 @@ A Helm chart for Kubernetes
 | extraEnvVars | list | `[]` |  |
 | extraVolumeMounts | list | `[]` |  |
 | extraVolumes | list | `[]` |  |
-| featureFlags | object | `{"ADDITIONAL":"","Base":"LDAP_SSO_PROVIDER,ASYNC_ARTIFACT_COLLECTION,JIRA_INTEGRATION,AUDIT_TRAIL_UI,GDS_TIME_SERIES_SAVE_PER_MINUTE,STACKDRIVER_SERVICEGUARD,BATCH_SECRET_DECRYPTION,TIME_SERIES_SERVICEGUARD_V2,TIME_SERIES_WORKFLOW_V2,CUSTOM_DASHBOARD,GRAPHQL,CV_FEEDBACKS,LOGS_V2_247,UPGRADE_JRE,LOG_STREAMING_INTEGRATION,NG_HARNESS_APPROVAL,GIT_SYNC_NG,NG_SHOW_DELEGATE,NG_CG_TASK_ASSIGNMENT_ISOLATION,CI_OVERVIEW_PAGE,AZURE_CLOUD_PROVIDER_VALIDATION_ON_DELEGATE,TERRAFORM_AWS_CP_AUTHENTICATION,NG_TEMPLATES,NEW_DEPLOYMENT_FREEZE,HELM_CHART_AS_ARTIFACT,RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION,WEBHOOK_TRIGGER_AUTHORIZATION,GITHUB_WEBHOOK_AUTHENTICATION,CUSTOM_MANIFEST,GIT_ACCOUNT_SUPPORT,AZURE_WEBAPP,PRUNE_KUBERNETES_RESOURCES,LDAP_GROUP_SYNC_JOB_ITERATOR,POLLING_INTERVAL_CONFIGURABLE,APPLICATION_DROPDOWN_MULTISELECT,USER_GROUP_AS_EXPRESSION,RESOURCE_CONSTRAINT_SCOPE_PIPELINE_ENABLED,NG_TEMPLATE_GITX,ELK_HEALTH_SOURCE,NG_ENABLE_LDAP_CHECK,CVNG_METRIC_THRESHOLD,SRM_HOST_SAMPLING_ENABLE,SRM_ENABLE_HEALTHSOURCE_CLOUDWATCH_METRICS","CCM":"CENG_ENABLED,CCM_MICRO_FRONTEND,NODE_RECOMMENDATION_AGGREGATE","CD":"CDNG_ENABLED","CDB":"NG_DASHBOARDS","CET":"CET_ENABLED,SRM_CODE_ERROR_NOTIFICATIONS,SRM_ET_RESOLVED_EVENTS,SRM_ET_CRITICAL_EVENTS","CHAOS":"CHAOS_ENABLED","CI":"CING_ENABLED,CI_INDIRECT_LOG_UPLOAD","FF":"CFNG_ENABLED","GitOps":"GITOPS_ONPREM_ENABLED,CDS_SHOW_CREATE_PR,GITOPS_BYO_ARGO,ARGO_PHASE1,ARGO_PHASE2_MANAGED,CUSTOM_ARIFACT_NG,SERVICE_DASHBOARD_V2,OPTIMIZED_GIT_FETCH_FILES,MULTI_SERVICE_INFRA,ENV_GROUP,NG_SVC_ENV_REDESIGN,OPTIMIZED_GIT_FETCH_FILES,NG_GITOPS","LICENSE":"NG_LICENSES_ENABLED,VIEW_USAGE_ENABLED","NG":"ENABLE_DEFAULT_NG_EXPERIENCE_FOR_ONPREM,NEXT_GEN_ENABLED,NEW_LEFT_NAVBAR_SETTINGS,SPG_SIDENAV_COLLAPSE","OLDGITSYNC":"USE_OLD_GIT_SYNC","OPA":"OPA_PIPELINE_GOVERNANCE,OPA_FEATURE_GOVERNANCE,OPA_FF_GOVERNANCE","SAMLAutoAccept":"AUTO_ACCEPT_SAML_ACCOUNT_INVITES,PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES","SRM":"CVNG_ENABLED","STO":"STO_BASELINE_REGEX,STO_STEP_PALETTE_BURP_ENTERPRISE,STO_STEP_PALETTE_CODEQL,STO_STEP_PALETTE_FOSSA,STO_STEP_PALETTE_GIT_LEAKS,STO_STEP_PALETTE_SEMGREP"}` | Feature Flags |
-| featureFlags.ADDITIONAL | string | `""` | Additional Feature Flag |
-| featureFlags.Base | string | `"LDAP_SSO_PROVIDER,ASYNC_ARTIFACT_COLLECTION,JIRA_INTEGRATION,AUDIT_TRAIL_UI,GDS_TIME_SERIES_SAVE_PER_MINUTE,STACKDRIVER_SERVICEGUARD,BATCH_SECRET_DECRYPTION,TIME_SERIES_SERVICEGUARD_V2,TIME_SERIES_WORKFLOW_V2,CUSTOM_DASHBOARD,GRAPHQL,CV_FEEDBACKS,LOGS_V2_247,UPGRADE_JRE,LOG_STREAMING_INTEGRATION,NG_HARNESS_APPROVAL,GIT_SYNC_NG,NG_SHOW_DELEGATE,NG_CG_TASK_ASSIGNMENT_ISOLATION,CI_OVERVIEW_PAGE,AZURE_CLOUD_PROVIDER_VALIDATION_ON_DELEGATE,TERRAFORM_AWS_CP_AUTHENTICATION,NG_TEMPLATES,NEW_DEPLOYMENT_FREEZE,HELM_CHART_AS_ARTIFACT,RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION,WEBHOOK_TRIGGER_AUTHORIZATION,GITHUB_WEBHOOK_AUTHENTICATION,CUSTOM_MANIFEST,GIT_ACCOUNT_SUPPORT,AZURE_WEBAPP,PRUNE_KUBERNETES_RESOURCES,LDAP_GROUP_SYNC_JOB_ITERATOR,POLLING_INTERVAL_CONFIGURABLE,APPLICATION_DROPDOWN_MULTISELECT,USER_GROUP_AS_EXPRESSION,RESOURCE_CONSTRAINT_SCOPE_PIPELINE_ENABLED,NG_TEMPLATE_GITX,ELK_HEALTH_SOURCE,NG_ENABLE_LDAP_CHECK,CVNG_METRIC_THRESHOLD,SRM_HOST_SAMPLING_ENABLE,SRM_ENABLE_HEALTHSOURCE_CLOUDWATCH_METRICS"` | Base flags for all modules |
-| featureFlags.CCM | string | `"CENG_ENABLED,CCM_MICRO_FRONTEND,NODE_RECOMMENDATION_AGGREGATE"` | CCM Feature Flags |
-| featureFlags.CD | string | `"CDNG_ENABLED"` | STO Feature Flags |
-| featureFlags.CDB | string | `"NG_DASHBOARDS"` | Custom Dashboard Flags |
-| featureFlags.CET | string | `"CET_ENABLED,SRM_CODE_ERROR_NOTIFICATIONS,SRM_ET_RESOLVED_EVENTS,SRM_ET_CRITICAL_EVENTS"` | CET Feature Flags |
-| featureFlags.CHAOS | string | `"CHAOS_ENABLED"` | CHAOS Feature Flags |
-| featureFlags.CI | string | `"CING_ENABLED,CI_INDIRECT_LOG_UPLOAD"` | STO Feature Flags |
-| featureFlags.FF | string | `"CFNG_ENABLED"` | FF Feature Flags |
-| featureFlags.GitOps | string | `"GITOPS_ONPREM_ENABLED,CDS_SHOW_CREATE_PR,GITOPS_BYO_ARGO,ARGO_PHASE1,ARGO_PHASE2_MANAGED,CUSTOM_ARIFACT_NG,SERVICE_DASHBOARD_V2,OPTIMIZED_GIT_FETCH_FILES,MULTI_SERVICE_INFRA,ENV_GROUP,NG_SVC_ENV_REDESIGN,OPTIMIZED_GIT_FETCH_FILES,NG_GITOPS"` | GitOps Feature Flags |
-| featureFlags.LICENSE | string | `"NG_LICENSES_ENABLED,VIEW_USAGE_ENABLED"` | Licensing flags |
-| featureFlags.NG | string | `"ENABLE_DEFAULT_NG_EXPERIENCE_FOR_ONPREM,NEXT_GEN_ENABLED,NEW_LEFT_NAVBAR_SETTINGS,SPG_SIDENAV_COLLAPSE"` | NG Specific Feature Flags |
-| featureFlags.OLDGITSYNC | string | `"USE_OLD_GIT_SYNC"` | Disable OLD_GIT_SYNC if ngGitSync is enabled |
-| featureFlags.OPA | string | `"OPA_PIPELINE_GOVERNANCE,OPA_FEATURE_GOVERNANCE,OPA_FF_GOVERNANCE"` | OPA |
-| featureFlags.SAMLAutoAccept | string | `"AUTO_ACCEPT_SAML_ACCOUNT_INVITES,PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES"` | AutoAccept Feature Flags |
-| featureFlags.SRM | string | `"CVNG_ENABLED"` | SRM Flags |
-| featureFlags.STO | string | `"STO_BASELINE_REGEX,STO_STEP_PALETTE_BURP_ENTERPRISE ,STO_STEP_PALETTE_CODEQL,STO_STEP_PALETTE_FOSSA ,STO_STEP_PALETTE_GIT_LEAKS,STO_STEP_PALETTE_SEMGREP"` | STO Feature Flags |
 | fullnameOverride | string | `""` |  |
 | global.ccm.enabled | bool | `false` |  |
 | global.cd.enabled | bool | `false` |  |
 | global.cg.enabled | bool | `false` |  |
 | global.chaos.enabled | bool | `false` |  |
 | global.ci.enabled | bool | `false` |  |
+| global.commonAnnotations | object | `{}` |  |
+| global.commonLabels | object | `{}` |  |
 | global.database.mongo.extraArgs | string | `""` |  |
 | global.database.mongo.hosts | list | `[]` | provide default values if mongo.installed is set to false |
 | global.database.mongo.installed | bool | `true` |  |
@@ -171,11 +155,12 @@ A Helm chart for Kubernetes
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.registry | string | `"docker.io"` |  |
 | image.repository | string | `"harness/migrator-signed"` |  |
-| image.tag | string | `"100534-000"` |  |
+| image.tag | string | `"100578-000"` |  |
 | immutable_delegate_docker_image.image.digest | string | `""` |  |
 | immutable_delegate_docker_image.image.registry | string | `"docker.io"` |  |
 | immutable_delegate_docker_image.image.repository | string | `"harness/delegate"` |  |
 | immutable_delegate_docker_image.image.tag | string | `"22.12.77617"` |  |
+| ingress.annotations | object | `{}` |  |
 | initContainer.image.digest | string | `""` |  |
 | initContainer.image.pullPolicy | string | `"IfNotPresent"` |  |
 | initContainer.image.registry | string | `"docker.io"` |  |
@@ -397,6 +382,7 @@ A Helm chart for Kubernetes
 | iteratorConfig.workflowExecutionMonitor.threadPoolIntervalInSeconds | int | `10` |  |
 | iteratorConfig.workflowExecutionMonitor.threadPoolSize | int | `5` |  |
 | iteratorConfig.workflowExecutionMonitor.throttleIntervalInSeconds | int | `0` |  |
+| java17flags | string | `""` |  |
 | maxSurge | int | `1` |  |
 | maxUnavailable | int | `0` |  |
 | migrator.mongodb.extraArgs | string | `""` |  |
@@ -424,6 +410,7 @@ A Helm chart for Kubernetes
 | secrets.VERIFICATION_SERVICE_SECRET | string | `"59MR5RlVARcdH7zb7pNx6GzqiglBmXR8"` |  |
 | securityContext.runAsNonRoot | bool | `true` |  |
 | securityContext.runAsUser | int | `65534` |  |
+| service.annotations | object | `{}` |  |
 | service.grpcport | int | `9879` |  |
 | service.port | int | `9080` |  |
 | service.type | string | `"ClusterIP"` |  |
@@ -437,6 +424,7 @@ A Helm chart for Kubernetes
 | upgrader_docker_image.image.registry | string | `"docker.io"` |  |
 | upgrader_docker_image.image.repository | string | `"harness/upgrader"` |  |
 | upgrader_docker_image.image.tag | string | `"latest"` |  |
+| virtualService.annotations | object | `{}` |  |
 | waitForInitContainer.image.digest | string | `""` |  |
 | waitForInitContainer.image.imagePullSecrets | list | `[]` |  |
 | waitForInitContainer.image.pullPolicy | string | `"IfNotPresent"` |  |

@@ -275,6 +275,8 @@ public class IdpApplication extends Application<IdpConfiguration> {
     serviceToSecretMapping.put(AuthorizationServiceHeader.DEFAULT.getServiceId(), config.getNgManagerServiceSecret());
     serviceToSecretMapping.put(AuthorizationServiceHeader.IDP_UI.getServiceId(), config.getIdpServiceSecret());
     serviceToSecretMapping.put(AuthorizationServiceHeader.IDP_SERVICE.getServiceId(), config.getIdpServiceSecret());
+    serviceToSecretMapping.put(
+        AuthorizationServiceHeader.ADMIN_PORTAL.getServiceId(), config.getJwtExternalServiceSecret());
     environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
         injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED")))));
     registerInternalApiAuthFilter(config, environment);

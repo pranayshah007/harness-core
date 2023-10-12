@@ -7,6 +7,7 @@
 
 package io.harness.ssca.normalize;
 
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ssca.beans.SettingsDTO;
 import io.harness.ssca.beans.SpdxDTO;
@@ -20,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.util.Strings;
 
@@ -86,9 +86,9 @@ public class SpdxNormalizer implements Normalizer<SpdxDTO> {
 
   private List<String> getPackageLicenses(String licenseConcluded, String licenseDeclared) {
     String packageLicenseExpression = "NO_ASSERTION";
-    if (Objects.nonNull(licenseConcluded) && !licenseConcluded.isEmpty()) {
+    if (EmptyPredicate.isNotEmpty(licenseConcluded) && !SBOMUtils.NO_ASSERTION_LIST.contains(licenseConcluded)) {
       packageLicenseExpression = licenseConcluded;
-    } else if (Objects.nonNull(licenseDeclared) && !licenseDeclared.isEmpty()) {
+    } else if (EmptyPredicate.isNotEmpty(licenseDeclared)) {
       packageLicenseExpression = licenseDeclared;
     }
     List<String> licenses = SBOMUtils.processExpression(packageLicenseExpression);

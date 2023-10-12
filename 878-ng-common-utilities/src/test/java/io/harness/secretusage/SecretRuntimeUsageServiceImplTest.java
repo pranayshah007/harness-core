@@ -13,12 +13,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.events.SecretRuntimeUsageEventProducer;
@@ -34,6 +37,7 @@ import io.harness.ng.core.entityusageactivity.EntityUsageTypes;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
@@ -51,6 +55,7 @@ import org.mockito.MockitoAnnotations;
 public class SecretRuntimeUsageServiceImplTest extends CategoryTest {
   @Mock SecretRuntimeUsageEventProducer secretRuntimeUsageEventProducer;
   @InjectMocks SecretRuntimeUsageServiceImpl secretRuntimeUsageService;
+  NGFeatureFlagHelperService ngFeatureFlagHelperService = mock(NGFeatureFlagHelperService.class);
 
   private static final String accountId = "account";
   private static final String orgId = "org";
@@ -81,6 +86,9 @@ public class SecretRuntimeUsageServiceImplTest extends CategoryTest {
   @Owner(developers = OwnerRule.MANISH)
   @Category(UnitTests.class)
   public void testProduceRuntimeUsageForSecretEventWithSecretDTOV2() {
+    when(ngFeatureFlagHelperService.isEnabled(any(), eq(FeatureName.CDS_NG_SECRET_RUNTIME_USAGE_EVENT_GENERATION)))
+        .thenReturn(true);
+
     SecretDTOV2 secretDTOV2 =
         SecretDTOV2.builder().identifier(secretId).orgIdentifier(orgId).projectIdentifier(projectId).build();
     EntityDetailProtoDTO referredByEntity =
@@ -121,6 +129,9 @@ public class SecretRuntimeUsageServiceImplTest extends CategoryTest {
   @Owner(developers = OwnerRule.MANISH)
   @Category(UnitTests.class)
   public void testProduceRuntimeUsageForSecretEventWithSecretIdentifierRef() {
+    when(ngFeatureFlagHelperService.isEnabled(any(), eq(FeatureName.CDS_NG_SECRET_RUNTIME_USAGE_EVENT_GENERATION)))
+        .thenReturn(true);
+
     SecretDTOV2 secretDTOV2 =
         SecretDTOV2.builder().identifier(secretId).orgIdentifier(orgId).projectIdentifier(projectId).build();
     EntityDetailProtoDTO referredByEntity =

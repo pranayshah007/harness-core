@@ -83,9 +83,7 @@ public class CustomArtifactSourceTemplateService implements NgTemplateService {
                             .name(v.getName())
                             .type(NGVariableType.STRING)
                             .description(v.getDescription())
-                            .value(StringUtils.isNotBlank(v.getValue()) ? ParameterField.createValueField(
-                                       String.format("<+input>.default(%s)", v.getValue().replaceAll(":\\s+", ":")))
-                                                                        : RUNTIME_FIELD)
+                            .value(RUNTIME_FIELD)
                             .build()));
     }
 
@@ -102,6 +100,7 @@ public class CustomArtifactSourceTemplateService implements NgTemplateService {
                   -> StringNGVariable.builder()
                          .name(isEmpty(attribute.getMappedAttribute()) ? PLEASE_FIX_ME : attribute.getMappedAttribute())
                          .value(ParameterField.createValueField(attribute.getRelativePath()))
+                         .type(NGVariableType.STRING)
                          .build())
               .collect(Collectors.toList());
     }

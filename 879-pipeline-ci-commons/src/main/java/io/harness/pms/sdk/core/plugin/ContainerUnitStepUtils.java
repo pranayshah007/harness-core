@@ -16,8 +16,10 @@ import io.harness.product.ci.engine.proto.StepContext;
 import io.harness.product.ci.engine.proto.UnitStep;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import lombok.experimental.UtilityClass;
 
@@ -63,13 +65,14 @@ public class ContainerUnitStepUtils {
     }
 
     StepContext stepContext = StepContext.newBuilder().setExecutionTimeoutSecs(timeout).build();
-    io.harness.product.ci.engine.proto.PluginStep pStep = io.harness.product.ci.engine.proto.PluginStep.newBuilder()
-                                                              .setContainerPort(port)
-                                                              .setImage(image)
-                                                              .addAllEntrypoint(entryPoint)
-                                                              .setContext(stepContext)
-                                                              .putAllEnvironment(envVarMap)
-                                                              .build();
+    io.harness.product.ci.engine.proto.PluginStep pStep =
+        io.harness.product.ci.engine.proto.PluginStep.newBuilder()
+            .setContainerPort(port)
+            .setImage(image)
+            .addAllEntrypoint(Optional.ofNullable(entryPoint).orElse(Collections.emptyList()))
+            .setContext(stepContext)
+            .putAllEnvironment(envVarMap)
+            .build();
 
     return UnitStep.newBuilder()
         .setAccountId(accountId)

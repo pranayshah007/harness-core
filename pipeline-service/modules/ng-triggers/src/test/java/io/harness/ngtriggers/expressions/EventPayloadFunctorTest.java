@@ -17,7 +17,6 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
-import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.ngtriggers.expressions.functors.EventPayloadFunctor;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -107,9 +106,7 @@ public class EventPayloadFunctorTest extends CategoryTest {
                                     .setSourceType(SourceType.GITHUB_REPO)
                                     .build())
                 .build()));
-    assertThatThrownBy(() -> eventPayloadFunctor.bind())
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Event payload could not be converted to a hashmap");
+    assertThat(eventPayloadFunctor.bind()).isEqualTo(",");
 
     when(metadataService.findByPlanExecutionId(any())).thenReturn(Optional.empty());
     assertThatThrownBy(() -> eventPayloadFunctor.bind())

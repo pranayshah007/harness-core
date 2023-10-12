@@ -295,6 +295,9 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
     if (codeBase == null) {
       return null;
     }
+    if (ParameterField.isNull(codeBase.getBuild())) {
+      throw new CIStageExecutionException(" build properties must be defined when codebase is enabled");
+    }
     ExecutionTriggerInfo triggerInfo = ambiance.getMetadata().getTriggerInfo();
     TriggerPayload triggerPayload = integrationStageStepParametersPMS.getTriggerPayload();
     // setPrincipalForHarnessSCM(ambiance, codeBase.getConnectorRef().getValue(), triggerInfo);

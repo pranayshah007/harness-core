@@ -20,6 +20,7 @@ import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 import static io.harness.rule.OwnerRule.SHALINI;
+import static io.harness.rule.OwnerRule.SRIDHAR;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -79,6 +80,7 @@ import io.harness.product.ci.scm.proto.CreatePRResponse;
 import io.harness.product.ci.scm.proto.CreateWebhookRequest;
 import io.harness.product.ci.scm.proto.CreateWebhookResponse;
 import io.harness.product.ci.scm.proto.FileContent;
+import io.harness.product.ci.scm.proto.FindFilesInPRResponse;
 import io.harness.product.ci.scm.proto.GetAuthenticatedUserRequest;
 import io.harness.product.ci.scm.proto.GetAuthenticatedUserResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
@@ -89,6 +91,7 @@ import io.harness.product.ci.scm.proto.GithubProvider;
 import io.harness.product.ci.scm.proto.ListBranchesResponse;
 import io.harness.product.ci.scm.proto.ListBranchesWithDefaultRequest;
 import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
+import io.harness.product.ci.scm.proto.PRFile;
 import io.harness.product.ci.scm.proto.PageResponse;
 import io.harness.product.ci.scm.proto.Provider;
 import io.harness.product.ci.scm.proto.Repository;
@@ -726,6 +729,50 @@ public class ScmServiceClientImplTest extends CategoryTest {
         .objectId(objectId)
         .filepath(filepath)
         .branch(branch)
+        .build();
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testFilesInPRTest() {
+    when(scmGitProviderHelper.getSlug(any())).thenReturn(slug);
+    when(scmGitProviderMapper.mapToSCMGitProvider(any())).thenReturn(gitProvider);
+    when(scmBlockingStub.findFilesInPR(any()))
+        .thenReturn(getFilesInPRResponse(50, true))
+        .thenReturn(getFilesInPRResponse(50, false));
+    int fileSize = 100;
+
+    FindFilesInPRResponse findFilesInPRResponse = scmServiceClient.findFilesInPR(scmConnector, 123, scmBlockingStub);
+
+    assertThat(findFilesInPRResponse).isNotNull();
+    assertThat(findFilesInPRResponse.getFilesCount()).isEqualTo(fileSize);
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testFilesInPRTestOnePage() {
+    when(scmGitProviderHelper.getSlug(any())).thenReturn(slug);
+    when(scmGitProviderMapper.mapToSCMGitProvider(any())).thenReturn(gitProvider);
+    when(scmBlockingStub.findFilesInPR(any())).thenReturn(getFilesInPRResponse(50, false));
+    int fileSize = 50;
+
+    FindFilesInPRResponse findFilesInPRResponse = scmServiceClient.findFilesInPR(scmConnector, 123, scmBlockingStub);
+
+    assertThat(findFilesInPRResponse).isNotNull();
+    assertThat(findFilesInPRResponse.getFilesCount()).isEqualTo(fileSize);
+  }
+
+  private FindFilesInPRResponse getFilesInPRResponse(int numOfFiles, boolean first) {
+    List<PRFile> prFiles = new ArrayList<>();
+    prFiles.add(PRFile.newBuilder().setPath("file" + UUIDGenerator.generateUuid()).build());
+    for (int i = 0; i < numOfFiles - 1; i++) {
+      prFiles.add(PRFile.newBuilder().setPath("file" + UUIDGenerator.generateUuid()).build());
+    }
+    return FindFilesInPRResponse.newBuilder()
+        .setPagination(PageResponse.newBuilder().setNext(first ? 1 : 0).build())
+        .addAllFiles(prFiles)
         .build();
   }
 }

@@ -6,9 +6,11 @@
  */
 
 package io.harness.graph.stepDetail.service;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.stepDetail.NodeExecutionsInfo;
 import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -23,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface NodeExecutionInfoService {
   void addStepDetail(String nodeExecutionId, String planExecutionId, PmsStepDetails stepDetails, String name);

@@ -20,4 +20,6 @@ enum OrchestrationEventType {
   NODE_EXECUTION_UPDATE = 10;  // Event triggered when there is a node update without any status change.
   STEP_DETAILS_UPDATE = 11;
   STEP_INPUTS_UPDATE = 12;
+  PIPELINE_INFO_UPDATE = 13;
+  STAGE_INFO_UPDATE = 14;
 }

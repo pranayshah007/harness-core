@@ -61,11 +61,11 @@ openapi_repositories(
 # Download the Go rules
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "6dc2da7ab4cf5d7bfc7c949776b1b7c733f05e56edc4bcd9022bb249d2e2a996",
+    sha256 = "a8e6375bf881ecc33100ccad4574408a80087eff5e238256b5506eeefe9dd9ee",
+    strip_prefix = "rules_go-c8f0fd7735132144dcdf4d51e927a8607af6774c",
     urls = [
-        "https://%s.harness.io/artifactory/rules-go-github/download/v0.39.1/rules_go-v0.39.1.zip" % REPOSITORY,
-        #"https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
-        #"https://github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
+        # "https://%s.harness.io/artifactory/rules-go-github/archive/c8f0fd7735132144dcdf4d51e927a8607af6774c.tar.gz" % REPOSITORY,
+        "https://github.com/bazelbuild/rules_go/archive/c8f0fd7735132144dcdf4d51e927a8607af6774c.tar.gz",
     ],
 )
 
@@ -4636,7 +4636,7 @@ go_repository(
 
 go_rules_dependencies()
 
-go_register_toolchains(version = "1.20.5")
+go_register_toolchains(version = "1.21.1")
 
 gazelle_dependencies()
 
@@ -4709,7 +4709,7 @@ plain_artifacts = [
     "ch.qos.logback:logback-classic:1.2.11",
     "ch.qos.logback:logback-core:1.2.11",
     "com.auth0:java-jwt:3.1.0",
-    "com.azure:azure-core:1.29.1",
+    "com.azure:azure-core:1.36.0",
     "com.azure:azure-identity:1.5.0",
     "com.azure:azure-core-http-netty:1.11.9",
     "com.azure:azure-core-http-okhttp:1.10.1",
@@ -5018,7 +5018,7 @@ plain_artifacts = [
     "io.grpc:grpc-netty-shaded:1.48.0",
     "io.grpc:grpc-netty:1.48.0",
     "io.grpc:grpc-protobuf-lite:1.50.1",
-    "io.grpc:grpc-protobuf:1.50.1",
+    "io.grpc:grpc-protobuf:1.58.0",
     "io.grpc:grpc-services:1.50.1",
     "io.grpc:grpc-stub:1.50.1",
     "io.gsonfire:gson-fire:1.8.3",
@@ -5085,6 +5085,7 @@ plain_artifacts = [
     "javax.xml.bind:jaxb-api:2.3.0",
     "javax.xml.soap:javax.xml.soap-api:1.4.0",
     "javax.xml.ws:jaxws-api:2.3.1",
+    "javax.xml.stream:stax-api:1.0-2",
     "jaxen:jaxen:1.1.6",
     "javax:javaee-api:8.0",
     "joda-time:joda-time:2.10.6",
@@ -5114,6 +5115,7 @@ plain_artifacts = [
     "net.sf.opencsv:opencsv:2.3",
     "net.shibboleth.utilities:java-support:7.5.0",
     "net.sourceforge.argparse4j:argparse4j:0.8.1",
+    "no.entur.mapstruct.spi:protobuf-spi-impl:1.44",
     "org.antlr:antlr4-runtime:4.7.2",
     "org.apache.avro:avro:1.9.2",
     "org.apache.avro:avro:1.9.2",
@@ -5169,7 +5171,6 @@ plain_artifacts = [
     "org.apache.maven.plugin-tools:maven-plugin-annotations:3.4",
     "org.apache.maven:maven-plugin-api:3.6.3",
     "org.apache.maven:maven-plugin-api:3.6.3",
-    "org.apache.neethi:neethi:3.1.1",
     "org.apache.santuario:xmlsec:2.2.4",
     "org.apache.sshd:sshd-core:2.10.0",
     "org.apache.sshd:sshd-common:2.10.0",
@@ -5194,7 +5195,7 @@ plain_artifacts = [
     "org.codehaus.janino:commons-compiler:3.0.6",
     "org.codehaus.janino:janino:3.0.6",
     "org.codehaus.mojo:animal-sniffer-annotations:1.18",
-    "org.codehaus.plexus:plexus-utils:3.0.20",
+    "org.codehaus.plexus:plexus-utils:4.0.0",
     "org.codehaus.woodstox:stax2-api:4.2",
     "org.conscrypt:conscrypt-openjdk-uber:2.5.1",
     "org.coursera:metrics-datadog:1.1.13",
@@ -5223,9 +5224,9 @@ plain_artifacts = [
     "org.eclipse.jetty:jetty-util:9.4.51.v20230217",
     "org.eclipse.jetty:jetty-webapp:9.4.51.v20230217",
     "org.eclipse.jetty:jetty-xml:9.4.51.v20230217",
-    "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:jar:5.13.0.202109080827-r",
-    "org.eclipse.jgit:org.eclipse.jgit.http.apache:5.13.0.202109080827-r",
-    "org.eclipse.jgit:org.eclipse.jgit:5.13.0.202109080827-r",
+    "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:jar:6.6.1.202309021850-r",
+    "org.eclipse.jgit:org.eclipse.jgit.http.apache:6.6.1.202309021850-r",
+    "org.eclipse.jgit:org.eclipse.jgit:6.6.1.202309021850-r",
     "org.elasticsearch.client:elasticsearch-rest-client:7.17.7",
     "org.elasticsearch.client:elasticsearch-rest-high-level-client:7.17.7",
     "org.elasticsearch.plugin:aggs-matrix-stats-client:7.17.7",
@@ -5299,6 +5300,8 @@ plain_artifacts = [
     "org.ldaptive:ldaptive:1.2.3",
     "org.lz4:lz4-java:1.6.0",
     "org.lz4:lz4-java:1.6.0",
+    "org.mapstruct:mapstruct:1.5.5.Final",
+    "org.mapstruct:mapstruct-processor:1.5.5.Final",
     "org.mindrot:jbcrypt:0.4",
     "org.modelmapper:modelmapper:0.7.5",
     "dev.morphia.morphia:core:1.6.1",
@@ -5328,6 +5331,7 @@ plain_artifacts = [
     "org.passay:passay:1.3.1",
     "org.postgresql:postgresql:42.2.25",
     "org.projectlombok:lombok:1.18.26",
+    "org.projectlombok:lombok-mapstruct-binding:0.2.0",
     "org.quartz-scheduler:quartz:2.3.2",
     "org.reactivestreams:reactive-streams:1.0.2",
     "org.redisson:redisson:3.13.3",

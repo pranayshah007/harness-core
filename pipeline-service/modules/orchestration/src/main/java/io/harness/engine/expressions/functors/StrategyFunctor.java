@@ -6,10 +6,12 @@
  */
 
 package io.harness.engine.expressions.functors;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.expressions.NodeExecutionsCache;
 import io.harness.engine.expressions.OrchestrationConstants;
 import io.harness.engine.utils.FunctorUtils;
@@ -25,6 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 public class StrategyFunctor extends LateBindingMap {
   Ambiance ambiance;

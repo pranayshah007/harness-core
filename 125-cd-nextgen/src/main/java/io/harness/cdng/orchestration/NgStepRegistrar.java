@@ -68,6 +68,7 @@ import io.harness.cdng.elastigroup.ElastigroupSetupStep;
 import io.harness.cdng.elastigroup.ElastigroupSwapRouteStep;
 import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStep;
 import io.harness.cdng.elastigroup.rollback.ElastigroupRollbackStep;
+import io.harness.cdng.environment.constants.CustomStageEnvironmentStepConstants;
 import io.harness.cdng.environment.steps.CustomStageEnvironmentStep;
 import io.harness.cdng.gitops.MergePRStep;
 import io.harness.cdng.gitops.UpdateReleaseRepoStep;
@@ -364,7 +365,7 @@ public class NgStepRegistrar {
     engineSteps.put(AwsCdkRollbackStep.STEP_TYPE, AwsCdkRollbackStep.class);
 
     engineSteps.put(CustomStageStep.STEP_TYPE, CustomStageStep.class);
-    engineSteps.put(CustomStageEnvironmentStep.STEP_TYPE, CustomStageEnvironmentStep.class);
+    engineSteps.put(CustomStageEnvironmentStepConstants.STEP_TYPE, CustomStageEnvironmentStep.class);
 
     return engineSteps;
   }

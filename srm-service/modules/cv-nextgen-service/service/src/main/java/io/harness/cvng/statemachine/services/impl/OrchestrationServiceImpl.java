@@ -247,11 +247,11 @@ public class OrchestrationServiceImpl implements OrchestrationService {
       }
       if ((AnalysisStatus.SUCCESS == stateMachineStatus || AnalysisStatus.COMPLETED == stateMachineStatus)
           && !AnalysisOrchestratorStatus.getFinalStates().contains(orchestrator.getStatus())) {
-        try (AnalysisStateMachineContext stateMachineContext =
-                 new AnalysisStateMachineContext(currentlyExecutingStateMachine)) {
-          metricService.recordDuration(CVNGMetricsUtils.STATE_MACHINE_EVALUATION_TIME,
-              Duration.between(currentlyExecutingStateMachine.getAnalysisStartTime(), clock.instant()));
-        }
+        //        try (AnalysisStateMachineContext stateMachineContext =
+        //                 new AnalysisStateMachineContext(currentlyExecutingStateMachine)) {
+        //          metricService.recordDuration(CVNGMetricsUtils.STATE_MACHINE_EVALUATION_TIME,
+        //              Duration.between(currentlyExecutingStateMachine.getAnalysisStartTime(), clock.instant()));
+        //        }
         orchestrateNewAnalysisStateMachine(
             orchestrator.getVerificationTaskId(), currentlyExecutingStateMachine.getTotalRetryCountToBePropagated());
       }
