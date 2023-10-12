@@ -194,7 +194,8 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
             .useOptimizedTfPlan(true)
             .isTerraformCloudCli(isTerraformCloudCli)
             .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
-
+            .providerCredentialDelegateInfo(
+                helper.getProviderCredentialDelegateInfo(spec.getProviderCredential(), ambiance))
             .build();
 
     TaskData taskData =
@@ -226,6 +227,14 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
 
     TerraformInheritOutput inheritOutput =
         helper.getSavedInheritOutput(provisionerIdentifier, DESTROY.name(), ambiance);
+
+    if (inheritOutput.getProviderCredentialConfig() != null) {
+      TerraformProviderCredential terraformProviderCredential =
+          helper.toTerraformProviderCredential(inheritOutput.getProviderCredentialConfig());
+      builder.providerCredentialDelegateInfo(
+          helper.getProviderCredentialDelegateInfo(terraformProviderCredential, ambiance));
+    }
+
     TerraformTaskNGParameters terraformTaskNGParameters =
         builder.workspace(inheritOutput.getWorkspace())
             .configFile(helper.getGitFetchFilesConfig(
@@ -308,6 +317,12 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
     if (terraformConfig.getFileStoreConfig() != null) {
       builder.fileStoreConfigFiles(
           helper.prepareTerraformConfigFileInfo(terraformConfig.getFileStoreConfig(), ambiance));
+    }
+
+    if (terraformConfig.getProviderCredentialConfig() != null) {
+      TerraformProviderCredential providerCredential =
+          helper.toTerraformProviderCredential(terraformConfig.getProviderCredentialConfig());
+      builder.providerCredentialDelegateInfo(helper.getProviderCredentialDelegateInfo(providerCredential, ambiance));
     }
 
     ParameterField<Boolean> skipTerraformRefreshCommand = parameters.getConfiguration().getIsSkipTerraformRefresh();

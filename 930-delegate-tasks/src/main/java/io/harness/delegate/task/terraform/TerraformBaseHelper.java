@@ -26,11 +26,13 @@ import io.harness.terraform.request.TerraformExecuteStepRequest;
 
 import software.wings.beans.delegation.TerraformProvisionParameters;
 
+import com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+import lombok.NonNull;
 
 @OwnedBy(CDP)
 public interface TerraformBaseHelper {
@@ -116,4 +118,6 @@ public interface TerraformBaseHelper {
   TerraformConfigInspectVersion getTerraformConfigInspectVersion(TerraformProvisionParameters parameters);
 
   Map<String, String> getAwsAuthEnvVariables(TerraformTaskNGParameters taskParameters);
+
+  @NonNull ImmutableMap<String, String> getEnvironmentVariables(TerraformTaskNGParameters taskParameters);
 }

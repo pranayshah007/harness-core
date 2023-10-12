@@ -94,7 +94,7 @@ public class TerraformTaskNGParameters
   EncryptedRecordData encryptedTfPlan;
   String planName;
   boolean encryptDecryptPlanForHarnessSMOnManager;
-  TerraformProviderCredentialDelegateInfo providerCredentialInfo;
+  TerraformProviderCredentialDelegateInfo providerCredentialDelegateInfo;
   boolean skipColorLogs;
 
   @Override
@@ -207,7 +207,7 @@ public class TerraformTaskNGParameters
   }
 
   private boolean hasProviderCredentialInfo() {
-    return this.providerCredentialInfo != null;
+    return this.providerCredentialDelegateInfo != null;
   }
 
   private boolean hasS3Store() {

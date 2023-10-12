@@ -200,6 +200,8 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
             .useOptimizedTfPlan(true)
             .isTerraformCloudCli(isTerraformCloudCli)
             .skipColorLogs(featureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
+            .providerCredentialDelegateInfo(
+                helper.getProviderCredentialDelegateInfo(configuration.getProviderCredential(), ambiance))
             .build();
 
     TaskData taskData =

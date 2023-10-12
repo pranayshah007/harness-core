@@ -23812,6 +23812,9 @@
             }
           ]
         },
+        "providerCredential": {
+          "$ref": "#/definitions/TerraformProviderCredential"
+        },
         "secretManagerRef": {
           "type": "string"
         },
