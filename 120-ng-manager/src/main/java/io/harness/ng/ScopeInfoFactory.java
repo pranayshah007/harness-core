@@ -11,6 +11,7 @@ import io.harness.ScopeInfo;
 
 import javax.inject.Inject;
 import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.ext.Provider;
 import org.glassfish.hk2.api.Factory;
 
 public class ScopeInfoFactory implements Factory<ScopeInfo> {
@@ -23,7 +24,8 @@ public class ScopeInfoFactory implements Factory<ScopeInfo> {
 
   @Override
   public ScopeInfo provide() {
-    return (ScopeInfo) context.getProperty("scopeInfo");
+    ScopeInfo scopeInfo = (ScopeInfo) context.getProperty("scopeInfo");
+    return scopeInfo;
   }
 
   @Override

@@ -307,6 +307,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
+import org.glassfish.jersey.process.internal.RequestScoped;
 import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.server.model.Resource;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -493,10 +494,12 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     initializeEnforcementService(injector, appConfig);
     initializeEnforcementSdk(injector);
     initializeCdMonitoring(appConfig, injector);
+    //    environment.jersey().getResourceConfig().packages(this.getClass().getPackage().getName() +
+    //    ";org.codehaus.jackson.jaxrs");
     environment.jersey().getResourceConfig().register(new AbstractBinder() {
       @Override
       protected void configure() {
-        bindFactory(ScopeInfoFactory.class).to(ScopeInfo.class);
+        bindFactory(ScopeInfoFactory.class).to(ScopeInfo.class).in(RequestScoped.class);
       }
     });
 

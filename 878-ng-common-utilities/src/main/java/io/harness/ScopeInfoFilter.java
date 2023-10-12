@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ScopeLevel;
 import io.harness.exception.InvalidRequestException;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.Optional;
@@ -21,13 +22,16 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.ext.Provider;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(PL)
 @Singleton
 @Slf4j
+@Provider
 public class ScopeInfoFilter implements ContainerRequestFilter {
+  //  @Inject ScopeInfo scopeInfo;
   @Override
   public void filter(ContainerRequestContext containerRequestContext) throws IOException {
     UriInfo uriInfo = containerRequestContext.getUriInfo();
@@ -40,14 +44,18 @@ public class ScopeInfoFilter implements ContainerRequestFilter {
     String accountIdentifier = accountIdentifierOptional.get();
     String orgIdentifier = queryParameters.getFirst("orgIdentifier");
     String projIdentifier = queryParameters.getFirst("projectIdentifier");
-    containerRequestContext.setProperty("scopeInfo",
-        ScopeInfo.builder()
-            .accountIdentifier(accountIdentifier)
-            .orgIdentifier(orgIdentifier)
-            .projectIdentifier(projIdentifier)
-            .scopeType(ScopeLevel.of(accountIdentifier, orgIdentifier, projIdentifier)) // resolve scope
-            .uniqueId("uniqueId")
-            .build());
+    ScopeInfo scopeInfo = new ScopeInfo(accountIdentifier, orgIdentifier, projIdentifier, "uni", ScopeLevel.PROJECT);
+    //    scopeInfo.setAccountIdentifier(accountIdentifier);
+
+    containerRequestContext.setProperty("scopeInfo", scopeInfo);
+    //    containerRequestContext.setProperty("scopeInfo",
+    //        ScopeInfo.builder()
+    //            .accountIdentifier(accountIdentifier)
+    //            .orgIdentifier(orgIdentifier)
+    //            .projectIdentifier(projIdentifier)
+    //            .scopeType(ScopeLevel.of(accountIdentifier, orgIdentifier, projIdentifier)) // resolve scope
+    //            .uniqueId("uniqueId")
+    //            .build());
   }
 
   private Optional<String> getAccountIdentifierFrom(ContainerRequestContext containerRequestContext) {

@@ -81,8 +81,11 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.ext.Provider;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import org.glassfish.jersey.process.internal.RequestScoped;
 import org.springframework.data.domain.Page;
 
 @OwnedBy(PL)
@@ -90,7 +93,7 @@ import org.springframework.data.domain.Page;
 @Path("organizations")
 @Produces({"application/json", "application/yaml"})
 @Consumes({"application/json", "application/yaml"})
-@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
+//@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Tag(name = "Organization", description = "This contains APIs related to Organization as defined in Harness")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",
     content =
@@ -117,7 +120,10 @@ import org.springframework.data.domain.Page;
     })
 @NextGenManagerAuth
 public class OrganizationResource {
-  private final OrganizationService organizationService;
+  @Inject private OrganizationService organizationService;
+  //  @Context
+  //  HttpServletRequest request;
+  @Inject ScopeInfo scopeInfo;
 
   @POST
   @ApiOperation(value = "Create an Organization", nickname = "postOrganization")
@@ -146,7 +152,8 @@ public class OrganizationResource {
   @Path("{identifier}")
   @ApiOperation(value = "Get an Organization by identifier", nickname = "getOrganization")
   @Operation(operationId = "getOrganization", summary = "List Organization details",
-      description = "Lists Organization details using an Account and Organization ID.",
+      description = "Lists Organization details using an "
+          + " and Organization ID.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
