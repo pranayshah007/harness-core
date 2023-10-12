@@ -47,6 +47,7 @@ import io.harness.persistence.HPersistence;
 import com.google.inject.Inject;
 import dev.morphia.query.UpdateOperations;
 import java.time.Clock;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -79,43 +80,53 @@ public class ErrorTrackingNotificationServiceImpl implements ErrorTrackingNotifi
                                         .projectIdentifier(monitoredService.getProjectIdentifier())
                                         .build();
 
-      List<String> notificationRuleRefs = monitoredService.getNotificationRuleRefs()
-                                              .stream()
-                                              .filter(NotificationRuleRef::isEnabled)
-                                              .map(NotificationRuleRef::getNotificationRuleRef)
-                                              .collect(Collectors.toList());
-
-      List<NotificationRule> notificationRules =
-          notificationRuleService.getEntities(projectParams, notificationRuleRefs);
       final NotificationRuleTemplateDataGenerator notificationRuleTemplateDataGenerator =
           notificationRuleConditionTypeTemplateDataGeneratorMap.get(CODE_ERRORS);
 
       Set<String> notificationRuleRefsWithChange = new HashSet<>();
 
-      for (NotificationRule notificationRule : notificationRules) {
-        List<MonitoredServiceNotificationRuleCondition> conditions =
-            ((MonitoredServiceNotificationRule) notificationRule).getConditions();
-        for (MonitoredServiceNotificationRuleCondition condition : conditions) {
-          if (CODE_ERRORS == condition.getType()) {
-            MonitoredServiceCodeErrorCondition codeErrorCondition = (MonitoredServiceCodeErrorCondition) condition;
-            if (codeErrorCondition.getAggregated()) {
-              NotificationData notification;
-              notification = getAggregatedNotificationData(monitoredService, codeErrorCondition, notificationRule);
-              sendNotification(notification, monitoredService, notificationRule, notificationRuleTemplateDataGenerator,
-                  projectParams, codeErrorCondition, notificationRuleRefsWithChange);
-            } else {
-              List<NotificationData> notifications;
-              notifications = getStackTraceNotificationsData(monitoredService, notificationRule);
-              for (NotificationData notification : notifications) {
-                sendNotification(notification, monitoredService, notificationRule,
-                    notificationRuleTemplateDataGenerator, projectParams, codeErrorCondition,
-                    notificationRuleRefsWithChange);
+      for (NotificationRuleRef notificationRuleRef : monitoredService.getNotificationRuleRefs()) {
+        if (notificationRuleRef.isEnabled()) {
+          MonitoredServiceNotificationRule notificationRule =
+              (MonitoredServiceNotificationRule) notificationRuleService.getEntity(
+                  projectParams, notificationRuleRef.getNotificationRuleRef());
+          for (MonitoredServiceNotificationRuleCondition condition : notificationRule.getConditions()) {
+            if (CODE_ERRORS == condition.getType()) {
+              MonitoredServiceCodeErrorCondition codeErrorCondition = (MonitoredServiceCodeErrorCondition) condition;
+              if (codeErrorCondition.getAggregated()) {
+                final Integer thresholdMinutes = codeErrorCondition.getVolumeThresholdMinutes();
+                // check and send the message if there are no threshold minutes
+                // OR check the eligibility against a defined threshold minutes
+                if (thresholdMinutes == null
+                    || notificationRuleRef.isEligible(clock.instant(), Duration.ofMinutes(thresholdMinutes))) {
+                  NotificationData notification =
+                      getAggregatedNotificationData(monitoredService, codeErrorCondition, notificationRule);
+                  sendNotification(notification, monitoredService, notificationRule,
+                      notificationRuleTemplateDataGenerator, projectParams, codeErrorCondition,
+                      notificationRuleRefsWithChange);
+
+                  // when we don't send notification, and we had an eligible threshold minutes
+                  if (!notification.shouldSendNotification() && thresholdMinutes != null) {
+                    // add it to the refs with change list which will update the lastSuccessfullNotificationTime, even
+                    // though we don't send the notification, we want to update this time to delay the next check to not
+                    // check again until the threshold duration has been met against the last time we checked.
+                    notificationRuleRefsWithChange.add(notificationRule.getIdentifier());
+                  }
+                }
+              } else {
+                List<NotificationData> notifications;
+                notifications = getStackTraceNotificationsData(monitoredService, notificationRule);
+                for (NotificationData notification : notifications) {
+                  sendNotification(notification, monitoredService, notificationRule,
+                      notificationRuleTemplateDataGenerator, projectParams, codeErrorCondition,
+                      notificationRuleRefsWithChange);
+                }
               }
             }
           }
+          updateNotificationRuleRefInMonitoredService(
+              projectParams, monitoredService, new ArrayList<>(notificationRuleRefsWithChange));
         }
-        updateNotificationRuleRefInMonitoredService(
-            projectParams, monitoredService, new ArrayList<>(notificationRuleRefsWithChange));
       }
     }
   }
@@ -179,10 +190,6 @@ public class ErrorTrackingNotificationServiceImpl implements ErrorTrackingNotifi
         log.error("Error connecting to the ErrorTracking Event Summary API.", e);
       }
       if (notificationData != null && !notificationData.getScorecards().isEmpty()) {
-        // TODO: this seems like the place to check to see if the notifications meet the threshold and time.
-        // TODO: if it does then we want to set shouldSendNotification to true and reset the count and window
-        // TODO: if it doesn't then we want to store in mongo the count for the sliding window...
-        // TODO: have no clue how to do this yet, but likely similar to updateNotificationRuleRefInMonitoredService(...)
         final String baseLinkUrl =
             ((ErrorTrackingTemplateDataGenerator) notificationRuleConditionTypeTemplateDataGeneratorMap.get(
                  CODE_ERRORS))
@@ -240,41 +247,24 @@ public class ErrorTrackingNotificationServiceImpl implements ErrorTrackingNotifi
     return notifications;
   }
 
-  // TODO: this updates the lastSuccessfullNotificationTime for notifications that were sent,
-  // TODO: likely need to do something similar to keep track of the threshold count in the sliding window.
-  // TODO: notificationRuleRefs are notifications that were sent
-  // TODO: comments below describe what is happening in this method
   private void updateNotificationRuleRefInMonitoredService(
       ProjectParams projectParams, MonitoredService monitoredService, List<String> notificationRuleRefs) {
     List<NotificationRuleRef> allNotificationRuleRefs = new ArrayList<>();
-
-    // Loop through all the NotificationRuleRef - this is the list of ones that were not sent
     List<NotificationRuleRef> notificationRuleRefsWithoutChange =
         monitoredService.getNotificationRuleRefs()
             .stream()
             .filter(notificationRuleRef -> !notificationRuleRefs.contains(notificationRuleRef.getNotificationRuleRef()))
             .collect(Collectors.toList());
-
-    // Loop through all the notificationRuleRefs and create a new list of NotificationRuleRefDTO set to enabled
     List<NotificationRuleRefDTO> notificationRuleRefDTOs =
         notificationRuleRefs.stream()
             .map(notificationRuleRef
                 -> NotificationRuleRefDTO.builder().notificationRuleRef(notificationRuleRef).enabled(true).build())
             .collect(Collectors.toList());
-
-    // Create a new list of NotificationRuleRefs from the notificationRuleRefDTOs that were sent, and set the
-    // lastSuccessfullNotificationTime to now
     List<NotificationRuleRef> notificationRuleRefsWithChange = notificationRuleService.getNotificationRuleRefs(
         projectParams, notificationRuleRefDTOs, NotificationRuleType.MONITORED_SERVICE, clock.instant());
-
-    // Add updated sent, and unupdated not sent to allNotificationRuleRefs
     allNotificationRuleRefs.addAll(notificationRuleRefsWithChange);
     allNotificationRuleRefs.addAll(notificationRuleRefsWithoutChange);
-
     UpdateOperations<MonitoredService> updateOperations = hPersistence.createUpdateOperations(MonitoredService.class);
-
-    // update all the notificationRuleRefs - which essentially updates the lastSuccessfullNotificationTime for
-    // notifications that were sent
     updateOperations.set(MonitoredServiceKeys.notificationRuleRefs, allNotificationRuleRefs);
 
     hPersistence.update(monitoredService, updateOperations);
