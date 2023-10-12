@@ -933,6 +933,7 @@ public enum FeatureName {
       "This flag to not support secrets in files which content will be used in configFile.getAsBase64 and fileStore.getAsBase64 expressions",
       HarnessTeam.CDP),
   CDS_INFRA_GITX("Onboard Infrastructure entity to GitX", HarnessTeam.CDC),
+  CDS_K8S_ASYNC_STEP_STRATEGY("This Flag enables the usage of ASYNC chain orchestration for K8s step", HarnessTeam.CDP),
   CDS_MERGE_PIPELINE_EXECUTION_SUMMARY_UPDATE_FLOW(
       "Merge the different flows to update pipeline execution summary to avoid write conflicts in mongo", PIPELINE),
   PIE_SECRETS_OBSERVER("Secrets Runtime Usages Observer", PIPELINE);
