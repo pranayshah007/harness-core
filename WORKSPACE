@@ -4709,7 +4709,7 @@ plain_artifacts = [
     "ch.qos.logback:logback-classic:1.2.11",
     "ch.qos.logback:logback-core:1.2.11",
     "com.auth0:java-jwt:3.1.0",
-    "com.azure:azure-core:1.29.1",
+    "com.azure:azure-core:1.36.0",
     "com.azure:azure-identity:1.5.0",
     "com.azure:azure-core-http-netty:1.11.9",
     "com.azure:azure-core-http-okhttp:1.10.1",
