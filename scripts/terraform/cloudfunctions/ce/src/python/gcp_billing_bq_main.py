@@ -260,7 +260,10 @@ def compute_sync_interval(jsonData):
         WHERE DATE(_PARTITIONTIME) >= DATE('%s')
     """ % (jsonData["sourceGcpProjectId"], jsonData["sourceDataSetId"], jsonData["sourceGcpTableName"],
            last_synced_export_date)
-    if jsonData["deployMode"] == "ONPREM":
+
+    if jsonData.get("dataSourceId") == "cross_region_copy":
+        imclient = client
+    elif jsonData["deployMode"] == "ONPREM":
         # Uses Google ADC
         imclient = bigquery.Client(project=PROJECTID)
     else:

@@ -113,6 +113,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
+import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
@@ -4820,11 +4821,25 @@ public class K8sStepHelperTest extends CDNGTestBase {
   }
 
   @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testTaskTypeOciEcrConfig() {
+    K8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
+    ManifestDelegateConfig manifestDelegateConfig =
+        HelmChartManifestDelegateConfig.builder()
+            .storeDelegateConfig(
+                OciHelmStoreDelegateConfig.builder().awsConnectorDTO(AwsConnectorDTO.builder().build()).build())
+            .build();
+    TaskType expectedTaskType = TaskType.K8S_COMMAND_TASK_NG_OCI_ECR_CONFIG;
+    checkTaskType(k8sInfraDelegateConfig, expectedTaskType, manifestDelegateConfig);
+  }
+
+  @Test
   @Owner(developers = ABHINAV2)
   @Category(UnitTests.class)
   public void testK8sTaskTypeRancher() {
     K8sInfraDelegateConfig k8sInfraDelegateConfig = RancherK8sInfraDelegateConfig.builder().build();
-    checkTaskType(k8sInfraDelegateConfig, TaskType.K8S_COMMAND_TASK_NG_RANCHER);
+    checkTaskType(k8sInfraDelegateConfig, TaskType.K8S_COMMAND_TASK_NG_RANCHER, null);
   }
 
   @Test
@@ -4833,7 +4848,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
   public void testK8sTaskTypeHooks() {
     K8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
     doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any(FeatureName.class));
-    checkTaskType(k8sInfraDelegateConfig, TaskType.K8S_COMMAND_TASK_NG_V2);
+    checkTaskType(k8sInfraDelegateConfig, TaskType.K8S_COMMAND_TASK_NG_V2, null);
   }
 
   @Test
@@ -4841,16 +4856,19 @@ public class K8sStepHelperTest extends CDNGTestBase {
   @Category(UnitTests.class)
   public void testK8sTaskType() {
     K8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
-    checkTaskType(k8sInfraDelegateConfig, TaskType.K8S_COMMAND_TASK_NG);
+    checkTaskType(k8sInfraDelegateConfig, TaskType.K8S_COMMAND_TASK_NG, null);
   }
 
-  private void checkTaskType(K8sInfraDelegateConfig k8sInfraDelegateConfig, TaskType expectedTaskType) {
+  private void checkTaskType(K8sInfraDelegateConfig k8sInfraDelegateConfig, TaskType expectedTaskType,
+      ManifestDelegateConfig manifestDelegateConfig) {
     try (MockedStatic<K8sTaskCapabilityHelper> mockK8s = mockStatic(K8sTaskCapabilityHelper.class);
-         MockedStatic<RancherTaskCapabilityHelper> mockRancher = mockStatic(RancherTaskCapabilityHelper.class)) {
+         MockedStatic<RancherTaskCapabilityHelper> mockRancher = mockStatic(RancherTaskCapabilityHelper.class);
+         MockedStatic<AwsCapabilityHelper> mockAws = mockStatic(AwsCapabilityHelper.class)) {
       mockK8s.when(() -> K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(any(), any(), anyBoolean()))
           .thenReturn(emptyList());
       mockRancher.when(() -> RancherTaskCapabilityHelper.fetchRequiredExecutionCapabilities(any(), any()))
           .thenReturn(emptyList());
+      mockAws.when(() -> AwsCapabilityHelper.fetchRequiredExecutionCapabilities(any(), any())).thenReturn(emptyList());
       StepElementParameters stepElementParameters = mock(StepElementParameters.class);
       K8sSpecParameters specParameters = mock(K8sSpecParameters.class);
       doReturn(specParameters).when(stepElementParameters).getSpec();
@@ -4859,6 +4877,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
       K8sDeployRequest k8sDeployRequest = K8sRollingDeployRequest.builder()
                                               .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
                                               .serviceHooks(List.of(hook))
+                                              .manifestDelegateConfig(manifestDelegateConfig)
                                               .build();
       ArgumentCaptor<TaskType> taskTypeArgumentCaptor = ArgumentCaptor.forClass(TaskType.class);
 

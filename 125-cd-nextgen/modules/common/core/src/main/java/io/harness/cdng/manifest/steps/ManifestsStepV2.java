@@ -56,7 +56,7 @@ import io.harness.cdng.manifestConfigs.ManifestConfigurations;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
-import io.harness.cdng.utilities.NGLogCallbackUtility;
+import io.harness.cdng.utilities.ServiceEnvironmentsLogCallbackUtility;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorModule;
 import io.harness.connector.ConnectorResponseDTO;
@@ -152,7 +152,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
   @Inject private CDStepHelper cdStepHelper;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject private StrategyHelper strategyHelper;
-  @Inject private NGLogCallbackUtility ngLogCallbackUtility;
+  @Inject private ServiceEnvironmentsLogCallbackUtility serviceEnvironmentsLogUtility;
   private static final String OVERRIDE_PROJECT_SETTING_IDENTIFIER = "service_override_v2";
 
   @Override
@@ -163,7 +163,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
   @Override
   public AsyncExecutableResponse executeAsync(Ambiance ambiance, EmptyStepParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
-    final NGLogCallback logCallback = ngLogCallbackUtility.getLogCallback(ambiance, false);
+    final NGLogCallback logCallback = serviceEnvironmentsLogUtility.getLogCallback(ambiance, false);
     Optional<ManifestsOutcome> manifestsOutcome = resolveManifestsOutcome(ambiance, logCallback);
 
     List<String> callbackIds = new ArrayList<>();
@@ -215,7 +215,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
   @Deprecated // Can be removed with next releases
   public StepResponse executeSync(Ambiance ambiance, EmptyStepParameters stepParameters, StepInputPackage inputPackage,
       PassThroughData passThroughData) {
-    final NGLogCallback logCallback = ngLogCallbackUtility.getLogCallback(ambiance, false);
+    final NGLogCallback logCallback = serviceEnvironmentsLogUtility.getLogCallback(ambiance, false);
     Optional<ManifestsOutcome> manifestsOutcome = resolveManifestsOutcome(ambiance, logCallback);
 
     manifestsOutcome.ifPresent(outcome -> saveManifestsOutcome(ambiance, outcome, new HashMap<>()));

@@ -60,16 +60,12 @@ public class NodeEntity implements PersistentEntity, UuidAccess {
         .build();
   }
 
-  public static NodeEntity fromNode(Node node, String planId, Boolean useNewNodeEntityConfiguration) {
-    if (useNewNodeEntityConfiguration) {
-      return NodeEntity.builder()
-          .node(node)
-          .uuid(UUIDGenerator.generateUuid())
-          .nodeId(node.getUuid())
-          .planId(planId)
-          .build();
-    } else {
-      return NodeEntity.builder().node(node).uuid(node.getUuid()).nodeId(node.getUuid()).planId(planId).build();
-    }
+  public static NodeEntity fromNode(Node node, String planId) {
+    return NodeEntity.builder()
+        .node(node)
+        .uuid(UUIDGenerator.generateUuid())
+        .nodeId(node.getUuid())
+        .planId(planId)
+        .build();
   }
 }

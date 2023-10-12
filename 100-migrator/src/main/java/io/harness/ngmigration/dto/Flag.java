@@ -12,5 +12,6 @@ import io.harness.annotations.dev.ProductModule;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public enum Flag {
-  HELM_INFRA_WITH_STAGE_VAR
+  HELM_INFRA_WITH_STAGE_VAR,
+  SEQUENTIAL_CREATION
 }

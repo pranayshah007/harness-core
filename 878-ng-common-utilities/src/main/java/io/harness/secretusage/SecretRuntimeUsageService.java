@@ -6,12 +6,15 @@
  */
 
 package io.harness.secretusage;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityUsageDetailProto;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 public interface SecretRuntimeUsageService {
   /**
    * Produce Secret runtime usage event

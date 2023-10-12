@@ -147,9 +147,9 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
     delegateTaskServiceClassic = mock(DelegateTaskServiceClassic.class);
     delegateTaskService = mock(DelegateTaskService.class);
     delegateTaskMigrationHelper = mock(DelegateTaskMigrationHelper.class);
-    delegateServiceGrpcImpl = new DelegateServiceGrpcImpl(delegateCallbackRegistry, perpetualTaskService,
-        delegateService, delegateTaskService, referenceFalseKryoSerializer, delegateTaskServiceClassic,
-        delegateTaskMigrationHelper, null, null);
+    delegateServiceGrpcImpl =
+        new DelegateServiceGrpcImpl(delegateCallbackRegistry, perpetualTaskService, delegateService,
+            delegateTaskService, referenceFalseKryoSerializer, delegateTaskServiceClassic, delegateTaskMigrationHelper);
 
     server =
         InProcessServerBuilder.forName(serverName).directExecutor().addService(delegateServiceGrpcImpl).build().start();

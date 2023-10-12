@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 60
+version: 61
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -590,6 +590,13 @@ permissions:
   - identifier: ff_featureflag_toggle
     name: Toggle a Feature Flag On or Off
     status: ACTIVE
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: ff_featureflag_editStaleState
+    name: Edit a Feature Flags Stale State
+    status: STAGING
     allowedScopeLevels:
       - account
       - organization

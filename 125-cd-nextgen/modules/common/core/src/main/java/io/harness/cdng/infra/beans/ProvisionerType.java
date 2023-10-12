@@ -6,7 +6,6 @@
  */
 
 package io.harness.cdng.infra.beans;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.pipeline.steptype.NGStepType.AWS_CDK_BOOTSTRAP;
 import static io.harness.cdng.pipeline.steptype.NGStepType.AWS_CDK_DEPLOY;
@@ -31,7 +30,10 @@ import static io.harness.cdng.pipeline.steptype.NGStepType.TERRAGRUNT_DESTROY;
 import static io.harness.cdng.pipeline.steptype.NGStepType.TERRAGRUNT_PLAN;
 import static io.harness.cdng.pipeline.steptype.NGStepType.TERRAGRUNT_ROLLBACK;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.pipeline.steptype.NGStepType;
 
 import com.google.common.collect.ImmutableSet;
@@ -40,6 +42,8 @@ import java.util.List;
 import java.util.Set;
 import lombok.Getter;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(CDP)
 public enum ProvisionerType {
   TERRAFORM("Terraform"),

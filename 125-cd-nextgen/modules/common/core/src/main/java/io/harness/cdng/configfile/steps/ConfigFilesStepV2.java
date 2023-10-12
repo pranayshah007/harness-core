@@ -35,7 +35,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
-import io.harness.cdng.utilities.NGLogCallbackUtility;
+import io.harness.cdng.utilities.ServiceEnvironmentsLogCallbackUtility;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.EmptyPredicate;
@@ -124,7 +124,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
   @Inject private ConfigGitFilesMapper configGitFilesMapper;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StrategyHelper strategyHelper;
-  @Inject private NGLogCallbackUtility ngLogCallbackUtility;
+  @Inject private ServiceEnvironmentsLogCallbackUtility serviveEnvironmentsLogUtility;
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
     return EmptyStepParameters.class;
@@ -142,7 +142,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
         fetchConfigFilesMetadataFromSweepingOutput(ambiance);
 
     final List<ConfigFileWrapper> configFiles = configFilesSweepingOutput.getFinalSvcConfigFiles();
-    final NGLogCallback logCallback = ngLogCallbackUtility.getLogCallback(ambiance, false);
+    final NGLogCallback logCallback = serviveEnvironmentsLogUtility.getLogCallback(ambiance, false);
     if (EmptyPredicate.isEmpty(configFiles)) {
       logCallback.saveExecutionLog(
           "No config files configured in the service or in overrides. configFiles expressions will not work",
@@ -178,7 +178,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
 
     final List<ConfigFileWrapper> configFiles = configFilesSweepingOutput.getFinalSvcConfigFiles();
     final Map<String, String> configFileLocation = configFilesSweepingOutput.getConfigFileLocation();
-    final NGLogCallback logCallback = ngLogCallbackUtility.getLogCallback(ambiance, false);
+    final NGLogCallback logCallback = serviveEnvironmentsLogUtility.getLogCallback(ambiance, false);
     if (EmptyPredicate.isEmpty(configFiles)) {
       logCallback.saveExecutionLog(
           "No config files configured in the service or in overrides. configFiles expressions will not work",
@@ -330,7 +330,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
     ConfigFilesStepV2SweepingOutput configFilesStepV2SweepingOutput =
         (ConfigFilesStepV2SweepingOutput) outputOptional.getOutput();
 
-    final NGLogCallback logCallback = ngLogCallbackUtility.getLogCallback(ambiance, false);
+    final NGLogCallback logCallback = serviveEnvironmentsLogUtility.getLogCallback(ambiance, false);
     ConfigFilesOutcome configFilesOutcome = new ConfigFilesOutcome();
     for (String taskId : responseDataMap.keySet()) {
       ConfigFileOutcome configFileOutcome =
@@ -376,7 +376,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
   @Override
   public void handleAbort(Ambiance ambiance, EmptyStepParameters stepParameters,
       AsyncExecutableResponse executableResponse, boolean userMarked) {
-    final NGLogCallback logCallback = ngLogCallbackUtility.getLogCallback(ambiance, false);
+    final NGLogCallback logCallback = serviveEnvironmentsLogUtility.getLogCallback(ambiance, false);
     logCallback.saveExecutionLog(
         "Fetching Config Files Step was aborted", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
   }

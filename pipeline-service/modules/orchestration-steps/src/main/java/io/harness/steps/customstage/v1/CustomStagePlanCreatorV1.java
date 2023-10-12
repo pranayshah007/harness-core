@@ -10,9 +10,11 @@ package io.harness.steps.customstage.v1;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.InvalidYamlException;
 import io.harness.plancreator.DependencyMetadata;
 import io.harness.plancreator.PlanCreatorUtilsV1;
-import io.harness.plancreator.steps.common.StageElementParameters;
+import io.harness.plancreator.steps.common.v1.StageElementParametersV1.StageElementParametersV1Builder;
+import io.harness.plancreator.steps.common.v1.StepParametersUtilsV1;
 import io.harness.plancreator.strategy.StrategyUtilsV1;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
@@ -34,10 +36,10 @@ import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.StepSpecTypeConstantsV1;
 import io.harness.steps.customstage.CustomStageSpecParams;
-import io.harness.steps.customstage.CustomStageStep;
 import io.harness.when.utils.v1.RunInfoUtilsV1;
 import io.harness.yaml.core.failurestrategy.v1.FailureConfigV1;
 
@@ -63,7 +65,7 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
     return Collections.singletonMap(
-        YAMLFieldNameConstants.STAGE, Collections.singleton(StepSpecTypeConstants.CUSTOM_STAGE));
+        YAMLFieldNameConstants.STAGE, Collections.singleton(StepSpecTypeConstantsV1.CUSTOM_STAGE));
   }
 
   @Override
@@ -139,18 +141,27 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
 
   @Override
   public PlanNode createPlanForParentNode(PlanCreationContext ctx, YamlField config, List<String> childrenNodeIds) {
-    CustomStageSpecParams params = CustomStageSpecParams.builder().childNodeID(childrenNodeIds.get(0)).build();
+    CustomStageNodeV1 customStageNodeV1;
+    try {
+      customStageNodeV1 = YamlUtils.read(config.getNode().toString(), CustomStageNodeV1.class);
+    } catch (Exception e) {
+      throw new InvalidYamlException(
+          "Unable to parse custom stage yaml. Please ensure that it is in correct format", e);
+    }
+    StageElementParametersV1Builder stageParameters = StepParametersUtilsV1.getStageParameters(customStageNodeV1);
+    stageParameters.type(StepSpecTypeConstantsV1.CUSTOM_STAGE);
+    stageParameters.spec(CustomStageSpecParams.builder().childNodeID(childrenNodeIds.get(0)).build());
     String name = config.getNodeName();
     PlanNodeBuilder builder =
         PlanNode.builder()
             .uuid(StrategyUtilsV1.getSwappedPlanNodeId(ctx, config.getUuid()))
             .identifier(StrategyUtilsV1.getIdentifierWithExpression(ctx, config.getId()))
-            .stepType(CustomStageStep.STEP_TYPE)
+            .stepType(CustomStageStepV1.STEP_TYPE)
             .group(StepOutcomeGroup.STAGE.name())
             .name(StrategyUtilsV1.getIdentifierWithExpression(ctx, name))
             .skipUnresolvedExpressionsCheck(true)
             .whenCondition(RunInfoUtilsV1.getStageWhenCondition(config))
-            .stepParameters(StageElementParameters.builder().specConfig(params).build())
+            .stepParameters(stageParameters.build())
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())

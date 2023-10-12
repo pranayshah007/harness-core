@@ -6,7 +6,6 @@
  */
 
 package software.wings.sm.states.k8s;
-
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
@@ -24,7 +23,10 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.BreakDependencyOn;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.context.ContextElementType;
@@ -81,6 +83,7 @@ import java.util.Objects;
 import lombok.Getter;
 import lombok.Setter;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @JsonIgnoreProperties(ignoreUnknown = true)
 @TargetModule(_870_CG_ORCHESTRATION)
 @OwnedBy(CDP)

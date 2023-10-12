@@ -35,6 +35,14 @@ public class K8SLegacyReleaseHistory implements IK8sReleaseHistory {
   }
 
   @Override
+  public IK8sRelease getLastSuccessfulRelease() {
+    if (isNotEmpty(releaseHistory.getReleases())) {
+      return releaseHistory.getLastSuccessfulRelease();
+    }
+    return null;
+  }
+
+  @Override
   public IK8sRelease getLastSuccessfulRelease(int currentReleaseNumber) {
     return releaseHistory.getPreviousRollbackEligibleRelease(currentReleaseNumber);
   }

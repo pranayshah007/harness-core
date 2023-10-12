@@ -6,10 +6,12 @@
  */
 
 package io.harness.yaml.individualschema;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.template.utils.TemplateSchemaFetcher;
@@ -26,6 +28,7 @@ import java.util.Iterator;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(PIPELINE)
 @Singleton

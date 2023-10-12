@@ -397,11 +397,11 @@
         "data_source_identifier": "jira",
         "data_point_identifier": "issuesCount",
         "conditional_input_value": "\"issuetype in (Epic, 'New Feature') AND resolved >= -90d\"",
-        "operator": "<",
+        "operator": ">",
         "value": "5"
       }
     ],
-    "expression": "jira.issuesCount < 5",
+    "expression": "jira.issuesCount > 5",
     "tags": ["Development maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Features delivered in last 90 days is less than 5"
@@ -431,8 +431,8 @@
     "id": "64d4f2a0b309cf72096284be",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "__HARNESS__bfffcf93-8892-4459-be93-b7a690df7f6f",
-    "name": "Gitlab Mean time to merge PR is less than 2 days",
-    "description": "Gitlab Mean time to merge PR is less than 2 days",
+    "name": "GitLab Mean time to merge PR is less than 2 days",
+    "description": "GitLab Mean time to merge PR is less than 2 days",
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
@@ -452,8 +452,8 @@
     "id": "64e5e23fb11d6686d2a9a007",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "__HARNESS__b9e98e87-e9f1-4c5e-9ba6-49085f71dbc4",
-    "name": "Gitlab Branch protection is set",
-    "description": "Gitlab Branch protection is set",
+    "name": "GitLab Branch protection is set",
+    "description": "GitLab Branch protection is set",
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
@@ -473,8 +473,8 @@
     "id": "64ffe63a8b4005661f8e59ff",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
     "identifier": "__HARNESS__b8a10e98-d9c1-4c5e-9ba6-4605a772fbc4",
-    "name": "Gitlab Gitleaks file exists",
-    "description": "Gitlab Gitleaks file exists",
+    "name": "GitLab Gitleaks file exists",
+    "description": "GitLab Gitleaks file exists",
     "ruleStrategy": "ALL_OF",
     "rules": [
       {
@@ -489,5 +489,25 @@
     "tags": ["Software quality", "Development maturity"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Gitleaks file does not exist"
+  },
+  {
+    "id": "652409ac837e048f84560598",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "__HARNESS__c659266c-33f5-555f-84e4-be204f9ea287",
+    "name": "Number of workflows is greater than 3",
+    "description": "Number of workflows is greater than 3",
+    "ruleStrategy": "ALL_OF",
+    "rules": [
+      {
+        "data_source_identifier": "github",
+        "data_point_identifier": "workflowsCount",
+        "operator": ">",
+        "value": "3"
+      }
+    ],
+    "expression": "github.workflowsCount > 3",
+    "tags": ["Software quality", "Development maturity"],
+    "defaultBehaviour": "FAIL",
+    "failMessage": "Number of workflows is less than or equal to 3."
   }
 ]

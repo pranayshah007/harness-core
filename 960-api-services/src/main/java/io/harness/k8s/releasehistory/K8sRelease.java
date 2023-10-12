@@ -27,6 +27,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.delegate.task.k8s.ReleaseMetadata;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
@@ -99,6 +100,17 @@ public class K8sRelease implements IK8sRelease {
   public List<KubernetesResourceId> getResourceIds() {
     List<KubernetesResource> resources = getResourcesWithSpecs();
     return resources.stream().map(KubernetesResource::getResourceId).collect(Collectors.toList());
+  }
+
+  @Override
+  public IK8sRelease setReleaseMetadata(ReleaseMetadata releaseMetadata) {
+    K8sReleaseSecretHelper.putHarnessReleaseMetadata(releaseSecret, releaseMetadata);
+    return this;
+  }
+
+  @Override
+  public ReleaseMetadata getReleaseMetadata() {
+    return K8sReleaseSecretHelper.getHarnessReleaseMetadata(releaseSecret);
   }
 
   @Override

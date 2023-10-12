@@ -11,10 +11,12 @@ import static org.mockito.Mockito.mock;
 
 import io.harness.factory.ClosingFactory;
 import io.harness.govern.ProviderModule;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.HPersistence;
 import io.harness.repositories.ArtifactRepository;
+import io.harness.repositories.CdInstanceSummaryRepo;
 import io.harness.repositories.EnforcementResultRepo;
 import io.harness.repositories.EnforcementSummaryRepo;
 import io.harness.repositories.SBOMComponentRepo;
@@ -33,6 +35,8 @@ import io.harness.ssca.api.SbomProcessorApiImpl;
 import io.harness.ssca.api.TokenApiImpl;
 import io.harness.ssca.services.ArtifactService;
 import io.harness.ssca.services.ArtifactServiceImpl;
+import io.harness.ssca.services.CdInstanceSummaryService;
+import io.harness.ssca.services.CdInstanceSummaryServiceImpl;
 import io.harness.ssca.services.EnforcementResultService;
 import io.harness.ssca.services.EnforcementResultServiceImpl;
 import io.harness.ssca.services.EnforcementStepService;
@@ -74,6 +78,7 @@ import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 @Slf4j
 public class SSCAManagerTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMixin {
@@ -134,6 +139,12 @@ public class SSCAManagerTestRule implements InjectorRuleMixin, MethodRule, Mongo
 
       @Provides
       @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
+      }
+
+      @Provides
+      @Singleton
       List<Class<? extends Converter<?, ?>>> springConverters() {
         return ImmutableList.<Class<? extends Converter<?, ?>>>builder()
             .addAll(SSCAManagerModuleRegistrars.springConverters)
@@ -167,8 +178,11 @@ public class SSCAManagerTestRule implements InjectorRuleMixin, MethodRule, Mongo
         bind(ArtifactRepository.class).toInstance(mock(ArtifactRepository.class));
         bind(EnforcementResultRepo.class).toInstance(mock(EnforcementResultRepo.class));
         bind(EnforcementSummaryRepo.class).toInstance(mock(EnforcementSummaryRepo.class));
+        bind(CdInstanceSummaryRepo.class).toInstance(mock(CdInstanceSummaryRepo.class));
+        bind(CdInstanceSummaryService.class).to(CdInstanceSummaryServiceImpl.class);
         bind(S3StoreService.class).to(S3StoreServiceImpl.class);
         bind(TokenApi.class).to(TokenApiImpl.class);
+        bind(MongoTemplate.class).toInstance(mock(MongoTemplate.class));
       }
     });
     modules.add(TimeModule.getInstance());

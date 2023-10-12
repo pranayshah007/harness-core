@@ -22,6 +22,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.RESTORE_CACHE_S
 import static io.harness.ci.commonconstants.CIExecutionConstants.RESTORE_CACHE_STEP_NAME;
 import static io.harness.ci.commonconstants.CIExecutionConstants.SAVE_CACHE_STEP_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.SAVE_CACHE_STEP_NAME;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_ARCHIVE_FORMAT;
 import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_AUTO_CACHE_ACCOUNT_ID;
 import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_AUTO_DETECT_CACHE;
 import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_BACKEND_OPERATION_TIMEOUT;
@@ -33,6 +34,7 @@ import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_MOUNT
 import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_OVERRIDE;
 import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_REBUILD;
 import static io.harness.ci.execution.buildstate.PluginSettingUtils.PLUGIN_RESTORE;
+import static io.harness.ci.execution.buildstate.PluginSettingUtils.ZSTD_ARCHIVE_FORMAT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -512,6 +514,7 @@ public class CIStepGroupUtils {
         envVariables.put(PLUGIN_CACHE_KEY, ParameterField.createValueField(cacheKey));
       }
     }
+    envVariables.put(PLUGIN_ARCHIVE_FORMAT, ParameterField.createValueField(ZSTD_ARCHIVE_FORMAT));
     envVariables.put(PLUGIN_AUTO_DETECT_CACHE, ParameterField.createValueField(STRING_TRUE));
     envVariables.put(PLUGIN_AUTO_CACHE_ACCOUNT_ID, ParameterField.createValueField(accountId));
     envVariables.put(PLUGIN_EXIT_CODE, ParameterField.createValueField(STRING_TRUE));

@@ -6,9 +6,11 @@
  */
 
 package io.harness.steps.shellscript.v1;
-
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.plancreator.DependencyMetadata;
 import io.harness.plancreator.PlanCreatorUtilsV1;
 import io.harness.plancreator.strategy.StrategyUtilsV1;
@@ -47,6 +49,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.SneakyThrows;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public class ShellScriptStepPlanCreatorV1 implements PartialPlanCreator<YamlField> {
   @Inject private KryoSerializer kryoSerializer;
 

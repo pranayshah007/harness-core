@@ -21,8 +21,6 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.AwsClient;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.connector.task.git.ScmConnectorMapperDelegate;
-import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
-import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
@@ -261,11 +259,11 @@ public class HelmChartManifestTaskService {
         break;
       case OCI_HELM:
         OciHelmStoreDelegateConfig ociHelm = (OciHelmStoreDelegateConfig) config.getStoreDelegateConfig();
-        if (ociHelm.getConnectorConfigDTO() instanceof OciHelmConnectorDTO) {
+        if (ociHelm.getOciHelmConnector() != null) {
           metadataBuilder.url(ociHelm.getRepoUrl())
               .basePath(ociHelm.getBasePath())
               .cacheRepoUrl(format("%s/%s", ociHelm.getRepoUrl(), ociHelm.getBasePath()));
-        } else if (ociHelm.getConnectorConfigDTO() instanceof AwsConnectorDTO) {
+        } else if (ociHelm.getAwsConnectorDTO() != null) {
           String repoUrl = getEcrRepoUrl(ociHelm);
           metadataBuilder.url(repoUrl)
               .region(ociHelm.getRegion())
@@ -302,7 +300,7 @@ public class HelmChartManifestTaskService {
 
   private static String getEcrRepoUrl(OciHelmStoreDelegateConfig ociHelmStoreDelegateConfig) {
     AwsInternalConfig awsInternalConfig =
-        awsNgConfigMapper.createAwsInternalConfig((AwsConnectorDTO) ociHelmStoreDelegateConfig.getConnectorConfigDTO());
+        awsNgConfigMapper.createAwsInternalConfig(ociHelmStoreDelegateConfig.getAwsConnectorDTO());
     return awsClient.getEcrImageUrl(awsInternalConfig, ociHelmStoreDelegateConfig.getRegistryId(),
         ociHelmStoreDelegateConfig.getRegion(), ociHelmStoreDelegateConfig.getRepoName());
   }

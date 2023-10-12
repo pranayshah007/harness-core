@@ -8,7 +8,7 @@
 package io.harness.cdng.environment.steps;
 
 import static io.harness.cdng.environment.constants.CustomStageEnvironmentStepConstants.ENVIRONMENT_STEP_COMMAND_UNIT;
-import static io.harness.cdng.service.steps.constants.ServiceStepConstants.OVERRIDES_COMMAND_UNIT;
+import static io.harness.cdng.environment.constants.CustomStageEnvironmentStepConstants.OVERRIDES_COMMAND_UNIT;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 

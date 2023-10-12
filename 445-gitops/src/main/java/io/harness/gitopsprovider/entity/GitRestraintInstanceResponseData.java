@@ -6,15 +6,18 @@
  */
 
 package io.harness.gitopsprovider.entity;
-
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.tasks.ResponseData;
 
 import lombok.Builder;
 import lombok.Value;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @OwnedBy(GITOPS)
 @Value
 @Builder

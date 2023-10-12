@@ -13,6 +13,7 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.delegate.task.k8s.ReleaseMetadata;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
 
@@ -48,6 +49,7 @@ public class K8sLegacyRelease implements IK8sRelease {
   @Builder.Default private List<KubernetesResource> resourcesWithSpec = new ArrayList<>();
 
   private String bgEnvironment;
+  private ReleaseMetadata harnessMeta;
 
   @Override
   public Integer getReleaseNumber() {
@@ -75,6 +77,11 @@ public class K8sLegacyRelease implements IK8sRelease {
   }
 
   @Override
+  public ReleaseMetadata getReleaseMetadata() {
+    return harnessMeta;
+  }
+
+  @Override
   public IK8sRelease setReleaseData(List<KubernetesResource> resources, boolean isPruningEnabled) {
     if (isPruningEnabled) {
       List<KubernetesResource> resourcesWithPruningEnabled =
@@ -85,6 +92,12 @@ public class K8sLegacyRelease implements IK8sRelease {
     } else {
       this.setResources(resources.stream().map(KubernetesResource::getResourceId).collect(Collectors.toList()));
     }
+    return this;
+  }
+
+  @Override
+  public IK8sRelease setReleaseMetadata(ReleaseMetadata releaseMetadata) {
+    this.setHarnessMeta(releaseMetadata);
     return this;
   }
 

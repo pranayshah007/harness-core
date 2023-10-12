@@ -6,13 +6,15 @@
  */
 
 package io.harness.engine.interrupts.helpers;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import io.harness.OrchestrationPublisherName;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delay.DelayEventHelper;
 import io.harness.engine.OrchestrationEngine;
@@ -34,6 +36,7 @@ import io.harness.pms.contracts.advisers.InterventionWaitAdvise;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.contracts.interrupts.RetryInterruptConfig;
@@ -52,6 +55,8 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @Slf4j
 public class RetryHelper {
@@ -75,19 +80,21 @@ public class RetryHelper {
 
     Level currentLevel = AmbianceUtils.obtainCurrentLevel(oldAmbiance);
     Ambiance ambiance = AmbianceUtils.cloneForFinish(oldAmbiance);
+    StrategyMetadata strategyMetadata = null;
+    if (currentLevel != null) {
+      strategyMetadata = currentLevel.getStrategyMetadata();
+    }
     int newRetryIndex = currentLevel != null ? currentLevel.getRetryIndex() + 1 : 0;
-    Ambiance finalAmbiance =
-        ambiance.toBuilder()
-            .addLevels(PmsLevelUtils.buildLevelFromNode(newUuid, newRetryIndex, node,
-                currentLevel.getStrategyMetadata(), AmbianceUtils.shouldUseMatrixFieldName(ambiance)))
-            .build();
+    Ambiance finalAmbiance = ambiance.toBuilder()
+                                 .addLevels(PmsLevelUtils.buildLevelFromNode(newUuid, newRetryIndex, node,
+                                     strategyMetadata, AmbianceUtils.shouldUseMatrixFieldName(ambiance)))
+                                 .build();
     // TODO: Move nodeExecution creation to AbstractNodeExecutionStrategy
     // ambiance could be modified by this clone method
     NodeExecution newNodeExecution =
         cloneForRetry(updatedRetriedNode, newUuid, finalAmbiance, interruptConfig, interruptId);
     NodeExecution savedNodeExecution = nodeExecutionService.save(newNodeExecution);
-    pmsGraphStepDetailsService.saveNodeExecutionInfo(
-        newUuid, ambiance.getPlanExecutionId(), currentLevel.getStrategyMetadata());
+    pmsGraphStepDetailsService.saveNodeExecutionInfo(newUuid, ambiance.getPlanExecutionId(), strategyMetadata);
 
     nodeExecutionService.updateRelationShipsForRetryNode(updatedRetriedNode.getUuid(), savedNodeExecution.getUuid());
     nodeExecutionService.markRetried(updatedRetriedNode.getUuid());

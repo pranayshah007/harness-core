@@ -6,9 +6,19 @@
  */
 
 package io.harness.gitsync.common.beans;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
-@OwnedBy(PIPELINE) public enum GitXWebhookEventStatus { QUEUED, PROCESSING, FAILED, SUCCESSFUL, SKIPPED }
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
+@OwnedBy(PIPELINE)
+public enum GitXWebhookEventStatus {
+  QUEUED,
+  PROCESSING,
+  FAILED,
+  SUCCESSFUL,
+  SKIPPED
+}

@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.SHALINI;
 import static io.harness.rule.OwnerRule.SHIVAM;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static junit.framework.TestCase.assertTrue;
@@ -36,6 +37,7 @@ import io.harness.engine.events.OrchestrationEventEmitter;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.plan.PlanExecutionService;
+import io.harness.event.PlanExecutionModuleInfoUpdateEventHandler;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
@@ -49,6 +51,7 @@ import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.repositories.orchestrationEventLog.OrchestrationEventLogRepository;
 import io.harness.rule.Owner;
 import io.harness.service.GraphGenerationService;
@@ -83,6 +86,8 @@ public class GraphGenerationServiceImplTest extends OrchestrationVisualizationTe
   @InjectMocks @Inject private GraphGenerationService graphGenerationService;
   @Mock private OrchestrationEventEmitter eventEmitter;
   @Mock private PlanExecutionMetadataService planExecutionMetadataService;
+  @Mock private PlanExecutionModuleInfoUpdateEventHandler planExecutionModuleInfoUpdateEventHandler;
+  @Mock private PmsExecutionSummaryService pmsExecutionSummaryService;
   @Inject @InjectMocks GraphGenerationServiceImpl graphGenerationServiceImpl;
 
   @Before
@@ -375,5 +380,60 @@ public class GraphGenerationServiceImplTest extends OrchestrationVisualizationTe
                                                                                .graphVertexMap(new HashMap<>())
                                                                                .build())
                                                             .build()));
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testUpdateGraphUnderLockWithOrchestrationGraphForPipelineInfoUpdate() {
+    String planExecutionId = generateUuid();
+    String nodeExecutionId = generateUuid();
+    List<OrchestrationEventLog> logs = new ArrayList<>();
+    logs.add(OrchestrationEventLog.builder()
+                 .planExecutionId(planExecutionId)
+                 .orchestrationEventType(OrchestrationEventType.PIPELINE_INFO_UPDATE)
+                 .createdAt(1550L)
+                 .build());
+    doReturn(logs).when(orchestrationEventLogRepository).findUnprocessedEvents(planExecutionId, 1222L, 1000);
+    assertTrue(
+        graphGenerationServiceImpl.updateGraphUnderLock(OrchestrationGraph.builder()
+                                                            .planExecutionId(planExecutionId)
+                                                            .rootNodeIds(new ArrayList<>())
+                                                            .lastUpdatedAt(1222L)
+                                                            .adjacencyList(OrchestrationAdjacencyListInternal.builder()
+                                                                               .adjacencyMap(new HashMap<>())
+                                                                               .graphVertexMap(new HashMap<>())
+                                                                               .build())
+                                                            .build()));
+    verify(planExecutionModuleInfoUpdateEventHandler, times(1)).handlePipelineInfoUpdate(any(), any());
+    verify(pmsExecutionSummaryService, times(1)).update(any(), any());
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testUpdateGraphUnderLockWithOrchestrationGraphForStageInfoUpdate() {
+    String planExecutionId = generateUuid();
+    String nodeExecutionId = generateUuid();
+    List<OrchestrationEventLog> logs = new ArrayList<>();
+    logs.add(OrchestrationEventLog.builder()
+                 .planExecutionId(planExecutionId)
+                 .nodeExecutionId(nodeExecutionId)
+                 .orchestrationEventType(OrchestrationEventType.STAGE_INFO_UPDATE)
+                 .createdAt(1550L)
+                 .build());
+    doReturn(logs).when(orchestrationEventLogRepository).findUnprocessedEvents(planExecutionId, 1222L, 1000);
+    assertTrue(
+        graphGenerationServiceImpl.updateGraphUnderLock(OrchestrationGraph.builder()
+                                                            .planExecutionId(planExecutionId)
+                                                            .rootNodeIds(new ArrayList<>())
+                                                            .lastUpdatedAt(1222L)
+                                                            .adjacencyList(OrchestrationAdjacencyListInternal.builder()
+                                                                               .adjacencyMap(new HashMap<>())
+                                                                               .graphVertexMap(new HashMap<>())
+                                                                               .build())
+                                                            .build()));
+    verify(planExecutionModuleInfoUpdateEventHandler, times(1)).handleStageInfoUpdate(any(), any(), any());
+    verify(pmsExecutionSummaryService, times(1)).update(any(), any());
   }
 }

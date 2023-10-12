@@ -6,7 +6,6 @@
  */
 
 package software.wings.yaml.gitSync;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
@@ -24,6 +23,9 @@ import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
@@ -66,6 +68,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * @author bsollish on 09/26/17
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 public class GitChangeSetRunnable implements Runnable {
   public static final List<Status> RUNNING_STATUS_LIST = singletonList(Status.RUNNING);

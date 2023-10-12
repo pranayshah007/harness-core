@@ -36,7 +36,6 @@ import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
@@ -62,11 +61,9 @@ public class ACLGeneratorServiceImpl implements ACLGeneratorService {
   private final InMemoryPermissionRepository inMemoryPermissionRepository;
   private int batchSizeForACLCreation;
 
-  @Inject
   public ACLGeneratorServiceImpl(RoleService roleService, UserGroupService userGroupService,
       ResourceGroupService resourceGroupService, ScopeService scopeService,
-      Map<Pair<ScopeLevel, Boolean>, Set<String>> implicitPermissionsByScope,
-      @Named(ACL.PRIMARY_COLLECTION) ACLRepository aclRepository,
+      Map<Pair<ScopeLevel, Boolean>, Set<String>> implicitPermissionsByScope, ACLRepository aclRepository,
       InMemoryPermissionRepository inMemoryPermissionRepository,
       @Named("batchSizeForACLCreation") int batchSizeForACLCreation) {
     this.roleService = roleService;

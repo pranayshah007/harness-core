@@ -151,6 +151,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   SCMGitAccessToProviderMapper scmGitAccessToProviderMapper;
   public static final int LIST_REPO_API_VERSION_TWO = 2;
   public static final int LIST_REPO_DEFAULT_API_VERSION = 1;
+  private final int FIRST_PAGE = 1;
 
   @Override
   public CreateFileResponse createFile(ScmConnector scmConnector, GitFileDetails gitFileDetails,
@@ -386,9 +387,26 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   @Override
   public FindFilesInPRResponse findFilesInPR(
       ScmConnector scmConnector, int prNumber, SCMGrpc.SCMBlockingStub scmBlockingStub) {
-    FindFilesInPRRequest findFilesInPRRequest = getFindFilesInPRRequest(scmConnector, prNumber);
-    // still to be resolved
-    return ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::findFilesInPR, findFilesInPRRequest);
+    final String slug = scmGitProviderHelper.getSlug(scmConnector);
+    final Provider provider = scmGitProviderMapper.mapToSCMGitProvider(scmConnector);
+    FindFilesInPRResponse response;
+    int pageNumber = FIRST_PAGE;
+
+    List<PRFile> prFiles = new ArrayList<>();
+
+    FindFilesInPRRequest.Builder request =
+        FindFilesInPRRequest.newBuilder().setSlug(slug).setNumber(prNumber).setProvider(provider).setPagination(
+            PageRequest.newBuilder().setPage(pageNumber).build());
+
+    // Paginate the request.
+    do {
+      response = ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::findFilesInPR, request.build());
+      prFiles.addAll(response.getFilesList());
+      // Set next page in the request
+      request.setPagination(PageRequest.newBuilder().setPage(response.getPagination().getNext()).build());
+    } while (response != null && response.getPagination().getNext() != 0);
+
+    return FindFilesInPRResponse.newBuilder().addAllFiles(prFiles).build();
   }
 
   @Override
@@ -573,14 +591,6 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     return FindFilesInBranchRequest.newBuilder()
         .setSlug(scmGitProviderHelper.getSlug(scmConnector))
         .setBranch(branch)
-        .setProvider(scmGitProviderMapper.mapToSCMGitProvider(scmConnector))
-        .build();
-  }
-
-  private FindFilesInPRRequest getFindFilesInPRRequest(ScmConnector scmConnector, int prNumber) {
-    return FindFilesInPRRequest.newBuilder()
-        .setSlug(scmGitProviderHelper.getSlug(scmConnector))
-        .setNumber(prNumber)
         .setProvider(scmGitProviderMapper.mapToSCMGitProvider(scmConnector))
         .build();
   }

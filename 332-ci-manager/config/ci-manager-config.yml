@@ -349,13 +349,9 @@ ciExecutionServiceConfig:
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
     sscaOrchestrationConfig:
-      image: harness/ssca-plugin:0.3.0
-      entrypoint:
-        - /bin/ssca-plugin
+      image: harness/ssca-plugin:0.11.0
     sscaEnforcementConfig:
-      image: harness/ssca-plugin:0.3.0
-      entrypoint:
-        - /bin/ssca-plugin
+      image: harness/ssca-plugin:0.11.0
     provenanceConfig:
       image: harness/slsa-plugin:latest
       entrypoint:

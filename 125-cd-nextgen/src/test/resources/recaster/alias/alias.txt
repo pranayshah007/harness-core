@@ -169,6 +169,7 @@ io.harness.cdng.ssh.CommandStepInfo
 io.harness.cdng.aws.asg.AsgCanaryDeployStepParameters
 io.harness.cdng.infra.InfrastructureDef
 io.harness.cdng.tas.outcome.TasAppResizeDataOutcome
+io.harness.cdng.tas.outcome.TanzuCommandOutcome
 io.harness.cdng.infra.yaml.AwsSamInfrastructure
 io.harness.cdng.gitops.MergePROutcome
 io.harness.cdng.provision.terraform.TerraformRollbackStepNode
@@ -1300,3 +1301,8 @@ io.harness.cdng.ecs.EcsBasicRollbackStepNode
 io.harness.beans.yaml.extended.cache.CachePolicy
 io.harness.beans.steps.stepinfo.GARStepInfo
 io.harness.cdng.provision.awscdk.beans.AwsCdkOutcome
+io.harness.cdng.ecs.EcsBasicPrepareDeployDataOutcome
+io.harness.cdng.ecs.beans.EcsUpgradeContainerOutcome
+io.harness.cdng.ecs.EcsBasicPrepareRollbackDataOutcome
+io.harness.cdng.ecs.beans.EcsServiceSetupOutcome
+io.harness.cdng.ecs.beans.EcsBasicRollbackOutcome

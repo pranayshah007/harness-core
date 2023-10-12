@@ -65,7 +65,7 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
-import io.harness.cdng.utilities.NGLogCallbackUtility;
+import io.harness.cdng.utilities.ServiceEnvironmentsLogCallbackUtility;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.TaskData;
@@ -146,7 +146,7 @@ public class ManifestsStepV2Test extends CategoryTest {
   @Mock private StrategyHelper strategyHelper;
   @Mock private KryoSerializer referenceFalseKryoSerializer;
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
-  @Mock private NGLogCallbackUtility ngLogCallbackUtility;
+  @Mock private ServiceEnvironmentsLogCallbackUtility serviceEnvironmentsLogUtility;
 
   @InjectMocks private ManifestsStepV2 step = new ManifestsStepV2();
 
@@ -163,7 +163,7 @@ public class ManifestsStepV2Test extends CategoryTest {
                              .build()))
         .when(connectorService)
         .get(anyString(), anyString(), anyString(), anyString());
-    doReturn(logCallback).when(ngLogCallbackUtility).getLogCallback(any(), anyBoolean());
+    doReturn(logCallback).when(serviceEnvironmentsLogUtility).getLogCallback(any(), anyBoolean());
   }
 
   @After

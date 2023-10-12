@@ -8,19 +8,12 @@
 package io.harness.steps.http;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.beans.constants.JsonConstants.RESOLVE_OBJECTS_VIA_JSON_SELECT;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.exception.WingsException.USER;
-
-import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
-import io.harness.beans.HttpCertificateNG;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
@@ -30,8 +23,6 @@ import io.harness.delegate.task.http.HttpStepResponse;
 import io.harness.delegate.task.http.HttpTaskParametersNg;
 import io.harness.delegate.task.http.HttpTaskParametersNg.HttpTaskParametersNgBuilder;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
-import io.harness.exception.InvalidRequestException;
-import io.harness.expression.common.ExpressionMode;
 import io.harness.http.HttpHeaderConfig;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
@@ -46,13 +37,11 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
@@ -65,21 +54,12 @@ import io.harness.utils.PmsFeatureFlagHelper;
 
 import software.wings.beans.TaskType;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import java.net.IDN;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @CodePulse(
@@ -87,7 +67,6 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDC)
 @Slf4j
 public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
-  private static final String URL_ENCODED_CHAR_REGEX = ".*%[0-9a-fA-F]{2}.*";
   public static final StepType STEP_TYPE = StepSpecTypeConstants.HTTP_STEP_TYPE;
 
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
@@ -95,16 +74,11 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private PmsFeatureFlagHelper pmsFeatureFlagHelper;
   @Inject private StepHelper stepHelper;
-  @Inject private EngineExpressionService engineExpressionService;
+  @Inject HttpStepUtils httpStepUtils;
 
   @Override
   public Class<StepBaseParameters> getStepParametersClass() {
     return StepBaseParameters.class;
-  }
-
-  private NGLogCallback getNGLogCallback(LogStreamingStepClientFactory logStreamingStepClientFactory, Ambiance ambiance,
-      String logFix, boolean openStream) {
-    return new NGLogCallback(logStreamingStepClientFactory, ambiance, logFix, openStream);
   }
 
   @Override
@@ -123,8 +97,8 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
     String url = (String) httpStepParameters.getUrl().fetchFinalValue();
 
     NGLogCallback logCallback =
-        getNGLogCallback(logStreamingStepClientFactory, ambiance, HttpTaskNG.COMMAND_UNIT, false);
-    url = encodeURL(url, logCallback);
+        httpStepUtils.getNGLogCallback(logStreamingStepClientFactory, ambiance, HttpTaskNG.COMMAND_UNIT, false);
+    url = httpStepUtils.encodeURL(url, logCallback);
 
     HttpTaskParametersNgBuilder httpTaskParametersNgBuilder = HttpTaskParametersNg.builder()
                                                                   .url(url)
@@ -151,7 +125,8 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
         pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.ENABLE_CERT_VALIDATION));
 
     if (pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_HTTP_STEP_NG_CERTIFICATE)) {
-      createCertificate(httpStepParameters).ifPresent(cert -> { httpTaskParametersNgBuilder.certificateNG(cert); });
+      httpStepUtils.createCertificate(httpStepParameters.getCertificate(), httpStepParameters.getCertificateKey())
+          .ifPresent(cert -> { httpTaskParametersNgBuilder.certificateNG(cert); });
     }
 
     final TaskData taskData =
@@ -169,49 +144,31 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
         stepHelper.getEnvironmentType(ambiance));
   }
 
-  @VisibleForTesting
-  protected Optional<HttpCertificateNG> createCertificate(HttpStepParameters httpStepParameters) {
-    if (isEmpty(httpStepParameters.getCertificate().getValue())
-        && isEmpty(httpStepParameters.getCertificateKey().getValue())) {
-      return Optional.empty();
-    }
-
-    if (isEmpty(httpStepParameters.getCertificate().getValue())
-        && isNotEmpty(httpStepParameters.getCertificateKey().getValue())) {
-      throw new InvalidRequestException(
-          "Only certificateKey is provided, we need both certificate and certificateKey or only certificate", USER);
-    }
-
-    return Optional.of(HttpCertificateNG.builder()
-                           .certificate(httpStepParameters.getCertificate().getValue())
-                           .certificateKey(httpStepParameters.getCertificateKey().getValue())
-                           .build());
-  }
-
   @Override
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepBaseParameters stepParameters,
       ThrowingSupplier<HttpStepResponse> responseSupplier) throws Exception {
     try {
       NGLogCallback logCallback =
-          getNGLogCallback(logStreamingStepClientFactory, ambiance, HttpTaskNG.COMMAND_UNIT, false);
+          httpStepUtils.getNGLogCallback(logStreamingStepClientFactory, ambiance, HttpTaskNG.COMMAND_UNIT, false);
 
       StepResponseBuilder responseBuilder = StepResponse.builder();
       HttpStepResponse httpStepResponse = responseSupplier.get();
 
       HttpStepParameters httpStepParameters = (HttpStepParameters) stepParameters.getSpec();
-      logCallback.saveExecutionLog(
-          String.format("Successfully executed the http request %s .", fetchFinalValue(httpStepParameters.getUrl())));
+      logCallback.saveExecutionLog(String.format(
+          "Successfully executed the http request %s .", httpStepUtils.fetchFinalValue(httpStepParameters.getUrl())));
 
       Map<String, Object> outputVariables =
           httpStepParameters.getOutputVariables() == null ? null : httpStepParameters.getOutputVariables().getValue();
       Map<String, String> outputVariablesEvaluated =
-          evaluateOutputVariables(outputVariables, httpStepResponse, ambiance);
+          httpStepUtils.evaluateOutputVariables(outputVariables, httpStepResponse, ambiance);
 
       logCallback.saveExecutionLog("Validating the assertions...");
-      boolean assertionSuccessful = validateAssertions(httpStepResponse, httpStepParameters);
+      boolean assertionSuccessful =
+          HttpStepUtils.validateAssertions(httpStepResponse, httpStepParameters.getAssertion());
       HttpOutcome executionData = HttpOutcome.builder()
-                                      .httpUrl(fetchFinalValue(httpStepParameters.getUrl()))
-                                      .httpMethod(fetchFinalValue(httpStepParameters.getMethod()))
+                                      .httpUrl(httpStepUtils.fetchFinalValue(httpStepParameters.getUrl()))
+                                      .httpMethod(httpStepUtils.fetchFinalValue(httpStepParameters.getMethod()))
                                       .httpResponseCode(httpStepResponse.getHttpResponseCode())
                                       .httpResponseBody(httpStepResponse.getHttpResponseBody())
                                       .status(httpStepResponse.getCommandExecutionStatus())
@@ -232,114 +189,13 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
 
       return responseBuilder.build();
     } finally {
-      closeLogStream(ambiance);
+      httpStepUtils.closeLogStream(ambiance);
     }
-  }
-
-  private String fetchFinalValue(ParameterField<String> field) {
-    return (String) field.fetchFinalValue();
-  }
-
-  private void closeLogStream(Ambiance ambiance) {
-    try {
-      Thread.sleep(500, 0);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      log.error("Close Log Stream was interrupted", e);
-    } finally {
-      ILogStreamingStepClient logStreamingStepClient =
-          logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
-      logStreamingStepClient.closeAllOpenStreamsWithPrefix(StepUtils.generateLogKeys(ambiance, emptyList()).get(0));
-    }
-  }
-
-  public static boolean validateAssertions(HttpStepResponse httpStepResponse, HttpStepParameters stepParameters) {
-    if (ParameterField.isNull(stepParameters.getAssertion())) {
-      return true;
-    }
-
-    HttpExpressionEvaluator evaluator = new HttpExpressionEvaluator(httpStepResponse);
-    String assertion = (String) stepParameters.getAssertion().fetchFinalValue();
-    if (assertion == null || isEmpty(assertion.trim())) {
-      return true;
-    }
-
-    try {
-      Object value = evaluator.evaluateExpression(assertion);
-      if (!(value instanceof Boolean)) {
-        throw new InvalidRequestException(String.format(
-            "Expected boolean assertion, got %s value", value == null ? "null" : value.getClass().getSimpleName()));
-      }
-      return (boolean) value;
-    } catch (Exception e) {
-      throw new InvalidRequestException("Assertion provided is not a valid expression", e);
-    }
-  }
-
-  public Map<String, String> evaluateOutputVariables(
-      Map<String, Object> outputVariables, HttpStepResponse httpStepResponse, Ambiance ambiance) {
-    Map<String, String> outputVariablesEvaluated = new LinkedHashMap<>();
-    final boolean resolveObjectsViaJSONSelect = pmsFeatureFlagHelper.isEnabled(
-        AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_RESOLVE_OBJECTS_VIA_JSON_SELECT);
-
-    if (outputVariables != null) {
-      Map<String, String> contextMap = buildContextMapFromResponse(httpStepResponse, resolveObjectsViaJSONSelect);
-      outputVariables.keySet().forEach(name -> {
-        Object expression = outputVariables.get(name);
-        if (expression instanceof ParameterField) {
-          ParameterField<?> expr = (ParameterField<?>) expression;
-          if (expr.isExpression()) {
-            // Adding Json Expression Support
-            AmbianceUtils.enabledJsonSupportFeatureFlag(ambiance, contextMap);
-            Object evaluatedValue = engineExpressionService.evaluateExpression(
-                ambiance, expr.getExpressionValue(), ExpressionMode.RETURN_NULL_IF_UNRESOLVED, contextMap);
-            if (evaluatedValue != null) {
-              outputVariablesEvaluated.put(name, evaluatedValue.toString());
-            }
-          } else if (expr.getValue() != null) {
-            outputVariablesEvaluated.put(name, expr.getValue().toString());
-          }
-        }
-      });
-    }
-    return outputVariablesEvaluated;
-  }
-
-  @VisibleForTesting
-  protected String encodeURL(String rawUrl, NGLogCallback logCallback) {
-    if (!isURLAlreadyEncoded(rawUrl)) {
-      try {
-        URL url = new URL(rawUrl);
-        URI uri = new URI(url.getProtocol(), url.getUserInfo(), IDN.toASCII(url.getHost()), url.getPort(),
-            url.getPath(), url.getQuery(), url.getRef());
-        String encodedUrl = uri.toASCIIString();
-        logCallback.saveExecutionLog(String.format("Encoded URL: %s", encodedUrl));
-        return encodedUrl;
-      } catch (MalformedURLException | URISyntaxException e) {
-        logCallback.saveExecutionLog(String.format("Failed to encode URL: %s", e.getMessage()));
-      }
-    }
-    return rawUrl;
-  }
-
-  private static boolean isURLAlreadyEncoded(String url) {
-    return url.matches(URL_ENCODED_CHAR_REGEX);
-  }
-
-  private Map<String, String> buildContextMapFromResponse(
-      HttpStepResponse httpStepResponse, boolean resolveObjectsViaJSONSelect) {
-    Map<String, String> contextMap = new HashMap<>();
-    contextMap.put("httpResponseBody", httpStepResponse.getHttpResponseBody());
-    contextMap.put("httpResponseCode", String.valueOf(httpStepResponse.getHttpResponseCode()));
-    if (resolveObjectsViaJSONSelect) {
-      contextMap.put(RESOLVE_OBJECTS_VIA_JSON_SELECT, "true");
-    }
-    return contextMap;
   }
 
   @Override
   public void handleAbort(Ambiance ambiance, StepBaseParameters stepParameters,
       TaskExecutableResponse executableResponse, boolean userMarked) {
-    closeLogStream(ambiance);
+    httpStepUtils.closeLogStream(ambiance);
   }
 }

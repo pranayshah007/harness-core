@@ -114,7 +114,7 @@ public class CoreDelegateResource {
                               .setType(delegateTaskPackage.getData().getTaskType())
                               .setSource(PluginSource.SOURCE_IMAGE)
                               .setUses(getImage(delegateTaskPackage.getData().getTaskType()))
-                              .setResource(resources)
+                              .setCompute(resources)
                               .build())
               .build();
       final var emptyDir = EmptyDirVolume.newBuilder().setName("marko-dir").setPath("/harness/marko").build();
@@ -122,7 +122,7 @@ public class CoreDelegateResource {
                                .newBuilder()
                                //                               .addAllInfraSecrets(protoSecrets) // Not supported now
                                .addSteps(k8sStep)
-                               .setResource(resources)
+                               .setCompute(resources)
                                .setWorkingDir("pera")
                                .addResources(Resource.newBuilder().setSpec(Any.pack(emptyDir)).build())
                                .setLogPrefix(logPrefix)

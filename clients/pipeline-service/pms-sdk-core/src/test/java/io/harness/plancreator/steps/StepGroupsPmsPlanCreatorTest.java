@@ -17,8 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
-import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
+import io.harness.pms.contracts.plan.PlanExecutionContext;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
@@ -59,7 +59,9 @@ public class StepGroupsPmsPlanCreatorTest extends PmsSdkCoreTestBase {
     context = PlanCreationContext.builder()
                   .currentField(stepGroupYamlField)
                   .globalContext("metadata",
-                      PlanCreationContextValue.newBuilder().setMetadata(ExecutionMetadata.newBuilder().build()).build())
+                      PlanCreationContextValue.newBuilder()
+                          .setExecutionContext(PlanExecutionContext.newBuilder().build())
+                          .build())
                   .build();
   }
 
@@ -130,7 +132,9 @@ public class StepGroupsPmsPlanCreatorTest extends PmsSdkCoreTestBase {
     context = PlanCreationContext.builder()
                   .currentField(stepGroupYamlField1)
                   .globalContext("metadata",
-                      PlanCreationContextValue.newBuilder().setMetadata(ExecutionMetadata.newBuilder().build()).build())
+                      PlanCreationContextValue.newBuilder()
+                          .setExecutionContext(PlanExecutionContext.newBuilder().build())
+                          .build())
                   .build();
     YamlField stepsField = stepGroupYamlField1.getNode().getField("steps");
     YamlField strategyField = stepGroupYamlField1.getNode().getField("strategy");

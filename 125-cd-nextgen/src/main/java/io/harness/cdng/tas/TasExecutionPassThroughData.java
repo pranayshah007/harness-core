@@ -24,7 +24,9 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
+import lombok.Setter;
 import lombok.Value;
+import lombok.experimental.NonFinal;
 import org.springframework.data.annotation.TypeAlias;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_PCF})
 @Value
@@ -44,5 +46,6 @@ public class TasExecutionPassThroughData implements PassThroughData {
   String rawScript;
   List<String> commandUnits;
   List<String> pathsFromScript;
+  @Setter @NonFinal Map<String, String> resolvedOutputVariables;
   int desiredCountInFinalYaml;
 }
