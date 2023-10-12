@@ -973,6 +973,8 @@ public class EcsContainerServiceImpl implements EcsContainerService {
 
   private void waitForTasksToBeInRunningState(UpdateServiceCountRequestData requestData) {
     long timeoutDuration = requestData.getTimeOut() == null ? 10L : requestData.getTimeOut().longValue();
+    // reduced the timeout duration so that it doesn't fail delegate task incase of false UncheckedTimeoutException
+    timeoutDuration = Math.round(timeoutDuration * 0.7);
     try {
       HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofMinutes(timeoutDuration), () -> {
         while (notAllDesiredTasksRunning(requestData)) {
@@ -981,13 +983,39 @@ public class EcsContainerServiceImpl implements EcsContainerService {
         return true;
       });
     } catch (UncheckedTimeoutException e) {
+      if (skipFailureIfServiceHasMoreRunningTasks(requestData)) {
+        return;
+      }
       throw new TimeoutException(
           "Timed out waiting for tasks to be in running state", "Timeout", e, WingsException.SRE);
     } catch (WingsException e) {
+      if (skipFailureIfServiceHasMoreRunningTasks(requestData)) {
+        return;
+      }
       throw e;
     } catch (Exception e) {
+      if (skipFailureIfServiceHasMoreRunningTasks(requestData)) {
+        return;
+      }
       throw new InvalidRequestException("Error while waiting for tasks to be in running state", e);
     }
+  }
+
+  private boolean skipFailureIfServiceHasMoreRunningTasks(UpdateServiceCountRequestData requestData) {
+    ExecutionLogCallback executionLogCallback = requestData.getExecutionLogCallback();
+    List<Service> services = getEcsServicesForClusterWithRetry(requestData.getRegion(), requestData.getAwsConfig(),
+        requestData.getEncryptedDataDetails(), requestData.getCluster(), requestData.getServiceName(),
+        executionLogCallback);
+
+    Service service = services.get(0);
+    if (service.getRunningCount() >= requestData.getDesiredCount()) {
+      executionLogCallback.saveExecutionLog(
+          format(
+              "Wait time is over. Proceeding ahead with current running task count: %s ...", service.getRunningCount()),
+          WARN);
+      return true;
+    }
+    return false;
   }
 
   @Override
@@ -1015,7 +1043,7 @@ public class EcsContainerServiceImpl implements EcsContainerService {
         "Waiting for pending tasks to finish. {}/{} running ...", service.getRunningCount(), service.getDesiredCount());
 
     executionLogCallback.saveExecutionLog(format("Waiting for pending tasks to finish. %s/%s running ...",
-                                              service.getRunningCount(), service.getDesiredCount()),
+                                              service.getRunningCount(), requestData.getDesiredCount()),
         LogLevel.INFO);
 
     printAwsEvent(service, requestData.getServiceEvents(), executionLogCallback);
