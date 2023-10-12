@@ -228,3 +228,5 @@ lifecycleHooks: {}
 #   preStop:
 #     exec:
 #       command:
+
+deployMode: KUBERNETES_ONPREM

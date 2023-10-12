@@ -242,3 +242,5 @@ ingress:
   annotations: {}
 
 distributedLockImplementation: MONGO
+
+deployMode: KUBERNETES_ONPREM
