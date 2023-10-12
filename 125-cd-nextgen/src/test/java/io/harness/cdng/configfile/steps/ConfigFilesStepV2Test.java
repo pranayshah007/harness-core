@@ -77,6 +77,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.secretusage.SecretRuntimeUsageService;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.TaskRequestsUtils;
@@ -114,6 +115,7 @@ public class ConfigFilesStepV2Test extends CategoryTest {
   @Mock private CDStepHelper cdStepHelper;
   @Mock EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Mock private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
+  @Mock private SecretRuntimeUsageService secretRuntimeUsageService;
   @Mock private FileStoreService fileStoreService;
   @Mock private PipelineRbacHelper pipelineRbacHelper;
   @Mock private ConfigGitFilesMapper configGitFilesMapper;
