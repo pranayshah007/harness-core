@@ -410,6 +410,8 @@ ciExecutionServiceConfig:
     httpClientConfig:
       baseUrl: ${GITNESS_INTERNAL_URL:- http://localhost:3000}
 
+harnessCodeGitUrl: ${HARNESS_CODE_GIT_URL:- http://localhost:3000/git}
+
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}
   maxPoolSize: ${PMS_SDK_EXECUTION_POOL_MAX_SIZE:-300}

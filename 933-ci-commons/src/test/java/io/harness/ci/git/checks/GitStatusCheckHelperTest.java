@@ -335,7 +335,7 @@ public class GitStatusCheckHelperTest extends CategoryTest {
                                                          .buildNumber(BUILD_NUMBER)
                                                          .gitSCMType(GitSCMType.HARNESS)
                                                          .owner(OWNER)
-                                                         .repo("ORG/PROJECT/" + REPO)
+                                                         .repo("ACCOUNT/ORG/PROJECT/" + REPO)
                                                          .state(STATE)
                                                          .title(TITLE)
                                                          .target_url(TARGET_URL)
