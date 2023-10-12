@@ -41,7 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @Slf4j
 public class RedisNodeResumeEventPublisher implements NodeResumeEventPublisher {
-  private static final int DELAY_MS_FOR_RETRY = 3000;
+  private static final int MAX_DELAY_MS_FOR_RETRY = 30000;
   @Inject private PmsEventSender eventSender;
   @Inject private NodeExecutionService nodeExecutionService;
 
@@ -109,7 +109,7 @@ public class RedisNodeResumeEventPublisher implements NodeResumeEventPublisher {
           // get processed
 
           int attempts = 0;
-          while (attempts < 3) {
+          while (attempts < 5) {
             attempts++;
             NodeExecution execution = nodeExecutionService.getWithFieldsIncluded(
                 resumeMetadata.getNodeExecutionUuid(), Set.of(NodeExecutionKeys.executableResponses));
@@ -118,7 +118,8 @@ public class RedisNodeResumeEventPublisher implements NodeResumeEventPublisher {
               resumeMetadata.setLatestExecutableResponse(execution.obtainLatestExecutableResponse());
               break;
             }
-            Morpheus.quietSleep(Duration.ofMillis(DELAY_MS_FOR_RETRY));
+            long exponentialSleepMs = (1L << (attempts - 1)) * 1000L;
+            Morpheus.quietSleep(Duration.ofMillis(Math.min(exponentialSleepMs, MAX_DELAY_MS_FOR_RETRY)));
           }
 
           // TODO:  Still letting it throw NPE for now
