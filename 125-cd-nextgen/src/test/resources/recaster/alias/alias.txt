@@ -1306,3 +1306,4 @@ io.harness.cdng.ecs.beans.EcsUpgradeContainerOutcome
 io.harness.cdng.ecs.EcsBasicPrepareRollbackDataOutcome
 io.harness.cdng.ecs.beans.EcsServiceSetupOutcome
 io.harness.cdng.ecs.beans.EcsBasicRollbackOutcome
+io.harness.cdng.manifest.yaml.ManifestSourceWrapper
