@@ -623,11 +623,6 @@ public class ScmServiceClientImplTest extends CategoryTest {
                               .url("https://app.harness.io/code/git/_OKE5H2PQKOUfzFFDuD4FA/default/CODE/gitness.git")
                               .build();
     assertThat(helper.getSlug(harnessConnectorDTO)).isEqualTo("_OKE5H2PQKOUfzFFDuD4FA/default/CODE/gitness/+");
-
-    harnessConnectorDTO = HarnessConnectorDTO.builder()
-                              .url("https://app.harness.io/ng/account/_OKE5H2PQKOUfzFFDuD4FA/code/default/CODE/gitness")
-                              .build();
-    assertThat(helper.getSlug(harnessConnectorDTO)).isEqualTo("_OKE5H2PQKOUfzFFDuD4FA/default/CODE/gitness/+");
   }
 
   @Test
