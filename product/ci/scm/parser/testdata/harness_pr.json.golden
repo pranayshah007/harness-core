@@ -4,6 +4,7 @@
     "repo": {
       "id": "aba",
       "branch": "main",
+      "clone":"http://localhost:3000/git/kmpySmUISimoRrJL6NL73w/myOrg/myProject/aba.git",
       "link": "http://localhost:3000/git/kmpySmUISimoRrJL6NL73w/myOrg/myProject/aba.git",
       "created": "0001-01-01T00:00:00Z",
       "updated": "0001-01-01T00:00:00Z"
@@ -13,6 +14,7 @@
       "title": "aw",
       "body": "",
       "sha": "d74b1ebfe520ac01b209dd9085f005884cc9f4cd",
+      "ref": "refs/heads/b",
       "source": "b",
       "target": "main",
       "fork":"fork",
@@ -22,6 +24,8 @@
       "base": {},
       "head": {},
       "author": {
+        "name": "Admin",
+        "email": "admin@harness.io",
         "created": "0001-01-01T00:00:00Z",
         "updated": "0001-01-01T00:00:00Z"
       },

@@ -809,7 +809,10 @@ public class GitClientHelperTest extends CategoryTest {
     repoName = GitClientHelper.getHarnessRepoName("https://qa.harness.io/code/git/acc/org/proj/repo.git");
     assertThat(repoName).isEqualTo("acc/org/proj/repo/+");
 
-    repoName = GitClientHelper.getHarnessRepoName("https://app.harness.io/code/git/acc/org/proj/repo.git/");
+    repoName = GitClientHelper.getHarnessRepoName("https://git.qa.harness.io/acc/org/proj/repo.git");
+    assertThat(repoName).isEqualTo("acc/org/proj/repo/+");
+
+    repoName = GitClientHelper.getHarnessRepoName("https://abhinavs.pr2.harness.io/devspace/acc/org/proj/repo.git");
     assertThat(repoName).isEqualTo("acc/org/proj/repo/+");
   }
 

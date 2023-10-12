@@ -63,7 +63,7 @@ public class ConnectorUtils extends BaseConnectorUtils {
   private final SecretUtils secretUtils;
   private final CIExecutionServiceConfig cIExecutionServiceConfig;
   @Inject private CIFeatureFlagService featureFlagService;
-  @Inject @Named("ngBaseUrl") private String ngBaseUrl;
+  @Inject @Named("harnessCodeGitBaseUrl") private String harnessCodeGitBaseUrl;
   private final long TEN_HOURS_IN_MS = TimeUnit.MILLISECONDS.convert(10, TimeUnit.HOURS);
 
   @Inject
@@ -160,7 +160,7 @@ public class ConnectorUtils extends BaseConnectorUtils {
     if (isGitConnector && isEmpty(connectorIdentifier)
         && featureFlagService.isEnabled(FeatureName.CODE_ENABLED, ngAccess.getAccountIdentifier())) {
       log.info("fetching harness scm connector");
-      String gitBaseUrl = getSCMBaseUrl(ngBaseUrl);
+      String gitBaseUrl = harnessCodeGitBaseUrl;
       String authToken = "";
       // todo: with this internal url we assume scm is in same cluster as ci manager, will need changes for ci saas and
       // scm on prem or vice versa
@@ -180,7 +180,7 @@ public class ConnectorUtils extends BaseConnectorUtils {
     if (isEmpty(connectorIdentifier)) {
       if (isGitConnector && featureFlagService.isEnabled(FeatureName.CODE_ENABLED, ngAccess.getAccountIdentifier())) {
         log.info("fetching harness scm connector");
-        String baseUrl = getSCMBaseUrl(ngBaseUrl);
+        String baseUrl = harnessCodeGitBaseUrl;
         String authToken = fetchAuthToken(ngAccess, ambiance, repoName);
         // todo: with this internal url we assume scm is in same cluster as ci manager, will need changes for ci saas
         // and scm on prem or vice versa
