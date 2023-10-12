@@ -286,7 +286,7 @@ public class GitStatusCheckHelper {
   }
 
   private boolean sendBuildStatusToHarnessCode(GitStatusCheckParams gitStatusCheckParams) {
-    String checkUid = (gitStatusCheckParams.getOwner() + "_" + gitStatusCheckParams.getSha() + "_"
+    String checkUid = ("status_check" + gitStatusCheckParams.getOwner() + "_" + gitStatusCheckParams.getSha() + "_"
         + gitStatusCheckParams.getRepo() + gitStatusCheckParams.getIdentifier())
                           .replaceAll("/", "_");
     HarnessCodePayload harnessCodePayload =
@@ -301,16 +301,20 @@ public class GitStatusCheckHelper {
             .build();
     String[] repoSplit = gitStatusCheckParams.getRepo().split("/");
     int len = repoSplit.length;
-    if (len < 4 || len > 5) {
-      throw new InvalidRequestException(String.format("incorrect repo provided: %s", gitStatusCheckParams.getRepo()));
+    if (len < 3 || len > 5) {
+      throw new InvalidRequestException(String.format("incorrect repo provided: %s, owner: %s, checkUid: %s",
+          gitStatusCheckParams.getRepo(), gitStatusCheckParams.getOwner(), checkUid));
     }
 
     String orgId = repoSplit[len - 3];
     String projectId = repoSplit[len - 2];
     String repoId = repoSplit[len - 1];
-    String accountId = repoSplit[len - 4];
-    log.info("Sending status {} for sha {} and repo {}", harnessCodePayload.getStatus(), gitStatusCheckParams.getSha(),
-        gitStatusCheckParams.getRepo());
+    String accountId = gitStatusCheckParams.getOwner();
+    if (len > 3) {
+      accountId = repoSplit[len - 4];
+    }
+    log.info("Sending status {} for sha {} and repo {} and owner {} and checkUid {}", harnessCodePayload.getStatus(),
+        gitStatusCheckParams.getSha(), gitStatusCheckParams.getRepo(), gitStatusCheckParams.getOwner(), checkUid);
     return NGRestUtils.getGeneralResponse(codeResourceClient.sendStatus(
                accountId, orgId, projectId, repoId, gitStatusCheckParams.getSha(), harnessCodePayload))
         != null;
