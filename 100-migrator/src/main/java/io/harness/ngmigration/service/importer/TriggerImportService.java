@@ -240,62 +240,9 @@ public class TriggerImportService implements ImportService {
       ArrayNode stagesNode = (ArrayNode) jsonStagesNode;
       for (int i = 0; i < stagesNode.size(); i++) {
         JsonNode stageNode = stagesNode.get(i);
-        Optional<ArtifactSelection> firstArtifactSelection = trigger.getArtifactSelections().stream().findFirst();
-
-        if (firstArtifactSelection.isPresent()) {
-          ArtifactSelection artifactSelection = firstArtifactSelection.get();
-          String triggerServiceRef = artifactSelection.getServiceName();
-          String serviceNGId =
-              MigratorUtility.generateIdentifier(triggerServiceRef, inputDTO.getIdentifierCaseFormat());
-          String serviceRef = stageNode.at("/stage/template/templateInputs/spec/service/serviceRef").asText();
-          if (RUNTIME_INPUT.equals(serviceRef) && !RUNTIME_INPUT.equals(triggerServiceRef)) {
-            ObjectNode serviceNode = (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/service");
-            serviceNode.put("serviceRef", serviceNGId);
-          }
-
-          Map<String, String> workflowVariables = trigger.getWorkflowVariables();
-          if (workflowVariables != null) {
-            String envCGId = workflowVariables.get("Environment");
-            if (envCGId != null) {
-              Environment env = environmentService.get(trigger.getAppId(), envCGId);
-              String envNGId = MigratorUtility.generateIdentifier(env.getName(), inputDTO.getIdentifierCaseFormat());
-
-              String envRef = stageNode.at("/stage/template/templateInputs/spec/environment/environmentRef").asText();
-              if (RUNTIME_INPUT.equals(envRef) && envNGId != null) {
-                ObjectNode envNode = (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/environment");
-                envNode.put("environmentRef", envNGId);
-              }
-            }
-
-            String pattern = ".*InfraDefinition.*";
-            Pattern regexPattern = Pattern.compile(pattern);
-            String infraCGId = null;
-            for (Map.Entry<String, String> entry : workflowVariables.entrySet()) {
-              String key = entry.getKey();
-              String value = entry.getValue();
-              Matcher matcher = regexPattern.matcher(key);
-              if (matcher.matches()) {
-                infraCGId = value;
-              }
-            }
-            if (infraCGId != null) {
-              InfrastructureDefinition infra = infrastructureDefinitionService.get(trigger.getAppId(), infraCGId);
-              if (infra != null) {
-                String infraNGId =
-                    MigratorUtility.generateIdentifier(infra.getName(), inputDTO.getIdentifierCaseFormat());
-                String infraRef =
-                    stageNode.at("/stage/template/templateInputs/spec/environment/infrastructureDefinitions").asText();
-                if (RUNTIME_INPUT.equals(infraRef) && infraNGId != null) {
-                  ObjectNode infraNodeObj =
-                      (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/environment");
-                  JsonNode infraNode = objectMapper.createObjectNode().put("identifier", infraNGId);
-                  ArrayNode infraArrayNode = objectMapper.createArrayNode().add(infraNode);
-                  infraNodeObj.set("infrastructureDefinitions", infraArrayNode);
-                }
-              }
-            }
-          }
-        }
+        resolveServiceDetails(stageNode, trigger, inputDTO, discoveryResult, yamlFileMap);
+        resolveEnvDetails(stageNode, trigger, inputDTO);
+        resolveInfraDetails(stageNode, trigger, inputDTO);
       }
     }
 
@@ -324,6 +271,66 @@ public class TriggerImportService implements ImportService {
                             .build())
         .cgBasicInfo(trigger.getCgBasicInfo())
         .build();
+  }
+
+  private void resolveServiceDetails(JsonNode stageNode, Trigger trigger, MigrationInputDTO inputDTO,
+      DiscoveryResult discoveryResult, Map<CgEntityId, NGYamlFile> yamlFileMap) {
+    Optional<ArtifactSelection> firstArtifactSelection = trigger.getArtifactSelections().stream().findFirst();
+
+    if (firstArtifactSelection.isPresent()) {
+      ArtifactSelection artifactSelection = firstArtifactSelection.get();
+      String triggerServiceRef = artifactSelection.getServiceName();
+      String serviceNGId = MigratorUtility.generateIdentifier(triggerServiceRef, inputDTO.getIdentifierCaseFormat());
+      String serviceRef = stageNode.at("/stage/template/templateInputs/spec/service/serviceRef").asText();
+      if (RUNTIME_INPUT.equals(serviceRef) && !RUNTIME_INPUT.equals(triggerServiceRef)) {
+        ObjectNode serviceNode = (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/service");
+        serviceNode.put("serviceRef", serviceNGId);
+      }
+    }
+  }
+
+  private void resolveEnvDetails(JsonNode stageNode, Trigger trigger, MigrationInputDTO inputDTO) {
+    Map<String, String> workflowVariables = trigger.getWorkflowVariables();
+    String envCGId = workflowVariables.get("Environment");
+    if (envCGId != null) {
+      Environment env = environmentService.get(trigger.getAppId(), envCGId);
+      String envNGId = MigratorUtility.generateIdentifier(env.getName(), inputDTO.getIdentifierCaseFormat());
+
+      String envRef = stageNode.at("/stage/template/templateInputs/spec/environment/environmentRef").asText();
+      if (RUNTIME_INPUT.equals(envRef) && envNGId != null) {
+        ObjectNode envNode = (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/environment");
+        envNode.put("environmentRef", envNGId);
+      }
+    }
+  }
+
+  private void resolveInfraDetails(JsonNode stageNode, Trigger trigger, MigrationInputDTO inputDTO) {
+    Map<String, String> workflowVariables = trigger.getWorkflowVariables();
+    String pattern = ".*InfraDefinition.*";
+    Pattern regexPattern = Pattern.compile(pattern);
+    String infraCGId = null;
+    for (Map.Entry<String, String> entry : workflowVariables.entrySet()) {
+      String key = entry.getKey();
+      String value = entry.getValue();
+      Matcher matcher = regexPattern.matcher(key);
+      if (matcher.matches()) {
+        infraCGId = value;
+      }
+    }
+    if (infraCGId != null) {
+      InfrastructureDefinition infra = infrastructureDefinitionService.get(trigger.getAppId(), infraCGId);
+      if (infra != null) {
+        String infraNGId = MigratorUtility.generateIdentifier(infra.getName(), inputDTO.getIdentifierCaseFormat());
+        String infraRef =
+            stageNode.at("/stage/template/templateInputs/spec/environment/infrastructureDefinitions").asText();
+        if (RUNTIME_INPUT.equals(infraRef) && infraNGId != null) {
+          ObjectNode infraNodeObj = (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/environment");
+          JsonNode infraNode = objectMapper.createObjectNode().put("identifier", infraNGId);
+          ArrayNode infraArrayNode = objectMapper.createArrayNode().add(infraNode);
+          infraNodeObj.set("infrastructureDefinitions", infraArrayNode);
+        }
+      }
+    }
   }
 
   private NgEntityDetail getPipelineIdentifier(Trigger trigger, Map<CgEntityId, NGYamlFile> yamlFileMap) {
