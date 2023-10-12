@@ -125,6 +125,8 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
       if (!planExecutionSettingResponse.isShouldQueue()) {
         // Start the planExecution if it should not be queued.
         startPlanExecution(plan, ambiance);
+      } else {
+        log.info("Marking execution as queued because the account has reached its limit.");
       }
       return planExecution;
     } finally {

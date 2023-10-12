@@ -68,7 +68,10 @@ public class StrategyFunctor extends LateBindingMap {
     if (!NODE_KEY.equals(key)) {
       return Optional.empty();
     }
-    return Optional.of(
-        StrategyNodeFunctor.builder().nodeExecutionsCache(nodeExecutionsCache).ambiance(ambiance).build());
+    return Optional.of(StrategyNodeFunctor.builder()
+                           .nodeExecutionInfoService(nodeExecutionInfoService)
+                           .nodeExecutionsCache(nodeExecutionsCache)
+                           .ambiance(ambiance)
+                           .build());
   }
 }
