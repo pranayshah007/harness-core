@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -7,7 +7,6 @@
 
 package io.harness.notification.service;
 
-import static io.harness.rule.OwnerRule.ANKUSH;
 import static io.harness.rule.OwnerRule.BHAVYA;
 
 import static junit.framework.TestCase.assertFalse;
@@ -21,7 +20,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.NotificationProcessingResponse;
-import io.harness.notification.senders.SlackSenderImpl;
+import io.harness.notification.senders.MSTeamsSenderImpl;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;
@@ -38,26 +37,27 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class SlackSenderImplTest extends CategoryTest {
-  private SlackSenderImpl slackSender;
+public class MSTeamsSenderImplTest extends CategoryTest {
+  private MSTeamsSenderImpl msTeamsSender;
   private OkHttpClient okHttpClient;
 
   @Before
   public void setUp() throws Exception {
     okHttpClient = mock(OkHttpClient.class);
-    slackSender = new SlackSenderImpl(okHttpClient);
+    msTeamsSender = new MSTeamsSenderImpl(okHttpClient);
   }
 
   @SneakyThrows
   @Test
-  @Owner(developers = ANKUSH)
+  @Owner(developers = BHAVYA)
   @Category(UnitTests.class)
-  public void send_ValidArguments() {
-    List<String> slackWekbhookUrl = Arrays.asList("http://slack.com/webhook1", "http://slack.com/webhook2");
+  public void send_ValidArguments_withDomainFilters() {
+    List<String> msTeamUrls = Arrays.asList("http://harness.webhook.com/webhook1",
+        "http://harness.webhook.com/webhook2", "http://test.webhook.com/webhook2");
     String message = "test message";
     String notificationId = "test";
-    Request mockrequest1 = new Request.Builder().url(slackWekbhookUrl.get(0)).build();
-    Request mockrequest2 = new Request.Builder().url(slackWekbhookUrl.get(1)).build();
+    Request mockrequest1 = new Request.Builder().url(msTeamUrls.get(0)).build();
+    Request mockrequest2 = new Request.Builder().url(msTeamUrls.get(1)).build();
     Response responseSuccess = new Response.Builder()
                                    .code(200)
                                    .message("success")
@@ -78,41 +78,11 @@ public class SlackSenderImplTest extends CategoryTest {
     when(okHttpClient.newCall(any())).thenReturn(call);
 
     NotificationProcessingResponse notificationProcessingResponse =
-        slackSender.send(slackWekbhookUrl, message, notificationId, null);
+        msTeamsSender.send(msTeamUrls, message, notificationId, Arrays.asList("harness.webhook.com"));
 
     verify(okHttpClient, times(2)).newCall(any());
 
     assertTrue(notificationProcessingResponse.getResult().get(0));
     assertFalse(notificationProcessingResponse.getResult().get(1));
-  }
-
-  @SneakyThrows
-  @Test
-  @Owner(developers = BHAVYA)
-  @Category(UnitTests.class)
-  public void send_ValidArguments_withDomainFilter() {
-    List<String> slackWebhookUrl =
-        Arrays.asList("http://hooks.slack.com/webhook1", "http://harness.slack.com/webhook2");
-    String message = "test message";
-    String notificationId = "test";
-    Request mockrequest1 = new Request.Builder().url(slackWebhookUrl.get(0)).build();
-    Response responseSuccess = new Response.Builder()
-                                   .code(200)
-                                   .message("success")
-                                   .request(mockrequest1)
-                                   .protocol(Protocol.HTTP_2)
-                                   .body(ResponseBody.create(MediaType.parse("application/json"), "{}"))
-                                   .build();
-
-    Call call = mock(Call.class);
-    when(call.execute()).thenReturn(responseSuccess);
-    when(okHttpClient.newCall(any())).thenReturn(call);
-
-    NotificationProcessingResponse notificationProcessingResponse =
-        slackSender.send(slackWebhookUrl, message, notificationId, Arrays.asList("harness.slack.com"));
-
-    verify(okHttpClient, times(1)).newCall(any());
-
-    assertTrue(notificationProcessingResponse.getResult().get(0));
   }
 }
