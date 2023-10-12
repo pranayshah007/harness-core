@@ -233,8 +233,6 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.SECURITY)
   SECURITY(ModuleType.CI, EntityTypeConstants.SECURITY, IdentifierRef.class, EntityYamlRootNames.SECURITY),
 
-  @JsonProperty(EntityTypeConstants.ANCHORE)
-  ANCHORE(ModuleType.STO, EntityTypeConstants.ANCHORE, IdentifierRef.class, EntityYamlRootNames.ANCHORE),
   @JsonProperty(EntityTypeConstants.AQUA_TRIVY)
   AQUA_TRIVY(ModuleType.STO, EntityTypeConstants.AQUA_TRIVY, IdentifierRef.class, EntityYamlRootNames.AQUA_TRIVY),
   @JsonProperty(EntityTypeConstants.AWS_ECR)
@@ -671,7 +669,9 @@ public enum EntityType {
       EntityYamlRootNames.ECS_BASIC_ROLLBACK),
   @JsonProperty(EntityTypeConstants.CHAOS_INFRASTRUCTURE)
   CHAOS_INFRASTRUCTURE(ModuleType.CHAOS, EntityTypeConstants.CHAOS_INFRASTRUCTURE, IdentifierRef.class,
-      EntityYamlRootNames.CHAOS_INFRASTRUCTURE);
+      EntityYamlRootNames.CHAOS_INFRASTRUCTURE),
+  @JsonProperty(EntityTypeConstants.ANCHORE)
+  ANCHORE(ModuleType.STO, EntityTypeConstants.ANCHORE, IdentifierRef.class, EntityYamlRootNames.ANCHORE);
 
   private final ModuleType moduleType;
   String yamlName;
