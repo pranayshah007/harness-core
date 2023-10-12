@@ -390,6 +390,8 @@ public class IACMStepsUtils {
       return new HashMap<>();
     }
     envVars.put("PLUGIN_ENDPOINT_VARIABLES", populatePipelineIds(ambiance, envVars.get("PLUGIN_ENDPOINT_VARIABLES")));
+    envVars.put("PLUGIN_AUTO_APPROVE", iacmApprovalInfo.getAutoApprove().getValue().toString());
+
     return envVars;
   }
 

@@ -2040,15 +2040,22 @@
             }
           ]
         },
-        "policy" : {
-          "oneOf" : [ {
-            "type" : "string",
-            "enum" : [ "pull", "push", "pull-push" ]
-          }, {
-            "type" : "string",
-            "pattern" : "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-            "minLength" : 1
-          } ]
+        "policy": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "pull",
+                "push",
+                "pull-push"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -5265,6 +5272,9 @@
         {
           "type": "object",
           "properties": {
+            "autoApprove": {
+              "type": "boolean"
+            },
             "image": {
               "type": "string"
             }
