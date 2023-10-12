@@ -677,6 +677,13 @@ public class NextGenModule extends AbstractModule {
 
   @Provides
   @Singleton
+  @Named("gitXWebhookEventQueueConfig")
+  public HsqsDequeueConfig getGitXWebhookEventQueueConfig() {
+    return appConfig.getGitXWebhookEventQueueConfig();
+  }
+
+  @Provides
+  @Singleton
   @Named("webhookPushEventHsqsDequeueConfig")
   public HsqsDequeueConfig getWebhookPushEventHsqsDequeueConfig() {
     return appConfig.getWebhookPushEventHsqsDequeueConfig();

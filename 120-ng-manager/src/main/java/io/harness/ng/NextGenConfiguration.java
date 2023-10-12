@@ -291,6 +291,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("queueServiceClientConfig") private QueueServiceClientConfig queueServiceClientConfig;
   @JsonProperty("webhookBranchHookEventHsqsDequeueConfig")
   private HsqsDequeueConfig webhookBranchHookEventHsqsDequeueConfig;
+  @JsonProperty("gitXWebhookEventQueueConfig") private HsqsDequeueConfig gitXWebhookEventQueueConfig;
   @JsonProperty("webhookPushEventHsqsDequeueConfig") private HsqsDequeueConfig webhookPushEventHsqsDequeueConfig;
   @JsonProperty("proxy") private CEProxyConfig ceProxyConfig;
   @JsonProperty("awsServiceEndpointUrls") private CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig;

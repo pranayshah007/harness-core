@@ -568,6 +568,10 @@ webhookBranchHookEventHsqsDequeueConfig:
   batchSize: ${WEBHOOK_BRANCH_HOOK_EVENT_DEQUE_BATCH_SIZE:-20}
   threadSleepTimeInMillis: ${WEBHOOK_BRANCH_HOOK_EVENT_DEQUE_THREAD_SLEEP_TIME_IN_MILLIS:-30}
 
+gitXWebhookEventQueueConfig:
+  batchSize: ${GITX_WEBHOOK_EVENT_QUEUE_BATCH_SIZE:-20}
+  threadSleepTimeInMillis: ${GITX_WEBHOOK_EVENT_QUEUE_THREAD_SLEEP_TIME_IN_MILLIS:-30}
+
 useQueueServiceForWebhookTriggers: ${USE_QUEUE_SERVICE_FOR_WEBHOOK_TRIGGERS:-false}
 
 proxy:

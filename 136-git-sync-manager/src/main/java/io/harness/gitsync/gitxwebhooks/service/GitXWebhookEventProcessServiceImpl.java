@@ -5,7 +5,8 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.gitsync.gitxwebhooks.runnable;
+package io.harness.gitsync.gitxwebhooks.service;
+
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -17,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
 import io.harness.exception.ConnectorNotFoundException;
 import io.harness.gitsync.common.beans.GitXWebhookEventStatus;
 import io.harness.gitsync.common.dtos.GitDiffResultFileDTO;
@@ -28,10 +30,8 @@ import io.harness.gitsync.gitxwebhooks.dtos.GitXCacheUpdateHelperRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.GitXEventUpdateRequestDTO;
 import io.harness.gitsync.gitxwebhooks.entity.GitXWebhook;
 import io.harness.gitsync.gitxwebhooks.entity.GitXWebhookEvent;
-import io.harness.gitsync.gitxwebhooks.entity.GitXWebhookEvent.GitXWebhookEventKeys;
 import io.harness.gitsync.gitxwebhooks.loggers.GitXWebhookEventLogContext;
-import io.harness.gitsync.gitxwebhooks.service.GitXWebhookEventService;
-import io.harness.gitsync.gitxwebhooks.service.GitXWebhookService;
+import io.harness.gitsync.gitxwebhooks.runnable.GitXWebhookCacheUpdateHelper;
 import io.harness.gitsync.gitxwebhooks.utils.GitXWebhookUtils;
 import io.harness.repositories.gitxwebhook.GitXWebhookEventsRepository;
 import io.harness.security.SecurityContextBuilder;
@@ -43,13 +43,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
-@OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
-public class GitXWebhookProcessorRunnable implements Runnable {
+@OwnedBy(HarnessTeam.PIPELINE)
+public class GitXWebhookEventProcessServiceImpl implements GitXWebhookEventProcessService {
   @Inject private GitXWebhookService gitXWebhookService;
   @Inject private GitXWebhookEventsRepository gitXWebhookEventsRepository;
   @Inject private GitXWebhookCacheUpdateHelper gitXWebhookCacheUpdateHelper;
@@ -59,22 +57,17 @@ public class GitXWebhookProcessorRunnable implements Runnable {
   @Inject private GitRepoHelper gitRepoHelper;
 
   @Override
-  public void run() {
-    try {
-      List<GitXWebhookEvent> queuedEvents = getQueuedGitXWebhookEvents();
-
-      if (!queuedEvents.isEmpty()) {
-        queuedEvents.forEach(this::processQueuedEvent);
+  public void processEvent(WebhookDTO webhookDTO) {
+    try (GitXWebhookEventLogContext context = new GitXWebhookEventLogContext(webhookDTO)) {
+      try {
+        GitXWebhookEvent gitXWebhookEvent = gitXWebhookEventsRepository.findByAccountIdentifierAndEventIdentifier(
+            webhookDTO.getAccountId(), webhookDTO.getEventId());
+        processQueuedEvent(gitXWebhookEvent);
+      } catch (Exception exception) {
+        log.error("Exception occurred while processing the event {}", webhookDTO.getEventId(), exception);
+        throw exception;
       }
-
-    } catch (Exception exception) {
-      log.error("Faced exception while polling for the queued webhook events", exception);
     }
-  }
-
-  private List<GitXWebhookEvent> getQueuedGitXWebhookEvents() {
-    Criteria criteria = Criteria.where(GitXWebhookEventKeys.eventStatus).is(GitXWebhookEventStatus.QUEUED);
-    return gitXWebhookEventsRepository.list(new Query(criteria));
   }
 
   private void processQueuedEvent(GitXWebhookEvent gitXWebhookEvent) {

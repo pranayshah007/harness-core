@@ -103,7 +103,7 @@ import io.harness.gitsync.core.runnable.GitChangeSetRunnable;
 import io.harness.gitsync.core.webhook.GitSyncEventConsumerService;
 import io.harness.gitsync.core.webhook.createbranchevent.WebhookBranchHookEventQueueProcessor;
 import io.harness.gitsync.core.webhook.pushevent.WebhookPushEventQueueProcessor;
-import io.harness.gitsync.gitxwebhooks.runnable.GitXWebhookProcessorRunnable;
+import io.harness.gitsync.gitxwebhooks.listener.GitXWebhookQueueProcessor;
 import io.harness.gitsync.migration.GitSyncMigrationProvider;
 import io.harness.gitsync.server.GitSyncGrpcModule;
 import io.harness.gitsync.server.GitSyncServiceConfiguration;
@@ -916,6 +916,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     if (appConfig.isUseQueueServiceForWebhookTriggers()) {
       environment.lifecycle().manage(injector.getInstance(WebhookBranchHookEventQueueProcessor.class));
       environment.lifecycle().manage(injector.getInstance(WebhookPushEventQueueProcessor.class));
+      environment.lifecycle().manage(injector.getInstance(GitXWebhookQueueProcessor.class));
     }
     createConsumerThreadsToListenToEvents(environment, injector);
   }
@@ -995,10 +996,6 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("gitChangeSet")))
         .scheduleWithFixedDelay(
             injector.getInstance(GitChangeSetRunnable.class), random.nextInt(4), 4L, TimeUnit.SECONDS);
-
-    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("gitXWebhookEvents")))
-        .scheduleWithFixedDelay(
-            injector.getInstance(GitXWebhookProcessorRunnable.class), random.nextInt(4), 4L, TimeUnit.SECONDS);
 
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
         .scheduleWithFixedDelay(injector.getInstance(DelegateSyncServiceImpl.class), 0L, 2L, TimeUnit.SECONDS);

@@ -9,6 +9,7 @@ package io.harness.gitsync.gitxwebhooks.service;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.eventsframework.EventsFrameworkConstants.GITX_WEBHOOK_EVENT;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -31,6 +32,10 @@ import io.harness.gitsync.gitxwebhooks.entity.GitXWebhookEvent.GitXWebhookEventK
 import io.harness.gitsync.gitxwebhooks.loggers.GitXWebhookEventLogContext;
 import io.harness.gitsync.gitxwebhooks.loggers.GitXWebhookLogContext;
 import io.harness.gitsync.gitxwebhooks.utils.GitXWebhookUtils;
+import io.harness.hsqs.client.api.HsqsClientService;
+import io.harness.hsqs.client.model.EnqueueRequest;
+import io.harness.hsqs.client.model.EnqueueResponse;
+import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.repositories.gitxwebhook.GitXWebhookEventsRepository;
 
 import com.google.inject.Inject;
@@ -50,7 +55,9 @@ import org.springframework.data.mongodb.core.query.Update;
 public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
   @Inject GitXWebhookEventsRepository gitXWebhookEventsRepository;
   @Inject GitXWebhookService gitXWebhookService;
+  @Inject HsqsClientService hsqsClientService;
 
+  private static final String QUEUE_TOPIC_PREFIX = "ng";
   private static final String WEBHOOK_FAILURE_ERROR_MESSAGE =
       "Unexpected error occurred while [%s] git webhook. Please contact Harness Support.";
 
@@ -70,6 +77,7 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
         GitXWebhookEvent gitXWebhookEvent = buildGitXWebhookEvent(webhookDTO, gitXWebhook.getIdentifier());
         GitXWebhookEvent createdGitXWebhookEvent = gitXWebhookEventsRepository.create(gitXWebhookEvent);
         updateGitXWebhook(gitXWebhook, webhookDTO.getTime());
+        enqueueWebhookEvents(webhookDTO);
         log.info(
             String.format("Successfully created the webhook event %s", createdGitXWebhookEvent.getEventIdentifier()));
       } catch (Exception exception) {
@@ -218,5 +226,17 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
                                              .webhookIdentifier(gitXWebhook.getIdentifier())
                                              .build(),
         UpdateGitXWebhookRequestDTO.builder().lastEventTriggerTime(triggerEventTime).build());
+  }
+
+  private void enqueueWebhookEvents(WebhookDTO webhookDTO) {
+    EnqueueRequest enqueueRequest = EnqueueRequest.builder()
+                                        .topic(QUEUE_TOPIC_PREFIX + GITX_WEBHOOK_EVENT)
+                                        .subTopic(webhookDTO.getAccountId())
+                                        .producerName(QUEUE_TOPIC_PREFIX + GITX_WEBHOOK_EVENT)
+                                        .payload(RecastOrchestrationUtils.toJson(webhookDTO))
+                                        .build();
+    EnqueueResponse execute = hsqsClientService.enqueue(enqueueRequest);
+    log.info("GitXWebhook event queued message id: {} for eventIdentifier: {}", execute.getItemId(),
+        webhookDTO.getEventId());
   }
 }
