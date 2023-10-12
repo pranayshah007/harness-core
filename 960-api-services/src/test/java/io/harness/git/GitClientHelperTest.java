@@ -17,6 +17,7 @@ import static io.harness.git.model.GitRepositoryType.HELM;
 import static io.harness.git.model.GitRepositoryType.TERRAFORM;
 import static io.harness.git.model.GitRepositoryType.TRIGGER;
 import static io.harness.git.model.GitRepositoryType.YAML;
+import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.ARVIND;
@@ -814,6 +815,9 @@ public class GitClientHelperTest extends CategoryTest {
 
     repoName = GitClientHelper.getHarnessRepoName("https://abhinavs.pr2.harness.io/devspace/acc/org/proj/repo.git");
     assertThat(repoName).isEqualTo("acc/org/proj/repo/+");
+
+    repoName = GitClientHelper.getHarnessRepoName("https:/git.harness.io/acc/org/proj/repo.git");
+    assertThat(repoName).isEqualTo("acc/org/proj/repo/+");
   }
 
   @Test
@@ -827,5 +831,24 @@ public class GitClientHelperTest extends CategoryTest {
     assertThat(s.size()).isEqualTo(2);
     assertThat(s.contains("file.txt")).isTrue();
     assertThat(s.contains("folder/file1.txt")).isTrue();
+  }
+
+  @Test
+  @Owner(developers = ABHINAV)
+  @Category(UnitTests.class)
+  public void testGitRepoHarness() {
+    final String repoName = GitClientHelper.getGitRepo(
+        "https://git.qa.harness.io/h61p38AZSV6MzEkpWWBtew/default/RajathaTest/HiteshTest.git");
+    assertThat(repoName).isEqualTo("default/RajathaTest/HiteshTest");
+    String gitOwner = GitClientHelper.getGitOwner(
+        "https://git.qa.harness.io/h61p38AZSV6MzEkpWWBtew/default/RajathaTest/HiteshTest.git", false);
+    assertThat(gitOwner).isEqualTo("h61p38AZSV6MzEkpWWBtew");
+
+    final String repoName1 = GitClientHelper.getGitRepo(
+        "https://qa.harness.io/code/git/h61p38AZSV6MzEkpWWBtew/default/RajathaTest/HiteshTest.git");
+    assertThat(repoName1).isEqualTo("git/h61p38AZSV6MzEkpWWBtew/default/RajathaTest/HiteshTest");
+    String gitOwner1 = GitClientHelper.getGitOwner(
+        "https://qa.harness.io/code/git/h61p38AZSV6MzEkpWWBtew/default/RajathaTest/HiteshTest.git", false);
+    assertThat(gitOwner1).isEqualTo("code");
   }
 }
