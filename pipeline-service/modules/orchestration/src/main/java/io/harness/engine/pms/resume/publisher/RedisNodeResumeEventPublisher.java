@@ -6,13 +6,17 @@
  */
 
 package io.harness.engine.pms.resume.publisher;
+import static io.harness.execution.NodeExecution.*;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.engine.pms.execution.strategy.identity.IdentityStep;
+import io.harness.execution.NodeExecution;
 import io.harness.pms.contracts.execution.AsyncChainExecutableResponse;
 import io.harness.pms.contracts.execution.ChildChainExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutionMode;
@@ -21,12 +25,15 @@ import io.harness.pms.contracts.resume.ChainDetails;
 import io.harness.pms.contracts.resume.NodeResumeEvent;
 import io.harness.pms.contracts.resume.ResponseDataProto;
 import io.harness.pms.events.base.PmsEventCategory;
+import io.harness.threading.Morpheus;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
@@ -35,6 +42,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RedisNodeResumeEventPublisher implements NodeResumeEventPublisher {
   @Inject private PmsEventSender eventSender;
+  @Inject private NodeExecutionService nodeExecutionService;
+  private static final int MAX_DELAY_MS_FOR_RETRY = 30000;
 
   @Override
   public void publishEvent(ResumeMetadata resumeMetadata, Map<String, ResponseDataProto> responseMap, boolean isError) {
@@ -96,6 +105,26 @@ public class RedisNodeResumeEventPublisher implements NodeResumeEventPublisher {
               .setPassThroughData(lastChildChainExecutableResponse.getPassThroughData())
               .build();
         case ASYNC_CHAIN:
+
+          // TODO: Hacking this in 1.47 for the race condition where callback get fired before the executableResponse
+          // get processed
+
+          int attempts = 0;
+          while (attempts < 5) {
+            attempts++;
+            NodeExecution execution = nodeExecutionService.getWithFieldsIncluded(
+                resumeMetadata.getNodeExecutionUuid(), Set.of(NodeExecutionKeys.executableResponses));
+            if (execution.obtainLatestExecutableResponse() != null) {
+              log.info("Resume metadata was null but fetched in attempt: {}", attempts);
+              resumeMetadata.setLatestExecutableResponse(execution.obtainLatestExecutableResponse());
+              break;
+            }
+            long exponentialSleepMs = (1L << (attempts - 1)) * 1000L;
+            Morpheus.quietSleep(Duration.ofMillis(Math.min(exponentialSleepMs, MAX_DELAY_MS_FOR_RETRY)));
+          }
+
+          // TODO:  Still letting it throw NPE for now
+
           AsyncChainExecutableResponse asyncChainExecutableResponse =
               Objects.requireNonNull(resumeMetadata.getLatestExecutableResponse()).getAsyncChain();
           return ChainDetails.newBuilder()
