@@ -68,7 +68,7 @@ global:
       secretName: ''
     # -- add annotations to ingress objects
     objects:
-      annotations: { }
+      annotations: {}
   istio:
     # -- create virtualServices objects
     enabled: false
