@@ -163,6 +163,9 @@ public class PagerDutyServiceImpl implements ChannelService {
       links.add(linkContext);
     }
 
+    List<String> pagerDutyKeysAllowlist = notificationSettingsHelper.getTargetAllowlistFromSettings(
+        SettingIdentifiers.PAGERDUTY_NOTIFICATION_INTEGRATION_KEYS_ALLOWLIST, accountId);
+
     NotificationProcessingResponse processingResponse = null;
     if (notificationSettingsService.checkIfWebhookIsSecret(pagerDutyKeys)) {
       DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.builder()
@@ -173,7 +176,7 @@ public class PagerDutyServiceImpl implements ChannelService {
                                                                         .pagerDutyKeys(pagerDutyKeys)
                                                                         .payload(payload)
                                                                         .links(links)
-                                                                        .accountId(accountId)
+                                                                        .pagerDutyKeysAllowlist(pagerDutyKeysAllowlist)
                                                                         .build())
                                                     .taskSetupAbstractions(abstractionMap)
                                                     .expressionFunctorToken(expressionFunctorToken)
@@ -183,7 +186,7 @@ public class PagerDutyServiceImpl implements ChannelService {
       log.info("Async delegate task created with taskID {}", taskId);
       processingResponse = NotificationProcessingResponse.allSent(pagerDutyKeys.size());
     } else {
-      processingResponse = pagerDutySender.send(pagerDutyKeys, payload, links, notificationId, accountId);
+      processingResponse = pagerDutySender.send(pagerDutyKeys, payload, links, notificationId, pagerDutyKeysAllowlist);
     }
     log.info(NotificationProcessingResponse.isNotificationRequestFailed(processingResponse)
             ? "Failed to send notification for request {}"
