@@ -7,27 +7,42 @@
 
 package io.harness.idp.gitintegration.repositories;
 
+import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.events.producers.SetupUsageProducer;
 import io.harness.idp.gitintegration.entities.CatalogConnectorEntity;
+import io.harness.idp.gitintegration.events.catalogconnector.CatalogConnectorCreateEvent;
+import io.harness.idp.gitintegration.events.catalogconnector.CatalogConnectorUpdateEvent;
+import io.harness.outbox.api.OutboxService;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.IDP)
 public class CatalogConnectorRepositoryCustomImpl implements CatalogConnectorRepositoryCustom {
   private MongoTemplate mongoTemplate;
   private SetupUsageProducer setupUsageProducer;
+
+  @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
+  @Inject private OutboxService outboxService;
+  private static final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
+
   @Override
   public CatalogConnectorEntity saveOrUpdate(CatalogConnectorEntity catalogConnectorEntity) {
     Criteria criteria = Criteria.where(CatalogConnectorEntity.CatalogConnectorKeys.accountIdentifier)
@@ -36,20 +51,29 @@ public class CatalogConnectorRepositoryCustomImpl implements CatalogConnectorRep
                             .is(catalogConnectorEntity.getConnectorProviderType());
     CatalogConnectorEntity connector = findOneByAccountIdentifierAndProviderType(criteria);
     if (connector == null) {
-      CatalogConnectorEntity savedCatalogConnectorEntity = mongoTemplate.save(catalogConnectorEntity);
-      setupUsageProducer.publishConnectorSetupUsage(savedCatalogConnectorEntity.getAccountIdentifier(),
-          savedCatalogConnectorEntity.getConnectorIdentifier(), savedCatalogConnectorEntity.getIdentifier());
-      return savedCatalogConnectorEntity;
+      return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+        CatalogConnectorEntity savedCatalogConnectorEntity = mongoTemplate.save(catalogConnectorEntity);
+        outboxService.save(
+            new CatalogConnectorCreateEvent(catalogConnectorEntity.getAccountIdentifier(), catalogConnectorEntity));
+        setupUsageProducer.publishConnectorSetupUsage(savedCatalogConnectorEntity.getAccountIdentifier(),
+            savedCatalogConnectorEntity.getConnectorIdentifier(), savedCatalogConnectorEntity.getIdentifier());
+        return savedCatalogConnectorEntity;
+      }));
     }
     Query query = new Query(criteria);
     Update update = buildUpdateQuery(catalogConnectorEntity);
     FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true);
-    CatalogConnectorEntity updatedCatalogConnectorEntity =
-        mongoTemplate.findAndModify(query, update, options, CatalogConnectorEntity.class);
-    setupUsageProducer.deleteConnectorSetupUsage(connector.getAccountIdentifier(), connector.getIdentifier());
-    setupUsageProducer.publishConnectorSetupUsage(updatedCatalogConnectorEntity.getAccountIdentifier(),
-        updatedCatalogConnectorEntity.getConnectorIdentifier(), updatedCatalogConnectorEntity.getIdentifier());
-    return updatedCatalogConnectorEntity;
+
+    return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      CatalogConnectorEntity updatedCatalogConnectorEntity =
+          mongoTemplate.findAndModify(query, update, options, CatalogConnectorEntity.class);
+      outboxService.save(new CatalogConnectorUpdateEvent(
+          catalogConnectorEntity.getAccountIdentifier(), catalogConnectorEntity, connector));
+      setupUsageProducer.deleteConnectorSetupUsage(connector.getAccountIdentifier(), connector.getIdentifier());
+      setupUsageProducer.publishConnectorSetupUsage(updatedCatalogConnectorEntity.getAccountIdentifier(),
+          updatedCatalogConnectorEntity.getConnectorIdentifier(), updatedCatalogConnectorEntity.getIdentifier());
+      return updatedCatalogConnectorEntity;
+    }));
   }
 
   @Override
