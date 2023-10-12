@@ -352,7 +352,7 @@ public final class STOSettingsUtils {
   }
 
   private static Map<String, String> processSTOAnchoreFields(
-          AnchoreStepInfo stepInfo, String stepType, String identifier) {
+      AnchoreStepInfo stepInfo, String stepType, String identifier) {
     Map<String, String> map = new HashMap<>();
 
     map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));

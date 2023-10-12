@@ -91,7 +91,7 @@ import lombok.Getter;
 @OwnedBy(STO)
 public enum STOStepType {
   ANCHORE("Anchore", null, FeatureName.STO_STEP_PALETTE_ANCHORE_ENTERPRISE, AnchoreScanNode.class, EntityType.ANCHORE,
-          new String[] {CONTAINER_SECURITY}),
+      new String[] {CONTAINER_SECURITY}),
   AQUA_TRIVY("AquaTrivy", "Aqua Trivy", null, AquaTrivyScanNode.class, EntityType.AQUA_TRIVY,
       new String[] {CONTAINER_SECURITY}),
   AWS_ECR("AWSECR", "AWS ECR Scan", null, AwsEcrScanNode.class, EntityType.AWS_ECR, new String[] {CONTAINER_SECURITY}),

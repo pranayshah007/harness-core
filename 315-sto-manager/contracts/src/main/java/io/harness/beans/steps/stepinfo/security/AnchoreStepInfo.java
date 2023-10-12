@@ -36,17 +36,17 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.AnchoreStepInfo")
 public class AnchoreStepInfo extends STOGenericStepInfo {
-    private static final String PRODUCT_NAME = "anchore";
+  private static final String PRODUCT_NAME = "anchore";
 
-    @JsonProperty protected STOYamlImage image;
+  @JsonProperty protected STOYamlImage image;
 
-    @JsonProperty protected io.harness.beans.steps.stepinfo.security.shared.STOYamlAuth auth;
+  @JsonProperty protected io.harness.beans.steps.stepinfo.security.shared.STOYamlAuth auth;
 
-    @NotNull
-    @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlGenericConfig")
-    protected STOYamlGenericConfig config;
-    @ApiModelProperty(hidden = true)
-    public String getProductName() {
-        return PRODUCT_NAME;
-    }
+  @NotNull
+  @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlGenericConfig")
+  protected STOYamlGenericConfig config;
+  @ApiModelProperty(hidden = true)
+  public String getProductName() {
+    return PRODUCT_NAME;
+  }
 }

@@ -37,28 +37,28 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.steps.nodes.security.AnchoreScanNode")
 public class AnchoreScanNode extends CIAbstractStepNode {
-    @JsonProperty("type") @NotNull AnchoreScanNode.StepType type = StepType.Anchore;
-    @NotNull
-    @JsonProperty("spec")
-    @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-    AnchoreStepInfo stepInfo;
+  @JsonProperty("type") @NotNull AnchoreScanNode.StepType type = StepType.Anchore;
+  @NotNull
+  @JsonProperty("spec")
+  @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
+  AnchoreStepInfo stepInfo;
 
-    @Override
-    public String getType() {
-        return CIStepInfoType.ANCHORE.getDisplayName();
+  @Override
+  public String getType() {
+    return CIStepInfoType.ANCHORE.getDisplayName();
+  }
+
+  @Override
+  public StepSpecType getStepSpecType() {
+    return stepInfo;
+  }
+
+  enum StepType {
+    Anchore(CIStepInfoType.ANCHORE.getDisplayName());
+    @Getter String name;
+
+    StepType(String name) {
+      this.name = name;
     }
-
-    @Override
-    public StepSpecType getStepSpecType() {
-        return stepInfo;
-    }
-
-    enum StepType {
-        Anchore(CIStepInfoType.ANCHORE.getDisplayName());
-        @Getter String name;
-
-        StepType(String name) {
-            this.name = name;
-        }
-    }
+  }
 }
