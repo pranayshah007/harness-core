@@ -14,6 +14,7 @@ import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDa
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.EMAIL_LINK_MIDDLE;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.ET_MONITORED_SERVICE_URL_FORMAT;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.SLACK_FORMATTED_VERSION_LIST;
+import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.*;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.CET_MODULE_NAME;
 
 import io.harness.cvng.beans.errortracking.ErrorTrackingHitSummary;
@@ -37,10 +38,6 @@ public class ErrorTrackingNotificationRuleUtils {
   public static final String NEW_EVENT_LABEL = "New Events ";
   public static final String CRITICAL_EVENT_LABEL = "Critical Events ";
   public static final String RESURFACED_EVENT_LABEL = "Resurfaced Events ";
-  public static final String BEGIN_CODE_BLOCK_SLACK = "<codeBlock>";
-  public static final String END_CODE_BLOCK_SLACK = "<endCodeBlock>";
-  public static final String BEGIN_CODE_BLOCK_EMAIL = "<codeBlockEmail>";
-  public static final String END_CODE_BLOCK_EMAIL = "<endCodeBlockEmail>";
 
   private ErrorTrackingNotificationRuleUtils() {
     throw new IllegalStateException("Utility classes cannot be instantiated.");
@@ -63,10 +60,12 @@ public class ErrorTrackingNotificationRuleUtils {
         errorTrackingHitSummary.getVersionId(), String.valueOf(fromTime), String.valueOf(toTime));
 
     notificationDataMap.put(ARC_SCREEN_URL, arcScreenUrl);
+    notificationDataMap.put(EMAIL_EVENT_DETAILS_BUTTON, EMAIL_EVENT_DETAILS_BUTTON_VALUE);
+    notificationDataMap.put(SLACK_EVENT_DETAILS_BUTTON, SLACK_EVENT_DETAILS_BUTTON_BLOCK_VALUE);
 
     StackTraceEvent stackTraceEvent = StackTraceEvent.builder()
                                           .version(errorTrackingHitSummary.getVersionId())
-                                          .stackTrace(String.join("", errorTrackingHitSummary.getStackTrace()))
+                                          .stackTrace(String.join(",", errorTrackingHitSummary.getStackTrace()))
                                           .build();
 
     final String slackStackTraceEvent = stackTraceEvent.toSlackString();
@@ -74,6 +73,9 @@ public class ErrorTrackingNotificationRuleUtils {
 
     notificationDataMap.put(SLACK_FORMATTED_VERSION_LIST, slackStackTraceEvent);
     notificationDataMap.put(EMAIL_FORMATTED_VERSION_LIST, emailStackTraceEvent);
+
+    notificationDataMap.put(EMAIL_SAVED_SEARCH_FILTER_SECTION, "");
+    notificationDataMap.put(SLACK_SAVED_SEARCH_FILTER_SECTION, "");
 
     return notificationDataMap;
   }
@@ -97,6 +99,9 @@ public class ErrorTrackingNotificationRuleUtils {
       List<AggregatedEvents> aggregatedEvents =
           getErrorTrackingEventsRecursive(errorTrackingEventStatus, scorecards, baseLinkUrl, from, to);
 
+      notificationDataMap.put(EMAIL_EVENT_DETAILS_BUTTON, "");
+      notificationDataMap.put(SLACK_EVENT_DETAILS_BUTTON, "");
+
       final String slackVersionList =
           aggregatedEvents.stream().map(AggregatedEvents::toSlackString).collect(Collectors.joining("\n"));
       final String emailVersionList =
@@ -105,6 +110,12 @@ public class ErrorTrackingNotificationRuleUtils {
       notificationDataMap.put(SLACK_FORMATTED_VERSION_LIST, slackVersionList);
       notificationDataMap.put(EMAIL_FORMATTED_VERSION_LIST, emailVersionList);
     }
+
+    notificationDataMap.put(EMAIL_SAVED_SEARCH_FILTER_SECTION, EMAIL_SAVED_SEARCH_FILTER_SECTION_VALUE);
+    notificationDataMap.put(SLACK_SAVED_SEARCH_FILTER_SECTION, SLACK_SAVED_SEARCH_FILTER_SECTION_VALUE);
+
+    notificationDataMap.put(SAVED_SEARCH_FILTER_URL, "filterURL.com");
+    notificationDataMap.put(SAVED_SEARCH_FILTER_NAME, errorTrackingNotificationData.getSavedFilter().getFilterName());
     return notificationDataMap;
   }
 
@@ -276,17 +287,17 @@ public class ErrorTrackingNotificationRuleUtils {
 
     public String toSlackString() {
       StringBuilder slack = new StringBuilder(EVENT_VERSION_LABEL + "*" + version + "*\n");
-      slack.append(BEGIN_CODE_BLOCK_SLACK).append(stackTrace).append(END_CODE_BLOCK_SLACK);
+      slack.append("```").append(stackTrace.replace(",", "\n")).append("```");
       return slack.toString();
     }
 
     public String toEmailString() {
       StringBuilder email = new StringBuilder("<div style=\"margin-bottom: 16px\">");
       email.append("<span>" + EVENT_VERSION_LABEL + "<span style=\"font-weight: bold;\">" + version + "</span></span>");
-      email.append("<div style =\"margin-top: 4px;\">");
-      email.append("<span>");
-      email.append(BEGIN_CODE_BLOCK_EMAIL).append(stackTrace).append(END_CODE_BLOCK_EMAIL);
-      email.append("</span>").append("</div>").append("</div>");
+      email.append("<div style =\"margin-top: 4px; background-color: #383946; border-radius: 3px;\">");
+      email.append("<p style=\"color:white; padding: 15px; padding-top: 18px; padding-bottom:18px;\">");
+      email.append(stackTrace.replace(",", "</br>"));
+      email.append("</p>").append("</div>").append("</div>");
       return email.toString();
     }
   }
