@@ -2,6 +2,8 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
+  commonAnnotations: {}
+  commonLabels: {}
   loadbalancerURL: "https://test"
   database:
     postgres:
@@ -75,6 +77,19 @@ global:
   stackDriverLoggingEnabled: false
   ccm:
     gcpProjectId: "placeHolder"
+  proxy:
+    enabled: false
+    host: localhost
+    port: 80
+    username: ""
+    password: ""
+    protocol: http
+  awsServiceEndpointUrls:
+    enabled: false
+    endPointRegion: us-east-2
+    stsEndPointUrl: https://sts.us-east-2.amazonaws.com
+    ecsEndPointUrl: https://ecs.us-east-2.amazonaws.com
+    cloudwatchEndPointUrl: https://monitoring.us-east-2.amazonaws.com
 
 replicaCount: 2
 
@@ -92,7 +107,7 @@ image:
   repository: harness/ce-nextgen-signed
   pullPolicy: IfNotPresent
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "80103-000"
+  tag: "80806-000"
   digest: ""
 # image pull secrets to use for ce-nextgen image
   imagePullSecrets: []
@@ -102,7 +117,7 @@ imageClickhouseEnabled:
   repository: harness/ce-nextgen-signed
   pullPolicy: Always
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "80103-000"
+  tag: "80806-000"
   digest: ""
 # image pull secrets to use for ce-nextgen image
   imagePullSecrets: []
@@ -140,7 +155,7 @@ awsSecret:
 
 ceng-gcp-credentials: ""
 
-nameOverride: ""
+nameOverride: "nextgen-ce"
 fullnameOverride: ""
 
 serviceAccount:
@@ -155,6 +170,7 @@ podSecurityContext: {}
 securityContext: {}
 
 service:
+  annotations: {}
   type: ClusterIP
   port: 6340
 
@@ -220,3 +236,9 @@ lifecycleHooks: {}
 #   preStop:
 #     exec:
 #       command:
+virtualService:
+  annotations: {}
+ingress:
+  annotations: {}
+
+distributedLockImplementation: MONGO

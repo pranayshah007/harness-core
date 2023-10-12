@@ -103,6 +103,13 @@ public class EventsFrameworkModule extends AbstractModule {
           .toInstance(
               NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
       bind(Producer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.MODULE_LICENSE))
+          .toInstance(NoOpProducer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME));
+      bind(Consumer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.MODULE_LICENSE))
+          .toInstance(
+              NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
+      bind(Producer.class)
           .annotatedWith(Names.named(WEBHOOK_EVENTS_STREAM))
           .toInstance(NoOpProducer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME));
       bind(Producer.class)
@@ -194,6 +201,16 @@ public class EventsFrameworkModule extends AbstractModule {
           .toInstance(RedisProducer.of(EventsFrameworkConstants.USERMEMBERSHIP, redissonClient,
               EventsFrameworkConstants.USER_MEMBERSHIP_TOPIC_SIZE, NG_MANAGER.getServiceId(),
               redisConfig.getEnvNamespace()));
+      bind(Producer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.MODULE_LICENSE))
+          .toInstance(RedisProducer.of(EventsFrameworkConstants.MODULE_LICENSE, redissonClient,
+              EventsFrameworkConstants.MODULE_LICENSE_TOPIC_SIZE, NG_MANAGER.getServiceId(),
+              redisConfig.getEnvNamespace()));
+      bind(Consumer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.MODULE_LICENSE))
+          .toInstance(RedisConsumer.of(EventsFrameworkConstants.MODULE_LICENSE, NG_MANAGER.getServiceId(),
+              redissonClient, EventsFrameworkConstants.MODULE_LICENSE_MAX_PROCESSING_TIME,
+              EventsFrameworkConstants.MODULE_LICENSE_READ_BATCH_SIZE, redisConfig.getEnvNamespace()));
       bind(Producer.class)
           .annotatedWith(Names.named(WEBHOOK_EVENTS_STREAM))
           .toInstance(RedisProducer.of(WEBHOOK_EVENTS_STREAM, redissonClient, WEBHOOK_EVENTS_STREAM_MAX_TOPIC_SIZE,

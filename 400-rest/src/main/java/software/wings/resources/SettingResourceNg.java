@@ -156,7 +156,8 @@ public class SettingResourceNg {
         break;
       }
     }
-    if (existingConfigWithNgSmtpSettingsPrefix != null) {
+    if (existingConfigWithNgSmtpSettingsPrefix != null
+        && isNotEmpty(((SmtpConfig) existingConfigWithNgSmtpSettingsPrefix.getValue()).getEncryptedPassword())) {
       settingServiceHelper.updateSettingAttributeBeforeResponse(existingConfigWithNgSmtpSettingsPrefix, true);
       maskEncryptedFields((EncryptableSetting) existingConfigWithNgSmtpSettingsPrefix.getValue());
     }

@@ -6,13 +6,15 @@
  */
 
 package software.wings.service.impl.yaml.handler.tag;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
@@ -48,6 +50,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @Slf4j
 public class HarnessTagYamlHelper {
@@ -61,7 +64,7 @@ public class HarnessTagYamlHelper {
 
     String accountId = getAccountId(entity, appId);
     String entityId = ((UuidAware) entity).getUuid();
-    List<HarnessTagLink> tagLinks = harnessTagService.getTagLinksWithEntityId(accountId, entityId);
+    List<HarnessTagLink> tagLinks = harnessTagService.getTagLinksWithEntityId(accountId, entityId, false);
 
     Map<String, String> harnessTags = new LinkedHashMap<>();
     tagLinks.forEach(harnessTagLink -> harnessTags.put(harnessTagLink.getKey(), harnessTagLink.getValue()));
@@ -99,7 +102,7 @@ public class HarnessTagYamlHelper {
     }
 
     String entityId = ((UuidAware) entity).getUuid();
-    List<HarnessTagLink> tagLinks = harnessTagService.getTagLinksWithEntityId(accountId, entityId);
+    List<HarnessTagLink> tagLinks = harnessTagService.getTagLinksWithEntityId(accountId, entityId, false);
 
     Map<String, String> tagsFromDB = new HashMap<>();
     tagLinks.forEach(harnessTagLink -> tagsFromDB.put(harnessTagLink.getKey(), harnessTagLink.getValue()));

@@ -7,6 +7,7 @@
 
 package io.harness.ssca.normalize;
 
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ssca.beans.SettingsDTO;
 import io.harness.ssca.beans.SpdxDTO;
@@ -18,6 +19,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.util.Strings;
@@ -32,26 +34,27 @@ public class SpdxNormalizer implements Normalizer<SpdxDTO> {
       NormalizedSBOMComponentEntityBuilder normalizedSBOMEntityBuilder =
           NormalizedSBOMComponentEntity.builder()
               .sbomVersion(sbom.getSpdxVersion())
-              .artifactURL(settings.getArtifactURL())
+              .artifactUrl(settings.getArtifactURL())
               .artifactId(settings.getArtifactID())
               .artifactName(sbom.getName())
+              .tags(Collections.singletonList(settings.getArtifactTag()))
               .createdOn(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
                              .parse(sbom.getCreationInfo().getCreated())
                              .toInstant())
               .toolVersion(settings.getTool().getVersion())
               .toolName(settings.getTool().getName())
               .toolVendor(settings.getTool().getVendor())
-              .packageID(spdxPackage.getSPDXID())
+              .packageId(spdxPackage.getSPDXID())
               .packageName(spdxPackage.getName())
               .packageDescription(spdxPackage.getDescription())
-              .packageLicense(getPackageLicenses(spdxPackage.getLicenseDeclared()))
+              .packageLicense(getPackageLicenses(spdxPackage.getLicenseConcluded(), spdxPackage.getLicenseDeclared()))
               .packageVersion(spdxPackage.getVersionInfo())
               .packageSourceInfo(spdxPackage.getSourceInfo())
               .orchestrationId(settings.getOrchestrationID())
               .pipelineIdentifier(settings.getPipelineIdentifier())
               .projectIdentifier(settings.getProjectIdentifier())
               .orgIdentifier(settings.getOrgIdentifier())
-              .accountID(settings.getAccountID());
+              .accountId(settings.getAccountID());
 
       if (spdxPackage.getOriginator() != null && spdxPackage.getOriginator().contains(":")) {
         String[] splitOriginator = Strings.split(spdxPackage.getOriginator(), ':');
@@ -81,8 +84,14 @@ public class SpdxNormalizer implements Normalizer<SpdxDTO> {
     return sbomEntityList;
   }
 
-  private List<String> getPackageLicenses(String licenseDeclared) {
-    List<String> licenses = SBOMUtils.processExpression(licenseDeclared);
+  private List<String> getPackageLicenses(String licenseConcluded, String licenseDeclared) {
+    String packageLicenseExpression = "NO_ASSERTION";
+    if (EmptyPredicate.isNotEmpty(licenseConcluded) && !SBOMUtils.NO_ASSERTION_LIST.contains(licenseConcluded)) {
+      packageLicenseExpression = licenseConcluded;
+    } else if (EmptyPredicate.isNotEmpty(licenseDeclared)) {
+      packageLicenseExpression = licenseDeclared;
+    }
+    List<String> licenses = SBOMUtils.processExpression(packageLicenseExpression);
 
     for (int i = 0; i < licenses.size(); i++) {
       if (licenses.get(i).contains(SBOMUtils.LICENSE_REF_DELIM)) {

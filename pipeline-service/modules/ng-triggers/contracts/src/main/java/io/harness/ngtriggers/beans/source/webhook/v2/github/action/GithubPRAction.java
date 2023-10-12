@@ -22,8 +22,8 @@ public enum GithubPRAction implements GitAction {
   @JsonProperty("Reopen") REOPEN("reopen", "Reopen"),
   @JsonProperty("Label") LABEL("label", "Label"),
   @JsonProperty("Unlabel") UNLABEL("unlabel", "Unlabel"),
-  @JsonProperty("Synchronize") SYNCHRONIZE("sync", "Synchronize");
-
+  @JsonProperty("Synchronize") SYNCHRONIZE("sync", "Synchronize"),
+  @JsonProperty("ReadyForReview") REVIEWREADY("reviewready", "ReadyForReview");
   private String value;
   private String parsedValue;
 

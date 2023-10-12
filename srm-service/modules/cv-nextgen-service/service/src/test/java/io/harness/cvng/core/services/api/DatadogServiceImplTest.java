@@ -223,8 +223,8 @@ public class DatadogServiceImplTest extends CvNextGenTestBase {
     when(mockedOnboardingService.getOnboardingResponse(eq(mockedProjectParams.getAccountIdentifier()), any()))
         .thenReturn(OnboardingResponseDTO.builder().result(new ArrayList<>()).build());
 
-    List<TimeSeriesSampleDTO> timeSeriesPoints =
-        classUnderTest.getTimeSeriesPoints(mockedProjectParams, connectorIdentifier, generateUuid(), MOCKED_QUERY);
+    List<TimeSeriesSampleDTO> timeSeriesPoints = classUnderTest.getTimeSeriesPoints(
+        mockedProjectParams, connectorIdentifier, "avg:container.cpu.system{*}.rollup(avg, 60)", MOCKED_QUERY);
 
     OnboardingRequestDTO onboardingRequestDTO = getAndVerifyOnBoardingRequest();
 

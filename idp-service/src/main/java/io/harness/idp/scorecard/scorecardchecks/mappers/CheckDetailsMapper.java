@@ -7,6 +7,7 @@
 
 package io.harness.idp.scorecard.scorecardchecks.mappers;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.idp.common.Constants.DOT_SEPARATOR;
 import static io.harness.idp.common.Constants.SPACE_SEPARATOR;
 
@@ -16,8 +17,10 @@ import io.harness.idp.scorecard.scorecardchecks.entity.CheckEntity;
 import io.harness.spec.server.idp.v1.model.CheckDetails;
 import io.harness.spec.server.idp.v1.model.Rule;
 
+import java.util.List;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.IDP)
 @UtilityClass
@@ -33,17 +36,13 @@ public class CheckDetailsMapper {
     checkDetails.setFailMessage(checkEntity.getFailMessage());
     checkDetails.setRuleStrategy(checkEntity.getRuleStrategy());
     checkDetails.setRules(checkEntity.getRules());
-    checkDetails.setLabels(checkEntity.getLabels());
+    checkDetails.setTags(checkEntity.getTags());
     return checkDetails;
   }
 
   public CheckEntity fromDTO(CheckDetails checkDetails, String accountIdentifier) {
-    String expression = checkDetails.getRules()
-                            .stream()
-                            .map(rule -> getExpression(rule))
-                            .collect(Collectors.joining(SPACE_SEPARATOR
-                                + (checkDetails.getRuleStrategy() == CheckDetails.RuleStrategyEnum.ALL_OF ? "&&" : "||")
-                                + SPACE_SEPARATOR));
+    String expression =
+        constructExpressionFromRules(checkDetails.getRules(), checkDetails.getRuleStrategy(), "", false);
     return CheckEntity.builder()
         .accountIdentifier(accountIdentifier)
         .identifier(checkDetails.getIdentifier())
@@ -55,17 +54,29 @@ public class CheckDetailsMapper {
         .failMessage(checkDetails.getFailMessage())
         .ruleStrategy(checkDetails.getRuleStrategy())
         .rules(checkDetails.getRules())
-        .labels(checkDetails.getLabels())
+        .tags(checkDetails.getTags())
         .build();
   }
 
-  String getExpression(Rule rule) {
-    if (!rule.getConditionalInputValue().isEmpty()) {
-      return rule.getDataSourceIdentifier() + DOT_SEPARATOR + rule.getDataPointIdentifier() + DOT_SEPARATOR
-          + rule.getConditionalInputValue() + rule.getOperator() + rule.getValue();
-    } else {
-      return rule.getDataSourceIdentifier() + DOT_SEPARATOR + rule.getDataPointIdentifier() + rule.getOperator()
-          + rule.getValue();
+  public static String constructExpressionFromRules(
+      List<Rule> rules, CheckDetails.RuleStrategyEnum ruleStrategy, String dpValueSuffix, boolean getLhsOnly) {
+    return rules.stream()
+        .map(rule -> CheckDetailsMapper.getExpression(rule, dpValueSuffix, getLhsOnly))
+        .collect(Collectors.joining(SPACE_SEPARATOR
+            + (ruleStrategy.equals(CheckDetails.RuleStrategyEnum.ALL_OF) ? "&&" : "||") + SPACE_SEPARATOR));
+  }
+
+  String getExpression(Rule rule, String dpValueSuffix, boolean getLhsOnly) {
+    String expression = rule.getDataSourceIdentifier() + DOT_SEPARATOR + rule.getDataPointIdentifier();
+    if (StringUtils.isNotBlank(rule.getConditionalInputValue())) {
+      expression += DOT_SEPARATOR + rule.getConditionalInputValue();
     }
+    if (StringUtils.isNotBlank(dpValueSuffix)) {
+      expression += DOT_SEPARATOR + dpValueSuffix;
+    }
+    if (!getLhsOnly) {
+      expression += rule.getOperator() + rule.getValue();
+    }
+    return expression;
   }
 }

@@ -44,7 +44,7 @@ public class NodeProjectionUtils {
           NodeExecutionKeys.mode, NodeExecutionKeys.unitProgresses, NodeExecutionKeys.parentId);
 
   public static final Set<String> fieldsForInstrumentationHandler =
-      Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.status);
+      Sets.newHashSet(NodeExecutionKeys.status, NodeExecutionKeys.identifier, NodeExecutionKeys.stepType);
 
   public static final Set<String> withAmbianceAndStatus =
       Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.status);
@@ -63,10 +63,6 @@ public class NodeProjectionUtils {
   public static final Set<String> fieldsForNodeUpdateObserver = Sets.newHashSet(
       NodeExecutionKeys.ambiance, NodeExecutionKeys.status, NodeExecutionKeys.endTs, NodeExecutionKeys.oldRetry);
 
-  public static final Set<String> fieldsForNodeStatusUpdateObserver =
-      Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.status, NodeExecutionKeys.resolvedParams,
-          NodeExecutionKeys.endTs, NodeExecutionKeys.oldRetry, NodeExecutionKeys.timeoutInstanceIds);
-
   public static final Set<String> fieldsForResume =
       Sets.newHashSet(NodeExecutionKeys.status, NodeExecutionKeys.ambiance, NodeExecutionKeys.executableResponses,
           NodeExecutionKeys.mode, NodeExecutionKeys.resolvedParams, NodeExecutionKeys.module,
@@ -82,9 +78,10 @@ public class NodeProjectionUtils {
 
   // NodeId is added to resolve expression within same step
   public static final Set<String> fieldsForExpressionEngine = Sets.newHashSet(NodeExecutionKeys.status,
-      NodeExecutionKeys.ambiance, NodeExecutionKeys.mode, NodeExecutionKeys.startTs, NodeExecutionKeys.endTs,
-      NodeExecutionKeys.parentId, NodeExecutionKeys.resolvedParams, NodeExecutionKeys.oldRetry,
-      NodeExecutionKeys.nodeId, NodeExecutionKeys.retryIds);
+      NodeExecutionKeys.mode, NodeExecutionKeys.startTs, NodeExecutionKeys.endTs, NodeExecutionKeys.parentId,
+      NodeExecutionKeys.resolvedParams, NodeExecutionKeys.oldRetry, NodeExecutionKeys.nodeId,
+      NodeExecutionKeys.retryIds, NodeExecutionKeys.skipExpressionChain, NodeExecutionKeys.identifier,
+      NodeExecutionKeys.group, NodeExecutionKeys.ambiance);
 
   public static final Set<String> forFacilitation = Sets.newHashSet(NodeExecutionKeys.ambiance,
       NodeExecutionKeys.originalNodeExecutionId, NodeExecutionKeys.module, NodeExecutionKeys.resolvedParams);
@@ -97,17 +94,22 @@ public class NodeProjectionUtils {
       Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.status, NodeExecutionKeys.adviserResponse,
           NodeExecutionKeys.failureInfo, NodeExecutionKeys.notifyId, NodeExecutionKeys.endTs);
 
-  public static final Set<String> fieldsForIdentityStrategyStep = Sets.newHashSet(NodeExecutionKeys.identifier,
-      NodeExecutionKeys.name, NodeExecutionKeys.nodeId, NodeExecutionKeys.status, NodeExecutionKeys.executableResponses,
-      NodeExecutionKeys.ambiance, NodeExecutionKeys.oldRetry, NodeExecutionKeys.parentId, NodeExecutionKeys.stepType);
+  public static final Set<String> fieldsForIdentityStrategyStep =
+      Sets.newHashSet(NodeExecutionKeys.identifier, NodeExecutionKeys.name, NodeExecutionKeys.nodeId,
+          NodeExecutionKeys.status, NodeExecutionKeys.executableResponses, NodeExecutionKeys.ambiance,
+          NodeExecutionKeys.oldRetry, NodeExecutionKeys.parentId, NodeExecutionKeys.stepType, NodeExecutionKeys.group);
 
   public static final Set<String> fieldsForNodeExecutionDelete = Sets.newHashSet(NodeExecutionKeys.timeoutInstanceIds,
       NodeExecutionKeys.adviserTimeoutInstanceIds, NodeExecutionKeys.nodeId, NodeExecutionKeys.notifyId,
       NodeExecutionKeys.planId, NodeExecutionKeys.stepType, NodeExecutionKeys.executionInputConfigured);
 
-  public static final Set<String> fieldsForIdentityNodeCreation =
-      Sets.newHashSet(NodeExecutionKeys.uuid, NodeExecutionKeys.stepType, NodeExecutionKeys.planId);
+  public static final Set<String> fieldsForIdentityNodeCreation = Sets.newHashSet(
+      NodeExecutionKeys.uuid, NodeExecutionKeys.stepType, NodeExecutionKeys.planId, NodeExecutionKeys.nodeId);
 
-  public static final Set<String> fieldsForNodeAndAmbiance =
-      Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.nodeId);
+  public static final Set<String> fieldsForRollbackIdentityNodeCreation =
+      Sets.newHashSet(NodeExecutionKeys.uuid, NodeExecutionKeys.stepType, NodeExecutionKeys.planId,
+          NodeExecutionKeys.nodeId, NodeExecutionKeys.name, NodeExecutionKeys.identifier);
+
+  public static final Set<String> fieldsForRollbackTransformer =
+      Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.stageFqn);
 }

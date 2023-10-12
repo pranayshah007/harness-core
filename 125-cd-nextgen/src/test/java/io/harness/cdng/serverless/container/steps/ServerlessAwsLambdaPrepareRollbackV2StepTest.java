@@ -9,7 +9,12 @@ package io.harness.cdng.serverless.container.steps;
 
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -28,7 +33,10 @@ import io.harness.delegate.task.stepstatus.StepStatus;
 import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.plugin.ContainerPortHelper;
 import io.harness.pms.sdk.core.plugin.ContainerStepExecutionResponseHelper;
+import io.harness.pms.sdk.core.plugin.ContainerUnitStepUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.product.ci.engine.proto.UnitStep;
@@ -45,6 +53,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
@@ -57,6 +66,8 @@ public class ServerlessAwsLambdaPrepareRollbackV2StepTest extends CategoryTest {
   @Mock private ServerlessStepCommonHelper serverlessStepCommonHelper;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
+
+  @Mock private ContainerPortHelper containerPortHelper;
 
   @InjectMocks @Spy private ServerlessAwsLambdaPrepareRollbackV2Step serverlessAwsLambdaPrepareRollbackV2Step;
 
@@ -158,5 +169,66 @@ public class ServerlessAwsLambdaPrepareRollbackV2StepTest extends CategoryTest {
     doReturn(unitStep)
         .when(serverlessAwsLambdaPrepareRollbackV2Step)
         .getUnitStep(any(), any(), any(), any(), any(), any(), any());
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testGetUnitStep() {
+    String accountId = "accountId";
+    Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
+    ServerlessAwsLambdaPrepareRollbackV2StepParameters stepParameters =
+        ServerlessAwsLambdaPrepareRollbackV2StepParameters.infoBuilder()
+            .image(ParameterField.<String>builder().value("sdaf").build())
+            .build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                      .identifier("identifier")
+                                                      .name("name")
+                                                      .spec(stepParameters)
+                                                      .timeout(ParameterField.createValueField("1h"))
+                                                      .build();
+
+    UnitStep unitStep = mock(UnitStep.class);
+    Mockito.mockStatic(ContainerUnitStepUtils.class);
+    when(ContainerUnitStepUtils.serializeStepWithStepParameters(anyInt(), anyString(), anyString(), anyString(),
+             anyLong(), anyString(), anyString(), any(), any(), any(), anyString(), any()))
+        .thenReturn(unitStep);
+    doReturn(1).when(containerPortHelper).getPort(any(), anyString(), anyBoolean());
+    Mockito.mockStatic(AmbianceUtils.class);
+    when(AmbianceUtils.obtainStepGroupIdentifier(any())).thenReturn("group");
+    assertThat(serverlessAwsLambdaPrepareRollbackV2Step.getUnitStep(
+                   ambiance, stepElementParameters, accountId, "logaKey", "100", stepParameters, new HashMap<>()))
+        .isEqualTo(unitStep);
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testGetStepParametersClass() {
+    assertThat(serverlessAwsLambdaPrepareRollbackV2Step.getStepParametersClass())
+        .isEqualTo(StepElementParameters.class);
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testGetTimeout() {
+    String accountId = "accountId";
+    Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", accountId).build();
+    ServerlessAwsLambdaPrepareRollbackV2StepParameters stepParameters =
+        ServerlessAwsLambdaPrepareRollbackV2StepParameters.infoBuilder()
+            .image(ParameterField.<String>builder().value("sdaf").build())
+            .build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                      .identifier("identifier")
+                                                      .name("name")
+                                                      .spec(stepParameters)
+                                                      .timeout(ParameterField.createValueField("1s"))
+                                                      .build();
+
+    assertThat(serverlessAwsLambdaPrepareRollbackV2Step.getTimeout(ambiance, stepElementParameters)).isEqualTo(1000);
   }
 }

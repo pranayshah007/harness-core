@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl.yaml;
-
 import static io.harness.annotations.dev.HarnessModule._951_CG_GIT_SYNC;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.beans.FeatureName.NOTIFY_GIT_SYNC_ERRORS_PER_APP;
@@ -82,7 +81,10 @@ import static java.util.Collections.sort;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.CgEventConfig;
 import io.harness.beans.FeatureName;
@@ -218,6 +220,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @Slf4j
 @TargetModule(_951_CG_GIT_SYNC)
@@ -2033,7 +2036,7 @@ public class YamlDirectoryServiceImpl implements YamlDirectoryService {
             .addOrder(Workflow.NAME_KEY, SortOrder.OrderType.ASC)
             .addFieldsIncluded(Pipeline.UUID_KEY, Pipeline.NAME_KEY, Pipeline.APP_ID_KEY2)
             .build();
-    List<Workflow> workflows = workflowService.listWorkflowsWithoutOrchestration(pageRequest).getResponse();
+    List<Workflow> workflows = workflowService.listWorkflowsWithoutOrchestration(pageRequest, false).getResponse();
 
     if (workflows != null) {
       // iterate over workflows
@@ -2072,7 +2075,7 @@ public class YamlDirectoryServiceImpl implements YamlDirectoryService {
       pageRequest.setLimit(PageRequest.LIMIT_2K_PAGE_SIZE);
     }
 
-    List<Pipeline> pipelines = pipelineService.listPipelines(pageRequest).getResponse();
+    List<Pipeline> pipelines = pipelineService.listPipelines(pageRequest, false, accountId).getResponse();
 
     if (pipelines != null) {
       // iterate over pipelines

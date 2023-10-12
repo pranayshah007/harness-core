@@ -6,12 +6,12 @@
  */
 
 package software.wings.delegatetasks.validation.capabilitycheck;
-
-import static io.harness.shell.SshSessionFactory.getSSHSession;
-
 import static java.time.Duration.ofSeconds;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.executioncapability.CapabilityResponse;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -21,6 +21,7 @@ import io.harness.delegate.task.winrm.WinRmSessionConfig;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.ssh.SshClientManager;
+import io.harness.shell.ssh.exception.SshClientException;
 
 import software.wings.beans.delegation.ShellScriptParameters;
 import software.wings.delegatetasks.validation.capabilities.ShellConnectionCapability;
@@ -29,9 +30,9 @@ import software.wings.service.intfc.security.SecretManagementDelegateService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
-import com.jcraft.jsch.JSchException;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class ShellConnectionCapabilityCheck implements CapabilityCheck {
@@ -84,7 +85,7 @@ public class ShellConnectionCapabilityCheck implements CapabilityCheck {
       expectedSshConfig.setSshSessionTimeout(timeout);
       performTest(expectedSshConfig);
       return CapabilityResponse.builder().validated(true).delegateCapability(capability).build();
-    } catch (JSchException ex) {
+    } catch (SshClientException ex) {
       log.info("Exception in sshSession Validation, cause {}", ex.getMessage());
       return CapabilityResponse.builder().validated(false).delegateCapability(capability).build();
     } catch (Exception ex) {
@@ -94,11 +95,7 @@ public class ShellConnectionCapabilityCheck implements CapabilityCheck {
   }
 
   @VisibleForTesting
-  void performTest(SshSessionConfig expectedSshConfig) throws Exception {
-    if (expectedSshConfig.isUseSshClient() || expectedSshConfig.isVaultSSH()) {
-      SshClientManager.test(expectedSshConfig);
-    } else {
-      getSSHSession(expectedSshConfig).disconnect();
-    }
+  void performTest(SshSessionConfig expectedSshConfig) throws SshClientException {
+    SshClientManager.test(expectedSshConfig);
   }
 }

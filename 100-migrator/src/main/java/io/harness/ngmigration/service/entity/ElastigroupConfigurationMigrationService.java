@@ -6,15 +6,17 @@
  */
 
 package io.harness.ngmigration.service.entity;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.ngmigration.NGMigrationEntityType.ELASTIGROUP_CONFIGURATION;
 import static software.wings.ngmigration.NGMigrationEntityType.WORKFLOW;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.cdng.elastigroup.ElastigroupConfiguration;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
@@ -70,9 +72,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class ElastigroupConfigurationMigrationService extends NgMigrationService {
@@ -194,7 +198,7 @@ public class ElastigroupConfigurationMigrationService extends NgMigrationService
   }
 
   @Override
-  protected boolean isNGEntityExists() {
+  protected boolean isNGEntityExists(MigrationContext migrationContext) {
     return true;
   }
 
@@ -290,18 +294,31 @@ public class ElastigroupConfigurationMigrationService extends NgMigrationService
   private void processPhase(Map<String, Object> custom, MigrationContext migrationContext,
       WorkflowMigrationContext wfContext, WorkflowPhase phase) {
     List<PhaseStep> phaseSteps = phase.getPhaseSteps();
+    List<StepExpressionFunctor> expressionFunctorsFromCurrentPhase = new ArrayList<>();
+    String prefix = phase.getName();
+
     phaseSteps.stream().filter(phaseStep -> isNotEmpty(phaseStep.getSteps())).forEach(phaseStep -> {
       List<GraphNode> steps = phaseStep.getSteps();
+      String stepGroupName = prefix + "-" + phaseStep.getName();
       steps.forEach(stepYaml -> {
         StepMapper stepMapper = stepMapperFactory.getStepMapper(stepYaml.getType());
         List<StepExpressionFunctor> expressionFunctors =
-            stepMapper.getExpressionFunctor(wfContext, phase, phaseStep, stepYaml);
+            stepMapper.getExpressionFunctor(wfContext, phase, stepGroupName, stepYaml);
         if (isNotEmpty(expressionFunctors)) {
-          wfContext.getStepExpressionFunctors().addAll(expressionFunctors);
+          expressionFunctorsFromCurrentPhase.addAll(expressionFunctors);
         }
       });
     });
-    custom.putAll(MigratorUtility.getExpressions(
-        phase, wfContext.getStepExpressionFunctors(), migrationContext.getInputDTO().getIdentifierCaseFormat()));
+
+    List<StepExpressionFunctor> distinctExpressionsFromCurrentPhase =
+        expressionFunctorsFromCurrentPhase.stream()
+            .filter(functor -> !custom.containsKey(functor.getCgExpression()))
+            .collect(Collectors.toList());
+
+    if (isNotEmpty(distinctExpressionsFromCurrentPhase)) {
+      wfContext.getStepExpressionFunctors().addAll(distinctExpressionsFromCurrentPhase);
+      custom.putAll(MigratorUtility.getExpressions(
+          phase, distinctExpressionsFromCurrentPhase, migrationContext.getInputDTO().getIdentifierCaseFormat()));
+    }
   }
 }

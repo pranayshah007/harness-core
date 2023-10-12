@@ -13,7 +13,10 @@ shared_dependencies = [
 ] + [
     "//:lombok",
     "//ssca-manager/modules/contracts:module",
+    "//126-instance:module",
+    "//940-primary-version-manager:module",
     "//950-ng-core:module",
+    "//958-debezium-utils:module",
     "//960-persistence:module",
     "//965-api-key-filter:module",
     "//980-commons:module",
@@ -44,6 +47,7 @@ shared_dependencies = [
     "@maven//:io_swagger_core_v3_swagger_annotations",
     "@maven//:io_swagger_core_v3_swagger_models",
     "@maven//:io_swagger_core_v3_swagger_integration",
+    "@maven//:com_amazonaws_aws_java_sdk_s3",
 ]
 
 java_binary(

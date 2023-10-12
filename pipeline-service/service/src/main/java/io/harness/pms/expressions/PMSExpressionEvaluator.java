@@ -31,6 +31,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.expressions.functors.AccountFunctor;
 import io.harness.pms.expressions.functors.ApprovalFunctor;
 import io.harness.pms.expressions.functors.ExecutionInputExpressionFunctor;
+import io.harness.pms.expressions.functors.ExportedVariablesFunctor;
 import io.harness.pms.expressions.functors.InputSetFunctor;
 import io.harness.pms.expressions.functors.OrgFunctor;
 import io.harness.pms.expressions.functors.PipelineExecutionFunctor;
@@ -44,9 +45,11 @@ import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.pms.sdk.PmsSdkInstance;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.project.remote.ProjectClient;
 import io.harness.steps.approval.step.ApprovalInstanceService;
+import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -70,6 +73,8 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
 
   @Inject PmsEngineExpressionService pmsEngineExpressionService;
   @Inject ApprovalInstanceService approvalInstanceService;
+  @Inject PmsFeatureFlagHelper pmsFeatureFlagHelper;
+  @Inject ExecutionSweepingOutputService executionSweepingOutputService;
 
   public PMSExpressionEvaluator(VariableResolverTracker variableResolverTracker, Ambiance ambiance,
       Set<NodeExecutionEntityType> entityTypes, boolean refObjectSpecific, Map<String, String> contextMap) {
@@ -89,7 +94,7 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
             pmsExecutionService, pipelineExpressionHelper, planExecutionMetadataService, ambiance));
     addToContext("executionInput", new ExecutionInputExpressionFunctor(executionInputService, ambiance));
 
-    addToContext("strategy", new StrategyFunctor(ambiance, nodeExecutionsCache));
+    addToContext("strategy", new StrategyFunctor(ambiance, nodeExecutionsCache, getNodeExecutionInfoService()));
     addToContext("inputSet", new InputSetFunctor(pmsExecutionSummaryService, ambiance));
 
     // Trigger functors
@@ -112,9 +117,10 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
                 .build());
       }
     });
-
     addToContext("serviceVariableOverrides", new ServiceVariableOverridesFunctor(ambiance, pmsEngineExpressionService));
     addToContext("approval", new ApprovalFunctor(ambiance.getPlanExecutionId(), approvalInstanceService));
+    addToContext("exportedVariables",
+        new ExportedVariablesFunctor(ambiance, pmsFeatureFlagHelper, executionSweepingOutputService));
 
     // Group aliases
     // TODO: Replace with step category

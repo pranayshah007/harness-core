@@ -7,6 +7,8 @@
 
 package io.harness.cdng.provision.terragrunt;
 import static io.harness.beans.FeatureName.CDS_TERRAGRUNT_CLI_OPTIONS_NG;
+import static io.harness.beans.FeatureName.CDS_TERRAGRUNT_USE_UNIQUE_DIRECTORY_BASE_DIR_NG;
+import static io.harness.beans.FeatureName.CDS_TF_TG_SKIP_ERROR_LOGS_COLORING;
 import static io.harness.cdng.provision.terragrunt.TerragruntStepHelper.DEFAULT_TIMEOUT;
 import static io.harness.provision.TerragruntConstants.APPLY;
 import static io.harness.provision.TerragruntConstants.DESTROY;
@@ -257,7 +259,11 @@ public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntT
         .encryptedDataDetailList(terragruntStepHelper.getEncryptionDetailsFromTgInheritConfig(
             terragruntConfig.getConfigFiles().toGitStoreConfig(), terragruntConfig.getBackendConfigFile(),
             terragruntConfig.getVarFileConfigs(), ambiance))
-        .timeoutInMillis(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), DEFAULT_TIMEOUT));
+        .useUniqueDirectoryForBaseDir(
+            cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAGRUNT_USE_UNIQUE_DIRECTORY_BASE_DIR_NG))
+        .timeoutInMillis(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), DEFAULT_TIMEOUT))
+        .skipColorLogs(
+            cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), CDS_TF_TG_SKIP_ERROR_LOGS_COLORING));
     builder.build();
 
     return builder;
@@ -291,7 +297,11 @@ public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntT
         .encryptedDataDetailList(terragruntStepHelper.getEncryptionDetailsFromTgInheritConfig(
             terragruntConfig.getConfigFiles().toGitStoreConfig(), terragruntConfig.getBackendConfigFile(),
             terragruntConfig.getVarFileConfigs(), ambiance))
-        .timeoutInMillis(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), DEFAULT_TIMEOUT));
+        .useUniqueDirectoryForBaseDir(
+            cdFeatureFlagHelper.isEnabled(accountId, CDS_TERRAGRUNT_USE_UNIQUE_DIRECTORY_BASE_DIR_NG))
+        .timeoutInMillis(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), DEFAULT_TIMEOUT))
+        .skipColorLogs(
+            cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), CDS_TF_TG_SKIP_ERROR_LOGS_COLORING));
     builder.build();
 
     return builder;

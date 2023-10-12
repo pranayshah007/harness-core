@@ -8,6 +8,8 @@
 accounts {"name": "accountBackgroundJobCheckIteration_1", "background": true} {"accountBackgroundJobCheckIteration": 1}
 accounts {"name": "accountDeletionIteration_1", "background": true} {"accountDeletionIteration": 1}
 accounts {"name": "accountName_1", "unique": true} {"accountName": 1}
+accounts {"name": "accountStatus_accountType_workflowDataCollectionIteration", "background": true} {"licenseInfo.accountStatus": 1, "licenseInfo.accountType": 1, "workflowDataCollectionIteration": 1}
+accounts {"name": "account_status_deletion_iteration", "background": true} {"licenseInfo.accountStatus": 1, "accountDeletionIteration": 1}
 accounts {"name": "appId_1", "background": true} {"appId": 1}
 accounts {"name": "ceLicenseExpiryIteration_1", "background": true} {"ceLicenseExpiryIteration": 1}
 accounts {"name": "createdAt_1", "background": true} {"createdAt": 1}
@@ -75,6 +77,7 @@ artifacts {"name": "accountId_artifactStreamId_revision_createdAt", "background"
 artifacts {"name": "accountId_createdAt_artifactStreamIds", "background": true} {"accountId": 1, "createdAt": -1, "artifactStreamId": 1}
 artifacts {"name": "appId_artifactStreamId_metadata_image", "background": true} {"appId": 1, "artifactStreamId": 1, "metadata.image": 1}
 artifacts {"name": "appId_artifactStreamId_status_createdAt", "background": true} {"appId": 1, "artifactStreamId": 1, "status": 1, "createdAt": -1}
+artifacts {"name": "artifactStreamId_status_artifactSourceName", "background": true} {"artifactStreamId": 1, "status": 1, "artifactSourceName": 1}
 artifacts {"name": "artifactStream_artifactPath", "background": true} {"artifactStreamId": 1, "metadata.artifactPath": 1}
 artifacts {"name": "artifactStream_buildNo", "background": true} {"artifactStreamId": 1, "metadata.buildNo": 1}
 artifacts {"name": "artifactStream_createdAt_buildNo", "background": true} {"artifactStreamId": 1, "createdAt": -1, "metadata.buildNo": 1}
@@ -96,7 +99,7 @@ authTokens {"name": "createdAt_1", "background": true} {"createdAt": 1}
 authTokens {"name": "userId_1", "background": true} {"userId": 1}
 authTokens {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 barrierInstances {"name": "accountId_1", "background": true} {"accountId": 1}
-barrierInstances {"name": "appId_1", "background": true} {"appId": 1}
+barrierInstances {"name": "appId_state", "background": true} {"appId": 1, "state": 1}
 barrierInstances {"name": "next", "background": true} {"state": 1, "nextIteration": 1}
 barrierInstances {"name": "search2", "unique": true} {"name": 1, "pipeline.executionId": 1, "pipeline.parallelIndex": 1}
 barrierInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
@@ -171,7 +174,7 @@ delegateConnections {"name": "index2", "background": true} {"accountId": 1, "del
 delegateConnections {"name": "lastHeartbeatIndex", "background": true} {"disconnected": 1, "lastHeartbeat": 1}
 delegateConnections {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 delegateGroups {"name": "byAcctNgOwner", "background": true} {"accountId": 1, "ng": 1, "owner": 1}
-delegateGroups {"name": "unique_identification", "unique": true} {"accountId": 1, "owner": 1, "identifier": 1}
+delegateGroups {"name": "unique_identification1", "unique": true} {"accountId": 1, "owner": 1, "identifier": 1, "ng": 1}
 delegateGroups {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 delegateProfiles {"name": "byAcctNgOwner", "background": true} {"accountId": 1, "ng": 1, "owner": 1}
 delegateProfiles {"name": "createdAt_1", "background": true} {"createdAt": 1}
@@ -277,6 +280,7 @@ events {"name": "createdAt_1", "background": true} {"createdAt": 1}
 events {"name": "eventConfigId_1", "background": true} {"eventConfigId": 1}
 events {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
 events {"name": "status_1", "background": true} {"status": 1}
+executionInfraLocation {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 executionInterruptTimeSeriesEventQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 executionInterruptTimeSeriesEventQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 executionInterrupts {"name": "accountId_lastUpdatedAt", "background": true} {"accountId": 1, "lastUpdatedAt": 1}
@@ -305,6 +309,7 @@ experimentalTimeSeriesAnalysisRecords {"name": "validUntil_1", "background": tru
 exportExecutionsRequests {"name": "accountId_status", "background": true} {"accountId": 1, "status": 1}
 exportExecutionsRequests {"name": "status_expiresAt_nextCleanupIteration", "background": true} {"status": 1, "expiresAt": 1, "nextCleanupIteration": 1}
 exportExecutionsRequests {"name": "status_nextIteration", "background": true} {"status": 1, "nextIteration": 1}
+exportExecutionsRequests {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 externalServiceAuthTokens {"name": "appId_1", "background": true} {"appId": 1}
 externalServiceAuthTokens {"name": "createdAt_1", "background": true} {"createdAt": 1}
 featureFlag {"name": "name_1", "background": true} {"name": 1}

@@ -6,6 +6,7 @@
  */
 
 package io.harness.plancreator.stages;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
@@ -13,9 +14,7 @@ import io.harness.plancreator.pipelinerollback.PipelineRollbackStageHelper;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
-import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.PlanNode;
@@ -26,7 +25,7 @@ import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.DependenciesUtils;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -69,9 +68,7 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
               .dependencies(DependenciesUtils.toDependenciesProto(stageYamlFieldMap))
               .build());
     }
-    PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
-    ExecutionMode executionMode = planCreationContextValue.getMetadata().getExecutionMode();
-    if (!ExecutionModeUtils.isRollbackMode(executionMode)) {
+    if (!ExecutionModeUtils.isRollbackMode(ctx.getExecutionMode())) {
       PipelineRollbackStageHelper.addPipelineRollbackStageDependency(responseMap, ctx.getCurrentField());
     }
     return responseMap;
@@ -140,7 +137,7 @@ public class StagesPlanCreator extends ChildrenPlanCreator<StagesConfig> {
 
   @Override
   public Set<String> getSupportedYamlVersions() {
-    return Set.of(PipelineVersion.V0);
+    return Set.of(HarnessYamlVersion.V0);
   }
 
   private List<YamlField> getStageYamlFields(PlanCreationContext planCreationContext) {

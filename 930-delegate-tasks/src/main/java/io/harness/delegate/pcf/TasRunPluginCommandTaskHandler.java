@@ -63,6 +63,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -131,11 +132,16 @@ public class TasRunPluginCommandTaskHandler extends CfCommandTaskNGHandler {
                                                                             .cfRequestConfig(cfRequestConfig)
                                                                             .build();
 
-      cfDeploymentManager.runPcfPluginScript(cfRunPluginScriptRequestData, executionLogCallback);
+      Map<String, String> outputVariables = cfDeploymentManager.runPcfPluginScriptWithEnvironmentVarInputsAndOutputs(
+          cfRunPluginScriptRequestData, executionLogCallback, pluginCommandRequest.getInputVariables(),
+          pluginCommandRequest.getOutputVariables());
 
       executionLogCallback.saveExecutionLog(
           "\n ----------  PCF Run Plugin Command completed successfully", INFO, CommandExecutionStatus.SUCCESS);
-      return TasRunPluginResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
+      return TasRunPluginResponse.builder()
+          .outputVariables(outputVariables)
+          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+          .build();
 
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);

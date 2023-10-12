@@ -6,17 +6,17 @@
  */
 
 package io.harness.pms.sdk.core.execution;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.AddExecutableResponseRequest;
-import io.harness.pms.contracts.execution.events.AdviserResponseRequest;
-import io.harness.pms.contracts.execution.events.EventErrorRequest;
 import io.harness.pms.contracts.execution.events.FacilitatorResponseRequest;
 import io.harness.pms.contracts.execution.events.HandleProgressRequest;
 import io.harness.pms.contracts.execution.events.HandleStepResponseRequest;
@@ -32,6 +32,7 @@ import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
 import io.harness.pms.contracts.plan.NodeExecutionEventType;
 import io.harness.pms.contracts.resume.ResponseDataProto;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
+import io.harness.pms.execution.utils.SdkResponseEventUtils;
 import io.harness.pms.sdk.core.execution.async.AsyncProgressData;
 import io.harness.pms.sdk.core.response.publishers.SdkResponseEventPublisher;
 import io.harness.pms.sdk.core.steps.io.ResponseDataMapper;
@@ -45,6 +46,7 @@ import java.util.Map;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @Slf4j
 @Singleton
@@ -108,6 +110,27 @@ public class SdkNodeExecutionServiceImpl implements SdkNodeExecutionService {
   }
 
   @Override
+  public void resumeNodeExecution(Ambiance ambiance, Map<String, ResponseData> response, boolean asyncError,
+      ExecutableResponse executableResponse) {
+    Map<String, ResponseDataProto> responseDataBytes = responseDataMapper.toResponseDataProtoV2(response);
+
+    ResumeNodeExecutionRequest.Builder resumeNodeExecutionRequestBuilder =
+        ResumeNodeExecutionRequest.newBuilder().putAllResponseData(responseDataBytes).setAsyncError(asyncError);
+    if (executableResponse != null) {
+      resumeNodeExecutionRequestBuilder.setExecutableResponse(executableResponse);
+    }
+    ResumeNodeExecutionRequest resumeNodeExecutionRequest = resumeNodeExecutionRequestBuilder.build();
+
+    SdkResponseEventProto sdkResponseEvent = SdkResponseEventProto.newBuilder()
+                                                 .setSdkResponseEventType(SdkResponseEventType.RESUME_NODE_EXECUTION)
+                                                 .setResumeNodeExecutionRequest(resumeNodeExecutionRequest)
+                                                 .setAmbiance(ambiance)
+                                                 .build();
+
+    sdkResponseEventPublisher.publishEvent(sdkResponseEvent);
+  }
+
+  @Override
   public void handleFacilitationResponse(
       Ambiance ambiance, @NonNull String notifyId, FacilitatorResponseProto facilitatorResponseProto) {
     FacilitatorResponseRequest facilitatorResponseRequest = FacilitatorResponseRequest.newBuilder()
@@ -125,12 +148,7 @@ public class SdkNodeExecutionServiceImpl implements SdkNodeExecutionService {
   @Override
   public void handleAdviserResponse(Ambiance ambiance, @NonNull String notifyId, AdviserResponse adviserResponse) {
     SdkResponseEventProto handleAdviserResponseRequest =
-        SdkResponseEventProto.newBuilder()
-            .setSdkResponseEventType(SdkResponseEventType.HANDLE_ADVISER_RESPONSE)
-            .setAdviserResponseRequest(
-                AdviserResponseRequest.newBuilder().setAdviserResponse(adviserResponse).setNotifyId(notifyId).build())
-            .setAmbiance(ambiance)
-            .build();
+        SdkResponseEventUtils.getSdkResponse(ambiance, notifyId, adviserResponse);
     sdkResponseEventPublisher.publishEvent(handleAdviserResponseRequest);
   }
 
@@ -138,16 +156,7 @@ public class SdkNodeExecutionServiceImpl implements SdkNodeExecutionService {
   public void handleEventError(
       NodeExecutionEventType eventType, Ambiance ambiance, String eventNotifyId, FailureInfo failureInfo) {
     SdkResponseEventProto handleEventErrorRequest =
-        SdkResponseEventProto.newBuilder()
-            .setSdkResponseEventType(SdkResponseEventType.HANDLE_EVENT_ERROR)
-            .setAmbiance(ambiance)
-            .setEventErrorRequest(EventErrorRequest.newBuilder()
-                                      .setEventNotifyId(eventNotifyId)
-                                      .setEventType(eventType)
-                                      .setFailureInfo(failureInfo)
-                                      .build())
-
-            .build();
+        SdkResponseEventUtils.getSdkErrorResponse(eventType, ambiance, eventNotifyId, failureInfo);
     sdkResponseEventPublisher.publishEvent(handleEventErrorRequest);
   }
 

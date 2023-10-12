@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.plan.execution.beans.dto;
+
 import static io.harness.filter.FilterConstants.PIPELINE_EXECUTION_FILTER;
 
 import io.harness.annotations.dev.CodePulse;
@@ -14,6 +15,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterPropertiesDTO;
 import io.harness.ng.core.common.beans.NGTag;
+import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.TimeRange;
 import io.harness.yaml.core.NGLabel;
@@ -22,19 +24,18 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModel;
 import java.util.List;
+import java.util.Map;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.bson.Document;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Data
-@Builder
 @NoArgsConstructor
-@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -47,9 +48,26 @@ public class PipelineExecutionFilterPropertiesDTO extends FilterPropertiesDTO {
   private String pipelineName;
   private TimeRange timeRange;
   private org.bson.Document moduleProperties;
-
+  private List<TriggerType> triggerTypes;
+  private List<String> triggerIdentifiers;
   @Override
   public FilterType getFilterType() {
     return FilterType.PIPELINEEXECUTION;
+  }
+
+  @Builder
+  public PipelineExecutionFilterPropertiesDTO(Map<String, String> tags, Map<String, String> labels,
+      FilterType filterType, List<NGTag> pipelineTags, List<NGLabel> pipelineLabels, List<ExecutionStatus> status,
+      String pipelineName, TimeRange timeRange, Document moduleProperties, List<TriggerType> triggerTypes,
+      List<String> triggerIdentifiers) {
+    super(tags, labels, filterType);
+    this.pipelineTags = pipelineTags;
+    this.pipelineLabels = pipelineLabels;
+    this.status = status;
+    this.pipelineName = pipelineName;
+    this.timeRange = timeRange;
+    this.moduleProperties = moduleProperties;
+    this.triggerTypes = triggerTypes;
+    this.triggerIdentifiers = triggerIdentifiers;
   }
 }

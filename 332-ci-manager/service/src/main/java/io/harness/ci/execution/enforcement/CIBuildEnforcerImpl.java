@@ -11,15 +11,22 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.beans.entities.ExecutionQueueLimit;
 import io.harness.beans.execution.license.CILicenseService;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.config.ExecutionLimitSpec;
 import io.harness.ci.config.ExecutionLimits;
-import io.harness.ci.config.ExecutionLimits.ExecutionLimitSpec;
 import io.harness.ci.execution.execution.QueueExecutionUtils;
+import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
+import io.harness.ci.pipeline.executions.beans.CIInfraDetails;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.repositories.ExecutionQueueLimitRepository;
 
 import com.google.inject.Inject;
+import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -32,37 +39,62 @@ public class CIBuildEnforcerImpl implements CIBuildEnforcer {
   @Inject private QueueExecutionUtils queueExecutionUtils;
   @Inject private ExecutionLimits executionLimits;
   @Inject private ExecutionQueueLimitRepository executionQueueLimitRepository;
+  private static final int MAX_LIMIT = 100;
 
   @Override
-  public boolean checkBuildEnforcement(String accountId) {
-    long activeExecutionsCount = queueExecutionUtils.getActiveExecutionsCount(accountId);
-    long macExecutionsCount = queueExecutionUtils.getActiveMacExecutionsCount(accountId);
-
+  public boolean shouldQueue(String accountID, Infrastructure infrastructure) {
+    long activeExecutionsCount = queueExecutionUtils.getActiveExecutionsCount(
+        accountID, List.of(Status.QUEUED.toString(), Status.RUNNING.toString()));
+    long macExecutionsCount = queueExecutionUtils.getActiveMacExecutionsCount(
+        accountID, List.of(Status.QUEUED.toString(), Status.RUNNING.toString()));
     long currExecutionCountNonMac = activeExecutionsCount - macExecutionsCount;
+    OSType osType = getOSType(infrastructure);
+    ExecutionLimitSpec executionLimitSpec = getExecutionLimit(accountID);
+    log.info("queue limits for account: {}, total: {}, mac: {}. Current count: total: {}, mac: {}", accountID,
+        executionLimitSpec.getDefaultTotalExecutionCount(), executionLimitSpec.getDefaultMacExecutionCount(),
+        currExecutionCountNonMac, macExecutionsCount);
+    if (osType == OSType.MacOS) {
+      return macExecutionsCount > executionLimitSpec.getDefaultMacExecutionCount();
+    }
+    return currExecutionCountNonMac > executionLimitSpec.getDefaultTotalExecutionCount();
+  }
+
+  @Override
+  public boolean shouldRun(String accountID, Infrastructure infrastructure) {
+    long activeExecutionsCount =
+        queueExecutionUtils.getActiveExecutionsCount(accountID, List.of(Status.RUNNING.toString()));
+    long macExecutionsCount =
+        queueExecutionUtils.getActiveMacExecutionsCount(accountID, List.of(Status.RUNNING.toString()));
+    long currExecutionCountNonMac = activeExecutionsCount - macExecutionsCount;
+    OSType osType = getOSType(infrastructure);
+    ExecutionLimitSpec executionLimitSpec = getExecutionLimit(accountID);
+    log.info("queue limits for account: {}, total: {}, mac: {}. Current count: total: {}, mac: {}", accountID,
+        executionLimitSpec.getDefaultTotalExecutionCount(), executionLimitSpec.getDefaultMacExecutionCount(),
+        currExecutionCountNonMac, macExecutionsCount);
+    if (osType == OSType.MacOS) {
+      return macExecutionsCount < executionLimitSpec.getDefaultMacExecutionCount();
+    }
+    return currExecutionCountNonMac < executionLimitSpec.getDefaultTotalExecutionCount();
+  }
+
+  private ExecutionLimitSpec getExecutionLimit(String accountId) {
+    long macLimit = MAX_LIMIT;
+    long totalLimit = MAX_LIMIT;
     Optional<ExecutionQueueLimit> overriddenConfig =
         executionQueueLimitRepository.findFirstByAccountIdentifier(accountId);
-
     // if the limits are override for a specific account, give priority to those
     if (overriddenConfig.isPresent()) {
-      Integer macLimit = 100000;
-      Integer totalLimit = 100000;
       ExecutionQueueLimit executionQueueLimit = overriddenConfig.get();
       if (StringUtils.isNotEmpty(executionQueueLimit.getTotalExecLimit())) {
         macLimit = Integer.parseInt(executionQueueLimit.getMacExecLimit());
         totalLimit = Integer.parseInt(executionQueueLimit.getTotalExecLimit());
       }
-      log.info("overridden limits for account: {}, total: {}, mac: {}. Current count: total: {}, mac: {}", accountId,
-          totalLimit, macLimit, currExecutionCountNonMac, macExecutionsCount);
-      return currExecutionCountNonMac < totalLimit && macExecutionsCount < macLimit;
-    }
-
-    LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
-    if (licensesWithSummaryDTO == null) {
-      throw new CIStageExecutionException("Please enable CI free plan or reach out to support.");
-    }
-
-    if (licensesWithSummaryDTO != null) {
-      ExecutionLimitSpec executionLimitSpec = null;
+    } else {
+      LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
+      if (licensesWithSummaryDTO == null) {
+        throw new CIStageExecutionException("Please enable CI free plan or reach out to support.");
+      }
+      ExecutionLimitSpec executionLimitSpec;
       switch (licensesWithSummaryDTO.getEdition()) {
         case TEAM:
           executionLimitSpec = executionLimits.getTeam();
@@ -73,13 +105,21 @@ public class CIBuildEnforcerImpl implements CIBuildEnforcer {
         default:
           executionLimitSpec = executionLimits.getFree();
       }
-      long defaultTotalExecutionCount = executionLimitSpec.getDefaultTotalExecutionCount();
-      long defaultMacExecutionCount = executionLimitSpec.getDefaultMacExecutionCount();
-      log.info("queue limits for the account: {}, total: {}, mac: {}. Current count: total: {}, mac: {}", accountId,
-          defaultTotalExecutionCount, defaultMacExecutionCount, currExecutionCountNonMac, macExecutionsCount);
-      return currExecutionCountNonMac <= defaultTotalExecutionCount && macExecutionsCount <= defaultMacExecutionCount;
+      totalLimit = executionLimitSpec.getDefaultTotalExecutionCount();
+      macLimit = executionLimitSpec.getDefaultMacExecutionCount();
     }
-    // in case of any failures in fetching the license, keeping the default behaviour as allowed
-    return true;
+    return ExecutionLimitSpec.builder()
+        .defaultMacExecutionCount(macLimit)
+        .defaultTotalExecutionCount(totalLimit)
+        .build();
+  }
+
+  private OSType getOSType(Infrastructure infrastructure) {
+    CIInfraDetails ciInfraDetails = IntegrationStageUtils.getCiInfraDetails(infrastructure);
+    OSType osType = OSType.Linux;
+    if (EmptyPredicate.isNotEmpty(ciInfraDetails.getInfraOSType())) {
+      osType = OSType.fromString(ciInfraDetails.getInfraOSType());
+    }
+    return osType;
   }
 }

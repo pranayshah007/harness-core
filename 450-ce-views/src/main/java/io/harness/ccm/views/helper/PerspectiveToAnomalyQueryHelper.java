@@ -20,9 +20,14 @@ import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.GCP_P
 import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.GCP_SKU_DESCRIPTION_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.NAMESPACE_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.REGION_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.SERVICE_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.SERVICE_NAME_FIELD_ID;
 import static io.harness.ccm.commons.constants.ViewFieldLowerCaseConstants.WORKLOAD_NAME_FIELD_ID;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.BUSINESS_MAPPING;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ccm.commons.entities.CCMField;
 import io.harness.ccm.commons.entities.CCMFilter;
 import io.harness.ccm.commons.entities.CCMGroupBy;
@@ -37,6 +42,7 @@ import io.harness.ccm.views.dto.PerspectiveQueryDTO;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewCondition;
 import io.harness.ccm.views.entities.ViewField;
+import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewRule;
 import io.harness.ccm.views.entities.ViewVisualization;
@@ -57,6 +63,8 @@ import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CCM, unitCoverageRequired = true, components = {HarnessModuleComponent.CCM_PERSPECTIVE})
 @Slf4j
 public class PerspectiveToAnomalyQueryHelper {
   @Inject ViewsQueryBuilder viewsQueryBuilder;
@@ -76,6 +84,9 @@ public class PerspectiveToAnomalyQueryHelper {
             break;
           case WORKLOAD_NAME_FIELD_ID:
             convertedGroupByList.add(CCMGroupBy.builder().groupByField(CCMField.WORKLOAD).build());
+            break;
+          case SERVICE_NAME_FIELD_ID:
+            convertedGroupByList.add(CCMGroupBy.builder().groupByField(CCMField.SERVICE_NAME).build());
             break;
           case GCP_PROJECT_FIELD_ID:
             convertedGroupByList.add(CCMGroupBy.builder().groupByField(CCMField.GCP_PROJECT).build());
@@ -135,6 +146,11 @@ public class PerspectiveToAnomalyQueryHelper {
           case WORKLOAD_NAME_FIELD_ID:
             stringFilters.add(buildStringFilter(
                 CCMField.WORKLOAD, filter.getIdFilter().getValues(), filter.getIdFilter().getOperator()));
+            break;
+          case SERVICE_NAME_FIELD_ID:
+          case SERVICE_FIELD_ID:
+            stringFilters.add(buildStringFilter(
+                CCMField.SERVICE_NAME, filter.getIdFilter().getValues(), filter.getIdFilter().getOperator()));
             break;
           case GCP_PROJECT_FIELD_ID:
             stringFilters.add(buildStringFilter(
@@ -306,6 +322,25 @@ public class PerspectiveToAnomalyQueryHelper {
     }
 
     return convertedRuleFilters;
+  }
+  public boolean isLabelPerspective(@NonNull CEView perspective) {
+    if (perspective.getViewRules() != null) {
+      for (ViewRule ruleCheck : perspective.getViewRules()) {
+        boolean labelPresent = false;
+        for (ViewCondition conditionCheck : ruleCheck.getViewConditions()) {
+          ViewIdCondition viewIdConditionCheck = (ViewIdCondition) conditionCheck;
+          if ((viewIdConditionCheck.getViewField().getIdentifier().getDisplayName())
+              == ViewFieldIdentifier.LABEL.getDisplayName()) {
+            labelPresent = true;
+            break;
+          }
+        }
+        if (labelPresent == false) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   private CCMFilter combineFilters(List<CCMFilter> filters) {

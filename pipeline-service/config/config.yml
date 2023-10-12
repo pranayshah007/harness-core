@@ -47,19 +47,19 @@ orchestrationVisualizationThreadPoolConfig:
 orchestrationPoolConfig:
   corePoolSize: ${ORCHESTRATION_POOL_CORE_SIZE:-20}
   maxPoolSize: ${ORCHESTRATION_POOL_MAX_SIZE:-100}
-  idleTime: ${ORCHESTRATION_POOL_IDLE_TIME:-500}
+  idleTime: ${ORCHESTRATION_POOL_IDLE_TIME:-60}
   timeUnit: ${ORCHESTRATION_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-20}
   maxPoolSize: ${PMS_SDK_EXECUTION_POOL_MAX_SIZE:-100}
-  idleTime: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME:-120}
+  idleTime: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME:-60}
   timeUnit: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 pmsSdkOrchestrationEventPoolConfig:
   corePoolSize: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_CORE_SIZE:-10}
   maxPoolSize: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_MAX_SIZE:-50}
-  idleTime: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME:-120}
+  idleTime: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME:-60}
   timeUnit: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 podCleanUpThreadPoolConfig:
@@ -335,17 +335,13 @@ orchestrationStepConfig:
     logStreamingContainerStepBaseUrl: ${LOG_STREAMING_CONTAINER_STEP_BASE_URL:-http://localhost:8079}
     pluginConfig:
       sscaOrchestrationConfig:
-        image: ${SSCA_ORCHESTRATION_IMAGE:-harness/ssca-plugin:0.3.0}
-        entrypoint:
-          - /bin/ssca-plugin
+        image: ${SSCA_ORCHESTRATION_IMAGE:-harness/ssca-plugin:0.11.0}
       sscaEnforcementConfig:
-        image: ${SSCA_ENFORCEMENT_IMAGE:-harness/ssca-plugin:0.3.0}
-        entrypoint:
-          - /bin/ssca-plugin
+        image: ${SSCA_ENFORCEMENT_IMAGE:-harness/ssca-plugin:0.11.0}
     #Todo: Move to config Management Service
     moduleToSupportedSteps:
       cd: [ "DownloadManifests", "AwsSamBuild", "AwsSamDeploy", "ServerlessAwsLambdaPrepareRollbackV2", "ServerlessAwsLambdaDeployV2", "ServerlessAwsLambdaPackageV2", "AwsCdkBootstrap", "AwsCdkSynth", "AwsCdkDiff", "ServerlessAwsLambdaRollbackV2", "AwsCdkDeploy", "AwsCdkDestroy", "AwsCdkRollback"]
-      ci: [ "Background", "background", "GitClone", "Run", "Plugin", "Action"]
+      ci: [ "Background", "background", "GitClone", "Run", "Plugin", "Action", "SlsaVerification"]
 
 
 shouldDeployWithGitSync: true
@@ -450,6 +446,8 @@ pipelineEventConsumersConfig:
     threads: 1
   triggerExecutionEvent:
     threads: ${TRIGGER_EXECUTION_EVENT_CONSUMER_THREAD_COUNT:-1}
+  asyncFilterCreationEvent:
+    threads: ${ASYNC_FILTER_CREATION_CONSUMER_THREAD_COUNT:-1}
 
 delegatePollingConfig:
   syncDelay: 2000
@@ -611,7 +609,7 @@ eventsFrameworkSnapshotDebezium:
       CATrustStorePath: "/tmp/ca_trust_store"
       CATrustStorePassword: ""
 
-disableFreezeNotificationTemplate: ${DISABLE_FREEZE_NOTIFY_TEMPLATE:-false}
+disableFreezeNotificationTemplate: ${DISABLE_FREEZE_NOTIFY_TEMPLATE:-true}
 
 cfClientConfig:
   apiKey: ""
@@ -665,3 +663,11 @@ webhookEventHsqsDequeueConfig:
   threadSleepTimeInMillis: ${WEBHOOK_EVENT_DEQUE_THREAD_SLEEP_TIME_IN_MILLIS:-30}
 
 useQueueServiceForWebhookTriggers: ${USE_QUEUE_SERVICE_FOR_WEBHOOK_TRIGGERS:-false}
+
+graphConsumerSleepIntervalMs: ${GRAPH_CONSUMER_SLEEP_INTERVAL_MS:-0}
+
+asyncFilterCreationConsumerSleepIntervalMs: ${ASYNC_FILTER_CREATION_CONSUMER_SLEEP_INTERVAL_MS:-5000}
+
+streamPerServiceConfiguration: ${PIE_STREAM_PER_SERVICE:- false}
+
+publishAdviserEventForCustomAdvisers: ${PUBLISH_ADVISER_EVENT_FOR_CUSTOM_ADVISERS:-false}

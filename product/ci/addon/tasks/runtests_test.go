@@ -152,7 +152,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		return types.SelectTestsResp{
 			SelectAll: false,
 			Tests:     []types.RunnableTest{t1, t2}}, nil
@@ -169,6 +169,7 @@ instrPackages: p1, p2, p3`
 	want := `set -xe
 export TMPDIR=/test/tmp
 export HARNESS_JAVA_AGENT=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini
+
 echo x
 mvn -am -DharnessArgLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini -DargLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini clean test
 echo y`
@@ -226,7 +227,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		return types.SelectTestsResp{
 			SelectAll: true,
 			Tests:     []types.RunnableTest{t1, t2}}, nil
@@ -243,6 +244,7 @@ instrPackages: p1, p2, p3`
 	want := `set -xe
 export TMPDIR=/test/tmp
 export HARNESS_JAVA_AGENT=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini
+
 echo x
 mvn -am -DharnessArgLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini -DargLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini clean test
 echo y`
@@ -297,7 +299,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		return types.SelectTestsResp{}, errors.New("error in selection")
 	}
 
@@ -312,6 +314,7 @@ instrPackages: p1, p2, p3`
 	want := `set -xe
 export TMPDIR=/test/tmp
 export HARNESS_JAVA_AGENT=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini
+
 echo x
 mvn -am -DharnessArgLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini -DargLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini clean test
 echo y`
@@ -365,7 +368,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		return types.SelectTestsResp{}, nil
 	}
 
@@ -380,6 +383,7 @@ instrPackages: p1, p2, p3`
 	want := `set -xe
 export TMPDIR=/test/tmp
 export HARNESS_JAVA_AGENT=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini
+
 echo x
 mvn clean test
 echo y`
@@ -388,7 +392,6 @@ echo y`
 	assert.Equal(t, r.runOnlySelectedTests, false) // Since it's a manual execution
 	assert.Equal(t, got, want)
 }
-
 
 func TestGetCmd_PushTrigger_CommitInfoError(t *testing.T) {
 	ctrl, ctx := gomock.WithContext(context.Background(), t)
@@ -471,7 +474,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		called++
 		return types.SelectTestsResp{}, nil
 	}
@@ -479,6 +482,7 @@ instrPackages: p1, p2, p3`
 	want := `set -xe
 export TMPDIR=/test/tmp
 export HARNESS_JAVA_AGENT=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini
+
 echo x
 mvn -am -DharnessArgLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini -DargLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini clean test
 echo y`
@@ -570,7 +574,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		called++
 		return types.SelectTestsResp{}, nil
 	}
@@ -578,6 +582,7 @@ instrPackages: p1, p2, p3`
 	want := `set -xe
 export TMPDIR=/test/tmp
 export HARNESS_JAVA_AGENT=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini
+
 echo x
 mvn -am -DharnessArgLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini -DargLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini clean test
 echo y`
@@ -669,7 +674,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		called++
 		return types.SelectTestsResp{}, nil
 	}
@@ -677,6 +682,7 @@ instrPackages: p1, p2, p3`
 	want := `set -xe
 export TMPDIR=/test/tmp
 export HARNESS_JAVA_AGENT=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini
+
 echo x
 mvn -am -DharnessArgLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini -DargLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini clean test
 echo y`
@@ -768,7 +774,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		called++
 		return types.SelectTestsResp{}, nil
 	}
@@ -776,16 +782,16 @@ instrPackages: p1, p2, p3`
 	want := `set -xe
 export TMPDIR=/test/tmp
 export HARNESS_JAVA_AGENT=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini
+
 echo x
-mvn -am -DharnessArgLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini -DargLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini clean test
+echo "Skipping test run, received no tests to execute"
 echo y`
 	got, err := r.getCmd(ctx, "/tmp/addon/agent", outputFile)
 	assert.Nil(t, err)
-	assert.Equal(t, r.runOnlySelectedTests, false) // Since there was an error in execution
+	assert.Equal(t, r.runOnlySelectedTests, true)
 	assert.Equal(t, got, want)
-	assert.Equal(t, called, 3)
+	assert.Equal(t, called, 4)
 }
-
 
 func TestGetCmd_PushTrigger_SelectAll(t *testing.T) {
 	ctrl, ctx := gomock.WithContext(context.Background(), t)
@@ -872,7 +878,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		called++
 		return types.SelectTestsResp{
 			SelectAll: true,
@@ -882,6 +888,7 @@ instrPackages: p1, p2, p3`
 	want := `set -xe
 export TMPDIR=/test/tmp
 export HARNESS_JAVA_AGENT=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini
+
 echo x
 mvn -am -DharnessArgLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini -DargLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini clean test
 echo y`
@@ -1302,7 +1309,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		return types.SelectTestsResp{}, nil
 	}
 
@@ -1469,7 +1476,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		return types.SelectTestsResp{
 			SelectAll: false,
 			Tests:     []types.RunnableTest{t1, t2}}, nil
@@ -1591,7 +1598,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		return types.SelectTestsResp{
 			SelectAll: false,
 			Tests:     []types.RunnableTest{t1, t2}}, nil
@@ -1710,7 +1717,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		return types.SelectTestsResp{
 			SelectAll: false,
 			Tests:     []types.RunnableTest{t1, t2}}, nil
@@ -1825,7 +1832,7 @@ instrPackages: p1, p2, p3`
 	defer func() {
 		selectTestsFn = oldSelect
 	}()
-	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem) (types.SelectTestsResp, error) {
+	selectTestsFn = func(ctx context.Context, f []types.File, runSelected bool, id string, log *zap.SugaredLogger, fs filesystem.FileSystem, language string, testGlobs []string) (types.SelectTestsResp, error) {
 		return types.SelectTestsResp{
 			SelectAll: false,
 			Tests:     []types.RunnableTest{t1, t2}}, nil

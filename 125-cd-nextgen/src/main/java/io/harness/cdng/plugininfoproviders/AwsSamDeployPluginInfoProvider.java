@@ -91,14 +91,14 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
     AwsSamDeployStepInfo awsSamDeployStepInfo = (AwsSamDeployStepInfo) cdAbstractStepNode.getStepSpecType();
 
     PluginDetails.Builder pluginDetailsBuilder = PluginInfoProviderHelper.buildPluginDetails(
-        awsSamDeployStepInfo.getResources(), awsSamDeployStepInfo.getRunAsUser(), usedPorts);
+        awsSamDeployStepInfo.getResources(), awsSamDeployStepInfo.getRunAsUser(), usedPorts, true);
 
     ImageDetails imageDetails = null;
 
     if (ParameterField.isNotNull(awsSamDeployStepInfo.getConnectorRef())
         || isNotEmpty(awsSamDeployStepInfo.getConnectorRef().getValue())) {
       imageDetails = PluginInfoProviderHelper.getImageDetails(awsSamDeployStepInfo.getConnectorRef(),
-          awsSamDeployStepInfo.getImage(), awsSamDeployStepInfo.getImagePullPolicy());
+          awsSamStepHelper.getImage(awsSamDeployStepInfo), awsSamDeployStepInfo.getImagePullPolicy());
 
     } else {
       // todo: If image is not provided by user, default to an harness provided image
@@ -141,6 +141,8 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
     AwsSamInfrastructureOutcome awsSamInfrastructureOutcome = (AwsSamInfrastructureOutcome) infrastructureOutcome;
 
     String awsConnectorRef = awsSamInfrastructureOutcome.getConnectorRef();
+    String crossAccountRoleArn = null;
+    String externalId = null;
 
     String awsAccessKey = null;
     String awsSecretKey = null;
@@ -174,6 +176,11 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
         awsSecretKey = NGVariablesUtils.fetchSecretExpressionWithExpressionToken(
             awsManualConfigSpecDTO.getSecretKeyRef().toSecretRefStringValue(), ambiance.getExpressionFunctorToken());
       }
+
+      if (awsCredentialDTO.getCrossAccountAccess() != null) {
+        crossAccountRoleArn = awsCredentialDTO.getCrossAccountAccess().getCrossAccountRoleArn();
+        externalId = awsCredentialDTO.getCrossAccountAccess().getExternalId();
+      }
     }
 
     HashMap<String, String> samDeployEnvironmentVariablesMap = new HashMap<>();
@@ -205,6 +212,14 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
 
     if (awsSecretKey != null) {
       samDeployEnvironmentVariablesMap.put("PLUGIN_AWS_SECRET_KEY", awsSecretKey);
+    }
+
+    if (crossAccountRoleArn != null) {
+      samDeployEnvironmentVariablesMap.put("PLUGIN_AWS_ROLE_ARN", crossAccountRoleArn);
+    }
+
+    if (externalId != null) {
+      samDeployEnvironmentVariablesMap.put("PLUGIN_AWS_STS_EXTERNAL_ID", externalId);
     }
 
     if (region != null) {

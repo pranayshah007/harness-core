@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngmigration.service.step.cv;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.MigratorUtility.checkIfStringIsValidUrl;
@@ -15,6 +14,9 @@ import static io.harness.ngmigration.utils.NGMigrationConstants.SECRET_FORMAT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.ConnectorDTO;
 import io.harness.delegate.beans.connector.newrelic.NewRelicConnectorDTO;
 import io.harness.http.HttpHeaderConfig;
@@ -44,6 +46,7 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 public class NewRelicDeploymentMarkerStepMapperImpl extends StepMapper {
   private static final String URL_FORMAT = "%sv2/applications/%s/deployments.json";

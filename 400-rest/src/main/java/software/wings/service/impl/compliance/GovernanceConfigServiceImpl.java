@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl.compliance;
-
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -14,9 +13,12 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.EnvironmentType;
@@ -93,6 +95,8 @@ import org.apache.commons.collections4.ListUtils;
 /**
  * @author rktummala on 02/04/19
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 @ValidateOnExecution
 @Singleton
@@ -704,7 +708,9 @@ public class GovernanceConfigServiceImpl implements GovernanceConfigService {
 
   private void validateAppEnvFilterOneAppWhenServiceFilterTypeIsCustom(List<ApplicationFilter> appSelections) {
     if (appSelections.stream()
-            .filter(selection -> selection.getFilterType() == BlackoutWindowFilterType.CUSTOM)
+            .filter(selection
+                -> selection.getFilterType() == BlackoutWindowFilterType.CUSTOM
+                    && Objects.nonNull(selection.getServiceSelection()))
             .anyMatch(appSelection
                 -> appSelection.getServiceSelection().getFilterType() == ServiceFilterType.CUSTOM
                     && ((CustomAppFilter) appSelection).getApps().size() != 1)) {

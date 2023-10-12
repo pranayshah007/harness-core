@@ -37,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @PublicApi
 @Slf4j
 public class MetricResource {
-  @Inject private HarnessMetricRegistry metricRegistry;
+  @Inject private HarnessMetricRegistry harnessMetricRegistry;
 
   @GET
   @Timed
@@ -46,12 +46,12 @@ public class MetricResource {
   public String get() throws IOException {
     final StringWriter writer = new StringWriter();
     Set<String> metrics = new HashSet<>();
-    CVConstants.LEARNING_ENGINE_TASKS_METRIC_LIST.forEach(metricName -> {
+    CVConstants.CUSTOM_METRIC_LIST.forEach(metricName -> {
       metrics.add(metricName);
       metrics.add(ENVIRONMENT + "_" + metricName);
     });
     try {
-      TextFormat.write004(writer, metricRegistry.getMetric(metrics));
+      TextFormat.write004(writer, harnessMetricRegistry.getMetric());
       writer.flush();
     } finally {
       writer.close();

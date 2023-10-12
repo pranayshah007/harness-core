@@ -113,15 +113,24 @@ public interface K8sDeployRequest extends TaskParameters, ExecutionCapabilityDem
           case OCI_HELM:
             OciHelmStoreDelegateConfig ociHelmStoreConfig =
                 (OciHelmStoreDelegateConfig) helManifestConfig.getStoreDelegateConfig();
-            OciHelmConnectorDTO ociHelmConnector = ociHelmStoreConfig.getOciHelmConnector();
-            capabilities.add(HelmInstallationCapability.builder()
-                                 .version(HelmVersion.V380)
-                                 .criteria("OCI_HELM_REPO: " + ociHelmConnector.getHelmRepoUrl())
-                                 .build());
+            String criteria = null;
+            if (ociHelmStoreConfig.getAwsConnectorDTO() != null) {
+              criteria = ociHelmStoreConfig.getRepoName() + ":" + ociHelmStoreConfig.getRegion();
+              capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
+                  ociHelmStoreConfig.getAwsConnectorDTO(), maskingEvaluator));
+            } else if (ociHelmStoreConfig.getOciHelmConnector() != null) {
+              criteria = ociHelmStoreConfig.getRepoUrl();
+              OciHelmConnectorDTO ociHelmConnector = ociHelmStoreConfig.getOciHelmConnector();
+              populateDelegateSelectorCapability(capabilities, ociHelmConnector.getDelegateSelectors());
+            }
+            if (isNotEmpty(criteria)) {
+              capabilities.add(HelmInstallationCapability.builder()
+                                   .version(HelmVersion.V380)
+                                   .criteria("OCI_HELM_REPO: " + criteria)
+                                   .build());
+            }
             capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
                 ociHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));
-            populateDelegateSelectorCapability(
-                capabilities, ociHelmStoreConfig.getOciHelmConnector().getDelegateSelectors());
             break;
 
           case S3_HELM:

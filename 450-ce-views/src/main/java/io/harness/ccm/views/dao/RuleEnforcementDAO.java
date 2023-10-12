@@ -7,9 +7,13 @@
 
 package io.harness.ccm.views.dao;
 
+import static io.harness.beans.FeatureName.CCM_ENABLE_AZURE_CLOUD_ASSET_GOVERNANCE_UI;
+
 import io.harness.ccm.views.entities.RuleEnforcement;
 import io.harness.ccm.views.entities.RuleEnforcement.RuleEnforcementId;
+import io.harness.ccm.views.helper.RuleCloudProviderType;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
@@ -28,6 +32,7 @@ import org.springframework.data.mongodb.core.query.Update;
 public class RuleEnforcementDAO {
   @Inject private HPersistence hPersistence;
   @Inject private MongoTemplate mongoTemplate;
+  @Inject private FeatureFlagService featureFlagService;
 
   public boolean save(RuleEnforcement ruleEnforcement) {
     RuleEnforcement savedRuleEnforcement = mongoTemplate.save(ruleEnforcement);
@@ -62,7 +67,8 @@ public class RuleEnforcementDAO {
     RuleEnforcement existingRuleEnforcement =
         fetchById(ruleEnforcement.getAccountId(), ruleEnforcement.getUuid(), false);
     if (ruleEnforcement.getName() != null) {
-      if (fetchByName(ruleEnforcement.getAccountId(), ruleEnforcement.getName(), true) != null) {
+      if (!checkRuleEnforcementNameIsUnique(
+              ruleEnforcement.getUuid(), ruleEnforcement.getAccountId(), ruleEnforcement.getName())) {
         throw new InvalidRequestException("Rule Enforcement with the given name already exits");
       }
       existingRuleEnforcement.setName(ruleEnforcement.getName());
@@ -116,6 +122,23 @@ public class RuleEnforcementDAO {
     }
   }
 
+  public boolean checkRuleEnforcementNameIsUnique(String ruleEnforcementId, String accountId, String name) {
+    List<RuleEnforcement> ruleEnforcements = hPersistence.createQuery(RuleEnforcement.class)
+                                                 .field(RuleEnforcementId.accountId)
+                                                 .equal(accountId)
+                                                 .field(RuleEnforcementId.name)
+                                                 .equal(name)
+                                                 .asList();
+    if (ruleEnforcements == null) {
+      return true;
+    }
+    if (ruleEnforcements.size() == 1) {
+      RuleEnforcement ruleEnforcement = ruleEnforcements.get(0);
+      return ruleEnforcement.getUuid().equals(ruleEnforcementId);
+    }
+    return false;
+  }
+
   public RuleEnforcement fetchById(String accountId, String uuid, boolean create) {
     try {
       return hPersistence.createQuery(RuleEnforcement.class)
@@ -135,11 +158,12 @@ public class RuleEnforcementDAO {
   }
 
   public List<RuleEnforcement> list(String accountId) {
-    return hPersistence.createQuery(RuleEnforcement.class)
-        .field(RuleEnforcementId.accountId)
-        .equal(accountId)
-        .order(Sort.ascending(RuleEnforcementId.name))
-        .asList();
+    Query<RuleEnforcement> query =
+        hPersistence.createQuery(RuleEnforcement.class).field(RuleEnforcementId.accountId).equal(accountId);
+    if (featureFlagService.isNotEnabled(CCM_ENABLE_AZURE_CLOUD_ASSET_GOVERNANCE_UI, accountId)) {
+      query.field(RuleEnforcementId.cloudProvider).notEqual(RuleCloudProviderType.AZURE);
+    }
+    return query.order(Sort.ascending(RuleEnforcementId.name)).asList();
   }
 
   public List<RuleEnforcement> ruleEnforcement(String accountId, List<String> ruleIds) {
@@ -166,6 +190,15 @@ public class RuleEnforcementDAO {
         .equal(accountId)
         .field(RuleEnforcementId.uuid)
         .in(ruleEnforcementId)
+        .asList();
+  }
+
+  public List<RuleEnforcement> listEnforcementsWithGivenRule(String accountId, String ruleId) {
+    return hPersistence.createQuery(RuleEnforcement.class)
+        .field(RuleEnforcementId.accountId)
+        .equal(accountId)
+        .field(RuleEnforcementId.ruleIds)
+        .contains(ruleId)
         .asList();
   }
 

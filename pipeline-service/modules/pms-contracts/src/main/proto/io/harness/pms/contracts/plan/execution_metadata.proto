@@ -18,24 +18,32 @@ message ExecutionMetadata {
   int32 runSequence = 1;
   ExecutionTriggerInfo triggerInfo = 2;
   string pipelineIdentifier = 4;
+  // Not used anymore so please don't use it during pipeline execution and only in planCreation.
   string executionUuid = 6;
   ExecutionPrincipalInfo principalInfo = 8;
   bytes gitSyncBranchContext = 10;
   string moduleType = 11;
-  RetryExecutionInfo retryInfo = 12;
+
+  // Not used anymore so please don't use it.
+  RetryExecutionInfo retryInfo = 12 [deprecated = true];
+
   bool isNotificationConfigured = 13;
   PipelineStoreType pipelineStoreType = 14;
   string pipelineConnectorRef = 15;
   PipelineStageInfo pipelineStageInfo = 16;
+  // Original entity version
   string harnessVersion = 17;
   bool isDebug = 18;
   ExecutionMode executionMode = 19;
-  repeated PostExecutionRollbackInfo postExecutionRollbackInfo = 21;
+  repeated PostExecutionRollbackInfo postExecutionRollbackInfo = 21 [deprecated = true];
   string originalPlanExecutionIdForRollbackMode = 22;
   // storing details for all the PMS settings used as per need in execution flow
   map<string, string> settingToValueMap = 23;
   // storing featureFlags to value map used as per need in execution flow
   map<string, bool> featureFlagToValueMap = 24;
+
+  // Processed/Resolved yaml version
+  string processedYamlVersion = 25;
 }
 
 message RetryExecutionInfo {

@@ -6,14 +6,16 @@
  */
 
 package io.harness.service.instance;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.dtos.InstanceDTO;
 import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceKeys;
@@ -45,6 +47,7 @@ import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @OwnedBy(HarnessTeam.DX)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -199,6 +202,13 @@ public class InstanceServiceImpl implements InstanceService {
         accountIdentifier, instanceInfoNamespace, instanceInfoPodName));
   }
 
+  @Override
+  public List<InstanceDTO> getActiveInstancesByInstanceInfoAndReleaseName(
+      String accountIdentifier, String instanceInfoNamespace, String releaseName) {
+    return InstanceMapper.toDTO(instanceRepository.getActiveInstancesByInstanceNamespaceAndReleaseName(
+        accountIdentifier, instanceInfoNamespace, releaseName));
+  }
+
   /*
     Returns aggregated result containing unique environment and build ids with instance count
   */
@@ -227,9 +237,11 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public AggregationResults<ActiveServiceInstanceInfoWithEnvType> getActiveServiceInstanceInfoWithEnvType(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier,
-      String serviceIdentifier, String displayName, boolean isGitOps, boolean filterOnArtifact) {
+      String serviceIdentifier, String displayName, boolean isGitOps, boolean filterOnArtifact, String chartVersion,
+      boolean filterOnChartVersion) {
     return instanceRepository.getActiveServiceInstanceInfoWithEnvType(accountIdentifier, orgIdentifier,
-        projectIdentifier, envIdentifier, serviceIdentifier, displayName, isGitOps, filterOnArtifact);
+        projectIdentifier, envIdentifier, serviceIdentifier, displayName, isGitOps, filterOnArtifact, chartVersion,
+        filterOnChartVersion);
   }
   @Override
   public AggregationResults<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
@@ -267,9 +279,9 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public AggregationResults<ArtifactDeploymentDetailModel> getLastDeployedInstance(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceIdentifier, boolean isEnvironmentCard,
-      boolean isGitOps) {
-    return instanceRepository.getLastDeployedInstance(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, isEnvironmentCard, isGitOps);
+      boolean isGitOps, boolean isChartVersionCard) {
+    return instanceRepository.getLastDeployedInstance(accountIdentifier, orgIdentifier, projectIdentifier,
+        serviceIdentifier, isEnvironmentCard, isGitOps, isChartVersionCard);
   }
 
   @Override
@@ -283,9 +295,11 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public AggregationResults<InstanceGroupedByPipelineExecution> getActiveInstanceGroupedByPipelineExecution(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, String envId,
-      EnvironmentType environmentType, String infraId, String clusterIdentifier, String displayName) {
+      EnvironmentType environmentType, String infraId, String clusterIdentifier, String displayName,
+      String chartVersion, boolean filterByChartVersion) {
     return instanceRepository.getActiveInstanceGroupedByPipelineExecution(accountIdentifier, orgIdentifier,
-        projectIdentifier, serviceId, envId, environmentType, infraId, clusterIdentifier, displayName);
+        projectIdentifier, serviceId, envId, environmentType, infraId, clusterIdentifier, displayName, chartVersion,
+        filterByChartVersion);
   }
 
   /*

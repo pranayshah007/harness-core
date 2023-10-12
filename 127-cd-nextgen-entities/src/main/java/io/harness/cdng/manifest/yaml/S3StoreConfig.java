@@ -8,6 +8,7 @@
 package io.harness.cdng.manifest.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
@@ -15,8 +16,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.manifest.yaml.summary.ManifestStoreInfo.ManifestStoreInfoBuilder;
+import io.harness.cdng.visitor.helpers.SecretConnectorRefExtractorHelper;
 import io.harness.common.ParameterFieldHelper;
-import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -46,7 +48,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @EqualsAndHashCode(callSuper = false)
 @JsonTypeName(ManifestStoreType.S3)
-@SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
+@SimpleVisitorHelper(helperClass = SecretConnectorRefExtractorHelper.class)
 @TypeAlias("s3Store")
 @RecasterAlias("io.harness.cdng.manifest.yaml.S3StoreConfig")
 @FieldNameConstants(innerTypeName = "S3StoreConfigKeys")
@@ -151,5 +153,12 @@ public class S3StoreConfig implements FileStorageStoreConfig, Visitable, WithCon
       invalidParameters.add(S3StoreConfigKeys.folderPath);
     }
     return invalidParameters;
+  }
+
+  @Override
+  public void populateManifestStoreInfo(ManifestStoreInfoBuilder manifestStoreInfoBuilder) {
+    manifestStoreInfoBuilder.bucketName(getParameterFieldValue(this.getBucketName()));
+    manifestStoreInfoBuilder.region(getParameterFieldValue(this.getRegion()));
+    manifestStoreInfoBuilder.folderPath(getParameterFieldValue(this.getFolderPath()));
   }
 }

@@ -6,17 +6,20 @@
  */
 
 package io.harness.steps.barriers;
-
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.FeatureName;
 import io.harness.distribution.barrier.Barrier;
 import io.harness.engine.observers.OrchestrationStartObserver;
 import io.harness.engine.observers.beans.OrchestrationStartInfo;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.steps.barriers.beans.BarrierExecutionInstance;
 import io.harness.steps.barriers.beans.BarrierPositionInfo;
 import io.harness.steps.barriers.beans.BarrierSetupInfo;
@@ -29,6 +32,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class BarrierInitializer implements OrchestrationStartObserver {
@@ -36,15 +40,19 @@ public class BarrierInitializer implements OrchestrationStartObserver {
 
   @Override
   public void onStart(OrchestrationStartInfo orchestrationStartInfo) {
+    if (AmbianceUtils.checkIfFeatureFlagEnabled(
+            orchestrationStartInfo.getAmbiance(), FeatureName.CDS_NG_BARRIER_STEPS_WITHIN_LOOPING_STRATEGIES.name())) {
+      return;
+    }
     String version = AmbianceUtils.getPipelineVersion(orchestrationStartInfo.getAmbiance());
     String planExecutionId = orchestrationStartInfo.getPlanExecutionId();
     PlanExecutionMetadata planExecutionMetadata = orchestrationStartInfo.getPlanExecutionMetadata();
     try {
       switch (version) {
-        case PipelineVersion.V1:
+        case HarnessYamlVersion.V1:
           // TODO: Barrier support
           break;
-        case PipelineVersion.V0:
+        case HarnessYamlVersion.V0:
           Map<String, BarrierSetupInfo> barrierIdentifierSetupInfoMap =
               barrierService.getBarrierSetupInfoList(planExecutionMetadata.getProcessedYaml())
                   .stream()

@@ -33,6 +33,7 @@ import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -103,6 +104,7 @@ import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.kinds.KustomizePatchesManifest;
 import io.harness.cdng.manifest.yaml.kinds.ValuesManifest;
 import io.harness.cdng.manifest.yaml.kinds.kustomize.OverlayConfiguration;
+import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigType;
 import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigWrapper;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
@@ -111,6 +113,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
+import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
@@ -194,6 +197,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.refobjects.RefType;
@@ -283,11 +287,17 @@ public class K8sStepHelperTest extends CDNGTestBase {
   @Spy @InjectMocks private K8sStepHelper k8sStepHelper;
 
   @Mock private LogCallback mockLogCallback;
+
   private final Ambiance ambiance = Ambiance.newBuilder()
                                         .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
                                         .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
                                         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
+                                        .setMetadata(ExecutionMetadata.newBuilder()
+                                                         .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                                         .setPipelineIdentifier("pipelineIdentifier")
+                                                         .build())
                                         .build();
+
   private static final String SOME_URL = "https://url.com/owner/repo.git";
 
   private final String ENCODED_REPO_NAME = "c26979e4-1d8c-344e-8181-45f484c57fe5";
@@ -317,7 +327,13 @@ public class K8sStepHelperTest extends CDNGTestBase {
     setupAbstractions.put(SetupAbstractionKeys.orgIdentifier, "org1");
     setupAbstractions.put(SetupAbstractionKeys.projectIdentifier, "project1");
 
-    return Ambiance.newBuilder().putAllSetupAbstractions(setupAbstractions).build();
+    return Ambiance.newBuilder()
+        .putAllSetupAbstractions(setupAbstractions)
+        .setMetadata(ExecutionMetadata.newBuilder()
+                         .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                         .setPipelineIdentifier("pipelineIdentifier")
+                         .build())
+        .build();
   }
 
   @Test
@@ -1208,7 +1224,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
         .isEqualTo("Git Fetch Files Task");
     assertThat(taskChainResponse.getTaskRequest().getDelegateTaskRequest().getLogKeys(0))
         .isEqualTo(
-            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:/runSequence:0-commandUnit:Fetch Files");
+            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:pipelineIdentifier/runSequence:0-commandUnit:Fetch Files");
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
     K8sStepPassThroughData k8sStepPassThroughData = (K8sStepPassThroughData) taskChainResponse.getPassThroughData();
@@ -2324,6 +2340,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
                     .spec(OciHelmChartStoreGenericConfig.builder()
                               .connectorRef(ParameterField.createValueField("oci-helm-connector"))
                               .build())
+                    .type(OciHelmChartStoreConfigType.GENERIC)
                     .build()))
             .build();
 
@@ -3964,7 +3981,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
         .isEqualTo("Git Fetch Files Task");
     assertThat(taskChainResponse.getTaskRequest().getDelegateTaskRequest().getLogKeys(0))
         .isEqualTo(
-            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:/runSequence:0-commandUnit:Fetch Files");
+            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:pipelineIdentifier/runSequence:0-commandUnit:Fetch Files");
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
     K8sStepPassThroughData k8sStepPassThroughData = (K8sStepPassThroughData) taskChainResponse.getPassThroughData();
@@ -4148,7 +4165,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
         .isEqualTo(TaskType.CUSTOM_MANIFEST_VALUES_FETCH_TASK_NG.getDisplayName());
     assertThat(taskChainResponse.getTaskRequest().getDelegateTaskRequest().getLogKeys(0))
         .isEqualTo(
-            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:/runSequence:0-commandUnit:Fetch Files");
+            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:pipelineIdentifier/runSequence:0-commandUnit:Fetch Files");
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
     K8sStepPassThroughData k8sStepPassThroughData = (K8sStepPassThroughData) taskChainResponse.getPassThroughData();
@@ -4429,7 +4446,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
         .isEqualTo("Git Fetch Files Task");
     assertThat(taskChainResponse.getTaskRequest().getDelegateTaskRequest().getLogKeys(0))
         .isEqualTo(
-            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:/runSequence:0-commandUnit:Fetch Files");
+            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:pipelineIdentifier/runSequence:0-commandUnit:Fetch Files");
     assertThat(taskChainResponse.getPassThroughData()).isNotNull();
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
     K8sStepPassThroughData k8sStepPassThroughData = (K8sStepPassThroughData) taskChainResponse.getPassThroughData();
@@ -4804,11 +4821,25 @@ public class K8sStepHelperTest extends CDNGTestBase {
   }
 
   @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testTaskTypeOciEcrConfig() {
+    K8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
+    ManifestDelegateConfig manifestDelegateConfig =
+        HelmChartManifestDelegateConfig.builder()
+            .storeDelegateConfig(
+                OciHelmStoreDelegateConfig.builder().awsConnectorDTO(AwsConnectorDTO.builder().build()).build())
+            .build();
+    TaskType expectedTaskType = TaskType.K8S_COMMAND_TASK_NG_OCI_ECR_CONFIG;
+    checkTaskType(k8sInfraDelegateConfig, expectedTaskType, manifestDelegateConfig);
+  }
+
+  @Test
   @Owner(developers = ABHINAV2)
   @Category(UnitTests.class)
   public void testK8sTaskTypeRancher() {
     K8sInfraDelegateConfig k8sInfraDelegateConfig = RancherK8sInfraDelegateConfig.builder().build();
-    checkTaskType(k8sInfraDelegateConfig, TaskType.K8S_COMMAND_TASK_NG_RANCHER);
+    checkTaskType(k8sInfraDelegateConfig, TaskType.K8S_COMMAND_TASK_NG_RANCHER, null);
   }
 
   @Test
@@ -4817,7 +4848,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
   public void testK8sTaskTypeHooks() {
     K8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
     doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any(FeatureName.class));
-    checkTaskType(k8sInfraDelegateConfig, TaskType.K8S_COMMAND_TASK_NG_V2);
+    checkTaskType(k8sInfraDelegateConfig, TaskType.K8S_COMMAND_TASK_NG_V2, null);
   }
 
   @Test
@@ -4825,16 +4856,19 @@ public class K8sStepHelperTest extends CDNGTestBase {
   @Category(UnitTests.class)
   public void testK8sTaskType() {
     K8sInfraDelegateConfig k8sInfraDelegateConfig = DirectK8sInfraDelegateConfig.builder().build();
-    checkTaskType(k8sInfraDelegateConfig, TaskType.K8S_COMMAND_TASK_NG);
+    checkTaskType(k8sInfraDelegateConfig, TaskType.K8S_COMMAND_TASK_NG, null);
   }
 
-  private void checkTaskType(K8sInfraDelegateConfig k8sInfraDelegateConfig, TaskType expectedTaskType) {
+  private void checkTaskType(K8sInfraDelegateConfig k8sInfraDelegateConfig, TaskType expectedTaskType,
+      ManifestDelegateConfig manifestDelegateConfig) {
     try (MockedStatic<K8sTaskCapabilityHelper> mockK8s = mockStatic(K8sTaskCapabilityHelper.class);
-         MockedStatic<RancherTaskCapabilityHelper> mockRancher = mockStatic(RancherTaskCapabilityHelper.class)) {
+         MockedStatic<RancherTaskCapabilityHelper> mockRancher = mockStatic(RancherTaskCapabilityHelper.class);
+         MockedStatic<AwsCapabilityHelper> mockAws = mockStatic(AwsCapabilityHelper.class)) {
       mockK8s.when(() -> K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(any(), any(), anyBoolean()))
           .thenReturn(emptyList());
       mockRancher.when(() -> RancherTaskCapabilityHelper.fetchRequiredExecutionCapabilities(any(), any()))
           .thenReturn(emptyList());
+      mockAws.when(() -> AwsCapabilityHelper.fetchRequiredExecutionCapabilities(any(), any())).thenReturn(emptyList());
       StepElementParameters stepElementParameters = mock(StepElementParameters.class);
       K8sSpecParameters specParameters = mock(K8sSpecParameters.class);
       doReturn(specParameters).when(stepElementParameters).getSpec();
@@ -4843,6 +4877,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
       K8sDeployRequest k8sDeployRequest = K8sRollingDeployRequest.builder()
                                               .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
                                               .serviceHooks(List.of(hook))
+                                              .manifestDelegateConfig(manifestDelegateConfig)
                                               .build();
       ArgumentCaptor<TaskType> taskTypeArgumentCaptor = ArgumentCaptor.forClass(TaskType.class);
 

@@ -6,17 +6,23 @@
  */
 
 package io.harness.cdng.pipeline.beans;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.plancreator.steps.common.SpecParameters;
 
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Value
 @Builder
 @TypeAlias("deploymentStageStepParameters")
@@ -30,7 +36,7 @@ public class DeploymentStageStepParameters implements SpecParameters {
   }
 
   @Override
-  public SpecParameters getViewJsonObject() {
-    return DeploymentStageStepParameters.builder().build();
+  public List<String> stepInputsKeyExclude() {
+    return new LinkedList<>(Arrays.asList("specConfig"));
   }
 }

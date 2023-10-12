@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng;
+
 import static io.harness.swagger.SwaggerBundleConfigurationFactory.buildSwaggerBundleConfiguration;
 
 import static java.util.stream.Collectors.toSet;
@@ -37,15 +38,19 @@ import io.harness.hsqs.client.model.QueueServiceClientConfig;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.mongo.MongoConfig;
+import io.harness.ng.core.service.ServiceGitXThreadConfiguration;
+import io.harness.ng.support.client.CannyConfig;
 import io.harness.notification.NotificationClientConfiguration;
 import io.harness.opaclient.OpaServiceConfiguration;
 import io.harness.outbox.OutboxPollConfiguration;
 import io.harness.pms.redisConsumer.DebeziumConsumersConfig;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
+import io.harness.remote.CEAwsServiceEndpointConfig;
 import io.harness.remote.CEAwsSetupConfig;
 import io.harness.remote.CEAzureSetupConfig;
 import io.harness.remote.CEGcpSetupConfig;
+import io.harness.remote.CEProxyConfig;
 import io.harness.remote.NextGenConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.resourcegroupclient.remote.ResourceGroupClientConfig;
@@ -158,8 +163,11 @@ public class NextGenConfiguration extends Configuration {
   public static final String LDAP_PACKAGE = "io.harness.ldap.resource";
   public static final String CHAOS_PACKAGE = "io.harness.ng.chaos";
   public static final String SERVICE_DISCOVERY_PACKAGE = "io.harness.ng.servicediscovery";
+  public static final String SUPPORT_PACKAGE = "io.harness.ng.support.resource";
 
   public static final String IP_ALLOWLIST_PACKAGE = "io.harness.ipallowlist.resource";
+
+  public static final String K8S_RELEASE_DETAILS_PACKAGE = "io.harness.ng.core.releasedetails.resources";
   public static final String FAVORITES_PACKAGE = "io.harness.favorites.remote";
   public static final String EULA_PACKAGE = "io.harness.eula.resource";
   public static final String SETTINGS_RESOURCE_PACKAGE = "io.harness.ngsettings.remote";
@@ -175,6 +183,9 @@ public class NextGenConfiguration extends Configuration {
   private static final String EOL_BANNER_RESOURCE_PACKAGE = "io.harness.ng.core.eolbanner.resources";
   private static final String TERRAFORM_RESOURCE_PACKAGE = "io.harness.ng.core.terraform.resources";
   private static final String TERRAGRUNT_RESOURCE_PACKAGE = "io.harness.ng.core.terragrunt.resources";
+  private static final String GITX_WEBHOOKS_PACKAGE = "io.harness.ng.gitxwebhook";
+
+  private static final String OIDC_CORE_RESOURCE = "io.harness.ng.core.oidc";
 
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
 
@@ -197,9 +208,11 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("auditClientConfig") private ServiceHttpClientConfig auditClientConfig;
   @JsonProperty("ceNextGenClientConfig") private ServiceHttpClientConfig ceNextGenClientConfig;
   @JsonProperty("cvngClientConfig") private ServiceHttpClientConfig cvngClientConfig;
+  @JsonProperty("stoCoreClientConfig") private ServiceHttpClientConfig stoCoreClientConfig;
   @JsonProperty("lightwingClientConfig") private ServiceHttpClientConfig lightwingClientConfig;
   @JsonProperty("templateServiceClientConfig") private ServiceHttpClientConfig templateServiceClientConfig;
   @JsonProperty("chaosServiceClientConfig") private ServiceHttpClientConfig chaosServiceClientConfig;
+  @JsonProperty("seiServiceClientConfig") private ServiceHttpClientConfig seiServiceClientConfig;
   @JsonProperty("serviceDiscoveryServiceClientConfig")
   private ServiceHttpClientConfig serviceDiscoveryServiceClientConfig;
   @JsonProperty("eventsFramework") @ConfigSecret private EventsFrameworkConfiguration eventsFrameworkConfiguration;
@@ -221,6 +234,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("logStreamingServiceConfig")
   @ConfigSecret
   private LogStreamingServiceConfiguration logStreamingServiceConfig;
+  @JsonProperty("cannyApiConfig") private CannyConfig cannyConfig;
   private OpaServiceConfiguration opaServerConfig;
   private String policyManagerSecret;
   private ServiceHttpClientConfig opaClientConfig;
@@ -270,14 +284,20 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
   @JsonProperty("gitService") private GitServiceConfiguration gitServiceConfiguration;
   @JsonProperty(value = "disableFreezeNotificationTemplate") private boolean disableFreezeNotificationTemplate;
+  @JsonProperty("dashboardExecutorServiceConfig") private ThreadPoolConfig dashboardExecutorServiceConfig;
   @JsonProperty(value = "pluginExecutionConfig") private PluginExecutionConfig pluginExecutionConfig;
   @JsonProperty("signupDomainDenylistConfig")
   private SignupDomainDenylistConfiguration signupDomainDenylistConfiguration;
   @JsonProperty("queueServiceClientConfig") private QueueServiceClientConfig queueServiceClientConfig;
   @JsonProperty("webhookBranchHookEventHsqsDequeueConfig")
   private HsqsDequeueConfig webhookBranchHookEventHsqsDequeueConfig;
+  @JsonProperty("gitXWebhookEventQueueConfig") private HsqsDequeueConfig gitXWebhookEventQueueConfig;
   @JsonProperty("webhookPushEventHsqsDequeueConfig") private HsqsDequeueConfig webhookPushEventHsqsDequeueConfig;
+  @JsonProperty("proxy") private CEProxyConfig ceProxyConfig;
+  @JsonProperty("awsServiceEndpointUrls") private CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig;
   private boolean useQueueServiceForWebhookTriggers;
+  @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;
+  @JsonProperty("serviceGitXThreadConfig") @ConfigSecret private ServiceGitXThreadConfiguration serviceGitXThreadConfig;
 
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database
   //  @JsonProperty("secondary-mongo") MongoConfig secondaryMongoConfig;
@@ -339,7 +359,9 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.EOL_BANNER_RESOURCE_PACKAGE, NextGenConfiguration.TERRAFORM_RESOURCE_PACKAGE,
                 NextGenConfiguration.IP_ALLOWLIST_PACKAGE, NextGenConfiguration.SERVICE_OVERRIDES_PACKAGE,
                 NextGenConfiguration.FAVORITES_PACKAGE, NextGenConfiguration.SERVICE_DISCOVERY_PACKAGE,
-                NextGenConfiguration.EULA_PACKAGE, NextGenConfiguration.TERRAGRUNT_RESOURCE_PACKAGE))
+                NextGenConfiguration.SUPPORT_PACKAGE, NextGenConfiguration.EULA_PACKAGE,
+                NextGenConfiguration.TERRAGRUNT_RESOURCE_PACKAGE, NextGenConfiguration.GITX_WEBHOOKS_PACKAGE,
+                NextGenConfiguration.K8S_RELEASE_DETAILS_PACKAGE, NextGenConfiguration.OIDC_CORE_RESOURCE))
         .collect(Collectors.toSet());
   }
 

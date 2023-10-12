@@ -6,11 +6,13 @@
  */
 
 package software.wings.service.intfc;
-
 import static io.harness.annotations.dev.HarnessModule._950_NG_AUTHENTICATION_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
@@ -43,6 +45,8 @@ import org.hibernate.validator.constraints.NotEmpty;
 /**
  * Created by rishi
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(PL)
 @TargetModule(_950_NG_AUTHENTICATION_SERVICE)
 public interface UserGroupService
@@ -59,16 +63,18 @@ public interface UserGroupService
   /**
    * List page response.
    *
-   * @param req the req
+   * @param accountId
+   * @param req            the req
    * @param searchTermType
    * @param searchTerm
+   * @param hitSecondary
    * @return the page response
    */
   /* (non-Javadoc)
    * @see software.wings.service.intfc.UserGroupService#list(software.wings.dl.PageRequest)
    */
-  PageResponse<UserGroup> list(@NotEmpty String accountId, PageRequest<UserGroup> req, boolean loadUsers,
-      UserGroupSearchTermType searchTermType, String searchTerm);
+  PageResponse<UserGroup> list(String accountId, PageRequest<UserGroup> req, boolean loadUsers,
+      UserGroupSearchTermType searchTermType, String searchTerm, boolean hitSecondary);
   long getCountOfUserGroups(String accountId);
   /**
    * list user groups by name.

@@ -76,7 +76,7 @@ redisLockConfig:
 
 enableAuth: false
 
-distributedLockImplementation: MONGO
+distributedLockImplementation: REDIS
 
 logServiceConfig:
   baseUrl: https://qa.harness.io/log-service/
@@ -94,6 +94,8 @@ iacmServiceConfig:
   baseUrl: http://localhost:8080
   externalUrl: http://localhost:8080
   globalToken: "551715ea-ca71-11ec-9d64-0242ac120002"
+  costEstimationToken: "551715ea-ca71-11ec-9d64-0242ac120002"
+  costEstimationAPIIUrl: "https://pricing.api.infracost.io"
 
 sscaServiceConfig:
   httpClientConfig:
@@ -266,20 +268,23 @@ ciExecutionServiceConfig:
         name: github.com/drone-plugins/drone-buildx-ecr@refs/tags/v1.0.1
       dockerBuildxGcrConfig:
         name: github.com/drone-plugins/drone-buildx-gcr@refs/tags/v1.0.1
-
+  gitnessConfig:
+    jwtSecret: ${GITNESS_JWT_SECRET:-"IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"}
+    httpClientConfig:
+      baseUrl: ${GITNESS_INTERNAL_URL:- http://localhost:3000}
 scmConnectionConfig:
   url: localhost:8091
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}
   maxPoolSize: ${PMS_SDK_EXECUTION_POOL_MAX_SIZE:-300}
-  idleTime: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME:-120}
+  idleTime: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME:-60}
   timeUnit: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 pmsSdkOrchestrationEventPoolConfig:
   corePoolSize: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_CORE_SIZE:-50}
   maxPoolSize: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_MAX_SIZE:-300}
-  idleTime: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME:-120}
+  idleTime: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME:-60}
   timeUnit: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 asyncDelegateResponseConsumption:
@@ -354,3 +359,5 @@ opaClientConfig:
   baseUrl: http://localhost:3000
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
+
+streamPerServiceConfiguration: ${PIE_STREAM_PER_SERVICE:- false}

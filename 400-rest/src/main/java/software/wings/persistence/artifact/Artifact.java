@@ -6,13 +6,15 @@
  */
 
 package software.wings.persistence.artifact;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.EmbeddedUser;
@@ -56,6 +58,7 @@ import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotEmpty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
@@ -107,6 +110,12 @@ public class Artifact implements PersistentEntity, UuidAware, CreatedAtAware, Cr
                  .field(ArtifactKeys.artifactStreamId)
                  .field(ArtifactKeys.status)
                  .descSortField(ArtifactKeys.createdAt)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("artifactStreamId_status_artifactSourceName")
+                 .field(ArtifactKeys.artifactStreamId)
+                 .field(ArtifactKeys.status)
+                 .field(ArtifactKeys.artifactSourceName)
                  .build())
         .add(SortCompoundMongoIndex.builder()
                  .name("accountId_artifactStreamId_createdAt")

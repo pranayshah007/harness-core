@@ -8,7 +8,6 @@
 package io.harness.ng.core.remote;
 
 import static io.harness.NGCommonEntityConstants.DIFFERENT_IDENTIFIER_IN_PAYLOAD_AND_PARAM;
-import static io.harness.NGCommonEntityConstants.DIFFERENT_ORG_IN_PAYLOAD_AND_PARAM;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.core.remote.ProjectMapper.toProject;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
@@ -96,16 +95,19 @@ public class OrgProjectApiImplTest extends CategoryTest {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testOrgScopedProjectCreate() {
+    final String parentId = randomAlphabetic(10);
     CreateProjectRequest request = new CreateProjectRequest();
-    io.harness.spec.server.ng.v1.model.Project proj = new io.harness.spec.server.ng.v1.model.Project();
+    io.harness.spec.server.ng.v1.model.ProjectRequest proj = new io.harness.spec.server.ng.v1.model.ProjectRequest();
     proj.setIdentifier(identifier);
     proj.setName(name);
-    proj.setOrg(org);
     request.setProject(proj);
 
     ProjectDTO projectDTO = projectApiUtils.getProjectDto(request);
     Project project = toProject(projectDTO);
+    project.setOrgIdentifier(org);
     project.setVersion(0L);
+    project.setUniqueId(randomAlphabetic(10));
+    project.setParentId(parentId);
 
     when(projectService.create(account, org, projectDTO)).thenReturn(project);
 
@@ -117,23 +119,6 @@ public class OrgProjectApiImplTest extends CategoryTest {
 
     assertEquals(identifier, entity.getProject().getIdentifier());
     assertEquals(org, entity.getProject().getOrg());
-  }
-
-  @Test
-  @Owner(developers = ASHISHSANODIA)
-  @Category(UnitTests.class)
-  public void testProjectCreateForOrgMisMatch() {
-    CreateProjectRequest request = new CreateProjectRequest();
-    io.harness.spec.server.ng.v1.model.Project proj = new io.harness.spec.server.ng.v1.model.Project();
-    proj.setIdentifier(identifier);
-    proj.setName(name);
-    proj.setOrg(org);
-    request.setProject(proj);
-
-    Throwable thrown = catchThrowableOfType(
-        () -> orgProjectApi.createOrgScopedProject(request, "different-org", account), InvalidRequestException.class);
-
-    assertThat(thrown).hasMessage(DIFFERENT_ORG_IN_PAYLOAD_AND_PARAM);
   }
 
   @Test(expected = NotFoundException.class)
@@ -204,15 +189,15 @@ public class OrgProjectApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testUpdateOrgScopedProject() {
     UpdateProjectRequest request = new UpdateProjectRequest();
-    io.harness.spec.server.ng.v1.model.Project proj = new io.harness.spec.server.ng.v1.model.Project();
+    io.harness.spec.server.ng.v1.model.ProjectRequest proj = new io.harness.spec.server.ng.v1.model.ProjectRequest();
     proj.setIdentifier(identifier);
     proj.setName("updated_name");
-    proj.setOrg(org);
     request.setProject(proj);
 
     ProjectDTO projectDTO = projectApiUtils.getProjectDto(request);
     Project project = toProject(projectDTO);
     project.setVersion(0L);
+    project.setOrgIdentifier(org);
 
     when(projectService.update(account, org, identifier, projectDTO)).thenReturn(project);
 
@@ -229,31 +214,11 @@ public class OrgProjectApiImplTest extends CategoryTest {
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
-  public void testUpdateOrgScopedProjectOrgMisMatch() {
-    UpdateProjectRequest request = new UpdateProjectRequest();
-    io.harness.spec.server.ng.v1.model.Project proj = new io.harness.spec.server.ng.v1.model.Project();
-    proj.setIdentifier(identifier);
-    proj.setName("updated_name");
-    proj.setOrg(org);
-    request.setProject(proj);
-
-    Throwable thrown =
-        catchThrowableOfType(()
-                                 -> orgProjectApi.updateOrgScopedProject(request, "different-org", identifier, account),
-            InvalidRequestException.class);
-
-    assertThat(thrown).hasMessage(DIFFERENT_ORG_IN_PAYLOAD_AND_PARAM);
-  }
-
-  @Test
-  @Owner(developers = ASHISHSANODIA)
-  @Category(UnitTests.class)
   public void testUpdateOrgScopedProjectIdentifierMisMatch() {
     UpdateProjectRequest request = new UpdateProjectRequest();
-    io.harness.spec.server.ng.v1.model.Project proj = new io.harness.spec.server.ng.v1.model.Project();
+    io.harness.spec.server.ng.v1.model.ProjectRequest proj = new io.harness.spec.server.ng.v1.model.ProjectRequest();
     proj.setIdentifier(identifier);
     proj.setName("updated_name");
-    proj.setOrg(org);
     request.setProject(proj);
 
     Throwable thrown =

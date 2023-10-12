@@ -27,6 +27,7 @@ public enum CIStepInfoType {
   ACR(CI_LITE_ENGINE, "BuildAndPushACR"),
   ECR(CI_LITE_ENGINE, "BuildAndPushECR"),
   GCR(CI_LITE_ENGINE, "BuildAndPushGCR"),
+  GAR(CI_LITE_ENGINE, "BuildAndPushGAR"),
   DOCKER(CI_LITE_ENGINE, "BuildAndPushDockerRegistry"),
   UPLOAD_GCS(CI_LITE_ENGINE, "GCSUpload"),
   UPLOAD_S3(CI_LITE_ENGINE, "S3Upload"),
@@ -88,7 +89,10 @@ public enum CIStepInfoType {
   BITRISE_V1(CI_LITE_ENGINE, "bitrise"),
   ACTION_V1(CI_LITE_ENGINE, "action"),
   SSCA_ORCHESTRATION(CI_LITE_ENGINE, "SscaOrchestration"),
-  SSCA_ENFORCEMENT(CI_LITE_ENGINE, "SscaEnforcement");
+  SSCA_ENFORCEMENT(CI_LITE_ENGINE, "SscaEnforcement"),
+  PROVENANCE(CI_LITE_ENGINE, "provenance"),
+  SLSA_VERIFICATION(CI_LITE_ENGINE, "SlsaVerification"),
+  PROVENANCE_GCR(CI_LITE_ENGINE, "provenanceGcr");
 
   @Getter private final CIStepExecEnvironment ciStepExecEnvironment;
   private final String displayName;

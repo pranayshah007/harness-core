@@ -41,6 +41,8 @@ public class GcpCredentialDTODeserializer extends StdDeserializer<GcpConnectorCr
       if (authSpec != null && !authSpec.isNull()) {
         throw new InvalidRequestException("No spec should be provided with the inherit from delegate type");
       }
+    } else if (type == GcpCredentialType.OIDC_AUTHENTICATION) {
+      gcpCredentialSpecDTO = mapper.readValue(authSpec.toString(), GcpOidcDetailsDTO.class);
     }
 
     return GcpConnectorCredentialDTO.builder().gcpCredentialType(type).config(gcpCredentialSpecDTO).build();

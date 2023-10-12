@@ -6,19 +6,21 @@
  */
 
 package io.harness.plancreator.steps.common;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.SkipAutoEvaluation;
 import io.harness.when.beans.StageWhenCondition;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import lombok.AccessLevel;
@@ -27,6 +29,7 @@ import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -46,13 +49,15 @@ public class StageElementParameters implements StepParameters {
   Map<String, String> tags;
   String type;
   SpecParameters specConfig;
+  ParameterField<String> timeout;
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @Override
-  public String toViewJson() {
-    StageElementParameters stageElementParameters = cloneParameters();
-    stageElementParameters.setSpecConfig(specConfig.getViewJsonObject());
-    return RecastOrchestrationUtils.toJson(stageElementParameters);
+  public List<String> excludeKeysFromStepInputs() {
+    if (specConfig != null) {
+      return specConfig.stepInputsKeyExclude();
+    }
+    return new LinkedList<>();
   }
 
   public StageElementParameters cloneParameters() {

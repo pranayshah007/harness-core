@@ -6,6 +6,7 @@
  */
 
 package io.harness;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static java.util.Collections.singletonList;
@@ -99,8 +100,6 @@ public class TemplateServiceConfiguration extends Configuration {
   @JsonProperty("basePathPrefix") String basePathPrefix = "";
   @JsonProperty("enforcementClientConfiguration") EnforcementClientConfiguration enforcementClientConfiguration;
   @JsonProperty("pmsGrpcClientConfig") GrpcClientConfig pmsGrpcClientConfig;
-  @JsonProperty("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceClientConfig;
-  @JsonProperty("pipelineServiceSecret") private String pipelineServiceSecret;
   @JsonProperty("allowedParallelStages") private int allowedParallelStages;
   @JsonProperty("cfClientConfig") @ConfigSecret private CfClientConfig cfClientConfig;
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
@@ -119,6 +118,7 @@ public class TemplateServiceConfiguration extends Configuration {
   private String managerServiceSecret;
   private String managerTarget;
   private String managerAuthority;
+  @Builder.Default boolean enableOpaEvaluation = Boolean.FALSE;
 
   public TemplateServiceConfiguration() {
     DefaultServerFactory defaultServerFactory = new DefaultServerFactory();

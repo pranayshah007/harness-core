@@ -141,6 +141,12 @@ public class StepGroupVariableCreator extends ChildrenVariableCreator<StepGroupE
         YamlProperties.newBuilder().setFqn(fqnPrefix + ".startTs").setLocalName(localNamePrefix + ".startTs").build();
     YamlProperties endTsProperty =
         YamlProperties.newBuilder().setFqn(fqnPrefix + ".endTs").setLocalName(localNamePrefix + ".endTs").build();
-    return YamlExtraProperties.newBuilder().addProperties(startTsProperty).addProperties(endTsProperty).build();
+    YamlProperties statusProperty =
+        YamlProperties.newBuilder().setFqn(fqnPrefix + ".status").setLocalName(localNamePrefix + ".status").build();
+    return YamlExtraProperties.newBuilder()
+        .addProperties(startTsProperty)
+        .addProperties(endTsProperty)
+        .addProperties(statusProperty)
+        .build();
   }
 }

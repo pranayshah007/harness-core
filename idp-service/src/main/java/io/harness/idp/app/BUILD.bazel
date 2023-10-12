@@ -38,6 +38,7 @@ java_binary(
         "//clients/pipeline-service/pms-sdk:module",
         "//idp-service/contracts/src/main/java/io/harness/idp/annotations:module",
         "//idp-service/src/main/java/io/harness/idp/allowlist:module",
+        "//idp-service/src/main/java/io/harness/idp/audittrials:module",
         "//idp-service/src/main/java/io/harness/idp/common/delegateselectors/cache:module",
         "//idp-service/src/main/java/io/harness/idp/common/delegateselectors/cache/memory:module",
         "//idp-service/src/main/java/io/harness/idp/common/delegateselectors/cache/redis:module",

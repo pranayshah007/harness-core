@@ -38,6 +38,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.Optional;
 import javax.ws.rs.NotFoundException;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class NgGlobalKmsServiceImpl implements NgGlobalKmsService {
   private final ConnectorService connectorService;
@@ -84,10 +85,10 @@ public class NgGlobalKmsServiceImpl implements NgGlobalKmsService {
     ((GcpKmsConnectorDTO) (connectorDTO.getConnectorConfig()))
         .getCredentials()
         .setDecryptedValue(credentials.toCharArray());
-    boolean validateResult = ngSecretManagerService.validateNGSecretManager(GLOBAL_ACCOUNT_ID,
+    Pair<String, Boolean> validateResult = ngSecretManagerService.validateNGSecretManager(GLOBAL_ACCOUNT_ID,
         SecretManagerConfigDTOMapper.fromConnectorDTO(GLOBAL_ACCOUNT_ID,
             ConnectorDTO.builder().connectorInfo(connectorDTO).build(), connectorDTO.getConnectorConfig()));
-    if (!validateResult) {
+    if (!validateResult.getValue()) {
       throw new InvalidRequestException("Failed to validate secret manager");
     }
   }

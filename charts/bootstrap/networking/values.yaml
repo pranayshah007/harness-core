@@ -1,4 +1,14 @@
 global:
+  ggIngress:
+    enabled: false
+    className: "harness-global"
+    hosts:
+      - 'myhost.example.com'
+    tls:
+      enabled: true
+      secretName: harness-cert
+  commonAnnotations: {}
+  commonLabels: {}
   ingress:
     enabled: false
     className: "harness"
@@ -72,6 +82,9 @@ nginx:
     requests:
       cpu: '0.5'
       memory: '512Mi'
+  podLabels: {}
+  service:
+    annotations: {}
 
 
 defaultbackend:
@@ -93,3 +106,6 @@ defaultbackend:
     requests:
       cpu: 10m
       memory: 20Mi
+  podLabels: {}
+  service:
+    annotations: {}

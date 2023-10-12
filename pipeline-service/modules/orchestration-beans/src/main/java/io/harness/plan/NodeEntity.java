@@ -56,6 +56,7 @@ public class NodeEntity implements PersistentEntity, UuidAccess {
                  .field(NodeEntityKeys.planId)
                  .field(NodeEntityKeys.nodeId)
                  .build())
+        .add(CompoundMongoIndex.builder().name("nodeId_idx").field(NodeEntityKeys.nodeId).build())
         .build();
   }
 

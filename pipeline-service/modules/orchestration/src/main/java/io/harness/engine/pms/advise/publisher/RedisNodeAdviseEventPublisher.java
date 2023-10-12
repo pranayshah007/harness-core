@@ -6,23 +6,23 @@
  */
 
 package io.harness.engine.pms.advise.publisher;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.data.structure.EmptyPredicate;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.engine.pms.advise.NodeAdviserUtils;
 import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.execution.NodeExecution;
-import io.harness.interrupts.InterruptEffect;
 import io.harness.plan.Node;
 import io.harness.pms.contracts.advisers.AdviseEvent;
-import io.harness.pms.contracts.advisers.AdviseEvent.Builder;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.events.base.PmsEventCategory;
 
 import com.google.inject.Inject;
-import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class RedisNodeAdviseEventPublisher implements NodeAdviseEventPublisher {
   @Inject private PmsEventSender eventSender;
@@ -34,27 +34,8 @@ public class RedisNodeAdviseEventPublisher implements NodeAdviseEventPublisher {
 
   @Override
   public String publishEvent(NodeExecution nodeExecution, FailureInfo failureInfo, Node planNode, Status fromStatus) {
-    Builder builder = AdviseEvent.newBuilder()
-                          .setAmbiance(nodeExecution.getAmbiance())
-                          .setFailureInfo(failureInfo)
-                          .addAllAdviserObtainments(planNode.getAdviserObtainments())
-                          .setIsPreviousAdviserExpired(isPreviousAdviserExpired(nodeExecution.getInterruptHistories()))
-                          .addAllRetryIds(nodeExecution.getRetryIds())
-                          .setToStatus(nodeExecution.getStatus())
-                          .setFromStatus(fromStatus);
-
-    if (!EmptyPredicate.isEmpty(nodeExecution.getNotifyId())) {
-      builder.setNotifyId(nodeExecution.getNotifyId());
-    }
-
-    return eventSender.sendEvent(nodeExecution.getAmbiance(), builder.build().toByteString(),
-        PmsEventCategory.NODE_ADVISE, nodeExecution.getModule(), true);
-  }
-
-  private boolean isPreviousAdviserExpired(List<InterruptEffect> interruptHistories) {
-    if (interruptHistories.size() == 0) {
-      return false;
-    }
-    return interruptHistories.get(interruptHistories.size() - 1).getInterruptConfig().getIssuedBy().hasTimeoutIssuer();
+    AdviseEvent adviseEvent = NodeAdviserUtils.createAdviseEvent(nodeExecution, failureInfo, planNode, fromStatus);
+    return eventSender.sendEvent(nodeExecution.getAmbiance(), adviseEvent.toByteString(), PmsEventCategory.NODE_ADVISE,
+        nodeExecution.getModule(), true);
   }
 }

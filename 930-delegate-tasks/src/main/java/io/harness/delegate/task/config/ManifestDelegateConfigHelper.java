@@ -9,8 +9,12 @@ package io.harness.delegate.task;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.task.git.GitDecryptionHelper;
+import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
@@ -26,6 +30,7 @@ import io.harness.security.encryption.SecretDecryptionService;
 import com.google.inject.Inject;
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 public class ManifestDelegateConfigHelper {
   @Inject private GitDecryptionHelper gitDecryptionHelper;
   @Inject private SecretDecryptionService decryptionService;
@@ -60,10 +65,23 @@ public class ManifestDelegateConfigHelper {
 
       case OCI_HELM:
         OciHelmStoreDelegateConfig ociHelmStoreConfig = (OciHelmStoreDelegateConfig) storeDelegateConfig;
-        for (DecryptableEntity entity : ociHelmStoreConfig.getOciHelmConnector().getDecryptableEntities()) {
-          decryptionService.decrypt(entity, ociHelmStoreConfig.getEncryptedDataDetails());
-          ExceptionMessageSanitizer.storeAllSecretsForSanitizing(entity, ociHelmStoreConfig.getEncryptedDataDetails());
+        ConnectorConfigDTO connectorConfigDTO = null;
+        if (ociHelmStoreConfig.getOciHelmConnector() != null) {
+          connectorConfigDTO = ociHelmStoreConfig.getOciHelmConnector();
         }
+
+        if (ociHelmStoreConfig.getAwsConnectorDTO() != null) {
+          connectorConfigDTO = ociHelmStoreConfig.getAwsConnectorDTO();
+        }
+
+        if (connectorConfigDTO != null) {
+          for (DecryptableEntity entity : connectorConfigDTO.getDecryptableEntities()) {
+            decryptionService.decrypt(entity, ociHelmStoreConfig.getEncryptedDataDetails());
+            ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+                entity, ociHelmStoreConfig.getEncryptedDataDetails());
+          }
+        }
+
         break;
 
       case S3_HELM:

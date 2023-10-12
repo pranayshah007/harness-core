@@ -122,8 +122,11 @@ import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.limits.LimitCheckerFactory;
 import io.harness.ng.core.account.AuthenticationMechanism;
+import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.common.beans.UserSource;
 import io.harness.ng.core.invites.dto.InviteOperationResponse;
+import io.harness.notification.channeldetails.EmailChannel;
+import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.PersistentEntity;
 import io.harness.remote.client.NGRestUtils;
@@ -133,9 +136,7 @@ import software.wings.WingsBaseTest;
 import software.wings.app.MainConfiguration;
 import software.wings.app.PortalConfig;
 import software.wings.beans.Account;
-import software.wings.beans.AccountJoinRequest;
 import software.wings.beans.AccountRole;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.ApplicationRole;
 import software.wings.beans.Base.BaseKeys;
 import software.wings.beans.CannySsoLoginResponse;
@@ -148,6 +149,8 @@ import software.wings.beans.RoleType;
 import software.wings.beans.User;
 import software.wings.beans.User.UserKeys;
 import software.wings.beans.UserInvite;
+import software.wings.beans.account.AccountJoinRequest;
+import software.wings.beans.account.AccountStatus;
 import software.wings.beans.loginSettings.LoginSettingsService;
 import software.wings.beans.marketplace.MarketPlaceType;
 import software.wings.beans.security.AccessRequest;
@@ -277,6 +280,7 @@ public class UserServiceTest extends WingsBaseTest {
    * The User invite query end.
    */
   @Mock private EmailNotificationService emailDataNotificationService;
+  @Mock private NotificationClient notificationClient;
   @Mock private RoleService roleService;
   @Mock private WingsPersistence wingsPersistence;
   @Mock private AccountService accountService;
@@ -311,6 +315,7 @@ public class UserServiceTest extends WingsBaseTest {
   @Captor private ArgumentCaptor<EmailData> emailDataArgumentCaptor;
   @Captor private ArgumentCaptor<User> userArgumentCaptor;
   @Captor private ArgumentCaptor<PageRequest<User>> pageRequestArgumentCaptor;
+
   @Inject @InjectMocks SecretManager secretManager;
   @Inject @InjectMocks private AwsMarketPlaceApiHandlerImpl marketPlaceService;
   @Inject WingsPersistence realWingsPersistence;
@@ -321,7 +326,7 @@ public class UserServiceTest extends WingsBaseTest {
   @InjectMocks private HarnessUserGroupService harnessUserGroupService = mock(HarnessUserGroupServiceImpl.class);
   @InjectMocks private AccessRequestService accessRequestService = mock(AccessRequestServiceImpl.class);
   private Query<User> userQuery;
-
+  private ArgumentCaptor<EmailChannel> emailChannelCaptor;
   /**
    * Sets mocks.
    */
@@ -606,7 +611,7 @@ public class UserServiceTest extends WingsBaseTest {
     when(accountService.save(any(Account.class), eq(false), eq(true))).thenReturn(account);
     when(wingsPersistence.saveAndGet(any(Class.class), any(User.class))).thenReturn(savedUser);
     when(wingsPersistence.get(MarketPlace.class, "TESTUUID")).thenReturn(marketPlace);
-    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), null, null))
+    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), null, null, false))
         .thenReturn(aPageResponse().build());
     when(authenticationManager.defaultLogin(USER_EMAIL, "TestPassword")).thenReturn(savedUser);
     User user = userService.completeMarketPlaceSignup(savedUser, testInvite, MarketPlaceType.AWS);
@@ -671,7 +676,7 @@ public class UserServiceTest extends WingsBaseTest {
 
     when(accountService.save(any(Account.class), eq(false), eq(false))).thenReturn(account);
     when(wingsPersistence.query(eq(User.class), any(PageRequest.class))).thenReturn(aPageResponse().build());
-    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any()))
+    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any(), anyBoolean()))
         .thenReturn(aPageResponse().build());
     when(subdomainUrlHelper.getPortalBaseUrl(ACCOUNT_ID)).thenReturn(PORTAL_URL + "/");
     userService.register(userBuilder.build());
@@ -814,7 +819,7 @@ public class UserServiceTest extends WingsBaseTest {
         .thenReturn(aPageResponse().withResponse(Lists.newArrayList(existingUser)).build());
     when(wingsPersistence.saveAndGet(eq(EmailVerificationToken.class), any(EmailVerificationToken.class)))
         .thenReturn(anEmailVerificationToken().withToken("token123").build());
-    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any()))
+    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any(), anyBoolean()))
         .thenReturn(aPageResponse().build());
     when(subdomainUrlHelper.getPortalBaseUrl(any())).thenReturn(PORTAL_URL);
 
@@ -955,7 +960,8 @@ public class UserServiceTest extends WingsBaseTest {
     when(wingsPersistence.delete(User.class, USER_ID)).thenReturn(true);
     when(wingsPersistence.findAndDelete(any(), any())).thenReturn(userBuilder.uuid(USER_ID).build());
     when(userGroupService.list(ACCOUNT_ID,
-             aPageRequest().withLimit("0").addFilter(UserGroupKeys.memberIds, HAS, USER_ID).build(), true, null, null))
+             aPageRequest().withLimit("0").addFilter(UserGroupKeys.memberIds, HAS, USER_ID).build(), true, null, null,
+             false))
         .thenReturn(aPageResponse().withResponse(Collections.emptyList()).withTotal(0).withLimit("0").build());
     userService.delete(ACCOUNT_ID, USER_ID);
     verify(wingsPersistence).findAndDelete(any(), any());
@@ -986,7 +992,7 @@ public class UserServiceTest extends WingsBaseTest {
     when(wingsPersistence.get(User.class, USER_ID)).thenReturn(user);
     when(wingsPersistence.delete(User.class, USER_ID)).thenReturn(true);
     when(wingsPersistence.findAndDelete(any(), any())).thenReturn(user);
-    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any()))
+    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any(), anyBoolean()))
         .thenReturn(aPageResponse().build());
     userService.delete(ACCOUNT_ID, USER_ID);
     verify(wingsPersistence).findAndDelete(any(), any());
@@ -1014,7 +1020,7 @@ public class UserServiceTest extends WingsBaseTest {
     when(wingsPersistence.get(User.class, USER_ID)).thenReturn(user);
     when(wingsPersistence.delete(User.class, USER_ID)).thenReturn(true);
     when(wingsPersistence.findAndDelete(any(), any())).thenReturn(user);
-    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any()))
+    when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any(), anyBoolean()))
         .thenReturn(aPageResponse().build());
     userService.delete(ACCOUNT_ID, USER_ID);
     verify(wingsPersistence).findAndDelete(any(), any());
@@ -1496,9 +1502,49 @@ public class UserServiceTest extends WingsBaseTest {
     assertThat(emailDataArgumentCaptor.getValue().getTemplateName()).isEqualTo("reset_password");
     assertThat(((Map) emailDataArgumentCaptor.getValue().getTemplateModel()).get("name")).isEqualTo(USER_NAME);
     assertThat(((Map<String, String>) emailDataArgumentCaptor.getValue().getTemplateModel()).get("url"))
-        .startsWith(PORTAL_URL + "/#/reset-password/");
+        .startsWith("/auth/#/reset-password/");
     assertThat(((Map<String, String>) emailDataArgumentCaptor.getValue().getTemplateModel()).get("url").length())
-        .isGreaterThan((PORTAL_URL + "/#/reset-password/").length());
+        .isGreaterThan("/auth/#/reset-password/".length());
+  }
+
+  @Test
+  @Owner(developers = SAHIBA)
+  @Category(UnitTests.class)
+  public void sendResetPasswordEmailDefaultExperienceNG() throws EmailException, TemplateException, IOException {
+    ArrayList<Account> accounts = new ArrayList<>();
+    accounts.add(new Account());
+    when(query.get())
+        .thenReturn(userBuilder.uuid(USER_ID).defaultAccountId("defaultAccount").accounts(accounts).build());
+    when(configuration.getPortal().getJwtPasswordSecret()).thenReturn("SECRET");
+    when(configuration.getPortal().getUrl()).thenReturn(PORTAL_URL);
+    when(subdomainUrlHelper.getPortalBaseUrl(any())).thenReturn(PORTAL_URL + "/");
+    when(accountService.get(any()))
+        .thenReturn(
+            Account.Builder.anAccount().withUuid("defaultAccount").withDefaultExperience(DefaultExperience.NG).build());
+    UserResource.ResetPasswordRequest resetPasswordRequest = new UserResource.ResetPasswordRequest();
+    resetPasswordRequest.setEmail(USER_EMAIL);
+    userService.resetPassword(resetPasswordRequest);
+    verify(notificationClient, times(1)).sendNotificationAsync(any());
+  }
+
+  @Test
+  @Owner(developers = SAHIBA)
+  @Category(UnitTests.class)
+  public void sendResetPasswordEmailDefaultExperienceCG() throws EmailException, TemplateException, IOException {
+    ArrayList<Account> accounts = new ArrayList<>();
+    accounts.add(new Account());
+    when(query.get())
+        .thenReturn(userBuilder.uuid(USER_ID).defaultAccountId("defaultAccount").accounts(accounts).build());
+    when(configuration.getPortal().getJwtPasswordSecret()).thenReturn("SECRET");
+    when(configuration.getPortal().getUrl()).thenReturn(PORTAL_URL);
+    when(subdomainUrlHelper.getPortalBaseUrl(any())).thenReturn(PORTAL_URL + "/");
+    when(accountService.get(any()))
+        .thenReturn(
+            Account.Builder.anAccount().withUuid("defaultAccount").withDefaultExperience(DefaultExperience.CG).build());
+    UserResource.ResetPasswordRequest resetPasswordRequest = new UserResource.ResetPasswordRequest();
+    resetPasswordRequest.setEmail(USER_EMAIL);
+    userService.resetPassword(resetPasswordRequest);
+    verify(emailDataNotificationService, times(1)).send(any());
   }
 
   @Test
@@ -1765,7 +1811,7 @@ public class UserServiceTest extends WingsBaseTest {
 
     when(ssoSettingService.getSamlSettingsByAccountId(account.getUuid())).thenReturn(samlSettings);
     when(wingsPersistence.get(User.class, user.getUuid())).thenReturn(user);
-    when(userGroupService.list(anyString(), any(), anyBoolean(), any(), any())).thenReturn(val);
+    when(userGroupService.list(anyString(), any(), anyBoolean(), any(), any(), anyBoolean())).thenReturn(val);
 
     LogoutResponse logoutResponse = userService.logout(account.getUuid(), user.getUuid());
     assertThat(logoutResponse.getLogoutUrl()).isNotNull();

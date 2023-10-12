@@ -6,10 +6,12 @@
  */
 
 package io.harness.service;
-
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.entities.InstanceSyncPerpetualTaskMappingService;
 import io.harness.entities.InstanceSyncPerpetualTaskMappingServiceImpl;
 import io.harness.instancesyncmonitoring.module.InstanceSyncMonitoringModule;
@@ -38,6 +40,8 @@ import io.harness.service.instancesyncperpetualtask.InstanceSyncPerpetualTaskSer
 import io.harness.service.instancesyncperpetualtask.InstanceSyncPerpetualTaskServiceImpl;
 import io.harness.service.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoService;
 import io.harness.service.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoServiceImpl;
+import io.harness.service.releasedetailsmapping.ReleaseDetailsMappingService;
+import io.harness.service.releasedetailsmapping.ReleaseDetailsMappingServiceImpl;
 import io.harness.service.stats.statscollector.InstanceStatsCollectorImpl;
 import io.harness.service.stats.statscollector.StatsCollector;
 import io.harness.service.stats.usagemetrics.eventpublisher.UsageMetricsEventPublisher;
@@ -48,6 +52,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.atmosphere.cpr.BroadcasterFactory;
 import org.atmosphere.cpr.DefaultBroadcasterFactory;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(DX)
 public class InstanceModule extends AbstractModule {
   private static final AtomicReference<InstanceModule> instanceRef = new AtomicReference<>();
@@ -65,6 +70,7 @@ public class InstanceModule extends AbstractModule {
     bind(InstanceDashboardService.class).to(InstanceDashboardServiceImpl.class);
     bind(InstanceService.class).to(InstanceServiceImpl.class);
     bind(InstanceSyncPerpetualTaskInfoService.class).to(InstanceSyncPerpetualTaskInfoServiceImpl.class);
+    bind(ReleaseDetailsMappingService.class).to(ReleaseDetailsMappingServiceImpl.class);
     bind(InfrastructureMappingService.class).to(InfrastructureMappingServiceImpl.class);
     bind(InstanceSyncHandlerFactoryService.class).to(InstanceSyncHandlerFactoryServiceImpl.class);
     bind(InstanceSyncService.class).to(InstanceSyncServiceImpl.class);

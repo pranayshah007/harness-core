@@ -9,6 +9,7 @@ package io.harness.repositories;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ADITHYA;
+import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static junit.framework.TestCase.assertEquals;
@@ -18,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,6 +35,7 @@ import io.harness.exception.ScmException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.common.beans.EntityWithCount;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitAwarePersistence;
@@ -49,6 +52,7 @@ import io.harness.template.services.TemplateGitXService;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
@@ -56,12 +60,15 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -78,7 +85,7 @@ public class NGTemplateRepositoryCustomImplTest extends CategoryTest {
   @Mock NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
 
   @Mock TemplateGitXService templateGitXService;
-
+  @InjectMocks EntityWithCount entityWithCount;
   String accountIdentifier = "acc";
   String orgIdentifier = "org";
   String projectIdentifier = "proj";
@@ -562,6 +569,43 @@ public class NGTemplateRepositoryCustomImplTest extends CategoryTest {
     verify(gitAwareEntityHelper, times(1)).fetchEntityFromRemote(any(), any(), any(), any());
   }
 
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testFindAll() {
+    String newYaml = "template: new yaml";
+
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(templateId)
+                                        .name("old name")
+                                        .description("old desc")
+                                        .yaml(newYaml)
+                                        .storeType(StoreType.REMOTE)
+                                        .version(1L)
+                                        .build();
+
+    doReturn(Arrays.asList(templateEntity)).when(mongoTemplate).find(any(Query.class), any());
+    doReturn("templateNg").when(mongoTemplate).getCollectionName(any());
+    Aggregation aggregation = mock(Aggregation.class);
+    EntityWithCount entityWithCount = mock(EntityWithCount.class);
+    AggregationResults<EntityWithCount> aggregationResultsMock = mock(AggregationResults.class);
+    Mockito.doReturn(aggregationResultsMock)
+        .when(mongoTemplate)
+        .aggregate(Mockito.nullable(Aggregation.class), Mockito.nullable(String.class), Mockito.<Class<?>>any());
+    Mockito.doReturn(Collections.singletonList(entityWithCount)).when(aggregationResultsMock).getMappedResults();
+
+    Criteria criteria = templateServiceHelper.formCriteria(
+        accountIdentifier, orgIdentifier, projectIdentifier, null, null, false, "", false);
+    criteria.and(TemplateEntityKeys.isLastUpdatedTemplate).is(true);
+    Pageable pageRequest = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, TemplateEntityKeys.lastUpdatedAt));
+    Page<TemplateEntity> templateEntities = ngTemplateRepositoryCustom.findAll(
+        criteria, pageRequest, accountIdentifier, orgIdentifier, projectIdentifier, true);
+    assertThat(templateEntities.getContent()).isNotNull();
+    assertThat(templateEntities.getContent().size()).isEqualTo(1);
+  }
   @Test
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)

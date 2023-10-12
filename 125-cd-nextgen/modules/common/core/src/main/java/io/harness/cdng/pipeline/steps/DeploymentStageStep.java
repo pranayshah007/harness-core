@@ -90,7 +90,7 @@ public class DeploymentStageStep implements ChildExecutable<StageElementParamete
     log.info("executed deployment stage =[{}]", stepParameters);
     RollbackUtility.publishRollbackInformation(ambiance, responseDataMap, executionSweepingOutputService);
     StepResponse stepResponse = createStepResponseFromChildResponse(responseDataMap);
-    stageExecutionInfoService.updateStageExecutionInfo(ambiance, createStageExecutionInfoUpdateDTO(stepResponse));
+    stageExecutionInfoService.upsertStageExecutionInfo(ambiance, createStageExecutionInfoUpdateDTO(stepResponse));
     return stepResponse;
   }
 

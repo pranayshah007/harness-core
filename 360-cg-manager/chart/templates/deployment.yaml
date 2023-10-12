@@ -4,8 +4,13 @@ metadata:
   name: harness-manager
   namespace: {{ .Release.Namespace }}
   labels:
-        {{- include "harness-manager.labels" . | nindent 4 }}
-  annotations: {}
+    {{- include "harness-manager.labels" . | nindent 4 }}
+    {{- if .Values.global.commonLabels }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.global.commonAnnotations }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
@@ -26,9 +31,18 @@ spec:
       {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .Values.global.commonAnnotations }}
+        {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 8 }}
+      {{- end }}
       labels:
         app: harness-manager
         {{- include "harness-manager.selectorLabels" . | nindent 8 }}
+        {{- if .Values.global.commonLabels }}
+        {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 8 }}
+        {{- end }}
+        {{- if .Values.podLabels }}
+        {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.podLabels "context" $) | nindent 8 }}
+        {{- end }}
     spec:
       {{- include "harness-manager.pullSecrets" . | nindent 6 }}
       serviceAccountName: {{ include "harness-manager.serviceAccountName" . }}
@@ -67,6 +81,12 @@ spec:
             - secretRef:
                 name: smtp-secret
             {{- end }}
+            {{- if .Values.global.secrets.app.external.enabled }}
+            {{- if .Values.global.secrets.app.external.kind.externalSecrets }}
+            - secretRef:
+                name: harness-manager-external-secret
+            {{- end }}
+            {{- end }}
           env:
             {{- include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "REDIS_USERNAME" "passwordVariableName" "REDIS_PASSWORD") | indent 12 }}
             {{- include "harnesscommon.dbconnection.redisEnv" (dict "context" .Values.global.database.redis "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 12 }}
@@ -77,6 +97,8 @@ spec:
               value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "harness" "context" $) }}
             - name: DMS_MONGO_URI
               value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "dms-harness" "context" $) }}
+            - name: NOTIFICATION_MONGO_URI
+              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "notifications" "context" $) }}
             - name: TIMESCALEDB_URI
               value: {{ include "harnesscommon.dbconnection.timescaleConnection" (dict "protocol" "jdbc:postgresql" "database" "harness" "context" $) }}
             {{- if .Values.extraEnvVars }}
@@ -89,7 +111,7 @@ spec:
           {{- if .Values.lifecycleHooks }}
           lifecycle: {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.lifecycleHooks "context" $) | nindent 12 }}
           {{- end }}
-          
+
           livenessProbe:
             failureThreshold: 20
             initialDelaySeconds: 180
@@ -127,7 +149,7 @@ spec:
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          
+
       volumes:
         - name: dynamic-iterator-config
           configMap:

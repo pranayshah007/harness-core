@@ -57,8 +57,8 @@ message GraphLayoutInfo {
 
 message PlanCreationContextValue {
   oneof value {
-    string stringValue = 1;
-    ExecutionMetadata metadata = 2;
+    string stringValue = 1 [deprecated = true];
+    ExecutionMetadata metadata = 2 [deprecated = true];
   }
   triggers.TriggerPayload triggerPayload = 3;
   string accountIdentifier = 4;
@@ -66,6 +66,26 @@ message PlanCreationContextValue {
   string projectIdentifier = 6;
   bool isExecutionInputEnabled = 7;
   Dependency globalDependency = 8;
+  PlanExecutionContext execution_context = 9;
+}
+
+message PlanExecutionContext {
+  int32 runSequence = 1;
+  ExecutionTriggerInfo triggerInfo = 2;
+  string pipelineIdentifier = 3;
+  // Not used anymore so please don't use it during pipeline execution and only in planCreation.
+  string executionUuid = 4;
+  ExecutionPrincipalInfo principalInfo = 5;
+  bytes gitSyncBranchContext = 6;
+  PipelineStoreType pipelineStoreType = 7;
+  string pipelineConnectorRef = 8;
+
+  // Original entity version
+  string harnessVersion = 9;
+  // Processed/Resolved yaml version
+  string processedYamlVersion = 10;
+
+  ExecutionMode executionMode = 11;
 }
 
 message YamlFieldBlob {
@@ -163,13 +183,14 @@ message Dependency {
   map<string, bytes> metadata = 2;
   RollbackModeBehaviour rollbackModeBehaviour = 3;
   HarnessStruct nodeMetadata = 4;
+  HarnessStruct parentInfo = 5;
 }
 
 // We are not using this struct from protobuf library:
 // https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/struct.proto#L51 because it doesn't have a
 // type value bytes in the value which is required in our case for passing kryo serialized complex objects
 message HarnessStruct {
-  map<string, HarnessValue> fields = 1;
+  map<string, HarnessValue> data = 1;
 }
 
 message HarnessValue {

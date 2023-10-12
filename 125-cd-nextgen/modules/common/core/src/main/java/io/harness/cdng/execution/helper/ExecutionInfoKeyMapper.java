@@ -6,13 +6,16 @@
  */
 
 package io.harness.cdng.execution.helper;
-
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.cdng.execution.ExecutionInfoKey;
+import io.harness.cdng.execution.ExecutionInfoKey.ExecutionInfoKeyBuilder;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
@@ -22,35 +25,31 @@ import io.harness.steps.environment.EnvironmentOutcome;
 
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.CDP)
 @UtilityClass
 public class ExecutionInfoKeyMapper {
   public static ExecutionInfoKey getExecutionInfoKey(Ambiance ambiance, EnvironmentOutcome environmentOutcome,
       ServiceStepOutcome serviceOutcome, InfrastructureOutcome infrastructureOutcome) {
     String infrastructureKind = infrastructureOutcome.getKind();
+
+    ExecutionInfoKeyBuilder executionInfoKeyBuilder =
+        ExecutionInfoKey.builder().scope(getScope(ambiance)).envIdentifier(environmentOutcome.getIdentifier());
+    if (serviceOutcome != null) {
+      executionInfoKeyBuilder.serviceIdentifier(serviceOutcome.getIdentifier());
+    }
+    String infraIdentifier = infrastructureOutcome.getInfraIdentifier();
+
     if (InfrastructureKind.PDC.equals(infrastructureKind)
         || InfrastructureKind.SSH_WINRM_AZURE.equals(infrastructureKind)
         || InfrastructureKind.SSH_WINRM_AWS.equals(infrastructureKind)
         || InfrastructureKind.TAS.equals(infrastructureKind)) {
-      // infra identifier could be null in service/env version v1
-      String infraIdentifier = infrastructureOutcome.getInfraIdentifier();
       if (isBlank(infraIdentifier)) {
         infraIdentifier = infrastructureOutcome.getInfrastructureKey();
       }
-      return ExecutionInfoKey.builder()
-          .scope(getScope(ambiance))
-          .envIdentifier(environmentOutcome.getIdentifier())
-          .infraIdentifier(infraIdentifier)
-          .serviceIdentifier(serviceOutcome.getIdentifier())
-          .build();
-    } else {
-      return ExecutionInfoKey.builder()
-          .scope(getScope(ambiance))
-          .envIdentifier(environmentOutcome.getIdentifier())
-          .infraIdentifier(infrastructureOutcome.getInfraIdentifier())
-          .serviceIdentifier(serviceOutcome.getIdentifier())
-          .build();
     }
+    return executionInfoKeyBuilder.infraIdentifier(infraIdentifier).build();
   }
 
   private static Scope getScope(Ambiance ambiance) {

@@ -6,10 +6,8 @@
  */
 
 package io.harness.pms.approval.custom;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.steps.approval.ApprovalUtils.getCustomApprovalTaskName;
-import static io.harness.steps.approval.ApprovalUtils.sendTaskIdProgressUpdate;
 import static io.harness.steps.approval.ApprovalUtils.updateTaskId;
 
 import static software.wings.beans.TaskType.SHELL_SCRIPT_TASK_NG;
@@ -19,7 +17,10 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.OrchestrationPublisherName;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
@@ -68,6 +69,7 @@ import java.util.List;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Slf4j
 public class CustomApprovalHelperServiceImpl implements CustomApprovalHelperService {
@@ -134,7 +136,6 @@ public class CustomApprovalHelperServiceImpl implements CustomApprovalHelperServ
       log.info("Queuing Custom Approval delegate task");
       String taskId = queueTask(ambiance, instance, scriptTaskParametersNG);
 
-      sendTaskIdProgressUpdate(taskId, getCustomApprovalTaskName(instance), instanceId, waitNotifyEngine);
       updateTaskId(instanceId, taskId, approvalInstanceService);
 
       log.info("Custom Approval Instance queued task with taskId - {}", taskId);

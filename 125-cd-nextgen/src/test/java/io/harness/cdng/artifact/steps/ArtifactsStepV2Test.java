@@ -118,6 +118,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.secretusage.SecretRuntimeUsageService;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.EntityReferenceExtractorUtils;
@@ -166,6 +167,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
   @Mock private TemplateResourceClient templateResourceClient;
   @Mock EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Mock private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
+  @Mock private SecretRuntimeUsageService secretRuntimeUsageService;
   @Mock private PipelineRbacHelper pipelineRbacHelper;
   @InjectMocks private ArtifactsStepV2 step = new ArtifactsStepV2();
   private final ArtifactStepHelper stepHelper = new ArtifactStepHelper();

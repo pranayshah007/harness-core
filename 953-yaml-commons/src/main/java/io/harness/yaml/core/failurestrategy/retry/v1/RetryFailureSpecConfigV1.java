@@ -6,11 +6,12 @@
  */
 
 package io.harness.yaml.core.failurestrategy.retry.v1;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.yaml.core.failurestrategy.v1.FailureConfigV1;
 import io.harness.yaml.core.timeout.Timeout;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -18,11 +19,12 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Value
 @Builder
 @OwnedBy(HarnessTeam.PIPELINE)
 public class RetryFailureSpecConfigV1 {
   ParameterField<Integer> attempts;
-  @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY) ParameterField<List<Timeout>> intervals;
-  FailureConfigV1 on_failure;
+  @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY) ParameterField<List<Timeout>> interval;
+  RetryFailureConfigV1 failure;
 }

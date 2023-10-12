@@ -7,13 +7,15 @@
 
 package io.harness.app;
 
+import static io.harness.authorization.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_READ_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELEGATE_ENTITY;
-import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.lock.DistributedLockImplementation.REDIS;
+import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListenerNonVersioned.NG_ORCHESTRATION;
 
 import io.harness.AccessControlClientModule;
@@ -28,14 +30,14 @@ import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.aws.AwsClient;
 import io.harness.aws.AwsClientImpl;
 import io.harness.beans.execution.license.CILicenseService;
-import io.harness.cache.CICacheManagementService;
-import io.harness.cache.CICacheManagementServiceImpl;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
 import io.harness.ci.CIExecutionServiceModule;
 import io.harness.ci.app.intfc.CIYamlSchemaService;
+import io.harness.ci.cache.CICacheManagementService;
+import io.harness.ci.cache.CICacheManagementServiceImpl;
 import io.harness.ci.enforcement.CIBuildEnforcer;
 import io.harness.ci.enforcement.CIBuildEnforcerImpl;
 import io.harness.ci.event.AccountEntityListener;
@@ -61,6 +63,7 @@ import io.harness.cistatus.service.bitbucket.BitbucketService;
 import io.harness.cistatus.service.bitbucket.BitbucketServiceImpl;
 import io.harness.cistatus.service.gitlab.GitlabService;
 import io.harness.cistatus.service.gitlab.GitlabServiceImpl;
+import io.harness.code.CodeResourceClientModule;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.core.ci.dashboard.BuildNumberService;
@@ -91,6 +94,7 @@ import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.MongoPersistence;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.opaclient.OpaClientModule;
+import io.harness.outbox.TransactionOutboxModule;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.sdk.core.plugin.PluginInfoProvider;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
@@ -238,7 +242,7 @@ public class CIManagerServiceModule extends AbstractModule {
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
     return ciManagerConfiguration.getDistributedLockImplementation() == null
-        ? MONGO
+        ? REDIS
         : ciManagerConfiguration.getDistributedLockImplementation();
   }
 
@@ -398,6 +402,8 @@ public class CIManagerServiceModule extends AbstractModule {
     install(new CILogServiceClientModule(ciManagerConfiguration.getLogServiceConfig()));
     install(UserClientModule.getInstance(
         ciManagerConfiguration.getManagerClientConfig(), ciManagerConfiguration.getManagerServiceSecret(), serviceId));
+    install(
+        new TransactionOutboxModule(DEFAULT_OUTBOX_POLL_CONFIGURATION, ACCESS_CONTROL_SERVICE.getServiceId(), false));
     install(new ProjectClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), serviceId));
     install(new TIServiceClientModule(ciManagerConfiguration.getTiServiceConfig()));
@@ -416,6 +422,10 @@ public class CIManagerServiceModule extends AbstractModule {
       }
     });
     install(new CICacheRegistrar());
+    install(new CodeResourceClientModule(
+        ciManagerConfiguration.getCiExecutionServiceConfig().getGitnessConfig().getHttpClientConfig(),
+        ciManagerConfiguration.getCiExecutionServiceConfig().getGitnessConfig().getJwtSecret(), serviceId,
+        ClientMode.PRIVILEGED));
     if (configurationOverride.getServiceHeader() == AuthorizationServiceHeader.CI_MANAGER) {
       install(FeatureFlagModule.getInstance());
     } else {

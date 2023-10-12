@@ -49,6 +49,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.Stack;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -757,10 +758,6 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
     }
 
     List<BudgetCostData> budgetGroupCostDataList = new ArrayList<>();
-    Double budgetedGroupAmount = budgetGroup.getBudgetGroupAmount();
-    if (budgetedGroupAmount == null) {
-      budgetedGroupAmount = 0.0;
-    }
 
     if (budgetGroup.getPeriod() == BudgetPeriod.YEARLY && breakdown == BudgetBreakdown.MONTHLY) {
       Double[] actualCost = budgetGroup.getBudgetGroupMonthlyBreakdown().getActualMonthlyCost();
@@ -803,22 +800,36 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
         startTime = endTime + BudgetUtils.ONE_DAY_MILLIS;
       }
     } else {
-      for (BudgetCostData historyBudgetGroupCostData : budgetGroup.getBudgetGroupHistory().values()) {
-        budgetGroupCostDataList.add(historyBudgetGroupCostData);
+      if (budgetGroup.getBudgetGroupHistory() != null) {
+        TreeMap<Long, BudgetCostData> sortedBudgetGroupHistory = new TreeMap<>();
+        sortedBudgetGroupHistory.putAll(budgetGroup.getBudgetGroupHistory());
+        for (BudgetCostData historyCostData : sortedBudgetGroupHistory.values()) {
+          budgetGroupCostDataList.add(
+              BudgetCostData.builder()
+                  .actualCost(BudgetUtils.getRoundedValue(historyCostData.getActualCost()))
+                  .forecastCost(BudgetUtils.getRoundedValue(historyCostData.getForecastCost()))
+                  .budgeted(BudgetUtils.getRoundedValue(historyCostData.getBudgeted()))
+                  .budgetVariance(BudgetUtils.getRoundedValue(historyCostData.getBudgetVariance()))
+                  .budgetVariancePercentage(BudgetUtils.getRoundedValue(historyCostData.getBudgetVariancePercentage()))
+                  .time(historyCostData.getTime())
+                  .endTime(historyCostData.getEndTime())
+                  .build());
+        }
       }
       double budgetGroupAmount = budgetGroup.getBudgetGroupAmount();
       double budgetGroupVariance = BudgetUtils.getBudgetVariance(budgetGroupAmount, budgetGroup.getActualCost());
       double budgetGroupVariancePercentage =
           BudgetUtils.getBudgetVariancePercentage(budgetGroupVariance, budgetGroupAmount);
-      BudgetCostData latestBudgetCostData = BudgetCostData.builder()
-                                                .time(budgetGroup.getStartTime())
-                                                .endTime(budgetGroup.getEndTime())
-                                                .actualCost(budgetGroup.getActualCost())
-                                                .forecastCost(budgetGroup.getForecastCost())
-                                                .budgeted(budgetGroupAmount)
-                                                .budgetVariance(budgetGroupVariance)
-                                                .budgetVariancePercentage(budgetGroupVariancePercentage)
-                                                .build();
+      BudgetCostData latestBudgetCostData =
+          BudgetCostData.builder()
+              .time(budgetGroup.getStartTime())
+              .endTime(budgetGroup.getEndTime())
+              .actualCost(BudgetUtils.getRoundedValue(budgetGroup.getActualCost()))
+              .forecastCost(BudgetUtils.getRoundedValue(budgetGroup.getForecastCost()))
+              .budgeted(BudgetUtils.getRoundedValue(budgetGroupAmount))
+              .budgetVariance(BudgetUtils.getRoundedValue(budgetGroupVariance))
+              .budgetVariancePercentage(BudgetUtils.getRoundedValue(budgetGroupVariancePercentage))
+              .build();
       budgetGroupCostDataList.add(latestBudgetCostData);
     }
     return BudgetData.builder().costData(budgetGroupCostDataList).forecastCost(budgetGroup.getForecastCost()).build();
@@ -850,6 +861,14 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
       } else {
         Budget childBudget = budgetDao.get(budgetGroupChildEntityDTO.getId(), accountId);
         childHistory = childBudget != null ? childBudget.getBudgetHistory() : null;
+      }
+      // This will happen when cost data was actually not present, we skip that child.
+      // The history will be adjusted/ updated when group expires and renewed.
+      if (childHistory == null) {
+        log.info("There is no history associated with {} id {} accountId {}",
+            budgetGroupChildEntityDTO.isBudgetGroup() ? "budget group" : "budget", budgetGroupChildEntityDTO.getId(),
+            accountId);
+        continue;
       }
       for (Long startTime : childHistory.keySet()) {
         double actualCost;

@@ -6,18 +6,19 @@
  */
 
 package io.harness.pms.plan.creation;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.YamlException;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.YamlUpdates;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.OptionUtils;
-import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -39,6 +40,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
 public class PlanCreatorUtils {
@@ -51,7 +53,7 @@ public class PlanCreatorUtils {
     }
 
     switch (version) {
-      case PipelineVersion.V1:
+      case HarnessYamlVersion.V1:
         Set<String> keys = supportedTypes.keySet();
         String type = field.getNode().getType();
         if (!EmptyPredicate.isEmpty(type)) {
@@ -67,7 +69,7 @@ public class PlanCreatorUtils {
           return false;
         }
         return keys.contains(field.getName());
-      case PipelineVersion.V0:
+      case HarnessYamlVersion.V0:
         String fieldName = field.getName();
         Set<String> types = supportedTypes.get(fieldName);
         if (EmptyPredicate.isEmpty(types)) {
@@ -190,21 +192,9 @@ public class PlanCreatorUtils {
     return new AutoLogContext(logContextMap, AutoLogContext.OverrideBehavior.OVERRIDE_NESTS);
   }
 
-  public AutoLogContext autoLogContextWithRandomRequestId(
-      ExecutionMetadata executionMetadata, String accountId, String orgIdentifier, String projectIdentifier) {
-    Map<String, String> logContextMap = new HashMap<>();
-    logContextMap.put("planExecutionId", executionMetadata.getExecutionUuid());
-    logContextMap.put("pipelineIdentifier", executionMetadata.getPipelineIdentifier());
-    logContextMap.put("accountIdentifier", accountId);
-    logContextMap.put("orgIdentifier", orgIdentifier);
-    logContextMap.put("projectIdentifier", projectIdentifier);
-    logContextMap.put("sdkPlanCreatorRequestId", UUIDGenerator.generateUuid());
-    return new AutoLogContext(logContextMap, AutoLogContext.OverrideBehavior.OVERRIDE_NESTS);
-  }
-
   public Dependency createGlobalDependency(KryoSerializer kryoSerializer, String pipelineVersion, String pipelineYaml) {
     switch (pipelineVersion) {
-      case PipelineVersion.V1:
+      case HarnessYamlVersion.V1:
         return Dependency.newBuilder().putAllMetadata(getOptionsDependency(kryoSerializer, pipelineYaml)).build();
       default:
         return null;

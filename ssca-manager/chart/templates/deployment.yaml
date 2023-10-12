@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ssca-manager
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- if .Values.global.commonLabels }}
+      {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.global.commonLabels "context" $) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.global.commonAnnotations }}
+  annotations:
+    {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.global.commonAnnotations "context" $) | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app: ssca-manager
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ .Values.maxSurge }}
+      maxUnavailable: {{ .Values.maxUnavailable }}
+  template:
+    metadata:
+      annotations:
+        checksum/credentials-secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
+      {{- if .Values.podAnnotations }}
+      {{- toYaml .Values.podAnnotations | nindent 8 }}
+      {{- end }}
+      {{- if .Values.global.commonAnnotations }}
+      {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.global.commonAnnotations "context" $) | nindent 8 }}
+      {{- end }}
+      {{- include "harnesscommon.monitoring.annotations" . | nindent 8 }}
+      labels:
+        app: ssca-manager
+        {{- include "ssca-manager.selectorLabels" . | nindent 8 }}
+        {{- if .Values.global.commonLabels }}
+        {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.global.commonLabels "context" $) | nindent 8 }}
+        {{- end }}
+        {{- if .Values.podLabels }}
+        {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.podLabels "context" $) | nindent 8 }}
+        {{- end }}
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - ssca-manager
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: ssca-manager
+          image: {{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: ssca-manager
+            - secretRef:
+                name: ssca-manager
+          env:
+            - name: MONGO_URI
+              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "ssca" "context" $) }}
+            - name: JWT_IDENTITY_SERVICE_SECRET
+              value: 'HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU='
+            - name: JWT_AUTH_SECRET
+              value: 'dOkdsVqdRPPRJG31XU0qY4MPqmBBMk0PTAGIKM6O7TGqhjyxScIdJe80mwh5Yb5zF3KxYBHw6B3Lfzlq'
+            {{- if .Values.s3.accessKeyId }}
+            - name: S3_ACCESS_KEY_ID
+              value: {{ .Values.s3.accessKeyId }}
+            {{- else }}
+            - name: S3_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.s3AccessKeyID.name }}
+                  key: {{ .Values.s3AccessKeyID.key }}
+            {{- end }}
+            {{- if .Values.s3.secretAccessKey }}
+            - name: S3_ACCESS_SECRET_KEY
+              value: {{ .Values.s3.secretAccessKey }}
+            {{- else }}
+            - name: S3_ACCESS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.s3SecretAccessKey.name }}
+                  key: {{ .Values.s3SecretAccessKey.key }}
+            {{- end }}
+            {{- if .Values.extraEnvVars }}
+            {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.extraEnvVars "context" $) | nindent 12 }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 300
+            timeoutSeconds: 5
+            periodSeconds: 60
+            failureThreshold: 2
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 60
+            timeoutSeconds: 5
+            periodSeconds: 5
+          resources:
+            limits:
+              memory: {{ .Values.podMemory }}
+            requests:
+              memory: {{ .Values.podMemory }}
+              cpu: {{ .Values.cpu | quote }}

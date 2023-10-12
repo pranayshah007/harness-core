@@ -32,7 +32,7 @@ import io.harness.pms.pipelinestage.helper.PipelineStageHelper;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -109,10 +109,10 @@ public class PipelineStagePlanCreatorTest {
                                      .project(PROJ)
                                      .inputSetReferences(Collections.singletonList("ref"))
                                      .build();
-    doReturn(null).when(pipelineStageHelper).getInputSetJsonNode(yamlField, PipelineVersion.V0);
+    doReturn(null).when(pipelineStageHelper).getInputSetJsonNode(yamlField, HarnessYamlVersion.V0);
 
     PipelineStageStepParameters stepParameters =
-        pipelineStagePlanCreator.getStepParameter(config, yamlField, "planNodeId", PipelineVersion.V0, "acc");
+        pipelineStagePlanCreator.getStepParameter(config, yamlField, "planNodeId", HarnessYamlVersion.V0);
     assertThat(stepParameters.getPipeline()).isEqualTo(PIPELINE);
     assertThat(stepParameters.getOrg()).isEqualTo(ORG);
     assertThat(stepParameters.getProject()).isEqualTo(PROJ);
@@ -273,6 +273,6 @@ public class PipelineStagePlanCreatorTest {
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void testGetSupportedYamlVersions() {
-    assertThat(pipelineStagePlanCreator.getSupportedYamlVersions()).isEqualTo(Set.of(PipelineVersion.V0));
+    assertThat(pipelineStagePlanCreator.getSupportedYamlVersions()).isEqualTo(Set.of(HarnessYamlVersion.V0));
   }
 }

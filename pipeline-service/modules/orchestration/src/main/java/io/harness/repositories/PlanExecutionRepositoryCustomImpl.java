@@ -6,25 +6,32 @@
  */
 
 package io.harness.repositories;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecution.PlanExecutionKeys;
 import io.harness.mongo.helper.AnalyticsMongoTemplateHolder;
+import io.harness.monitoring.ExecutionCountWithAccountResult;
+import io.harness.monitoring.ExecutionCountWithAccountResult.ExecutionCountWithAccountResultKeys;
+import io.harness.pms.execution.utils.StatusUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.CloseableIterator;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @Singleton
 public class PlanExecutionRepositoryCustomImpl implements PlanExecutionRepositoryCustom {
@@ -85,6 +92,16 @@ public class PlanExecutionRepositoryCustomImpl implements PlanExecutionRepositor
     query.cursorBatchSize(MAX_BATCH_SIZE);
     validatePlanExecutionStreamQuery(query);
     return analyticsMongoTemplate.stream(query, PlanExecution.class);
+  }
+
+  @Override
+  public List<ExecutionCountWithAccountResult> aggregateRunningExecutionCountPerAccount() {
+    Aggregation aggregation = Aggregation.newAggregation(
+        Aggregation.match(Criteria.where(PlanExecutionKeys.status).in(StatusUtils.activeStatuses())),
+        Aggregation.group(PlanExecutionKeys.accountId).count().as(ExecutionCountWithAccountResultKeys.count));
+
+    return analyticsMongoTemplate.aggregate(aggregation, PlanExecution.class, ExecutionCountWithAccountResult.class)
+        .getMappedResults();
   }
 
   private void validatePlanExecutionStreamQuery(Query query) {

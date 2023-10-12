@@ -98,9 +98,7 @@ public class WaitStepInfo implements PMSStepInfo, Visitable {
 
   public StepElementParametersBuilder getStepParameters(
       AbstractStepNode stepElementConfig, OnFailRollbackParameters failRollbackParameters) {
-    StepElementParametersBuilder stepBuilder = getStepParameters((WaitStepNode) stepElementConfig);
-    stepBuilder.rollbackParameters(failRollbackParameters);
-    return stepBuilder;
+    return getStepParameters((WaitStepNode) stepElementConfig);
   }
 
   public StepElementParametersBuilder getStepParameters(WaitStepNode stepElementConfig) {

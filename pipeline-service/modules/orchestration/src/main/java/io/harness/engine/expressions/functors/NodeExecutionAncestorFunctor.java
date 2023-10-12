@@ -6,27 +6,29 @@
  */
 
 package io.harness.engine.expressions.functors;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.pms.execution.utils.AmbianceUtils.obtainCurrentLevel;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.expressions.NodeExecutionsCache;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.LateBindingMap;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.execution.utils.AmbianceUtils;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
+import org.apache.commons.jexl3.JexlEngine;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDC)
 @Value
 @Builder
@@ -35,9 +37,11 @@ public class NodeExecutionAncestorFunctor extends LateBindingMap {
   transient NodeExecutionsCache nodeExecutionsCache;
   transient PmsOutcomeService pmsOutcomeService;
   transient PmsSweepingOutputService pmsSweepingOutputService;
+  transient NodeExecutionInfoService nodeExecutionInfoService;
   transient Ambiance ambiance;
   transient Set<NodeExecutionEntityType> entityTypes;
   transient Map<String, String> groupAliases;
+  transient JexlEngine engine;
 
   @Override
   public synchronized Object get(Object key) {
@@ -51,9 +55,11 @@ public class NodeExecutionAncestorFunctor extends LateBindingMap {
                                             .nodeExecutionsCache(nodeExecutionsCache)
                                             .pmsOutcomeService(pmsOutcomeService)
                                             .pmsSweepingOutputService(pmsSweepingOutputService)
+                                            .nodeExecutionInfoService(nodeExecutionInfoService)
                                             .ambiance(ambiance)
                                             .startNodeExecution(startNodeExecution)
                                             .entityTypes(entityTypes)
+                                            .engine(engine)
                                             .build()
                                             .bind();
   }
@@ -69,8 +75,7 @@ public class NodeExecutionAncestorFunctor extends LateBindingMap {
     }
     NodeExecution currNodeExecution = nodeExecutionsCache.fetch(nodeExecutionId);
     while (currNodeExecution != null) {
-      Level level = Objects.requireNonNull(obtainCurrentLevel(currNodeExecution.getAmbiance()));
-      if (!level.getSkipExpressionChain() && key.equals(level.getIdentifier())) {
+      if (!currNodeExecution.getSkipExpressionChain() && key.equals(currNodeExecution.getIdentifier())) {
         return currNodeExecution;
       }
       currNodeExecution = nodeExecutionsCache.fetch(currNodeExecution.getParentId());
@@ -86,7 +91,7 @@ public class NodeExecutionAncestorFunctor extends LateBindingMap {
 
     NodeExecution currNodeExecution = nodeExecutionsCache.fetch(nodeExecutionId);
     while (currNodeExecution != null) {
-      if (groupName.equals(AmbianceUtils.getCurrentGroup(currNodeExecution.getAmbiance()))) {
+      if (groupName.equals(currNodeExecution.getGroup())) {
         return currNodeExecution;
       }
       currNodeExecution = nodeExecutionsCache.fetch(currNodeExecution.getParentId());

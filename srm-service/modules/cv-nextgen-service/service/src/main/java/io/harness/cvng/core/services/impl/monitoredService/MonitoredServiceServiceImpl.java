@@ -8,12 +8,6 @@
 package io.harness.cvng.core.services.impl.monitoredService;
 
 import static io.harness.cvng.core.beans.params.ServiceEnvironmentParams.builderWithProjectParams;
-import static io.harness.cvng.core.utils.FeatureFlagNames.SRM_CODE_ERROR_NOTIFICATIONS;
-import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.ENVIRONMENT_NAME;
-import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_NAME;
-import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_URL;
-import static io.harness.cvng.notification.utils.ErrorTrackingNotificationRuleUtils.buildMonitoredServiceConfigurationTabUrl;
-import static io.harness.cvng.notification.utils.ErrorTrackingNotificationRuleUtils.getCodeErrorTemplateData;
 import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getDurationInSeconds;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.CHANGE_EVENT_TYPE;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.COOL_OFF_DURATION;
@@ -35,9 +29,7 @@ import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeSourceType;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
-import io.harness.cvng.beans.errortracking.ErrorTrackingNotificationData;
 import io.harness.cvng.cdng.services.api.SRMAnalysisStepService;
-import io.harness.cvng.client.ErrorTrackingService;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.HealthMonitoringFlagResponse;
 import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
@@ -108,7 +100,6 @@ import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeImpactCondition;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeObservedCondition;
-import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceCodeErrorCondition;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceHealthScoreCondition;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceNotificationRuleCondition;
 import io.harness.cvng.notification.entities.NotificationRule;
@@ -116,7 +107,6 @@ import io.harness.cvng.notification.entities.NotificationRule.CVNGNotificationCh
 import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator;
 import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator.NotificationData;
-import io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator;
 import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetailsResponse;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsResponse;
@@ -224,7 +214,6 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   @Inject private ServiceDependencyService serviceDependencyService;
   @Inject private SetupUsageEventService setupUsageEventService;
   @Inject private ChangeSourceService changeSourceService;
-  @Inject private ErrorTrackingService errorTrackingService;
   @Inject private Clock clock;
   @Inject private TimeSeriesDashboardService timeSeriesDashboardService;
   @Inject private LogDashboardService logDashboardService;
@@ -1975,10 +1964,6 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
             notificationData =
                 getChangeImpactNotificationData(monitoredService, (MonitoredServiceChangeImpactCondition) condition);
             break;
-          case CODE_ERRORS:
-            notificationData = getCodeErrorsNotificationData(
-                monitoredService, (MonitoredServiceCodeErrorCondition) condition, notificationRule);
-            break;
           default:
             notificationData = NotificationData.builder().shouldSendNotification(false).build();
             break;
@@ -2176,8 +2161,13 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
       List<String> envNames = activeDTO.getEnvNames();
       List<String> envIdentifierList = monitoredService.getEnvironmentIdentifierList();
       for (String envIdentifier : envIdentifierList) {
-        EnvironmentResponseDTO environmentResponseDTO = nextGenService.getEnvironment(monitoredService.getAccountId(),
-            monitoredService.getOrgIdentifier(), monitoredService.getProjectIdentifier(), envIdentifier);
+        EnvironmentResponseDTO environmentResponseDTO = null;
+        try {
+          environmentResponseDTO = nextGenService.getEnvironment(monitoredService.getAccountId(),
+              monitoredService.getOrgIdentifier(), monitoredService.getProjectIdentifier(), envIdentifier);
+        } catch (Exception e) {
+          log.info("Error fetching the environment.");
+        }
         if (environmentResponseDTO != null) {
           envNames.add(environmentResponseDTO.getName());
         }
@@ -2201,20 +2191,33 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
 
       ProjectDTO projectDTO = null;
       OrganizationDTO organizationDTO = null;
-      ServiceResponseDTO serviceDTO = nextGenService.getService(serviceParams.getAccountIdentifier(),
-          serviceParams.getOrgIdentifier(), serviceParams.getProjectIdentifier(), serviceParams.getServiceIdentifier());
+      ServiceResponseDTO serviceDTO = null;
+      try {
+        serviceDTO = nextGenService.getService(serviceParams.getAccountIdentifier(), serviceParams.getOrgIdentifier(),
+            serviceParams.getProjectIdentifier(), serviceParams.getServiceIdentifier());
+      } catch (Exception e) {
+        log.info("Error fetching the service.");
+      }
       if (serviceParams.getProjectIdentifier() != null) {
-        projectDTO = nextGenService.getProject(serviceParams.getAccountIdentifier(), serviceParams.getOrgIdentifier(),
-            serviceParams.getProjectIdentifier());
+        try {
+          projectDTO = nextGenService.getProject(serviceParams.getAccountIdentifier(), serviceParams.getOrgIdentifier(),
+              serviceParams.getProjectIdentifier());
+        } catch (Exception e) {
+          log.info("Error fetching the project.");
+        }
       }
       if (serviceParams.getOrgIdentifier() != null) {
-        organizationDTO =
-            nextGenService.getOrganization(serviceParams.getAccountIdentifier(), serviceParams.getOrgIdentifier());
+        try {
+          organizationDTO =
+              nextGenService.getOrganization(serviceParams.getAccountIdentifier(), serviceParams.getOrgIdentifier());
+        } catch (Exception e) {
+          log.info("Error fetching the organization.");
+        }
       }
 
-      activeServiceDTO.setOrgName(organizationDTO != null ? organizationDTO.getName() : null);
-      activeServiceDTO.setProjectName(projectDTO != null ? projectDTO.getName() : null);
-      activeServiceDTO.setName(serviceDTO != null ? serviceDTO.getName() : null);
+      activeServiceDTO.setOrgName(organizationDTO != null ? organizationDTO.getName() : "Deleted");
+      activeServiceDTO.setProjectName(projectDTO != null ? projectDTO.getName() : "Deleted");
+      activeServiceDTO.setName(serviceDTO != null ? serviceDTO.getName() : "Deleted");
       activeServiceDTOList.add(activeServiceDTO);
     }
 
@@ -2329,7 +2332,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     hPersistence.update(monitoredService, updateOperations);
   }
 
-  private static MonitoredServiceParams buildMonitoredServiceParams(MonitoredService monitoredService) {
+  public static MonitoredServiceParams buildMonitoredServiceParams(MonitoredService monitoredService) {
     return MonitoredServiceParams.builder()
         .accountIdentifier(monitoredService.getAccountId())
         .orgIdentifier(monitoredService.getOrgIdentifier())
@@ -2424,43 +2427,6 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     } else {
       return NotificationData.builder().shouldSendNotification(false).build();
     }
-  }
-
-  private NotificationData getCodeErrorsNotificationData(MonitoredService monitoredService,
-      MonitoredServiceCodeErrorCondition codeErrorCondition, NotificationRule notificationRule) {
-    MonitoredServiceParams monitoredServiceParams = buildMonitoredServiceParams(monitoredService);
-    Map<String, String> templateDataMap = new HashMap<>();
-    boolean featureFlagEnabled =
-        featureFlagService.isFeatureFlagEnabled(monitoredService.getAccountId(), SRM_CODE_ERROR_NOTIFICATIONS);
-    final List<String> environmentIdentifierList = monitoredService.getEnvironmentIdentifierList();
-    boolean oneEnvironmentId = environmentIdentifierList != null && environmentIdentifierList.size() == 1;
-
-    if (featureFlagEnabled && oneEnvironmentId) {
-      String environmentId = environmentIdentifierList.get(0);
-      ErrorTrackingNotificationData notificationData = null;
-      try {
-        notificationData = errorTrackingService.getNotificationData(monitoredService.getOrgIdentifier(),
-            monitoredService.getAccountId(), monitoredService.getProjectIdentifier(),
-            monitoredService.getServiceIdentifier(), environmentId, codeErrorCondition.getErrorTrackingEventStatus(),
-            codeErrorCondition.getErrorTrackingEventTypes(), notificationRule.getUuid());
-      } catch (Exception e) {
-        log.error("Error connecting to the ErrorTracking Event Summary API.", e);
-      }
-      if (notificationData != null && !notificationData.getScorecards().isEmpty()) {
-        final String baseLinkUrl =
-            ((ErrorTrackingTemplateDataGenerator) notificationRuleConditionTypeTemplateDataGeneratorMap.get(
-                 NotificationRuleConditionType.CODE_ERRORS))
-                .getBaseLinkUrl(monitoredService.getAccountId());
-        templateDataMap.putAll(
-            getCodeErrorTemplateData(codeErrorCondition.getErrorTrackingEventStatus(), notificationData, baseLinkUrl));
-        templateDataMap.put(
-            NOTIFICATION_URL, buildMonitoredServiceConfigurationTabUrl(baseLinkUrl, monitoredServiceParams));
-        templateDataMap.put(NOTIFICATION_NAME, notificationRule.getName());
-        templateDataMap.put(ENVIRONMENT_NAME, environmentId);
-        return NotificationData.builder().shouldSendNotification(true).templateDataMap(templateDataMap).build();
-      }
-    }
-    return NotificationData.builder().shouldSendNotification(false).build();
   }
 
   private List<NotificationRuleRef> getNotificationRuleRefs(

@@ -6,22 +6,33 @@
  */
 
 package io.harness.steps.container.utils;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.TaskSelector;
+import io.harness.delegate.beans.ci.pod.ConnectorDetails;
+import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.plugin.ContainerStepSpec;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @UtilityClass
 @Slf4j
 public class ContainerSpecUtils {
+  public static final String CONNECTOR_ORIGIN = "connector";
+
   @NotNull
-  public List<TaskSelector> getDelegateSelectors(ContainerStepSpec containerStepSpec) {
+  public List<TaskSelector> getStepDelegateSelectors(ContainerStepSpec containerStepSpec) {
     if (containerStepSpec != null) {
       ParameterField<List<TaskSelectorYaml>> selectors = containerStepSpec.fetchDelegateSelectors();
       if (ParameterField.isNotNull(selectors)) {
@@ -32,5 +43,30 @@ public class ContainerSpecUtils {
       }
     }
     return List.of();
+  }
+
+  @NotNull
+  private List<TaskSelector> getConnectorDelegateSelectors(ConnectorDetails k8sConnector) {
+    if (k8sConnector != null && k8sConnector.getConnectorConfig() instanceof KubernetesClusterConfigDTO) {
+      Set<String> delegateSelectorSet =
+          ((KubernetesClusterConfigDTO) k8sConnector.getConnectorConfig()).getDelegateSelectors();
+      if (delegateSelectorSet != null) {
+        return delegateSelectorSet.stream()
+            .map(selector -> TaskSelector.newBuilder().setSelector(selector).setOrigin(CONNECTOR_ORIGIN).build())
+            .collect(Collectors.toList());
+      }
+    }
+    return List.of();
+  }
+
+  @NotNull
+  public List<TaskSelector> mergeStepAndConnectorOriginDelegateSelectors(
+      ContainerStepSpec containerStepInfo, ConnectorDetails k8sConnector) {
+    List<TaskSelector> stepSelector = getStepDelegateSelectors(containerStepInfo);
+    List<TaskSelector> connectorSelector = getConnectorDelegateSelectors(k8sConnector);
+    List<TaskSelector> finalSelectors = new ArrayList<>();
+    finalSelectors.addAll(connectorSelector);
+    finalSelectors.addAll(stepSelector);
+    return finalSelectors;
   }
 }

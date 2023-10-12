@@ -2,58 +2,66 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: migrator-config
-  namespace: {{ .Release.Namespace }}
+  namespace: '{{ .Release.Namespace }}'
+  labels:
+    {{- if .Values.global.commonLabels }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.global.commonAnnotations }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
 data:
-  ALLOWED_ORIGINS: {{ .Values.config.ALLOWED_ORIGINS | default .Values.global.loadbalancerURL }}
-  API_URL: {{ .Values.config.API_URL | default .Values.global.loadbalancerURL }}
+  ALLOWED_ORIGINS: '{{ .Values.config.ALLOWED_ORIGINS | default .Values.global.loadbalancerURL }}'
+  API_URL: '{{ .Values.config.API_URL | default .Values.global.loadbalancerURL }}'
   DELEGATE_METADATA_URL: {{ .Values.config.DELEGATE_METADATA_URL | default "loadbalancerURL/storage/wingsdelegates/delegateprod.txt" | replace "loadbalancerURL" .Values.global.loadbalancerURL }}
-  UI_SERVER_URL: {{ .Values.config.UI_SERVER_URL | default .Values.global.loadbalancerURL }}
+  UI_SERVER_URL: '{{ .Values.config.UI_SERVER_URL | default .Values.global.loadbalancerURL }}'
   WATCHER_METADATA_URL: {{ .Values.config.DELEGATE_METADATA_URL | default "loadbalancerURL/storage/wingswatchers/watcherprod.txt" | replace "loadbalancerURL" .Values.global.loadbalancerURL }}
   LOG_STREAMING_SERVICE_BASEURL: {{ .Values.config.LOG_STREAMING_SERVICE_BASEURL | default "http://log-service:8079/" }}
   LOG_STREAMING_SERVICE_EXTERNAL_URL: {{ .Values.config.LOG_STREAMING_SERVICE_EXTERNAL_URL | default "loadbalancerURL/gateway/log-service/" | replace "loadbalancerURL" .Values.global.loadbalancerURL }}
-  ATMOSPHERE_BACKEND: {{ .Values.config.ATMOSPHERE_BACKEND }}
-  BACKGROUND_SCHEDULER_CLUSTERED: {{ .Values.config.BACKGROUND_SCHEDULER_CLUSTERED | quote }}
-  CACHE_BACKEND: {{ .Values.config.CACHE_BACKEND }}
-  CAPSULE_JAR: {{ .Values.config.CAPSULE_JAR }}
+  ATMOSPHERE_BACKEND: '{{ .Values.config.ATMOSPHERE_BACKEND }}'
+  BACKGROUND_SCHEDULER_CLUSTERED: '{{ .Values.config.BACKGROUND_SCHEDULER_CLUSTERED }}'
+  CACHE_BACKEND: '{{ .Values.config.CACHE_BACKEND }}'
+  CAPSULE_JAR: '{{ .Values.config.CAPSULE_JAR }}'
   UPGRADER_DOCKER_IMAGE: {{ include "migrator.upgrader_docker_image" . }}
-  DELEGATE_SERVICE_TARGET: {{ .Values.config.DELEGATE_SERVICE_TARGET }}
-  DELEGATE_SERVICE_AUTHORITY: {{ .Values.config.DELEGATE_SERVICE_AUTHORITY }}
-  DISTRIBUTED_LOCK_IMPLEMENTATION: {{ .Values.config.DISTRIBUTED_LOCK_IMPLEMENTATION }}
-  DEPLOY_MODE: {{ .Values.config.DEPLOY_MODE }}
-  DISABLE_NEW_RELIC: {{ .Values.config.DISABLE_NEW_RELIC | quote }}
-  ENABLE_G1GC: {{ .Values.config.ENABLE_G1GC | quote }}
-  EXTERNAL_GRAPHQL_RATE_LIMIT: {{ .Values.config.EXTERNAL_GRAPHQL_RATE_LIMIT | quote }}
+  DELEGATE_SERVICE_TARGET: '{{ .Values.config.DELEGATE_SERVICE_TARGET }}'
+  DELEGATE_SERVICE_AUTHORITY: '{{ .Values.config.DELEGATE_SERVICE_AUTHORITY }}'
+  DISTRIBUTED_LOCK_IMPLEMENTATION: '{{ .Values.config.DISTRIBUTED_LOCK_IMPLEMENTATION }}'
+  DEPLOY_MODE: '{{ .Values.config.DEPLOY_MODE }}'
+  DISABLE_NEW_RELIC: '{{ .Values.config.DISABLE_NEW_RELIC }}'
+  ENABLE_G1GC: '{{ .Values.config.ENABLE_G1GC }}'
+  EXTERNAL_GRAPHQL_RATE_LIMIT: '{{ .Values.config.EXTERNAL_GRAPHQL_RATE_LIMIT }}'
   GITOPS_SERVICE_CLIENT_BASEURL: {{ .Values.config.GITOPS_SERVICE_CLIENT_BASEURL | default "http://gitops:7908/api/v1/" }}
-  HAZELCAST_NAMESPACE: {{ .Values.config.HAZELCAST_NAMESPACE | default .Release.Namespace }}
-  HAZELCAST_SERVICE: {{ .Values.config.HAZELCAST_SERVICE }}
-  HZ_CLUSTER_NAME: {{ .Values.config.HZ_CLUSTER_NAME }}
-  LOGGING_LEVEL: {{ .Values.config.LOGGING_LEVEL }}
-  MEMORY: {{ .Values.config.MEMORY | quote }}
-  REDIS_SENTINEL: {{ .Values.global.database.redis.installed  | quote }}
+  HAZELCAST_NAMESPACE: '{{ .Values.config.HAZELCAST_NAMESPACE | default .Release.Namespace }}'
+  HAZELCAST_SERVICE: '{{ .Values.config.HAZELCAST_SERVICE }}'
+  HZ_CLUSTER_NAME: '{{ .Values.config.HZ_CLUSTER_NAME }}'
+  LOGGING_LEVEL: '{{ .Values.config.LOGGING_LEVEL }}'
+  MEMORY: '{{ .Values.config.MEMORY }}'
+  REDIS_SENTINEL: '{{ .Values.global.database.redis.installed }}'
   REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   REDIS_MASTER_NAME: 'harness-redis'
   REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
-  SERVER_PORT: {{ .Values.config.SERVER_PORT | quote }}
-  SERVICE_ACC: {{ .Values.config.SERVICE_ACC }}
-  VERSION: {{ .Values.config.VERSION | quote }}
+  SERVER_PORT: '{{ .Values.config.SERVER_PORT }}'
+  SERVICE_ACC: '{{ .Values.config.SERVICE_ACC }}'
+  VERSION: '{{ .Values.config.VERSION }}'
   NG_MANAGER_BASE_URL: {{ .Values.config.NG_MANAGER_BASE_URL | default "http://ng-manager:7090/" }}
-  ACCESS_CONTROL_ENABLED: {{ .Values.config.ACCESS_CONTROL_ENABLED | quote }}
+  ACCESS_CONTROL_ENABLED: '{{ .Values.config.ACCESS_CONTROL_ENABLED }}'
   ACCESS_CONTROL_BASE_URL: {{ .Values.config.ACCESS_CONTROL_BASE_URL | default "http://access-control:9006/api/" }}
   EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
-  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: {{ .Values.config.EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME }}
-  EVENTS_FRAMEWORK_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
-  EVENTS_FRAMEWORK_AVAILABLE_IN_ONPREM: {{ .Values.config.EVENTS_FRAMEWORK_AVAILABLE_IN_ONPREM | quote }}
+  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: '{{ .Values.config.EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME }}'
+  EVENTS_FRAMEWORK_USE_SENTINEL: '{{ .Values.global.database.redis.installed }}'
+  EVENTS_FRAMEWORK_AVAILABLE_IN_ONPREM: '{{ .Values.config.EVENTS_FRAMEWORK_AVAILABLE_IN_ONPREM }}'
   EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
-  HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER: {{ .Values.config.HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER | quote }}
-  MONGO_SSL_CONFIG: {{ .Values.config.MONGO_SSL_CONFIG | quote }}
-  ENABLE_ITERATORS: {{ .Values.config.ENABLE_ITERATORS | quote }}
-  ITERATOR_CONFIG_PATH: {{ .Values.config.ITERATOR_CONFIG_PATH }}
-  LICENSE_INFO: {{ .Values.config.LICENSE_INFO | default .Values.global.license.cg | quote }}
+  HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER: '{{ .Values.config.HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER }}'
+  MONGO_SSL_CONFIG: '{{ .Values.config.MONGO_SSL_CONFIG }}'
+  ENABLE_ITERATORS: '{{ .Values.config.ENABLE_ITERATORS }}'
+  ITERATOR_CONFIG_PATH: '{{ .Values.config.ITERATOR_CONFIG_PATH }}'
+  LICENSE_INFO: '{{ .Values.config.LICENSE_INFO | default .Values.global.license.cg }}'
   ENABLE_AUDIT: 'true'
   AUDIT_CLIENT_BASEURL: {{ .Values.config.AUDIT_CLIENT_BASEURL | default "http://platform-service:9005/api/" }}
   TEMPLATE_SERVICE_ENDPOINT: {{ .Values.config.TEMPLATE_SERVICE_ENDPOINT | default "http://template-service:15002/api/" }}
   PIPELINE_SERVICE_CLIENT_BASEURL: {{ .Values.config.PIPELINE_SERVICE_CLIENT_BASEURL | default "http://pipeline-service:12001/api/" }}
   NG_MANAGER_CLIENT_BASEURL: {{ .Values.config.NG_MANAGER_CLIENT_BASEURL | default "http://ng-manager:7090/" }}
+  {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
 
 ---
 apiVersion: v1

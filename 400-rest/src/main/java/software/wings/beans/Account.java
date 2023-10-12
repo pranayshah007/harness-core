@@ -6,7 +6,6 @@
  */
 
 package software.wings.beans;
-
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.delegate.beans.DelegateConfiguration.DelegateConfigurationKeys;
 
@@ -18,8 +17,11 @@ import static software.wings.ngmigration.NGMigrationEntityType.ACCOUNT;
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.ccm.license.CeLicenseInfo;
@@ -39,6 +41,7 @@ import io.harness.security.EncryptionInterface;
 import io.harness.security.SimpleEncryption;
 import io.harness.validation.Create;
 
+import software.wings.beans.account.AccountPreferences;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.yaml.BaseEntityYaml;
@@ -68,6 +71,7 @@ import lombok.experimental.Accessors;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(DX)
 @TargetModule(HarnessModule._955_ACCOUNT_MGMT)
 @FieldNameConstants(innerTypeName = "AccountKeys")
@@ -85,7 +89,18 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
                  .name("next_iteration_license_info2")
                  .field(AccountKeys.licenseExpiryCheckIteration)
                  .field(AccountKeys.encryptedLicenseInfo)
-                 .build())
+                 .build(),
+            CompoundMongoIndex.builder()
+                .name("account_status_deletion_iteration")
+                .field(AccountKeys.accountStatusKey)
+                .field(AccountKeys.accountDeletionIteration)
+                .build(),
+            CompoundMongoIndex.builder()
+                .name("accountStatus_accountType_workflowDataCollectionIteration")
+                .field(AccountKeys.accountStatusKey)
+                .field(AccountKeys.accountType)
+                .field(AccountKeys.workflowDataCollectionIteration)
+                .build())
         .build();
   }
 
@@ -920,5 +935,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     public static final String delegateTaskRebroadcastIteration = "delegateTaskRebroadcastIteration";
     public static final String DELEGATE_CONFIGURATION_DELEGATE_VERSIONS =
         delegateConfiguration + "." + DelegateConfigurationKeys.delegateVersions;
+    public static final String accountStatusKey = "licenseInfo.accountStatus";
+    public static final String accountType = "licenseInfo.accountType";
   }
 }

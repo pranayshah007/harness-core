@@ -32,7 +32,9 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
 import io.harness.cdng.infra.mapper.InfrastructureMapper;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
@@ -41,6 +43,9 @@ import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.Envir
 import io.harness.cdng.ssh.SshEntityHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
+import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
+import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.beans.DocumentationConstants;
 import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
@@ -61,6 +66,7 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.Infrastruct
 import io.harness.ng.core.infrastructure.mappers.InfrastructureFilterHelper;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.infrastructure.services.impl.InfrastructureYamlSchemaHelper;
+import io.harness.ng.core.utils.GitXUtils;
 import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.repositories.UpsertOptions;
@@ -89,10 +95,12 @@ import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -155,6 +163,7 @@ public class InfrastructureResource {
   @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
   @Inject private final SshEntityHelper sshEntityHelper;
   private InfrastructureYamlSchemaHelper infrastructureYamlSchemaHelper;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   public static final String INFRA_PARAM_MESSAGE = "Infrastructure Identifier for the entity";
 
@@ -175,7 +184,13 @@ public class InfrastructureResource {
       @Parameter(description = NGCommonEntityConstants.ENVIRONMENT_KEY, required = true) @NotNull @QueryParam(
           NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String envIdentifier,
       @Parameter(description = "Specify whether Infrastructure is deleted or not") @QueryParam(
-          NGCommonEntityConstants.DELETED_KEY) @DefaultValue("false") boolean deleted) {
+          NGCommonEntityConstants.DELETED_KEY) @DefaultValue("false") boolean deleted,
+      @Parameter(description = "This contains details of Git Entity like Git Branch info",
+          hidden = true) @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @Parameter(description = "Specifies whether to load the entity from cache", hidden = true) @HeaderParam(
+          "Load-From-Cache") @DefaultValue("false") String loadFromCache,
+      @Parameter(description = "Specifies whether to load the entity from fallback branch", hidden = true) @QueryParam(
+          "loadFromFallbackBranch") @DefaultValue("false") boolean loadFromFallbackBranch) {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(orgIdentifier, projectIdentifier, accountId);
     environmentValidationHelper.checkThatEnvExists(accountId, orgIdentifier, projectIdentifier, envIdentifier);
 
@@ -183,7 +198,8 @@ public class InfrastructureResource {
         accountId, orgIdentifier, projectIdentifier, envIdentifier, ENVIRONMENT_VIEW_PERMISSION, "view");
 
     Optional<InfrastructureEntity> infraEntity =
-        infrastructureEntityService.get(accountId, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifier);
+        infrastructureEntityService.get(accountId, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifier,
+            GitXUtils.parseLoadFromCacheHeaderParam(loadFromCache), loadFromFallbackBranch);
 
     if (infraEntity.isPresent()) {
       if (isEmpty(infraEntity.get().getYaml())) {
@@ -207,11 +223,15 @@ public class InfrastructureResource {
   public ResponseDTO<InfrastructureResponse>
   create(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @RequestBody(required = true, description = "Details of the Infrastructure to be created", content = {
-        @Content(
-            examples = @ExampleObject(name = "Create", summary = "Sample Infrastructure create payload",
-                value = DocumentationConstants.infrastructureRequestDTO, description = "Sample Infrastructure payload"))
-      }) @Valid InfrastructureRequestDTO infrastructureRequestDTO) {
+      @RequestBody(required = true, description = "Details of the Infrastructure to be created",
+          content =
+          {
+            @Content(examples = @ExampleObject(name = "Create", summary = "Sample Infrastructure create payload",
+                         value = DocumentationConstants.infrastructureRequestDTO,
+                         description = "Sample Infrastructure payload"))
+          }) @Valid InfrastructureRequestDTO infrastructureRequestDTO,
+      @Parameter(description = "This contains details of Git Entity like Git Branch, Git Repository to be created",
+          hidden = true) @BeanParam GitEntityCreateInfoDTO gitEntityCreateInfo) {
     throwExceptionForNoRequestDTO(infrastructureRequestDTO);
     infrastructureYamlSchemaHelper.validateSchema(accountId, infrastructureRequestDTO.getYaml());
     InfrastructureEntity infrastructureEntity =
@@ -302,11 +322,15 @@ public class InfrastructureResource {
   public ResponseDTO<InfrastructureResponse>
   update(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
              NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @RequestBody(required = true, description = "Details of the Infrastructure to be updated", content = {
-        @Content(
-            examples = @ExampleObject(name = "Update", summary = "Sample Infrastructure update payload",
-                value = DocumentationConstants.infrastructureRequestDTO, description = "Sample Infrastructure payload"))
-      }) @Valid InfrastructureRequestDTO infrastructureRequestDTO) {
+      @RequestBody(required = true, description = "Details of the Infrastructure to be updated",
+          content =
+          {
+            @Content(examples = @ExampleObject(name = "Update", summary = "Sample Infrastructure update payload",
+                         value = DocumentationConstants.infrastructureRequestDTO,
+                         description = "Sample Infrastructure payload"))
+          }) @Valid InfrastructureRequestDTO infrastructureRequestDTO,
+      @Parameter(description = "This contains details of Git Entity like Git Branch information to be updated",
+          hidden = true) @BeanParam GitEntityUpdateInfoDTO gitEntityInfo) {
     throwExceptionForNoRequestDTO(infrastructureRequestDTO);
     infrastructureYamlSchemaHelper.validateSchema(accountId, infrastructureRequestDTO.getYaml());
     InfrastructureEntity infrastructureEntity =
@@ -393,7 +417,11 @@ public class InfrastructureResource {
       @Parameter(
           description =
               "Specifies the sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
-      @QueryParam("sort") List<String> sort) {
+      @QueryParam("sort") List<String> sort,
+      @Parameter(description = "list of service refs required to fetch infrastructures scoped to these service refs")
+      @QueryParam("serviceRefs") List<String> serviceRefs,
+      @Parameter(description = "Specifies the repo name of the entity", hidden = true) @QueryParam(
+          "repoName") String repoName) {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(orgIdentifier, projectIdentifier, accountId);
     environmentValidationHelper.checkThatEnvExists(accountId, orgIdentifier, projectIdentifier, envIdentifier);
     checkForAccessOrThrow(
@@ -408,6 +436,9 @@ public class InfrastructureResource {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
     Page<InfrastructureEntity> infraEntities = infrastructureEntityService.list(criteria, pageRequest);
+    if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_SCOPE_INFRA_TO_SERVICES)) {
+      infraEntities = infrastructureEntityService.getScopedInfrastructures(infraEntities, serviceRefs);
+    }
     if (ServiceDefinitionType.CUSTOM_DEPLOYMENT == deploymentType && !isEmpty(deploymentTemplateIdentifier)
         && !isEmpty(versionLabel)) {
       infraEntities = customDeploymentYamlHelper.getFilteredInfraEntities(

@@ -7,9 +7,11 @@
 
 package io.harness.repositories.envGroup;
 
+import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import io.harness.category.element.UnitTests;
@@ -22,6 +24,7 @@ import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.outbox.api.OutboxService;
+import io.harness.repositories.environment.custom.EnvironmentRepositoryCustomImpl;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -53,11 +56,13 @@ public class EnvironmentGroupRepositoryCustomImplTest extends CDNGTestBase {
   @Inject private EnvironmentService environmentService;
 
   @InjectMocks private EnvironmentGroupRepositoryCustomImpl environmentGroupRepositoryCustom;
+  @InjectMocks private EnvironmentRepositoryCustomImpl environmentRepositoryCustom;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
     Reflect.on(environmentGroupRepositoryCustom).set("mongoTemplate", mongoTemplate);
+    Reflect.on(environmentRepositoryCustom).set("mongoTemplate", mongoTemplate);
     Reflect.on(environmentGroupRepositoryCustom).set("environmentService", environmentService);
 
     environmentService.create(Environment.builder()
@@ -213,5 +218,16 @@ public class EnvironmentGroupRepositoryCustomImplTest extends CDNGTestBase {
             .and(EnvironmentGroupKeys.identifier));
     assertThat(updated).isEqualToIgnoringGivenFields(originalEntity, "name", "version");
     assertThat(updated.getName()).isEqualTo("newName");
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void test() {
+    assertThatCode(()
+                       -> environmentRepositoryCustom
+                              .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
+                                  ACC_ID, ORG_ID, PRO_ID, null, true, false, false, false))
+        .doesNotThrowAnyException();
   }
 }

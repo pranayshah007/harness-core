@@ -6,11 +6,15 @@
  */
 
 package io.harness.delegate.task.terraform;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(CDP)
 public final class TerraformExceptionConstants {
   public TerraformExceptionConstants() {
@@ -43,6 +47,8 @@ public final class TerraformExceptionConstants {
         "Please check if Artifactory config has artifact details";
     public static final String HINT_FILES_NOT_FOUND_IN_S3_CONFIG =
         "Please check if there is any file on provided S3 path";
+    public static final String HINT_ERROR_ASKING_FOR_STATE_MIGRATION =
+        "Please set a new provisionerIdentifier so old state maintained by Harness will be ignored";
   }
 
   public static final class Explanation {
@@ -57,6 +63,8 @@ public final class TerraformExceptionConstants {
         "No Artifactory config files details set";
     public static final String EXPLANATION_FILES_NOT_FOUND_IN_S3_CONFIG =
         "Couldn't find any file on specified S3 path ";
+    public static final String EXPLANATION_ERROR_ASKING_FOR_STATE_MIGRATION =
+        "A terraform step with same provisionerIdentifier and no remote backend config configured was previously executed and a local state file maintained by Harness is present";
   }
 
   public static final class Message {
@@ -81,5 +89,10 @@ public final class TerraformExceptionConstants {
     public static final String NO_VALID_CRED_FOUND_FOR_AWS = "No valid credential sources found for AWS Provider";
     public static final String CONFIG_FILE_PATH_NOT_EXIST = "Could not find provided terraform config folder";
     public static final String FAIL_TO_INSTALL_PROVIDER = "Failed to install provider";
+
+    public static final String ERROR_ASKING_FOR_STATE_MIGRATION = "error asking for state migration";
+
+    public static final String ERROR_ASKING_FOR_STATE_MIGRATION_2 =
+        "Can't ask approval for state migration when interactive input is disabled";
   }
 }

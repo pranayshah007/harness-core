@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.plancreator.DependencyMetadata;
 import io.harness.plancreator.PlanCreatorUtilsV1;
 import io.harness.plancreator.steps.internal.PmsStepPlanCreatorUtils;
 import io.harness.plancreator.strategy.StrategyUtils;
@@ -24,7 +25,7 @@ import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
+import io.harness.pms.contracts.plan.HarnessStruct;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -32,6 +33,7 @@ import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters;
 import io.harness.pms.pipelinestage.helper.PipelineStageHelper;
 import io.harness.pms.pipelinestage.step.PipelineStageStep;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
@@ -41,8 +43,8 @@ import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.security.PmsSecurityContextGuardUtils;
 import io.harness.pms.yaml.DependenciesUtils;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -58,7 +60,6 @@ import io.harness.utils.PmsFeatureFlagService;
 import io.harness.when.utils.v1.RunInfoUtilsV1;
 
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -101,13 +102,13 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
         .build();
   }
 
-  public void setSourcePrincipal(PlanCreationContextValue executionMetadata) {
-    Principal principal = PmsSecurityContextGuardUtils.getPrincipal(executionMetadata.getAccountIdentifier(),
-        executionMetadata.getMetadata().getPrincipalInfo(),
-        executionMetadata.getMetadata().getTriggerInfo().getTriggeredBy());
+  public void setSourcePrincipal(PlanCreationContext ctx) {
+    Principal principal = PmsSecurityContextGuardUtils.getPrincipal(
+        ctx.getAccountIdentifier(), ctx.getPrincipalInfo(), ctx.getTriggerInfo().getTriggeredBy());
     SourcePrincipalContextBuilder.setSourcePrincipal(principal);
     SecurityContextBuilder.setContext(principal);
   }
+
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, YamlField stageNode) {
     PipelineStageConfig configNode = null;
@@ -122,7 +123,7 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
       throw new InvalidRequestException("Pipeline Stage Yaml does not contain spec");
     }
     // Principal is added to fetch Git Entity
-    setSourcePrincipal(ctx.getMetadata());
+    setSourcePrincipal(ctx);
     Optional<PipelineEntity> childPipelineEntity = pmsPipelineService.getPipeline(ctx.getAccountIdentifier(),
         configNode.getOrg(), configNode.getProject(), configNode.getPipeline(), false, false, false, true);
 
@@ -144,10 +145,6 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
     }
 
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
-    Map<String, ByteString> metadataMap = new HashMap<>();
-
-    // This will be empty till we enable strategy support for Pipeline Stage
-    addDependencyForStrategy(ctx, stageNode, dependenciesNodeMap, metadataMap);
 
     // Here planNodeId is used to support strategy. Same node id will be passed to child execution for navigation to
     // parent execution
@@ -174,7 +171,7 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
                     .build())
             .adviserObtainments(
                 PmsStepPlanCreatorUtils.getAdviserObtainmentFromMetaData(kryoSerializer, ctx.getCurrentField(), true));
-    if (!EmptyPredicate.isEmpty(ctx.getExecutionInputTemplate())) {
+    if (EmptyPredicate.isNotEmpty(ctx.getExecutionInputTemplate())) {
       builder.executionInputTemplate(ctx.getExecutionInputTemplate());
     }
     // If strategy present then don't add advisers. Strategy node will take care of running the stage nodes.
@@ -183,6 +180,12 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
       builder.adviserObtainments(getAdviserObtainments(ctx.getDependency()));
     }
 
+    // This will be empty till we enable strategy support for Pipeline Stage
+    DependencyMetadata dependencyMetadata = getDependencyMetadataForStrategy(ctx, stageNode, dependenciesNodeMap);
+
+    // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
+    // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
+    // bytes for complex objects. We will deprecate the first one in v1
     // Dependencies is added for strategy node
     return PlanCreationResponse.builder()
         .graphLayoutResponse(getLayoutNodeInfo(ctx))
@@ -190,15 +193,20 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
         .dependencies(
             DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
                 .toBuilder()
-                .putDependencyMetadata(stageNode.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
+                .putDependencyMetadata(stageNode.getUuid(),
+                    Dependency.newBuilder()
+                        .putAllMetadata(dependencyMetadata.getMetadataMap())
+                        .setNodeMetadata(
+                            HarnessStruct.newBuilder().putAllData(dependencyMetadata.getNodeMetadataMap()).build())
+                        .build())
                 .build())
         .build();
   }
 
-  private void addDependencyForStrategy(PlanCreationContext ctx, YamlField stageNode,
-      Map<String, YamlField> dependenciesNodeMap, Map<String, ByteString> metadataMap) {
-    StrategyUtilsV1.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, stageNode.getUuid(), dependenciesNodeMap,
-        metadataMap, getAdviserObtainments(ctx.getDependency()));
+  private DependencyMetadata getDependencyMetadataForStrategy(
+      PlanCreationContext ctx, YamlField stageNode, Map<String, YamlField> dependenciesNodeMap) {
+    return StrategyUtilsV1.getStrategyFieldDependencyMetadataIfPresent(
+        kryoSerializer, ctx, stageNode.getUuid(), dependenciesNodeMap, getAdviserObtainments(ctx.getDependency()));
   }
 
   private List<AdviserObtainment> getAdviserObtainments(Dependency dependency) {
@@ -211,15 +219,15 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
     YamlField stageYamlField = context.getCurrentField();
     String nextNodeUuid = null;
     if (context.getDependency() != null && !EmptyPredicate.isEmpty(context.getDependency().getMetadataMap())
-        && context.getDependency().getMetadataMap().containsKey("nextId")) {
-      nextNodeUuid =
-          (String) kryoSerializer.asObject(context.getDependency().getMetadataMap().get("nextId").toByteArray());
+        && context.getDependency().getMetadataMap().containsKey(PlanCreatorConstants.NEXT_ID)) {
+      nextNodeUuid = (String) kryoSerializer.asObject(
+          context.getDependency().getMetadataMap().get(PlanCreatorConstants.NEXT_ID).toByteArray());
     }
     if (StrategyUtilsV1.isWrappedUnderStrategy(context.getCurrentField())) {
       stageYamlFieldMap = StrategyUtilsV1.modifyStageLayoutNodeGraph(stageYamlField, nextNodeUuid);
     } else {
       EdgeLayoutList edgeLayoutList = EdgeLayoutList.newBuilder().build();
-      if (!EmptyPredicate.isEmpty(nextNodeUuid)) {
+      if (EmptyPredicate.isNotEmpty(nextNodeUuid)) {
         // Add nextChildId in edgeLayoutList if present.
         edgeLayoutList = EdgeLayoutList.newBuilder().addNextIds(nextNodeUuid).build();
       }
@@ -239,6 +247,6 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
 
   @Override
   public Set<String> getSupportedYamlVersions() {
-    return Set.of(PipelineVersion.V1);
+    return Set.of(HarnessYamlVersion.V1);
   }
 }

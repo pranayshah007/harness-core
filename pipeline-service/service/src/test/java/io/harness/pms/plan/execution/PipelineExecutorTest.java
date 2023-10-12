@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -358,13 +359,16 @@ public class PipelineExecutorTest extends CategoryTest {
         ExecutionMetadata.newBuilder()
             .setTriggerInfo(ExecutionTriggerInfo.newBuilder().setTriggerType(TriggerType.WEBHOOK).build())
             .build();
-    doReturn(PlanExecution.builder().metadata(originalExecutionMetadata).build())
+    doReturn(PlanExecution.builder()
+                 .createdAt(System.currentTimeMillis() - 300000)
+                 .metadata(originalExecutionMetadata)
+                 .build())
         .when(planExecutionService)
-        .get(originalExecutionId);
+        .getWithFieldsIncluded(eq(originalExecutionId), any());
     doReturn(metadata)
         .when(rollbackModeExecutionHelper)
-        .transformExecutionMetadata(originalExecutionMetadata, "planId", executionTriggerInfo, accountId, orgId,
-            projectId, ExecutionMode.POST_EXECUTION_ROLLBACK, null, stageNodeExecutionIds);
+        .transformExecutionMetadata(originalExecutionMetadata, "planId", executionTriggerInfo,
+            ExecutionMode.POST_EXECUTION_ROLLBACK, null, stageNodeExecutionIds);
     PlanExecutionMetadata originalPlanExecutionMetadata =
         PlanExecutionMetadata.builder().planExecutionId(originalExecutionId).build();
     doReturn(Optional.of(originalPlanExecutionMetadata))
@@ -397,11 +401,11 @@ public class PipelineExecutorTest extends CategoryTest {
             .build();
     doReturn(PlanExecution.builder().metadata(originalExecutionMetadata).build())
         .when(planExecutionService)
-        .get(originalExecutionId);
+        .getWithFieldsIncluded(eq(originalExecutionId), any());
     doReturn(metadata)
         .when(rollbackModeExecutionHelper)
-        .transformExecutionMetadata(originalExecutionMetadata, "planId", executionTriggerInfo, accountId, orgId,
-            projectId, ExecutionMode.PIPELINE_ROLLBACK, null, Collections.emptyList());
+        .transformExecutionMetadata(originalExecutionMetadata, "planId", executionTriggerInfo,
+            ExecutionMode.PIPELINE_ROLLBACK, null, Collections.emptyList());
     PlanExecutionMetadata originalPlanExecutionMetadata =
         PlanExecutionMetadata.builder().planExecutionId(originalExecutionId).build();
     doReturn(Optional.of(originalPlanExecutionMetadata))

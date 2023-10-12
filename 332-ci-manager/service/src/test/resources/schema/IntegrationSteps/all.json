@@ -388,7 +388,8 @@
           "enum": [
             "branch",
             "tag",
-            "PR"
+            "PR",
+            "commitSha"
           ]
         }
       },
@@ -430,6 +431,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "commitSha"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CommitShaBuildSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "tag"
               }
             }
@@ -451,6 +468,25 @@
     "CIStepInfo": {
       "type": "object",
       "discriminator": "type",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CommitShaBuildSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/BuildSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "commitSha"
+          ],
+          "properties": {
+            "commitSha": {
+              "type": "string"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ContainerResource": {
@@ -1602,7 +1638,6 @@
         {
           "type": "object",
           "required": [
-            "args",
             "buildTool",
             "language"
           ],

@@ -44,7 +44,7 @@ public class ApprovalPollingCallback implements OldNotifyCallback {
     JiraExecutionData jiraExecutionData = (JiraExecutionData) response.values().iterator().next();
 
     ExecutionStatus issueStatus = jiraExecutionData.getExecutionStatus();
-    log.info("Issue: {} Status from JIRA: {} Current Status {} for approvalId: {}, workflowExecutionId: {} ",
+    log.debug("Issue: {} Status from JIRA: {} Current Status {} for approvalId: {}, workflowExecutionId: {} ",
         jiraExecutionData.getIssueId(), issueStatus, jiraExecutionData.getCurrentStatus(), "approval id",
         workflowExecutionId);
 

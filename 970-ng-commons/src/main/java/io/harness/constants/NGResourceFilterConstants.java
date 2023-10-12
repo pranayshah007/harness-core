@@ -6,13 +6,16 @@
  */
 
 package io.harness;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PL)
 @UtilityClass
 public class NGResourceFilterConstants {
@@ -35,6 +38,9 @@ public class NGResourceFilterConstants {
   public static final String IDENTIFIERS = "identifiers";
   public static final String DESCRIPTION = "description";
   public static final String FILTER_KEY = "filterIdentifier";
+
+  public static final String SHOW_ALL_EXECUTONS = "showAllExecutions";
+
   public static final String SCOPE_KEY = "scope";
   public static final String SCOPE = "scope";
   public static final String TIME_GROUP_BY_TYPE = "timeGroupByType";

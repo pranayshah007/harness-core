@@ -6,9 +6,11 @@
  */
 
 package io.harness.pms.serializer.kryo;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -31,6 +33,7 @@ import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.contracts.plan.ErrorResponse;
 import io.harness.pms.contracts.plan.PartialPlanResponse;
 import io.harness.pms.contracts.plan.PlanCreationBlobResponse;
+import io.harness.pms.contracts.plan.RetryExecutionInfo;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.refobjects.RefType;
 import io.harness.pms.contracts.steps.SkipType;
@@ -49,6 +52,7 @@ import io.harness.pms.serializer.kryo.serializers.NodeRunInfoKryoSerializer;
 import io.harness.pms.serializer.kryo.serializers.PartialPlanResponseKryoSerializer;
 import io.harness.pms.serializer.kryo.serializers.PlanCreationBlobResponseKryoSerializer;
 import io.harness.pms.serializer.kryo.serializers.RefTypeKryoSerializer;
+import io.harness.pms.serializer.kryo.serializers.RetryExecutionInfoKryoSerializer;
 import io.harness.pms.serializer.kryo.serializers.SkipInfoKryoSerializer;
 import io.harness.pms.serializer.kryo.serializers.StepOutcomeRefKryoSerializer;
 import io.harness.pms.serializer.kryo.serializers.StepTypeKryoSerializer;
@@ -56,6 +60,7 @@ import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PmsContractsKryoRegistrar implements KryoRegistrar {
   @Override
@@ -87,5 +92,6 @@ public class PmsContractsKryoRegistrar implements KryoRegistrar {
     kryo.register(PartialPlanResponse.class, PartialPlanResponseKryoSerializer.getInstance(), 2626);
     kryo.register(ErrorResponse.class, ErrorResponseKryoSerializer.getInstance(), 2625);
     kryo.register(AdviserObtainment.class, AdviserObtainmentKryoSerializer.getInstance(), 954001);
+    kryo.register(RetryExecutionInfo.class, RetryExecutionInfoKryoSerializer.getInstance(), 954002);
   }
 }

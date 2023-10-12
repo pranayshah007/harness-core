@@ -16,6 +16,7 @@ import static org.mockito.Mockito.verify;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.creator.variables.CustomStageVariableCreator;
 import io.harness.cdng.creator.variables.DeploymentStageVariableCreator;
 import io.harness.pms.sdk.PmsSdkInitValidator;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoDecoratorImpl;
@@ -41,6 +42,7 @@ public class CDNGPlanCreatorProviderTest {
 
   // WE NEED TO GUARANTEE THE CALL TO THE REAL METHOD getSupportedTypes DURING VALIDATION OF PLAN CREATORS
   @Spy private DeploymentStageVariableCreator deploymentStageVariableCreator;
+  @Spy private CustomStageVariableCreator customStageVariableCreator;
 
   @Test
   @Owner(developers = FERNANDOD)

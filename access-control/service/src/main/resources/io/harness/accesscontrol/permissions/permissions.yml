@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 55
+version: 61
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -590,6 +590,13 @@ permissions:
   - identifier: ff_featureflag_toggle
     name: Toggle a Feature Flag On or Off
     status: ACTIVE
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: ff_featureflag_editStaleState
+    name: Edit a Feature Flags Stale State
+    status: STAGING
     allowedScopeLevels:
       - account
       - organization
@@ -1396,27 +1403,6 @@ permissions:
     includedInAllRoles: false
     allowedScopeLevels:
       - account
-  - identifier: iac_stack_view
-    name: View IAC Stack
-    status: STAGING
-    allowedScopeLevels:
-      - account
-      - organization
-      - project
-  - identifier: iac_stack_edit
-    name: Create or Edit IAC Stack
-    status: STAGING
-    allowedScopeLevels:
-      - account
-      - organization
-      - project
-  - identifier: iac_stack_delete
-    name: Delete IAC Stack
-    status: STAGING
-    allowedScopeLevels:
-      - account
-      - organization
-      - project
   - identifier: core_streamingDestination_view
     name: View Streaming Destination
     status: ACTIVE
@@ -1470,7 +1456,7 @@ permissions:
       - account
       - organization
       - project
-  - identifier: code_commitCheck_report
+  - identifier: code_repo_reportCommitCheck
     name: Report a Status Check Result on a Commit
     status: ACTIVE
     allowedScopeLevels:
@@ -1589,3 +1575,146 @@ permissions:
       - account
       - organization
       - project
+  - identifier: iac_workspace_view
+    name: View Infrastructure Workspace
+    status: STAGING
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: iac_workspace_edit
+    name: Create/Edit Infrastructure Workspace
+    status: STAGING
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: iac_workspace_delete
+    name: Delete Infrastructure Workspace
+    status: STAGING
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: iac_workspace_editvariable
+    name: Create/Edit Infrastructure Workspace Variable
+    status: STAGING
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: iac_workspace_deletevariable
+    name: Delete Infrastructure Workspace Variable
+    status: STAGING
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: iac_workspace_approve
+    name: Approve Infrastructure Workspace
+    status: STAGING
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: iac_workspace_accessstate
+    name: Access Infrastructure Workspace State
+    status: STAGING
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sei_seiconfigurationsettings_view
+    name: SEI view configuration settings
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: sei_seiconfigurationsettings_edit
+    name: SEI edit configuration settings
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: sei_seiconfigurationsettings_delete
+    name: SEI delete configuration settings
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: sei_seicollections_create
+    name: SEI create collections
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sei_seicollections_view
+    name: SEI view collections
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sei_seicollections_edit
+    name: SEI edit collections
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sei_seicollections_delete
+    name: SEI delete collections
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sei_seiinsights_create
+    name: SEI create insights
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sei_seiinsights_view
+    name: SEI view insights
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sei_seiinsights_edit
+    name: SEI edit insights
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sei_seiinsights_delete
+    name: SEI delete insights
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: ccm_anomalies_view
+    name: View CCM Anomalies
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_recommendations_view
+    name: View CCM Recommendations
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account

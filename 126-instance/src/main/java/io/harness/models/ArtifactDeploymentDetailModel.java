@@ -17,6 +17,7 @@ import lombok.Getter;
 public class ArtifactDeploymentDetailModel {
   private String envIdentifier;
   private String displayName;
+  private String chartVersion;
   private long lastDeployedAt;
   private String lastPipelineExecutionId;
   private String lastPipelineExecutionName;

@@ -1,0 +1,2 @@
+DOCKER_FILE_PATH: /harness/harness-core/idp-service/build/container/Dockerfile-idp-service-multistage
+HELM_CHART_SOURCE_DIRECTORY: harness-core/idp-service/chart

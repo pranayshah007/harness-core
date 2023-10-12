@@ -166,17 +166,15 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
     return overviewExecutionDetails;
   }
 
-  public OverviewExecutionCostDetails getExecutionCostDetails(
-      String accountId, RuleExecutionFilter ruleExecutionFilter, List<String> recommendationIds) {
-    return getResourcePotentialCost(accountId, ruleExecutionFilter, recommendationIds);
+  public OverviewExecutionCostDetails getExecutionCostDetails(String accountId, List<String> recommendationIds) {
+    return getResourcePotentialCost(accountId, recommendationIds);
   }
 
   public <T> AggregationResults<T> aggregate(Aggregation aggregation, Class<T> classToFillResultIn) {
     return mongoTemplate.aggregate(aggregation, RuleExecution.class, classToFillResultIn);
   }
 
-  private OverviewExecutionCostDetails getResourcePotentialCost(
-      String accountId, RuleExecutionFilter ruleExecutionFilter, List<String> recommendationIds) {
+  private OverviewExecutionCostDetails getResourcePotentialCost(String accountId, List<String> recommendationIds) {
     // Getting the recommendations data from mongo DB(Only the executions data is projected)
     List<RuleRecommendation> ruleRecommendationList =
         rulesExecutionDAO.getGovernanceRecommendations(accountId, recommendationIds);
@@ -193,20 +191,18 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
       return OverviewExecutionCostDetails.builder().build();
     }
     return OverviewExecutionCostDetails.builder()
-        .awsExecutionCostDetails(
-            getResourcePotentialCostPerCloudProvider(accountId, ruleExecutionFilter, AWS.name(), ruleExecutionIds))
-        .azureExecutionCostDetails(
-            getResourcePotentialCostPerCloudProvider(accountId, ruleExecutionFilter, AZURE.name(), ruleExecutionIds))
+        .awsExecutionCostDetails(getResourcePotentialCostPerCloudProvider(accountId, AWS.name(), ruleExecutionIds))
+        .azureExecutionCostDetails(getResourcePotentialCostPerCloudProvider(accountId, AZURE.name(), ruleExecutionIds))
         .build();
   }
 
-  private Map<String, Double> getResourcePotentialCostPerCloudProvider(String accountId,
-      RuleExecutionFilter ruleExecutionFilter, String cloudProvider, Set<String> ruleExecutionIdList) {
+  private Map<String, Double> getResourcePotentialCostPerCloudProvider(
+      String accountId, String cloudProvider, Set<String> ruleExecutionIdList) {
     // Adding ruleExecutionIdList as extra criteria to filter correct executions
     Criteria criteria = Criteria.where(RuleExecutionKeys.accountId)
                             .is(accountId)
                             .and(MONGODB_ID)
-                            .in(new ArrayList<>(ruleExecutionIdList))
+                            .in(ruleExecutionIdList)
                             .and(RuleExecutionKeys.cost)
                             .ne(null)
                             .and(RuleExecutionKeys.costType)
@@ -215,17 +211,6 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
                             .is(INTERNAL)
                             .and(RuleExecutionKeys.cloudProvider)
                             .is(cloudProvider);
-    if (ruleExecutionFilter.getTime() != null) {
-      for (CCMTimeFilter time : ruleExecutionFilter.getTime()) {
-        switch (time.getOperator()) {
-          case AFTER:
-            criteria.and(RuleExecutionKeys.createdAt).gte(time.getTimestamp());
-            break;
-          default:
-            throw new InvalidRequestException("Operator not supported not supported for time fields");
-        }
-      }
-    }
     MatchOperation matchStage = Aggregation.match(criteria);
     GroupOperation group =
         group(RuleExecutionKeys.resourceType).sum(RuleExecutionKeys.cost).as(ResourceTypeCostKey.cost);
@@ -305,7 +290,7 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
     Map<String, Integer> result = new HashMap<>();
     AggregationOptions options = Aggregation.newAggregationOptions().allowDiskUse(true).build();
     aggregate(
-        newAggregation(matchStage, sortStage, group, projectionStage).withOptions(options), ResourceTypeCount.class)
+        newAggregation(matchStage, group, projectionStage, sortStage).withOptions(options), ResourceTypeCount.class)
         .getMappedResults()
         .forEach(resource -> result.put(resource.getResourceName(), resource.getCount()));
     log.info("result: {}", result);

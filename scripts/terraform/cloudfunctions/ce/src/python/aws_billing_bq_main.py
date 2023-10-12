@@ -762,9 +762,10 @@ def ingest_data_to_awscur(jsonData):
                          "billingperiodstartdate", "billingperiodenddate"]
 
     if jsonData.get('accountId') in ACCOUNTS_ENABLED_WITH_ADDITIONAL_AWS_FIELDS_IN_UNIFIED_TABLE:
+        print_("Flag is enabled for account. Looking for available additional-fields in billing-table for ingestion.")
         desirable_columns += ["payeraccountid", "lineitemdescription", "billtype", "usagetype_1", "description", "pricingunit",
                               "publicondemandcost", "publicondemandrate", "operation", "usagehours", "savingsplaneffectivecost",
-                              "storage", "licensemodel", "gpumemory", "gpu", "datatransferout"]
+                              "storage", "licensemodel", "gpumemory", "gpu", "datatransferout", "unit"]
 
     available_columns = list(set(desirable_columns) & set(jsonData["available_columns"]))
     select_available_columns = prepare_select_query(jsonData, available_columns)  # passing updated available_columns
@@ -1018,7 +1019,7 @@ def ingest_data_to_unified(jsonData):
                                  "instancefamily", "marketoption", "servicecode", "usageamount",
                                  "billtype", "usagetype_1", "description", "pricingunit",
                                  "publicondemandcost", "publicondemandrate", "operation", "usagehours", "savingsplaneffectivecost",
-                                 "storage", "licensemodel", "gpumemory", "gpu", "datatransferout"]:
+                                 "storage", "licensemodel", "gpumemory", "gpu", "datatransferout", "unit"]:
 
             if additionalColumn.lower() in jsonData["available_columns"]:
                 insert_columns = insert_columns + ", aws%s%s" % (additionalColumn,
@@ -1069,12 +1070,15 @@ def ingest_data_to_unified(jsonData):
 
 
 def fetch_ingestion_filters(jsonData):
-    year, month = jsonData["reportYear"], jsonData["reportMonth"]
-    date_start = "%s-%s-01" % (year, month)
-    date_end = "%s-%s-%s" % (year, month, monthrange(int(year), int(month))[1])
-
+    billing_period_filters = ""
+    if jsonData["accountId"] == "pC_7h33wQTeZ_j-libvF4A":
+        billing_period_filters = " AND DATE(awsbillingperiodstartdate) = '%s'" \
+                                 " AND DATE(awsbillingperiodenddate) = '%s'" \
+                                 % (jsonData["billingperiodstartdate"], jsonData["billingperiodenddate"])
     return """ DATE(startTime) >= '%s' AND DATE(startTime) <= '%s' 
-    AND cloudProvider = "AWS" AND awsUsageAccountId IN (%s) """ % (date_start, date_end, jsonData["usageaccountid"])
+    AND cloudProvider = "AWS" AND awsUsageAccountId IN (%s) %s""" % (jsonData["min_usagestartdate"],
+                                                                   jsonData["max_usagestartdate"],
+                                                                   jsonData["usageaccountid"], billing_period_filters)
 
 
 def ingest_data_to_costagg(jsonData):

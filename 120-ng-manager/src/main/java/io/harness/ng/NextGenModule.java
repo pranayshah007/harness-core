@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng;
+
 import static io.harness.audit.ResourceTypeConstants.API_KEY;
 import static io.harness.audit.ResourceTypeConstants.CONNECTOR;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE_CONFIGURATION;
@@ -49,7 +50,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.TERRAG
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_SCOPE_RECONCILIATION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.VARIABLE_ENTITY;
-import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.lock.DistributedLockImplementation.REDIS;
 import static io.harness.ng.core.api.utils.JWTTokenFlowAuthFilterUtils.JWT_TOKEN_PUBLIC_KEYS_JSON_DATA_CACHE_KEY;
 import static io.harness.ng.core.api.utils.JWTTokenFlowAuthFilterUtils.JWT_TOKEN_SCIM_SETTINGS_DATA_CACHE_KEY;
 import static io.harness.ng.core.api.utils.JWTTokenFlowAuthFilterUtils.JWT_TOKEN_SERVICE_ACCOUNT_DATA_CACHE_KEY;
@@ -140,6 +141,7 @@ import io.harness.gitsync.common.events.FullSyncMessageListener;
 import io.harness.gitsync.common.events.GitSyncProjectCleanup;
 import io.harness.gitsync.core.webhook.createbranchevent.GitBranchHookEventStreamListener;
 import io.harness.gitsync.core.webhook.pushevent.GitPushEventStreamListener;
+import io.harness.gitsync.gitxwebhooks.listener.GitXWebhookPushEventListener;
 import io.harness.govern.ProviderModule;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
@@ -152,6 +154,7 @@ import io.harness.lock.PersistentLockModule;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.logstreaming.LogStreamingServiceRestClient;
 import io.harness.logstreaming.NGLogStreamingClientFactory;
+import io.harness.manage.ManagedExecutorService;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.metrics.impl.DelegateMetricsServiceImpl;
 import io.harness.metrics.intfc.DelegateMetricsService;
@@ -223,6 +226,7 @@ import io.harness.ng.core.event.UserMembershipReconciliationMessageProcessor;
 import io.harness.ng.core.event.UserMembershipStreamListener;
 import io.harness.ng.core.event.VariableEntityCRUDStreamListener;
 import io.harness.ng.core.event.gitops.ClusterCrudStreamListener;
+import io.harness.ng.core.event.modulelicense.ModuleLicenseStreamListener;
 import io.harness.ng.core.globalkms.impl.NgGlobalKmsServiceImpl;
 import io.harness.ng.core.globalkms.services.NgGlobalKmsService;
 import io.harness.ng.core.impl.OrganizationServiceImpl;
@@ -255,6 +259,8 @@ import io.harness.ng.core.user.service.NgUserService;
 import io.harness.ng.core.user.service.impl.LastAdminCheckServiceImpl;
 import io.harness.ng.core.user.service.impl.NgUserServiceImpl;
 import io.harness.ng.core.user.service.impl.UserEntityCrudStreamListener;
+import io.harness.ng.core.utils.CDGitXService;
+import io.harness.ng.core.utils.CDGitXServiceImpl;
 import io.harness.ng.eventsframework.EventsFrameworkModule;
 import io.harness.ng.feedback.services.FeedbackService;
 import io.harness.ng.feedback.services.impls.FeedbackServiceImpl;
@@ -268,6 +274,8 @@ import io.harness.ng.opa.entities.secret.OpaSecretService;
 import io.harness.ng.opa.entities.secret.OpaSecretServiceImpl;
 import io.harness.ng.overview.service.CDLandingDashboardService;
 import io.harness.ng.overview.service.CDLandingDashboardServiceImpl;
+import io.harness.ng.overview.service.CDLandingPageService;
+import io.harness.ng.overview.service.CDLandingPageServiceImpl;
 import io.harness.ng.overview.service.CDOverviewDashboardService;
 import io.harness.ng.overview.service.CDOverviewDashboardServiceImpl;
 import io.harness.ng.rollback.PostProdRollbackService;
@@ -277,6 +285,7 @@ import io.harness.ng.scim.NGScimUserServiceImpl;
 import io.harness.ng.serviceaccounts.service.api.ServiceAccountService;
 import io.harness.ng.serviceaccounts.service.impl.ServiceAccountServiceImpl;
 import io.harness.ng.servicediscovery.AbstractServiceDiscoveryModule;
+import io.harness.ng.support.client.CannyConfig;
 import io.harness.ng.userprofile.commons.SCMType;
 import io.harness.ng.userprofile.entities.AwsCodeCommitSCM.AwsCodeCommitSCMMapper;
 import io.harness.ng.userprofile.entities.AzureRepoSCM.AzureRepoSCMMapper;
@@ -314,9 +323,11 @@ import io.harness.polling.service.intfc.PollingPerpetualTaskService;
 import io.harness.polling.service.intfc.PollingService;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
+import io.harness.remote.CEAwsServiceEndpointConfig;
 import io.harness.remote.CEAwsSetupConfig;
 import io.harness.remote.CEAzureSetupConfig;
 import io.harness.remote.CEGcpSetupConfig;
+import io.harness.remote.CEProxyConfig;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.resourcegroupclient.ResourceGroupClientModule;
@@ -443,6 +454,17 @@ public class NextGenModule extends AbstractModule {
 
   @Provides
   @Singleton
+  @Named("DashboardExecutorService")
+  public ExecutorService DashboardExecutorServiceThreadPool() {
+    return ThreadPool.create(appConfig.getDashboardExecutorServiceConfig().getCorePoolSize(),
+        appConfig.getDashboardExecutorServiceConfig().getMaxPoolSize(),
+        appConfig.getDashboardExecutorServiceConfig().getIdleTime(),
+        appConfig.getDashboardExecutorServiceConfig().getTimeUnit(),
+        new ThreadFactoryBuilder().setNameFormat("DashboardExecutorService-%d").build());
+  }
+
+  @Provides
+  @Singleton
   CiDefaultEntityConfiguration getCiDefaultConfiguration() {
     return appConfig.getCiDefaultEntityConfiguration();
   }
@@ -451,6 +473,13 @@ public class NextGenModule extends AbstractModule {
   @Singleton
   LogStreamingServiceConfiguration getLogStreamingServiceConfiguration() {
     return appConfig.getLogStreamingServiceConfig();
+  }
+
+  @Provides
+  @Named("cannyApiConfiguration")
+  @Singleton
+  CannyConfig getCannyConfig() {
+    return appConfig.getCannyConfig();
   }
 
   @Provides
@@ -471,7 +500,7 @@ public class NextGenModule extends AbstractModule {
   @Provides
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
-    return appConfig.getDistributedLockImplementation() == null ? MONGO : appConfig.getDistributedLockImplementation();
+    return appConfig.getDistributedLockImplementation() == null ? REDIS : appConfig.getDistributedLockImplementation();
   }
 
   @Provides
@@ -525,6 +554,18 @@ public class NextGenModule extends AbstractModule {
   @Named("GitSyncGrpcClientConfigs")
   public Map<Microservice, GrpcClientConfig> grpcClientConfigs() {
     return appConfig.getGitGrpcClientConfigs();
+  }
+
+  @Provides
+  @Singleton
+  CEProxyConfig ceProxyConfig() {
+    return this.appConfig.getCeProxyConfig();
+  }
+
+  @Provides
+  @Singleton
+  CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig() {
+    return this.appConfig.getCeAwsServiceEndpointConfig();
   }
 
   @Provides
@@ -615,11 +656,30 @@ public class NextGenModule extends AbstractModule {
         new ThreadFactoryBuilder().setNameFormat("log-client-pool-%d").build());
   }
 
+  // this should be used with a managed executor service
+  private ThreadPoolExecutor serviceGitXThreadPool() {
+    ThreadPoolConfig threadPoolConfig = appConfig != null && appConfig.getServiceGitXThreadConfig() != null
+            && appConfig.getServiceGitXThreadConfig().getThreadPoolConfig() != null
+        ? appConfig.getServiceGitXThreadConfig().getThreadPoolConfig()
+        : ThreadPoolConfig.builder().corePoolSize(1).maxPoolSize(10).idleTime(30).timeUnit(TimeUnit.SECONDS).build();
+
+    return ThreadPool.create(threadPoolConfig.getCorePoolSize(), threadPoolConfig.getMaxPoolSize(),
+        threadPoolConfig.getIdleTime(), threadPoolConfig.getTimeUnit(),
+        new ThreadFactoryBuilder().setNameFormat("service-gitx-pool-%d").build());
+  }
+
   @Provides
   @Singleton
   @Named("webhookBranchHookEventHsqsDequeueConfig")
   public HsqsDequeueConfig getWebhookBranchHookEventHsqsDequeueConfig() {
     return appConfig.getWebhookBranchHookEventHsqsDequeueConfig();
+  }
+
+  @Provides
+  @Singleton
+  @Named("gitXWebhookEventQueueConfig")
+  public HsqsDequeueConfig getGitXWebhookEventQueueConfig() {
+    return appConfig.getGitXWebhookEventQueueConfig();
   }
 
   @Provides
@@ -662,6 +722,7 @@ public class NextGenModule extends AbstractModule {
 
     bind(CDOverviewDashboardService.class).to(CDOverviewDashboardServiceImpl.class);
     bind(CDLandingDashboardService.class).to(CDLandingDashboardServiceImpl.class);
+    bind(CDLandingPageService.class).to(CDLandingPageServiceImpl.class);
 
     try {
       bind(TimeScaleDBService.class)
@@ -846,6 +907,7 @@ public class NextGenModule extends AbstractModule {
     install(new NGIpAllowlistModule(appConfig));
     install(new NGFavoriteModule(appConfig));
     install(new EulaModule(appConfig));
+    install(new GitXWebhookModule(appConfig));
     install(EntitySetupUsageModule.getInstance());
     install(PersistentLockModule.getInstance());
     install(new TransactionOutboxModule(
@@ -976,6 +1038,12 @@ public class NextGenModule extends AbstractModule {
                 .setNameFormat("ng-telemetry-publisher-Thread-%d")
                 .setPriority(Thread.NORM_PRIORITY)
                 .build()));
+
+    bind(CDGitXService.class).to(CDGitXServiceImpl.class).in(Singleton.class);
+
+    bind(ExecutorService.class)
+        .annotatedWith(Names.named("service-gitx-executor"))
+        .toInstance(new ManagedExecutorService(serviceGitXThreadPool()));
 
     MapBinder<SCMType, SourceCodeManagerMapper> sourceCodeManagerMapBinder =
         MapBinder.newMapBinder(binder(), SCMType.class, SourceCodeManagerMapper.class);
@@ -1151,6 +1219,9 @@ public class NextGenModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkConstants.USERMEMBERSHIP))
         .to(UserMembershipStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(EventsFrameworkConstants.MODULE_LICENSE))
+        .to(ModuleLicenseStreamListener.class);
 
     bind(MessageListener.class).annotatedWith(Names.named(SETUP_USAGE)).to(SetupUsageChangeEventMessageListener.class);
     bind(MessageListener.class)
@@ -1159,6 +1230,9 @@ public class NextGenModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkConstants.GIT_PUSH_EVENT_STREAM))
         .to(GitPushEventStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(EventsFrameworkConstants.GITX_WEBHOOK_PUSH_EVENT_STREAM))
+        .to(GitXWebhookPushEventListener.class);
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkConstants.GIT_BRANCH_HOOK_EVENT_STREAM))
         .to(GitBranchHookEventStreamListener.class);

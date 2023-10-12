@@ -76,7 +76,7 @@ public class EngineExpressionEvaluator {
 
   private static final int MAX_DEPTH = 15;
 
-  private final JexlEngine engine;
+  @Getter private final JexlEngine engine;
   @Getter private final VariableResolverTracker variableResolverTracker;
   @Getter private final Map<String, Object> contextMap;
   @Getter private final Map<String, String> staticAliases;
@@ -779,7 +779,7 @@ public class EngineExpressionEvaluator {
 
     public boolean isAnyCollection(Object value) {
       return value instanceof Map || value instanceof Collection || value instanceof String[] || value instanceof List
-          || value instanceof Iterable;
+          || value instanceof Iterable || (value != null && value.getClass().isArray());
     }
 
     @Override

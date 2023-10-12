@@ -68,6 +68,9 @@ import io.harness.govern.ProviderModule;
 import io.harness.governance.DefaultConnectorRefExpansionHandler;
 import io.harness.health.HealthService;
 import io.harness.maintenance.MaintenanceController;
+import io.harness.metrics.MetricRegistryModule;
+import io.harness.metrics.jobs.RecordMetricsJob;
+import io.harness.metrics.service.api.MetricService;
 import io.harness.migration.MigrationProvider;
 import io.harness.migration.NGMigrationSdkInitHelper;
 import io.harness.migration.NGMigrationSdkModule;
@@ -98,12 +101,18 @@ import io.harness.pms.sdk.core.SdkDeployMode;
 import io.harness.pms.sdk.core.governance.JsonExpansionHandlerInfo;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.pms.sdk.execution.events.facilitators.FacilitatorEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.facilitators.FacilitatorEventRedisConsumerV2;
 import io.harness.pms.sdk.execution.events.interrupts.InterruptEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.interrupts.InterruptEventRedisConsumerV2;
 import io.harness.pms.sdk.execution.events.node.advise.NodeAdviseEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.node.advise.NodeAdviseRedisConsumerV2;
+import io.harness.pms.sdk.execution.events.node.resume.NodeResumeEventConsumerV2;
 import io.harness.pms.sdk.execution.events.node.resume.NodeResumeEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsumerV2;
 import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
+import io.harness.pms.sdk.execution.events.progress.NodeProgressEventRedisConsumerV2;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
 import io.harness.pms.serializer.json.PmsBeansJacksonModule;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -133,11 +142,13 @@ import io.harness.yaml.YamlSdkInitHelper;
 import io.harness.yaml.YamlSdkModule;
 import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
+import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
@@ -189,6 +200,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
   private static final SecureRandom random = new SecureRandom();
   public static final Store HARNESSCI_STORE = Store.builder().name(DbAliases.CIMANAGER).build();
   private static final String APP_NAME = "CI Manager Service Application";
+  private final MetricRegistry metricRegistry = new MetricRegistry();
 
   public static void main(String[] args) throws Exception {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -323,6 +335,13 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     modules.add(PmsSdkModule.getInstance(ciPmsSdkConfiguration));
 
     modules.add(PipelineServiceUtilityModule.getInstance());
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(MetricRegistry.class).toInstance(metricRegistry);
+      }
+    });
+    modules.add(new MetricRegistryModule(metricRegistry));
 
     Injector injector = Guice.createInjector(modules);
     registerPMSSDK(configuration, injector);
@@ -351,6 +370,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
 
     initializeCiManagerDataDeletion(injector);
     initializePluginPublisher(injector);
+    initializeMonitoring(configuration, injector);
     registerOasResource(configuration, environment, injector);
     log.info("Starting app done");
     MaintenanceController.forceMaintenance(false);
@@ -378,6 +398,17 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     queueListenerController.register(injector.getInstance(NgOrchestrationNotifyEventListenerNonVersioned.class), 1);
   }
 
+  private void initializeMonitoring(CIManagerConfiguration config, Injector injector) {
+    PmsSdkConfiguration ciSDKConfig = getPmsSdkConfiguration(
+        config, ModuleType.CI, ExecutionRegistrar.getEngineSteps(), CIPipelineServiceInfoProvider.class);
+    // If Deployment mode is REMOTE then monitoring is
+    // initialized as part of the PMS SDK registration step.
+    if (!ciSDKConfig.getDeploymentMode().equals(SdkDeployMode.REMOTE)) {
+      injector.getInstance(MetricService.class).initializeMetrics();
+      injector.getInstance(RecordMetricsJob.class).scheduleMetricsTasks();
+    }
+  }
+
   @Override
   public void initialize(Bootstrap<CIManagerConfiguration> bootstrap) {
     initializeLogging();
@@ -396,6 +427,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
         return appConfig.getSwaggerBundleConfiguration();
       }
     });
+    bootstrap.setMetricRegistry(metricRegistry);
     log.info("bootstrapping done.");
   }
 
@@ -431,6 +463,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
 
     return PmsSdkConfiguration.builder()
         .deploymentMode(remote ? SdkDeployMode.REMOTE : SdkDeployMode.LOCAL)
+        .streamPerServiceConfiguration(config.isStreamPerServiceConfiguration())
         .moduleType(moduleType)
         .pipelineServiceInfoProviderClass(pipelineServiceInfoProviderClass)
         .grpcServerConfig(config.getPmsSdkGrpcServerConfig())
@@ -494,13 +527,22 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     log.info("Initializing redis abstract consumers...");
     PipelineEventConsumerController pipelineEventConsumerController =
         injector.getInstance(PipelineEventConsumerController.class);
-    pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(OrchestrationEventRedisConsumer.class), 1);
+
+    pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(ProgressEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(NodeAdviseEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventRedisConsumer.class), 2);
+
+    pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumerV2.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumerV2.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumerV2.class), 2);
+    pipelineEventConsumerController.register(injector.getInstance(NodeProgressEventRedisConsumerV2.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeAdviseRedisConsumerV2.class), 2);
+    pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventConsumerV2.class), 2);
+
     pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(CINotifyEventConsumerRedis.class), 15);
   }

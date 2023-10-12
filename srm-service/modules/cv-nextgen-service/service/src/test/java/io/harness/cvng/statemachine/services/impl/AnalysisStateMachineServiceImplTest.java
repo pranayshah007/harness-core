@@ -239,10 +239,9 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = DEEPAK_CHHIKARA)
   @Category(UnitTests.class)
   public void testCreateStateMachine_forSLI() {
-    List<String> serviceLevelIndicatorIdentifiers =
-        serviceLevelIndicatorService.create(builderFactory.getProjectParams(),
-            Collections.singletonList(builderFactory.getServiceLevelIndicatorDTOBuilder()), generateUuid(),
-            monitoredServiceIdentifier, generateUuid());
+    List<String> serviceLevelIndicatorIdentifiers = serviceLevelIndicatorService.create(
+        builderFactory.getProjectParams(), Collections.singletonList(builderFactory.getServiceLevelIndicatorDTO()),
+        generateUuid(), monitoredServiceIdentifier, generateUuid());
     ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
         builderFactory.getProjectParams(), serviceLevelIndicatorIdentifiers.get(0));
     String sliId = serviceLevelIndicator.getUuid();

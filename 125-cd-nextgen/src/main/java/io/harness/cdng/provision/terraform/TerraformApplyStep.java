@@ -7,7 +7,7 @@
 
 package io.harness.cdng.provision.terraform;
 
-import static io.harness.beans.FeatureName.CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT;
+import static io.harness.beans.FeatureName.CDS_TF_TG_SKIP_ERROR_LOGS_COLORING;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 
 import io.harness.EntityType;
@@ -126,8 +126,7 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
 
     if (stepParametersSpec.getConfiguration().getEncryptOutputSecretManager() != null
         && !ParameterField.isBlank(
-            stepParametersSpec.getConfiguration().getEncryptOutputSecretManager().getOutputSecretManagerRef())
-        && cdFeatureFlagHelper.isEnabled(accountId, CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT)) {
+            stepParametersSpec.getConfiguration().getEncryptOutputSecretManager().getOutputSecretManagerRef())) {
       String secretManagerRef = ParameterFieldHelper.getParameterFieldValue(
           stepParametersSpec.getConfiguration().getEncryptOutputSecretManager().getOutputSecretManagerRef());
 
@@ -212,6 +211,9 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
             .useOptimizedTfPlan(true)
             .isTerraformCloudCli(isTerraformCloudCli)
             .skipTerraformRefresh(skipRefreshCommand)
+            .providerCredentialDelegateInfo(
+                helper.getProviderCredentialDelegateInfo(spec.getProviderCredential(), ambiance))
+            .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
             .build();
 
     TaskData taskData =
@@ -244,6 +246,14 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
     builder.terraformCommandFlags(helper.getTerraformCliFlags(stepParameters.getConfiguration().getCliOptions()));
 
     TerraformInheritOutput inheritOutput = helper.getSavedInheritOutput(provisionerIdentifier, APPLY.name(), ambiance);
+
+    if (inheritOutput.getProviderCredentialConfig() != null) {
+      TerraformProviderCredential terraformProviderCredential =
+          helper.toTerraformProviderCredential(inheritOutput.getProviderCredentialConfig());
+      builder.providerCredentialDelegateInfo(
+          helper.getProviderCredentialDelegateInfo(terraformProviderCredential, ambiance));
+    }
+
     TerraformTaskNGParameters terraformTaskNGParameters =
         builder.workspace(inheritOutput.getWorkspace())
             .configFile(helper.getGitFetchFilesConfig(
@@ -271,6 +281,7 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
             .encryptDecryptPlanForHarnessSMOnManager(
                 helper.tfPlanEncryptionOnManager(accountId, inheritOutput.getEncryptionConfig()))
             .useOptimizedTfPlan(true)
+            .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
             .build();
 
     TaskData taskData =
@@ -400,8 +411,7 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
     TerraformApplyOutcome terraformApplyOutcome;
     if (stepParameters.getConfiguration().getEncryptOutputSecretManager() != null
         && !ParameterField.isBlank(
-            stepParameters.getConfiguration().getEncryptOutputSecretManager().getOutputSecretManagerRef())
-        && cdFeatureFlagHelper.isEnabled(accountId, CDS_ENCRYPT_TERRAFORM_APPLY_JSON_OUTPUT)) {
+            stepParameters.getConfiguration().getEncryptOutputSecretManager().getOutputSecretManagerRef())) {
       String secretManagerRef = ParameterFieldHelper.getParameterFieldValue(
           stepParameters.getConfiguration().getEncryptOutputSecretManager().getOutputSecretManagerRef());
       String provisionerId = ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier());

@@ -22,6 +22,7 @@ public class CIStepConfig {
   StepImageConfig buildAndPushDockerRegistryConfig;
   StepImageConfig buildAndPushECRConfig;
   StepImageConfig buildAndPushGCRConfig;
+  StepImageConfig buildAndPushGARConfig;
   StepImageConfig buildAndPushACRConfig;
   StepImageConfig gcsUploadConfig;
   StepImageConfig s3UploadConfig;
@@ -31,6 +32,9 @@ public class CIStepConfig {
   StepImageConfig cacheS3Config;
   StepImageConfig sscaOrchestrationConfig;
   StepImageConfig sscaEnforcementConfig;
+  StepImageConfig provenanceConfig;
+  StepImageConfig provenanceGcrConfig;
+  StepImageConfig slsaVerificationConfig;
   StepImageConfig iacmTerraform;
   VmImageConfig vmImageConfig;
   VmContainerlessStepConfig vmContainerlessStepConfig;

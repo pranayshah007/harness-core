@@ -76,7 +76,7 @@ public class InternalContainerParamsProvider {
 
   public CIK8ContainerParams getSetupAddonContainerParams(ConnectorDetails harnessInternalImageConnector,
       Map<String, String> volumeToMountPath, String workDir, ContainerSecurityContext ctrSecurityContext,
-      String accountIdentifier, OSType os) {
+      String accountIdentifier, OSType os, String imagePullPolicy) {
     Map<String, String> envVars = new HashMap<>();
     envVars.put(HARNESS_WORKSPACE, workDir);
 
@@ -89,6 +89,7 @@ public class InternalContainerParamsProvider {
       commands = PWSH_COMMAND;
       args = Arrays.asList(WIN_SETUP_ADDON_ARGS);
     }
+
     return CIK8ContainerParams.builder()
         .name(SETUP_ADDON_CONTAINER_NAME)
         .envVars(envVars)
@@ -101,6 +102,7 @@ public class InternalContainerParamsProvider {
         .volumeToMountPath(volumeToMountPath)
         .commands(commands)
         .args(args)
+        .imagePullPolicy(imagePullPolicy)
         .securityContext(ctrSecurityContext)
         .containerResourceParams(getAddonResourceParams())
         .build();
@@ -110,10 +112,12 @@ public class InternalContainerParamsProvider {
       Map<String, ConnectorDetails> publishArtifactConnectors, K8PodDetails k8PodDetails, Integer stageCpuRequest,
       Integer stageMemoryRequest, Map<String, String> logEnvVars, Map<String, String> tiEnvVars,
       Map<String, String> stoEnvVars, Map<String, String> volumeToMountPath, String workDirPath,
-      ContainerSecurityContext ctrSecurityContext, String logPrefix, Ambiance ambiance, SecretEnvVars secretEnvVars) {
+      ContainerSecurityContext ctrSecurityContext, String logPrefix, Ambiance ambiance, SecretEnvVars secretEnvVars,
+      String imagePullPolicy) {
     String imageName = ciExecutionConfigService.getLiteEngineImage(AmbianceUtils.getAccountId(ambiance));
     String fullyQualifiedImage =
         IntegrationStageUtils.getFullyQualifiedImageName(imageName, harnessInternalImageConnector);
+
     return CIK8ContainerParams.builder()
         .name(LITE_ENGINE_CONTAINER_NAME)
         .containerResourceParams(getLiteEngineResourceParams(stageCpuRequest, stageMemoryRequest))
@@ -129,6 +133,7 @@ public class InternalContainerParamsProvider {
                                        .imageConnectorDetails(harnessInternalImageConnector)
                                        .build())
         .volumeToMountPath(volumeToMountPath)
+        .imagePullPolicy(imagePullPolicy)
         .securityContext(ctrSecurityContext)
         .workingDir(workDirPath)
         .build();

@@ -6,9 +6,11 @@
  */
 
 package io.harness.plancreator.pipeline;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -21,7 +23,7 @@ import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.DependenciesUtils;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.steps.common.pipeline.PipelineSetupStep;
@@ -35,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelinePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   @Override
@@ -47,7 +50,8 @@ public class PipelinePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
       PlanCreationContext ctx, YamlField config) {
     LinkedHashMap<String, PlanCreationResponse> responseMap = new LinkedHashMap<>();
     Map<String, YamlField> dependencies = new HashMap<>();
-    YamlField stagesYamlNode = Preconditions.checkNotNull(config.getNode().getField("stages"));
+    YamlField stagesYamlNode = Preconditions.checkNotNull(
+        config.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField(YAMLFieldNameConstants.STAGES));
     if (stagesYamlNode.getNode() == null) {
       return responseMap;
     }
@@ -88,7 +92,7 @@ public class PipelinePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
 
   @Override
   public Set<String> getSupportedYamlVersions() {
-    return Set.of(PipelineVersion.V1);
+    return Set.of(HarnessYamlVersion.V1);
   }
 
   @Override

@@ -33,7 +33,7 @@ import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
@@ -439,34 +439,34 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
 
     InputSetEntity inputSet1 = InputSetEntity.builder()
                                    .identifier(inputSetId1)
-                                   .yaml("inputs:\n"
+                                   .yaml("spec:\n"
                                        + "  image: alpine\n")
-                                   .harnessVersion(PipelineVersion.V1)
+                                   .harnessVersion(HarnessYamlVersion.V1)
                                    .inputSetEntityType(InputSetEntityType.INPUT_SET)
                                    .storeType(StoreType.INLINE)
                                    .build();
 
     InputSetEntity inputSet2 = InputSetEntity.builder()
                                    .identifier(inputSetId1)
-                                   .yaml("inputs:\n"
+                                   .yaml("spec:\n"
                                        + "  method: POST\n")
-                                   .harnessVersion(PipelineVersion.V1)
+                                   .harnessVersion(HarnessYamlVersion.V1)
                                    .inputSetEntityType(InputSetEntityType.INPUT_SET)
                                    .storeType(StoreType.INLINE)
                                    .build();
     InputSetEntity inputSet3 = InputSetEntity.builder()
                                    .identifier(inputSetId3)
-                                   .yaml("inputs:\n"
+                                   .yaml("spec:\n"
                                        + "  url: google.com\n")
-                                   .harnessVersion(PipelineVersion.V1)
+                                   .harnessVersion(HarnessYamlVersion.V1)
                                    .inputSetEntityType(InputSetEntityType.INPUT_SET)
                                    .storeType(StoreType.INLINE)
                                    .build();
     InputSetEntity inputSet4 = InputSetEntity.builder()
                                    .identifier(inputSetId4)
-                                   .yaml("inputs:\n"
+                                   .yaml("spec:\n"
                                        + "  timeout: 10h\n")
-                                   .harnessVersion(PipelineVersion.V1)
+                                   .harnessVersion(HarnessYamlVersion.V1)
                                    .inputSetEntityType(InputSetEntityType.INPUT_SET)
                                    .storeType(StoreType.INLINE)
                                    .build();
@@ -474,13 +474,13 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
     InputSetEntity overlay = InputSetEntity.builder()
                                  .identifier(overlayId)
                                  .inputSetReferences(Arrays.asList(inputSetId3, inputSetId4))
-                                 .harnessVersion(PipelineVersion.V1)
+                                 .harnessVersion(HarnessYamlVersion.V1)
                                  .inputSetEntityType(InputSetEntityType.OVERLAY_INPUT_SET)
                                  .storeType(StoreType.INLINE)
                                  .build();
 
     PipelineEntity pipeline = PipelineEntity.builder()
-                                  .harnessVersion(PipelineVersion.V1)
+                                  .harnessVersion(HarnessYamlVersion.V1)
                                   .yaml(pipelineYaml)
                                   .storeType(StoreType.INLINE)
                                   .build();
@@ -507,11 +507,10 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
     JsonNode mergedInputSets = validateAndMergeHelper.getMergeInputSetFromPipelineTemplateWithJsonNode(
         accountId, orgId, projectId, pipelineId, Arrays.asList(inputSetId1, inputSetId2, overlayId), null, null, null);
     assertThat(mergedInputSets)
-        .isEqualTo(YamlUtils.readAsJsonNode("inputs:\n"
-            + "  image: alpine\n"
-            + "  method: POST\n"
-            + "  url: google.com\n"
-            + "  timeout: 10h\n"));
+        .isEqualTo(YamlUtils.readAsJsonNode("image: alpine\n"
+            + "method: POST\n"
+            + "url: google.com\n"
+            + "timeout: 10h\n"));
   }
   @Test
   @Owner(developers = ADITHYA)

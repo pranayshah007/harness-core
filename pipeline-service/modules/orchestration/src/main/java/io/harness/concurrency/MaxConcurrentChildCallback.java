@@ -6,16 +6,18 @@
  */
 
 package io.harness.concurrency;
-
 import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
 
 import io.harness.OrchestrationPublisherName;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.exception.UnexpectedException;
 import io.harness.execution.NodeExecution;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -25,7 +27,6 @@ import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.tasks.ResponseData;
 import io.harness.waiter.OldNotifyCallback;
-import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -35,6 +36,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Data
 @Builder
 @Slf4j
@@ -44,13 +46,13 @@ public class MaxConcurrentChildCallback implements OldNotifyCallback {
 
   @Inject OrchestrationEngine engine;
   @Inject NodeExecutionService nodeExecutionService;
-  @Inject WaitNotifyEngine waitNotifyEngine;
-  @Inject PmsGraphStepDetailsService nodeExecutionInfoService;
+  @Inject NodeExecutionInfoService nodeExecutionInfoService;
   @Inject PersistentLocker persistentLocker;
 
   long maxConcurrency;
   String parentNodeExecutionId;
-  Ambiance ambiance; // Store only planExecutionId
+  String planExecutionId;
+  @Deprecated Ambiance ambiance; // Store only planExecutionId
 
   Boolean proceedIfFailed;
   @Override
@@ -68,7 +70,11 @@ public class MaxConcurrentChildCallback implements OldNotifyCallback {
 
       if (childInstance == null) {
         log.error("[MaxConcurrentCallback]: ChildInstance found null for parentId: " + parentNodeExecutionId);
-        nodeExecutionService.errorOutActiveNodes(ambiance.getPlanExecutionId());
+        if (EmptyPredicate.isEmpty(planExecutionId)) {
+          nodeExecutionService.errorOutActiveNodes(ambiance.getPlanExecutionId());
+        } else {
+          nodeExecutionService.errorOutActiveNodes(planExecutionId);
+        }
         return;
       }
       log.info("[MaxConcurrentCallback]: MaxConcurrentCallback called for parentId: " + parentNodeExecutionId);

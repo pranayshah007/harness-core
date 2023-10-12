@@ -34,13 +34,13 @@ disableResourceValidation: ${DISABLE_RESOURCE_VALIDATION:-false}
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-20}
   maxPoolSize: ${PMS_SDK_EXECUTION_POOL_MAX_SIZE:-100}
-  idleTime: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME:-120}
+  idleTime: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME:-60}
   timeUnit: ${PMS_SDK_EXECUTION_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 pmsSdkOrchestrationEventPoolConfig:
   corePoolSize: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_CORE_SIZE:-10}
   maxPoolSize: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_MAX_SIZE:-50}
-  idleTime: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME:-120}
+  idleTime: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME:-60}
   timeUnit: ${PMS_SDK_ORCHESTRATION_EVENT_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 nextGen:
@@ -142,6 +142,11 @@ cvngClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
+stoCoreClientConfig:
+  baseUrl: ${STO_CORE_SERVICE_BASE_URL:-http://localhost:4000/api/}v2/system/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
 pipelineServiceClientConfig:
   baseUrl: http://localhost:12001/api/
   connectTimeOutSeconds: 15
@@ -174,6 +179,11 @@ templateServiceClientConfig:
 
 chaosServiceClientConfig:
   baseUrl: ${CHAOS_SERVICE_BASE_URL:-http://localhost:8080}
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+seiServiceClientConfig:
+  baseUrl: ${SEI_SERVICE_BASE_URL:-http://localhost:8991}
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
@@ -328,6 +338,9 @@ logStreamingServiceConfig:
     maxPoolSize: ${LOG_STREAMING_CLIENT_POOL_MAX_SIZE:-50}
     idleTime: ${LOG_STREAMING_CLIENT_POOL_IDLE_TIME:-30}
     timeUnit: ${LOG_STREAMING_CLIENT_POOL_TIME_UNIT:-SECONDS}
+
+cannyApiConfig:
+  token: dummyToken
 
 outboxPollConfig:
   initialDelayInSeconds: 5
@@ -495,6 +508,12 @@ pmsPlanCreatorServicePoolConfig:
   idleTime: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_IDLE_TIME:-30}
   timeUnit: ${PLAN_CREATOR_SERVICE_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
+dashboardExecutorServiceConfig:
+  corePoolSize: ${DASHBOARD_EXECUTOR_POOL_CORE_SIZE:-3}
+  maxPoolSize: ${DASHBOARD_EXECUTOR_POOL_MAX_SIZE:-15}
+  idleTime: ${DASHBOARD_EXECUTOR_POOL_IDLE_TIME:-30}
+  timeUnit: ${DASHBOARD_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
 debeziumConsumersConfigs:
   planExecutionsSummaryStreaming:
     topic: ${DEBEZIUM_CONSUMER_TOPIC_NAME:-DEBEZIUM_pmsMongo.pms-harness.planExecutionsSummary}
@@ -522,7 +541,7 @@ pluginExecutionConfig:
       - ""
   gitCloneConfig:
     # Use rootless image only for K8 git clone
-    image: harness/drone-git:1.3.9-rootless
+    image: harness/drone-git:1.4.1-linux-amd64-rootless
     entrypoint:
       - /usr/local/bin/clone
   apiUrl: https://localhost:8181/#/
@@ -549,5 +568,33 @@ webhookBranchHookEventHsqsDequeueConfig:
   batchSize: ${WEBHOOK_BRANCH_HOOK_EVENT_DEQUE_BATCH_SIZE:-20}
   threadSleepTimeInMillis: ${WEBHOOK_BRANCH_HOOK_EVENT_DEQUE_THREAD_SLEEP_TIME_IN_MILLIS:-30}
 
+gitXWebhookEventQueueConfig:
+  batchSize: ${GITX_WEBHOOK_EVENT_QUEUE_BATCH_SIZE:-20}
+  threadSleepTimeInMillis: ${GITX_WEBHOOK_EVENT_QUEUE_THREAD_SLEEP_TIME_IN_MILLIS:-30}
+
 useQueueServiceForWebhookTriggers: ${USE_QUEUE_SERVICE_FOR_WEBHOOK_TRIGGERS:-false}
 
+proxy:
+  enabled: false
+  host: localhost
+  port: 80
+  username: ""
+  password: ""
+  protocol: http
+
+awsServiceEndpointUrls:
+  enabled: false
+  endPointRegion: us-east-1
+  stsEndPointUrl: https://sts.us-east-1.amazonaws.com
+  ecsEndPointUrl: https://ecs.us-east-1.amazonaws.com
+  cloudwatchEndPointUrl: https://monitoring.us-east-1.amazonaws.com
+
+
+streamPerServiceConfiguration: ${PIE_STREAM_PER_SERVICE:- false}
+
+serviceGitXThreadConfig:
+  threadPoolConfig:
+    corePoolSize: ${SERVICE_GITX_POOL_CORE_SIZE:-1}
+    maxPoolSize: ${SERVICE_GITX_POOL_MAX_SIZE:-10}
+    idleTime: ${SERVICE_GITX_POOL_IDLE_TIME:-30}
+    timeUnit: ${SERVICE_GITX_POOL_TIME_UNIT:-SECONDS}

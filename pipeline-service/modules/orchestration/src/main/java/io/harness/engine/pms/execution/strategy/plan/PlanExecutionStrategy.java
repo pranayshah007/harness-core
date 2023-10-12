@@ -6,7 +6,6 @@
  */
 
 package io.harness.engine.pms.execution.strategy.plan;
-
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.contracts.execution.Status.ERRORED;
 
@@ -14,8 +13,11 @@ import io.harness.ModuleType;
 import io.harness.OrchestrationPublisherName;
 import io.harness.PipelineSettingsService;
 import io.harness.PlanExecutionSettingResponse;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.GovernanceService;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.events.OrchestrationEventEmitter;
@@ -46,6 +48,7 @@ import io.harness.pms.contracts.execution.events.OrchestrationEventType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.springdata.TransactionHelper;
+import io.harness.utils.ExecutionModeUtils;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
@@ -56,6 +59,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -184,7 +188,8 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
 
   @Override
   public void endNodeExecution(Ambiance ambiance) {
-    Status status = planExecutionService.calculateStatus(ambiance.getPlanExecutionId());
+    Status status = planExecutionService.calculateStatus(
+        ambiance.getPlanExecutionId(), ExecutionModeUtils.isRollbackMode(ambiance.getMetadata().getExecutionMode()));
     PlanExecution planExecution = planExecutionService.updateStatus(
         ambiance.getPlanExecutionId(), status, ops -> ops.set(PlanExecutionKeys.endTs, System.currentTimeMillis()));
     if (planExecution == null) {

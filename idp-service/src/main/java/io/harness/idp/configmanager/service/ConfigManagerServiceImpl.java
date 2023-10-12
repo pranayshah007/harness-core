@@ -7,6 +7,11 @@
 package io.harness.idp.configmanager.service;
 
 import static io.harness.idp.common.CommonUtils.readFileFromClassPath;
+import static io.harness.idp.common.Constants.COMPLIANCE_ENV;
+import static io.harness.idp.common.Constants.PRE_QA_ENV;
+import static io.harness.idp.common.Constants.QA_ENV;
+import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static java.lang.String.format;
 
@@ -18,6 +23,8 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.Constants;
 import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
 import io.harness.idp.configmanager.beans.entity.MergedAppConfigEntity;
+import io.harness.idp.configmanager.events.appconfigs.AppConfigCreateEvent;
+import io.harness.idp.configmanager.events.appconfigs.AppConfigUpdateEvent;
 import io.harness.idp.configmanager.mappers.AppConfigMapper;
 import io.harness.idp.configmanager.mappers.MergedAppConfigMapper;
 import io.harness.idp.configmanager.repositories.AppConfigRepository;
@@ -29,6 +36,7 @@ import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
 import io.harness.idp.k8s.client.K8sClient;
 import io.harness.idp.namespace.service.NamespaceService;
 import io.harness.jackson.JsonNodeUtils;
+import io.harness.outbox.api.OutboxService;
 import io.harness.spec.server.idp.v1.model.*;
 import io.harness.springdata.TransactionHelper;
 
@@ -42,6 +50,9 @@ import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
@@ -56,6 +67,9 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   BackstageEnvVariableService backstageEnvVariableService;
   PluginsProxyInfoService pluginsProxyInfoService;
   TransactionHelper transactionHelper;
+  @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
+  @Inject private OutboxService outboxService;
+  private static final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
 
   private static final String PLUGIN_CONFIG_NOT_FOUND =
       "Plugin configs for plugin - %s is not present for account - %s";
@@ -115,14 +129,21 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
 
     List<BackstageEnvSecretVariable> backstageEnvSecretVariableList =
         configEnvVariablesService.insertConfigEnvVariables(appConfig, accountIdentifier);
-    if (appConfig.getConfigId().equals(HARNESS_CI_CD_PLUGIN_IDENTIFIER)) {
-      appConfigEntity.setEnabled(true);
-    }
-    AppConfigEntity insertedData = appConfigRepository.save(appConfigEntity);
-    AppConfig returnedConfig = AppConfigMapper.toDTO(insertedData);
-    returnedConfig.setEnvVariables(backstageEnvSecretVariableList);
-    returnedConfig.setProxy(pluginProxyHostDetails);
-    return returnedConfig;
+
+    return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      AppConfigEntity insertedData = appConfigRepository.save(appConfigEntity);
+
+      if (appConfig.getConfigId().equals(HARNESS_CI_CD_PLUGIN_IDENTIFIER)) {
+        appConfigEntity.setEnabled(true);
+      }
+
+      AppConfig returnedConfig = AppConfigMapper.toDTO(insertedData);
+      returnedConfig.setEnvVariables(backstageEnvSecretVariableList);
+      returnedConfig.setProxy(pluginProxyHostDetails);
+
+      outboxService.save(new AppConfigCreateEvent(accountIdentifier, appConfig));
+      return returnedConfig;
+    }));
   }
 
   @Override
@@ -130,20 +151,30 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
     AppConfigEntity appConfigEntity = AppConfigMapper.fromDTO(appConfig, accountIdentifier);
     appConfigEntity.setConfigType(configType);
 
+    AppConfigEntity appConfigEntityOld =
+        appConfigRepository.findByAccountIdentifierAndConfigId(accountIdentifier, appConfig.getConfigId());
+    AppConfig oldAppConfig = AppConfigMapper.toDTO(appConfigEntityOld);
+
     List<BackstageEnvSecretVariable> backstageEnvSecretVariableList =
         configEnvVariablesService.updateConfigEnvVariables(appConfig, accountIdentifier);
-    AppConfigEntity updatedData = appConfigRepository.updateConfig(appConfigEntity, configType);
-    if (updatedData == null) {
-      throw new InvalidRequestException(format(PLUGIN_CONFIG_NOT_FOUND, appConfig.getConfigId(), accountIdentifier));
-    }
-    AppConfig returnedConfig = AppConfigMapper.toDTO(updatedData);
-    returnedConfig.setEnvVariables(backstageEnvSecretVariableList);
 
     List<ProxyHostDetail> proxyHostDetailList =
         pluginsProxyInfoService.updateProxyHostDetailsForPlugin(appConfig, accountIdentifier, configType);
-    returnedConfig.setProxy(proxyHostDetailList);
 
-    return returnedConfig;
+    return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      AppConfigEntity updatedData = appConfigRepository.updateConfig(appConfigEntity, configType);
+      outboxService.save(new AppConfigUpdateEvent(accountIdentifier, appConfig, oldAppConfig));
+
+      if (updatedData == null) {
+        throw new InvalidRequestException(format(PLUGIN_CONFIG_NOT_FOUND, appConfig.getConfigId(), accountIdentifier));
+      }
+      AppConfig returnedConfig = AppConfigMapper.toDTO(updatedData);
+      returnedConfig.setEnvVariables(backstageEnvSecretVariableList);
+
+      returnedConfig.setProxy(proxyHostDetailList);
+
+      return returnedConfig;
+    }));
   }
 
   @Override
@@ -222,7 +253,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   }
 
   @Override
-  public MergedPluginConfigs mergeEnabledPluginConfigsForAccount(String accountIdentifier) throws Exception {
+  public MergedPluginConfigs mergeEnabledPluginConfigsForAccount(String accountIdentifier) {
     MergedPluginConfigs mergedPluginConfigs = new MergedPluginConfigs();
     List<String> allEnabledPluginConfigs = getAllEnabledPluginConfigs(accountIdentifier);
     boolean isAllEnabledPluginsWithNoConfig = allEnabledPluginConfigs.stream().allMatch(config -> config == null);
@@ -405,11 +436,11 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
 
   private String getBaseAppConfigPath() {
     switch (env) {
-      case "qa":
+      case QA_ENV:
         return BASE_APP_CONFIG_PATH_QA;
-      case "stress":
+      case PRE_QA_ENV:
         return BASE_APP_CONFIG_PATH_PRE_QA;
-      case "compliance":
+      case COMPLIANCE_ENV:
         return BASE_APP_CONFIG_PATH_COMPLIANCE;
       default:
         return BASE_APP_CONFIG_PATH;

@@ -7,7 +7,7 @@
 
 package io.harness.idp.scorecard.datasources.providers;
 
-import static io.harness.idp.scorecard.datasources.constants.Constants.CATALOG_PROVIDER;
+import static io.harness.idp.common.Constants.CATALOG_IDENTIFIER;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,6 +17,8 @@ import io.harness.idp.scorecard.datapoints.service.DataPointService;
 import io.harness.idp.scorecard.datasourcelocations.locations.DataSourceLocationFactory;
 import io.harness.idp.scorecard.datasourcelocations.repositories.DataSourceLocationRepository;
 
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -28,19 +30,20 @@ import lombok.experimental.FieldDefaults;
 public class CatalogProvider extends DataSourceProvider {
   protected CatalogProvider(DataPointService dataPointService, DataSourceLocationFactory dataSourceLocationFactory,
       DataSourceLocationRepository dataSourceLocationRepository, DataPointParserFactory dataPointParserFactory) {
-    super(CATALOG_PROVIDER, dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
+    super(CATALOG_IDENTIFIER, dataPointService, dataSourceLocationFactory, dataSourceLocationRepository,
         dataPointParserFactory);
   }
 
   @Override
-  public Map<String, Map<String, Object>> fetchData(
-      String accountIdentifier, BackstageCatalogEntity entity, Map<String, Set<String>> dataPointsAndInputValues) {
-    return processOut(
-        accountIdentifier, entity, dataPointsAndInputValues, getAuthHeaders(accountIdentifier), Collections.emptyMap());
+  public Map<String, Map<String, Object>> fetchData(String accountIdentifier, BackstageCatalogEntity entity,
+      Map<String, Set<String>> dataPointsAndInputValues, String configs)
+      throws NoSuchAlgorithmException, KeyManagementException {
+    return processOut(accountIdentifier, entity, dataPointsAndInputValues, getAuthHeaders(accountIdentifier, null),
+        Collections.emptyMap(), Collections.emptyMap());
   }
 
   @Override
-  public Map<String, String> getAuthHeaders(String accountIdentifier) {
+  public Map<String, String> getAuthHeaders(String accountIdentifier, String configs) {
     return Collections.emptyMap();
   }
 }

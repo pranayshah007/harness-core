@@ -21,6 +21,7 @@ import static io.harness.rule.OwnerRule.VLICA;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -103,6 +104,20 @@ public class TerragruntTaskServiceTest extends CategoryTest {
   @Test
   @Owner(developers = VLICA)
   @Category(UnitTests.class)
+  public void testBaseDirWithUniqueDirectory() {
+    String uniqueBaseDir1 = TerragruntTaskService.getBaseDirWithUniqueDirectory("accountID-test1", "entityID-test1");
+    String uniqueBaseDir2 = TerragruntTaskService.getBaseDirWithUniqueDirectory("accountID-test1", "entityID-test1");
+
+    assertThat(uniqueBaseDir1.contentEquals(uniqueBaseDir2)).isFalse();
+    assertThat(uniqueBaseDir1.contains("./terragrunt-working-dir/accountID-test1/entityID-test1/")).isTrue();
+    assertThat(uniqueBaseDir1).hasSize("./terragrunt-working-dir/accountID-test1/entityID-test1/".length() + 8);
+    assertThat(uniqueBaseDir2.contains("./terragrunt-working-dir/accountID-test1/entityID-test1/")).isTrue();
+    assertThat(uniqueBaseDir2).hasSize("./terragrunt-working-dir/accountID-test1/entityID-test1/".length() + 8);
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
   public void testPrepareTerragruntWhenRunModule() throws IOException {
     TerragruntRunConfiguration runConfiguration =
         TerragruntRunConfiguration.builder().runType(TerragruntTaskRunType.RUN_MODULE).path(TG_RUN_PATH).build();
@@ -128,7 +143,7 @@ public class TerragruntTaskServiceTest extends CategoryTest {
                         .files(List.of("test-be-123.tfVars"))
                         .build());
 
-    when(terragruntClientFactory.getClient(any(), anyLong(), any(), any(), any()))
+    when(terragruntClientFactory.getClient(any(), anyLong(), any(), any(), any(), anyBoolean()))
         .thenReturn(TerragruntClientImpl.builder()
                         .cliHelper(cliHelper)
                         .terragruntInfoJson("{ \"WorkingDir\": \"workingDir/\" }")
@@ -187,7 +202,7 @@ public class TerragruntTaskServiceTest extends CategoryTest {
                         .files(List.of("test-be-123.tfVars"))
                         .build());
 
-    when(terragruntClientFactory.getClient(any(), anyLong(), any(), any(), any()))
+    when(terragruntClientFactory.getClient(any(), anyLong(), any(), any(), any(), anyBoolean()))
         .thenReturn(TerragruntClientImpl.builder()
                         .cliHelper(cliHelper)
                         .terragruntInfoJson("{ \"WorkingDir\": \"workingDir/\" }")

@@ -6,11 +6,13 @@
  */
 
 package io.harness.plancreator.stages;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -27,6 +29,8 @@ import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.timeout.SdkTimeoutObtainment;
+import io.harness.pms.utils.StageTimeoutUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
@@ -40,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.SneakyThrows;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @TargetModule(HarnessModule._882_PMS_SDK_CORE)
 public abstract class AbstractPmsStagePlanCreator<T extends PmsAbstractStageNode> extends AbstractStagePlanCreator<T> {
@@ -76,9 +81,10 @@ public abstract class AbstractPmsStagePlanCreator<T extends PmsAbstractStageNode
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
-    PlanNodeBuilder builder =
+    SdkTimeoutObtainment sdkTimeoutObtainment = StageTimeoutUtils.getStageTimeoutObtainment(stageNode);
+    PlanNodeBuilder planNodeBuilder =
         PlanNode.builder()
-            .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid()))
+            .uuid(getFinalPlanNodeId(ctx, stageNode))
             .name(stageNode.getName())
             .identifier(stageNode.getIdentifier())
             .group(StepOutcomeGroup.STAGE.name())
@@ -90,10 +96,15 @@ public abstract class AbstractPmsStagePlanCreator<T extends PmsAbstractStageNode
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                     .build())
-            .adviserObtainments(getAdviserObtainmentFromMetaData(ctx.getCurrentField()));
+            .adviserObtainments(getAdviserObtainmentFromMetaData(ctx.getCurrentField(), ctx.getDependency()));
+    planNodeBuilder = setStageTimeoutObtainment(sdkTimeoutObtainment, planNodeBuilder);
     if (!EmptyPredicate.isEmpty(ctx.getExecutionInputTemplate())) {
-      builder.executionInputTemplate(ctx.getExecutionInputTemplate());
+      planNodeBuilder.executionInputTemplate(ctx.getExecutionInputTemplate());
     }
-    return builder.build();
+    return planNodeBuilder.build();
+  }
+
+  protected String getFinalPlanNodeId(PlanCreationContext ctx, T stageNode) {
+    return StrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid());
   }
 }

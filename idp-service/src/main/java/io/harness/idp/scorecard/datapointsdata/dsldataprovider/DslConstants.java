@@ -19,6 +19,11 @@ public class DslConstants {
   public static final String CD_PROJECT_IDENTIFIER_KEY = "cdProjectIdentifier";
   public static final String CD_SERVICE_IDENTIFIER_KEY = "cdServiceIdentifier";
 
+  public static final String CD_SERVICE_HOST = "cdServiceUrlHost";
+
+  public static final String PIPELINE_URL =
+      "https://%s/ng/account/%s/cd/orgs/%s/projects/%s/pipelines/%s/pipeline-studio/?storeType=INLINE";
+
   public static final long THIRTY_DAYS_IN_MILLIS = 30L * 24 * 60 * 60 * 1000;
 
   public static final long SEVEN_DAYS_IN_MILLIS = 7L * 24 * 60 * 60 * 1000;

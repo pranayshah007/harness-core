@@ -6,10 +6,12 @@
  */
 
 package io.harness.pms.sdk;
-
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
@@ -40,6 +42,7 @@ import lombok.Builder.Default;
 import lombok.NonNull;
 import lombok.Value;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Value
 @Builder
@@ -61,7 +64,7 @@ public class PmsSdkConfiguration {
   @Builder.Default ThreadPoolConfig orchestrationEventPoolConfig = ThreadPoolConfig.builder().build();
   @Builder.Default ThreadPoolConfig planCreatorServiceInternalConfig = ThreadPoolConfig.builder().build();
   @Default List<JsonExpansionHandlerInfo> jsonExpansionHandlers = new ArrayList<>();
-
+  boolean streamPerServiceConfiguration;
   @Default
   EventsFrameworkConfiguration eventsFrameworkConfiguration =
       EventsFrameworkConfiguration.builder()

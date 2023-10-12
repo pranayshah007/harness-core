@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.service.step.ecs;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.ecs.EcsRollingRollbackStepInfo;
 import io.harness.cdng.ecs.EcsRollingRollbackStepNode;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
@@ -26,6 +28,7 @@ import software.wings.sm.states.EcsServiceRollback;
 import java.util.Collections;
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public class EcsServiceRollbackStepMapperImpl extends EcsBaseStepMapper {
   @Override

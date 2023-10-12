@@ -9,6 +9,7 @@ package io.harness.ngtriggers.expressions;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ADWAIT;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -22,7 +23,6 @@ import io.harness.beans.HeaderConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataServiceImpl;
-import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.ngtriggers.expressions.functors.TriggerFunctor;
@@ -113,18 +113,18 @@ public class TriggerFunctorTest extends CategoryTest {
     headerMap.forEach((k, v) -> headerConfigs.add(HeaderConfig.builder().key(k).values(v).build()));
 
     PlanExecutionMetadataService metadataService = mock(PlanExecutionMetadataServiceImpl.class);
+    TriggerPayload triggerPayload = TriggerPayload.newBuilder()
+                                        .setParsedPayload(ParsedPayload.newBuilder().setPr(prEvent.getPr()).build())
+                                        .setType(Type.WEBHOOK)
+                                        .setSourceType(SourceType.GITHUB_REPO)
+                                        .setConnectorRef("gitConnector")
+                                        .build();
     when(metadataService.findByPlanExecutionId(any()))
-        .thenReturn(Optional.of(
-            PlanExecutionMetadata.builder()
-                .triggerJsonPayload(bigPayload)
-                .triggerHeader(headerConfigs)
-                .triggerPayload(TriggerPayload.newBuilder()
-                                    .setParsedPayload(ParsedPayload.newBuilder().setPr(prEvent.getPr()).build())
-                                    .setType(Type.WEBHOOK)
-                                    .setSourceType(SourceType.GITHUB_REPO)
-                                    .setConnectorRef("gitConnector")
-                                    .build())
-                .build()));
+        .thenReturn(Optional.of(PlanExecutionMetadata.builder()
+                                    .triggerJsonPayload(bigPayload)
+                                    .triggerHeader(headerConfigs)
+                                    .triggerPayload(triggerPayload)
+                                    .build()));
     SampleEvaluator expressionEvaluator = new SampleEvaluator(
         new TriggerFunctor(Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder()).build(), metadataService));
 
@@ -140,7 +140,7 @@ public class TriggerFunctorTest extends CategoryTest {
     assertThat(expressionEvaluator.renderExpression("<+trigger.repoUrl>")).isEqualTo("https://github.com");
     assertThat(expressionEvaluator.renderExpression("<+trigger.gitUser>")).isEqualTo("user");
     assertThat(expressionEvaluator.renderExpression("<+trigger.prTitle>")).isEqualTo("This is Title");
-    assertThat(expressionEvaluator.renderExpression("<+trigger.connectorRef>")).isEqualTo("gitConnector");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.triggerPayload>")).isEqualTo(triggerPayload.toString());
 
     // keys inside header expression are case insensitive for eg: <+trigger.header['Host']> and
     // <+trigger.header['host']> both will work
@@ -209,9 +209,60 @@ public class TriggerFunctorTest extends CategoryTest {
                                     .setSourceType(SourceType.GITHUB_REPO)
                                     .build())
                 .build()));
-    assertThatThrownBy(() -> finalExpressionEvaluator.renderExpression("<+trigger.event>"))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Event payload could not be converted to a hashmap");
+    assertThat(finalExpressionEvaluator.renderExpression("<+trigger.event>")).isEqualTo("PR");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testCustomWebhookWhenPayloadIsArray() {
+    String arrayPayload =
+        "[\"value1\",\"value2\",[\"value3\",\"value4\"],{\"key1\":\"value5\"},{\"key2\":[\"value6\"]}]";
+    PlanExecutionMetadataService metadataService = mock(PlanExecutionMetadataServiceImpl.class);
+    when(metadataService.findByPlanExecutionId(any()))
+        .thenReturn(Optional.of(PlanExecutionMetadata.builder()
+                                    .triggerHeader(null)
+                                    .triggerJsonPayload(arrayPayload)
+                                    .triggerPayload(TriggerPayload.newBuilder().build())
+                                    .build()));
+    SampleEvaluator expressionEvaluator = new SampleEvaluator(
+        new TriggerFunctor(Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder()).build(), metadataService));
+    assertThat(expressionEvaluator.renderExpression("<+trigger.eventPayload>")).isEqualTo(arrayPayload);
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload>")).isEqualTo(arrayPayload);
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload[0]>")).isEqualTo("value1");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload[1]>")).isEqualTo("value2");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload[2]>")).isEqualTo("[\"value3\",\"value4\"]");
+    assertThat(expressionEvaluator.renderExpression("<+<+trigger.payload[2]>[0]>")).isEqualTo("value3");
+    assertThat(expressionEvaluator.renderExpression("<+<+trigger.payload[2]>[1]>")).isEqualTo("value4");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload[3]>")).isEqualTo("{\"key1\":\"value5\"}");
+    assertThat(expressionEvaluator.renderExpression("<+<+trigger.payload[3]>.key1>")).isEqualTo("value5");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload[4]>")).isEqualTo("{\"key2\":[\"value6\"]}");
+    assertThat(expressionEvaluator.renderExpression("<+<+trigger.payload[4]>.key2>")).isEqualTo("[\"value6\"]");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload[4].key2[0]>")).isEqualTo("value6");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testCustomWebhookWhenPayloadIsMap() {
+    String mapPayload = "{\"key1\":\"value1\",\"key2\":[\"value2\",{\"key3\":\"value3\"}]}";
+    PlanExecutionMetadataService metadataService = mock(PlanExecutionMetadataServiceImpl.class);
+    when(metadataService.findByPlanExecutionId(any()))
+        .thenReturn(Optional.of(PlanExecutionMetadata.builder()
+                                    .triggerHeader(null)
+                                    .triggerJsonPayload(mapPayload)
+                                    .triggerPayload(TriggerPayload.newBuilder().build())
+                                    .build()));
+    SampleEvaluator expressionEvaluator = new SampleEvaluator(
+        new TriggerFunctor(Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder()).build(), metadataService));
+    assertThat(expressionEvaluator.renderExpression("<+trigger.eventPayload>")).isEqualTo(mapPayload);
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload>")).isEqualTo(mapPayload);
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload.key1>")).isEqualTo("value1");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload.key2>"))
+        .isEqualTo("[\"value2\",{\"key3\":\"value3\"}]");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload.key2[0]>")).isEqualTo("value2");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.payload.key2[1]>")).isEqualTo("{\"key3\":\"value3\"}");
+    assertThat(expressionEvaluator.renderExpression("<+<+trigger.payload.key2[1]>.key3>")).isEqualTo("value3");
   }
 
   @Test

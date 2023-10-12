@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.plan.creation;
+
 import static io.harness.cf.pipeline.FeatureFlagStageFilterJsonCreator.FEATURE_FLAG_SUPPORTED_TYPE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.GROUP;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGE;
@@ -26,6 +27,7 @@ import io.harness.filters.EmptyFilterJsonCreator;
 import io.harness.filters.GroupFilterJsonCreator;
 import io.harness.filters.ParallelFilterJsonCreator;
 import io.harness.filters.PipelineFilterJsonCreator;
+import io.harness.plancreator.EmptyVariableCreatorV1;
 import io.harness.plancreator.approval.ApprovalStageFilterJsonCreator;
 import io.harness.plancreator.approval.ApprovalStagePlanCreatorV2;
 import io.harness.plancreator.group.GroupPlanCreatorV1;
@@ -46,6 +48,7 @@ import io.harness.plancreator.steps.internal.PMSStepPlanCreator;
 import io.harness.plancreator.steps.internal.PmsStepFilterJsonCreator;
 import io.harness.plancreator.steps.internal.PmsStepFilterJsonCreatorV2;
 import io.harness.plancreator.steps.internal.ShellScriptStepFilterJsonCreatorV2;
+import io.harness.plancreator.steps.internal.v1.PmsStepFilterJsonCreatorV3;
 import io.harness.plancreator.steps.pluginstep.ContainerStepPlanCreator;
 import io.harness.plancreator.steps.pluginstep.ContainerStepVariableCreator;
 import io.harness.plancreator.steps.resourceconstraint.QueueStepPlanCreator;
@@ -84,6 +87,7 @@ import io.harness.steps.cf.FlagConfigurationStep;
 import io.harness.steps.customstage.CustomStageFilterCreator;
 import io.harness.steps.customstage.CustomStagePlanCreator;
 import io.harness.steps.customstage.CustomStageVariableCreator;
+import io.harness.steps.customstage.v1.CustomStageFilterCreatorV1;
 import io.harness.steps.customstage.v1.CustomStagePlanCreatorV1;
 import io.harness.steps.jira.JiraStepVariableCreator;
 import io.harness.steps.jira.JiraUpdateStepVariableCreator;
@@ -172,6 +176,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     filterJsonCreators.add(new ApprovalStageFilterJsonCreator());
     filterJsonCreators.add(new PmsStepFilterJsonCreator());
     filterJsonCreators.add(new PmsStepFilterJsonCreatorV2());
+    filterJsonCreators.add(new PmsStepFilterJsonCreatorV3());
     filterJsonCreators.add(new ShellScriptStepFilterJsonCreatorV2());
     filterJsonCreators.add(new FeatureFlagStageFilterJsonCreator());
     filterJsonCreators.add(new CustomStageFilterCreator());
@@ -181,6 +186,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     filterJsonCreators.add(new EmptyFilterJsonCreator(STAGE, ImmutableSet.of(PIPELINE_ROLLBACK_STAGE)));
     filterJsonCreators.add(new HarnessApprovalStepFilterJsonCreatorV2());
     filterJsonCreators.add(new CdSscaStepFilterJsonCreator());
+    filterJsonCreators.add(new CustomStageFilterCreatorV1());
 
     injectorUtils.injectMembers(filterJsonCreators);
 
@@ -218,6 +224,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     variableCreators.add(new ContainerStepVariableCreator());
     variableCreators.add(new BarrierStepVariableCreator());
     variableCreators.add(new CdSscaStepVariableCreator());
+    variableCreators.add(new EmptyVariableCreatorV1());
 
     injectorUtils.injectMembers(variableCreators);
     return variableCreators;

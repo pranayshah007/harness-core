@@ -6,13 +6,15 @@
  */
 
 package software.wings.graphql.datafetcher;
-
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.ExceptionLogger;
@@ -53,6 +55,7 @@ import lombok.Value;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Slf4j
 @OwnedBy(DX)
@@ -188,44 +191,13 @@ public abstract class AbstractStatsDataFetcher<A, F, G, S> implements DataFetche
       return new StringBuilder("date_trunc('").append(unit).append("',").append(dbFieldName).append(')').toString();
     }
 
-    return new StringBuilder("time_bucket('")
+    return new StringBuilder("harness_date_bin_graphql('")
         .append(value)
         .append(' ')
         .append(unit)
         .append("',")
         .append(dbFieldName)
         .append(')')
-        .toString();
-  }
-
-  public String getGroupByTimeQueryWithGapFill(
-      QLTimeSeriesAggregation groupByTime, String dbFieldName, String from, String to) {
-    String unit;
-    int value = groupByTime.getTimeAggregationValue();
-
-    switch (groupByTime.getTimeAggregationType()) {
-      case DAY:
-        unit = "days";
-        break;
-      case HOUR:
-        unit = "hours";
-        break;
-      default:
-        log.warn("Unsupported timeAggregationType " + groupByTime.getTimeAggregationType());
-        throw new InvalidRequestException(GENERIC_EXCEPTION_MSG);
-    }
-
-    return new StringBuilder("time_bucket_gapfill('")
-        .append(value)
-        .append(' ')
-        .append(unit)
-        .append("',")
-        .append(dbFieldName)
-        .append(",'")
-        .append(from)
-        .append("','")
-        .append(to)
-        .append("')")
         .toString();
   }
 

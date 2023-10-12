@@ -14,7 +14,10 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.BILLING_AMOUNT;
 import static io.harness.ccm.views.utils.ClusterTableKeys.COST;
 import static io.harness.ccm.views.utils.ClusterTableKeys.DEFAULT_GRID_ENTRY_NAME;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ccm.clickHouse.ClickHouseService;
 import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
@@ -51,6 +54,8 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CCM, unitCoverageRequired = true, components = {HarnessModuleComponent.CCM_PERSPECTIVE})
 @Slf4j
 @Singleton
 @OwnedBy(CE)

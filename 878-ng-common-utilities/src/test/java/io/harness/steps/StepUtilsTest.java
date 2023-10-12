@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SAMARTH;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
+import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
@@ -94,12 +95,16 @@ public class StepUtilsTest extends CategoryTest {
     setupAbstractions.put(SetupAbstractionKeys.accountId, "accountId");
     setupAbstractions.put(SetupAbstractionKeys.projectIdentifier, "projectId");
     setupAbstractions.put(SetupAbstractionKeys.orgIdentifier, "orgId");
-    Ambiance ambiance =
-        Ambiance.newBuilder()
-            .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("pipelineId").setRunSequence(1).build())
-            .putAllSetupAbstractions(setupAbstractions)
-            .addLevels(Level.newBuilder().setIdentifier("runStep1").setGroup("group1").build())
-            .build();
+
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setMetadata(ExecutionMetadata.newBuilder()
+                                             .setPipelineIdentifier("pipelineId")
+                                             .setRunSequence(1)
+                                             .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                             .build())
+                            .putAllSetupAbstractions(setupAbstractions)
+                            .addLevels(Level.newBuilder().setIdentifier("runStep1").setGroup("group1").build())
+                            .build();
 
     LinkedHashMap<String, String> expectedLogAbstractionMap = new LinkedHashMap<>();
     expectedLogAbstractionMap.put("accountId", "accountId");
@@ -120,13 +125,17 @@ public class StepUtilsTest extends CategoryTest {
     setupAbstractions.put(SetupAbstractionKeys.accountId, "accountId");
     setupAbstractions.put(SetupAbstractionKeys.projectIdentifier, "projectId");
     setupAbstractions.put(SetupAbstractionKeys.orgIdentifier, "orgId");
-    Ambiance ambiance =
-        Ambiance.newBuilder()
-            .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("pipelineId").setRunSequence(1).build())
-            .putAllSetupAbstractions(setupAbstractions)
-            .addLevels(Level.newBuilder().setIdentifier("runStep1").setGroup("group1").build())
-            .addLevels(Level.newBuilder().setIdentifier("runStep2").setGroup("group2").build())
-            .build();
+
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setMetadata(ExecutionMetadata.newBuilder()
+                                             .setPipelineIdentifier("pipelineId")
+                                             .setRunSequence(1)
+                                             .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                                             .build())
+                            .putAllSetupAbstractions(setupAbstractions)
+                            .addLevels(Level.newBuilder().setIdentifier("runStep1").setGroup("group1").build())
+                            .addLevels(Level.newBuilder().setIdentifier("runStep2").setGroup("group2").build())
+                            .build();
 
     LinkedHashMap<String, String> expectedLogAbstractionMap = new LinkedHashMap<>();
     expectedLogAbstractionMap.put("accountId", "accountId");
@@ -149,7 +158,11 @@ public class StepUtilsTest extends CategoryTest {
     setupAbstractions.put(SetupAbstractionKeys.orgIdentifier, "orgId");
     Ambiance ambiance =
         Ambiance.newBuilder()
-            .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("pipelineId").setRunSequence(1).build())
+            .setMetadata(ExecutionMetadata.newBuilder()
+                             .setPipelineIdentifier("pipelineId")
+                             .setRunSequence(1)
+                             .putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false)
+                             .build())
             .putAllSetupAbstractions(setupAbstractions)
             .addLevels(Level.newBuilder().setIdentifier("runStep1").setGroup("group1").build())
             .addLevels(Level.newBuilder().setIdentifier("runStep2").setGroup("group2").setRetryIndex(2).build())

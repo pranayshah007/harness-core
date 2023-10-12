@@ -41,6 +41,7 @@ public class CIExecutionConfigService {
   @Inject private PluginSettingUtils pluginSettingUtils;
 
   private static final String UNEXPECTED_ERR_FORMAT = "Unexpected value: %s";
+
   public CIExecutionServiceConfig getCiExecutionServiceConfig() {
     return ciExecutionServiceConfig;
   }
@@ -114,6 +115,9 @@ public class CIExecutionConfigService {
       case BUILD_PUSH_GCR:
         executionConfig.setBuildAndPushGCRImage(value);
         break;
+      case BUILD_PUSH_GAR:
+        executionConfig.setBuildAndPushGARImage(value);
+        break;
       case GCS_UPLOAD:
         executionConfig.setGcsUploadImage(value);
         break;
@@ -137,6 +141,12 @@ public class CIExecutionConfigService {
         break;
       case SSCA_ENFORCEMENT:
         executionConfig.setSscaEnforcementTag(value);
+        break;
+      case PROVENANCE:
+        executionConfig.setProvenanceTag(value);
+        break;
+      case SLSA_VERIFICATION:
+        executionConfig.setSlsaVerificationTag(value);
         break;
       default:
         throw new BadRequestException(format("Field %s does not exist for infra type: K8", field));
@@ -167,6 +177,9 @@ public class CIExecutionConfigService {
         break;
       case BUILD_PUSH_GCR:
         vmImageConfig.setBuildAndPushGCR(value);
+        break;
+      case BUILD_PUSH_GAR:
+        vmImageConfig.setBuildAndPushGAR(value);
         break;
       case GCS_UPLOAD:
         vmImageConfig.setGcsUpload(value);
@@ -250,6 +263,9 @@ public class CIExecutionConfigService {
     if (Strings.isNotBlank(overriddenConfig.getBuildAndPushGCRTag())) {
       defaultConfig.setBuildAndPushGCRTag(overriddenConfig.getBuildAndPushGCRTag());
     }
+    if (Strings.isNotBlank(overriddenConfig.getBuildAndPushGARTag())) {
+      defaultConfig.setBuildAndPushGARTag(overriddenConfig.getBuildAndPushGARTag());
+    }
     if (Strings.isNotBlank(overriddenConfig.getGcsUploadTag())) {
       defaultConfig.setGcsUploadTag(overriddenConfig.getGcsUploadTag());
     }
@@ -281,6 +297,7 @@ public class CIExecutionConfigService {
         .gitCloneTag(vmImageConfig.getGitClone())
         .buildAndPushECRTag(vmImageConfig.getBuildAndPushECR())
         .buildAndPushACRTag(vmImageConfig.getBuildAndPushACR())
+        .buildAndPushGARTag(vmImageConfig.getBuildAndPushGAR())
         .buildAndPushGCRTag(vmImageConfig.getBuildAndPushGCR())
         .gcsUploadTag(vmImageConfig.getGcsUpload())
         .s3UploadTag(vmImageConfig.getS3Upload())
@@ -290,6 +307,7 @@ public class CIExecutionConfigService {
         .securityTag(vmImageConfig.getSecurity())
         .sscaOrchestrationTag(vmImageConfig.getSscaOrchestration())
         .sscaEnforcementTag(vmImageConfig.getSscaEnforcement())
+        .slsaVerificationTag(vmImageConfig.getSlsaVerification())
         .build();
   }
 
@@ -331,6 +349,7 @@ public class CIExecutionConfigService {
         .gitCloneTag(vmImageConfig.getGitClone())
         .buildAndPushECRTag(vmImageConfig.getBuildAndPushECR())
         .buildAndPushGCRTag(vmImageConfig.getBuildAndPushGCR())
+        .buildAndPushGARTag(vmImageConfig.getBuildAndPushGAR())
         .buildAndPushACRTag(vmImageConfig.getBuildAndPushACR())
         .gcsUploadTag(vmImageConfig.getGcsUpload())
         .s3UploadTag(vmImageConfig.getS3Upload())
@@ -340,6 +359,7 @@ public class CIExecutionConfigService {
         .securityTag(vmImageConfig.getSecurity())
         .sscaOrchestrationTag(vmImageConfig.getSscaOrchestration())
         .sscaEnforcementTag(vmImageConfig.getSscaEnforcement())
+        .slsaVerificationTag(vmImageConfig.getSlsaVerification())
         .build();
   }
 
@@ -355,6 +375,7 @@ public class CIExecutionConfigService {
         .buildAndPushECRTag(config.getBuildAndPushECRConfig().getImage())
         .buildAndPushGCRTag(config.getBuildAndPushGCRConfig().getImage())
         .buildAndPushACRTag(config.getBuildAndPushACRConfig().getImage())
+        .buildAndPushGARTag(config.getBuildAndPushGARConfig().getImage())
         .gcsUploadTag(config.getGcsUploadConfig().getImage())
         .s3UploadTag(config.getS3UploadConfig().getImage())
         .artifactoryUploadTag(config.getArtifactoryUploadConfig().getImage())
@@ -363,6 +384,9 @@ public class CIExecutionConfigService {
         .securityTag(config.getSecurityConfig().getImage())
         .sscaOrchestrationTag(config.getSscaOrchestrationConfig().getImage())
         .sscaEnforcementTag(config.getSscaEnforcementConfig().getImage())
+        .provenanceTag(config.getProvenanceConfig().getImage())
+        .provenanceGcrTag(config.getProvenanceGcrConfig().getImage())
+        .slsaVerificationTag(config.getSlsaVerificationConfig().getImage())
         .build();
   }
 
@@ -375,6 +399,7 @@ public class CIExecutionConfigService {
         .buildAndPushECRTag(config.getBuildAndPushECRImage())
         .buildAndPushGCRTag(config.getBuildAndPushGCRImage())
         .buildAndPushACRTag(config.getBuildAndPushACRImage())
+        .buildAndPushGARTag(config.getBuildAndPushGARImage())
         .gcsUploadTag(config.getGcsUploadImage())
         .s3UploadTag(config.getS3UploadImage())
         .artifactoryUploadTag(config.getArtifactoryUploadTag())
@@ -383,6 +408,9 @@ public class CIExecutionConfigService {
         .securityTag(config.getSecurityImage())
         .sscaOrchestrationTag(config.getSscaOrchestrationTag())
         .sscaEnforcementTag(config.getSscaEnforcementTag())
+        .provenanceTag(config.getProvenanceTag())
+        .provenanceGcrTag(config.getProvenanceGcrTag())
+        .slsaVerificationTag(config.getSlsaVerificationTag())
         .build();
   }
 
@@ -469,6 +497,11 @@ public class CIExecutionConfigService {
           image = ciExecutionConfig.getBuildAndPushGCRImage();
         }
         break;
+      case GAR:
+        if (Strings.isNotBlank(ciExecutionConfig.getBuildAndPushGARImage())) {
+          image = ciExecutionConfig.getBuildAndPushGARImage();
+        }
+        break;
       case ECR:
         if (Strings.isNotBlank(ciExecutionConfig.getBuildAndPushECRImage())) {
           image = ciExecutionConfig.getBuildAndPushECRImage();
@@ -526,6 +559,21 @@ public class CIExecutionConfigService {
           image = ciExecutionConfig.getSscaEnforcementTag();
         }
         break;
+      case PROVENANCE:
+        if (Strings.isNotBlank(ciExecutionConfig.getProvenanceTag())) {
+          image = ciExecutionConfig.getProvenanceTag();
+        }
+        break;
+      case PROVENANCE_GCR:
+        if (Strings.isNotBlank(ciExecutionConfig.getProvenanceGcrTag())) {
+          image = ciExecutionConfig.getProvenanceGcrTag();
+        }
+        break;
+      case SLSA_VERIFICATION:
+        if (Strings.isNotBlank(ciExecutionConfig.getSlsaVerificationTag())) {
+          image = ciExecutionConfig.getSlsaVerificationTag();
+        }
+        break;
       default:
         throw new BadRequestException(format(UNEXPECTED_ERR_FORMAT, stepInfoType));
     }
@@ -545,6 +593,8 @@ public class CIExecutionConfigService {
         return ciExecutionServiceConfig.getStepConfig().getBuildAndPushGCRConfig();
       case ECR:
         return ciExecutionServiceConfig.getStepConfig().getBuildAndPushECRConfig();
+      case GAR:
+        return ciExecutionServiceConfig.getStepConfig().getBuildAndPushGARConfig();
       case ACR:
         return ciExecutionServiceConfig.getStepConfig().getBuildAndPushACRConfig();
       case RESTORE_CACHE_S3:
@@ -567,6 +617,12 @@ public class CIExecutionConfigService {
         return ciExecutionServiceConfig.getStepConfig().getSscaOrchestrationConfig();
       case SSCA_ENFORCEMENT:
         return ciExecutionServiceConfig.getStepConfig().getSscaEnforcementConfig();
+      case PROVENANCE:
+        return ciExecutionServiceConfig.getStepConfig().getProvenanceConfig();
+      case PROVENANCE_GCR:
+        return ciExecutionServiceConfig.getStepConfig().getProvenanceGcrConfig();
+      case SLSA_VERIFICATION:
+        return ciExecutionServiceConfig.getStepConfig().getSlsaVerificationConfig();
       case IACM_TERRAFORM_PLUGIN:
       case IACM_APPROVAL:
         return ciExecutionServiceConfig.getStepConfig().getIacmTerraform();
@@ -597,6 +653,11 @@ public class CIExecutionConfigService {
       case GCR:
         if (Strings.isNotBlank(vmImageConfig.getBuildAndPushGCR())) {
           image = vmImageConfig.getBuildAndPushGCR();
+        }
+        break;
+      case GAR:
+        if (Strings.isNotBlank(vmImageConfig.getBuildAndPushGAR())) {
+          image = vmImageConfig.getBuildAndPushGAR();
         }
         break;
       case ECR:
@@ -700,6 +761,11 @@ public class CIExecutionConfigService {
           name = vmContainerlessStepConfig.getDockerBuildxEcrConfig().getName();
         }
         break;
+      case GAR:
+        if (pluginSettingUtils.buildxRequired(pluginCompatibleStep)) {
+          name = vmContainerlessStepConfig.getDockerBuildxGarConfig().getName();
+        }
+        break;
       case GCR:
         if (pluginSettingUtils.buildxRequired(pluginCompatibleStep)) {
           name = vmContainerlessStepConfig.getDockerBuildxGcrConfig().getName();
@@ -734,6 +800,8 @@ public class CIExecutionConfigService {
         return vmImageConfig.getBuildAndPushECR();
       case ACR:
         return vmImageConfig.getBuildAndPushACR();
+      case GAR:
+        return vmImageConfig.getBuildAndPushGAR();
       case RESTORE_CACHE_S3:
       case SAVE_CACHE_S3:
         return vmImageConfig.getCacheS3();

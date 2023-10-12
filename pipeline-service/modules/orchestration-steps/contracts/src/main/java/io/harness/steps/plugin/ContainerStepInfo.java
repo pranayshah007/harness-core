@@ -6,7 +6,6 @@
  */
 
 package io.harness.steps.plugin;
-
 import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
@@ -17,8 +16,11 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.yaml.extended.CIShellType;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.filters.WithConnectorRef;
@@ -58,6 +60,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -172,5 +175,10 @@ public class ContainerStepInfo extends ContainerBaseStepInfo
   @JsonIgnore
   public ContainerStepType getType() {
     return ContainerStepType.RUN_CONTAINER;
+  }
+
+  @Override
+  public List<String> excludeKeysFromStepInputs() {
+    return PMSStepInfo.super.excludeKeysFromStepInputs();
   }
 }

@@ -6,22 +6,27 @@
  */
 
 package io.harness.monitoring;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.executions.node.NodeExecutionMonitorService;
 import io.harness.engine.executions.plan.PlanExecutionMonitorService;
 import io.harness.metrics.service.api.MetricsPublisher;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
+@Singleton
 public class PipelineMetricsPublisher implements MetricsPublisher {
   @Inject PlanExecutionMonitorService planExecutionMonitorService;
   @Inject NodeExecutionMonitorService nodeExecutionMonitorService;
   @Override
   public void recordMetrics() {
-    //    planExecutionMonitorService.registerActiveExecutionMetrics();
-    //    nodeExecutionMonitorService.registerActiveExecutionMetrics();
+    planExecutionMonitorService.registerActiveExecutionMetrics();
+    nodeExecutionMonitorService.registerActiveExecutionMetrics();
   }
 }

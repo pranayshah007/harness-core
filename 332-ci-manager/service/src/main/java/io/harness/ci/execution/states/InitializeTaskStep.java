@@ -68,7 +68,7 @@ import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logstreaming.LogStreamingHelper;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.dto.AccountDTO;
@@ -81,6 +81,7 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.PipelineRbacHelper;
@@ -111,7 +112,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -392,8 +392,8 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
 
     for (ExecutionWrapperConfig config : executionElement.getSteps()) {
       ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo;
-      expandedExecutionWrapperInfo =
-          strategyHelper.expandExecutionWrapperConfigFromClass(config, maxExpansionLimit, CIAbstractStepNode.class);
+      expandedExecutionWrapperInfo = strategyHelper.expandExecutionWrapperConfigFromClass(
+          config, maxExpansionLimit, CIAbstractStepNode.class, ambiance);
 
       expandedExecutionElement.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());
       strategyExpansionMap.putAll(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData());
@@ -529,8 +529,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   }
 
   private String getLogPrefix(Ambiance ambiance) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance, "STAGE");
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    return LogStreamingStepClientFactory.getLogBaseKey(ambiance, StepCategory.STAGE.name());
   }
 
   private List<EntityDetail> getConnectorIdentifiers(

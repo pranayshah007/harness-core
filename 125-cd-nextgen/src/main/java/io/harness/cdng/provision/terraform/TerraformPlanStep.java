@@ -7,6 +7,8 @@
 
 package io.harness.cdng.provision.terraform;
 
+import static io.harness.beans.FeatureName.CDS_TF_TG_SKIP_ERROR_LOGS_COLORING;
+
 import io.harness.EntityType;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -197,6 +199,9 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
                 StepUtils.getTimeoutMillis(StepBaseParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .useOptimizedTfPlan(true)
             .isTerraformCloudCli(isTerraformCloudCli)
+            .skipColorLogs(featureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
+            .providerCredentialDelegateInfo(
+                helper.getProviderCredentialDelegateInfo(configuration.getProviderCredential(), ambiance))
             .build();
 
     TaskData taskData =

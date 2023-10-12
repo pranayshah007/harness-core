@@ -24,4 +24,6 @@ public interface ScoreRepository extends CrudRepository<ScoreEntity, String>, Sc
       String accountIdentifier, String entityIdentifier, String scorecardIdentifier);
 
   ScoreEntity save(ScoreEntity scoreEntity);
+
+  void deleteAllByAccountIdentifierAndIdIn(String accountIdentifier, List<String> ids);
 }

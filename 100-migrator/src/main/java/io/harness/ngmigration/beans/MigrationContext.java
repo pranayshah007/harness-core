@@ -6,9 +6,13 @@
  */
 
 package io.harness.ngmigration.beans;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
+import software.wings.ngmigration.NGMigrationEntityType;
 
 import java.util.Map;
 import java.util.Set;
@@ -17,6 +21,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Data
 @Builder
 @NoArgsConstructor
@@ -28,6 +33,7 @@ public class MigrationContext {
   private MigrationInputDTO inputDTO;
   private String accountId;
   private boolean templatizeStepParams;
+  private NGMigrationEntityType root;
 
   public static MigrationContext newInstance(String accountId, MigrationInputDTO inputDTO,
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph,

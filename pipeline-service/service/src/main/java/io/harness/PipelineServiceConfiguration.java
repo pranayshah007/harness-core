@@ -6,6 +6,7 @@
  */
 
 package io.harness;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.swagger.SwaggerBundleConfigurationFactory.buildSwaggerBundleConfiguration;
 
@@ -176,12 +177,17 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("expandedJsonConfig") private ExpandedJsonLockConfig expandedJsonLockConfig;
   @JsonProperty("pipelineSetupUsageCreationExecutorServiceConfig")
   private ThreadPoolConfig pipelineSetupUsageCreationPoolConfig;
+  @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;
 
   @JsonProperty("podCleanUpThreadPoolConfig") private ThreadPoolConfig podCleanUpThreadPoolConfig;
 
   @JsonProperty("staticSchemaFileURL") private String staticSchemaFileURL;
   @JsonProperty("timeoutIteratorMode") private String timeoutIteratorMode;
   @JsonProperty("webhookEventHsqsDequeueConfig") private HsqsDequeueConfig webhookEventHsqsDequeueConfig;
+  @JsonProperty("graphConsumerSleepIntervalMs") private Integer graphConsumerSleepIntervalMs;
+  @JsonProperty("asyncFilterCreationConsumerSleepIntervalMs")
+  private Integer asyncFilterCreationConsumerSleepIntervalMs;
+  @JsonProperty("publishAdviserEventForCustomAdvisers") private Boolean publishAdviserEventForCustomAdvisers;
   private boolean useQueueServiceForWebhookTriggers;
 
   private String managerServiceSecret;

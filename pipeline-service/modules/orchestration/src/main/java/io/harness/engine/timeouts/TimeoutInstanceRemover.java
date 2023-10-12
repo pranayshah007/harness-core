@@ -6,9 +6,12 @@
  */
 
 package io.harness.engine.timeouts;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.observers.NodeStatusUpdateObserver;
 import io.harness.engine.observers.NodeUpdateInfo;
@@ -27,6 +30,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 @Slf4j
@@ -48,7 +52,8 @@ public class TimeoutInstanceRemover implements AsyncInformObserver, NodeStatusUp
     List<String> timeoutInstanceIds = nodeUpdateInfo.getTimeoutInstanceIds();
 
     try (AutoLogContext autoLogContext = obtainAutoLogContext(nodeUpdateInfo)) {
-      boolean isSuccess = timeoutInstanceIds.isEmpty() || deleteTimeoutInstancesWithRetry(timeoutInstanceIds);
+      boolean isSuccess =
+          EmptyPredicate.isEmpty(timeoutInstanceIds) || deleteTimeoutInstancesWithRetry(timeoutInstanceIds);
       if (isSuccess) {
         log.info("Timeout instances {} are removed successfully", timeoutInstanceIds);
       } else {

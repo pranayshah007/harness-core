@@ -6,10 +6,12 @@
  */
 
 package io.harness.pms.pipeline;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.gitsync.sdk.CacheState;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -20,6 +22,7 @@ import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Value;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @Value
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -32,4 +35,5 @@ public class CacheResponseMetadataDTO {
   @NotNull CacheState cacheState;
   @NotNull long ttlLeft;
   @NotNull long lastUpdatedAt;
+  @NotNull Boolean isSyncEnabled;
 }

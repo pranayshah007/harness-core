@@ -16,13 +16,18 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.IDP)
 @UtilityClass
 public class ScorecardSummaryInfoMapper {
-  public ScorecardSummaryInfo toDTO(ScoreEntity scoreEntity, String scoreCardName) {
+  public ScorecardSummaryInfo toDTO(
+      ScoreEntity scoreEntity, String scoreCardName, String scoreCardDescription, String scoreCardIdentifier) {
     ScorecardSummaryInfo scorecardSummaryInfo = new ScorecardSummaryInfo();
-    scorecardSummaryInfo.setScore((int) scoreEntity.getScore());
-    scorecardSummaryInfo.setTimestamp(scoreEntity.getLastComputedTimestamp());
-    scorecardSummaryInfo.setChecksStatuses(scoreEntity.getCheckStatus());
-    scorecardSummaryInfo.setEntityIdentifier(scoreEntity.getEntityIdentifier());
+    scorecardSummaryInfo.setScore(0);
+    if (scoreEntity != null) {
+      scorecardSummaryInfo.setScore(scoreEntity.getScore());
+      scorecardSummaryInfo.setTimestamp(scoreEntity.getLastComputedTimestamp());
+      scorecardSummaryInfo.setChecksStatuses(scoreEntity.getCheckStatus());
+    }
+    scorecardSummaryInfo.setScorecardIdentifier(scoreCardIdentifier);
     scorecardSummaryInfo.setScorecardName(scoreCardName);
+    scorecardSummaryInfo.setDescription(scoreCardDescription);
     return scorecardSummaryInfo;
   }
 }

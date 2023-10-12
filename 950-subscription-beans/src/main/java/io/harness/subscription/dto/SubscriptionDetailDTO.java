@@ -17,7 +17,7 @@ import lombok.Builder;
 import lombok.Data;
 import org.jvnet.hk2.annotations.Optional;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ARTIFACTS})
 @Data
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)

@@ -189,6 +189,10 @@ if [[ "" != "$IDP_ENCRYPTION_SECRET" ]]; then
   export IDP_ENCRYPTION_SECRET; yq -i '.idpEncryptionSecret=env(IDP_ENCRYPTION_SECRET)' $CONFIG_FILE
 fi
 
+if [[ "" != "$JWT_EXTERNAL_SERVICE_SECRET" ]]; then
+  export JWT_EXTERNAL_SERVICE_SECRET; yq -i '.jwtExternalServiceSecret=env(JWT_EXTERNAL_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
 if [[ "" != "$NG_MANAGER_GITSYNC_TARGET" ]]; then
   export NG_MANAGER_GITSYNC_TARGET; yq -i '.gitManagerGrpcClientConfig.target=env(NG_MANAGER_GITSYNC_TARGET)' $CONFIG_FILE
 fi
@@ -208,6 +212,14 @@ fi
 if [[ "" != "$PROXY_ALLOW_LIST_CONFIG_SERVICES" ]]; then
   export PROXY_ALLOW_LIST_CONFIG_SERVICES; yq -i '.proxyAllowList.services=env(PROXY_ALLOW_LIST_CONFIG_SERVICES)' $CONFIG_FILE
   sed -i '' 's/  services: |-/  services:/g' $CONFIG_FILE
+fi
+
+if [[ "" != "$CPU" ]]; then
+  export CPU; yq -i '.cpu=env(CPU)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SCORE_COMPUTER_THREADS_PER_CORE" ]]; then
+  export SCORE_COMPUTER_THREADS_PER_CORE; yq -i '.scoreComputerThreadsPerCore=env(SCORE_COMPUTER_THREADS_PER_CORE)' $CONFIG_FILE
 fi
 
 yq -i 'del(.codec)' $REDISSON_CACHE_FILE
@@ -243,6 +255,7 @@ replace_key_value backstageMasterUrl "$BACKSTAGE_MASTER_URL"
 replace_key_value backstagePodLabel "$BACKSTAGE_POD_LABEL"
 replace_key_value idpServiceSecret "$IDP_SERVICE_SECRET"
 replace_key_value idpEncryptionSecret "$IDP_ENCRYPTION_SECRET"
+replace_key_value jwtExternalServiceSecret "$JWT_EXTERNAL_SERVICE_SECRET"
 replace_key_value jwtAuthSecret "$JWT_AUTH_SECRET"
 replace_key_value jwtIdentityServiceSecret "$JWT_IDENTITY_SERVICE_SECRET"
 replace_key_value provisionModuleConfig.triggerPipelineUrl "$TRIGGER_PIPELINE_URL"
@@ -381,4 +394,25 @@ fi
 
 if [[ "" != "$TI_SERVICE_GLOBAL_TOKEN" ]]; then
   export TI_SERVICE_GLOBAL_TOKEN; yq -i '.tiServiceConfig.globalToken=env(TI_SERVICE_GLOBAL_TOKEN)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SCORECARD_ITERATOR_THREAD_POOL_COUNT" ]]; then
+  export SCORECARD_ITERATOR_THREAD_POOL_COUNT; yq -i '.scorecardScoreComputationIteratorConfig.threadPoolCount=env(SCORECARD_ITERATOR_THREAD_POOL_COUNT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SCORECARD_ITERATOR_ENABLED" ]]; then
+  export SCORECARD_ITERATOR_ENABLED; yq -i '.scorecardScoreComputationIteratorConfig.enabled=env(SCORECARD_ITERATOR_ENABLED)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SCORECARD_ITERATOR_TARGET_INTERVAL_IN_SECONDS" ]]; then
+  export SCORECARD_ITERATOR_TARGET_INTERVAL_IN_SECONDS; yq -i '.scorecardScoreComputationIteratorConfig.targetIntervalInSeconds=env(SCORECARD_ITERATOR_TARGET_INTERVAL_IN_SECONDS)' $CONFIG_FILE
+fi
+
+
+if [[ "" != "$AUDIT_CLIENT_BASEURL" ]]; then
+  export AUDIT_CLIENT_BASEURL; yq -i '.auditClientConfig.baseUrl=env(AUDIT_CLIENT_BASEURL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$AUDIT_ENABLED" ]]; then
+  export AUDIT_ENABLED; yq -i '.enableAudit=env(AUDIT_ENABLED)' $CONFIG_FILE
 fi

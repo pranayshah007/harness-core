@@ -3,23 +3,27 @@
 # Declare variables to be passed into your templates.
 global:
   kubeVersion: ""
+  commonAnnotations: {}
+  commonLabels: {}
+  cg:
+    enabled: false
   secrets:
     app:
       external:
         ## if FALSE, Generate all secrets within K8s Namespace
         ## If TRUE, use one of the followings kids to inject
-        enabled: false 
+        enabled: false
         kind:
           # use ExternalSecrets Operator
-          externalSecrets: false 
+          externalSecrets: false
           # Use CSI Driver volume mount
-          csiSecretDriver: false          
+          csiSecretDriver: false
     database:
       external:
         enabled: false
         kind:
           externalSecrets: false
-          csiSecretDriver: false 
+          csiSecretDriver: false
 
   useExternalSecrets: false
   loadbalancerURL: ""
@@ -81,6 +85,13 @@ global:
   chaos:
     enabled: false
   stackDriverLoggingEnabled: false
+  smtpCreateSecret:
+    enabled: false
+    SMTP_PASSWORD: ""
+    SMTP_HOST: ""
+    SMTP_USERNAME: ""
+    SMTP_USE_SSL: "true"
+    SMTP_PORT: "465"
   ingress:
     # -- create ingress objects
     enabled: false
@@ -106,6 +117,19 @@ global:
     virtualService:
       gateways:
       hosts:
+  proxy:
+    enabled: false
+    host: localhost
+    port: 80
+    username: ""
+    password: ""
+    protocol: http
+  awsServiceEndpointUrls:
+    enabled: false
+    endPointRegion: us-east-2
+    stsEndPointUrl: https://sts.us-east-2.amazonaws.com
+    ecsEndPointUrl: https://ecs.us-east-2.amazonaws.com
+    cloudwatchEndPointUrl: https://monitoring.us-east-2.amazonaws.com
 replicaCount: 1
 maxSurge: 1
 maxUnavailable: 0
@@ -119,7 +143,7 @@ image:
   repository: harness/ng-manager-signed
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "79819"
+  tag: "80209"
   digest: ""
   imagePullSecrets: []
 
@@ -225,12 +249,12 @@ probes:
     failureThreshold: 25
 
 service:
+  annotations: {}
   type: ClusterIP
   protocol: TCP
   port: 7090
   grpcport: 9979
   gitsyncgrpcport: 13002
-
 
 resources:
   limits:
@@ -252,6 +276,8 @@ tolerations: []
 affinity: {}
 
 additionalConfigs: {}
+
+java17flags: ""
 
 # extraVolumes:
 # - name: volume-test
@@ -279,3 +305,8 @@ extraVolumeMounts: []
 #     fieldRef:
 #       fieldPath: metadata.name
 extraEnvVars: []
+
+virtualService:
+  annotations: {}
+ingress:
+  annotations: {}

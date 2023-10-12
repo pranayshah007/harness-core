@@ -14,6 +14,7 @@ import static javax.ws.rs.core.MediaType.MULTIPART_FORM_DATA;
 
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
+import io.harness.exception.InvalidRequestException;
 import io.harness.rest.RestResponse;
 import io.harness.serializer.JsonUtils;
 import io.harness.stream.BoundedInputStream;
@@ -52,6 +53,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
+import org.apache.commons.io.FilenameUtils;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
@@ -103,6 +105,9 @@ public class ConfigResource {
   public RestResponse<String> save(@QueryParam("appId") String appId, @QueryParam("entityId") String entityId,
       @QueryParam("entityType") EntityType entityType, @FormDataParam("file") InputStream uploadedInputStream,
       @FormDataParam("fileName") String fileName, @BeanParam ConfigFile configFile) {
+    if (FilenameUtils.isExtension(fileName.toLowerCase(), "csv", "xlsx", "xls")) {
+      throw new InvalidRequestException("cannot upload files with extension .csv, .xls and .xlsx");
+    }
     Application application = appService.get(appId);
     configFile.setAppId(application.getAppId());
     configFile.setAccountId(application.getAccountId());

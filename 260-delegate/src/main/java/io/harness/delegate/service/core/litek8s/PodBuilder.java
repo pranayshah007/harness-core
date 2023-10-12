@@ -15,7 +15,6 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 import io.harness.delegate.core.beans.K8SInfra;
-import io.harness.delegate.core.beans.ResourceRequirements;
 import io.harness.delegate.service.core.k8s.K8SEnvVar;
 import io.harness.delegate.service.core.util.K8SResourceHelper;
 import io.harness.delegate.service.core.util.K8SVolumeUtils;
@@ -80,7 +79,8 @@ public class PodBuilder extends V1PodBuilder {
   }
 
   public PodBuilder withTasks(final List<V1Container> containers) {
-    containers.forEach(container -> container.addVolumeMountsItem(WORKDIR_VOLUME_MNT));
+    containers.forEach(
+        container -> container.addVolumeMountsItem(WORKDIR_VOLUME_MNT).addVolumeMountsItem(ADDON_VOLUME_MNT));
     this.editOrNewSpec().addAllToContainers(containers).endSpec();
     return this;
   }
@@ -90,9 +90,9 @@ public class PodBuilder extends V1PodBuilder {
     return this;
   }
 
-  public V1Pod buildPod(final ResourceRequirements resource, final List<V1Volume> volumes, final V1Secret loggingSecret,
-      final PortMap portMap) {
-    return this.withAddon().withLiteEngine(resource, loggingSecret, portMap).withVolumes(volumes).build();
+  public V1Pod buildPod(
+      final K8SInfra k8SInfra, final List<V1Volume> volumes, final V1Secret loggingSecret, final PortMap portMap) {
+    return this.withAddon().withLiteEngine(k8SInfra, loggingSecret, portMap).withVolumes(volumes).build();
   }
 
   @NonNull
@@ -101,12 +101,11 @@ public class PodBuilder extends V1PodBuilder {
         normalizeLabel(taskGroupId));
   }
 
-  private PodBuilder withLiteEngine(
-      final ResourceRequirements resource, final V1Secret loggingSecret, final PortMap portMap) {
+  private PodBuilder withLiteEngine(final K8SInfra k8SInfra, final V1Secret loggingSecret, final PortMap portMap) {
     final var portEnvMap =
         portMap.getPortMap().entrySet().stream().collect(toMap(e -> e.getKey() + SERVICE_PORT_SUFFIX, String::valueOf));
 
-    final var leContainer = containerFactory.createLEContainer(resource)
+    final var leContainer = containerFactory.createLEContainer(k8SInfra.getCompute())
                                 .addToEnvFrom(K8SEnvVar.fromSecret(loggingSecret))
                                 .addAllToEnv(K8SEnvVar.fromMap(portEnvMap))
                                 .build();

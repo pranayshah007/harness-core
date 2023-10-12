@@ -34,6 +34,7 @@ public class ServiceUpsertEvent implements Event {
   private String orgIdentifier;
   private String projectIdentifier;
   private ServiceEntity service;
+  private ServiceEntity oldService;
 
   @JsonIgnore
   @Override

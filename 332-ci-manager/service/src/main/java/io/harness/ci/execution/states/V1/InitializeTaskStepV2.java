@@ -36,6 +36,7 @@ import static java.util.Collections.singletonList;
 import io.harness.EntityType;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.app.beans.entities.StepExecutionParameters;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.dependencies.ServiceDependency;
 import io.harness.beans.environment.ServiceDefinitionInfo;
@@ -46,6 +47,7 @@ import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome.VmDetailsOutcomeBuilder;
 import io.harness.beans.steps.CIAbstractStepNode;
+import io.harness.beans.steps.CILogKeyMetadata;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.InitializeExecutionSweepingOutput;
 import io.harness.beans.sweepingoutputs.TaskSelectorSweepingOutput;
@@ -55,6 +57,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.enforcement.CIBuildEnforcer;
 import io.harness.ci.executable.CiAsyncExecutable;
 import io.harness.ci.execution.buildstate.BuildSetupUtils;
 import io.harness.ci.execution.buildstate.ConnectorUtils;
@@ -101,7 +104,7 @@ import io.harness.hsqs.client.model.EnqueueResponse;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logstreaming.LogStreamingHelper;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.dto.AccountDTO;
@@ -116,6 +119,7 @@ import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
@@ -130,6 +134,8 @@ import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.CIAccountExecutionMetadataRepository;
 import io.harness.repositories.CIExecutionRepository;
+import io.harness.repositories.CILogKeyRepository;
+import io.harness.repositories.StepExecutionParametersRepository;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
 import io.harness.steps.matrix.ExpandedExecutionWrapperInfo;
@@ -148,7 +154,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -164,7 +169,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
   @Inject private ExceptionManager exceptionManager;
   @Inject private AccountClient accountClient;
   @Inject private CIDelegateTaskExecutor ciDelegateTaskExecutor;
-
+  @Inject CIBuildEnforcer buildEnforcer;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private CIFeatureFlagService ciFeatureFlagService;
   @Inject private BuildSetupUtils buildSetupUtils;
@@ -190,7 +195,10 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
   @Inject SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
   @Inject QueueExecutionUtils queueExecutionUtils;
+  @Inject private StepExecutionParametersRepository stepExecutionParametersRepository;
   @Inject CIExecutionRepository ciExecutionRepository;
+  @Inject private CILogKeyRepository ciLogKeyRepository;
+
   private static final String DEPENDENCY_OUTCOME = "dependencies";
 
   @Override
@@ -199,19 +207,37 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
   }
 
   @Override
-  public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {}
-
-  @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     String logKey = getLogKey(ambiance);
     String taskId;
     String accountId = AmbianceUtils.getAccountId(ambiance);
     addExecutionRecord(ambiance, stepParameters, accountId);
-    boolean queueConcurrencyEnabled =
-        ciFeatureFlagService.isEnabled(QUEUE_CI_EXECUTIONS_CONCURRENCY, AmbianceUtils.getAccountId(ambiance));
+    String runTime = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+    String stageRuntimeId = AmbianceUtils.getStageRuntimeIdAmbiance(ambiance);
+    InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepParameters.getSpec();
+    Infrastructure infrastructure = initializeStepInfo.getInfrastructure();
+
+    stepExecutionParametersRepository.save(StepExecutionParameters.builder()
+                                               .accountId(accountId)
+                                               .runTimeId(runTime)
+                                               .stageRunTimeId(stageRuntimeId)
+                                               .stepParameters(RecastOrchestrationUtils.toJson(stepParameters))
+                                               .build());
+    // Check and add log key to execution ID
+    CILogKeyMetadata ciLogKeyMetadata =
+        CILogKeyMetadata.builder().stageExecutionId(stageRuntimeId).logKeys(List.of(logKey)).build();
+    ciLogKeyRepository.save(ciLogKeyMetadata);
+    boolean shouldQueue = false;
+    boolean queueConcurrencyEnabled = infrastructure.getType() == Infrastructure.Type.HOSTED_VM
+        && ciFeatureFlagService.isEnabled(QUEUE_CI_EXECUTIONS_CONCURRENCY, accountId);
+
+    // only check if queue is enabled
     if (queueConcurrencyEnabled) {
+      shouldQueue = buildEnforcer.shouldQueue(accountId, infrastructure);
+    }
+
+    if (shouldQueue) {
       String topic = ciExecutionServiceConfig.getQueueServiceClientConfig().getTopic();
       log.info("start executeAsyncAfterRbac for initialize step with queue. Topic: {}", topic);
       taskId = generateUuid();
@@ -232,6 +258,8 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
             AmbianceUtils.getStageRuntimeIdAmbiance(ambiance)));
       }
     } else {
+      ciExecutionRepository.updateExecutionStatus(
+          AmbianceUtils.getAccountId(ambiance), ambiance.getStageExecutionId(), Status.RUNNING.toString());
       taskId = executeBuild(ambiance, stepParameters);
     }
 
@@ -239,8 +267,8 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
         AsyncExecutableResponse.newBuilder().addCallbackIds(taskId).addAllLogKeys(
             CollectionUtils.emptyIfNull(singletonList(logKey)));
 
-    // Sending the status if feature flag is enabled
-    if (queueConcurrencyEnabled) {
+    // Sending the status if shouldQueue is true
+    if (shouldQueue) {
       return responseBuilder.setStatus(Status.QUEUED_LICENSE_LIMIT_REACHED).build();
     } else {
       InitStepV2DelegateTaskInfo initStepV2DelegateTaskInfo =
@@ -434,6 +462,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
       sanitizationService.validate(steps);
     }
   }
+
   private void validateConnectors(InitializeStepInfo initializeStepInfo, List<EntityDetail> connectorEntitiesList,
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     if (initializeStepInfo.getInfrastructure().getType() != Infrastructure.Type.HOSTED_VM) {
@@ -477,6 +506,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     }
     return connectorDetailsList;
   }
+
   private void validateFeatureFlags(InitializeStepInfo initializeStepInfo, String accountIdentifier) {
     if (initializeStepInfo.getInfrastructure().getType() != Infrastructure.Type.HOSTED_VM) {
       return;
@@ -489,10 +519,11 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
           "Hosted builds are not enabled for this account. Please contact Harness support.");
     }
   }
+
   private String getLogKey(Ambiance ambiance) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance);
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    return LogStreamingStepClientFactory.getLogBaseKey(ambiance);
   }
+
   public TaskData getTaskData(
       StepElementParameters stepElementParameters, CIInitializeTaskParams buildSetupTaskParams) {
     long timeout =
@@ -592,8 +623,8 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
     for (ExecutionWrapperConfig config : executionElement.getSteps()) {
       ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo;
-      expandedExecutionWrapperInfo =
-          strategyHelper.expandExecutionWrapperConfigFromClass(config, maxExpansionLimit, CIAbstractStepNode.class);
+      expandedExecutionWrapperInfo = strategyHelper.expandExecutionWrapperConfigFromClass(
+          config, maxExpansionLimit, CIAbstractStepNode.class, ambiance);
 
       expandedExecutionElement.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());
       strategyExpansionMap.putAll(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData());
@@ -729,8 +760,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
   }
 
   private String getLogPrefix(Ambiance ambiance) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance, "STAGE");
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    return LogStreamingStepClientFactory.getLogBaseKey(ambiance, StepCategory.STAGE.name());
   }
 
   private LiteEnginePodDetailsOutcome getPodDetailsOutcome(CiK8sTaskResponse ciK8sTaskResponse) {
@@ -741,6 +771,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     }
     return null;
   }
+
   private List<EntityDetail> getConnectorIdentifiers(
       InitializeStepInfo initializeStepInfo, String accountIdentifier, String projectIdentifier, String orgIdentifier) {
     Infrastructure infrastructure = initializeStepInfo.getInfrastructure();
@@ -791,6 +822,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
     return entityDetails;
   }
+
   private EntityDetail createEntityDetails(
       String connectorIdentifier, String accountIdentifier, String projectIdentifier, String orgIdentifier) {
     IdentifierRef connectorRef =

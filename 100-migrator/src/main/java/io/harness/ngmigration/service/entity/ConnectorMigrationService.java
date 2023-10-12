@@ -6,7 +6,6 @@
  */
 
 package io.harness.ngmigration.service.entity;
-
 import static io.harness.ngmigration.beans.SupportStatus.UNSUPPORTED;
 import static io.harness.ngmigration.connector.ConnectorFactory.CONNECTOR_FACTORY_MAP;
 
@@ -16,8 +15,11 @@ import static software.wings.ngmigration.NGMigrationEntityType.SECRET;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
@@ -79,6 +81,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class ConnectorMigrationService extends NgMigrationService {
@@ -295,7 +298,7 @@ public class ConnectorMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected boolean isNGEntityExists() {
+  protected boolean isNGEntityExists(MigrationContext migrationContext) {
     return true;
   }
 }

@@ -62,7 +62,7 @@ import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.execution.CIDelegateTaskExecutor;
 import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logstreaming.LogStreamingHelper;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plugin.service.BasePluginCompatibleSerializer;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -86,6 +86,7 @@ import io.harness.product.ci.engine.proto.PluginStep;
 import io.harness.product.ci.engine.proto.RunStep;
 import io.harness.product.ci.engine.proto.RunTestsStep;
 import io.harness.product.ci.engine.proto.UnitStep;
+import io.harness.repositories.CILogKeyRepository;
 import io.harness.repositories.CIStageOutputRepository;
 import io.harness.steps.StepUtils;
 import io.harness.tasks.ResponseData;
@@ -100,7 +101,6 @@ import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -130,12 +130,16 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
 
   @Inject protected CIFeatureFlagService featureFlagService;
   @Inject private CiStepParametersUtils ciStepParametersUtils;
+  @Inject private CILogKeyRepository ciLogKeyRepository;
 
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     String runtimeId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     String logKey = getLogKey(ambiance);
+    // Check and add log key to execution ID if not exists
+    ciLogKeyRepository.appendLogKeys(ambiance.getStageExecutionId(), List.of(logKey));
+
     String stepGroupIdentifier = AmbianceUtils.obtainStepGroupIdentifier(ambiance);
     String stepIdentifier = AmbianceUtils.obtainStepIdentifier(ambiance);
     String completeStepIdentifier = getCompleteStepIdentifier(ambiance, stepIdentifier);
@@ -196,8 +200,7 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
       long timeoutInMillis, String stringTimeout, StageInfraDetails stageInfraDetails, StageDetails stageDetails);
 
   private String getLogKey(Ambiance ambiance) {
-    LinkedHashMap<String, String> logAbstractions = StepUtils.generateLogAbstractions(ambiance);
-    return LogStreamingHelper.generateLogBaseKey(logAbstractions);
+    return LogStreamingStepClientFactory.getLogBaseKey(ambiance);
   }
 
   public abstract void resolveGitAppFunctor(Ambiance ambiance, CIStepInfo ciStepInfo);
@@ -438,18 +441,20 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
     if (shouldPublishArtifact(stepStatus)) {
       publishArtifact(ambiance, stepParameters, stepIdentifier, stepStatus, stepResponseBuilder);
     }
+
+    if (shouldPublishOutcome(stepStatus) && stepStatus.getOutput() != null) {
+      populateCIStageOutputs(((StepMapOutput) stepStatus.getOutput()).getMap(), AmbianceUtils.getAccountId(ambiance),
+          ambiance.getStageExecutionId());
+      StepResponse.StepOutcome stepOutcome =
+          StepResponse.StepOutcome.builder()
+              .outcome(
+                  CIStepOutcome.builder().outputVariables(((StepMapOutput) stepStatus.getOutput()).getMap()).build())
+              .name("output")
+              .build();
+      stepResponseBuilder.stepOutcome(stepOutcome);
+    }
+
     if (stepStatus.getStepExecutionStatus() == StepExecutionStatus.SUCCESS) {
-      if (stepStatus.getOutput() != null) {
-        populateCIStageOutputs(((StepMapOutput) stepStatus.getOutput()).getMap(), AmbianceUtils.getAccountId(ambiance),
-            ambiance.getStageExecutionId());
-        StepResponse.StepOutcome stepOutcome =
-            StepResponse.StepOutcome.builder()
-                .outcome(
-                    CIStepOutcome.builder().outputVariables(((StepMapOutput) stepStatus.getOutput()).getMap()).build())
-                .name("output")
-                .build();
-        stepResponseBuilder.stepOutcome(stepOutcome);
-      }
       return stepResponseBuilder.status(Status.SUCCEEDED).build();
     } else if (stepStatus.getStepExecutionStatus() == StepExecutionStatus.SKIPPED) {
       return stepResponseBuilder.status(Status.SKIPPED).build();
@@ -471,7 +476,7 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
       StepStatus stepStatus, StepResponseBuilder stepResponseBuilder) {
     modifyStepStatus(ambiance, stepStatus, stepIdentifier);
 
-    StepArtifacts stepArtifacts = handleArtifact(stepStatus.getArtifactMetadata(), stepParameters);
+    StepArtifacts stepArtifacts = handleArtifact(stepStatus.getArtifactMetadata(), stepParameters, ambiance);
     if (stepArtifacts != null) {
       // since jexl doesn't understand - therefore we are adding a new outcome with artifact_ appended
       // Also to have backward compatibility we'll save the old outcome as an output variable.
@@ -574,6 +579,10 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
     return stepStatus.getStepExecutionStatus() == StepExecutionStatus.SUCCESS;
   }
 
+  protected boolean shouldPublishOutcome(StepStatus stepStatus) {
+    return stepStatus.getStepExecutionStatus() == StepExecutionStatus.SUCCESS;
+  }
+
   private String maskTransportExceptionError(String errorMessage) {
     final String defaultTransportExceptionMessage =
         "Communication between Container and Lite-engine seems to be broken. Please review the resources allocated to the Step";
@@ -583,6 +592,11 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
     } else {
       return errorMessage;
     }
+  }
+
+  protected StepArtifacts handleArtifact(
+      ArtifactMetadata artifactMetadata, StepElementParameters stepParameters, Ambiance ambiance) {
+    return handleArtifact(artifactMetadata, stepParameters);
   }
 
   protected StepArtifacts handleArtifact(ArtifactMetadata artifactMetadata, StepElementParameters stepParameters) {

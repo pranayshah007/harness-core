@@ -54,6 +54,7 @@ import io.harness.terraform.request.TerraformExecuteStepRequest;
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.io.File;
 import java.io.IOException;
@@ -176,6 +177,8 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
           commitIdToFetchedFilesMap, keyVersionMap);
     }
 
+    ImmutableMap<String, String> environmentVars = terraformBaseHelper.getEnvironmentVariables(taskParameters);
+
     try (PlanJsonLogOutputStream planJsonLogOutputStream =
              new PlanJsonLogOutputStream(taskParameters.isSaveTerraformStateJson());
          PlanLogOutputStream planLogOutputStream = new PlanLogOutputStream();
@@ -190,7 +193,7 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
               .scriptDirectory(scriptDirectory)
               .encryptedTfPlan(taskParameters.getEncryptedTfPlan())
               .encryptionConfig(taskParameters.getEncryptionConfig())
-              .envVars(taskParameters.getEnvironmentVariables())
+              .envVars(environmentVars)
               .isSaveTerraformJson(taskParameters.isSaveTerraformStateJson())
               .logCallback(logCallback)
               .planJsonLogOutputStream(planJsonLogOutputStream)
@@ -208,6 +211,7 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
               .additionalCliFlags(taskParameters.getTerraformCommandFlags())
               .encryptDecryptPlanForHarnessSMOnManager(taskParameters.isEncryptDecryptPlanForHarnessSMOnManager())
               .isNG(true)
+              .skipColorLogs(taskParameters.isSkipColorLogs())
               .build();
 
       TerraformStepResponse terraformStepResponse =

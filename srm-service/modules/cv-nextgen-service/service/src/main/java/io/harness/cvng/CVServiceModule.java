@@ -33,7 +33,6 @@ import io.harness.cvng.activity.entities.HarnessCDCurrentGenActivity.HarnessCDCu
 import io.harness.cvng.activity.entities.InternalChangeActivity.InternalChangeActivityUpdatableEntity;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.KubernetesClusterActivityUpdatableEntity;
 import io.harness.cvng.activity.entities.PagerDutyActivity.PagerDutyActivityUpdatableEntity;
-import io.harness.cvng.activity.entities.SRMStepAnalysisActivity;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.activity.services.api.ActivityUpdateHandler;
 import io.harness.cvng.activity.services.impl.ActivityServiceImpl;
@@ -41,7 +40,6 @@ import io.harness.cvng.activity.services.impl.CustomChangeActivityUpdateHandler;
 import io.harness.cvng.activity.services.impl.DeploymentActivityUpdateHandler;
 import io.harness.cvng.activity.services.impl.InternalChangeActivityUpdateHandler;
 import io.harness.cvng.activity.services.impl.KubernetesClusterActivityUpdateHandler;
-import io.harness.cvng.activity.services.impl.SRMAnalysisActivityUpdateHandler;
 import io.harness.cvng.activity.source.services.api.KubernetesActivitySourceService;
 import io.harness.cvng.activity.source.services.impl.KubernetesActivitySourceServiceImpl;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
@@ -184,6 +182,7 @@ import io.harness.cvng.core.services.api.demo.CVNGDemoPerpetualTaskService;
 import io.harness.cvng.core.services.api.demo.ChangeSourceDemoDataGenerator;
 import io.harness.cvng.core.services.api.demo.ChiDemoService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
+import io.harness.cvng.core.services.api.monitoredService.ErrorTrackingNotificationService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MSHealthReportService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
@@ -207,7 +206,10 @@ import io.harness.cvng.core.services.impl.CustomHealthLogDataCollectionInfoMappe
 import io.harness.cvng.core.services.impl.CustomHealthMetricDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.CustomHealthServiceImpl;
 import io.harness.cvng.core.services.impl.DataCollectionTaskServiceImpl;
+import io.harness.cvng.core.services.impl.DatadogLogDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.DatadogLogNextGenHealthSourceHelper;
 import io.harness.cvng.core.services.impl.DatadogMetricDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.DatadogMetricNextGenHealthSourceHelper;
 import io.harness.cvng.core.services.impl.DatadogServiceImpl;
 import io.harness.cvng.core.services.impl.DebugServiceImpl;
 import io.harness.cvng.core.services.impl.DeeplinkURLServiceImpl;
@@ -238,6 +240,7 @@ import io.harness.cvng.core.services.impl.PagerDutyServiceImpl;
 import io.harness.cvng.core.services.impl.PagerdutyChangeSourceUpdateHandler;
 import io.harness.cvng.core.services.impl.ParseSampleDataServiceImpl;
 import io.harness.cvng.core.services.impl.PrometheusDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.PrometheusNextGenHealthSourceHelper;
 import io.harness.cvng.core.services.impl.PrometheusServiceImpl;
 import io.harness.cvng.core.services.impl.SLIDataCollectionTaskServiceImpl;
 import io.harness.cvng.core.services.impl.SRMTelemetrySentStatusServiceImpl;
@@ -268,7 +271,7 @@ import io.harness.cvng.core.services.impl.demo.changesource.CDNGChangeSourceDemo
 import io.harness.cvng.core.services.impl.demo.changesource.KubernetesChangeSourceDemoDataGenerator;
 import io.harness.cvng.core.services.impl.demo.changesource.PagerdutyChangeSourceDemoDataGenerator;
 import io.harness.cvng.core.services.impl.monitoredService.ChangeSourceServiceImpl;
-import io.harness.cvng.core.services.impl.monitoredService.DatadogLogDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.monitoredService.ErrorTrackingNotificationServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.HealthSourceServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.MSHealthReportServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.MonitoredServiceServiceImpl;
@@ -287,7 +290,6 @@ import io.harness.cvng.core.transformer.changeEvent.HarnessCDCurrentGenChangeEve
 import io.harness.cvng.core.transformer.changeEvent.InternalChangeEventTransformer;
 import io.harness.cvng.core.transformer.changeEvent.KubernetesClusterChangeEventMetadataTransformer;
 import io.harness.cvng.core.transformer.changeEvent.PagerDutyChangeEventTransformer;
-import io.harness.cvng.core.transformer.changeEvent.SRMStepAnalysisChangeEventTransformer;
 import io.harness.cvng.core.transformer.changeSource.ChangeSourceEntityAndDTOTransformer;
 import io.harness.cvng.core.transformer.changeSource.ChangeSourceSpecTransformer;
 import io.harness.cvng.core.transformer.changeSource.CustomChangeSourceSpecTransformer;
@@ -467,6 +469,7 @@ import io.harness.govern.ProviderMethodInterceptor;
 import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
 import io.harness.lock.DistributedLockImplementation;
+import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.MongoPersistence;
 import io.harness.opaclient.OpaClientModule;
 import io.harness.outbox.TransactionOutboxModule;
@@ -558,6 +561,9 @@ public class CVServiceModule extends AbstractModule {
                 .setUncaughtExceptionHandler((t, e) -> log.error("error while processing task", e))
                 .build()));
     install(PrimaryVersionManagerModule.getInstance());
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("taskPollExecutor"))
+        .toInstance(new ManagedScheduledExecutorService("TaskPoll-Thread"));
     install(new TemplateResourceClientModule(verificationConfiguration.getTemplateServiceClientConfig(),
         verificationConfiguration.getTemplateServiceSecret(), AuthorizationServiceHeader.CV_NEXT_GEN.getServiceId()));
     install(new AccountClientModule(getManagerClientConfig(verificationConfiguration.getManagerClientConfig()),
@@ -912,6 +918,15 @@ public class CVServiceModule extends AbstractModule {
     dataSourceTypeNextGenHelperMapBinder.addBinding(DataSourceType.AZURE_METRICS)
         .to(AzureMetricsNextGenHealthSourceHelper.class)
         .in(Scopes.SINGLETON);
+    dataSourceTypeNextGenHelperMapBinder.addBinding(DataSourceType.DATADOG_LOG)
+        .to(DatadogLogNextGenHealthSourceHelper.class)
+        .in(Scopes.SINGLETON);
+    dataSourceTypeNextGenHelperMapBinder.addBinding(DataSourceType.DATADOG_METRICS)
+        .to(DatadogMetricNextGenHealthSourceHelper.class)
+        .in(Scopes.SINGLETON);
+    dataSourceTypeNextGenHelperMapBinder.addBinding(DataSourceType.PROMETHEUS)
+        .to(PrometheusNextGenHealthSourceHelper.class)
+        .in(Scopes.SINGLETON);
     MapBinder<DataSourceType, CVConfigUpdatableEntity> dataSourceTypeCVConfigMapBinder =
         MapBinder.newMapBinder(binder(), DataSourceType.class, CVConfigUpdatableEntity.class);
 
@@ -1007,6 +1022,7 @@ public class CVServiceModule extends AbstractModule {
     bind(SumoLogicService.class).to(SumoLogicServiceImpl.class);
     bind(HealthSourceService.class).to(HealthSourceServiceImpl.class);
     bind(MonitoredServiceService.class).to(MonitoredServiceServiceImpl.class);
+    bind(ErrorTrackingNotificationService.class).to(ErrorTrackingNotificationServiceImpl.class);
     bind(MSHealthReportService.class).to(MSHealthReportServiceImpl.class);
     bind(EntityDisabledTimeService.class).to(EntityDisabledTimeServiceImpl.class);
     bind(ServiceDependencyService.class).to(ServiceDependencyServiceImpl.class);
@@ -1124,9 +1140,7 @@ public class CVServiceModule extends AbstractModule {
     activityTypeActivityUpdatableEntityMapBinder.addBinding(ActivityType.CUSTOM_FF)
         .to(CustomChangeActivityUpdatableEntity.class)
         .in(Scopes.SINGLETON);
-    activityTypeActivityUpdatableEntityMapBinder.addBinding(ActivityType.SRM_STEP_ANALYSIS)
-        .to(SRMStepAnalysisActivity.SRMAnalysiActivityUpdatableEntity.class)
-        .in(Scopes.SINGLETON);
+
     MapBinder<ChangeSourceType, ChangeSourceUpdateHandler> changeSourceUpdateHandlerMapBinder =
         MapBinder.newMapBinder(binder(), ChangeSourceType.class, ChangeSourceUpdateHandler.class);
     changeSourceUpdateHandlerMapBinder.addBinding(ChangeSourceType.PAGER_DUTY)
@@ -1161,9 +1175,6 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     activityUpdateHandlerMapBinder.addBinding(ActivityType.CUSTOM_FF)
         .to(CustomChangeActivityUpdateHandler.class)
-        .in(Scopes.SINGLETON);
-    activityUpdateHandlerMapBinder.addBinding(ActivityType.SRM_STEP_ANALYSIS)
-        .to(SRMAnalysisActivityUpdateHandler.class)
         .in(Scopes.SINGLETON);
 
     MapBinder<SLOTargetType, SLOTargetTransformer> sloTargetTypeSLOTargetTransformerMapBinder =
@@ -1243,9 +1254,6 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.CUSTOM_FF)
         .to(CustomChangeEventTransformer.class)
-        .in(Scopes.SINGLETON);
-    changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.SRM_STEP_ANALYSIS)
-        .to(SRMStepAnalysisChangeEventTransformer.class)
         .in(Scopes.SINGLETON);
 
     bind(StateMachineMessageProcessor.class).to(StateMachineMessageProcessorImpl.class);

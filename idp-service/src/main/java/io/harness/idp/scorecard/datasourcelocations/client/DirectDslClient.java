@@ -11,11 +11,21 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.InvalidRequestException;
+import io.harness.eraro.ResponseMessage;
+import io.harness.idp.scorecard.datasourcelocations.beans.ApiRequestDetails;
+import io.harness.security.AllTrustingX509TrustManager;
 
+import com.google.common.collect.ImmutableList;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.HttpUrl;
@@ -29,22 +39,31 @@ import okhttp3.RequestBody;
 public class DirectDslClient implements DslClient {
   private static final String POST_METHOD = "POST";
   private static final String GET_METHOD = "GET";
+  private static final ImmutableList<TrustManager> TRUST_ALL_CERTS =
+      ImmutableList.of(new AllTrustingX509TrustManager());
 
   @Override
-  public Response call(String accountIdentifier, String url, String method, Map<String, String> headers, String body) {
+  public Response call(String accountIdentifier, ApiRequestDetails apiRequestDetails)
+      throws NoSuchAlgorithmException, KeyManagementException {
     OkHttpClient client = buildOkHttpClient();
-    log.info("Executing request through direct DSL for url = {}, method = {}", url, method);
-    Request request = buildRequest(url, method, headers, body);
+    String url = apiRequestDetails.getUrl();
+    String method = apiRequestDetails.getMethod();
+    String body = apiRequestDetails.getRequestBody();
+    Request request = buildRequest(url, method, apiRequestDetails.getHeaders(), body);
     return executeRequest(client, request);
   }
 
-  private OkHttpClient buildOkHttpClient() {
+  private OkHttpClient buildOkHttpClient() throws NoSuchAlgorithmException, KeyManagementException {
+    final SSLContext sslContext = SSLContext.getInstance("SSL");
+    sslContext.init(null, TRUST_ALL_CERTS.toArray(new TrustManager[1]), new java.security.SecureRandom());
+    final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
     return new OkHttpClient()
         .newBuilder()
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(10, TimeUnit.SECONDS)
         .writeTimeout(10, TimeUnit.SECONDS)
         .retryOnConnectionFailure(true)
+        .sslSocketFactory(sslSocketFactory, (X509TrustManager) TRUST_ALL_CERTS.get(0))
         .build();
   }
 
@@ -71,7 +90,9 @@ public class DirectDslClient implements DslClient {
       return Response.status(response.code()).entity(Objects.requireNonNull(response.body()).string()).build();
     } catch (Exception e) {
       log.error("Error in request execution through direct dsl client. Error = {}", e.getMessage(), e);
-      throw new InvalidRequestException("Request execution failed in direct dsl client");
+      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+          .entity(ResponseMessage.builder().message("Error occurred while fetching data").build())
+          .build();
     }
   }
 }

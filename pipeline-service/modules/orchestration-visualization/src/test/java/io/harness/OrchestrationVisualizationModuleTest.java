@@ -29,7 +29,7 @@ public class OrchestrationVisualizationModuleTest extends OrchestrationVisualiza
   @Category(UnitTests.class)
   public void testGetInstance() {
     assertThat(OrchestrationVisualizationModule.getInstance(
-                   EventsFrameworkConfiguration.builder().build(), ThreadPoolConfig.builder().build()))
+                   EventsFrameworkConfiguration.builder().build(), ThreadPoolConfig.builder().build(), 200))
         .isInstanceOf(OrchestrationVisualizationModule.class);
   }
   @Test
@@ -37,7 +37,7 @@ public class OrchestrationVisualizationModuleTest extends OrchestrationVisualiza
   @Category(UnitTests.class)
   public void testOrchestrationVisualizationExecutorService() {
     OrchestrationVisualizationModule orchestrationVisualizationModule = OrchestrationVisualizationModule.getInstance(
-        EventsFrameworkConfiguration.builder().build(), ThreadPoolConfig.builder().build());
+        EventsFrameworkConfiguration.builder().build(), ThreadPoolConfig.builder().build(), 200);
     assertThat(orchestrationVisualizationModule.orchestrationVisualizationExecutorService())
         .isInstanceOf(ExecutorService.class);
   }

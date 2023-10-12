@@ -6,7 +6,6 @@
  */
 
 package io.harness.engine.interrupts;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.interrupts.Interrupt.State.PROCESSED_SUCCESSFULLY;
@@ -20,8 +19,11 @@ import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
@@ -30,6 +32,7 @@ import io.harness.engine.interrupts.helpers.ExpiryHelper;
 import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
+import io.harness.execution.PlanExecution.PlanExecutionKeys;
 import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.Interrupt.InterruptKeys;
 import io.harness.iterator.PersistenceIteratorFactory;
@@ -44,6 +47,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -64,6 +68,9 @@ import org.springframework.data.util.CloseableIterator;
  * 1. What if there are no leaves at all (leverage level count)
  *
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class InterruptMonitor implements Handler<Interrupt> {
@@ -114,7 +121,8 @@ public class InterruptMonitor implements Handler<Interrupt> {
       // The null check is for really old plans which are cleared by mongo
       PlanExecution planExecution = null;
       try {
-        planExecution = planExecutionService.getPlanExecutionMetadata(interrupt.getPlanExecutionId());
+        planExecution = planExecutionService.getWithFieldsIncluded(
+            interrupt.getPlanExecutionId(), Sets.newHashSet(PlanExecutionKeys.status));
       } catch (Exception ex) {
         // Just ignoring this exception this happens again for old executions where the plan execution have been removed
         // from database
@@ -243,7 +251,7 @@ public class InterruptMonitor implements Handler<Interrupt> {
         abortHelper.discontinueMarkedInstance(discontinuingParent, interrupt);
         return;
       case EXPIRE_ALL:
-        expiryHelper.expireMarkedInstance(discontinuingParent, interrupt);
+        expiryHelper.expireMarkedInstance(discontinuingParent, interrupt, true);
         return;
       default:
         // This cannot happen just returning

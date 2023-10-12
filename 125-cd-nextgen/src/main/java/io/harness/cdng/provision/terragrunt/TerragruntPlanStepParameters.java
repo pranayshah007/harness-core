@@ -26,6 +26,8 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
 
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -46,13 +48,8 @@ public class TerragruntPlanStepParameters extends TerragruntPlanBaseStepInfo imp
   TerragruntPlanExecutionDataParameters configuration;
 
   @Override
-  public SpecParameters getViewJsonObject() {
-    TerragruntPlanStepParameters terragruntPlanStepParameters = this;
-    // this TerragruntModuleConfig we are settle to null so that it will not show in the input of plan step execution
-    if (terragruntPlanStepParameters.getConfiguration() != null) {
-      terragruntPlanStepParameters.getConfiguration().setTerragruntModuleConfig(null);
-    }
-    return terragruntPlanStepParameters;
+  public List<String> stepInputsKeyExclude() {
+    return new LinkedList<>(Arrays.asList("spec.configuration.terragruntModuleConfig"));
   }
 
   @Builder(builderMethodName = "infoBuilder")

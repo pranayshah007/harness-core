@@ -8,6 +8,7 @@
 package io.harness.engine.execution;
 
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.VED;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -72,6 +73,18 @@ public class WaitForExecutionInputCallbackTest extends CategoryTest {
     doReturn(NodeExecution.builder().ambiance(ambiance).build()).when(nodeExecutionService).get(nodeExecutionId);
     waitForExecutionInputCallback.notify(null);
     verify(executorService, times(1)).submit(any(Runnable.class));
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testNotifyUnsettingResolvedParams() {
+    Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId("id").build();
+    doReturn(NodeExecution.builder().ambiance(ambiance).build()).when(nodeExecutionService).get(nodeExecutionId);
+    waitForExecutionInputCallback.notify(null);
+    verify(executorService, times(1)).submit(any(Runnable.class));
+    verify(nodeExecutionService, times(1))
+        .updateStatusWithOps(eq(nodeExecutionId), eq(Status.QUEUED), any(), eq(EnumSet.of(Status.INPUT_WAITING)));
   }
 
   // TODO (prashant): Refactor this test, this test should be broken into at-least 3 diff tests

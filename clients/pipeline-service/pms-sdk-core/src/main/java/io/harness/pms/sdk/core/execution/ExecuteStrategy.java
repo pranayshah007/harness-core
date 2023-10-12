@@ -6,12 +6,15 @@
  */
 
 package io.harness.pms.sdk.core.execution;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.steps.Step;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface ExecuteStrategy {
   void start(InvokerPackage invokerPackage);
@@ -25,4 +28,10 @@ public interface ExecuteStrategy {
   default void progress(ProgressPackage progressPackage) {
     throw new UnsupportedOperationException();
   };
+
+  void abort(InterruptPackage interruptPackage);
+
+  void expire(InterruptPackage interruptPackage);
+
+  void failure(InterruptPackage interruptPackage);
 }

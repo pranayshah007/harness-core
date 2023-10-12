@@ -16,6 +16,7 @@ public enum PluginField {
   BUILD_PUSH_DOCKER_REGISTRY("buildAndPushDockerRegistryTag"),
   BUILD_PUSH_ECR("buildAndPushECRTag"),
   BUILD_PUSH_GCR("buildAndPushGCRTag"),
+  BUILD_PUSH_GAR("buildAndPushGARTag"),
   BUILD_PUSH_ACR("buildAndPushACRTag"),
   GCS_UPLOAD("gcsUploadTag"),
   S3_UPLOAD("s3UploadTag"),
@@ -25,6 +26,8 @@ public enum PluginField {
   SECURITY("securityTag"),
   SSCA_ORCHESTRATION("sscaOrchestrationTag"),
   SSCA_ENFORCEMENT("sscaEnforcementTag"),
+  PROVENANCE("provenanceTag"),
+  SLSA_VERIFICATION("slsaVerificationTag"),
   UNKNOWN("unknown");
 
   public final String label;

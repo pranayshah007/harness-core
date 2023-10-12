@@ -22,4 +22,7 @@ public class ServiceInstanceDetails {
 
   private String testNodeRegExPattern;
   private String controlNodeRegExPattern;
+
+  private List<String> sampledTestNodes;
+  private List<String> sampledControlNodes;
 }

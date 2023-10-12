@@ -10,7 +10,10 @@ package io.harness.delegate.task.azure.appservice.webapp.handler;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_PRODUCTION_NAME;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.azure.context.AzureWebClientContext;
 import io.harness.azure.model.AzureAppServiceApplicationSetting;
 import io.harness.azure.model.AzureAppServiceConfiguration;
@@ -36,6 +39,8 @@ import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @OwnedBy(CDP)
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AZURE_WEBAPP})
 public abstract class AbstractSlotDataRequestHandler<T extends AbstractSlotDataRequest>
     extends AzureWebAppRequestHandler<T> {
   @Inject private AzureRegistrySettingsAdapter azureRegistrySettingsAdapter;
@@ -123,6 +128,8 @@ public abstract class AbstractSlotDataRequestHandler<T extends AbstractSlotDataR
         .skipTargetSlotValidation(true)
         .isBasicDeployment(
             DEPLOYMENT_SLOT_PRODUCTION_NAME.equalsIgnoreCase(taskRequest.getInfrastructure().getDeploymentSlot()))
+        .cleanDeployment(taskRequest.isCleanDeployment())
+        .useNewDeployApi(taskRequest.isCleanDeployment())
         .build();
   }
 

@@ -6,9 +6,11 @@
  */
 
 package io.harness.pms.sdk.core.plan;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.plan.ExecutionMode;
@@ -27,6 +29,7 @@ import lombok.Singular;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Value
 @Builder
@@ -51,14 +54,11 @@ public class PlanNode {
   Map<ExecutionMode, List<AdviserObtainment>> advisorObtainmentsForExecutionMode;
   @Singular List<FacilitatorObtainment> facilitatorObtainments;
   @Singular List<SdkTimeoutObtainment> timeoutObtainments;
-
   // Skip
   String skipCondition;
   String whenCondition;
-
   // stage fqn
   @NonFinal @lombok.Setter String stageFqn;
-
   // Config
   boolean skipExpressionChain;
   @Builder.Default @NotNull ExpressionMode expressionMode = ExpressionMode.RETURN_NULL_IF_UNRESOLVED;

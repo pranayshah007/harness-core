@@ -6,7 +6,6 @@
  */
 
 package io.harness.migrations.all;
-
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageRequest.UNLIMITED;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -16,6 +15,9 @@ import static software.wings.beans.security.UserGroup.DEFAULT_ACCOUNT_ADMIN_USER
 import static software.wings.beans.security.UserGroup.DEFAULT_NON_PROD_SUPPORT_USER_GROUP_NAME;
 import static software.wings.beans.security.UserGroup.DEFAULT_PROD_SUPPORT_USER_GROUP_NAME;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.migrations.Migration;
@@ -38,6 +40,8 @@ import lombok.extern.slf4j.Slf4j;
  * This script is meant to be idempotent, so it could be run any number of times.
  * @author rktummala on 3/21/18
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 public class CreateSupportUserGroupsAndRenameAccountAdmin implements Migration {
   private static final String DEFAULT_OLD_USER_GROUP_NAME = "ADMIN";
@@ -60,7 +64,7 @@ public class CreateSupportUserGroupsAndRenameAccountAdmin implements Migration {
                 .addFilter("name", IN, DEFAULT_OLD_USER_GROUP_NAME, DEFAULT_ACCOUNT_ADMIN_USER_GROUP_NAME,
                     DEFAULT_PROD_SUPPORT_USER_GROUP_NAME, DEFAULT_NON_PROD_SUPPORT_USER_GROUP_NAME)
                 .build();
-        PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, true, null, null);
+        PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, true, null, null, false);
 
         List<UserGroup> userGroupList = pageResponse.getResponse();
 

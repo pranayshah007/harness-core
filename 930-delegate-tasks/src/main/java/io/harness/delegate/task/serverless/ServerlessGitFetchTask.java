@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.task.serverless;
-
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.NO_SERVERLESS_MANIFEST_EXPLANATION;
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.NO_SERVERLESS_MANIFEST_FAILED;
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.NO_SERVERLESS_MANIFEST_HINT;
@@ -20,8 +19,11 @@ import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.task.git.GitDecryptionHelper;
 import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.data.structure.EmptyPredicate;
@@ -69,6 +71,7 @@ import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class ServerlessGitFetchTask extends AbstractDelegateRunnableTask {
@@ -222,7 +225,7 @@ public class ServerlessGitFetchTask extends AbstractDelegateRunnableTask {
     filePath = GitFetchTaskHelper.getCompleteFilePath(folderPath, filePath);
     List<String> filePaths = Collections.singletonList(filePath);
     gitFetchTaskHelper.printFileNames(executionLogCallback, filePaths, closeLogStream);
-    return gitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);
+    return gitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO, false);
   }
 
   @Override

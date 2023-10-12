@@ -6,13 +6,16 @@
  */
 
 package software.wings.search.entities.pipeline;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static software.wings.beans.PipelineStage.PipelineStageElement;
 
 import static java.util.Arrays.asList;
+import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.mongo.changestreams.ChangeEvent;
 import io.harness.timescaledb.TimeScaleDBService;
 
@@ -34,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 @Singleton
 public class PipelineTimescaleChangeDataHandler implements ChangeHandler {
@@ -143,7 +147,8 @@ public class PipelineTimescaleChangeDataHandler implements ChangeHandler {
           ? pipelineStage.getPipelineStageElements()
           : new LinkedList<>();
       for (PipelineStageElement pipelineStageElement : pipelineStageElements) {
-        if (pipelineStageElement.getProperties() != null && pipelineStageElement.getProperties().containsKey("envId")) {
+        if (pipelineStageElement.getProperties() != null && pipelineStageElement.getProperties().containsKey("envId")
+            && !isNull(pipelineStageElement.getProperties().get("envId"))) {
           String envId = pipelineStageElement.getProperties().get("envId").toString();
           if (envId != null) {
             if (!isEnvIdPresent.containsKey(envId)) {
@@ -154,7 +159,8 @@ public class PipelineTimescaleChangeDataHandler implements ChangeHandler {
         }
 
         if (pipelineStageElement.getProperties() != null
-            && pipelineStageElement.getProperties().containsKey("workflowId")) {
+            && pipelineStageElement.getProperties().containsKey("workflowId")
+            && !isNull(pipelineStageElement.getProperties().get("workflowId"))) {
           String workflowId = pipelineStageElement.getProperties().get("workflowId").toString();
           if (workflowId != null) {
             if (!isWorkflowIdPresent.containsKey(workflowId)) {

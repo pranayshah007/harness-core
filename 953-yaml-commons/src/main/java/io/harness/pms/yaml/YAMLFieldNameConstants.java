@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.yaml;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.CodePulse;
@@ -22,6 +23,7 @@ import lombok.experimental.UtilityClass;
 public class YAMLFieldNameConstants {
   public final String EXECUTION = "execution";
   public final String PIPELINE = "pipeline";
+  public final String TRIGGER = "trigger";
   public final String POLICY_OUTPUT = "policyOutput";
   public final String CI_CODE_BASE = "codebase";
   public final String PROPERTIES = "properties";
@@ -122,4 +124,8 @@ public class YAMLFieldNameConstants {
 
   public final String COMBINED_ROLLBACK_STATUS = "combinedRollbackStatus";
   public final String RETRY_STEP_GROUP = "retryStepGroup";
+  public final String CUSTOM = "Custom";
+  public final String REF = "ref";
+  public final String VERSION = "version";
+  public final String KIND = "kind";
 }

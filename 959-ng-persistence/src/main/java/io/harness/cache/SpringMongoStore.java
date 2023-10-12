@@ -6,13 +6,15 @@
  */
 
 package io.harness.cache;
-
 import static com.mongodb.ErrorCategory.DUPLICATE_KEY;
 import static java.lang.String.format;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cache.SpringCacheEntity.SpringCacheEntityKeys;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
@@ -22,6 +24,7 @@ import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.mongodb.ErrorCategory;
 import com.mongodb.MongoCommandException;
 import java.sql.Date;
@@ -39,6 +42,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -48,6 +52,7 @@ public class SpringMongoStore implements DistributedStore {
   @Inject private MongoTemplate mongoTemplate;
   @Inject private SecondaryMongoTemplateHolder secondaryMongoTemplateHolder;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Override
   public <T extends Distributable> T get(long algorithmId, long structureHash, String key, List<String> params) {
@@ -129,16 +134,22 @@ public class SpringMongoStore implements DistributedStore {
       }
 
       final io.harness.cache.SpringCacheEntity cacheEntity = mongoTemplate.findOne(query, SpringCacheEntity.class);
-
-      if (cacheEntity == null) {
-        return null;
-      }
-
-      return (T) kryoSerializer.asInflatedObject(cacheEntity.getEntity());
+      return inflateObject(cacheEntity);
     } catch (RuntimeException ex) {
       log.error("Failed to obtain from cache", ex);
     }
     return null;
+  }
+
+  private <T extends Distributable> T inflateObject(io.harness.cache.SpringCacheEntity cacheEntity) {
+    if (cacheEntity == null) {
+      return null;
+    }
+    if (cacheEntity.isUsingKryoWithoutReference()) {
+      return (T) referenceFalseKryoSerializer.asInflatedObject(cacheEntity.getEntity());
+    } else {
+      return (T) kryoSerializer.asInflatedObject(cacheEntity.getEntity());
+    }
   }
 
   private <T extends Distributable> T getFromSecondary(
@@ -154,11 +165,7 @@ public class SpringMongoStore implements DistributedStore {
       final io.harness.cache.SpringCacheEntity cacheEntity =
           secondaryMongoTemplateHolder.getSecondaryMongoTemplate().findOne(query, SpringCacheEntity.class);
 
-      if (cacheEntity == null) {
-        return null;
-      }
-
-      return (T) kryoSerializer.asInflatedObject(cacheEntity.getEntity());
+      return inflateObject(cacheEntity);
     } catch (RuntimeException ex) {
       log.error("Failed to obtain from cache", ex);
     }
@@ -195,7 +202,8 @@ public class SpringMongoStore implements DistributedStore {
       Update update = new Update()
                           .setOnInsert(SpringCacheEntityKeys.canonicalKey, canonicalKey)
                           .set(SpringCacheEntityKeys.contextValue, contextValue)
-                          .set(SpringCacheEntityKeys.entity, kryoSerializer.asDeflatedBytes(entity))
+                          .set(SpringCacheEntityKeys.usingKryoWithoutReference, true)
+                          .set(SpringCacheEntityKeys.entity, referenceFalseKryoSerializer.asDeflatedBytes(entity))
                           .set(SpringCacheEntityKeys.validUntil, Date.from(OffsetDateTime.now().plus(ttl).toInstant()))
                           .set(SpringCacheEntityKeys.entityUpdatedAt, entityLastUpdatedAt);
 

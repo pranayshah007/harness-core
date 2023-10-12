@@ -127,6 +127,15 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   done
 fi
 
+if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
+  IFS=',' read -ra SENTINEL_URLS <<< "$LOCK_CONFIG_REDIS_SENTINELS"
+  INDEX=0
+  for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.redisLockConfig.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+    INDEX=$(expr $INDEX + 1)
+  done
+fi
+
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
   yq -i 'del(.logging.appenders[0])' $CONFIG_FILE
   yq -i '.logging.appenders[0].stackdriverLogEnabled=true' $CONFIG_FILE
@@ -188,3 +197,16 @@ replace_key_value isClickHouseEnabled "$CLICKHOUSE_ENABLED"
 
 replace_key_value aiEngineConfig.genAIService.genAIServiceSecret "$GENAI_SERVICE_SECRET"
 replace_key_value aiEngineConfig.genAIService.apiEndpoint "$GENAI_SERVICE_ENDPOINT"
+
+replace_key_value proxy.enabled "$PROXY_ENABLED"
+replace_key_value proxy.host "$PROXY_HOST"
+replace_key_value proxy.port "$PROXY_PORT"
+replace_key_value proxy.username "$PROXY_USERNAME"
+replace_key_value proxy.password "$PROXY_PASSWORD"
+replace_key_value proxy.protocol "$PROXY_PROTOCOL"
+
+replace_key_value awsServiceEndpointUrls.enabled "$AWS_SERVICE_ENDPOINT_URLS_ENABLED"
+replace_key_value awsServiceEndpointUrls.endPointRegion "$AWS_SERVICE_ENDPOINT_URLS_ENDPOINT_REGION"
+replace_key_value awsServiceEndpointUrls.stsEndPointUrl "$AWS_SERVICE_ENDPOINT_URLS_STS_ENDPOINT_URL"
+replace_key_value awsServiceEndpointUrls.ecsEndPointUrl "$AWS_SERVICE_ENDPOINT_URLS_ECS_ENDPOINT_URL"
+replace_key_value awsServiceEndpointUrls.cloudwatchEndPointUrl "$AWS_SERVICE_ENDPOINT_URLS_CLOUDWATCH_ENDPOINT_URL"

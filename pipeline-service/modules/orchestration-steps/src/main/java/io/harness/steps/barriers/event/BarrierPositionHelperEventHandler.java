@@ -6,13 +6,17 @@
  */
 
 package io.harness.steps.barriers.event;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.FeatureName;
 import io.harness.engine.observers.NodeStatusUpdateObserver;
 import io.harness.engine.observers.NodeUpdateInfo;
 import io.harness.execution.NodeExecution;
 import io.harness.observer.AsyncInformObserver;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.steps.barriers.beans.BarrierExecutionInstance;
@@ -27,6 +31,7 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -41,12 +46,21 @@ public class BarrierPositionHelperEventHandler implements AsyncInformObserver, N
     try {
       Level level = Objects.requireNonNull(AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()));
       String group = level.getGroup();
+      BarrierPositionType positionType = null;
       if (BarrierPositionType.STAGE.name().equals(group)) {
-        updatePosition(planExecutionId, BarrierPositionType.STAGE, nodeExecution);
+        positionType = BarrierPositionType.STAGE;
       } else if (BarrierPositionType.STEP_GROUP.name().equals(group)) {
-        updatePosition(planExecutionId, BarrierPositionType.STEP_GROUP, nodeExecution);
+        positionType = BarrierPositionType.STEP_GROUP;
       } else if (BarrierPositionType.STEP.name().equals(group)) {
-        updatePosition(planExecutionId, BarrierPositionType.STEP, nodeExecution);
+        positionType = BarrierPositionType.STEP;
+      }
+      if (positionType != null) {
+        if (AmbianceUtils.checkIfFeatureFlagEnabled(nodeUpdateInfo.getNodeExecution().getAmbiance(),
+                FeatureName.CDS_NG_BARRIER_STEPS_WITHIN_LOOPING_STRATEGIES.name())) {
+          updatePosition(planExecutionId, positionType, nodeExecution);
+        } else {
+          updatePositionWithoutFiltersForLoopingStrategy(planExecutionId, positionType, nodeExecution);
+        }
       }
     } catch (Exception e) {
       log.error("Failed to update barrier position for planExecutionId: [{}]", planExecutionId);
@@ -54,10 +68,24 @@ public class BarrierPositionHelperEventHandler implements AsyncInformObserver, N
     }
   }
 
+  private List<BarrierExecutionInstance> updatePositionWithoutFiltersForLoopingStrategy(
+      String planExecutionId, BarrierPositionType type, NodeExecution nodeExecution) {
+    // TODO: Remove this method when removing Feature Flag CDS_NG_BARRIER_STEPS_WITHIN_LOOPING_STRATEGIES.
+    Ambiance ambiance = nodeExecution.getAmbiance();
+    Level level = Objects.requireNonNull(AmbianceUtils.obtainCurrentLevel(ambiance));
+    return barrierService.updatePosition(
+        planExecutionId, type, level.getSetupId(), nodeExecution.getUuid(), null, null, false);
+  }
+
   private List<BarrierExecutionInstance> updatePosition(
       String planExecutionId, BarrierPositionType type, NodeExecution nodeExecution) {
-    Level level = Objects.requireNonNull(AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()));
-    return barrierService.updatePosition(planExecutionId, type, level.getSetupId(), nodeExecution.getUuid());
+    Ambiance ambiance = nodeExecution.getAmbiance();
+    Level level = Objects.requireNonNull(AmbianceUtils.obtainCurrentLevel(ambiance));
+    String stageRuntimeId = AmbianceUtils.getStageLevelFromAmbiance(ambiance).map(Level::getRuntimeId).orElse(null);
+    String stepGroupRuntimeId =
+        AmbianceUtils.getStepGroupLevelFromAmbiance(ambiance).map(Level::getRuntimeId).orElse(null);
+    return barrierService.updatePosition(
+        planExecutionId, type, level.getSetupId(), nodeExecution.getUuid(), stageRuntimeId, stepGroupRuntimeId, true);
   }
 
   @Override

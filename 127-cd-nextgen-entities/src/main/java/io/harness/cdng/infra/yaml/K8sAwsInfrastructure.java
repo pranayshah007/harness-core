@@ -6,17 +6,19 @@
  */
 
 package io.harness.cdng.infra.yaml;
-
 import static io.harness.cdng.k8s.K8sEntityHelper.K8S_INFRA_NAMESPACE_REGEX_PATTERN;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.K8sAwsInfraMapping;
-import io.harness.filters.ConnectorRefExtractorHelper;
+import io.harness.cdng.visitor.helpers.SecretConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.yaml.ParameterField;
@@ -43,12 +45,13 @@ import lombok.experimental.Wither;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Value
 @SuperBuilder
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName(InfrastructureKind.KUBERNETES_AWS)
-@SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
+@SimpleVisitorHelper(helperClass = SecretConnectorRefExtractorHelper.class)
 @TypeAlias("k8sAwsInfrastructure")
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.infra.yaml.K8sAwsInfrastructure")
@@ -83,12 +86,15 @@ public class K8sAwsInfrastructure
   @Wither
   ParameterField<String> cluster;
 
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> region;
+
   @Override
   public InfraMapping getInfraMapping() {
     return K8sAwsInfraMapping.builder()
         .awsConnector(connectorRef.getValue())
         .namespace(namespace.getValue())
         .cluster(cluster.getValue())
+        .region(region.getValue())
         .build();
   }
 
@@ -99,6 +105,9 @@ public class K8sAwsInfrastructure
 
   @Override
   public String[] getInfrastructureKeyValues() {
+    if (ParameterField.isNotNull(region)) {
+      return new String[] {connectorRef.getValue(), cluster.getValue(), region.getValue(), namespace.getValue()};
+    }
     return new String[] {connectorRef.getValue(), cluster.getValue(), namespace.getValue()};
   }
 
@@ -125,6 +134,9 @@ public class K8sAwsInfrastructure
     }
     if (!ParameterField.isNull(config.getProvisioner())) {
       resultantInfra.setProvisioner(config.getProvisioner());
+    }
+    if (!ParameterField.isNull(config.getRegion())) {
+      resultantInfra = resultantInfra.withRegion(config.getRegion());
     }
 
     return resultantInfra;

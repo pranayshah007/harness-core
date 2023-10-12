@@ -16,6 +16,7 @@ import io.harness.engine.expressions.OrchestrationConstants;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.expression.LateBindingValue;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.helpers.PipelineExpressionHelper;
@@ -71,6 +72,13 @@ public class PipelineExecutionFunctor implements LateBindingValue {
     jsonObject.put("sequenceId", pipelineExecutionSummaryEntity.getRunSequence());
     jsonObject.put(
         "resumedExecutionId", pipelineExecutionSummaryEntity.getRetryExecutionMetadata().getRootExecutionId());
+    jsonObject.put("storeType",
+        pipelineExecutionSummaryEntity.getStoreType() != null ? pipelineExecutionSummaryEntity.getStoreType()
+                                                              : StoreType.INLINE);
+    if (pipelineExecutionSummaryEntity.getEntityGitDetails() != null) {
+      jsonObject.put("branchName", pipelineExecutionSummaryEntity.getEntityGitDetails().getBranch());
+      jsonObject.put("repoName", pipelineExecutionSummaryEntity.getEntityGitDetails().getRepoName());
+    }
 
     // block to add selected stages identifier
     try {

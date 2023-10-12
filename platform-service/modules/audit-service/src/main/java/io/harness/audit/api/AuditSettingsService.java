@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.entities.AuditSettings;
 
 import java.util.List;
+import java.util.Set;
 
 @OwnedBy(PL)
 public interface AuditSettingsService {
@@ -20,5 +21,6 @@ public interface AuditSettingsService {
   AuditSettings create(String accountIdentifier, int months);
   AuditSettings update(String accountIdentifier, int months);
   List<AuditSettings> fetchAll();
+  Set<String> getUniqueAccountsWithAuditRetentionPeriod();
   void deleteByAccountIdentifier(String accountIdentifier);
 }

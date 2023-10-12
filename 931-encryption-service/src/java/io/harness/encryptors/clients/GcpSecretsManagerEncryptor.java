@@ -15,8 +15,11 @@ import static io.harness.eraro.ErrorCode.GCP_SECRET_MANAGER_OPERATION_ERROR;
 import static io.harness.eraro.ErrorCode.GCP_SECRET_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_SRE;
+import static io.harness.helpers.GlobalSecretManagerUtils.getValueByJsonPath;
+import static io.harness.helpers.GlobalSecretManagerUtils.parse;
 
 import static com.google.datastore.v1.client.DatastoreHelper.getProjectIdFromComputeEngine;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SecretText;
@@ -146,11 +149,18 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
     String projectId = getProjectId(googleCredentials);
     try (SecretManagerServiceClient gcpSecretsManagerClient = getGcpSecretsManagerClient(gcpSecretsManagerConfig)) {
       SecretVersionName secretVersionName = null;
+      String key = EMPTY;
       if (isNotEmpty(encryptedRecord.getPath())) {
         String secretName;
         String version;
         if (encryptedRecord.getAdditionalMetadata() != null) {
-          secretName = encryptedRecord.getPath();
+          int keyIndex = encryptedRecord.getPath().indexOf('#');
+          if (keyIndex > 0) {
+            secretName = encryptedRecord.getPath().substring(0, keyIndex);
+            key = encryptedRecord.getPath().substring(keyIndex + 1);
+          } else {
+            secretName = encryptedRecord.getPath();
+          }
           version = encryptedRecord.getAdditionalMetadata().getValues().get(VERSION).toString();
         } else {
           secretName = encryptedRecord.getEncryptionKey() != null ? encryptedRecord.getEncryptionKey()
@@ -179,7 +189,7 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
       if (secretVersionName != null) {
         AccessSecretVersionResponse response = gcpSecretsManagerClient.accessSecretVersion(secretVersionName);
         String payload = response.getPayload().getData().toStringUtf8();
-        return payload.toCharArray();
+        return getValueByJsonPath(parse(payload), key).toCharArray();
       }
     } catch (IOException e) {
       throw new SecretManagementClientException(

@@ -33,6 +33,10 @@ public class InternalChangeActivity extends Activity {
   String updatedBy;
   InternalChangeEvent internalChangeEvent;
   Long eventEndTime;
+  String pipelineId;
+  String stageId;
+  String stageStepId;
+  String planExecutionId;
 
   public ActivityType getType() {
     return activityType;

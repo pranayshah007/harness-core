@@ -6,12 +6,14 @@
  */
 
 package io.harness.engine.pms.execution.strategy.identity;
-
 import static io.harness.plan.NodeType.IDENTITY_PLAN_NODE;
 
 import io.harness.OrchestrationStepTypes;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
@@ -35,6 +37,8 @@ import com.google.inject.Inject;
 import java.util.Map;
 import java.util.Optional;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class IdentityStep
     implements ChildExecutable<IdentityStepParameters>, ChildrenExecutable<IdentityStepParameters> {
@@ -57,9 +61,11 @@ public class IdentityStep
   @Override
   public StepResponse handleChildResponse(
       Ambiance ambiance, IdentityStepParameters identityParams, Map<String, ResponseData> responseDataMap) {
-    NodeExecution originalNodeExecution = nodeExecutionService.get(identityParams.getOriginalNodeExecutionId());
+    NodeExecution originalNodeExecution = nodeExecutionService.getWithFieldsIncluded(
+        identityParams.getOriginalNodeExecutionId(), NodeProjectionUtils.withStatus);
+
     // Copying the outcomes
-    pmsOutcomeService.cloneForRetryExecution(ambiance, originalNodeExecution.getUuid());
+    pmsOutcomeService.cloneForRetryExecution(ambiance, identityParams.getOriginalNodeExecutionId());
     return StepResponse.builder().status(originalNodeExecution.getStatus()).build();
   }
 
@@ -75,9 +81,10 @@ public class IdentityStep
   @Override
   public StepResponse handleChildrenResponse(
       Ambiance ambiance, IdentityStepParameters identityParams, Map<String, ResponseData> responseDataMap) {
-    NodeExecution originalNodeExecution = nodeExecutionService.get(identityParams.getOriginalNodeExecutionId());
+    NodeExecution originalNodeExecution = nodeExecutionService.getWithFieldsIncluded(
+        identityParams.getOriginalNodeExecutionId(), NodeProjectionUtils.withStatus);
     // copying the outcomes
-    pmsOutcomeService.cloneForRetryExecution(ambiance, originalNodeExecution.getUuid());
+    pmsOutcomeService.cloneForRetryExecution(ambiance, identityParams.getOriginalNodeExecutionId());
     return StepResponse.builder().status(originalNodeExecution.getStatus()).build();
   }
 

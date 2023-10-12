@@ -188,6 +188,10 @@ if [[ "" != "$DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT" ]]; then
   export $DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT; yq -i '.executorsConfig.dataReconciliationExecutorConfig.timeUnit=env($DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$DATA_RECONCILIATION_CRON_DURATION" ]]; then
+  export DATA_RECONCILIATION_CRON_DURATION; yq -i '.dataReconciliation.duration=env(DATA_RECONCILIATION_CRON_DURATION)' $CONFIG_FILE
+fi
+
 if [[ "" != "$EVENTS_MONGO_URI" ]]; then
   export EVENTS_MONGO_URI; yq -i '.events-mongo.uri=env(EVENTS_MONGO_URI)' $CONFIG_FILE
 else
@@ -1247,3 +1251,18 @@ replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
 replace_key_value notificationClient.httpClient.baseUrl "$NOTIFICATION_BASE_URL"
 replace_key_value notificationClient.secrets.notificationClientSecret "$NEXT_GEN_MANAGER_SECRET"
 replace_key_value notificationClient.messageBroker.uri "${NOTIFICATION_MONGO_URI//\\&/&}"
+
+replace_key_value proxy.enabled "$PROXY_ENABLED"
+replace_key_value proxy.host "$PROXY_HOST"
+replace_key_value proxy.port "$PROXY_PORT"
+replace_key_value proxy.username "$PROXY_USERNAME"
+replace_key_value proxy.password "$PROXY_PASSWORD"
+replace_key_value proxy.protocol "$PROXY_PROTOCOL"
+
+replace_key_value awsServiceEndpointUrls.enabled "$AWS_SERVICE_ENDPOINT_URLS_ENABLED"
+replace_key_value awsServiceEndpointUrls.endPointRegion "$AWS_SERVICE_ENDPOINT_URLS_ENDPOINT_REGION"
+replace_key_value awsServiceEndpointUrls.stsEndPointUrl "$AWS_SERVICE_ENDPOINT_URLS_STS_ENDPOINT_URL"
+replace_key_value awsServiceEndpointUrls.ecsEndPointUrl "$AWS_SERVICE_ENDPOINT_URLS_ECS_ENDPOINT_URL"
+replace_key_value awsServiceEndpointUrls.cloudwatchEndPointUrl "$AWS_SERVICE_ENDPOINT_URLS_CLOUDWATCH_ENDPOINT_URL"
+
+replace_key_value maxAccountsToDeleteInParallel "$MAX_ACCOUNTS_TO_DELETE_IN_PARALLEL"

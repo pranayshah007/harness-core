@@ -2,8 +2,15 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: harness-manager-config
-  namespace: {{ .Release.Namespace }}
-  annotations: {}
+  namespace: '{{ .Release.Namespace }}'
+  {{- if .Values.global.commonLabels }}
+  labels:
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+  {{- end }}
+  {{- if .Values.global.commonAnnotations }}
+  annotations: 
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
 data:
   GITOPS_SERVICE_CLIENT_BASEURL: http://gitops:7908/api/v1/
   ALLOWED_ORIGINS: '{{ .Values.allowedOrigins | default .Values.global.loadbalancerURL }}'
@@ -33,20 +40,20 @@ data:
   HAZELCAST_SERVICE: harness-manager
   HZ_CLUSTER_NAME: harness-manager
   LOGGING_LEVEL: '{{ .Values.appLogLevel }}'
-  MEMORY: {{ .Values.java.memory | quote }}
-  REDIS_SENTINEL: {{ .Values.global.database.redis.installed  | quote }}
+  MEMORY: '{{ .Values.java.memory }}'
+  REDIS_SENTINEL: '{{ .Values.global.database.redis.installed }}'
   REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   REDIS_MASTER_NAME: 'harness-redis'
   REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
-  REDIS_NETTY_THREADS: {{ .Values.redisConfig.nettyThreads | quote }}
+  REDIS_NETTY_THREADS: '{{ .Values.redisConfig.nettyThreads }}'
   SERVER_PORT: "9090"
   SERVICE_ACC: /opt/harness/svc/service_acc.json
-  VERSION: {{ .Values.version }}
+  VERSION: '{{ .Values.version }}'
   LOG_STREAMING_SERVICE_TOKEN: c76e567a-b341-404d-a8dd-d9738714eb82
-  STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
+  STACK_DRIVER_LOGGING_ENABLED: '{{ .Values.global.stackDriverLoggingEnabled }}'
   EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
-  EVENTS_FRAMEWORK_USE_SENTINEL: {{ .Values.global.database.redis.installed  | quote }}
+  EVENTS_FRAMEWORK_USE_SENTINEL: '{{ .Values.global.database.redis.installed }}'
   EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   EVENTS_FRAMEWORK_AVAILABLE_IN_ONPREM: "true"
   HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER: "true"
@@ -59,13 +66,30 @@ data:
   ENABLE_ITERATORS: 'true'
   ITERATOR_CONFIG_PATH: '/opt/harness/config'
   LICENSE_INFO: '{{ .Values.global.license.cg }}'
+  {{- if .Values.global.proxy.enabled }}
+  PROXY_ENABLED: '{{ .Values.global.proxy.enabled }}'
+  PROXY_HOST: {{ .Values.global.proxy.host }}
+  PROXY_PORT: '{{ .Values.global.proxy.port }}'
+  PROXY_USERNAME: '{{ .Values.global.proxy.username }}'
+  PROXY_PASSWORD: '{{ .Values.global.proxy.password }}'
+  PROXY_PROTOCOL: {{ .Values.global.proxy.protocol }}
+  {{- end }}
+  {{- if .Values.global.awsServiceEndpointUrls.enabled }}
+  AWS_SERVICE_ENDPOINT_URLS_ENABLED: '{{ .Values.global.awsServiceEndpointUrls.enabled }}'
+  AWS_SERVICE_ENDPOINT_URLS_ENDPOINT_REGION: {{ .Values.global.awsServiceEndpointUrls.endPointRegion }}
+  AWS_SERVICE_ENDPOINT_URLS_STS_ENDPOINT_URL: {{ .Values.global.awsServiceEndpointUrls.stsEndPointUrl }}
+  AWS_SERVICE_ENDPOINT_URLS_ECS_ENDPOINT_URL: {{ .Values.global.awsServiceEndpointUrls.ecsEndPointUrl }}
+  AWS_SERVICE_ENDPOINT_URLS_CLOUDWATCH_ENDPOINT_URL: {{ .Values.global.awsServiceEndpointUrls.cloudwatchEndPointUrl }}
+  {{- end }}
   {{- if .Values.global.ng.enabled }}
   NG_MANAGER_BASE_URL: 'http://ng-manager:7090/'
   ACCESS_CONTROL_ENABLED: "true"
   ACCESS_CONTROL_BASE_URL: 'http://access-control:9006/api/'
   ENABLE_AUDIT: 'true'
   AUDIT_CLIENT_BASEURL: 'http://platform-service:9005/api/'
+  NOTIFICATION_BASE_URL: 'http://platform-service:9005/api/'
   {{- end }}
+  {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
   {{- if .Values.additionalConfigs }}
   {{- toYaml .Values.additionalConfigs | nindent 2 }}
   {{- end }}
@@ -76,6 +100,13 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: iterator-config
+  {{- if .Values.global.commonLabels }}
+  labels:
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+  {{- end }}
+  {{- if .Values.global.commonAnnotations }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
 data:
   iterator_config.json: |
     [
@@ -395,6 +426,16 @@ data:
         "throttleIntervalInSeconds": 0
       },
       {
+        "name": "DelegateTaskFailOnDMS",
+        "enabled": true,
+        "threadPoolSize": 10,
+        "threadPoolIntervalInSeconds": 30,
+        "nextIterationMode": "TARGET",
+        "targetIntervalInSeconds": 30,
+        "throttleIntervalInSeconds": 0,
+        "iteratorMode": "PUMP"
+      },
+      {
         "name": "DelegateTelemetryPublisherIteration",
         "enabled": true,
         "threadPoolSize": 1,
@@ -404,4 +445,3 @@ data:
         "throttleIntervalInSeconds": 0
       }
     ]
-

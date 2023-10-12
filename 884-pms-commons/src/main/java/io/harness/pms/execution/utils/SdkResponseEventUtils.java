@@ -6,17 +6,27 @@
  */
 
 package io.harness.pms.execution.utils;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.AutoLogContext.OverrideBehavior;
+import io.harness.pms.contracts.advisers.AdviserResponse;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.events.AdviserResponseRequest;
+import io.harness.pms.contracts.execution.events.EventErrorRequest;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
+import io.harness.pms.contracts.execution.events.SdkResponseEventType;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
+import io.harness.pms.contracts.plan.NodeExecutionEventType;
 
 import java.util.HashMap;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
 public class SdkResponseEventUtils {
@@ -37,5 +47,28 @@ public class SdkResponseEventUtils {
 
   public static String getPlanExecutionId(SdkResponseEventProto event) {
     return event.getAmbiance().getPlanExecutionId();
+  }
+
+  public SdkResponseEventProto getSdkResponse(Ambiance ambiance, String notifyId, AdviserResponse adviserResponse) {
+    return SdkResponseEventProto.newBuilder()
+        .setSdkResponseEventType(SdkResponseEventType.HANDLE_ADVISER_RESPONSE)
+        .setAdviserResponseRequest(
+            AdviserResponseRequest.newBuilder().setAdviserResponse(adviserResponse).setNotifyId(notifyId).build())
+        .setAmbiance(ambiance)
+        .build();
+  }
+
+  public SdkResponseEventProto getSdkErrorResponse(
+      NodeExecutionEventType eventType, Ambiance ambiance, String eventNotifyId, FailureInfo failureInfo) {
+    return SdkResponseEventProto.newBuilder()
+        .setSdkResponseEventType(SdkResponseEventType.HANDLE_EVENT_ERROR)
+        .setAmbiance(ambiance)
+        .setEventErrorRequest(EventErrorRequest.newBuilder()
+                                  .setEventNotifyId(eventNotifyId)
+                                  .setEventType(eventType)
+                                  .setFailureInfo(failureInfo)
+                                  .build())
+
+        .build();
   }
 }

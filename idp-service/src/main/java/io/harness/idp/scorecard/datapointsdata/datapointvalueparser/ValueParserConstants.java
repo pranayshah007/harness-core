@@ -6,6 +6,9 @@
  */
 package io.harness.idp.scorecard.datapointsdata.datapointvalueparser;
 
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
 public class ValueParserConstants {
   public static final String CONTENT_KEY = "content";
 }

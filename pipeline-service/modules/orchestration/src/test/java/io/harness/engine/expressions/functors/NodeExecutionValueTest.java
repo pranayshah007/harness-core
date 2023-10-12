@@ -29,6 +29,7 @@ import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.MatrixMetadata;
@@ -45,6 +46,7 @@ import io.harness.utils.steps.TestStepParameters;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -66,6 +68,8 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
   @Mock NodeExecutionService nodeExecutionService;
   @Mock PmsOutcomeService pmsOutcomeService;
   @Mock PmsSweepingOutputService pmsSweepingOutputService;
+
+  @Inject NodeExecutionInfoService nodeExecutionInfoService;
 
   @Mock PlanService planService;
 
@@ -111,6 +115,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
                          .stepType(node1.getStepType())
                          .identifier(node1.getIdentifier())
                          .module(node1.getServiceName())
+                         .group(null)
                          .skipGraphType(node1.getSkipGraphType())
                          .build();
 
@@ -129,6 +134,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
             .resolvedParams(PmsStepParameters.parse(prepareStepParameters("bo")))
             .parentId(nodeExecution1Id)
             .nextId(nodeExecution1Id)
+            .group(null)
             .build();
 
     PlanNode node3 = preparePlanNode(true, "c");
@@ -146,6 +152,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
             .resolvedParams(PmsStepParameters.parse(prepareStepParameters("co")))
             .parentId(nodeExecution1Id)
             .previousId(nodeExecution2Id)
+            .group(null)
             .build();
 
     PlanNode node4 = preparePlanNode(false, "d", "di1", "STAGE");
@@ -169,6 +176,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
             .skipGraphType(node4.getSkipGraphType())
             .parentId(nodeExecution3Id)
             .nextId(nodeExecution5Id)
+            .group("STAGE")
             .build();
 
     PlanNode node5 = preparePlanNode(false, "d", "di2");
@@ -183,6 +191,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
                          .stepType(node5.getStepType())
                          .identifier(node5.getIdentifier())
                          .module(node5.getServiceName())
+                         .group(null)
                          .skipGraphType(node5.getSkipGraphType())
                          .resolvedParams(PmsStepParameters.parse(prepareStepParameters("do2")))
                          .parentId(nodeExecution3Id)
@@ -205,6 +214,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
                          .skipGraphType(node6.getSkipGraphType())
                          .resolvedParams(PmsStepParameters.parse(prepareStepParameters("eo")))
                          .parentId(nodeExecution4Id)
+                         .group(null)
                          .build();
 
     PlanNode node7 = preparePlanNode(false, "f");
@@ -225,6 +235,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
                          .resolvedParams(PmsStepParameters.parse(prepareStepParameters("eo")))
                          .parentId(nodeExecution6Id)
                          .nextId(nodeExecution8Id)
+                         .group(null)
                          .build();
 
     PlanNode node8 = preparePlanNode(false, "g");
@@ -245,6 +256,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
                          .resolvedParams(PmsStepParameters.parse(prepareStepParameters("eo")))
                          .parentId(nodeExecution6Id)
                          .previousId(nodeExecution7Id)
+                         .group(null)
                          .build();
 
     when(nodeExecutionService.getWithFieldsIncluded(
@@ -333,6 +345,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
             .nodeExecutionsCache(new NodeExecutionsCache(nodeExecutionService, planService, newAmbiance))
             .pmsOutcomeService(pmsOutcomeService)
             .ambiance(newAmbiance)
+            .engine(engine)
             .build();
     NodeExecutionMap nodeExecutionMap = (NodeExecutionMap) functor.bind();
     assertThat(engine.getProperty(nodeExecutionMap, "param")).isEqualTo("ao");
@@ -352,6 +365,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
             .nodeExecutionsCache(new NodeExecutionsCache(nodeExecutionService, planService, newAmbiance))
             .pmsOutcomeService(pmsOutcomeService)
             .ambiance(newAmbiance)
+            .engine(engine)
             .groupAliases(ImmutableMap.of("stage", "STAGE"))
             .build();
     assertThat(engine.getProperty(functor, "stage.param")).isEqualTo("di1");
@@ -374,8 +388,10 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
         NodeExecutionAncestorFunctor.builder()
             .nodeExecutionsCache(new NodeExecutionsCache(nodeExecutionService, planService, newAmbiance))
             .pmsOutcomeService(pmsOutcomeService)
+            .nodeExecutionInfoService(nodeExecutionInfoService)
             .pmsSweepingOutputService(pmsSweepingOutputService)
             .ambiance(newAmbiance)
+            .engine(engine)
             .groupAliases(ImmutableMap.of("stage", "STAGE"))
             .build();
     assertThat(engine.getProperty(functor, "stage.matrix.os")).isEqualTo("test");
@@ -392,6 +408,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
             .nodeExecutionsCache(new NodeExecutionsCache(nodeExecutionService, planService, newAmbiance))
             .pmsOutcomeService(pmsOutcomeService)
             .ambiance(newAmbiance)
+            .engine(engine)
             .groupAliases(ImmutableMap.of("stage", "STAGE"))
             .build();
 
@@ -418,6 +435,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
             .nodeExecutionsCache(new NodeExecutionsCache(nodeExecutionService, planService, newAmbiance))
             .pmsOutcomeService(pmsOutcomeService)
             .ambiance(newAmbiance)
+            .engine(engine)
             .groupAliases(ImmutableMap.of("stage", "STAGE"))
             .build();
 
@@ -467,6 +485,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
                                                     nodeExecutionService, planService, nodeExecution1.getAmbiance()))
                                                 .pmsOutcomeService(pmsOutcomeService)
                                                 .ambiance(nodeExecution1.getAmbiance())
+                                                .engine(engine)
                                                 .build();
     NodeExecutionMap nodeExecutionMap = (NodeExecutionMap) functor.bind();
     assertThat(engine.getProperty(nodeExecutionMap, "a.b.param")).isEqualTo("bo");

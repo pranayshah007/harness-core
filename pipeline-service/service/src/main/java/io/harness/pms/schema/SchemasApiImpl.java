@@ -13,12 +13,18 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.annotations.PipelineServiceAuth;
-import io.harness.pms.pipeline.service.PMSYamlSchemaServiceImpl;
+import io.harness.pms.pipeline.api.PipelinesApiUtils;
+import io.harness.pms.pipeline.service.PMSYamlSchemaService;
 import io.harness.spec.server.pipeline.v1.SchemasApi;
 import io.harness.spec.server.pipeline.v1.model.IndividualSchemaResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineInputSchemaDetailsResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineInputsSchemaRequestBody;
+import io.harness.yaml.schema.inputs.beans.YamlInputDetails;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
+import java.util.List;
+import javax.validation.Valid;
 import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -30,15 +36,23 @@ import lombok.extern.slf4j.Slf4j;
 @PipelineServiceAuth
 @Slf4j
 public class SchemasApiImpl implements SchemasApi {
-  private final PMSYamlSchemaServiceImpl pmsYamlSchemaService;
+  private final PMSYamlSchemaService pmsYamlSchemaService;
 
   @Override
   public Response getIndividualStaticSchema(
-      String harnessAccount, String nodeGroup, String nodeType, String nodeGroupDifferentiator) {
+      String harnessAccount, String nodeGroup, String nodeType, String nodeGroupDifferentiator, String version) {
     ObjectNode schema =
-        pmsYamlSchemaService.getIndividualStaticSchema(harnessAccount, nodeGroup, nodeType, nodeGroupDifferentiator);
+        pmsYamlSchemaService.getStaticSchemaForAllEntities(nodeGroup, nodeType, nodeGroupDifferentiator, version);
     IndividualSchemaResponseBody responseBody = new IndividualSchemaResponseBody();
     responseBody.setData(schema);
+    return Response.ok().entity(responseBody).build();
+  }
+
+  @Override
+  public Response getInputsSchema(@Valid PipelineInputsSchemaRequestBody body, String harnessAccount) {
+    List<YamlInputDetails> yamlInputDetails = pmsYamlSchemaService.getInputSchemaDetails(body.getPipelineYaml());
+    PipelineInputSchemaDetailsResponseBody responseBody =
+        PipelinesApiUtils.getPipelineInputSchemaDetailsResponseBody(yamlInputDetails);
     return Response.ok().entity(responseBody).build();
   }
 }

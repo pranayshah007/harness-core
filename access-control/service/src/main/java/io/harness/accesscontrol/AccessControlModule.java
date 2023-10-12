@@ -13,9 +13,9 @@ import static io.harness.accesscontrol.AccessControlPermissions.VIEW_PROJECT_PER
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
-import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.ACCOUNT;
-import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.ORGANIZATION;
-import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.PROJECT;
+import static io.harness.accesscontrol.scopes.HarnessScopeLevel.ACCOUNT;
+import static io.harness.accesscontrol.scopes.HarnessScopeLevel.ORGANIZATION;
+import static io.harness.accesscontrol.scopes.HarnessScopeLevel.PROJECT;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.authorization.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.DUMMY_GROUP_NAME;
@@ -24,7 +24,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD_MAX_PROCESSING_TIME;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD_READ_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.USERMEMBERSHIP;
-import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.lock.DistributedLockImplementation.REDIS;
 
 import io.harness.AccessControlClientModule;
 import io.harness.accesscontrol.acl.ResourceAttributeProvider;
@@ -64,6 +64,9 @@ import io.harness.accesscontrol.principals.users.HarnessUserService;
 import io.harness.accesscontrol.principals.users.HarnessUserServiceImpl;
 import io.harness.accesscontrol.principals.users.UserValidator;
 import io.harness.accesscontrol.principals.users.events.UserMembershipEventConsumer;
+import io.harness.accesscontrol.publicaccess.PublicAccessApiImpl;
+import io.harness.accesscontrol.publicaccess.PublicAccessService;
+import io.harness.accesscontrol.publicaccess.PublicAccessServiceImpl;
 import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupService;
 import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupServiceImpl;
 import io.harness.accesscontrol.resources.resourcegroups.events.ResourceGroupEventConsumer;
@@ -115,7 +118,6 @@ import io.harness.lock.PersistentLockModule;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.migration.NGMigrationSdkModule;
 import io.harness.organization.OrganizationClientModule;
-import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.project.ProjectClientModule;
 import io.harness.queue.QueueController;
@@ -130,6 +132,7 @@ import io.harness.spec.server.accesscontrol.v1.OrgRoleAssignmentsApi;
 import io.harness.spec.server.accesscontrol.v1.OrganizationRolesApi;
 import io.harness.spec.server.accesscontrol.v1.ProjectRoleAssignmentsApi;
 import io.harness.spec.server.accesscontrol.v1.ProjectRolesApi;
+import io.harness.spec.server.accesscontrol.v1.PublicAccessApi;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.threading.ExecutorModule;
@@ -184,7 +187,7 @@ public class AccessControlModule extends AbstractModule {
   @Provides
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
-    return config.getDistributedLockImplementation() == null ? MONGO : config.getDistributedLockImplementation();
+    return config.getDistributedLockImplementation() == null ? REDIS : config.getDistributedLockImplementation();
   }
 
   @Provides
@@ -317,12 +320,11 @@ public class AccessControlModule extends AbstractModule {
         config.getNgManagerServiceConfiguration().getNgManagerServiceSecret(), ACCESS_CONTROL_SERVICE.getServiceId(),
         ClientMode.PRIVILEGED));
 
-    install(new TransactionOutboxModule(config.getOutboxPollConfig(), ACCESS_CONTROL_SERVICE.getServiceId(),
-        config.getAggregatorConfiguration().isExportMetricsToStackDriver()));
     install(NGMigrationSdkModule.getInstance());
 
     install(AccessControlPersistenceModule.getInstance(config.getMongoConfig()));
-    install(AccessControlCoreModule.getInstance());
+    install(AccessControlCoreModule.getInstance(
+        config.getOutboxPollConfig(), config.getAggregatorConfiguration().isExportMetricsToStackDriver()));
     install(AccessControlPreferenceModule.getInstance());
     install(new AbstractTelemetryModule() {
       @Override
@@ -348,6 +350,8 @@ public class AccessControlModule extends AbstractModule {
     scopesByKey.addBinding(PROJECT.toString()).toInstance(PROJECT);
 
     bind(HarnessScopeService.class).to(HarnessScopeServiceImpl.class);
+    bind(PublicAccessApi.class).to(PublicAccessApiImpl.class);
+    bind(PublicAccessService.class).to(PublicAccessServiceImpl.class);
 
     bind(HarnessResourceGroupService.class).to(HarnessResourceGroupServiceImpl.class);
     bind(HarnessUserGroupService.class).to(HarnessUserGroupServiceImpl.class);
@@ -418,9 +422,14 @@ public class AccessControlModule extends AbstractModule {
     bind(OrgRoleAssignmentsApi.class).to(OrgRoleAssignmentsApiImpl.class);
     bind(ProjectRoleAssignmentsApi.class).to(ProjectRoleAssignmentsApiImpl.class);
 
-    bind(boolean.class).annotatedWith(Names.named("disableRedundantACLs")).toInstance(config.isDisableRedundantACLs());
     bind(boolean.class)
         .annotatedWith(Names.named("enableParallelProcessingOfUserGroupUpdates"))
         .toInstance(config.isEnableParallelProcessingOfUserGroupUpdates());
+    bind(boolean.class)
+        .annotatedWith(Names.named("enableAclProcessingThroughOutbox"))
+        .toInstance(config.isEnableAclProcessingThroughOutbox());
+    bind(Integer.class)
+        .annotatedWith(Names.named("batchSizeForACLCreation"))
+        .toInstance(config.getBatchSizeForACLCreation());
   }
 }

@@ -6,9 +6,11 @@
  */
 
 package io.harness.delegate.beans.logstreaming;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.logstreaming.CommandUnitProgress.CommandUnitProgressBuilder;
 import io.harness.delegate.beans.taskprogress.ITaskProgressClient;
 import io.harness.logging.CommandExecutionStatus;
@@ -21,6 +23,8 @@ import java.util.LinkedHashMap;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class NGDelegateLogCallback implements LogCallback {
@@ -50,13 +54,24 @@ public class NGDelegateLogCallback implements LogCallback {
   }
 
   @Override
+  public void saveExecutionLog(String line, LogLevel logLevel, boolean skipColoringLog) {
+    saveExecutionLogInternal(line, logLevel, CommandExecutionStatus.RUNNING, false, skipColoringLog);
+  }
+
+  @Override
   public void saveExecutionLog(
       String line, LogLevel logLevel, CommandExecutionStatus commandExecutionStatus, boolean closeLogStream) {
+    saveExecutionLogInternal(line, logLevel, commandExecutionStatus, closeLogStream, false);
+  }
+
+  private void saveExecutionLogInternal(String line, LogLevel logLevel, CommandExecutionStatus commandExecutionStatus,
+      boolean closeLogStream, boolean skipColoringLog) {
     if (this.iLogStreamingTaskClient == null) {
       return;
     }
     Instant now = Instant.now();
-    LogLine logLine = LogLine.builder().message(line).level(logLevel).timestamp(now).build();
+    LogLine logLine =
+        LogLine.builder().message(line).level(logLevel).timestamp(now).skipColoring(skipColoringLog).build();
     iLogStreamingTaskClient.writeLogLine(logLine, commandUnitName);
 
     if (closeLogStream) {
@@ -67,6 +82,24 @@ public class NGDelegateLogCallback implements LogCallback {
       // When no units
       return;
     }
+    LinkedHashMap<String, CommandUnitProgress> commandUnitProgressMap =
+        commandUnitsProgress.getCommandUnitProgressMap();
+
+    boolean change = updateCommandUnitProgressMap(commandExecutionStatus, now, commandUnitProgressMap);
+
+    if (change) {
+      ITaskProgressClient taskProgressClient = iLogStreamingTaskClient.obtainTaskProgressClient();
+
+      ExecutorService taskProgressExecutor = iLogStreamingTaskClient.obtainTaskProgressExecutor();
+      taskProgressExecutor.submit(() -> sendTaskProgressUpdate(taskProgressClient));
+    }
+  }
+
+  // This method is to close log stream without any message.
+  @Override
+  public void close(CommandExecutionStatus commandExecutionStatus) {
+    Instant now = Instant.now();
+    iLogStreamingTaskClient.closeStream(commandUnitName);
     LinkedHashMap<String, CommandUnitProgress> commandUnitProgressMap =
         commandUnitsProgress.getCommandUnitProgressMap();
 

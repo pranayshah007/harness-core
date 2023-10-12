@@ -14,6 +14,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.credit.utils.CreditStatus;
 import io.harness.data.validator.Trimmed;
+import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
@@ -64,6 +65,12 @@ public abstract class Credit implements PersistentEntity, NGAccountAccess {
                  .field(CreditsKeys.creditStatus)
                  .ascSortField(CreditsKeys.creditExpiryCheckIteration)
                  .ascSortField(CreditsKeys.expiryTime)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountIdentifier_creditType_creditStatus")
+                 .field(CreditsKeys.accountIdentifier)
+                 .field(CreditsKeys.creditType)
+                 .field(CreditsKeys.creditStatus)
                  .build())
         .build();
   }

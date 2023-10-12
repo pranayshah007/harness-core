@@ -60,9 +60,10 @@ import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
+import io.harness.pms.contracts.plan.PlanExecutionContext;
+import io.harness.pms.contracts.plan.PrincipalType;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
@@ -108,6 +109,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import retrofit2.Call;
 
@@ -118,6 +120,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   @Inject private KryoSerializer kryoSerializer;
   @Mock private FreezeEvaluateService freezeEvaluateService;
   @Mock private AccessControlClient accessControlClient;
+  @Spy private StagePlanCreatorHelper stagePlanCreatorHelper;
   @InjectMocks private DeploymentStagePMSPlanCreatorV2 deploymentStagePMSPlanCreator;
 
   @Mock private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
@@ -131,6 +134,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   public void setUp() throws Exception {
     mocks = MockitoAnnotations.openMocks(this);
 
+    Reflect.on(stagePlanCreatorHelper).set("kryoSerializer", kryoSerializer);
     Reflect.on(deploymentStagePMSPlanCreator).set("kryoSerializer", kryoSerializer);
   }
 
@@ -162,13 +166,30 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
-  public void testAddCDExecutionDependencies() throws IOException {
+  @Parameters(method = "getDeploymentStageConfig")
+  @PrepareForTest(YamlUtils.class)
+  public void testAddCDExecutionDependencies(DeploymentStageNode node) throws IOException {
     YamlField executionField = getYamlFieldFromPath("cdng/plan/service.yml");
 
     String executionNodeId = executionField.getNode().getUuid();
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
-    deploymentStagePMSPlanCreator.addCDExecutionDependencies(planCreationResponseMap, executionField);
+    JsonNode jsonNode = mapper.valueToTree(node);
+    PlanCreationContext ctx = PlanCreationContext.builder()
+                                  .globalContext(Map.of("metadata",
+                                      PlanCreationContextValue.newBuilder().setAccountIdentifier("accountId").build()))
+                                  .currentField(new YamlField(new YamlNode("spec", jsonNode)))
+                                  .build();
+    deploymentStagePMSPlanCreator.addCDExecutionDependencies(planCreationResponseMap, executionField, ctx, node);
     assertThat(planCreationResponseMap.containsKey(executionNodeId)).isEqualTo(true);
+    assertThat(planCreationResponseMap.get(executionNodeId)
+                   .getDependencies()
+                   .getDependencyMetadataMap()
+                   .get(executionNodeId)
+                   .getParentInfo()
+                   .getDataMap()
+                   .get("stageId")
+                   .getStringValue())
+        .isEqualTo("nodeuuid");
   }
 
   @Test
@@ -177,6 +198,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   @Parameters(method = "getDeploymentStageConfig")
   @PrepareForTest(YamlUtils.class)
   public void testCreatePlanForChildrenNodes(DeploymentStageNode node) throws IOException {
+    doReturn(false).when(stagePlanCreatorHelper).isProjectScopedResourceConstraintQueueByFFOrSetting(any());
     node.setFailureStrategies(
         ParameterField.createValueField(List.of(FailureStrategyConfig.builder()
                                                     .onFailure(OnFailureConfig.builder()
@@ -227,10 +249,10 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
                                           .setAccountIdentifier("accountId")
                                           .setOrgIdentifier("orgId")
                                           .setProjectIdentifier("projId")
-                                          .setMetadata(ExecutionMetadata.newBuilder().setPrincipalInfo(
+                                          .setExecutionContext(PlanExecutionContext.newBuilder().setPrincipalInfo(
                                               ExecutionPrincipalInfo.newBuilder()
                                                   .setPrincipal("prinicipal")
-                                                  .setPrincipalType(io.harness.pms.contracts.plan.PrincipalType.USER)
+                                                  .setPrincipalType(PrincipalType.USER)
                                                   .build()))
                                           .build()))
                                   .build();
@@ -257,7 +279,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
                                           .setAccountIdentifier("accountId")
                                           .setOrgIdentifier("orgId")
                                           .setProjectIdentifier("projId")
-                                          .setMetadata(ExecutionMetadata.newBuilder().setPrincipalInfo(
+                                          .setExecutionContext(PlanExecutionContext.newBuilder().setPrincipalInfo(
                                               ExecutionPrincipalInfo.newBuilder()
                                                   .setPrincipal("prinicipal")
                                                   .setPrincipalType(io.harness.pms.contracts.plan.PrincipalType.USER)

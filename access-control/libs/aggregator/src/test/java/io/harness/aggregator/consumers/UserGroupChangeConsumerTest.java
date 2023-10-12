@@ -18,8 +18,11 @@ import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 
 import static java.util.concurrent.ThreadLocalRandom.current;
 import static junit.framework.TestCase.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.accesscontrol.acl.persistence.ACL;
 import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
@@ -69,7 +72,6 @@ public class UserGroupChangeConsumerTest extends AggregatorTestBase {
   private RoleAssignmentRepository roleAssignmentRepository;
   private ScopeService scopeService;
   private UserGroupService userGroupService;
-  private RoleAssignmentChangeConsumerImpl roleAssignmentChangeConsumer;
   private String testScopeIdentifier;
   private String scopeIdentifier;
   private Role role;
@@ -78,6 +80,8 @@ public class UserGroupChangeConsumerTest extends AggregatorTestBase {
   @Inject @Named(ACL.PRIMARY_COLLECTION) private ACLRepository aclRepository;
   private UserGroupChangeConsumer userGroupChangeConsumer;
   private InMemoryPermissionRepository inMemoryPermissionRepository;
+  private ACLGeneratorService aclGeneratorService;
+  @Inject @Named("batchSizeForACLCreation") private int batchSizeForACLCreation;
 
   @Before
   public void setup() {
@@ -85,12 +89,11 @@ public class UserGroupChangeConsumerTest extends AggregatorTestBase {
     roleAssignmentRepository = mock(RoleAssignmentRepository.class);
     RoleService roleService = mock(RoleService.class);
     ResourceGroupService resourceGroupService = mock(ResourceGroupService.class);
-    RoleAssignmentCRUDEventHandler roleAssignmentCRUDEventHandler = mock(RoleAssignmentCRUDEventHandler.class);
     scopeService = mock(ScopeService.class);
-    ACLGeneratorService aclGeneratorService = new ACLGeneratorServiceImpl(roleService, userGroupService,
-        resourceGroupService, scopeService, new HashMap<>(), aclRepository, false, inMemoryPermissionRepository);
-    roleAssignmentChangeConsumer = new RoleAssignmentChangeConsumerImpl(
-        aclRepository, roleAssignmentRepository, aclGeneratorService, roleAssignmentCRUDEventHandler);
+    inMemoryPermissionRepository = mock(InMemoryPermissionRepository.class);
+    when(inMemoryPermissionRepository.isPermissionCompatibleWithResourceSelector(any(), any())).thenReturn(true);
+    aclGeneratorService = new ACLGeneratorServiceImpl(roleService, userGroupService, resourceGroupService, scopeService,
+        new HashMap<>(), aclRepository, inMemoryPermissionRepository, batchSizeForACLCreation);
     userGroupChangeConsumer =
         new UserGroupChangeConsumer(aclRepository, roleAssignmentRepository, aclGeneratorService, scopeService);
     aclRepository.cleanCollection();
@@ -119,18 +122,27 @@ public class UserGroupChangeConsumerTest extends AggregatorTestBase {
       when(roleAssignmentRepository.findByIdentifierAndScopeIdentifier(
                roleAssignmentDBO.getIdentifier(), roleAssignmentDBO.getScopeIdentifier()))
           .thenReturn(Optional.of(roleAssignmentDBO));
-      roleAssignmentChangeConsumer.consumeCreateEvent(roleAssignmentDBO.getId(), roleAssignmentDBO);
+      createACLs(roleAssignmentDBO);
       roleAssignmentDBOS.add(roleAssignmentDBO);
       remaining--;
     }
+    Pattern startsWithScope = Pattern.compile("^".concat(userGroupForRoleAssignment.getScopeIdentifier()).concat("/"));
     Criteria criteria = Criteria.where(RoleAssignmentDBOKeys.principalType).is(USER_GROUP);
     criteria.and(RoleAssignmentDBOKeys.principalIdentifier).is(userGroupForRoleAssignment.getIdentifier());
     criteria.and(RoleAssignmentDBOKeys.principalScopeLevel).is(TestScopeLevels.TEST_SCOPE.toString());
-    criteria.and(RoleAssignmentDBOKeys.scopeIdentifier)
-        .regex(Pattern.compile("^".concat(userGroupForRoleAssignment.getScopeIdentifier())));
-    when(roleAssignmentRepository.findAll(criteria, Pageable.ofSize(10000)))
+    criteria.andOperator(new Criteria().orOperator(
+        where(RoleAssignmentDBOKeys.scopeIdentifier).is(userGroupForRoleAssignment.getScopeIdentifier()),
+        where(RoleAssignmentDBOKeys.scopeIdentifier).regex(startsWithScope)));
+    when(roleAssignmentRepository.findAll(any(), eq(Pageable.ofSize(10000))))
         .thenReturn(PageTestUtils.getPage(roleAssignmentDBOS, roleAssignmentDBOS.size()));
     return roleAssignmentDBOS;
+  }
+
+  private long createACLs(RoleAssignmentDBO roleAssignment) {
+    long numberOfACLsCreated = aclGeneratorService.createACLsForRoleAssignment(roleAssignment);
+    numberOfACLsCreated +=
+        aclGeneratorService.createImplicitACLsForRoleAssignment(roleAssignment, new HashSet<>(), new HashSet<>());
+    return numberOfACLsCreated;
   }
 
   private void mockUserGroupServices(UserGroupDBO userGroupForMocking) {

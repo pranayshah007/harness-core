@@ -6,9 +6,12 @@
  */
 
 package io.harness.plancreator.stages.v1;
-
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
+import static io.harness.pms.plan.creation.PlanCreatorConstants.YAML_VERSION;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
@@ -16,7 +19,10 @@ import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
@@ -24,6 +30,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -42,6 +49,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 public class StagesPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   @Inject private KryoSerializer kryoSerializer;
 
@@ -59,37 +68,73 @@ public class StagesPlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
 
     // TODO : Figure out corresponding failure stages and put that here as well
     for (i = 0; i < stages.size() - 1; i++) {
-      curr = stages.get(i);
+      curr = getStageField(stages.get(i));
+      String version = getYamlVersionFromStageField(curr);
+      String nextId = getStageField(stages.get(i + 1)).getUuid();
+      // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
+      // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
+      // bytes for complex objects. We will deprecate the first one in v1
       responseMap.put(curr.getUuid(),
           PlanCreationResponse.builder()
-              .dependencies(Dependencies.newBuilder()
-                                .putDependencies(curr.getUuid(), curr.getYamlPath())
-                                .putDependencyMetadata(curr.getUuid(),
-                                    Dependency.newBuilder()
-                                        .putMetadata("nextId",
-                                            ByteString.copyFrom(kryoSerializer.asBytes(stages.get(i + 1).getUuid())))
-                                        .build())
-                                .build())
+              .dependencies(
+                  Dependencies.newBuilder()
+                      .putDependencies(curr.getUuid(), curr.getYamlPath())
+                      .putDependencyMetadata(curr.getUuid(),
+                          Dependency.newBuilder()
+                              .putMetadata(
+                                  PlanCreatorConstants.NEXT_ID, ByteString.copyFrom(kryoSerializer.asBytes(nextId)))
+                              .setNodeMetadata(HarnessStruct.newBuilder().putData(PlanCreatorConstants.NEXT_ID,
+                                  HarnessValue.newBuilder().setStringValue(nextId).build()))
+                              .setParentInfo(
+                                  HarnessStruct.newBuilder()
+                                      .putData(YAML_VERSION, HarnessValue.newBuilder().setStringValue(version).build())
+                                      .build())
+                              .build())
+                      .build())
               .build());
     }
 
-    curr = stages.get(i);
+    curr = getStageField(stages.get(i));
+    String version = getYamlVersionFromStageField(curr);
+    if (curr.getNode().getField(YAMLFieldNameConstants.STAGE) != null) {
+      curr = curr.getNode().getField(YAMLFieldNameConstants.STAGE);
+      version = HarnessYamlVersion.V0;
+    }
     responseMap.put(curr.getUuid(),
         PlanCreationResponse.builder()
-            .dependencies(Dependencies.newBuilder().putDependencies(curr.getUuid(), curr.getYamlPath()).build())
+            .dependencies(Dependencies.newBuilder()
+                              .putDependencies(curr.getUuid(), curr.getYamlPath())
+                              .putDependencyMetadata(curr.getUuid(),
+                                  Dependency.newBuilder()
+                                      .setParentInfo(HarnessStruct.newBuilder()
+                                                         .putData(YAML_VERSION,
+                                                             HarnessValue.newBuilder().setStringValue(version).build())
+                                                         .build())
+                                      .build())
+                              .build())
             .build());
     return responseMap;
   }
 
+  private YamlField getStageField(YamlField currField) {
+    if (currField.getNode().getField(YAMLFieldNameConstants.STAGE) != null) {
+      return currField.getNode().getField(YAMLFieldNameConstants.STAGE);
+    }
+    return currField;
+  }
+
+  private String getYamlVersionFromStageField(YamlField currField) {
+    if (currField.getNode().getField(YAMLFieldNameConstants.STAGE) != null
+        || YAMLFieldNameConstants.STAGE.equals(currField.getNode().getFieldName())) {
+      return HarnessYamlVersion.V0;
+    }
+    return HarnessYamlVersion.V1;
+  }
   @Override
   public GraphLayoutResponse getLayoutNodeInfo(PlanCreationContext ctx, YamlField config) {
-    // Create graphLayout only if stages node is child of parent.(Return empty if its child of parallel.spec)
-    if (EmptyPredicate.isEmpty(config.getNode().getParentNode().getType())
-        || !config.getNode().getParentNode().getType().equals(YAMLFieldNameConstants.PIPELINE)) {
-      return GraphLayoutResponse.builder().build();
-    }
     Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
-    List<YamlField> stagesYamlField = getStageYamlFields(config);
+    List<YamlField> stagesYamlField =
+        getStageYamlFields(config).stream().map(this::getStageField).collect(Collectors.toList());
     List<EdgeLayoutList> edgeLayoutLists = new ArrayList<>();
     for (YamlField stageYamlField : stagesYamlField) {
       EdgeLayoutList.Builder stageEdgesBuilder = EdgeLayoutList.newBuilder();

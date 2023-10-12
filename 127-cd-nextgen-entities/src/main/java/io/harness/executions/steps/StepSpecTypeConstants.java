@@ -23,6 +23,7 @@ public interface StepSpecTypeConstants {
   String GITOPS_REVERT_PR = "RevertPR";
   String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
   String GITOPS_SYNC = "GitOpsSync";
+  String UPDATE_GITOPS_APP = "UpdateGitOpsApp";
   String CLOUDFORMATION_CREATE_STACK = "CreateStack";
   String CLOUDFORMATION_DELETE_STACK = "DeleteStack";
   String CLOUDFORMATION_ROLLBACK_STACK = "RollbackStack";
@@ -95,6 +96,9 @@ public interface StepSpecTypeConstants {
   String ECS_BLUE_GREEN_CREATE_SERVICE = "EcsBlueGreenCreateService";
   String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = "EcsBlueGreenSwapTargetGroups";
   String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
+  String ECS_SERVICE_SETUP = "EcsServiceSetup";
+  String ECS_UPGRADE_CONTAINER = "EcsUpgradeContainer";
+  String ECS_BASIC_ROLLBACK = "EcsBasicRollback";
 
   String GOOGLE_CLOUD_FUNCTIONS_DEPLOY = "DeployCloudFunction";
   String GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC = "DeployCloudFunctionWithNoTraffic";

@@ -56,6 +56,8 @@ public class CCMServiceNowUtils {
   private static final String INVALID_SERVICE_NOW_CREDENTIALS = "Invalid ServiceNow credentials";
   private static final String NOT_FOUND = "404 Not found";
   private static final String SERVICENOW_TICKET_STATE_KEY = "state";
+  private static final String SERVICENOW_TICKET_ACTIVE_KEY = "active";
+
   private final Retry retry = buildRetryAndRegisterListeners();
 
   public ServiceNowTicketNG createTicket(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
@@ -120,6 +122,10 @@ public class CCMServiceNowUtils {
 
   public String getStatus(ServiceNowTicketNG serviceNowTicketNG) {
     return serviceNowTicketNG.getFields().get(SERVICENOW_TICKET_STATE_KEY).getDisplayValue();
+  }
+
+  public boolean isTicketActive(ServiceNowTicketNG serviceNowTicketNG) {
+    return serviceNowTicketNG.getFields().get(SERVICENOW_TICKET_STATE_KEY).getDisplayValue().equalsIgnoreCase("true");
   }
 
   private ServiceNowTicketNG createTicketWithoutTemplate(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {

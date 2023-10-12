@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.service.step.elastigroup;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.common.capacity.Capacity;
 import io.harness.cdng.common.capacity.CapacitySpecType;
 import io.harness.cdng.common.capacity.CountCapacitySpec;
@@ -29,6 +31,7 @@ import software.wings.sm.states.spotinst.SpotInstDeployState;
 
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class ElastigroupDeployStepMapperImpl extends StepMapper {
   @Override
   public String getStepType(GraphNode stepYaml) {

@@ -17,6 +17,7 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cistatus.service.gitlab.GitlabService;
+import io.harness.cistatus.service.gitlab.GitlabServiceImpl;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessSpecDTO;
@@ -81,13 +82,7 @@ public class GitlabApiClient implements GitApiClient {
       String prNumber = gitApiTaskParams.getPrNumber();
       boolean deleteSourceBranch = gitApiTaskParams.isDeleteSourceBranch();
       JSONObject mergePRResponse = gitlabService.mergePR(gitApiURL, slug, token, prNumber, deleteSourceBranch);
-      if (mergePRResponse != null) {
-        responseBuilder.commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-            .gitApiResult(GitApiMergePRTaskResponse.builder().sha(mergePRResponse.get("sha").toString()).build());
-      } else {
-        responseBuilder.commandExecutionStatus(FAILURE).errorMessage(
-            format("Merging PR encountered a problem. URL:%s Slug:%s PrNumber:%s", gitApiURL, slug, prNumber));
-      }
+      prepareResponseBuilder(responseBuilder, prNumber, mergePRResponse);
     } catch (Exception e) {
       log.error(new StringBuilder("failed while merging PR using connector: ")
                     .append(gitConnector.getIdentifier())
@@ -97,6 +92,37 @@ public class GitlabApiClient implements GitApiClient {
     }
 
     return responseBuilder.build();
+  }
+
+  void prepareResponseBuilder(GitApiTaskResponseBuilder responseBuilder, String prNumber, JSONObject mergePRResponse) {
+    if (mergePRResponse != null) {
+      Object merged = getValue(mergePRResponse, GitlabServiceImpl.MERGED);
+      if (merged != null && (boolean) merged) {
+        Object responseSha = getValue(mergePRResponse, GitlabServiceImpl.SHA);
+        responseBuilder.commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .gitApiResult(
+                GitApiMergePRTaskResponse.builder().sha(responseSha == null ? null : responseSha.toString()).build());
+      } else {
+        responseBuilder.commandExecutionStatus(FAILURE).errorMessage(
+            format("Merging PR encountered a problem. PrNumber:%s Message:%s Code:%s", prNumber,
+                getValue(mergePRResponse, GitlabServiceImpl.ERROR), getValue(mergePRResponse, GitlabServiceImpl.CODE)));
+      }
+    } else {
+      responseBuilder.commandExecutionStatus(FAILURE).errorMessage(
+          format("Merging PR encountered a problem. PrNumber:%s", prNumber));
+    }
+  }
+
+  Object getValue(JSONObject jsonObject, String key) {
+    if (jsonObject == null) {
+      return null;
+    }
+    try {
+      return jsonObject.get(key);
+    } catch (Exception ex) {
+      log.error("Failed to get key: {} in JsonObject: {}", key, jsonObject);
+      return null;
+    }
   }
 
   @Override

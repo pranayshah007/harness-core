@@ -30,6 +30,7 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
+import lombok.extern.jackson.Jacksonized;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -39,6 +40,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Builder
+@Jacksonized
 @FieldNameConstants(innerTypeName = "CheckKeys")
 @StoreIn(DbAliases.IDP)
 @Entity(value = "checks", noClassnameStored = true)
@@ -85,13 +87,13 @@ public class CheckEntity implements PersistentEntity, CreatedByAware, UpdatedByA
   private boolean harnessManaged = true; // dropdown (default or custom) - we know data source and data point
   private boolean isCustom; // for the purpose of UI
 
-  private List<String> labels;
+  private List<String> tags;
   private CheckDetails.DefaultBehaviourEnum defaultBehaviour;
   private String failMessage;
   private boolean isDeleted;
   private long deletedAt;
   @SchemaIgnore @CreatedBy private EmbeddedUser createdBy;
   @SchemaIgnore @LastModifiedBy private EmbeddedUser lastUpdatedBy;
-  @CreatedDate private long createdAt;
+  @Builder.Default @CreatedDate private long createdAt = System.currentTimeMillis();
   @LastModifiedDate private long lastUpdatedAt;
 }

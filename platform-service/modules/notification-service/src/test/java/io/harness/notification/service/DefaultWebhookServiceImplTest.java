@@ -30,6 +30,7 @@ import io.harness.notification.remote.dto.WebhookSettingDTO;
 import io.harness.notification.senders.WebhookSenderImpl;
 import io.harness.notification.service.api.NotificationSettingsService;
 import io.harness.notification.service.api.NotificationTemplateService;
+import io.harness.notification.utils.NotificationSettingsHelper;
 import io.harness.rule.Owner;
 import io.harness.service.DelegateGrpcClientWrapper;
 
@@ -49,6 +50,7 @@ public class DefaultWebhookServiceImplTest extends CategoryTest {
   @Mock private NotificationTemplateService notificationTemplateService;
   @Mock private WebhookSenderImpl webhookSender;
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Mock private NotificationSettingsHelper notificationSettingsHelper;
   private WebhookServiceImpl webhookService;
   private String accountId = "accountId";
   private String webhookTemplateName = "webhook_test";
@@ -59,8 +61,8 @@ public class DefaultWebhookServiceImplTest extends CategoryTest {
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
-    webhookService = new WebhookServiceImpl(
-        notificationSettingsService, notificationTemplateService, webhookSender, delegateGrpcClientWrapper);
+    webhookService = new WebhookServiceImpl(notificationSettingsService, notificationTemplateService, webhookSender,
+        delegateGrpcClientWrapper, notificationSettingsHelper);
   }
 
   @Test
@@ -136,7 +138,7 @@ public class DefaultWebhookServiceImplTest extends CategoryTest {
     when(notificationTemplateService.getTemplateAsString(eq(webhookTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
-    when(webhookSender.send(any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(webhookSender.send(any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
 
     NotificationProcessingResponse notificationProcessingResponse = webhookService.send(notificationRequest);
     assertEquals(notificationProcessingResponse, NotificationProcessingResponse.trivialResponseWithNoRetries);
@@ -190,7 +192,7 @@ public class DefaultWebhookServiceImplTest extends CategoryTest {
     when(notificationTemplateService.getTemplateAsString(eq(webhookTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
-    when(webhookSender.send(any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(webhookSender.send(any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
 
     NotificationProcessingResponse notificationProcessingResponse = webhookService.send(notificationRequest);
     assertEquals(notificationProcessingResponse, NotificationProcessingResponse.trivialResponseWithNoRetries);
@@ -238,7 +240,7 @@ public class DefaultWebhookServiceImplTest extends CategoryTest {
     when(notificationTemplateService.getTemplateAsString(eq(webhookTemplateName), any()))
         .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
-    when(webhookSender.send(any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(webhookSender.send(any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
 
     NotificationProcessingResponse notificationProcessingResponse = webhookService.send(notificationRequest);
     assertTrue(notificationProcessingResponse.equals(NotificationProcessingResponse.trivialResponseWithNoRetries));
@@ -291,7 +293,7 @@ public class DefaultWebhookServiceImplTest extends CategoryTest {
         WebhookSettingDTO.builder().accountId(accountId).recipient(webhookurl).build();
     NotificationProcessingResponse notificationExpectedResponse =
         NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
-    when(webhookSender.send(any(), any(), any())).thenReturn(notificationExpectedResponse);
+    when(webhookSender.send(any(), any(), any(), any(), any())).thenReturn(notificationExpectedResponse);
     when(notificationTemplateService.getTemplateAsString(any(), any()))
         .thenReturn(Optional.of("This is a test notification"));
     boolean response = webhookService.sendTestNotification(notificationSettingDTO4);

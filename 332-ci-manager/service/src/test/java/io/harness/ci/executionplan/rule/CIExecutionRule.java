@@ -49,6 +49,7 @@ import io.harness.cistatus.service.bitbucket.BitbucketService;
 import io.harness.cistatus.service.bitbucket.BitbucketServiceImpl;
 import io.harness.cistatus.service.gitlab.GitlabService;
 import io.harness.cistatus.service.gitlab.GitlabServiceImpl;
+import io.harness.code.CodeResourceClient;
 import io.harness.delegate.DelegateServiceGrpc;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
 import io.harness.exception.exceptionmanager.exceptionhandler.CILiteEngineExceptionHandler;
@@ -155,6 +156,7 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
       protected void configure() {
         bind(AccountClient.class).toInstance(mock(AccountClient.class));
         bind(AccountClient.class).annotatedWith(Names.named("PRIVILEGED")).toInstance(mock(AccountClient.class));
+        bind(CodeResourceClient.class).toInstance(mock(CodeResourceClient.class));
       }
     });
 
@@ -218,6 +220,7 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
                                       .buildAndPushDockerRegistry("vm-buildAndPushDockerRegistry")
                                       .buildAndPushECR("vm-buildAndPushECR")
                                       .buildAndPushGCR("vm-buildAndPushGCR")
+                                      .buildAndPushGAR("vm-buildAndPushGAR")
                                       .cacheGCS("vm-cacheGCS")
                                       .cacheS3("vm-cacheS3")
                                       .security("vm-security")
@@ -230,6 +233,7 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
             .buildAndPushACRConfig(StepImageConfig.builder().image("bpacr:1.2.3").build())
             .buildAndPushECRConfig(StepImageConfig.builder().image("bpecr:1.2.3").build())
             .buildAndPushGCRConfig(StepImageConfig.builder().image("bpgcr:1.2.3").build())
+            .buildAndPushGARConfig(StepImageConfig.builder().image("bpgar:1.2.3").build())
             .gcsUploadConfig(StepImageConfig.builder().image("gcsupload:1.2.3").build())
             .s3UploadConfig(StepImageConfig.builder().image("s3upload:1.2.3").build())
             .artifactoryUploadConfig(StepImageConfig.builder().image("art:1.2.3").build())
@@ -239,6 +243,9 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
             .gcsUploadConfig(StepImageConfig.builder().image("gcsUpload:1.2.3").build())
             .sscaOrchestrationConfig(StepImageConfig.builder().image("sscaorchestrate:0.0.1").build())
             .sscaEnforcementConfig(StepImageConfig.builder().image("sscaEnforcement:0.0.1").build())
+            .slsaVerificationConfig(StepImageConfig.builder().image("slsaVerification:0.0.1").build())
+            .provenanceConfig(StepImageConfig.builder().image("provenance:0.0.1").build())
+            .provenanceGcrConfig(StepImageConfig.builder().image("provenanceGcr:0.0.1").build())
             .vmImageConfig(vmImageConfig)
             .build();
 

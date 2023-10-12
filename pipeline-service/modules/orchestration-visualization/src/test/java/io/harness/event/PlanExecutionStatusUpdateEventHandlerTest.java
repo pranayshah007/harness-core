@@ -55,7 +55,7 @@ public class PlanExecutionStatusUpdateEventHandlerTest extends OrchestrationVisu
 
     OrchestrationGraph orchestrationGraph = OrchestrationGraph.builder()
                                                 .rootNodeIds(Lists.newArrayList(generateUuid()))
-                                                .status(Status.PAUSING)
+                                                .status(Status.PAUSED)
                                                 .startTs(planExecution.getStartTs())
                                                 .planExecutionId(planExecution.getUuid())
                                                 .cacheKey(planExecution.getUuid())
@@ -63,7 +63,7 @@ public class PlanExecutionStatusUpdateEventHandlerTest extends OrchestrationVisu
                                                 .build();
 
     OrchestrationGraph updatedGraph =
-        planExecutionStatusUpdateEventHandler.handleEvent(event.getAmbiance().getPlanExecutionId(), orchestrationGraph);
+        planExecutionStatusUpdateEventHandler.handleEvent(planExecution, orchestrationGraph);
 
     assertThat(updatedGraph).isNotNull();
     assertThat(updatedGraph.getPlanExecutionId()).isEqualTo(planExecution.getUuid());

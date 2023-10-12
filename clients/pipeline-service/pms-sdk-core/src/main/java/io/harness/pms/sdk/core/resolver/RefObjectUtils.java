@@ -58,4 +58,13 @@ public class RefObjectUtils {
         .setRefType(RefType.newBuilder().setType(OrchestrationRefType.SWEEPING_OUTPUT).build())
         .build();
   }
+
+  public RefObject getSweepingOutputRefObjectUsingGroup(String name, String groupName) {
+    return RefObject.newBuilder()
+        .setName(name)
+        .setKey(name)
+        .setRefType(RefType.newBuilder().setType(OrchestrationRefType.SWEEPING_OUTPUT).build())
+        .setGroupName(groupName)
+        .build();
+  }
 }

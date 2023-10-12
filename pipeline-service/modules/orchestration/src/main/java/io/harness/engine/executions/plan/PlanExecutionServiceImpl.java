@@ -6,7 +6,6 @@
  */
 
 package io.harness.engine.executions.plan;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.engine.pms.execution.strategy.plan.PlanExecutionStrategy.ENFORCEMENT_CALLBACK_ID;
@@ -17,8 +16,12 @@ import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.engine.execution.PipelineStageResponseData;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.interrupts.statusupdate.NodeStatusUpdateHandlerFactory;
 import io.harness.engine.observers.NodeStatusUpdateHandler;
@@ -27,15 +30,16 @@ import io.harness.engine.observers.PlanExecutionDeleteObserver;
 import io.harness.engine.observers.PlanStatusUpdateObserver;
 import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.exception.EntityNotFoundException;
-import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecution.ExecutionMetadataKeys;
 import io.harness.execution.PlanExecution.PlanExecutionKeys;
+import io.harness.lock.AcquiredLock;
+import io.harness.lock.PersistentLocker;
+import io.harness.monitoring.ExecutionCountWithAccountResult;
 import io.harness.observer.Subject;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
-import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.PlanExecutionProjectionConstants;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
@@ -47,6 +51,7 @@ import io.harness.waiter.WaitNotifyEngine;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.time.Duration;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -68,6 +73,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.CloseableIterator;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @Slf4j
 @Singleton
@@ -77,6 +83,9 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   @Inject private NodeStatusUpdateHandlerFactory nodeStatusUpdateHandlerFactory;
   @Inject private NodeExecutionService nodeExecutionService;
   @Inject private WaitNotifyEngine waitNotifyEngine;
+  @Inject private PersistentLocker persistentLocker;
+
+  private static final String PLAN_EXECUTION_STATUS_UPDATE_LOCK = "PLAN_STATUS_UPDATE_LOCK_";
 
   @Getter private final Subject<PlanStatusUpdateObserver> planStatusUpdateSubject = new Subject<>();
   @Getter private final Subject<PlanExecutionDeleteObserver> planExecutionDeleteObserverSubject = new Subject<>();
@@ -128,6 +137,7 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
     if (StatusUtils.isFinalStatus(status)) {
       waitNotifyEngine.doneWith(
           String.format(ENFORCEMENT_CALLBACK_ID, planExecutionId), StringNotifyResponseData.builder().build());
+      waitNotifyEngine.doneWith(planExecutionId, PipelineStageResponseData.builder().status(status).build());
     }
     return updated;
   }
@@ -223,26 +233,68 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
     return mongoTemplate.find(new Query(criteria), PlanExecution.class);
   }
 
+  @Override
   public Status calculateStatus(String planExecutionId) {
-    List<Status> statuses = nodeExecutionService.fetchNodeExecutionsStatusesWithoutOldRetries(planExecutionId);
-    return OrchestrationUtils.calculateStatusForPlanExecution(statuses, planExecutionId);
+    return calculateStatus(planExecutionId, false);
   }
 
   @Override
-  public Status calculateStatusExcluding(String planExecutionId, String excludedNodeExecutionId) {
-    List<NodeExecution> nodeExecutions = new LinkedList<>();
-    try (CloseableIterator<NodeExecution> iterator = nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesIterator(
-             planExecutionId, NodeProjectionUtils.withStatus)) {
-      while (iterator.hasNext()) {
-        nodeExecutions.add(iterator.next());
-      }
-    }
+  public Status calculateStatus(String planExecutionId, boolean shouldSkipIdentityNodes) {
+    List<Status> statuses =
+        nodeExecutionService.fetchNodeExecutionsStatusesWithoutOldRetries(planExecutionId, shouldSkipIdentityNodes);
+    return OrchestrationUtils.calculateStatusForPlanExecution(statuses, planExecutionId);
+  }
 
-    List<Status> filtered = nodeExecutions.stream()
-                                .filter(ne -> !ne.getUuid().equals(excludedNodeExecutionId))
-                                .map(NodeExecution::getStatus)
-                                .collect(Collectors.toList());
-    return StatusUtils.calculateStatus(filtered, planExecutionId);
+  /*
+    This functions calculates the status of the based on status of all node execution status excluding current node. If
+    the status comes out to be a terminal status, we are setting it to Running as currently is running. eg -> we have
+    matrix in which few stages have failed. But currently as the  pipeline is running (may be a CI stage), then it
+    should be marked to Running
+
+    Updating planExecution status can cause race condition, thus using lock on planExecutionId so that updates are
+    sequential
+     */
+
+  @Override
+  public void calculateAndUpdateRunningStatusUnderLock(String planExecutionId, Status excludeNodeExecutionStatus) {
+    String lockName = PLAN_EXECUTION_STATUS_UPDATE_LOCK + planExecutionId;
+    try (AcquiredLock<?> lock =
+             persistentLocker.waitToAcquireLockOptional(lockName, Duration.ofSeconds(10), Duration.ofSeconds(30))) {
+      if (lock == null) {
+        log.warn(String.format(
+            "[PLAN_EXECUTION_STATUS_UPDATE] Not able to take lock on plan status update for lockName - %s, returning early.",
+            lockName));
+      }
+
+      Status updateStatusTo = RUNNING;
+      Status planExecutionStatus = getStatus(planExecutionId);
+      if (planExecutionStatus == RUNNING) {
+        return;
+      }
+      log.info("Calculating the planExecution status as current status {}", planExecutionStatus);
+      Status planStatus = calculateNonFlowingAndNonFinalStatusExcluding(planExecutionId, excludeNodeExecutionStatus);
+      if (!StatusUtils.isFinalStatus(planStatus)) {
+        updateStatusTo = planStatus;
+      }
+      log.info("Marking PlanExecution %s status to %s", planExecutionId, updateStatusTo);
+      updateStatus(planExecutionId, updateStatusTo);
+
+    } catch (Exception exception) {
+      log.error(String.format(
+                    "[PLAN_EXECUTION_STATUS_UPDATE] Exception Occurred while updating status for planExecutionId: %s",
+                    planExecutionId),
+          exception);
+    }
+  }
+
+  // excludeCurrentNodeExecutionStatus if some status of nodeExecution you want to exclude from calculateStatus
+  private Status calculateNonFlowingAndNonFinalStatusExcluding(
+      String planExecutionId, Status excludeCurrentNodeExecutionStatus) {
+    List<Status> nonFinalStatusList = nodeExecutionService.fetchNonFlowingAndNonFinalStatuses(planExecutionId);
+    if (excludeCurrentNodeExecutionStatus != null) {
+      nonFinalStatusList.remove(excludeCurrentNodeExecutionStatus);
+    }
+    return StatusUtils.calculateStatus(nonFinalStatusList, planExecutionId);
   }
 
   public PlanExecution updateCalculatedStatus(String planExecutionId) {
@@ -325,7 +377,8 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   }
 
   @Override
-  public void deleteAllPlanExecutionAndMetadata(Set<String> planExecutionIds) {
+  public void deleteAllPlanExecutionAndMetadata(
+      Set<String> planExecutionIds, boolean retainPipelineExecutionDetailsAfterDelete) {
     // Uses idx index
     Query query = query(where(PlanExecutionKeys.uuid).in(planExecutionIds));
     for (String fieldName : PlanExecutionProjectionConstants.fieldsForPlanExecutionDelete) {
@@ -337,22 +390,23 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
         PlanExecution next = iterator.next();
         batchPlanExecutions.add(next);
         if (batchPlanExecutions.size() >= PersistenceModule.MAX_BATCH_SIZE) {
-          deletePlanExecutionMetadataInternal(batchPlanExecutions);
+          deletePlanExecutionMetadataInternal(batchPlanExecutions, retainPipelineExecutionDetailsAfterDelete);
           batchPlanExecutions.clear();
         }
       }
     }
     if (EmptyPredicate.isNotEmpty(batchPlanExecutions)) {
       // at end if any execution metadata is left, delete those as well
-      deletePlanExecutionMetadataInternal(batchPlanExecutions);
+      deletePlanExecutionMetadataInternal(batchPlanExecutions, retainPipelineExecutionDetailsAfterDelete);
     }
     deletePlanExecutionsInternal(planExecutionIds);
   }
 
-  private void deletePlanExecutionMetadataInternal(List<PlanExecution> batchPlanExecutions) {
+  private void deletePlanExecutionMetadataInternal(
+      List<PlanExecution> batchPlanExecutions, boolean retainPipelineExecutionDetailsAfterDelete) {
     // Delete planExecutionMetadata example - PlanExecutionMetadata, PipelineExecutionSummaryEntity
-    planExecutionDeleteObserverSubject.fireInform(
-        PlanExecutionDeleteObserver::onPlanExecutionsDelete, batchPlanExecutions);
+    planExecutionDeleteObserverSubject.fireInform(PlanExecutionDeleteObserver::onPlanExecutionsDelete,
+        batchPlanExecutions, retainPipelineExecutionDetailsAfterDelete);
   }
 
   private void deletePlanExecutionsInternal(Set<String> planExecutionIds) {
@@ -384,20 +438,8 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
     });
   }
 
-  /*
-    This functions calculates the status of the based on status of all node execution status excluding current node. If
-    the status comes out to be a terminal status, we are setting it to Running as currently is running. eg -> we have
-    matrix in which few stages have failed. But currently as the  pipeline is running (may be a CI stage), then it
-    should be marked to Running
-     */
   @Override
-  public void calculateAndUpdateRunningStatus(String planNodeId, String nodeExecutionId) {
-    Status updateStatusTo = RUNNING;
-    Status planStatus = calculateStatusExcluding(planNodeId, nodeExecutionId);
-    if (!StatusUtils.isFinalStatus(planStatus)) {
-      updateStatusTo = planStatus;
-    }
-    log.info("Marking PlanExecution %s status to %s", planNodeId, updateStatusTo);
-    updateStatus(planNodeId, updateStatusTo);
+  public List<ExecutionCountWithAccountResult> aggregateRunningExecutionCountPerAccount() {
+    return planExecutionRepository.aggregateRunningExecutionCountPerAccount();
   }
 }

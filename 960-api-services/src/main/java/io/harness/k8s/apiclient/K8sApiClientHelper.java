@@ -78,4 +78,13 @@ public class K8sApiClientHelper {
       return Optional.empty();
     }
   }
+
+  public boolean isEnvVarSet(String environmentVariable) {
+    try {
+      String value = SystemWrapper.getenv(environmentVariable);
+      return isNotEmpty(value) && value.equalsIgnoreCase("true");
+    } catch (Exception e) {
+      return false;
+    }
+  }
 }

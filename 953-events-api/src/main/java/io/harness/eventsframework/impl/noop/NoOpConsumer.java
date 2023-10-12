@@ -6,10 +6,12 @@
  */
 
 package io.harness.eventsframework.impl.noop;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eventsframework.api.AbstractConsumer;
 import io.harness.eventsframework.consumer.Message;
 
@@ -17,6 +19,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PL)
 public class NoOpConsumer extends AbstractConsumer {
   public NoOpConsumer(String topicName, String groupName) {
@@ -29,10 +32,15 @@ public class NoOpConsumer extends AbstractConsumer {
   }
 
   @Override
-  public void acknowledge(String messageId) {}
+  public void acknowledge(String... messageId) {}
 
   @Override
   public void shutdown() {}
+
+  @Override
+  public int getBatchSize() {
+    return 0;
+  }
 
   public static NoOpConsumer of(String topicName, String groupName) {
     return new NoOpConsumer(topicName, groupName);

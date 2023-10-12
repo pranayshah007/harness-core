@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -47,8 +46,11 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.elasticsearch.common.util.set.Sets.newHashSet;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
@@ -148,6 +150,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotBlank;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(PL)
 @ValidateOnExecution
 @Singleton
@@ -258,7 +261,7 @@ public class UserGroupServiceImpl implements UserGroupService {
 
   @Override
   public PageResponse<UserGroup> list(String accountId, PageRequest<UserGroup> req, boolean loadUsers,
-      UserGroupSearchTermType searchTermType, String searchTerm) {
+      UserGroupSearchTermType searchTermType, String searchTerm, boolean hitSecondary) {
     notNullCheck(UserGroupKeys.accountId, accountId, USER);
     Account account = accountService.get(accountId);
     notNullCheck("account", account, USER);
@@ -271,7 +274,12 @@ public class UserGroupServiceImpl implements UserGroupService {
       }
       populateAppIdFilter(req, applicationIdsMatchingSearchTerm);
     }
-    PageResponse<UserGroup> res = wingsPersistence.query(UserGroup.class, req);
+    PageResponse<UserGroup> res;
+    if (hitSecondary && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION_V2, accountId)) {
+      res = wingsPersistence.querySecondary(UserGroup.class, req);
+    } else {
+      res = wingsPersistence.query(UserGroup.class, req);
+    }
 
     log.info("Page response for user groups list: {}", res);
 
@@ -380,7 +388,7 @@ public class UserGroupServiceImpl implements UserGroupService {
 
   @Override
   public List<UserGroup> filter(String accountId, List<String> userGroupIds) {
-    return getQuery(accountId, userGroupIds).asList();
+    return getQuery(accountId, userGroupIds).asList(createFindOptionsToHitSecondaryNode(accountId));
   }
 
   @Override
@@ -404,8 +412,9 @@ public class UserGroupServiceImpl implements UserGroupService {
 
   @Override
   public void deleteByAccountId(String accountId) {
-    List<UserGroup> userGroups =
-        wingsPersistence.createQuery(UserGroup.class).filter(UserGroupKeys.accountId, accountId).asList();
+    List<UserGroup> userGroups = wingsPersistence.createQuery(UserGroup.class)
+                                     .filter(UserGroupKeys.accountId, accountId)
+                                     .asList(createFindOptionsToHitSecondaryNode(accountId));
     for (UserGroup userGroup : userGroups) {
       delete(accountId, userGroup.getUuid(), true);
     }
@@ -932,7 +941,7 @@ public class UserGroupServiceImpl implements UserGroupService {
                                          .withLimit(Long.toString(getCountOfUserGroups(accountId)))
                                          .addFilter(UserGroupKeys.accountId, EQ, accountId)
                                          .addFilter(UserGroupKeys.memberIds, Operator.HAS, user.getUuid());
-    return list(accountId, pageRequest.build(), loadUsers, null, null).getResponse();
+    return list(accountId, pageRequest.build(), loadUsers, null, null, false).getResponse();
   }
 
   @Override
@@ -940,7 +949,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     PageRequestBuilder pageRequest = aPageRequest()
                                          .withLimit(Long.toString(getCountOfUserGroups(accountId)))
                                          .addFilter(UserGroupKeys.accountId, EQ, accountId);
-    return list(accountId, pageRequest.build(), true, null, null).getResponse();
+    return list(accountId, pageRequest.build(), true, null, null, true).getResponse();
   }
 
   @Override
@@ -1065,7 +1074,8 @@ public class UserGroupServiceImpl implements UserGroupService {
 
     if (ssoType == SSOType.LDAP) {
       LdapSettings ldapSettings = (LdapSettings) ssoSettings;
-      ldapGroupScheduledHandler.handle(ldapSettings);
+      ldapGroupSyncJobHelper.syncUserGroupsParallel(
+          accountId, ldapSettings, Collections.singletonList(updatedGroup), ldapSettings.getUuid());
     }
 
     return updatedGroup;
@@ -1181,7 +1191,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     try (HIterator<UserGroup> userGroupIterator =
              new HIterator<>(wingsPersistence.createQuery(UserGroup.class, excludeAuthority)
                                  .filter(UserGroupKeys.accountId, accountId)
-                                 .fetch())) {
+                                 .fetch(createFindOptionsToHitSecondaryNode(accountId)))) {
       while (userGroupIterator.hasNext()) {
         final UserGroup userGroup = userGroupIterator.next();
         removeEntityIdsFromAppPermissions(userGroup, deletedEntityIds);
@@ -1251,7 +1261,7 @@ public class UserGroupServiceImpl implements UserGroupService {
                                              .addFilter(UserGroupKeys.isSsoLinked, EQ, true)
                                              .addFilter(UserGroupKeys.linkedSsoId, EQ, ssoId)
                                              .build();
-    PageResponse<UserGroup> pageResponse = list(accountId, pageRequest, true, null, null);
+    PageResponse<UserGroup> pageResponse = list(accountId, pageRequest, true, null, null, false);
     return pageResponse.getResponse();
   }
 
@@ -1271,7 +1281,7 @@ public class UserGroupServiceImpl implements UserGroupService {
             .addFilter(UserGroupKeys.isDefault, EQ, true)
             .build();
 
-    return list(accountId, pageRequest, true, null, null).getResponse().get(0);
+    return list(accountId, pageRequest, true, null, null, false).getResponse().get(0);
   }
 
   @Override
@@ -1310,7 +1320,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     }
     PageRequestBuilder pageRequest =
         aPageRequest().withLimit(Integer.toString(userIds.length)).addFilter(UserGroup.ID_KEY2, Operator.IN, userIds);
-    return list(userInvite.getAccountId(), pageRequest.build(), true, null, null).getResponse();
+    return list(userInvite.getAccountId(), pageRequest.build(), true, null, null, false).getResponse();
   }
 
   /**
@@ -1430,5 +1440,12 @@ public class UserGroupServiceImpl implements UserGroupService {
   @Override
   public void pruneByTemplate(String appId, String templateId) {
     pruneEntityIdFromUserGroup(appId, templateId);
+  }
+
+  private FindOptions createFindOptionsToHitSecondaryNode(String accountId) {
+    if (accountId != null && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION_V2, accountId)) {
+      return new FindOptions().readPreference(ReadPreference.secondaryPreferred());
+    }
+    return new FindOptions();
   }
 }

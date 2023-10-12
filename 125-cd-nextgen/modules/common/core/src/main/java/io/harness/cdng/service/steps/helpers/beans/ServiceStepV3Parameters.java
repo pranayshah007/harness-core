@@ -15,10 +15,11 @@ import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.SkipAutoEvaluation;
 
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
@@ -47,8 +48,11 @@ public class ServiceStepV3Parameters implements StepParameters {
   private ServiceDefinitionType deploymentType;
   @SkipAutoEvaluation private EnvironmentGroupYaml environmentGroupYaml;
   @SkipAutoEvaluation private EnvironmentsYaml environmentsYaml;
+
   @Override
-  public String toViewJson() {
-    return RecastOrchestrationUtils.toJson(Map.of("service", serviceRef.fetchFinalValue()));
+  public List<String> excludeKeysFromStepInputs() {
+    return new LinkedList<>(Arrays.asList("inputs", "envRef", "infraId", "envGroupRef", "envRefs",
+        "gitOpsMultiSvcEnvEnabled", "envInputs", "envToEnvInputs", "envToSvcOverrideInputs", "serviceOverrideInputs",
+        "childrenNodeIds", "deploymentType", "environmentGroupYaml", "environmentsYaml"));
   }
 }

@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.YUVRAJ;
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -88,6 +89,7 @@ public class ApprovalResourceImplServiceImplTest extends CategoryTest {
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Mock private PmsEngineExpressionService pmsEngineExpressionService;
   private static final Long CREATED_AT = 1000L;
+  private static final String ACCOUNT_ID = "accountId";
   ApprovalResourceServiceImpl approvalResourceService;
   @Before
   public void setUp() {
@@ -104,10 +106,17 @@ public class ApprovalResourceImplServiceImplTest extends CategoryTest {
     ApprovalInstanceResponseDTO approvalInstanceResponseDTO = ApprovalInstanceResponseDTO.builder().id(id).build();
     ApprovalInstance approvalInstance = HarnessApprovalInstance.builder().build();
     approvalInstance.setId(id);
+    approvalInstance.setAccountId(ACCOUNT_ID);
     when(approvalInstanceService.get(id)).thenReturn(approvalInstance);
     when(approvalInstanceResponseMapper.toApprovalInstanceResponseDTO(approvalInstance, true))
         .thenReturn(approvalInstanceResponseDTO);
-    assertEquals(approvalResourceService.get(id), approvalInstanceResponseDTO);
+    assertEquals(approvalResourceService.get(id, ACCOUNT_ID), approvalInstanceResponseDTO);
+    assertEquals(approvalResourceService.get(id, null), approvalInstanceResponseDTO);
+    assertThatThrownBy(() -> approvalResourceService.get(id, "random"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(String.format(
+            "Account Identifier provided %s doesn't match with approval instance's account identifier: %s", "random",
+            approvalInstance.getAccountId()));
   }
 
   @Test

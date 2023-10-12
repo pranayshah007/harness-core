@@ -30,7 +30,13 @@ public class NoOpDsl implements DataSourceLocation {
   @Override
   public Map<String, Object> fetchData(String accountIdentifier, BackstageCatalogEntity backstageCatalogEntity,
       DataSourceLocationEntity dataSourceLocationEntity, Map<DataPointEntity, Set<String>> dataPointsAndInputValues,
-      Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs) {
+      Map<String, String> replaceableHeaders, Map<String, String> possibleReplaceableRequestBodyPairs,
+      Map<String, String> possibleReplaceableUrlPairs) {
     return mapper.convertValue(backstageCatalogEntity, new TypeReference<>() {});
+  }
+
+  @Override
+  public String replaceInputValuePlaceholdersIfAny(Map<String, String> dataPointIdsAndInputValues, String requestBody) {
+    return null;
   }
 }

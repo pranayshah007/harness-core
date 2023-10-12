@@ -6,9 +6,11 @@
  */
 
 package io.harness.repositories.instance;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.entities.Instance;
 import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.ActiveServiceInstanceInfoV2;
@@ -27,6 +29,7 @@ import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(HarnessTeam.DX)
 public interface InstanceRepositoryCustom {
   Instance findAndReplace(Criteria criteria, Instance instance);
@@ -41,6 +44,9 @@ public interface InstanceRepositoryCustom {
 
   List<Instance> getActiveInstancesByInstanceInfo(
       String accountIdentifier, String instanceInfoNamespace, String instanceInfoPodName);
+
+  List<Instance> getActiveInstancesByInstanceNamespaceAndReleaseName(
+      String accountIdentifier, String instanceInfoNamespace, String releaseName);
 
   List<Instance> getActiveInstancesByServiceId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs);
@@ -62,7 +68,8 @@ public interface InstanceRepositoryCustom {
       String buildIdentifier);
   AggregationResults<ActiveServiceInstanceInfoWithEnvType> getActiveServiceInstanceInfoWithEnvType(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier,
-      String serviceIdentifier, String displayName, boolean isGitOps, boolean filterOnArtifact);
+      String serviceIdentifier, String displayName, boolean isGitOps, boolean filterOnArtifact, String chartVersion,
+      boolean filterOnChartVersion);
   AggregationResults<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
 
@@ -79,7 +86,7 @@ public interface InstanceRepositoryCustom {
       long timestampInMs, int limit, String infraId, String clusterId, String pipelineExecutionId);
   AggregationResults<ArtifactDeploymentDetailModel> getLastDeployedInstance(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceIdentifier, boolean isEnvironmentCard,
-      boolean isGitOps);
+      boolean isGitOps, boolean isChartVersionCard);
 
   List<Instance> getActiveInstanceDetails(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String serviceId, String envId, String infraId, String clusterIdentifier, String pipelineExecutionId,
@@ -87,7 +94,8 @@ public interface InstanceRepositoryCustom {
 
   AggregationResults<InstanceGroupedByPipelineExecution> getActiveInstanceGroupedByPipelineExecution(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, String envId,
-      EnvironmentType environmentType, String infraId, String clusterIdentifier, String displayName);
+      EnvironmentType environmentType, String infraId, String clusterIdentifier, String displayName,
+      String chartVersion, boolean filterByChartVersion);
 
   AggregationResults<CountByServiceIdAndEnvType> getActiveServiceInstanceCountBreakdown(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, List<String> serviceId, long timestampInMs);

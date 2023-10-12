@@ -28,6 +28,7 @@ import io.harness.timescaledb.tables.ServiceInfraInfo;
 import io.harness.timescaledb.tables.ServiceInstancesLicenseDailyReport;
 import io.harness.timescaledb.tables.Services;
 import io.harness.timescaledb.tables.ServicesLicenseDailyReport;
+import io.harness.timescaledb.tables.TimeBucketListCdStatus;
 import io.harness.timescaledb.tables.UtilizationData;
 import io.harness.timescaledb.tables.WorkloadInfo;
 
@@ -131,6 +132,12 @@ public class Tables {
    * The table <code>public.services</code>.
    */
   public static final Services SERVICES = Services.SERVICES;
+
+  /**
+   * The table <code>public.time_bucket_list_cd_status</code>.
+   */
+  public static final TimeBucketListCdStatus TIME_BUCKET_LIST_CD_STATUS =
+      TimeBucketListCdStatus.TIME_BUCKET_LIST_CD_STATUS;
 
   /**
    * The table <code>public.utilization_data</code>.

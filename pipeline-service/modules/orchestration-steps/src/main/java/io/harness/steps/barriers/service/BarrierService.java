@@ -6,11 +6,14 @@
  */
 
 package io.harness.steps.barriers.service;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.distribution.barrier.Barrier.State;
+import io.harness.plancreator.steps.barrier.BarrierStepNode;
 import io.harness.steps.barriers.beans.BarrierExecutionInstance;
 import io.harness.steps.barriers.beans.BarrierPositionInfo;
 import io.harness.steps.barriers.beans.BarrierSetupInfo;
@@ -19,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 public interface BarrierService {
   BarrierExecutionInstance save(BarrierExecutionInstance barrierExecutionInstance);
@@ -28,7 +32,7 @@ public interface BarrierService {
   BarrierExecutionInstance updateState(String uuid, State state);
   List<BarrierExecutionInstance> updatePosition(String planExecutionId,
       BarrierPositionInfo.BarrierPosition.BarrierPositionType positionType, String positionSetupId,
-      String positionExecutionId);
+      String positionExecutionId, String stageExecutionId, String stepGroupExecutionId, boolean isNewBarrierUpdateFlow);
   BarrierExecutionInstance findByIdentifierAndPlanExecutionId(String identifier, String planExecutionId);
   BarrierExecutionInstance findByPlanNodeIdAndPlanExecutionId(String planNodeId, String planExecutionId);
   List<BarrierExecutionInstance> findByStageIdentifierAndPlanExecutionIdAnsStateIn(
@@ -42,4 +46,12 @@ public interface BarrierService {
    * @param planExecutionIds
    */
   void deleteAllForGivenPlanExecutionId(Set<String> planExecutionIds);
+  void upsert(BarrierExecutionInstance barrierExecutionInstance);
+  void updateBarrierPositionInfoList(
+      String barrierIdentifier, String planExecutionId, List<BarrierPositionInfo.BarrierPosition> barrierPositions);
+  boolean existsByPlanExecutionIdAndStrategySetupId(String planExecutionId, String strategySetupId);
+  List<BarrierExecutionInstance> findManyByPlanExecutionIdAndStrategySetupId(
+      String planExecutionId, String strategySetupId);
+  void upsertBarrierExecutionInstance(BarrierStepNode field, String planExecutionId, String parentInfoStrategyNodeType,
+      String stageId, String stepGroupId, String strategyId);
 }

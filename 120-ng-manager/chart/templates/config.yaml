@@ -2,7 +2,14 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: ng-manager
-  namespace: {{ .Release.Namespace }}
+  namespace: '{{ .Release.Namespace }}'
+  labels:
+    {{- if .Values.global.commonLabels }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.global.commonAnnotations }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
 data:
   GITOPS_SERVICE_CLIENT_BASEURL: http://gitops:7908/api/v1/
   GITOPS_SERVICE_SECRET: HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU=
@@ -13,10 +20,10 @@ data:
   NG_MANAGER_TARGET: ng-manager:13002
   NG_MANAGER_AUTHORITY: ng-manager:13002
   EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
-  EVENTS_FRAMEWORK_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
+  EVENTS_FRAMEWORK_USE_SENTINEL: '{{ .Values.global.database.redis.installed }}'
   EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
   EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
-  STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
+  STACK_DRIVER_LOGGING_ENABLED: '{{ .Values.global.stackDriverLoggingEnabled }}'
   GRPC_SERVER_PORT: "9979"
   SHOULD_CONFIGURE_WITH_PMS: "true"
   PMS_GITSYNC_TARGET:  pipeline-service:14002
@@ -25,12 +32,12 @@ data:
   TEMPLATE_GITSYNC_AUTHORITY:  template-service:16002
   PMS_TARGET:  pipeline-service:12011
   PMS_AUTHORITY:  pipeline-service:12011
-  MEMORY: {{ .Values.java.memory | quote }}
-  LOGGING_LEVEL: {{ .Values.appLogLevel }}
+  MEMORY: '{{ .Values.java.memory }}'
+  LOGGING_LEVEL: '{{ .Values.appLogLevel }}'
   LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
   LOCK_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
-  LOCK_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
+  LOCK_CONFIG_USE_SENTINEL: '{{ .Values.global.database.redis.installed }}'
   LOG_STREAMING_SERVICE_TOKEN: c76e567a-b341-404d-a8dd-d9738714eb82
   USE_REDIS_FOR_SDK_RESPONSE_EVENTS: "true"
   MOCK_ACCESS_CONTROL_SERVICE: "false"
@@ -53,7 +60,7 @@ data:
   {{- end }}
   CENG_CLIENT_BASEURL: 'http://nextgen-ce.{{ .Release.Namespace }}.svc.cluster.local:6340/ccm/api/'
   CE_NG_CLIENT_BASEURL: 'http://nextgen-ce.{{ .Release.Namespace }}.svc.cluster.local:6340/ccm/api/'
-  CE_SETUP_CONFIG_GCP_PROJECT_ID: {{ .Values.ceGcpSetupConfigGcpProjectId | quote }}
+  CE_SETUP_CONFIG_GCP_PROJECT_ID: '{{ .Values.ceGcpSetupConfigGcpProjectId }}'
   CURRENT_GEN_UI_URL: '{{ .Values.global.loadbalancerURL }}/#/'
   HARNESS_ENABLE_NG_AUTH_UI_PLACEHOLDER: "true"
   WEBHOOK_BASE_URL: '{{ .Values.global.loadbalancerURL }}/gateway/ng/api/'
@@ -73,9 +80,26 @@ data:
   PIPELINE_SERVICE_CLIENT_BASEURL: http://pipeline-service:12001/api/
   CI_MANAGER_SERVICE_CLIENT_BASEURL: http://ci-manager:7090/
   CVNG_SERVICE_CLIENT_BASEURL: http://cv-nextgen:6060/cv/api/
+  STO_CORE_SERVICE_CLIENT_BASEURL: http://sto-core:4000/api/
   ALLOWED_ORIGINS: '{{ .Values.allowedOrigins | default .Values.global.loadbalancerURL }}'
   HARNESS_NG_MANAGER_INTERNAL_URL: 'http://ng-manager.{{ .Release.Namespace }}.svc.cluster.local:7090'
   HARNESS_SCM_API_INTERNAL_URL: 'http://code-api.{{ .Release.Namespace }}.svc.cluster.local:80'
+  {{- if .Values.global.proxy.enabled }}
+  PROXY_ENABLED: '{{ .Values.global.proxy.enabled }}'
+  PROXY_HOST: {{ .Values.global.proxy.host }}
+  PROXY_PORT: '{{ .Values.global.proxy.port }}'
+  PROXY_USERNAME: '{{ .Values.global.proxy.username }}'
+  PROXY_PASSWORD: '{{ .Values.global.proxy.password }}'
+  PROXY_PROTOCOL: {{ .Values.global.proxy.protocol }}
+  {{- end }}
+  {{- if .Values.global.awsServiceEndpointUrls.enabled }}
+  AWS_SERVICE_ENDPOINT_URLS_ENABLED: '{{ .Values.global.awsServiceEndpointUrls.enabled }}'
+  AWS_SERVICE_ENDPOINT_URLS_ENDPOINT_REGION: {{ .Values.global.awsServiceEndpointUrls.endPointRegion }}
+  AWS_SERVICE_ENDPOINT_URLS_STS_ENDPOINT_URL: {{ .Values.global.awsServiceEndpointUrls.stsEndPointUrl }}
+  AWS_SERVICE_ENDPOINT_URLS_ECS_ENDPOINT_URL: {{ .Values.global.awsServiceEndpointUrls.ecsEndPointUrl }}
+  AWS_SERVICE_ENDPOINT_URLS_CLOUDWATCH_ENDPOINT_URL: {{ .Values.global.awsServiceEndpointUrls.cloudwatchEndPointUrl }}
+  {{- end }}
+  {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
   {{- if .Values.additionalConfigs }}
   {{- toYaml .Values.additionalConfigs | nindent 2 }}
   {{- end }}

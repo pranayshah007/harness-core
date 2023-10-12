@@ -38,6 +38,7 @@ message AsyncChainExecutableResponse {
   repeated string units = 4;
   int32 timeout = 5;
   Status status = 6;
+  bytes passThroughData = 7;
 }
 
 message AsyncExecutableResponse {
@@ -74,6 +75,7 @@ message StrategyMetadata {
     MatrixMetadata matrixMetadata = 3;
     ForMetadata forMetadata = 4;
   }
+  string identifierPostFix = 5;
 }
 
 message ForMetadata {
@@ -86,6 +88,7 @@ message MatrixMetadata {
   repeated int32 matrixCombination = 2;
   string subType = 3;
   repeated string matrixKeysToSkipInName = 4;
+  string nodeName = 5;
 }
 
 message ChildChainExecutableResponse {

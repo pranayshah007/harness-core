@@ -6,10 +6,14 @@
  */
 
 package software.wings.app;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import static java.util.Objects.isNull;
+
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.event.reconciliation.deployment.DeploymentReconRecord;
 import io.harness.version.VersionInfoManager;
@@ -29,11 +33,13 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import java.util.concurrent.TimeUnit;
 import javax.cache.Cache;
 import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.CreatedExpiryPolicy;
 import javax.cache.expiry.Duration;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(PL)
 public class ManagerCacheRegistrar extends AbstractModule {
   public static final String AUTH_TOKEN_CACHE = "authTokenCache";
@@ -49,6 +55,11 @@ public class ManagerCacheRegistrar extends AbstractModule {
   public static final String DEPLOYMENT_RECONCILIATION_CACHE = "deploymentReconciliationCache";
   public static final String GIT_POLLING_CACHE = "gitPolling";
   public static final String WAIT_ENGINE_EVENT_CACHE = "waitEngineEventsCache";
+  private final MainConfiguration configuration;
+
+  public ManagerCacheRegistrar(MainConfiguration configuration) {
+    this.configuration = configuration;
+  }
 
   @Provides
   @Named(AUTH_TOKEN_CACHE)
@@ -125,8 +136,18 @@ public class ManagerCacheRegistrar extends AbstractModule {
   @Singleton
   public Cache<String, DeploymentReconRecord> getDeploymentReconCache(
       HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    Duration duration = Duration.TEN_MINUTES;
+    if (!isNull(configuration) && !isNull(configuration.getDataReconciliationConfig())
+        && configuration.getDataReconciliationConfig().isEnabled()) {
+      if (configuration.getDataReconciliationConfig().getDuration() > 7200) { // 2 hrs
+        duration = new Duration(TimeUnit.HOURS, 2);
+      } else {
+        duration = new Duration(
+            TimeUnit.SECONDS, configuration.getDataReconciliationConfig().getDuration() - 300); // config - 5 mins
+      }
+    }
     return harnessCacheManager.getCache(DEPLOYMENT_RECONCILIATION_CACHE, String.class, DeploymentReconRecord.class,
-        CreatedExpiryPolicy.factoryOf(Duration.TEN_MINUTES), versionInfoManager.getVersionInfo().getBuildNo());
+        CreatedExpiryPolicy.factoryOf(duration), versionInfoManager.getVersionInfo().getBuildNo());
   }
 
   @Provides

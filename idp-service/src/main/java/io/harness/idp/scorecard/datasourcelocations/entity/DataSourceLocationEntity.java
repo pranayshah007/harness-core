@@ -10,26 +10,37 @@ package io.harness.idp.scorecard.datasourcelocations.entity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EmbeddedUser;
 import io.harness.idp.scorecard.datasourcelocations.beans.DataSourceLocationType;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
+import io.harness.persistence.CreatedAtAware;
+import io.harness.persistence.CreatedByAware;
 import io.harness.persistence.PersistentEntity;
+import io.harness.persistence.UpdatedAtAware;
+import io.harness.persistence.UpdatedByAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -51,7 +62,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("dataSourceLocations")
 @Persistent
 @OwnedBy(HarnessTeam.IDP)
-public abstract class DataSourceLocationEntity implements PersistentEntity {
+public abstract class DataSourceLocationEntity
+    implements PersistentEntity, CreatedByAware, UpdatedByAware, CreatedAtAware, UpdatedAtAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -68,4 +80,8 @@ public abstract class DataSourceLocationEntity implements PersistentEntity {
   private String identifier;
   private String dataSourceIdentifier;
   @NotNull DataSourceLocationType type;
+  @SchemaIgnore @CreatedBy private EmbeddedUser createdBy;
+  @SchemaIgnore @LastModifiedBy private EmbeddedUser lastUpdatedBy;
+  @Builder.Default @CreatedDate private long createdAt = System.currentTimeMillis();
+  @LastModifiedDate private long lastUpdatedAt;
 }

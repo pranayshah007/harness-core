@@ -6,7 +6,6 @@
  */
 
 package io.harness.engine.pms.data;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
@@ -14,8 +13,11 @@ import static java.lang.String.format;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.OutcomeInstance;
 import io.harness.data.OutcomeInstance.OutcomeInstanceKeys;
 import io.harness.data.structure.EmptyPredicate;
@@ -38,7 +40,6 @@ import io.harness.springdata.TransactionHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.mongodb.DuplicateKeyException;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,12 +59,14 @@ import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.jexl3.JexlException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public class PmsOutcomeServiceImpl implements PmsOutcomeService {
@@ -103,6 +106,25 @@ public class PmsOutcomeServiceImpl implements PmsOutcomeService {
   }
 
   @Override
+  public String resolveUsingLevelRuntimeIdx(String planExecutionId, List<String> levelRuntimeIdx, RefObject refObject) {
+    String name = refObject.getName();
+    Query query = query(where(OutcomeInstanceKeys.planExecutionId).is(planExecutionId))
+                      .addCriteria(where(OutcomeInstanceKeys.name).is(name))
+                      .addCriteria(where(OutcomeInstanceKeys.levelRuntimeIdIdx).in(levelRuntimeIdx));
+
+    List<OutcomeInstance> instances = mongoTemplate.find(query, OutcomeInstance.class);
+
+    // Multiple instances might be returned if the same name was saved at different levels/specificity.
+    OutcomeInstance instance = EmptyPredicate.isEmpty(instances)
+        ? null
+        : instances.stream().max(Comparator.comparing(OutcomeInstance::getLevelRuntimeIdIdx)).orElse(null);
+    if (instance == null) {
+      throw new OutcomeException(format("Could not resolve outcome with name '%s'", name));
+    }
+    return instance.getOutcomeJsonValue();
+  }
+
+  @Override
   public String consumeInternal(Ambiance ambiance, Level producedBy, String name, String value, String groupName) {
     try {
       return transactionHelper.performTransaction(() -> {
@@ -122,7 +144,7 @@ public class PmsOutcomeServiceImpl implements PmsOutcomeService {
         return instance.getUuid();
       });
     } catch (DuplicateKeyException ex) {
-      throw new OutcomeException(format("Outcome with name %s is already saved", name), ex);
+      throw new OutcomeException(format("Outcome with name %s is already saved", name));
     }
   }
 
@@ -174,23 +196,8 @@ public class PmsOutcomeServiceImpl implements PmsOutcomeService {
   }
 
   private String resolveUsingRuntimeId(@NotNull Ambiance ambiance, @NotNull RefObject refObject) {
-    String name = refObject.getName();
-    Query query =
-        query(where(OutcomeInstanceKeys.planExecutionId).is(ambiance.getPlanExecutionId()))
-            .addCriteria(where(OutcomeInstanceKeys.name).is(name))
-            .addCriteria(
-                where(OutcomeInstanceKeys.levelRuntimeIdIdx).in(ResolverUtils.prepareLevelRuntimeIdIndices(ambiance)));
-
-    List<OutcomeInstance> instances = mongoTemplate.find(query, OutcomeInstance.class);
-
-    // Multiple instances might be returned if the same name was saved at different levels/specificity.
-    OutcomeInstance instance = EmptyPredicate.isEmpty(instances)
-        ? null
-        : instances.stream().max(Comparator.comparing(OutcomeInstance::getLevelRuntimeIdIdx)).orElse(null);
-    if (instance == null) {
-      throw new OutcomeException(format("Could not resolve outcome with name '%s'", name));
-    }
-    return instance.getOutcomeJsonValue();
+    return resolveUsingLevelRuntimeIdx(
+        ambiance.getPlanExecutionId(), ResolverUtils.prepareLevelRuntimeIdIndices(ambiance), refObject);
   }
 
   private String resolveUsingProducerSetupId(@NotNull Ambiance ambiance, @NotNull RefObject refObject) {

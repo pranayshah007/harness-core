@@ -6,7 +6,6 @@
  */
 
 package io.harness.delegate.k8s;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -28,7 +27,10 @@ import static software.wings.beans.LogWeight.Bold;
 import static java.lang.String.format;
 import static java.util.Collections.emptyMap;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.configuration.KubernetesCliCommandType;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -49,6 +51,7 @@ import io.harness.k8s.ProcessResponse;
 import io.harness.k8s.kubectl.ApplyCommand;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.kubectl.KubectlFactory;
+import io.harness.k8s.manifest.DryRunOutput;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesConfig;
@@ -68,6 +71,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.zeroturnaround.exec.ProcessResult;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @OwnedBy(CDP)
 public class K8sDryRunManifestRequestHandler extends K8sRequestHandler {
@@ -173,7 +177,9 @@ public class K8sDryRunManifestRequestHandler extends K8sRequestHandler {
         logExecutableFailed(result, executionLogCallback);
         throw new KubernetesCliTaskRuntimeException(response, KubernetesCliCommandType.DRY_RUN);
       }
-      String dryRunManifestYaml = ManifestHelper.toYamlForLogs(this.resources);
+
+      List<DryRunOutput> dryRunOutputList = ManifestHelper.toDryRunOutput(this.resources);
+      String dryRunManifestYaml = ManifestHelper.toYamlOutput(dryRunOutputList);
       if (dryRunManifestYaml.getBytes(StandardCharsets.UTF_8).length >= MAX_VARIABLE_SIZE) {
         dryRunManifestYaml = "";
         executionLogCallback.saveExecutionLog(

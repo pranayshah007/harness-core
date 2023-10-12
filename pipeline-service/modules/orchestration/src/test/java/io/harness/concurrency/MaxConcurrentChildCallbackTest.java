@@ -21,7 +21,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.execution.NodeExecution;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.lock.PersistentLocker;
 import io.harness.lock.redis.RedisAcquiredLock;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -48,7 +48,7 @@ public class MaxConcurrentChildCallbackTest extends OrchestrationTestBase {
   @Mock WaitNotifyEngine waitNotifyEngine;
   @Mock PersistentLocker persistentLocker;
 
-  @Mock PmsGraphStepDetailsService nodeExecutionInfoService;
+  @Mock NodeExecutionInfoService nodeExecutionInfoService;
 
   MaxConcurrentChildCallback maxConcurrentChildCallback;
   @Before
@@ -58,13 +58,13 @@ public class MaxConcurrentChildCallbackTest extends OrchestrationTestBase {
     Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId(PLAN_EXECUTION_ID).build();
     maxConcurrentChildCallback = MaxConcurrentChildCallback.builder()
                                      .ambiance(ambiance)
+                                     .planExecutionId(ambiance.getPlanExecutionId())
                                      .parentNodeExecutionId(PARENT_NODE_EXECUTION_ID)
                                      .engine(engine)
                                      .nodeExecutionService(nodeExecutionService)
                                      .nodeExecutionInfoService(nodeExecutionInfoService)
                                      .maxConcurrency(2)
                                      .publisherName(PUBLISHER_NAME)
-                                     .waitNotifyEngine(waitNotifyEngine)
                                      .persistentLocker(persistentLocker)
                                      .build();
   }

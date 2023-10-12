@@ -18,6 +18,7 @@ import io.harness.beans.CreatedByType;
 import io.harness.beans.EmbeddedUser;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
@@ -25,9 +26,13 @@ import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.CreatedByAware;
 import io.harness.persistence.UuidAware;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
+import java.time.OffsetDateTime;
+import java.util.Date;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -84,6 +89,12 @@ public class ExportExecutionsRequest
 
   // For status = FAILED
   private String errorMessage;
+
+  @Builder.Default
+  @JsonIgnore
+  @FdTtlIndex
+  @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+  private Date validUntil = Date.from(OffsetDateTime.now().plusHours(12).toInstant());
 
   private long createdAt;
   private CreatedByType createdByType;

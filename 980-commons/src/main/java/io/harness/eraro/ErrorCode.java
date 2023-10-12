@@ -6,6 +6,7 @@
  */
 
 package io.harness.eraro;
+
 import static io.harness.eraro.Status.BAD_REQUEST;
 import static io.harness.eraro.Status.CONFLICT;
 import static io.harness.eraro.Status.EXPECTATION_FAILED;
@@ -31,7 +32,9 @@ import com.google.common.base.Splitter;
 /**
  * The enum Error codes.
  */
-
+// ###
+// WHEN NEW ENTRIES ARE ADDED, NEW SAME ENTRY MUST EXIST ON THE MESSAGE.PROPERTIES FILE ON THIS MODULE.
+//
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.DX)
 public enum ErrorCode {
@@ -637,6 +640,7 @@ public enum ErrorCode {
   INVALID_IDENTIFIER_REF,
 
   SPOTINST_NULL_ERROR,
+  SPOTNIST_REST_EXCEPTION,
 
   SCM_UNEXPECTED_ERROR,
   DUPLICATE_FILE_IMPORT,
@@ -657,6 +661,7 @@ public enum ErrorCode {
   AWS_STS_ERROR,
 
   FREEZE_EXCEPTION,
+  MISSING_EXCEPTION,
 
   DELEGATE_TASK_EXPIRED,
 
@@ -686,7 +691,8 @@ public enum ErrorCode {
   HTTP_SERVER_ERROR_RESPONSE,
   PIPELINE_UPDATE_EXCEPTION,
   SERVICENOW_REFRESH_TOKEN_ERROR,
-  PARAMETER_FIELD_CAST_ERROR;
+  PARAMETER_FIELD_CAST_ERROR,
+  ABORT_ALL_ALREADY_NG;
 
   private Status status = BAD_REQUEST;
   private String description;

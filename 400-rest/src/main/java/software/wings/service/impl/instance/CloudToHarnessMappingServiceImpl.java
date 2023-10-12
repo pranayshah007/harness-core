@@ -6,7 +6,6 @@
  */
 
 package software.wings.service.impl.instance;
-
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.cluster.entities.ClusterType.AWS_ECS;
 import static io.harness.ccm.cluster.entities.ClusterType.DIRECT_KUBERNETES;
@@ -15,9 +14,13 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.persistence.HQuery.excludeValidate;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.FeatureName;
 import io.harness.ccm.cluster.dao.ClusterRecordDao;
 import io.harness.ccm.cluster.entities.CEUserInfo;
 import io.harness.ccm.cluster.entities.Cluster;
@@ -36,6 +39,7 @@ import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.HQuery;
@@ -73,6 +77,8 @@ import software.wings.settings.SettingVariableTypes;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.ReadPreference;
+import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import java.time.Instant;
@@ -85,6 +91,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @Slf4j
 @TargetModule(HarnessModule._375_CE_GRAPHQL)
@@ -94,18 +101,21 @@ public class CloudToHarnessMappingServiceImpl implements CloudToHarnessMappingSe
   private final WingsPersistence wingsPersistence;
   private final DeploymentService deploymentService;
   private final CEMetadataRecordDao ceMetadataRecordDao;
+  private final FeatureFlagService featureFlagService;
   private ClusterRecordDao clusterRecordDao;
 
   private static final String EXC_MSG_USER_DOESNT_EXIST = "User does not exist";
 
   @Inject
   public CloudToHarnessMappingServiceImpl(HPersistence persistence, WingsPersistence wingsPersistence,
-      DeploymentService deploymentService, CEMetadataRecordDao ceMetadataRecordDao, ClusterRecordDao clusterRecordDao) {
+      DeploymentService deploymentService, CEMetadataRecordDao ceMetadataRecordDao, ClusterRecordDao clusterRecordDao,
+      FeatureFlagService featureFlagService) {
     this.persistence = persistence;
     this.wingsPersistence = wingsPersistence;
     this.deploymentService = deploymentService;
     this.ceMetadataRecordDao = ceMetadataRecordDao;
     this.clusterRecordDao = clusterRecordDao;
+    this.featureFlagService = featureFlagService;
   }
 
   @Override
@@ -508,8 +518,9 @@ public class CloudToHarnessMappingServiceImpl implements CloudToHarnessMappingSe
   @Override
   public List<UserGroup> listUserGroupsForAccount(String accountId) {
     List<UserGroup> userGroups = new ArrayList<>();
-    for (UserGroup userGroup :
-        wingsPersistence.createQuery(UserGroup.class).filter(UserGroupKeys.accountId, accountId).fetch()) {
+    for (UserGroup userGroup : wingsPersistence.createQuery(UserGroup.class)
+                                   .filter(UserGroupKeys.accountId, accountId)
+                                   .fetch(createFindOptionsToHitSecondaryNode(accountId))) {
       if (userGroup.getAccountPermissions() != null && userGroup.getMemberIds() != null) {
         userGroups.add(userGroup);
       }
@@ -534,5 +545,12 @@ public class CloudToHarnessMappingServiceImpl implements CloudToHarnessMappingSe
   @Override
   public List<ClusterRecord> listCeEnabledClusters(String accountId) {
     return clusterRecordDao.listCeEnabledClusters(accountId);
+  }
+
+  private FindOptions createFindOptionsToHitSecondaryNode(String accountId) {
+    if (accountId != null && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION_V2, accountId)) {
+      return new FindOptions().readPreference(ReadPreference.secondaryPreferred());
+    }
+    return new FindOptions();
   }
 }

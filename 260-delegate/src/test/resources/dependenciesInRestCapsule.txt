@@ -180,7 +180,7 @@ com.nimbusds:nimbus-jose-jwt:jar:8.19
 com.nimbusds:oauth2-oidc-sdk:jar:7.4
 org.asynchttpclient:async-http-client:jar:2.0.35
 com.novemberain:quartz-mongodb:jar:2.1.1
-com.offbytwo.jenkins:jenkins-client:jar:0.3.9
+com.offbytwo.jenkins:jenkins-client:jar:0.3.10
 com.palominolabs.metrics:metrics-guice:jar:3.2.0
 com.papertrail:profiler:jar:1.0.2
 com.rabbitmq:amqp-client:jar:4.8.0
@@ -434,10 +434,10 @@ org.atmosphere:wasync:jar:2.1.7
 org.atteo:evo-inflector:jar:1.2.2
 org.awaitility:awaitility:jar:2.0.0:test
 org.bitbucket.b_c:jose4j:jar:0.7.0
-org.bouncycastle:bcpg-jdk15on:jar:1.64
-org.bouncycastle:bcpkix-jdk15on:jar:1.64
-org.bouncycastle:bcprov-ext-jdk15on:jar:1.64
-org.bouncycastle:bcprov-jdk15on:jar:1.64
+org.bouncycastle:bcpg-jdk18on:jar:1.76
+org.bouncycastle:bcpkix-jdk18on:jar:1.76
+org.bouncycastle:bcprov-ext-jdk18on:jar:1.76
+org.bouncycastle:bcprov-jdk18on:jar:1.76
 org.checkerframework:checker-compat-qual:jar:2.5.5
 org.checkerframework:checker-qual:jar:2.10.0
 org.clojure:clojure:jar:1.9.0
@@ -480,9 +480,9 @@ org.eclipse.jetty:jetty-util-ajax:jar:9.4.41.v20210516
 org.eclipse.jetty:jetty-util:jar:9.4.41.v20210516
 org.eclipse.jetty:jetty-webapp:jar:9.4.41.v20210516
 org.eclipse.jetty:jetty-xml:jar:9.4.41.v20210516
-org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:jar:5.13.0.202109080827-r
-org.eclipse.jgit:org.eclipse.jgit.http.apache:jar:5.13.0.202109080827-r
-org.eclipse.jgit:org.eclipse.jgit:jar:5.13.0.202109080827-r
+org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:jar:6.6.1.202309021850-r
+org.eclipse.jgit:org.eclipse.jgit.http.apache:jar:6.6.1.202309021850-r
+org.eclipse.jgit:org.eclipse.jgit:jar:6.6.1.202309021850-r
 org.elasticsearch.client:elasticsearch-rest-client:jar:7.17.7
 org.elasticsearch.client:elasticsearch-rest-high-level-client:jar:7.17.7
 org.elasticsearch.plugin:aggs-matrix-stats-client:jar:7.17.7

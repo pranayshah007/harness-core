@@ -32,8 +32,9 @@ public class RetryAdviserRollbackParameters implements WithFailureTypes {
   List<Integer> waitIntervalList;
   int retryCount;
   RepairActionCode repairActionCodeAfterRetry;
-  FailureStrategyActionConfig retryActionConfig;
+  @Deprecated FailureStrategyActionConfig retryActionConfig;
   Set<FailureType> applicableFailureTypes;
+  ActionConfigPostRetry actionConfigPostRetry;
   // Only applicable if the repair action code after retry is set to IGNORE
   String nextNodeId;
   // Only applicable for finding

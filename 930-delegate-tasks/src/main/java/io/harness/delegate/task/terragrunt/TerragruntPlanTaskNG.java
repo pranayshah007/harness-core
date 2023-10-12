@@ -45,6 +45,7 @@ import io.harness.delegate.task.terraform.handlers.HarnessSMEncryptionDecryption
 import io.harness.delegate.utils.TaskExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.filesystem.FileIo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -62,14 +63,12 @@ import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 
 import com.google.inject.Inject;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jose4j.lang.JoseException;
@@ -107,8 +106,14 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
         ? planTaskParameters.getCommandUnitsProgress()
         : CommandUnitsProgress.builder().build();
 
-    String baseDir =
-        TerragruntTaskService.getBaseDir(planTaskParameters.getAccountId(), planTaskParameters.getEntityId());
+    String baseDir;
+    if (planTaskParameters.isUseUniqueDirectoryForBaseDir()) {
+      baseDir = TerragruntTaskService.getBaseDirWithUniqueDirectory(
+          planTaskParameters.getAccountId(), planTaskParameters.getEntityId());
+    } else {
+      baseDir = TerragruntTaskService.getBaseDir(planTaskParameters.getAccountId(), planTaskParameters.getEntityId());
+    }
+
     try (PlanJsonLogOutputStream planJsonLogOutputStream = taskService.getPlanJsonLogOutputStream();
          PlanLogOutputStream planLogOutputStream = new PlanLogOutputStream()) {
       taskService.mapGitConfig(planTaskParameters);
@@ -246,7 +251,11 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
       throw new TaskNGDataException(
           UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);
     } finally {
-      FileUtils.deleteQuietly(new File(baseDir));
+      try {
+        FileIo.deleteDirectoryAndItsContentIfExists(baseDir);
+      } catch (Exception e) {
+        log.warn(format("Failed to delete files in directory %s", baseDir), e);
+      }
     }
   }
   @Override

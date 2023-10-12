@@ -38,11 +38,11 @@ import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.cdng.manifest.yaml.HttpStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.OciHelmChartConfig;
+import io.harness.cdng.manifest.yaml.OciHelmChartStoreEcrConfig;
 import io.harness.cdng.manifest.yaml.OciHelmChartStoreGenericConfig;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
-import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfig;
 import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigType;
 import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigWrapper;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
@@ -51,9 +51,11 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
+import io.harness.delegate.beans.connector.helm.EcrHelmApiListTagsTaskParams;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.helm.OciHelmDockerApiListTagsTaskParams;
@@ -111,7 +113,7 @@ public class HelmChartServiceImpl implements HelmChartService {
 
   private HelmChartResponseDTO getHelmChartVersionDetails(String accountId, String orgId, String projectId,
       HelmChartManifestOutcome helmChartManifestOutcome, String connectorId, String chartName, String region,
-      String bucketName, String folderPath, String lastTag) {
+      String bucketName, String folderPath, String lastTag, String registryId) {
     NGAccess ngAccess =
         BaseNGAccess.builder().accountIdentifier(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build();
 
@@ -128,13 +130,12 @@ public class HelmChartServiceImpl implements HelmChartService {
     abstractions.put("owner", ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier());
 
     DelegateTaskRequest delegateTaskRequest = null;
-    String taskTypeName = null;
 
     if (helmChartManifestOutcome.getStore() instanceof OciHelmChartConfig) {
       IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(connectorId, accountId, orgId, projectId);
       ConnectorInfoDTO helmConnector = getConnector(connectorRef.getAccountIdentifier(),
           connectorRef.getOrgIdentifier(), connectorRef.getProjectIdentifier(), connectorRef.getIdentifier());
-      OciHelmConnectorDTO ociHelmConnectorDTO = (OciHelmConnectorDTO) helmConnector.getConnectorConfig();
+      ConnectorConfigDTO connectorConfigDTO = helmConnector.getConnectorConfig();
 
       String normalizedFolderPath = normalizeURI(folderPath);
       String normalizedChartName = normalizeURI(chartName);
@@ -142,24 +143,13 @@ public class HelmChartServiceImpl implements HelmChartService {
               + (EmptyPredicate.isNotEmpty(normalizedChartName) ? "/%s" : "%s"),
           normalizedFolderPath, normalizedChartName);
 
-      OciHelmDockerApiListTagsTaskParams ociHelmDockerApiListTagsTaskParams =
-          OciHelmDockerApiListTagsTaskParams.builder()
-              .ociHelmConnector(ociHelmConnectorDTO)
-              .encryptionDetails(k8sEntityHelper.getEncryptionDataDetails(helmConnector, ngAccess))
-              .chartName(updatedChartName)
-              .pageSize(PAGE_SIZE)
-              .lastTag(lastTag)
-              .build();
-
-      taskTypeName = TaskType.OCI_HELM_DOCKER_API_LIST_TAGS_TASK_NG.name();
-      delegateTaskRequest = DelegateTaskRequest.builder()
-                                .accountId(ngAccess.getAccountIdentifier())
-                                .taskType(taskTypeName)
-                                .taskParameters(ociHelmDockerApiListTagsTaskParams)
-                                .executionTimeout(java.time.Duration.ofSeconds(DEFAULT_TIMEOUT))
-                                .taskSetupAbstractions(abstractions)
-                                .taskSelectors(ociHelmConnectorDTO.getDelegateSelectors())
-                                .build();
+      if (connectorConfigDTO instanceof OciHelmConnectorDTO) {
+        delegateTaskRequest = getOciHelmGenericConfigDelegateTaskRequest(
+            helmConnector, ngAccess, updatedChartName, lastTag, connectorConfigDTO, abstractions);
+      } else if (connectorConfigDTO instanceof AwsConnectorDTO) {
+        delegateTaskRequest = getOciHelmEcrConfigDelegateTaskRequest(
+            helmConnector, ngAccess, chartName, lastTag, connectorConfigDTO, region, registryId, abstractions);
+      }
     } else {
       HelmVersion helmVersion = getHelmVersionBasedOnFF(helmChartManifestOutcome.getHelmVersion(), accountId);
 
@@ -187,7 +177,7 @@ public class HelmChartServiceImpl implements HelmChartService {
               .helmChartManifestDelegateConfig(helmChartManifestDelegateConfig)
               .build();
 
-      taskTypeName = TaskType.HELM_FETCH_CHART_VERSIONS_TASK_NG.name();
+      String taskTypeName = TaskType.HELM_FETCH_CHART_VERSIONS_TASK_NG.name();
       delegateTaskRequest = DelegateTaskRequest.builder()
                                 .accountId(ngAccess.getAccountIdentifier())
                                 .taskType(taskTypeName)
@@ -198,7 +188,7 @@ public class HelmChartServiceImpl implements HelmChartService {
                                 .build();
     }
 
-    DelegateResponseData delegateResponseData = null;
+    DelegateResponseData delegateResponseData;
     try {
       delegateResponseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
     } catch (DelegateServiceDriverException ex) {
@@ -225,8 +215,8 @@ public class HelmChartServiceImpl implements HelmChartService {
     }
   }
 
-  private StoreConfig getHelmChartStoreConfig(
-      String storeType, String connectorId, String region, String bucketName, String folderPath) {
+  private StoreConfig getHelmChartStoreConfig(String storeType, String connectorId, String region, String bucketName,
+      String folderPath, String ociHelmChartStoreConfigType, String registryId) {
     StoreConfig storeConfig;
 
     if (!ManifestStoreType.HelmAllRepo.contains(storeType)) {
@@ -293,12 +283,33 @@ public class HelmChartServiceImpl implements HelmChartService {
         break;
       }
       case ManifestStoreType.OCI: {
-        OciHelmChartStoreConfig ociHelmChartStoreConfig =
-            OciHelmChartStoreGenericConfig.builder().connectorRef(ParameterField.createValueField(connectorId)).build();
-        OciHelmChartStoreConfigWrapper ociHelmChartStoreConfigWrapper = OciHelmChartStoreConfigWrapper.builder()
-                                                                            .type(OciHelmChartStoreConfigType.GENERIC)
-                                                                            .spec(ociHelmChartStoreConfig)
-                                                                            .build();
+        OciHelmChartStoreConfigWrapper ociHelmChartStoreConfigWrapper = null;
+        if (isEmpty(ociHelmChartStoreConfigType)
+            || OciHelmChartStoreConfigType.GENERIC.getDisplayName().equals(ociHelmChartStoreConfigType)) {
+          OciHelmChartStoreGenericConfig ociHelmChartStoreGenericConfig =
+              OciHelmChartStoreGenericConfig.builder()
+                  .connectorRef(ParameterField.createValueField(connectorId))
+                  .build();
+          ociHelmChartStoreConfigWrapper = OciHelmChartStoreConfigWrapper.builder()
+                                               .type(OciHelmChartStoreConfigType.GENERIC)
+                                               .spec(ociHelmChartStoreGenericConfig)
+                                               .build();
+        } else if (OciHelmChartStoreConfigType.ECR.getDisplayName().equals(ociHelmChartStoreConfigType)) {
+          if (isEmpty(region)) {
+            throw new InvalidRequestException("query param region: must not be null");
+          }
+          OciHelmChartStoreEcrConfig ociHelmChartStoreEcrConfig =
+              OciHelmChartStoreEcrConfig.builder()
+                  .connectorRef(ParameterField.createValueField(connectorId))
+                  .region(ParameterField.createValueField(region))
+                  .registryId(ParameterField.createValueField(registryId))
+                  .build();
+
+          ociHelmChartStoreConfigWrapper = OciHelmChartStoreConfigWrapper.builder()
+                                               .type(OciHelmChartStoreConfigType.ECR)
+                                               .spec(ociHelmChartStoreEcrConfig)
+                                               .build();
+        }
         storeConfig = OciHelmChartConfig.builder()
                           .config(ParameterField.createValueField(ociHelmChartStoreConfigWrapper))
                           .build();
@@ -326,8 +337,9 @@ public class HelmChartServiceImpl implements HelmChartService {
   @Override
   public HelmChartResponseDTO getHelmChartVersionDetails(String accountId, String orgId, String projectId,
       String connectorId, String chartName, String region, String bucketName, String folderPath, String lastTag,
-      String storeType, String helmVersion) {
-    StoreConfig storeConfig = getHelmChartStoreConfig(storeType, connectorId, region, bucketName, folderPath);
+      String storeType, String ociHelmChartStoreConfigType, String helmVersion, String registryId) {
+    StoreConfig storeConfig = getHelmChartStoreConfig(
+        storeType, connectorId, region, bucketName, folderPath, ociHelmChartStoreConfigType, registryId);
 
     HelmChartManifestOutcome helmChartManifestOutcome = HelmChartManifestOutcome.builder()
                                                             .chartName(ParameterField.createValueField(chartName))
@@ -337,19 +349,19 @@ public class HelmChartServiceImpl implements HelmChartService {
                                                             .build();
 
     return getHelmChartVersionDetails(accountId, orgId, projectId, helmChartManifestOutcome, connectorId, chartName,
-        region, bucketName, folderPath, lastTag);
+        region, bucketName, folderPath, lastTag, registryId);
   }
 
   @Override
   public HelmChartResponseDTO getHelmChartVersionDetailsV2(String accountId, String orgId, String projectId,
       String serviceRef, String manifestPath, String connectorId, String chartName, String region, String bucketName,
-      String folderPath, String lastTag) {
+      String folderPath, String lastTag, String registryId) {
     HelmManifestInternalDTO helmChartManifest =
         locateManifestInService(accountId, orgId, projectId, serviceRef, manifestPath);
     HelmChartManifestOutcome helmChartManifestOutcome = getHelmChartManifestOutcome(helmChartManifest);
 
     return getHelmChartVersionDetails(accountId, orgId, projectId, helmChartManifestOutcome, connectorId, chartName,
-        region, bucketName, folderPath, lastTag);
+        region, bucketName, folderPath, lastTag, registryId);
   }
 
   @Override
@@ -475,5 +487,52 @@ public class HelmChartServiceImpl implements HelmChartService {
     }
 
     return result.toString();
+  }
+
+  private DelegateTaskRequest getOciHelmGenericConfigDelegateTaskRequest(ConnectorInfoDTO helmConnector,
+      NGAccess ngAccess, String updatedChartName, String lastTag, ConnectorConfigDTO connectorConfigDTO,
+      Map<String, String> abstractions) {
+    OciHelmConnectorDTO ociHelmConnectorDTO = (OciHelmConnectorDTO) connectorConfigDTO;
+    OciHelmDockerApiListTagsTaskParams taskParameters =
+        OciHelmDockerApiListTagsTaskParams.builder()
+            .ociHelmConnector(ociHelmConnectorDTO)
+            .encryptionDetails(k8sEntityHelper.getEncryptionDataDetails(helmConnector, ngAccess))
+            .chartName(updatedChartName)
+            .pageSize(PAGE_SIZE)
+            .lastTag(lastTag)
+            .build();
+    String taskTypeName = TaskType.OCI_HELM_DOCKER_API_LIST_TAGS_TASK_NG.name();
+    return DelegateTaskRequest.builder()
+        .accountId(ngAccess.getAccountIdentifier())
+        .taskType(taskTypeName)
+        .taskParameters(taskParameters)
+        .executionTimeout(java.time.Duration.ofSeconds(DEFAULT_TIMEOUT))
+        .taskSetupAbstractions(abstractions)
+        .taskSelectors(ociHelmConnectorDTO.getDelegateSelectors())
+        .build();
+  }
+
+  private DelegateTaskRequest getOciHelmEcrConfigDelegateTaskRequest(ConnectorInfoDTO helmConnector, NGAccess ngAccess,
+      String chartName, String lastTag, ConnectorConfigDTO connectorConfigDTO, String region, String registryId,
+      Map<String, String> abstractions) {
+    EcrHelmApiListTagsTaskParams taskParameters =
+        EcrHelmApiListTagsTaskParams.builder()
+            .encryptionDetails(k8sEntityHelper.getEncryptionDataDetails(helmConnector, ngAccess))
+            .chartName(chartName)
+            .awsConnectorDTO((AwsConnectorDTO) connectorConfigDTO)
+            .region(region)
+            .registryId(registryId)
+            .pageSize(PAGE_SIZE)
+            .lastTag(lastTag)
+            .build();
+    String taskTypeName = TaskType.ECR_HELM_API_LIST_TAGS_TASK.name();
+    return DelegateTaskRequest.builder()
+        .accountId(ngAccess.getAccountIdentifier())
+        .taskType(taskTypeName)
+        .taskParameters(taskParameters)
+        .executionTimeout(java.time.Duration.ofSeconds(DEFAULT_TIMEOUT))
+        .taskSetupAbstractions(abstractions)
+        .taskSelectors(((AwsConnectorDTO) connectorConfigDTO).getDelegateSelectors())
+        .build();
   }
 }

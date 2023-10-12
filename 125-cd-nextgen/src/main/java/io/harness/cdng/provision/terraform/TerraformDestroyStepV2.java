@@ -7,6 +7,7 @@
 
 package io.harness.cdng.provision.terraform;
 
+import static io.harness.beans.FeatureName.CDS_TF_TG_SKIP_ERROR_LOGS_COLORING;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.DESTROY;
 import static io.harness.cdng.provision.terraform.TerraformStepHelper.TF_BACKEND_CONFIG_FILE;
 import static io.harness.cdng.provision.terraform.TerraformStepHelper.TF_CONFIG_FILES;
@@ -315,6 +316,11 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
 
     builder.skipTerraformRefresh(skipRefreshCommand);
 
+    if (spec.getProviderCredential() != null) {
+      builder.providerCredentialDelegateInfo(
+          helper.getProviderCredentialDelegateInfo(spec.getProviderCredential(), ambiance));
+    }
+
     return builder.currentStateFileId(helper.getLatestFileId(entityId))
         .taskType(TFTaskType.DESTROY)
         .terraformCommand(TerraformCommand.DESTROY)
@@ -338,7 +344,8 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
         .timeoutInMillis(
             StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
         .useOptimizedTfPlan(true)
-        .isTerraformCloudCli(isTerraformCloudCli);
+        .isTerraformCloudCli(isTerraformCloudCli)
+        .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING));
   }
 
   private TerraformTaskNGParametersBuilder getTerraformTaskNGParametersBuilderInheritFromPlan(
@@ -358,6 +365,12 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
 
     TerraformInheritOutput inheritOutput =
         helper.getSavedInheritOutput(provisionerIdentifier, DESTROY.name(), ambiance);
+
+    if (inheritOutput.getProviderCredentialConfig() != null) {
+      TerraformProviderCredential providerCredential =
+          helper.toTerraformProviderCredential(inheritOutput.getProviderCredentialConfig());
+      builder.providerCredentialDelegateInfo(helper.getProviderCredentialDelegateInfo(providerCredential, ambiance));
+    }
 
     return builder.workspace(inheritOutput.getWorkspace())
         .configFile(helper.getGitFetchFilesConfig(
@@ -383,7 +396,8 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
             helper.tfPlanEncryptionOnManager(accountId, inheritOutput.getEncryptionConfig()))
         .timeoutInMillis(
             StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
-        .useOptimizedTfPlan(true);
+        .useOptimizedTfPlan(true)
+        .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING));
   }
 
   private TerraformTaskNGParametersBuilder getTerraformTaskNGParametersBuilderInheritFromApply(
@@ -402,6 +416,12 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
 
     TerraformConfig terraformConfig = helper.getLastSuccessfulApplyConfig(stepParameters, ambiance);
 
+    if (terraformConfig.getProviderCredentialConfig() != null) {
+      TerraformProviderCredential providerCredential =
+          helper.toTerraformProviderCredential(terraformConfig.getProviderCredentialConfig());
+      builder.providerCredentialDelegateInfo(helper.getProviderCredentialDelegateInfo(providerCredential, ambiance));
+    }
+
     builder.workspace(terraformConfig.getWorkspace())
         .varFileInfos(helper.prepareTerraformVarFileInfo(terraformConfig.getVarFileConfigs(), ambiance, true))
         .backendConfig(terraformConfig.getBackendConfig())
@@ -415,6 +435,7 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
                 : terraformConfig.getEnvironmentVariables())
         .timeoutInMillis(
             StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
+        .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
         .useOptimizedTfPlan(true);
     if (terraformConfig.getConfigFiles() != null) {
       builder.configFile(helper.getGitFetchFilesConfig(

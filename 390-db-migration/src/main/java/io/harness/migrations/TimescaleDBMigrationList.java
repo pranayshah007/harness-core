@@ -6,9 +6,11 @@
  */
 
 package io.harness.migrations;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.migrations.timescaledb.AddAccountIdStatusIndexToDeployment;
 import io.harness.migrations.timescaledb.AddAlertTypeColumnToBudgetAlerts;
 import io.harness.migrations.timescaledb.AddAzureColumnAnomaly;
@@ -59,6 +61,8 @@ import io.harness.migrations.timescaledb.CreateDeploymentStageTable;
 import io.harness.migrations.timescaledb.CreateDeploymentStepTable;
 import io.harness.migrations.timescaledb.CreateEnvironmentTable;
 import io.harness.migrations.timescaledb.CreateExecutionInterruptTable;
+import io.harness.migrations.timescaledb.CreateHarnessDateBinGraphqlFunction;
+import io.harness.migrations.timescaledb.CreateHarnessTimeBucketListFunction;
 import io.harness.migrations.timescaledb.CreateIndexOnKubernetesUtilizationData;
 import io.harness.migrations.timescaledb.CreateInfraDefinitionTable;
 import io.harness.migrations.timescaledb.CreateInstanceStatsDayTable;
@@ -92,6 +96,7 @@ import java.util.List;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(HarnessTeam.PL)
 @UtilityClass
 public class TimescaleDBMigrationList {
@@ -175,6 +180,8 @@ public class TimescaleDBMigrationList {
         .add(Pair.of(76, BaseTimeScaleDBMigration.class))
         .add(Pair.of(77, AddInfraIdsToDeploymentsEnvIdsToInfraTable.class))
         .add(Pair.of(78, AddIsDeletedColumnToAllTimescaleEntities.class))
+        .add(Pair.of(79, CreateHarnessDateBinGraphqlFunction.class))
+        .add(Pair.of(80, CreateHarnessTimeBucketListFunction.class))
         .build();
   }
 }

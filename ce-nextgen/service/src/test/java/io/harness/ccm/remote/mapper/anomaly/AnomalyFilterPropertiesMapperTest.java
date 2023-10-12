@@ -41,6 +41,7 @@ public class AnomalyFilterPropertiesMapperTest extends CategoryTest {
   List<String> k8sClusterNames = Arrays.asList("k8sCluster1");
   List<String> k8sNamespaces = Arrays.asList("k8sNamespace1");
   List<String> k8sWorkloadNames = Arrays.asList("k8sWorkloadName1");
+  List<String> K8sServiceNames = Arrays.asList("K8sServiceNames1");
   List<String> gcpProjects = Arrays.asList("gcpProject1");
   List<String> gcpProducts = Arrays.asList("gcpProduct1");
   List<String> gcpSKUDescriptions = Arrays.asList("gcpSKUDescription1");
@@ -76,6 +77,7 @@ public class AnomalyFilterPropertiesMapperTest extends CategoryTest {
                                             .k8sClusterNames(k8sClusterNames)
                                             .k8sNamespaces(k8sNamespaces)
                                             .k8sWorkloadNames(k8sWorkloadNames)
+                                            .K8sServiceNames(K8sServiceNames)
                                             .gcpProjects(gcpProjects)
                                             .gcpProducts(gcpProducts)
                                             .gcpSKUDescriptions(gcpSKUDescriptions)
@@ -101,6 +103,7 @@ public class AnomalyFilterPropertiesMapperTest extends CategoryTest {
     assertThat(filterPropertiesDTO.getK8sClusterNames()).isEqualTo(k8sClusterNames);
     assertThat(filterPropertiesDTO.getK8sNamespaces()).isEqualTo(k8sNamespaces);
     assertThat(filterPropertiesDTO.getK8sWorkloadNames()).isEqualTo(k8sWorkloadNames);
+    assertThat(filterPropertiesDTO.getK8sServiceNames()).isEqualTo(K8sServiceNames);
     assertThat(filterPropertiesDTO.getGcpProjects()).isEqualTo(gcpProjects);
     assertThat(filterPropertiesDTO.getGcpProducts()).isEqualTo(gcpProducts);
     assertThat(filterPropertiesDTO.getGcpSKUDescriptions()).isEqualTo(gcpSKUDescriptions);
@@ -129,6 +132,7 @@ public class AnomalyFilterPropertiesMapperTest extends CategoryTest {
                                                   .k8sClusterNames(k8sClusterNames)
                                                   .k8sNamespaces(k8sNamespaces)
                                                   .k8sWorkloadNames(k8sWorkloadNames)
+                                                  .k8sServiceNames(K8sServiceNames)
                                                   .gcpProjects(gcpProjects)
                                                   .gcpProducts(gcpProducts)
                                                   .gcpSKUDescriptions(gcpSKUDescriptions)
@@ -153,6 +157,7 @@ public class AnomalyFilterPropertiesMapperTest extends CategoryTest {
     assertThat(filterProperties.getK8sClusterNames()).isEqualTo(k8sClusterNames);
     assertThat(filterProperties.getK8sNamespaces()).isEqualTo(k8sNamespaces);
     assertThat(filterProperties.getK8sWorkloadNames()).isEqualTo(k8sWorkloadNames);
+    assertThat(filterProperties.getK8sServiceNames()).isEqualTo(K8sServiceNames);
     assertThat(filterProperties.getGcpProjects()).isEqualTo(gcpProjects);
     assertThat(filterProperties.getGcpProducts()).isEqualTo(gcpProducts);
     assertThat(filterProperties.getGcpSKUDescriptions()).isEqualTo(gcpSKUDescriptions);

@@ -26,6 +26,7 @@ import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.EntityType;
+import io.harness.TemplateServiceConfiguration;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -83,6 +84,7 @@ import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.organization.remote.OrganizationClient;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -172,6 +174,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
   @Inject private GovernanceService governanceService;
   @Inject private PmsFeatureFlagService pmsFeatureFlagService;
+  @Inject private TemplateServiceConfiguration templateServiceConfiguration;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Template [%s] of versionLabel [%s] under Project[%s], Organization [%s] already exists";
@@ -244,8 +247,10 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
     // apply templates to template yaml for validation and populating module info
     applyTemplatesToYamlAndValidateSchema(templateEntity);
-
-    List<EntityDetailProtoDTO> referredEntities = templateReferenceHelper.calculateTemplateReferences(templateEntity);
+    List<EntityDetailProtoDTO> referredEntities = new ArrayList<>();
+    if (!HarnessYamlVersion.isV1(templateEntity.getHarnessVersion())) {
+      referredEntities = templateReferenceHelper.calculateTemplateReferences(templateEntity);
+    }
 
     try {
       // Check if this is template identifier first entry, for marking it as stable template.
@@ -359,17 +364,20 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   }
 
   private void applyTemplatesToYamlAndValidateSchema(TemplateEntity templateEntity) {
+    String yamlVersion = templateEntity.getHarnessVersion();
     TemplateMergeResponseDTO templateMergeResponseDTO = null;
     templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(templateEntity.getAccountId(),
         templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(),
-        YamlUtils.readAsJsonNode(templateEntity.getYaml()), false, false, false);
+        YamlUtils.readAsJsonNode(templateEntity.getYaml()), false, false, false, yamlVersion);
     populateLinkedTemplatesModules(templateEntity, templateMergeResponseDTO);
     checkLinkedTemplateAccess(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
         templateEntity.getProjectIdentifier(), templateMergeResponseDTO);
 
-    // validate schema on resolved yaml to validate template inputs value as well.
-    ngTemplateSchemaService.validateYamlSchemaInternal(
-        templateEntity.withYaml(templateMergeResponseDTO.getMergedPipelineYaml()));
+    if (HarnessYamlVersion.V0.equals(templateEntity.getHarnessVersion())) {
+      // validate schema on resolved yaml to validate template inputs value as well.
+      ngTemplateSchemaService.validateYamlSchemaInternal(
+          templateEntity.withYaml(templateMergeResponseDTO.getMergedPipelineYaml()));
+    }
   }
 
   private void populateLinkedTemplatesModules(
@@ -396,8 +404,10 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     // apply templates to template yaml for validations and populating module info
     applyTemplatesToYamlAndValidateSchema(templateEntity);
     // calculate the references, returns error if any errors occur while fetching references
-    List<EntityDetailProtoDTO> referredEntities = templateReferenceHelper.calculateTemplateReferences(templateEntity);
-
+    List<EntityDetailProtoDTO> referredEntities = new ArrayList<>();
+    if (!HarnessYamlVersion.isV1(templateEntity.getHarnessVersion())) {
+      referredEntities = templateReferenceHelper.calculateTemplateReferences(templateEntity);
+    }
     TemplateEntity template = null;
 
     template = transactionHelper.performTransaction(() -> {
@@ -1701,6 +1711,12 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
   @Override
   public GovernanceMetadata validateGovernanceRules(TemplateEntity templateEntity) {
+    if (!templateServiceConfiguration.isEnableOpaEvaluation()) {
+      return GovernanceMetadata.newBuilder()
+          .setDeny(false)
+          .setMessage("Template OPA is disabled. Configure \"enableOpaRule: true\" in config.yaml file")
+          .build();
+    }
     return governanceService.evaluateGovernancePoliciesForTemplate(templateEntity.getYaml(),
         templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(),
         OpaConstants.OPA_EVALUATION_ACTION_SAVE, OpaConstants.OPA_EVALUATION_TYPE_TEMPLATE);

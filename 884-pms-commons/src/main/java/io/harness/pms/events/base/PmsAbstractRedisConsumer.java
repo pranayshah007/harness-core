@@ -22,7 +22,6 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
-import io.harness.eventsframework.impl.redis.RedisAbstractConsumer;
 import io.harness.eventsframework.impl.redis.RedisTraceConsumer;
 import io.harness.logging.AutoLogContext;
 import io.harness.queue.QueueController;
@@ -122,7 +121,7 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
         redisConsumer.acknowledge(messageId);
       }
     }
-    if (messages.size() < ((RedisAbstractConsumer) this.redisConsumer).getBatchSize()) {
+    if (messages.size() < this.redisConsumer.getBatchSize()) {
       // Adding thread sleep when the events read are less than the batch-size. This way when the load is high, consumer
       // will query the events quickly. And in case of low load, thread will sleep for some time.
       TimeUnit.MILLISECONDS.sleep(THREAD_SLEEP_TIME_IN_MILLIS);
@@ -140,7 +139,6 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
     AtomicBoolean success = new AtomicBoolean(true);
     if (messageListener.isProcessable(message) && !isAlreadyProcessed(message)) {
       log.info("Read message with message id {} from redis", message.getId());
-      insertMessageInCache(message);
       long readTs = System.currentTimeMillis();
       executorService.submit(() -> {
         try (AutoLogContext ignore = new MessageLogContext(message)) {
@@ -156,18 +154,10 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
     return success.get();
   }
 
-  private void insertMessageInCache(Message message) {
-    try {
-      eventsCache.put(String.format(CACHE_KEY, this.getClass().getSimpleName(), message.getId()), 1);
-    } catch (Exception ex) {
-      log.error("Exception occurred while storing message id in cache", ex);
-    }
-  }
-
   private boolean isAlreadyProcessed(Message message) {
     try {
       String key = String.format(CACHE_KEY, this.getClass().getSimpleName(), message.getId());
-      boolean isProcessed = eventsCache.containsKey(key);
+      boolean isProcessed = !eventsCache.putIfAbsent(key, 1);
       if (isProcessed) {
         log.warn(String.format("Duplicate redis notification received to consumer [%s] with messageId [%s]",
             this.getClass().getSimpleName(), message.getId()));

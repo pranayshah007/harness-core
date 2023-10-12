@@ -19,7 +19,14 @@ public abstract class AnalysisStateExecutor<T extends AnalysisState> {
   public abstract AnalysisState handleRunning(T analysisState);
   public abstract AnalysisState handleSuccess(T analysisState);
   public abstract AnalysisState handleTransition(T analysisState);
-  public abstract AnalysisState handleRetry(T analysisState);
+  public AnalysisState handleRetry(T analysisState) {
+    if (analysisState.getRetryCount() >= getMaxRetry()) {
+      analysisState.setStatus(AnalysisStatus.IGNORED);
+    } else {
+      return handleRerun(analysisState);
+    }
+    return analysisState;
+  }
   public void handleFinalStatuses(T analysisState) {
     // no-op - designed to override
   }

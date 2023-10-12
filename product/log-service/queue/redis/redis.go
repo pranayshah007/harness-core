@@ -7,6 +7,8 @@ package redis
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -28,8 +30,8 @@ const (
 	usePrefixParam = "prefix"
 )
 
-func NewWithClient(cmdable *redis.Cmdable) *Redis {
-	return &Redis{Client: *cmdable}
+func NewWithClient(cmdable redis.Cmdable) *Redis {
+	return &Redis{Client: cmdable}
 }
 
 func (r Redis) Produce(ctx context.Context, stream, key, zipKey string, values []string) error {
@@ -40,7 +42,7 @@ func (r Redis) Produce(ctx context.Context, stream, key, zipKey string, values [
 	if err != nil {
 		return err
 	}
-	_, err = r.Client.Expire(ctx, key, time.Second*30).Result()
+	_, err = r.Client.Expire(ctx, key, time.Minute*10).Result()
 
 	if err != nil {
 		return err
@@ -55,12 +57,40 @@ func (r Redis) Consume(ctx context.Context, stream string, consumerGroup string,
 		Group:    consumerGroup,
 		Consumer: name,
 		Count:    1,
-		Block:    0,
-		NoAck:    true,
+		Block:    5 * time.Second,
+		NoAck:    false,
 	}).Result()
 
 	if err != nil {
-		return nil, err
+		if strings.Contains(err.Error(), "redis: nil") {
+			return nil, err
+		}
+		//re-create stream and try to consume again
+		fmt.Println("re-creating stream due to error", err)
+		createErr := r.Create(ctx, stream, consumerGroup)
+		if createErr == nil || strings.Contains(createErr.Error(), "already exists") {
+			streams, err = r.Client.XReadGroup(ctx, &redis.XReadGroupArgs{
+				Streams:  []string{stream, ">"},
+				Group:    consumerGroup,
+				Consumer: name,
+				Count:    1,
+				Block:    5 * time.Second,
+				NoAck:    false,
+			}).Result()
+			if err != nil {
+				return nil, fmt.Errorf("error while Re-Reading from stream: %w", err)
+			}
+		} else {
+			return nil, fmt.Errorf("error while Re-creating stream: %w", createErr)
+		}
+	}
+
+	if len(streams) == 0 {
+		return nil, nil
+	}
+
+	if len(streams[0].Messages) == 0 {
+		return nil, fmt.Errorf("no messages in the first slice") // No messages in the first slice
 	}
 
 	// after consume delete message from the stream

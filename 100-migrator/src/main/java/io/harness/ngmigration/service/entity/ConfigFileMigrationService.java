@@ -96,6 +96,7 @@ public class ConfigFileMigrationService extends NgMigrationService {
                                     .type(NGMigrationEntityType.CONFIG_FILE)
                                     .build();
     Set<CgEntityId> children = new HashSet<>();
+
     if (configFile.isEncrypted() && StringUtils.isNotBlank(configFile.getEncryptedFileId())) {
       children.add(CgEntityId.builder().id(configFile.getEncryptedFileId()).type(NGMigrationEntityType.SECRET).build());
     }
@@ -104,16 +105,7 @@ public class ConfigFileMigrationService extends NgMigrationService {
       children.addAll(secretRefUtils.getSecretRefFromExpressions(
           configFile.getAccountId(), MigratorExpressionUtils.extractAll(new String(fileContent))));
     }
-    // Add service as a child if the config file is a service template config file
-    if (StringUtils.isNotBlank(configFile.getParentConfigFileId())
-        && EntityType.SERVICE_TEMPLATE.equals(configFile.getEntityType())) {
-      ConfigFile parentConfigFile = configService.get(configFile.getAppId(), configFile.getParentConfigFileId());
-      if (EntityType.SERVICE.equals(parentConfigFile.getEntityType())
-          && StringUtils.isNotBlank(parentConfigFile.getEntityId())) {
-        children.add(
-            CgEntityId.builder().id(parentConfigFile.getEntityId()).type(NGMigrationEntityType.SERVICE).build());
-      }
-    }
+
     if (EntityType.SERVICE_TEMPLATE.equals(configFile.getEntityType())
         && StringUtils.isNotBlank(configFile.getEntityId())) {
       children.add(CgEntityId.builder().type(SERVICE_TEMPLATE).id(configFile.getEntityId()).build());
@@ -237,8 +229,9 @@ public class ConfigFileMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected boolean isNGEntityExists() {
-    return true;
+  protected boolean isNGEntityExists(MigrationContext migrationContext) {
+    NGMigrationEntityType rootType = migrationContext.getRoot();
+    return NGMigrationEntityType.APPLICATION == rootType;
   }
 
   public List<ConfigFileWrapper> getConfigFiles(MigrationContext migrationContext, Set<CgEntityId> configFileIds) {

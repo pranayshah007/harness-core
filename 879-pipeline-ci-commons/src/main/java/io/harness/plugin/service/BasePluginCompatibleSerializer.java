@@ -24,8 +24,10 @@ import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public abstract class BasePluginCompatibleSerializer implements ProtobufStepSerializer<PluginCompatibleStep> {
   @Inject PluginService pluginService;
@@ -45,18 +47,20 @@ public abstract class BasePluginCompatibleSerializer implements ProtobufStepSeri
     List<String> outputVarNames = getOutputVariables(pluginCompatibleStep);
 
     StepContext stepContext = StepContext.newBuilder().setExecutionTimeoutSecs(timeout).build();
-    Map<String, String> envVarMap = pluginService.getPluginCompatibleEnvVariables(
+    Map<String, String> envVarMap = getPluginCompatibleEnvVariables(
         pluginCompatibleStep, identifier, timeout, ambiance, StageInfraDetails.Type.K8, true, true);
     envVarMap.put(DRONE_STAGE_MACHINE, podName);
-    PluginStep pluginStep = PluginStep.newBuilder()
-                                .setContainerPort(port)
-                                .setImage(getImageName(pluginCompatibleStep, accountId))
-                                .addAllEntrypoint(getEntryPoint(pluginCompatibleStep, accountId, os))
-                                .setContext(stepContext)
-                                .addAllEnvVarOutputs(outputVarNames)
-                                .putAllEnvironment(envVarMap)
-                                .setArtifactFilePath(PLUGIN_ARTIFACT_FILE_VALUE)
-                                .build();
+    PluginStep pluginStep =
+        PluginStep.newBuilder()
+            .setContainerPort(port)
+            .setImage(getImageName(pluginCompatibleStep, accountId))
+            .addAllEntrypoint(
+                Optional.ofNullable(getEntryPoint(pluginCompatibleStep, accountId, os)).orElse(Collections.emptyList()))
+            .setContext(stepContext)
+            .addAllEnvVarOutputs(outputVarNames)
+            .putAllEnvironment(envVarMap)
+            .setArtifactFilePath(PLUGIN_ARTIFACT_FILE_VALUE)
+            .build();
 
     return UnitStep.newBuilder()
         .setAccountId(accountId)
@@ -77,4 +81,11 @@ public abstract class BasePluginCompatibleSerializer implements ProtobufStepSeri
   public abstract List<String> getEntryPoint(PluginCompatibleStep pluginCompatibleStep, String accountId, OSType os);
 
   public abstract String getDelegateCallbackToken();
+
+  protected Map<String, String> getPluginCompatibleEnvVariables(PluginCompatibleStep stepInfo, String identifier,
+      long timeout, Ambiance ambiance, StageInfraDetails.Type infraType, boolean isMandatory,
+      boolean isContainerizedPlugin) {
+    return pluginService.getPluginCompatibleEnvVariables(
+        stepInfo, identifier, timeout, ambiance, StageInfraDetails.Type.K8, true, true);
+  }
 }

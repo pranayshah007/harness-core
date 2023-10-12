@@ -6,26 +6,27 @@
  */
 
 package io.harness.pms.plan.execution.handlers;
-
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 
+import io.harness.AbortInfoHelper;
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.events.OrchestrationEventEmitter;
-import io.harness.engine.execution.PipelineStageResponseData;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.observers.OrchestrationEndObserver;
 import io.harness.engine.observers.PlanStatusUpdateObserver;
 import io.harness.execution.PlanExecution;
+import io.harness.execution.PlanExecution.PlanExecutionKeys;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.OrchestrationEvent;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.execution.utils.StatusUtils;
-import io.harness.pms.notification.orchestration.helpers.AbortInfoHelper;
 import io.harness.pms.pipeline.observer.OrchestrationObserverUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
@@ -42,13 +43,13 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelineStatusUpdateEventHandler implements PlanStatusUpdateObserver, OrchestrationEndObserver {
   private final PlanExecutionService planExecutionService;
   private final PmsExecutionSummaryRepository pmsExecutionSummaryRepository;
   private OrchestrationEventEmitter eventEmitter;
   private WaitNotifyEngine waitNotifyEngine;
-  private AbortInfoHelper abortInfoHelper;
 
   @Inject
   public PipelineStatusUpdateEventHandler(PlanExecutionService planExecutionService,
@@ -58,44 +59,19 @@ public class PipelineStatusUpdateEventHandler implements PlanStatusUpdateObserve
     this.pmsExecutionSummaryRepository = pmsExecutionSummaryRepository;
     this.eventEmitter = eventEmitter;
     this.waitNotifyEngine = waitNotifyEngine;
-    this.abortInfoHelper = abortInfoHelper;
   }
 
   @Override
   public void onPlanStatusUpdate(Ambiance ambiance) {
-    String planExecutionId = ambiance.getPlanExecutionId();
-    PlanExecution planExecution = planExecutionService.get(planExecutionId);
-
-    ExecutionStatus status = ExecutionStatus.getExecutionStatus(planExecution.getStatus());
-
-    Update update = new Update();
-
-    update.set(PlanExecutionSummaryKeys.internalStatus, planExecution.getStatus());
-    update.set(PlanExecutionSummaryKeys.status, status);
-    if (status == ExecutionStatus.ABORTED) {
-      update.set(PlanExecutionSummaryKeys.abortedBy, abortInfoHelper.fetchAbortedByInfoFromInterrupts(planExecutionId));
-    }
-    if (StatusUtils.isFinalStatus(status.getEngineStatus())) {
-      update.set(PlanExecutionSummaryKeys.endTs, planExecution.getEndTs());
-    }
-
-    Criteria criteria = Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionId);
-    Query query = new Query(criteria);
-    pmsExecutionSummaryRepository.update(query, update);
-
-    performActionOnTerminalStatus(status.getEngineStatus(), planExecutionId);
-  }
-
-  private void performActionOnTerminalStatus(Status status, String planExecutionId) {
-    if (StatusUtils.isFinalStatus(status)) {
-      // This is required to notify parent pipeline in Pipeline chaining
-      waitNotifyEngine.doneWith(planExecutionId, PipelineStageResponseData.builder().status(status).build());
-    }
+    // Do nothing. PlanExecutionSummaryStatus updates are happening via the GraphGenerationServiceImpl.
   }
 
   @Override
   public void onEnd(Ambiance ambiance, Status endStatus) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
+    PlanExecution planExecution = planExecutionService.getWithFieldsIncluded(
+        ambiance.getPlanExecutionId(), Set.of(PlanExecutionKeys.endTs, PlanExecutionKeys.status));
+    // todo: remove executedModules from summary.
     Optional<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntity =
         pmsExecutionSummaryRepository
             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndPipelineDeletedNot(accountId,
@@ -112,10 +88,9 @@ public class PipelineStatusUpdateEventHandler implements PlanStatusUpdateObserve
           pmsExecutionSummaryRepository.update(query, update);
       for (String module : executedModules) {
         if (!module.equalsIgnoreCase(ModuleType.PMS.name())) {
-          eventEmitter.emitEvent(
-              buildEndEvent(ambiance, module, pipelineExecutionSummaryUpdatedEntity.getStatus().getEngineStatus(),
-                  pipelineExecutionSummaryUpdatedEntity.getModuleInfo().get(module),
-                  pipelineExecutionSummaryUpdatedEntity.getEndTs()));
+          eventEmitter.emitEvent(buildEndEvent(ambiance, module,
+              ExecutionStatus.getExecutionStatus(planExecution.getStatus()).getEngineStatus(),
+              pipelineExecutionSummaryUpdatedEntity.getModuleInfo().get(module), planExecution.getEndTs()));
         }
       }
     }

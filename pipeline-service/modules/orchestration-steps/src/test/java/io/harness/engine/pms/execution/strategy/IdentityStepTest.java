@@ -7,6 +7,7 @@
 
 package io.harness.engine.pms.execution.strategy;
 
+import static io.harness.execution.NodeExecution.builder;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SHALINI;
 
@@ -28,6 +29,7 @@ import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.engine.pms.execution.strategy.identity.IdentityStep;
 import io.harness.engine.pms.steps.identity.IdentityStepParameters;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
@@ -42,6 +44,7 @@ import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -81,8 +84,7 @@ public class IdentityStepTest extends CategoryTest {
     ChildExecutableResponse expectedChildExecutable =
         ChildExecutableResponse.newBuilder().setChildNodeId("childId").build();
     ExecutableResponse executableResponse = ExecutableResponse.newBuilder().setChild(expectedChildExecutable).build();
-    NodeExecution nodeExecution =
-        NodeExecution.builder().uuid("nodeUuid").executableResponse(executableResponse).build();
+    NodeExecution nodeExecution = builder().uuid("nodeUuid").executableResponse(executableResponse).build();
     doReturn(nodeExecution).when(nodeExecutionService).getWithFieldsIncluded(any(), any());
 
     ChildExecutableResponse childExecutableResponse = identityStep.obtainChild(ambiance, identityParams, null);
@@ -99,8 +101,10 @@ public class IdentityStepTest extends CategoryTest {
         IdentityStepParameters.builder().originalNodeExecutionId("nodeUuid").build();
 
     // nodeExecution formation
-    NodeExecution nodeExecution = NodeExecution.builder().uuid("nodeUuid").status(Status.ABORTED).build();
-    doReturn(nodeExecution).when(nodeExecutionService).get(anyString());
+    NodeExecution nodeExecution = builder().uuid("nodeUuid").status(Status.ABORTED).build();
+    doReturn(nodeExecution)
+        .when(nodeExecutionService)
+        .getWithFieldsIncluded("nodeUuid", Collections.singleton(NodeExecutionKeys.status));
 
     StepResponse stepResponse = identityStep.handleChildResponse(ambiance, identityParams, null);
     verify(pmsOutcomeService, times(1)).cloneForRetryExecution(ambiance, "nodeUuid");
@@ -119,8 +123,7 @@ public class IdentityStepTest extends CategoryTest {
     ChildrenExecutableResponse expectedChildrenExecutable = ChildrenExecutableResponse.newBuilder().build();
     ExecutableResponse executableResponse =
         ExecutableResponse.newBuilder().setChildren(expectedChildrenExecutable).build();
-    NodeExecution nodeExecution =
-        NodeExecution.builder().uuid("nodeUuid").executableResponse(executableResponse).build();
+    NodeExecution nodeExecution = builder().uuid("nodeUuid").executableResponse(executableResponse).build();
     doReturn(nodeExecution).when(nodeExecutionService).get(anyString());
 
     ChildrenExecutableResponse childrenExecutableResponse = identityStep.obtainChildren(ambiance, identityParams, null);
@@ -137,8 +140,10 @@ public class IdentityStepTest extends CategoryTest {
         IdentityStepParameters.builder().originalNodeExecutionId("nodeUuid").build();
 
     // nodeExecution formation
-    NodeExecution nodeExecution = NodeExecution.builder().uuid("nodeUuid").status(Status.ABORTED).build();
-    doReturn(nodeExecution).when(nodeExecutionService).get(anyString());
+    NodeExecution nodeExecution = builder().uuid("nodeUuid").status(Status.ABORTED).build();
+    doReturn(nodeExecution)
+        .when(nodeExecutionService)
+        .getWithFieldsIncluded("nodeUuid", Collections.singleton(NodeExecutionKeys.status));
 
     StepResponse stepResponse = identityStep.handleChildrenResponse(ambiance, identityParams, null);
     verify(pmsOutcomeService, times(1)).cloneForRetryExecution(ambiance, "nodeUuid");

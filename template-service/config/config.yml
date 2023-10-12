@@ -155,18 +155,13 @@ managerClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
-pipelineServiceClientConfig:
-  baseUrl: http://localhost:12001/api/
-  connectTimeOutSeconds: 15
-  readTimeOutSeconds: 15
-
-pipelineServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
-
 allowedParallelStages: ${ALLOWED_PARALLEL_STAGES:-25}
 
 enableOpentelemetry: false
 
 policyManagerSecret: secret
+
+enableOpaEvaluation: ${ENABLE_OPA_EVALUATION:-false}
 
 opaClientConfig:
   baseUrl: http://localhost:3000
@@ -190,7 +185,7 @@ featureFlagConfig:
   
 staticSchemaFileURL: ${STATIC_SCHEMA_FILE_URL:-"https://raw.githubusercontent.com/harness/harness-schema/main/%s/%s"}
 
-distributedLockImplementation: MONGO
+distributedLockImplementation: REDIS
 
 segmentConfiguration:
   enabled: ${SEGMENT_ENABLED:-false}

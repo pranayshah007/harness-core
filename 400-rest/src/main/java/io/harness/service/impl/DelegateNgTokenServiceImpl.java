@@ -8,6 +8,7 @@
 package io.harness.service.impl;
 
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
+import static io.harness.delegate.beans.DelegateTokenStatus.ACTIVE;
 import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
 import static io.harness.delegate.utils.DelegateServiceConstants.STREAM_DELEGATE;
 
@@ -50,6 +51,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.validation.executable.ValidateOnExecution;
@@ -95,7 +97,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
             .owner(owner)
             .name(tokenName.trim())
             .isNg(true)
-            .status(DelegateTokenStatus.ACTIVE)
+            .status(ACTIVE)
             .value(token)
             .encryptedTokenId(delegateSecretManager.encrypt(accountId, token, tokenIdentifier.trim()))
             .createdByNgUser(SourcePrincipalContextBuilder.getSourcePrincipal())
@@ -174,6 +176,28 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
     return null;
   }
 
+  @Override
+  public DelegateTokenDetails getDefaultTokenOrOldestActiveDelegateToken(String accountId, DelegateEntityOwner owner) {
+    DelegateTokenDetails defaultTokenInScope = getDelegateToken(accountId, getDefaultTokenName(owner), true);
+    if (Objects.nonNull(defaultTokenInScope) && defaultTokenInScope.getStatus().equals(DelegateTokenStatus.ACTIVE)) {
+      return defaultTokenInScope;
+    }
+    DelegateToken delegateToken = persistence.createQuery(DelegateToken.class)
+                                      .field(DelegateTokenKeys.accountId)
+                                      .equal(accountId)
+                                      .field(DelegateTokenKeys.owner)
+                                      .equal(owner)
+                                      .field(DelegateTokenKeys.status)
+                                      .equal(ACTIVE)
+                                      .order(DelegateTokenKeys.createdAt)
+                                      .get();
+
+    if (delegateToken != null) {
+      return getDelegateTokenDetails(delegateToken, true);
+    }
+    return null;
+  }
+
   // some old ng delegates are using accountKey as token, and the value of acccountKey is same as default token in cg
   // which is not encoded. So we should not decode it.
   @Override
@@ -196,7 +220,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
       query = query.filter(DelegateTokenKeys.owner, owner);
     }
 
-    Query<DelegateToken> queryExistsActive = query.filter(DelegateTokenKeys.status, DelegateTokenStatus.ACTIVE);
+    Query<DelegateToken> queryExistsActive = query.filter(DelegateTokenKeys.status, ACTIVE);
     Optional<DelegateToken> token = queryExistsActive.asList().stream().findAny();
     if (token.isPresent() && skipIfExists) {
       log.info("Active default Delegate NG Token already exists for account {}, organization {} and project {}",
@@ -209,7 +233,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
             .setOnInsert(DelegateTokenKeys.uuid, UUIDGenerator.generateUuid())
             .setOnInsert(DelegateTokenKeys.accountId, accountId)
             .set(DelegateTokenKeys.name, getDefaultTokenName(owner))
-            .set(DelegateTokenKeys.status, DelegateTokenStatus.ACTIVE)
+            .set(DelegateTokenKeys.status, ACTIVE)
             .set(DelegateTokenKeys.isNg, true)
             .set(DelegateTokenKeys.value, tokenValue);
     String tokenIdentifier = getDefaultTokenName(owner);
@@ -271,7 +295,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
   public void autoRevokeExpiredTokens() {
     List<DelegateToken> delegateTokenList = persistence.createQuery(DelegateToken.class)
                                                 .filter(DelegateTokenKeys.isNg, true)
-                                                .filter(DelegateTokenKeys.status, DelegateTokenStatus.ACTIVE)
+                                                .filter(DelegateTokenKeys.status, ACTIVE)
                                                 .field(DelegateTokenKeys.revokeAfter)
                                                 .lessThan(System.currentTimeMillis())
                                                 .project(DelegateTokenKeys.accountId, true)
@@ -363,9 +387,8 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
                                              .project(DelegateTokenKeys.name, true)
                                              .project(DelegateTokenKeys.status, true)
                                              .asList();
-    delegateTokens.forEach(delegateToken
-        -> delegateTokenStatusMap.put(
-            delegateToken.getName(), DelegateTokenStatus.ACTIVE.equals(delegateToken.getStatus())));
+    delegateTokens.forEach(
+        delegateToken -> delegateTokenStatusMap.put(delegateToken.getName(), ACTIVE.equals(delegateToken.getStatus())));
     return delegateTokenStatusMap;
   }
 

@@ -158,6 +158,10 @@ public class MigratorExpressionUtils {
           k.replace("ARTIFACT_PLACEHOLDER", "rollbackArtifact"), v.replace("ARTIFACT_PLACEHOLDER", "rollbackArtifact"));
     });
 
+    context.put("artifact.metadata.s3_bucket", "<+artifact.metadata.get(\"s3_bucket\")>");
+    context.put("artifact.metadata.s3_key", "<+artifact.metadata.get(\"s3_key\")>");
+    context.put("artifact.metadata.s3_secret", "<+artifact.metadata.get(\"s3_secret\")>");
+
     context.put("artifact.label", new ArtifactLabelMigratorFunctor());
     context.put("rollbackArtifact.label", new ArtifactLabelMigratorFunctor());
     context.put("artifact.metadata.getSHA()", "artifact.metadata.SHA");
@@ -226,6 +230,13 @@ public class MigratorExpressionUtils {
     context.put("infra.pcf.space", "<+infra.space>");
     context.put("host.pcfElement.applicationId", "<+pcf.newAppGuid>");
     context.put("host.pcfElement.displayName", "<+pcf.newAppName>");
+
+    context.put("BACKUP_PATH", "<+variable.backupPath>");
+    context.put("RUNTIME_PATH", "<+variable.runtimePath>");
+    context.put("STAGING_PATH", "<+variable.stagingPath>");
+    context.put("WINGS_BACKUP_PATH", "<+variable.backupPath>");
+    context.put("WINGS_RUNTIME_PATH", "<+variable.runtimePath>");
+    context.put("WINGS_STAGING_PATH", "<+variable.stagingPath>");
 
     if (overrides != null && EmptyPredicate.isNotEmpty(overrides.getCustomExpressions())) {
       context.putAll(overrides.getCustomExpressions());

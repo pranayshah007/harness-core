@@ -6,35 +6,38 @@
  */
 
 package io.harness.engine.expressions.functors;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static java.util.Arrays.asList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.expressions.NodeExecutionsCache;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.LateBindingValue;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.ambiance.Level;
-import io.harness.pms.execution.utils.AmbianceUtils;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Value;
+import org.apache.commons.jexl3.JexlEngine;
 
 /**
  * NodeExecutionValue implements a LateBindingValue which matches expressions starting from startNodeExecution. If we
  * want to resolve fully qualified expressions, startNodeExecution should be null. OOtherwise, it should be the node
  * execution from where we want to start expression evaluation. It supports step parameters and outcomes in expressions.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDC)
 @Value
 @Builder
@@ -42,9 +45,11 @@ public class NodeExecutionValue implements LateBindingValue {
   NodeExecutionsCache nodeExecutionsCache;
   PmsOutcomeService pmsOutcomeService;
   PmsSweepingOutputService pmsSweepingOutputService;
+  NodeExecutionInfoService nodeExecutionInfoService;
   Ambiance ambiance;
   NodeExecution startNodeExecution;
   Set<NodeExecutionEntityType> entityTypes;
+  JexlEngine engine;
 
   @Override
   public Object bind() {
@@ -54,10 +59,12 @@ public class NodeExecutionValue implements LateBindingValue {
         .nodeExecutionsCache(nodeExecutionsCache)
         .pmsOutcomeService(pmsOutcomeService)
         .pmsSweepingOutputService(pmsSweepingOutputService)
+        .nodeExecutionInfoService(nodeExecutionInfoService)
         .ambiance(ambiance)
         .nodeExecution(startNodeExecution)
         .entityTypes(entityTypes)
         .children(map)
+        .engine(engine)
         .build();
   }
 
@@ -74,20 +81,21 @@ public class NodeExecutionValue implements LateBindingValue {
   }
 
   private boolean canAdd(NodeExecution nodeExecution) {
-    Level level = Objects.requireNonNull(AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()));
-    return !level.getSkipExpressionChain() && EmptyPredicate.isNotEmpty(level.getIdentifier())
+    return !nodeExecution.getSkipExpressionChain() && EmptyPredicate.isNotEmpty(nodeExecution.getIdentifier())
         && !nodeExecution.getOldRetry();
   }
 
   private void addToMap(Map<String, Object> map, NodeExecution nodeExecution) {
-    String key = AmbianceUtils.obtainStepIdentifier(nodeExecution.getAmbiance());
+    String key = nodeExecution.getIdentifier();
     NodeExecutionValue childValue = NodeExecutionValue.builder()
                                         .nodeExecutionsCache(nodeExecutionsCache)
                                         .pmsOutcomeService(pmsOutcomeService)
                                         .pmsSweepingOutputService(pmsSweepingOutputService)
+                                        .nodeExecutionInfoService(nodeExecutionInfoService)
                                         .ambiance(ambiance)
                                         .startNodeExecution(nodeExecution)
                                         .entityTypes(entityTypes)
+                                        .engine(engine)
                                         .build();
     map.compute(key, (k, v) -> {
       if (v == null) {

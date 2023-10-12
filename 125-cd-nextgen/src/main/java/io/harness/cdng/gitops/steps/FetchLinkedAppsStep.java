@@ -316,8 +316,8 @@ public class FetchLinkedAppsStep extends CdTaskExecutable<GitOpsFetchAppTaskResp
     String connectorId = gitStoreConfig.getConnectorRef().getValue();
     ConnectorInfoDTO connectorDTO = cdStepHelper.getConnector(connectorId, ambiance);
 
-    GitStoreDelegateConfig gitStoreDelegateConfig = cdStepHelper.getGitStoreDelegateConfig(
-        gitStoreConfig, connectorDTO, manifestOutcome, getParameterFieldValue(gitStoreConfig.getPaths()), ambiance);
+    GitStoreDelegateConfig gitStoreDelegateConfig = cdStepHelper.getGitStoreDelegateConfigWithApiAccess(
+        gitStoreConfig, connectorDTO, getParameterFieldValue(gitStoreConfig.getPaths()), ambiance, manifestOutcome);
 
     return GitFetchFilesConfig.builder()
         .identifier(manifestOutcome.getIdentifier())

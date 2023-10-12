@@ -6,6 +6,7 @@
  */
 
 package io.harness;
+
 import static io.harness.cache.CacheBackend.CAFFEINE;
 import static io.harness.cache.CacheBackend.NOOP;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -195,6 +196,13 @@ public class OrchestrationStepsRule implements MethodRule, InjectorRuleMixin, Mo
       @Singleton
       public LogStreamingServiceConfiguration getLogStreamingServiceConfiguration() {
         return LogStreamingServiceConfiguration.builder().baseUrl(logStreamingBaseURL).build();
+      }
+
+      @Provides
+      @Singleton
+      @Named("publishAdviserEventForCustomAdvisers")
+      public Boolean getPublishAdviserEventForCustomAdvisers() {
+        return true;
       }
     });
     modules.add(new ProviderModule() {

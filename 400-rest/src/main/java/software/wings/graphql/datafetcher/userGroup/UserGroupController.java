@@ -6,7 +6,6 @@
  */
 
 package software.wings.graphql.datafetcher.userGroup;
-
 import static io.harness.beans.FeatureName.SPG_GRAPHQL_VERIFY_APPLICATION_FROM_USER_GROUP;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.SearchFilter.Operator.IN;
@@ -15,9 +14,12 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
@@ -71,6 +73,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 @Singleton
 @TargetModule(HarnessModule._380_CG_GRAPHQL)
@@ -359,7 +362,7 @@ public class UserGroupController {
                                      .addFilter("_id", IN, userGroupIds.toArray())
                                      .addFilter("accountId", SearchFilter.Operator.EQ, accountId)
                                      .build();
-    PageResponse<UserGroup> res = userGroupService.list(accountId, req, false, null, null);
+    PageResponse<UserGroup> res = userGroupService.list(accountId, req, false, null, null, false);
     List<String> idsPresent = res.stream().map(UserGroup::getUuid).collect(Collectors.toList());
     idsInput.removeAll(idsPresent);
     if (isNotEmpty(idsInput)) {

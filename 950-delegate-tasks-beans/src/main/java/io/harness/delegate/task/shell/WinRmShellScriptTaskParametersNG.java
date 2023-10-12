@@ -9,6 +9,9 @@ package io.harness.delegate.task.shell;
 
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.task.TaskParameters;
@@ -28,6 +31,8 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @Value
 @Builder
 public class WinRmShellScriptTaskParametersNG implements TaskParameters, ExecutionCapabilityDemander {
@@ -46,11 +51,13 @@ public class WinRmShellScriptTaskParametersNG implements TaskParameters, Executi
   SecretSpecDTO sshKeySpecDTO;
   List<EncryptedDataDetail> encryptionDetails;
   String host;
+  Long sessionTimeout;
 
   // WinRm specific fields
   boolean disableCommandEncoding;
   boolean winrmScriptCommandSplit;
   boolean useWinRMKerberosUniqueCacheFile;
+  boolean disableWinRmEnvVarEscaping;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

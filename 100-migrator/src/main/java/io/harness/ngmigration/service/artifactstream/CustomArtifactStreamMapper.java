@@ -56,13 +56,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.util.Strings;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class CustomArtifactStreamMapper implements ArtifactStreamMapper {
   @Override
   public PrimaryArtifact getArtifactDetails(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, ArtifactStream artifactStream,
-      Map<CgEntityId, NGYamlFile> migratedEntities) {
+      Map<CgEntityId, NGYamlFile> migratedEntities, String version) {
     CustomArtifactStream customArtifactStream = (CustomArtifactStream) artifactStream;
     if (isNotEmpty(customArtifactStream.getTemplateUuid())) {
       TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();
@@ -161,12 +162,16 @@ public class CustomArtifactStreamMapper implements ArtifactStreamMapper {
     ObjectMapper mapper = new ObjectMapper();
 
     ArrayNode inputs = mapper.createArrayNode();
-    if (isNotEmpty(template.getVariables())) {
-      template.getVariables().stream().filter(v -> StringUtils.isBlank(v.getValue())).forEach(v -> {
+    List<Variable> customArtifactTemplateVariables = template.getVariables();
+    if (isNotEmpty(customArtifactTemplateVariables)) {
+      Map<String, String> templateVariableMap =
+          customArtifactTemplateVariables.stream().collect(Collectors.toMap(Variable::getName, Variable::getValue));
+
+      customArtifactTemplateVariables.forEach(v -> {
         ObjectNode variable = mapper.createObjectNode();
         variable.put("name", v.getName());
         variable.put("type", "String");
-        variable.put("value", varMap.getOrDefault(v.getName(), RUNTIME_INPUT));
+        variable.put("value", varMap.getOrDefault(v.getName(), getDefaultValueFromTemplate(v, templateVariableMap)));
         inputs.add(variable);
       });
     }
@@ -178,5 +183,12 @@ public class CustomArtifactStreamMapper implements ArtifactStreamMapper {
     templateInputs.put("type", "CustomArtifact");
     templateInputs.set("spec", spec);
     return templateInputs;
+  }
+
+  private String getDefaultValueFromTemplate(Variable variable, Map<String, String> customArtifactTemplateVariables) {
+    if (Strings.isBlank(customArtifactTemplateVariables.get(variable.getName()))) {
+      return RUNTIME_INPUT;
+    }
+    return customArtifactTemplateVariables.get(variable.getName());
   }
 }

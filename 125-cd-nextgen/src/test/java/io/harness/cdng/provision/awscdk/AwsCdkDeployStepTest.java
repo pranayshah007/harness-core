@@ -8,6 +8,7 @@
 package io.harness.cdng.provision.awscdk;
 
 import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_STACK_NAMES;
+import static io.harness.cdng.provision.awscdk.AwsCdkHelper.CDK_OUTPUT_OUTCOME_NAME;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,6 +28,7 @@ import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.provision.ProvisionerOutputHelper;
 import io.harness.cdng.provision.awscdk.beans.AwsCdkConfig;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepMapOutput;
@@ -43,6 +45,7 @@ import io.harness.pms.sdk.core.plugin.ContainerUnitStepUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.product.ci.engine.proto.UnitStep;
 import io.harness.rule.Owner;
@@ -84,6 +87,7 @@ public class AwsCdkDeployStepTest extends CategoryTest {
   @Mock private PluginUtils pluginUtils;
   @Mock private AwsCdkHelper awsCdkStepHelper;
   @Mock private AwsCdkConfigDAL awsCdkConfigDAL;
+  @Mock private ProvisionerOutputHelper provisionerOutputHelper;
 
   @InjectMocks AwsCdkDeployStep awsCdkDeployStep;
 
@@ -140,7 +144,7 @@ public class AwsCdkDeployStepTest extends CategoryTest {
   @Test
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
-  public void testHandleAsyncResponse() {
+  public void testGetAnyOutComeForStep() {
     Ambiance ambiance = getAmbiance();
     ContainerResource containerResource =
         ContainerResource.builder()
@@ -170,19 +174,19 @@ public class AwsCdkDeployStepTest extends CategoryTest {
                     .stackNames(ParameterField.<List<String>>builder().value(Arrays.asList("stack1", "stack2")).build())
                     .build())
             .build();
-    ArgumentCaptor<Map<String, ResponseData>> captor = ArgumentCaptor.forClass(Map.class);
     ArgumentCaptor<AwsCdkConfig> configCaptor = ArgumentCaptor.forClass(AwsCdkConfig.class);
+    StepMapOutput stepMapOutput = StepMapOutput.builder().build();
+    Map<String, String> stepMapOutputMap = new HashMap();
+    stepMapOutputMap.put("GIT_COMMIT_ID", "testvaluee");
+    stepMapOutputMap.put(CDK_OUTPUT_OUTCOME_NAME, "testvaluee");
+    stepMapOutput.setMap(stepMapOutputMap);
     StepStatusTaskResponseData stepStatusTaskResponseData =
         StepStatusTaskResponseData.builder()
-            .stepStatus(StepStatus.builder()
-                            .stepExecutionStatus(StepExecutionStatus.SUCCESS)
-                            .output(StepMapOutput.builder().output("test", "notEncodedValue").build())
-                            .build())
+            .stepStatus(
+                StepStatus.builder().stepExecutionStatus(StepExecutionStatus.SUCCESS).output(stepMapOutput).build())
             .build();
     Map<String, ResponseData> responseDataMap = new HashMap<>();
     Map<String, String> processedOutput = new HashMap<>();
-    processedOutput.put("GIT_COMMIT_ID", "testvaluee");
-    processedOutput.put("CDK_OUTPUT", "testvaluee");
     Map<String, String> envVariables = new HashMap<>();
     envVariables.put("key1", "value1");
     responseDataMap.put("test", stepStatusTaskResponseData);
@@ -193,16 +197,13 @@ public class AwsCdkDeployStepTest extends CategoryTest {
     doReturn(processedOutput).when(awsCdkStepHelper).processOutput(any());
     doReturn(envVariables).when(awsCdkStepHelper).getCommonEnvVariables(any(), any(), any());
 
-    awsCdkDeployStep.handleAsyncResponse(ambiance, stepElementParameters, responseDataMap);
+    StepOutcome outcome = awsCdkDeployStep.getAnyOutComeForStep(ambiance, stepElementParameters, responseDataMap);
 
-    verify(containerStepExecutionResponseHelper).handleAsyncResponseInternal(any(), captor.capture(), any());
     verify(awsCdkConfigDAL).saveAwsCdkConfig(configCaptor.capture());
-    StepMapOutput stepMapOutput =
-        (StepMapOutput) ((StepStatusTaskResponseData) captor.getValue().get("test")).getStepStatus().getOutput();
-    assertThat(stepMapOutput.getMap().get("GIT_COMMIT_ID")).isEqualTo("testvaluee");
-    assertThat(stepMapOutput.getMap().get("CDK_OUTPUT")).isEqualTo("testvaluee");
+    assertThat(outcome.getOutcome()).isEqualTo(processedOutput);
     verify(awsCdkConfigDAL).getRollbackAwsCdkConfig(any(), any());
     verify(awsCdkStepHelper).processOutput(any());
+    verify(provisionerOutputHelper).saveProvisionerOutputByStepIdentifier(any(), any());
 
     AwsCdkConfig awsCdkConfig = configCaptor.getValue();
     assertThat(awsCdkConfig.getAccountId()).isEqualTo("test-account");

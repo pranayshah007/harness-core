@@ -8,6 +8,7 @@
 package io.harness.cdng.manifest.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -16,7 +17,8 @@ import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfig;
 import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigWrapper;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
-import io.harness.filters.ConnectorRefExtractorHelper;
+import io.harness.cdng.manifest.yaml.summary.ManifestStoreInfo.ManifestStoreInfoBuilder;
+import io.harness.cdng.visitor.helpers.SecretConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.SkipAutoEvaluation;
@@ -45,7 +47,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @EqualsAndHashCode(callSuper = false)
 @JsonTypeName(ManifestStoreType.OCI)
-@SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
+@SimpleVisitorHelper(helperClass = SecretConnectorRefExtractorHelper.class)
 @TypeAlias("OciHelmChartConfig")
 @RecasterAlias("io.harness.cdng.manifest.yaml.OciHelmChartConfig")
 @FieldNameConstants(innerTypeName = "OciHelmChartConfigKeys")
@@ -118,5 +120,10 @@ public class OciHelmChartConfig implements StoreConfig, Visitable, WithConnector
       invalidParameters.add(OciHelmChartConfigKeys.basePath);
     }
     return invalidParameters;
+  }
+
+  @Override
+  public void populateManifestStoreInfo(ManifestStoreInfoBuilder manifestStoreInfoBuilder) {
+    manifestStoreInfoBuilder.folderPath(getParameterFieldValue(this.getBasePath()));
   }
 }

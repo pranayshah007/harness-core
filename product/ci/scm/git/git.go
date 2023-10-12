@@ -35,7 +35,7 @@ const (
 )
 
 func RefreshToken(ctx context.Context, request *pb.RefreshTokenRequest, log *zap.SugaredLogger) (out *pb.RefreshTokenResponse, err error) {
-	log.Infow("RefreshToken starting:", request.Endpoint, "ClientID:", request.ClientID)
+	log.Infow("RefreshToken starting:", "Endpoint:", request.Endpoint, "ClientID:", request.ClientID)
 
 	before := &scm.Token{
 		Refresh: request.RefreshToken,
@@ -51,12 +51,12 @@ func RefreshToken(ctx context.Context, request *pb.RefreshTokenRequest, log *zap
 	after, err := r.Token(ctx)
 
 	if err != nil {
-		log.Errorw("RefreshToken failure:", request.Endpoint, "Error:", err)
+		log.Errorw("RefreshToken failure:", "Endpoint", request.Endpoint, "Error:", err)
 		return nil, err
 	}
 
 	if after == nil {
-		log.Errorw("RefreshToken failure result:", request.Endpoint)
+		log.Errorw("RefreshToken failure result:", "Endpoint", request.Endpoint)
 		return nil, err
 	}
 
@@ -442,7 +442,7 @@ func ListBranches(ctx context.Context, request *pb.ListBranchesRequest, log *zap
 	out := &pb.ListBranchesResponse{
 		Branches: branches,
 		Pagination: &pb.PageResponse{
-			Next: int32(response.Page.Next),
+			Next:    int32(response.Page.Next),
 			NextUrl: response.Page.NextURL,
 		},
 	}
@@ -490,7 +490,7 @@ func ListBranchesWithDefault(ctx context.Context, request *pb.ListBranchesWithDe
 		out := &pb.ListBranchesWithDefaultResponse{
 			Branches: branches,
 			Pagination: &pb.PageResponse{
-				Next: int32(response.Page.Next),
+				Next:    int32(response.Page.Next),
 				NextUrl: response.Page.NextURL,
 			},
 		}
@@ -519,7 +519,7 @@ func ListBranchesWithDefault(ctx context.Context, request *pb.ListBranchesWithDe
 		Branches:      branches,
 		DefaultBranch: userRepoResponse.GetRepo().GetBranch(),
 		Pagination: &pb.PageResponse{
-			Next: int32(response.Page.Next),
+			Next:    int32(response.Page.Next),
 			NextUrl: response.Page.NextURL,
 		},
 	}
@@ -594,7 +594,7 @@ func CompareCommits(ctx context.Context, request *pb.CompareCommitsRequest, log 
 
 func GetAuthenticatedUser(ctx context.Context, request *pb.GetAuthenticatedUserRequest, log *zap.SugaredLogger) (out *pb.GetAuthenticatedUserResponse, err error) {
 	start := time.Now()
-	log.Infow("GetAuthenticatedUser starting")
+	log.Infow("GetAuthenticatedUser starting", "provider", request.GetProvider())
 
 	client, err := gitclient.GetGitClient(*request.GetProvider(), log)
 	if err != nil {
@@ -627,7 +627,7 @@ func GetAuthenticatedUser(ctx context.Context, request *pb.GetAuthenticatedUserR
 
 func GetUserRepos(ctx context.Context, request *pb.GetUserReposRequest, log *zap.SugaredLogger) (out *pb.GetUserReposResponse, err error) {
 	start := time.Now()
-	log.Infow("GetUserRepos starting")
+	log.Infow("GetUserRepos starting", "provider", request.GetProvider())
 
 	client, err := gitclient.GetGitClient(*request.GetProvider(), log)
 
@@ -648,12 +648,12 @@ func GetUserRepos(ctx context.Context, request *pb.GetUserReposRequest, log *zap
 			if request.GetVersion() == 2 {
 				repoList, response, err = client.Repositories.ListV2(ctx, scm.RepoListOptions{
 					RepoSearchTerm: getRepoFilterParams(request),
-					ListOptions: scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())},
-					})
+					ListOptions:    scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())},
+				})
 			} else {
 				repoList, response, err = client.Repositories.List(ctx, scm.ListOptions{Page: int(request.GetPagination().GetPage()), Size: int(request.GetPagination().GetSize())})
 			}
-			
+
 		}
 		if err != nil {
 			log.Errorw("GetUserRepos failure", "provider", gitclient.GetProvider(*request.GetProvider()), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
@@ -674,7 +674,7 @@ func GetUserRepos(ctx context.Context, request *pb.GetUserReposRequest, log *zap
 			Status: int32(response.Status),
 			Repos:  convertRepoList(repoList),
 			Pagination: &pb.PageResponse{
-				Next: int32(response.Page.Next),
+				Next:    int32(response.Page.Next),
 				NextUrl: response.Page.NextURL,
 			},
 		}
@@ -904,6 +904,7 @@ func findCommitWithRetry(ctx context.Context, log *zap.SugaredLogger, client *sc
 		}
 		break
 	}
+
 	return commit, res, err
 }
 
@@ -951,7 +952,7 @@ func isGithubApp(p *pb.Provider) (out bool) {
 	}
 }
 
-func getRepoFilterParams(request *pb.GetUserReposRequest) (out scm.RepoSearchTerm){
+func getRepoFilterParams(request *pb.GetUserReposRequest) (out scm.RepoSearchTerm) {
 	if nil == request.GetRepoFilterParams() {
 		return scm.RepoSearchTerm{
 			RepoName: "",
@@ -965,7 +966,7 @@ func getRepoFilterParams(request *pb.GetUserReposRequest) (out scm.RepoSearchTer
 	}
 }
 
-func getBranchFilterParams(request *pb.ListBranchesWithDefaultRequest) (string){
+func getBranchFilterParams(request *pb.ListBranchesWithDefaultRequest) string {
 	if nil == request.GetBranchFilterParams() {
 		return ""
 	} else {

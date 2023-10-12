@@ -507,6 +507,7 @@ public class SignupServiceImpl implements SignupService {
   private AccountDTO createAccount(SignupDTO dto) {
     return createAccount(dto, null);
   }
+
   private AccountDTO createAccount(SignupDTO dto, String accountId) {
     String username = dto.getEmail().split("@")[0];
     AccountDTO accountDTO = AccountDTO.builder()
@@ -591,8 +592,20 @@ public class SignupServiceImpl implements SignupService {
       throw e;
     }
 
+    dto.setEmail(dto.getEmail().toLowerCase());
     SignupDTO signupDTO = SignupDTO.builder().email(dto.getEmail()).utmInfo(dto.getUtmInfo()).build();
     AccountDTO account = createAccount(signupDTO);
+    return oAuthSignup(dto, account);
+  }
+
+  @Override
+  public UserInfo oAuthSignupForDS(OAuthSignupDTO dto, String accountId) {
+    SignupDTO signupDTO = SignupDTO.builder().email(dto.getEmail()).utmInfo(dto.getUtmInfo()).build();
+    AccountDTO account = createAccount(signupDTO, accountId);
+    return oAuthSignup(dto, account);
+  }
+
+  private UserInfo oAuthSignup(OAuthSignupDTO dto, AccountDTO account) {
     UserInfo oAuthUser = createOAuthUser(dto, account);
 
     if (dto.getIntent() != null && !dto.getIntent().equals("")) {

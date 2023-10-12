@@ -1,0 +1,74 @@
+provisioner:
+  steps:
+    - stepGroup:
+        name: awsCdk
+        identifier: awsCdk
+        steps:
+          - step:
+              type: GitClone
+              name: GitClone
+              identifier: gitClone
+              spec:
+                connectorRef:
+                build:
+                  type: branch
+                  spec:
+                    branch:
+          - step:
+              type: AwsCdkDiff
+              name: AwsCdkDiff
+              identifier: awsCdkDiff
+              timeout: 10m
+              spec:
+                connectorRef:
+                image:
+          - step:
+              type: AwsCdkSynth
+              name: AwsCdkSynth
+              identifier: awsCdkSynth
+              timeout: 10m
+              spec:
+                connectorRef:
+                image:
+          - step:
+              identifier: awscdkdeploy
+              name: AwsCdkDeploy
+              type: AwsCdkDeploy
+              timeout: 10m
+              spec:
+                connectorRef:
+                image:
+                provisionerIdentifier:
+        stepGroupInfra:
+          type: KubernetesDirect
+          spec:
+            connectorRef:
+            namespace:
+  rollbackSteps:
+    - stepGroup:
+        name: AwsCdkRollback
+        identifier: awsCdkRollback
+        steps:
+          - step:
+              type: GitClone
+              name: GitCloneRollback
+              identifier: GitCloneRollback
+              spec:
+                connectorRef:
+                build:
+                  type: commitSha
+                  spec:
+                    commitSha:
+          - step:
+              type: AwsCdkRollback
+              identifier: AwsCdkRollback
+              name: AwsCdkRollback
+              timeout: 10m
+              spec:
+                provisionerIdentifier:
+        stepGroupInfra:
+          type: KubernetesDirect
+          spec:
+            connectorRef:
+            namespace:
+              

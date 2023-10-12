@@ -6,7 +6,6 @@
  */
 
 package io.harness.perpetualtask;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.network.SafeHttpCall.execute;
@@ -15,8 +14,11 @@ import static java.lang.String.format;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.instancesync.K8sInstanceSyncPerpetualTaskResponse;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
@@ -24,6 +26,7 @@ import io.harness.delegate.beans.instancesync.mapper.K8sPodToServiceInstanceInfo
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.K8sDeploymentReleaseData;
+import io.harness.delegate.task.k8s.K8sDeploymentReleaseData.K8sDeploymentReleaseDataBuilder;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.grpc.utils.AnyUtils;
@@ -49,6 +52,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
@@ -97,13 +101,17 @@ public class K8sInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecut
   }
 
   private K8sDeploymentReleaseData toK8sDeploymentReleaseData(K8sDeploymentRelease k8SDeploymentRelease) {
-    return K8sDeploymentReleaseData.builder()
-        .releaseName(k8SDeploymentRelease.getReleaseName())
-        .namespaces(new LinkedHashSet<>(k8SDeploymentRelease.getNamespacesList()))
-        .k8sInfraDelegateConfig((K8sInfraDelegateConfig) kryoSerializer.asObject(
-            k8SDeploymentRelease.getK8SInfraDelegateConfig().toByteArray()))
-        .helmChartInfo((HelmChartInfo) kryoSerializer.asObject(k8SDeploymentRelease.getHelmChartInfo().toByteArray()))
-        .build();
+    K8sDeploymentReleaseDataBuilder k8sDeploymentReleaseDataBuilder =
+        K8sDeploymentReleaseData.builder()
+            .releaseName(k8SDeploymentRelease.getReleaseName())
+            .namespaces(new LinkedHashSet<>(k8SDeploymentRelease.getNamespacesList()))
+            .k8sInfraDelegateConfig((K8sInfraDelegateConfig) kryoSerializer.asObject(
+                k8SDeploymentRelease.getK8SInfraDelegateConfig().toByteArray()));
+    if (k8SDeploymentRelease.getHelmChartInfo().toByteArray().length != 0) {
+      k8sDeploymentReleaseDataBuilder.helmChartInfo(
+          (HelmChartInfo) kryoSerializer.asObject(k8SDeploymentRelease.getHelmChartInfo().toByteArray()));
+    }
+    return k8sDeploymentReleaseDataBuilder.build();
   }
 
   private List<K8sDeploymentReleaseData> fixK8sDeploymentReleaseData(

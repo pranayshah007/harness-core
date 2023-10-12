@@ -10,6 +10,7 @@ package io.harness.cdng;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.OCI_HELM;
 import static io.harness.filestore.utils.FileStoreNodeUtils.mapFileNodes;
 import static io.harness.k8s.manifest.ManifestHelper.getValuesYamlGitFilePath;
 import static io.harness.k8s.manifest.ManifestHelper.values_filename;
@@ -30,6 +31,7 @@ import io.harness.beans.FileReference;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.helm.HelmSpecParameters;
+import io.harness.cdng.helm.ReleaseHelmChartOutcome;
 import io.harness.cdng.hooks.steps.ServiceHooksOutcome;
 import io.harness.cdng.k8s.K8sApplyStepParameters;
 import io.harness.cdng.k8s.K8sEntityHelper;
@@ -65,9 +67,12 @@ import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
+import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.helm.HelmFetchFileConfig;
 import io.harness.delegate.task.helm.HelmFetchFileResult;
@@ -132,6 +137,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.ObjectUtils;
 import org.hibernate.validator.constraints.NotEmpty;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
@@ -421,14 +427,15 @@ public class K8sHelmCommonStepHelper {
             .closeLogStream(k8sStepPassThroughData.isShouldCloseFetchFilesStream())
             .build();
 
+    TaskType taskType = getHelmValuesFetchTaskType(helmManifest.getStoreDelegateConfig());
     final TaskData taskData = TaskData.builder()
                                   .async(true)
                                   .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
-                                  .taskType(TaskType.HELM_VALUES_FETCH_NG.name())
+                                  .taskType(taskType.name())
                                   .parameters(new Object[] {helmValuesFetchRequest})
                                   .build();
 
-    String taskName = TaskType.HELM_VALUES_FETCH_NG.getDisplayName();
+    String taskName = taskType.getDisplayName();
 
     ParameterField<List<TaskSelectorYaml>> stepLevelSelectors = null;
     List<String> commandUnits = null;
@@ -1066,5 +1073,26 @@ public class K8sHelmCommonStepHelper {
       serviceHooks.add(serviceHook);
     });
     return serviceHooks;
+  }
+
+  public ReleaseHelmChartOutcome getHelmChartOutcome(HelmChartInfo helmChartInfo) {
+    ReleaseHelmChartOutcome releaseHelmChartOutcome = null;
+    if (ObjectUtils.isNotEmpty(helmChartInfo)) {
+      releaseHelmChartOutcome = ReleaseHelmChartOutcome.builder()
+                                    .name(helmChartInfo.getName())
+                                    .subChartPath(helmChartInfo.getSubChartPath())
+                                    .repoUrl(helmChartInfo.getRepoUrl())
+                                    .version(helmChartInfo.getVersion())
+                                    .build();
+    }
+    return releaseHelmChartOutcome;
+  }
+
+  private TaskType getHelmValuesFetchTaskType(StoreDelegateConfig storeDelegateConfig) {
+    if (OCI_HELM.equals(storeDelegateConfig.getType())
+        && ((OciHelmStoreDelegateConfig) storeDelegateConfig).getAwsConnectorDTO() != null) {
+      return TaskType.HELM_VALUES_FETCH_NG_OCI_ECR_CONFIG;
+    }
+    return TaskType.HELM_VALUES_FETCH_NG;
   }
 }

@@ -6,15 +6,17 @@
  */
 
 package io.harness.ngmigration.service.entity;
-
 import static software.wings.ngmigration.NGMigrationEntityType.CONFIG_FILE;
 import static software.wings.ngmigration.NGMigrationEntityType.ENVIRONMENT;
 import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
 import static software.wings.ngmigration.NGMigrationEntityType.SERVICE;
 import static software.wings.ngmigration.NGMigrationEntityType.SERVICE_VARIABLE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
@@ -67,6 +69,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceVariableMigrationService extends NgMigrationService {
@@ -141,6 +144,22 @@ public class ServiceVariableMigrationService extends NgMigrationService {
             .upsertServiceOverride(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
                 JsonUtils.asTree(requestDTO))
             .execute();
+
+    if (!(resp.code() >= 200 && resp.code() < 300)) {
+      yaml = getYamlStringV2(yamlFile);
+      requestDTO = ServiceOverrideRequestDTO.builder()
+                       .serviceIdentifier(serviceOverrideInfoConfig.getServiceRef())
+                       .environmentIdentifier(serviceOverrideInfoConfig.getEnvironmentRef())
+                       .orgIdentifier(yamlFile.getNgEntityDetail().getOrgIdentifier())
+                       .projectIdentifier(yamlFile.getNgEntityDetail().getProjectIdentifier())
+                       .yaml(yaml)
+                       .build();
+      resp = ngClient
+                 .upsertServiceOverride(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                     JsonUtils.asTree(requestDTO))
+                 .execute();
+    }
+
     log.info("Service variables creation Response details {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);
   }
@@ -259,7 +278,9 @@ public class ServiceVariableMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected boolean isNGEntityExists() {
-    return true;
+  protected boolean isNGEntityExists(MigrationContext migrationContext) {
+    NGMigrationEntityType rootType = migrationContext.getRoot();
+    return NGMigrationEntityType.APPLICATION == rootType || NGMigrationEntityType.WORKFLOW == rootType
+        || NGMigrationEntityType.PIPELINE == rootType;
   }
 }

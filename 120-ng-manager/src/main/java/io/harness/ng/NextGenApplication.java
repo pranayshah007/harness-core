@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng;
+
 import static io.harness.NGCommonEntityConstants.CONFIG_FILE_FUNCTOR;
 import static io.harness.NGCommonEntityConstants.FILE_STORE_FUNCTOR;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassInterMsvcRequests;
@@ -70,6 +71,10 @@ import io.harness.connector.ConnectorRestrictionUsageImpl;
 import io.harness.connector.entities.Connector;
 import io.harness.connector.gitsync.ConnectorGitSyncHelper;
 import io.harness.controller.PrimaryVersionChangeScheduler;
+import io.harness.credit.schedular.CICreditExpiryIteratorHandler;
+import io.harness.credit.schedular.ProvisionMonthlyCICreditsHandler;
+import io.harness.credit.schedular.SendProvisionedCICreditsToSegmentHandler;
+import io.harness.delay.DelayEventListener;
 import io.harness.enforcement.client.CustomRestrictionRegisterConfiguration;
 import io.harness.enforcement.client.RestrictionUsageRegisterConfiguration;
 import io.harness.enforcement.client.custom.CustomRestrictionInterface;
@@ -98,6 +103,7 @@ import io.harness.gitsync.core.runnable.GitChangeSetRunnable;
 import io.harness.gitsync.core.webhook.GitSyncEventConsumerService;
 import io.harness.gitsync.core.webhook.createbranchevent.WebhookBranchHookEventQueueProcessor;
 import io.harness.gitsync.core.webhook.pushevent.WebhookPushEventQueueProcessor;
+import io.harness.gitsync.gitxwebhooks.listener.GitXWebhookQueueProcessor;
 import io.harness.gitsync.migration.GitSyncMigrationProvider;
 import io.harness.gitsync.server.GitSyncGrpcModule;
 import io.harness.gitsync.server.GitSyncServiceConfiguration;
@@ -134,6 +140,7 @@ import io.harness.ng.core.handler.NGVaultSecretManagerRenewalHandler;
 import io.harness.ng.core.handler.freezeHandlers.NgDeploymentFreezeActivationHandler;
 import io.harness.ng.core.migration.NGBeanMigrationProvider;
 import io.harness.ng.core.migration.ProjectMigrationProvider;
+import io.harness.ng.core.migration.UniqueIdParentIdMigrationProvider;
 import io.harness.ng.core.migration.UserGroupMigrationProvider;
 import io.harness.ng.core.remote.UserGroupRestrictionUsageImpl;
 import io.harness.ng.core.remote.UsersRestrictionUsageImpl;
@@ -192,11 +199,16 @@ import io.harness.pms.sdk.core.events.OrchestrationEventHandler;
 import io.harness.pms.sdk.core.execution.expression.SdkFunctor;
 import io.harness.pms.sdk.core.governance.JsonExpansionHandlerInfo;
 import io.harness.pms.sdk.execution.events.facilitators.FacilitatorEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.facilitators.FacilitatorEventRedisConsumerV2;
 import io.harness.pms.sdk.execution.events.interrupts.InterruptEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.node.advise.NodeAdviseEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.node.advise.NodeAdviseRedisConsumerV2;
+import io.harness.pms.sdk.execution.events.node.resume.NodeResumeEventConsumerV2;
 import io.harness.pms.sdk.execution.events.node.resume.NodeResumeEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsumer;
+import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsumerV2;
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
+import io.harness.pms.sdk.execution.events.progress.NodeProgressEventRedisConsumerV2;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
 import io.harness.pms.serializer.json.PmsBeansJacksonModule;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -540,6 +552,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
   private void registerQueueListeners(Injector injector) {
     log.info("Initializing queue listeners...");
     QueueListenerController queueListenerController = injector.getInstance(QueueListenerController.class);
+    queueListenerController.register(injector.getInstance(DelayEventListener.class), 1);
     queueListenerController.register(injector.getInstance(NgOrchestrationNotifyEventListener.class), 1);
   }
 
@@ -564,6 +577,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
           { add(NGBeanMigrationProvider.class); }
 
           { add(ProjectMigrationProvider.class); }
+
+          { add(UniqueIdParentIdMigrationProvider.class); }
 
           { add(NGCoreMigrationProvider.class); } // Add all migration provider classes here
 
@@ -661,6 +676,9 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         .registerIterators(ngIteratorsConfig.getOauthTokenRefreshIteratorConfig().getThreadPoolSize());
     injector.getInstance(CDLicenseDailyReportIteratorHandler.class)
         .registerIterator(ngIteratorsConfig.getCdLicenseDailyReportIteratorConfig());
+    injector.getInstance(CICreditExpiryIteratorHandler.class).registerIterator(2);
+    injector.getInstance(SendProvisionedCICreditsToSegmentHandler.class).registerIterator(2);
+    injector.getInstance(ProvisionMonthlyCICreditsHandler.class).registerIterators(2);
   }
 
   public void registerJobs(Injector injector) {
@@ -686,11 +704,20 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         injector.getInstance(PipelineEventConsumerController.class);
     pipelineEventConsumerController.register(injector.getInstance(InterruptEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(CdngOrchestrationEventRedisConsumer.class), 1);
+
+    // V1 will be removed once the change has reached prod
     pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(ProgressEventRedisConsumer.class), 1);
     pipelineEventConsumerController.register(injector.getInstance(NodeAdviseEventRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventRedisConsumer.class), 2);
+
+    pipelineEventConsumerController.register(injector.getInstance(FacilitatorEventRedisConsumerV2.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeStartEventRedisConsumerV2.class), 2);
+    pipelineEventConsumerController.register(injector.getInstance(NodeProgressEventRedisConsumerV2.class), 1);
+    pipelineEventConsumerController.register(injector.getInstance(NodeAdviseRedisConsumerV2.class), 2);
+    pipelineEventConsumerController.register(injector.getInstance(NodeResumeEventConsumerV2.class), 2);
+
     pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class), 2);
     pipelineEventConsumerController.register(injector.getInstance(PipelineExecutionSummaryCDRedisEventConsumer.class),
         appConfig.getDebeziumConsumersConfigs().getPlanExecutionsSummaryStreaming().getThreads());
@@ -732,6 +759,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
     return PmsSdkConfiguration.builder()
         .deploymentMode(remote ? SdkDeployMode.REMOTE : SdkDeployMode.LOCAL)
+        .streamPerServiceConfiguration(appConfig.isStreamPerServiceConfiguration())
         .moduleType(ModuleType.CD)
         .grpcServerConfig(appConfig.getPmsSdkGrpcServerConfig())
         .pmsGrpcClientConfig(appConfig.getPmsGrpcClientConfig())
@@ -758,6 +786,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     aliases.put("artifact", "artifacts.primary");
     aliases.put("infra", "stage.spec.infrastructure.output");
     aliases.put("INFRA_KEY", "stage.spec.infrastructure.output.infrastructureKey");
+    aliases.put("INFRA_KEY_SHORT_ID", "stage.spec.infrastructure.output.infrastructureKeyShort");
     aliases.put("OnRollbackModeExecution",
         "(<+ambiance.metadata.executionMode> == \"POST_EXECUTION_ROLLBACK\") || (<+ambiance.metadata.executionMode> == \"PIPELINE_ROLLBACK\")");
     return aliases;
@@ -887,6 +916,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     if (appConfig.isUseQueueServiceForWebhookTriggers()) {
       environment.lifecycle().manage(injector.getInstance(WebhookBranchHookEventQueueProcessor.class));
       environment.lifecycle().manage(injector.getInstance(WebhookPushEventQueueProcessor.class));
+      environment.lifecycle().manage(injector.getInstance(GitXWebhookQueueProcessor.class));
     }
     createConsumerThreadsToListenToEvents(environment, injector);
   }

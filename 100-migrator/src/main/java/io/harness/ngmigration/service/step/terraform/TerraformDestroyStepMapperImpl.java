@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.service.step.terraform;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.provision.terraform.TerraformDestroyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformDestroyStepNode;
 import io.harness.cdng.provision.terraform.TerraformStepConfiguration;
@@ -26,6 +28,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public class TerraformDestroyStepMapperImpl extends BaseTerraformProvisionerMapper {
   @Override
@@ -50,12 +53,15 @@ public class TerraformDestroyStepMapperImpl extends BaseTerraformProvisionerMapp
   public AbstractStepNode getSpec(
       MigrationContext migrationContext, WorkflowMigrationContext context, GraphNode graphNode) {
     DestroyTerraformProvisionState state = (DestroyTerraformProvisionState) getState(graphNode);
+    if (state.isRunPlanOnly()) {
+      return getStepNode(migrationContext, graphNode);
+    }
     TerraformDestroyStepNode terraformDestroyStepNode = new TerraformDestroyStepNode();
     baseSetup(graphNode, terraformDestroyStepNode, context.getIdentifierCaseFormat());
 
     TerraformStepConfiguration stepConfiguration = new TerraformStepConfiguration();
-    if ((Boolean) graphNode.getProperties().getOrDefault("inheritFromLast", false)) {
-      stepConfiguration.setTerraformStepConfigurationType(TerraformStepConfigurationType.INHERIT_FROM_APPLY);
+    if (state.isInheritApprovedPlan()) {
+      stepConfiguration.setTerraformStepConfigurationType(TerraformStepConfigurationType.INHERIT_FROM_PLAN);
     } else {
       stepConfiguration.setTerraformStepConfigurationType(TerraformStepConfigurationType.INLINE);
       stepConfiguration.setTerraformExecutionData(

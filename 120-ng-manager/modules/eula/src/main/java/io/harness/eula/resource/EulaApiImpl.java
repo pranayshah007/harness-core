@@ -7,11 +7,15 @@
 
 package io.harness.eula.resource;
 
+import static io.harness.ngsettings.SettingPermissions.SETTING_EDIT_PERMISSION;
+import static io.harness.ngsettings.SettingPermissions.SETTING_RESOURCE_TYPE;
+
+import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.eula.dto.EulaDTO;
 import io.harness.eula.service.EulaService;
 import io.harness.eula.utils.EulaResourceUtils;
 import io.harness.spec.server.ng.v1.EulaApi;
-import io.harness.spec.server.ng.v1.model.AgreementType;
 import io.harness.spec.server.ng.v1.model.EulaSignRequest;
 import io.harness.spec.server.ng.v1.model.EulaSignResponse;
 
@@ -30,7 +34,8 @@ public class EulaApiImpl implements EulaApi {
   private EulaResourceUtils eulaResourceUtils;
 
   @Override
-  public Response signEula(@Valid EulaSignRequest body, String harnessAccount) {
+  @NGAccessControlCheck(resourceType = SETTING_RESOURCE_TYPE, permission = SETTING_EDIT_PERMISSION)
+  public Response signEula(@Valid EulaSignRequest body, @AccountIdentifier String harnessAccount) {
     EulaDTO eulaDTO = eulaResourceUtils.toEulaDTO(body, harnessAccount);
     boolean isSigned = eulaService.sign(eulaDTO);
     String responseMessage;
@@ -45,9 +50,9 @@ public class EulaApiImpl implements EulaApi {
   }
 
   @Override
-  public Response validateEulaSign(@NotNull AgreementType agreementType, String harnessAccount) {
-    boolean isSigned = eulaService.isSigned(
-        EnumUtils.getEnum(io.harness.eula.AgreementType.class, agreementType.toString()), harnessAccount);
+  public Response validateEulaSign(@NotNull String agreementType, String harnessAccount) {
+    boolean isSigned =
+        eulaService.isSigned(EnumUtils.getEnum(io.harness.eula.AgreementType.class, agreementType), harnessAccount);
     String responseMessage;
     if (isSigned) {
       responseMessage = String.format("An End User License Agreement is signed for %s.", agreementType);

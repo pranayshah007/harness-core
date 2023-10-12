@@ -7,8 +7,13 @@
 
 package io.harness;
 
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cf.AbstractCfModule;
 import io.harness.cf.CfClientConfig;
 import io.harness.cf.CfMigrationConfig;
@@ -24,8 +29,12 @@ import io.harness.health.HealthService;
 import io.harness.lock.PersistentLocker;
 import io.harness.lock.redis.RedisPersistentLocker;
 import io.harness.maintenance.MaintenanceController;
+import io.harness.metrics.MetricRegistryModule;
+import io.harness.metrics.jobs.RecordMetricsJob;
+import io.harness.metrics.service.api.MetricService;
 import io.harness.reflection.HarnessReflections;
 
+import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -47,9 +56,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.server.model.Resource;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.DEBEZIUM})
+@OwnedBy(PIPELINE)
 @Slf4j
 public class DebeziumServiceApplication extends Application<DebeziumServiceConfiguration> {
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
+
+  private final MetricRegistry metricRegistry = new MetricRegistry();
 
   public static void main(String[] args) throws Exception {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -74,6 +87,7 @@ public class DebeziumServiceApplication extends Application<DebeziumServiceConfi
         return debeziumServiceConfiguration.getSwaggerBundleConfiguration();
       }
     });
+    bootstrap.setMetricRegistry(metricRegistry);
   }
 
   public static void configureObjectMapper(final ObjectMapper mapper) {
@@ -131,11 +145,17 @@ public class DebeziumServiceApplication extends Application<DebeziumServiceConfi
             .build();
     modules.add(DebeziumServiceModule.getInstance(moduleConfig));
 
+    // Bind the MetricRegistry
+    modules.add(new MetricRegistryModule(metricRegistry));
+
     Injector injector = Guice.createInjector(modules);
     registerHealthCheck(environment, injector);
     registerResources(environment, injector);
     PersistentLocker locker = injector.getInstance(PersistentLocker.class);
     DebeziumControllerStarter starter = injector.getInstance(DebeziumControllerStarter.class);
+
+    // Initialize Monitoring
+    initializeMetrics(injector);
 
     for (DebeziumConfig debeziumConfig : appConfig.getDebeziumConfigs()) {
       if (debeziumConfig.isEnabled()) {
@@ -163,5 +183,10 @@ public class DebeziumServiceApplication extends Application<DebeziumServiceConfi
       }
     }
     MaintenanceController.forceMaintenance(false);
+  }
+
+  private void initializeMetrics(Injector injector) {
+    injector.getInstance(MetricService.class).initializeMetrics();
+    injector.getInstance(RecordMetricsJob.class).scheduleMetricsTasks();
   }
 }

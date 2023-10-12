@@ -6,7 +6,6 @@
  */
 
 package software.wings.app;
-
 import static io.harness.annotations.dev.HarnessModule._360_CG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE;
@@ -20,7 +19,7 @@ import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ORGANIZATION_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
-import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.lock.DistributedLockImplementation.REDIS;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
 import io.harness.AccessControlClientModule;
@@ -28,7 +27,10 @@ import io.harness.CgOrchestrationModule;
 import io.harness.SecretManagementCoreModule;
 import io.harness.accesscontrol.AccessControlAdminClientConfiguration;
 import io.harness.accesscontrol.AccessControlAdminClientModule;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.annotations.retry.MethodExecutionHelper;
 import io.harness.annotations.retry.RetryOnException;
@@ -864,6 +866,8 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
@@ -875,6 +879,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Guice Module for initializing all beans.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 @OwnedBy(PL)
 @TargetModule(_360_CG_MANAGER)
@@ -899,7 +905,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
   @Provides
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
-    return configuration.getDistributedLockImplementation() == null ? MONGO
+    return configuration.getDistributedLockImplementation() == null ? REDIS
                                                                     : configuration.getDistributedLockImplementation();
   }
 
@@ -993,6 +999,14 @@ public class WingsModule extends AbstractModule implements ServersModule {
     boolean isFreeCluster = StringUtils.equals(clusterType, "freemium");
 
     return new CdnStorageUrlGenerator(configuration.getCdnConfig(), isFreeCluster);
+  }
+
+  @Provides
+  @Singleton
+  @Named("cgJobExecutor")
+  public ScheduledExecutorService cgJobExecutor() {
+    return new ScheduledThreadPoolExecutor(
+        2, new ThreadFactoryBuilder().setNameFormat("cg-job-%d").setPriority(Thread.MAX_PRIORITY).build());
   }
 
   @Override
@@ -1318,7 +1332,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     buildServiceMapBinder.addBinding(SftpConfig.class).toInstance(SftpBuildService.class);
     buildServiceMapBinder.addBinding(AzureArtifactsPATConfig.class).toInstance(AzureArtifactsBuildService.class);
 
-    install(new ManagerCacheRegistrar());
+    install(new ManagerCacheRegistrar(configuration));
     install(new FactoryModuleBuilder().implement(Jenkins.class, JenkinsImpl.class).build(JenkinsFactory.class));
     install(SecretManagementCoreModule.getInstance());
     install(new InstanceSyncMonitoringModule());

@@ -6,12 +6,14 @@
  */
 
 package io.harness.cdng.aws.service;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.aws.AwsCFTemplatesType;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.common.resources.AwsResourceServiceHelper;
@@ -73,6 +75,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -82,6 +85,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Singleton
 @OwnedBy(CDP)
 public class AwsResourceServiceImpl implements AwsResourceService {
@@ -91,6 +95,7 @@ public class AwsResourceServiceImpl implements AwsResourceService {
   @Inject private AwsResourceServiceHelper serviceHelper;
   @Inject private GitResourceServiceHelper gitResourceServiceHelper;
   private static final String EKS_GET_CLUSTERS_EXCEPTION_MESSAGE = "Failed to get AWS EKS clusters";
+  private static final Duration EKS_LIST_CLUSTERS_TASK_TIMEOUT = Duration.ofMinutes(5);
 
   @Override
   public List<String> getCapabilities() {
@@ -552,18 +557,19 @@ public class AwsResourceServiceImpl implements AwsResourceService {
     return response.getListenerRulesArn();
   }
 
+  @Override
   public List<String> getEKSClusterNames(
-      IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier) {
+      IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier, String region) {
     BaseNGAccess access =
         serviceHelper.getBaseNGAccess(awsConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
 
     AwsConnectorDTO awsConnector = serviceHelper.getAwsConnector(awsConnectorRef);
     List<EncryptedDataDetail> encryptedData = serviceHelper.getAwsEncryptionDetails(awsConnector, access);
     AwsTaskParams awsTaskParams =
-        AwsTaskParams.builder().awsConnector(awsConnector).encryptionDetails(encryptedData).build();
+        AwsTaskParams.builder().awsConnector(awsConnector).region(region).encryptionDetails(encryptedData).build();
 
-    DelegateResponseData responseData =
-        serviceHelper.getResponseData(access, awsTaskParams, TaskType.AWS_EKS_LIST_CLUSTERS_TASK.name());
+    DelegateResponseData responseData = serviceHelper.getResponseData(
+        access, awsTaskParams, TaskType.AWS_EKS_LIST_CLUSTERS_TASK.name(), EKS_LIST_CLUSTERS_TASK_TIMEOUT);
     return getEKSClusterNamesFromResponse(responseData);
   }
 

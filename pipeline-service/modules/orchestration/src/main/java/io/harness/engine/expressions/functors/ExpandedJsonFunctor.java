@@ -6,12 +6,14 @@
  */
 
 package io.harness.engine.expressions.functors;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.execution.expansion.PlanExpansionService;
-import io.harness.plancreator.strategy.StrategyUtils;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -21,11 +23,13 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.Builder;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Builder
 public class ExpandedJsonFunctor {
   Ambiance ambiance;
   PlanExpansionService planExpansionService;
+  NodeExecutionInfoService nodeExecutionInfoService;
 
   transient Map<String, String> groupAliases;
 
@@ -38,13 +42,15 @@ public class ExpandedJsonFunctor {
       return null;
     }
     List<Level> levelsWithStrategyMetadata =
-        ambiance.getLevelsList().stream().filter(Level::hasStrategyMetadata).collect(Collectors.toList());
+        ambiance.getLevelsList().stream().filter(AmbianceUtils::hasStrategyMetadata).collect(Collectors.toList());
     boolean useMatrixFieldName = AmbianceUtils.shouldUseMatrixFieldName(ambiance);
     if (EmptyPredicate.isNotEmpty(levelsWithStrategyMetadata)) {
-      response.put("strategy", StrategyUtils.fetchStrategyObjectMap(levelsWithStrategyMetadata, useMatrixFieldName));
+      response.put(
+          "strategy", nodeExecutionInfoService.fetchStrategyObjectMap(levelsWithStrategyMetadata, useMatrixFieldName));
     } else {
       response.put("strategy",
-          StrategyUtils.fetchStrategyObjectMap(AmbianceUtils.obtainCurrentLevel(ambiance), useMatrixFieldName));
+          nodeExecutionInfoService.fetchStrategyObjectMap(
+              AmbianceUtils.obtainCurrentLevel(ambiance), useMatrixFieldName));
     }
     return response;
   }

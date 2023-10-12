@@ -7,8 +7,13 @@
 
 package io.harness.idp.scorecard.datapoints.parser;
 
+import static io.harness.idp.common.Constants.DEFAULT_BRANCH_KEY_ESCAPED;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.GITHUB_ADMIN_PERMISSION_ERROR;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.INVALID_BRANCH_NAME_ERROR;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.common.CommonUtils;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 
 import java.util.HashMap;
@@ -19,11 +24,38 @@ import java.util.Set;
 public class GithubIsBranchProtectedParser implements DataPointParser {
   @Override
   public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPoint, Set<String> inputValues) {
-    return new HashMap<>();
-  }
+    Map<String, Object> dataPointData = new HashMap<>();
 
-  @Override
-  public String getReplaceKey() {
-    return "";
+    for (String inputValue : inputValues) {
+      if (!data.containsKey(inputValue)) {
+        dataPointData.putAll(constructDataPointInfo(inputValue, false, INVALID_BRANCH_NAME_ERROR));
+        continue;
+      }
+
+      Map<String, Object> inputValueData = (Map<String, Object>) data.get(inputValue);
+      Map<String, Object> ref;
+      if (CommonUtils.findObjectByName(inputValueData, "defaultBranchRef") == null
+          && CommonUtils.findObjectByName(inputValueData, "ref") == null) {
+        dataPointData.putAll(constructDataPointInfo(inputValue, false, INVALID_BRANCH_NAME_ERROR));
+      } else {
+        if (inputValue.equals(DEFAULT_BRANCH_KEY_ESCAPED)) {
+          ref = (Map<String, Object>) CommonUtils.findObjectByName(inputValueData, "defaultBranchRef");
+        } else {
+          ref = (Map<String, Object>) CommonUtils.findObjectByName(inputValueData, "ref");
+        }
+        Map<String, Object> branchProtectionRule = (Map<String, Object>) ref.get("branchProtectionRule");
+
+        boolean value = false;
+        String errorMessage = null;
+        if (branchProtectionRule != null) {
+          value = !(boolean) branchProtectionRule.get("allowsDeletions")
+              && !(boolean) branchProtectionRule.get("allowsForcePushes");
+        } else {
+          errorMessage = GITHUB_ADMIN_PERMISSION_ERROR;
+        }
+        dataPointData.putAll(constructDataPointInfo(inputValue, value, errorMessage));
+      }
+    }
+    return dataPointData;
   }
 }

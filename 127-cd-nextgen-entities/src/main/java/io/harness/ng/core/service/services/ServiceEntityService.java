@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.ng.core.dto.RepoListResponseDTO;
 import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
@@ -21,6 +22,7 @@ import io.harness.spec.server.ng.v1.model.ManifestsResponseDTO;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
@@ -33,8 +35,20 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public interface ServiceEntityService {
   ServiceEntity create(ServiceEntity serviceEntity);
 
-  Optional<ServiceEntity> get(
-      String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier, boolean deleted);
+  Optional<ServiceEntity> get(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceIdentifier, boolean deleted);
+
+  /**
+   * this method will return the service entity as stored in the MongoDB
+   * database itself. No additional data (YAML) will be fetched from the source code repository.
+   * @return An Optional containing the retrieved or fetched ServiceEntity, or an empty Optional if
+   *         no matching entity is found.
+   */
+  Optional<ServiceEntity> getMetadata(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceIdentifier, boolean deleted);
+
+  Optional<ServiceEntity> get(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceIdentifier, boolean deleted, boolean loadFromCache, boolean loadFromFallbackBranch);
 
   // TODO(archit): make it transactional
   ServiceEntity update(ServiceEntity requestService);
@@ -95,15 +109,18 @@ public interface ServiceEntityService {
 
   // Avoid using this method,as it  allows clients to access unbounded amount of data
   @Deprecated
-  List<ServiceEntity> getServices(
+  List<ServiceEntity> getMetadata(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> serviceIdentifiers);
+
+  List<ServiceEntity> getServices(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      List<String> serviceRefs, Map<String, String> servicesMetadataWithGitInfo, boolean loadFromCache);
 
   boolean isServiceField(String fieldName, JsonNode value);
 
   List<String> getServiceIdentifiers(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
   Optional<ServiceEntity> getService(
-      String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier);
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier);
 
   ValidateTemplateInputsResponseDTO validateTemplateInputs(
       String accountId, String orgId, String projectId, String serviceIdentifier, String loadFromCache);
@@ -111,4 +128,7 @@ public interface ServiceEntityService {
   String resolveArtifactSourceTemplateRefs(String accountId, String orgId, String projectId, String yaml);
 
   ManifestsResponseDTO getManifestIdentifiers(String yaml, String serviceIdentifier);
+
+  RepoListResponseDTO getListOfRepos(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      boolean includeAllServicesAccessibleAtScope);
 }

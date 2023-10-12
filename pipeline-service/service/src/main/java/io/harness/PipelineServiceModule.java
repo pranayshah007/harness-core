@@ -6,6 +6,7 @@
  */
 
 package io.harness;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.authorization.AuthorizationServiceHeader.BEARER;
 import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
@@ -14,9 +15,10 @@ import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PIPELINE_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
-import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.lock.DistributedLockImplementation.REDIS;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
+import io.harness.accesscontrol.publicaccess.PublicAccessClientModule;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
@@ -339,7 +341,8 @@ public class PipelineServiceModule extends AbstractModule {
     install(OrchestrationStepsModule.getInstance(configuration.getOrchestrationStepConfig()));
     install(FeatureFlagModule.getInstance());
     install(OrchestrationVisualizationModule.getInstance(configuration.getEventsFrameworkConfiguration(),
-        configuration.getOrchestrationVisualizationThreadPoolConfig()));
+        configuration.getOrchestrationVisualizationThreadPoolConfig(),
+        configuration.getGraphConsumerSleepIntervalMs()));
     install(PodCleanUpModule.getInstance(configuration.getPodCleanUpThreadPoolConfig()));
     install(PrimaryVersionManagerModule.getInstance());
     install(new DelegateServiceDriverGrpcClientModule(configuration.getManagerServiceSecret(),
@@ -363,6 +366,10 @@ public class PipelineServiceModule extends AbstractModule {
     install(JooqModule.getInstance());
     install(AccessControlClientModule.getInstance(
         configuration.getAccessControlClientConfiguration(), PIPELINE_SERVICE.getServiceId()));
+    install(new PublicAccessClientModule(
+        configuration.getAccessControlClientConfiguration().getAccessControlServiceConfig(),
+        configuration.getAccessControlClientConfiguration().getAccessControlServiceSecret(),
+        PIPELINE_SERVICE.toString()));
     install(new PollResourceClientModule(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getNgManagerServiceSecret(), MANAGER.getServiceId()));
 
@@ -442,8 +449,14 @@ public class PipelineServiceModule extends AbstractModule {
     bind(NodeTypeLookupService.class).to(NodeTypeLookupServiceImpl.class);
 
     bind(ScheduledExecutorService.class)
-        .annotatedWith(Names.named("taskPollExecutor"))
-        .toInstance(new ManagedScheduledExecutorService("TaskPoll-Thread"));
+        .annotatedWith(Names.named("syncTaskPollExecutor"))
+        .toInstance(new ManagedScheduledExecutorService("SyncTaskPoll-Thread"));
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("asyncTaskPollExecutor"))
+        .toInstance(new ManagedScheduledExecutorService("AsyncTaskPoll-Thread"));
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("progressTaskPollExecutor"))
+        .toInstance(new ManagedScheduledExecutorService("ProgressTaskPoll-Thread"));
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("progressUpdateServiceExecutor"))
         .toInstance(new ManagedScheduledExecutorService("ProgressUpdateServiceExecutor-Thread"));
@@ -671,7 +684,7 @@ public class PipelineServiceModule extends AbstractModule {
   @Provides
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
-    return configuration.getDistributedLockImplementation() == null ? MONGO
+    return configuration.getDistributedLockImplementation() == null ? REDIS
                                                                     : configuration.getDistributedLockImplementation();
   }
 
@@ -766,7 +779,7 @@ public class PipelineServiceModule extends AbstractModule {
         configuration.getPlanCreatorMergeServicePoolConfig().getMaxPoolSize(),
         configuration.getPlanCreatorMergeServicePoolConfig().getIdleTime(),
         configuration.getPlanCreatorMergeServicePoolConfig().getTimeUnit(),
-        new ThreadFactoryBuilder().setNameFormat("PipelineExecutorService-%d").build());
+        new ThreadFactoryBuilder().setNameFormat("PipelineMergeCreatorExecutorService-%d").build());
   }
 
   @Provides
@@ -902,5 +915,12 @@ public class PipelineServiceModule extends AbstractModule {
     return new ManagedExecutorService(ThreadPool.create(configuration.getPipelineSetupUsageCreationPoolConfig(), 1,
         new ThreadFactoryBuilder().setNameFormat("PipelineSetupUsageCreationExecutorService-%d").build(),
         new ThreadPoolExecutor.AbortPolicy()));
+  }
+
+  @Provides
+  @Singleton
+  @Named("publishAdviserEventForCustomAdvisers")
+  public Boolean getPublishAdviserEventForCustomAdvisers() {
+    return configuration.getPublishAdviserEventForCustomAdvisers();
   }
 }

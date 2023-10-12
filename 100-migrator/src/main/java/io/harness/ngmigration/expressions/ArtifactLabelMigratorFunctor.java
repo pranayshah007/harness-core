@@ -6,12 +6,26 @@
  */
 
 package io.harness.ngmigration.expressions;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.expression.LateBindingMap;
 
+import java.util.HashMap;
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class ArtifactLabelMigratorFunctor extends LateBindingMap {
   @Override
   public synchronized Object get(Object key) {
+    if ("artifactStream".equals(key)) {
+      return new HashMap<>() {
+        {
+          put("dockerRepositoryServer", "<+artifacts.metadata.registryHostname>");
+          put("imageName", "<+artifacts.imagePath>");
+        }
+      };
+    }
+
     return "<+artifact.label.get(\"" + key + "\")>";
   }
 }

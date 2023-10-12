@@ -3,6 +3,13 @@ kind: ConfigMap
 metadata:
   name: pipeline-service
   namespace: {{ .Release.Namespace }}
+  labels:
+    {{- if .Values.global.commonLabels }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.global.commonAnnotations }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
 data:
   CACHE_BACKEND: "REDIS"
   CACHE_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
@@ -65,6 +72,7 @@ data:
   AUDIT_SERVICE_BASE_URL: http://platform-service:9005/api/
   LOG_STREAMING_CONTAINER_STEP_BASE_URL: '{{ .Values.global.loadbalancerURL }}/log-service/'
   ALLOWED_ORIGINS: '{{ .Values.allowedOrigins | default .Values.global.loadbalancerURL }}'
+  {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
   {{- if .Values.additionalConfigs }}
   {{- toYaml .Values.additionalConfigs | nindent 2 }}
   {{- end }}

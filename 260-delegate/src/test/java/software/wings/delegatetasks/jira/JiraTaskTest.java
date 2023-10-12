@@ -7,6 +7,7 @@
 
 package software.wings.delegatetasks.jira;
 
+import static io.harness.rule.OwnerRule.ABHINAV_MITTAL;
 import static io.harness.rule.OwnerRule.AGORODETKI;
 import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.LUCAS_SALES;
@@ -608,6 +609,23 @@ public class JiraTaskTest extends CategoryTest {
     JiraException e =
         new JiraException("Failed to retrieve issue 141081", new SSLHandshakeException("PKIX path building failed"));
     assertThat(jiraTask.isWarningException(e)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = ABHINAV_MITTAL)
+  @Category(UnitTests.class)
+  public void shouldWarningExceptionDetectSSLHandshakeException1() {
+    JiraException e =
+        new JiraException("Failed to retrieve issue 141081", new RestException("Too many requests", 429, null, null));
+    assertThat(jiraTask.isWarningException(e)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = ABHINAV_MITTAL)
+  @Category(UnitTests.class)
+  public void shouldWarningExceptionDetectSSLHandshakeException1null() {
+    JiraException e = new JiraException("Failed to retrieve issue 141081", null);
+    assertThat(jiraTask.isWarningException(e)).isFalse();
   }
 
   @Test

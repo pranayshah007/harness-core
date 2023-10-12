@@ -9,6 +9,7 @@ package io.harness.cdng.manifest.yaml.harness;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
@@ -18,6 +19,7 @@ import io.harness.cdng.manifest.yaml.FileStorageConfigDTO;
 import io.harness.cdng.manifest.yaml.FileStorageStoreConfig;
 import io.harness.cdng.manifest.yaml.StoreConfigHelper;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.manifest.yaml.summary.ManifestStoreInfo.ManifestStoreInfoBuilder;
 import io.harness.cdng.visitor.helpers.store.HarnessStoreVisitorHelper;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.pms.yaml.ParameterField;
@@ -121,5 +123,10 @@ public class HarnessStore implements HarnessStoreConfig, FileStorageStoreConfig,
       invalidParameters.add(HarnessStoreConfigKeys.files);
     }
     return invalidParameters;
+  }
+
+  @Override
+  public void populateManifestStoreInfo(ManifestStoreInfoBuilder manifestStoreInfoBuilder) {
+    manifestStoreInfoBuilder.paths(getParameterFieldValue(this.getFiles()));
   }
 }

@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.importer;
 
+import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
+
 import static software.wings.ngmigration.NGMigrationEntityType.TRIGGER;
 
 import io.harness.annotations.dev.CodePulse;
@@ -29,7 +31,7 @@ import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.dto.SaveSummaryDTO;
 import io.harness.ngmigration.dto.TriggerFilter;
 import io.harness.ngmigration.service.DiscoveryService;
-import io.harness.ngmigration.service.MigrationTemplateUtils;
+import io.harness.ngmigration.service.MigrationHelperService;
 import io.harness.ngmigration.service.artifactstream.ArtifactStreamFactory;
 import io.harness.ngmigration.service.artifactstream.ArtifactStreamMapper;
 import io.harness.ngmigration.utils.MigratorUtility;
@@ -52,24 +54,37 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.ServiceHttpClientConfig;
 
 import software.wings.beans.Base;
+import software.wings.beans.Environment;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamType;
+import software.wings.beans.trigger.ArtifactSelection;
 import software.wings.beans.trigger.ArtifactTriggerCondition;
 import software.wings.beans.trigger.ScheduledTriggerCondition;
 import software.wings.beans.trigger.Trigger;
 import software.wings.beans.trigger.Trigger.TriggerKeys;
+import software.wings.infra.InfrastructureDefinition;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryResult;
 import software.wings.ngmigration.NGMigrationEntityType;
+import software.wings.service.intfc.EnvironmentService;
+import software.wings.service.intfc.InfrastructureDefinitionService;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
@@ -81,11 +96,15 @@ import retrofit2.Response;
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class TriggerImportService implements ImportService {
+  @Inject private EnvironmentService environmentService;
+  @Inject private InfrastructureDefinitionService infrastructureDefinitionService;
   @Inject DiscoveryService discoveryService;
   @Inject HPersistence hPersistence;
-  @Inject private MigrationTemplateUtils migrationTemplateUtils;
+  @Inject private MigrationHelperService migrationHelperService;
   @Inject @Named("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceClientConfig;
   @Inject WorkflowImportService workflowImportService;
+
+  private final ObjectMapper objectMapper = new ObjectMapper();
 
   public DiscoveryResult discover(ImportDTO importConnectorDTO) {
     TriggerFilter filter = (TriggerFilter) importConnectorDTO.getFilter();
@@ -213,6 +232,73 @@ public class TriggerImportService implements ImportService {
     String orgIdentifier = inputDTO.getOrgIdentifier();
     String description = StringUtils.isBlank(trigger.getDescription()) ? "" : trigger.getDescription();
 
+    Map<String, Object> inputDetails = new HashMap<>();
+    JsonNode inputNode = getInputDetails(inputDTO, pipelineDetail, inputDetails);
+    Object jsonStagesNode = inputDetails.get("stages");
+
+    if (jsonStagesNode instanceof ArrayNode) {
+      ArrayNode stagesNode = (ArrayNode) jsonStagesNode;
+      for (int i = 0; i < stagesNode.size(); i++) {
+        JsonNode stageNode = stagesNode.get(i);
+        Optional<ArtifactSelection> firstArtifactSelection = trigger.getArtifactSelections().stream().findFirst();
+
+        if (firstArtifactSelection.isPresent()) {
+          ArtifactSelection artifactSelection = firstArtifactSelection.get();
+          String triggerServiceRef = artifactSelection.getServiceName();
+          String serviceNGId =
+              MigratorUtility.generateIdentifier(triggerServiceRef, inputDTO.getIdentifierCaseFormat());
+          String serviceRef = stageNode.at("/stage/template/templateInputs/spec/service/serviceRef").asText();
+          if (RUNTIME_INPUT.equals(serviceRef) && !RUNTIME_INPUT.equals(triggerServiceRef)) {
+            ObjectNode serviceNode = (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/service");
+            serviceNode.put("serviceRef", serviceNGId);
+          }
+
+          Map<String, String> workflowVariables = trigger.getWorkflowVariables();
+          if (workflowVariables != null) {
+            String envCGId = workflowVariables.get("Environment");
+            if (envCGId != null) {
+              Environment env = environmentService.get(trigger.getAppId(), envCGId);
+              String envNGId = MigratorUtility.generateIdentifier(env.getName(), inputDTO.getIdentifierCaseFormat());
+
+              String envRef = stageNode.at("/stage/template/templateInputs/spec/environment/environmentRef").asText();
+              if (RUNTIME_INPUT.equals(envRef) && envNGId != null) {
+                ObjectNode envNode = (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/environment");
+                envNode.put("environmentRef", envNGId);
+              }
+            }
+
+            String pattern = ".*InfraDefinition.*";
+            Pattern regexPattern = Pattern.compile(pattern);
+            String infraCGId = null;
+            for (Map.Entry<String, String> entry : workflowVariables.entrySet()) {
+              String key = entry.getKey();
+              String value = entry.getValue();
+              Matcher matcher = regexPattern.matcher(key);
+              if (matcher.matches()) {
+                infraCGId = value;
+              }
+            }
+            if (infraCGId != null) {
+              InfrastructureDefinition infra = infrastructureDefinitionService.get(trigger.getAppId(), infraCGId);
+              if (infra != null) {
+                String infraNGId =
+                    MigratorUtility.generateIdentifier(infra.getName(), inputDTO.getIdentifierCaseFormat());
+                String infraRef =
+                    stageNode.at("/stage/template/templateInputs/spec/environment/infrastructureDefinitions").asText();
+                if (RUNTIME_INPUT.equals(infraRef) && infraNGId != null) {
+                  ObjectNode infraNodeObj =
+                      (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/environment");
+                  JsonNode infraNode = objectMapper.createObjectNode().put("identifier", infraNGId);
+                  ArrayNode infraArrayNode = objectMapper.createArrayNode().add(infraNode);
+                  infraNodeObj.set("infrastructureDefinitions", infraArrayNode);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
     // We need to get the FG trigger inputs & set it
     NGTriggerConfigV2 triggerConfig = NGTriggerConfigV2.builder()
                                           .identifier(identifier)
@@ -223,8 +309,7 @@ public class TriggerImportService implements ImportService {
                                           .enabled(false)
                                           .pipelineIdentifier(pipelineDetail.getIdentifier())
                                           .source(getSourceInfo(discoveryResult, trigger, yamlFileMap))
-                                          .inputYaml(migrationTemplateUtils.getPipelineInput(
-                                              inputDTO, pipelineDetail, inputDTO.getDestinationAccountIdentifier()))
+                                          .inputYaml(inputNode != null ? inputNode.toString() : null)
                                           .build();
 
     return NGYamlFile.builder()
@@ -261,9 +346,8 @@ public class TriggerImportService implements ImportService {
     switch (trigger.getCondition().getConditionType()) {
       case WEBHOOK:
         type = NGTriggerType.WEBHOOK;
-        // TODO Generate the right JEXL condition based on the type
         spec = WebhookTriggerConfigV2.builder()
-                   .spec(CustomTriggerSpec.builder().jexlCondition("__PLEASE_FIX_ME__").build())
+                   .spec(CustomTriggerSpec.builder().build())
                    .type(WebhookTriggerType.CUSTOM)
                    .build();
         //        spec = WebhookFactory.getHandler((WebHookTriggerCondition) trigger.getCondition())
@@ -307,10 +391,30 @@ public class TriggerImportService implements ImportService {
         type = NGTriggerType.WEBHOOK;
         spec = WebhookTriggerConfigV2.builder()
                    .type(WebhookTriggerType.CUSTOM)
-                   .spec(CustomTriggerSpec.builder().jexlCondition("__PLEASE_FIX_ME__").build())
+                   .spec(CustomTriggerSpec.builder().build())
                    .build();
     }
 
     return NGTriggerSourceV2.builder().type(type).spec(spec).build();
+  }
+
+  private JsonNode getInputDetails(
+      MigrationInputDTO inputDTO, NgEntityDetail pipelineDetail, Map<String, Object> inputDetails) {
+    String inputYaml =
+        migrationHelperService.getPipelineInput(inputDTO, pipelineDetail, inputDTO.getDestinationAccountIdentifier());
+
+    JsonNode inputNode;
+    if (StringUtils.isBlank(inputYaml)) {
+      return null;
+    }
+    try {
+      inputNode = YamlUtils.read(inputYaml, JsonNode.class);
+    } catch (Exception ex) {
+      log.warn("Error when getting inputs - ", ex);
+      return null;
+    }
+    inputDetails.put("identifier", inputNode.at("/pipeline/identifier"));
+    inputDetails.put("stages", inputNode.at("/pipeline/stages"));
+    return inputNode;
   }
 }

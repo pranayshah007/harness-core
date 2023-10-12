@@ -6,11 +6,13 @@
  */
 
 package io.harness.ngmigration.service.entity;
-
 import static software.wings.ngmigration.NGMigrationEntityType.SERVICE_TEMPLATE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ngmigration.beans.MigrationContext;
@@ -30,6 +32,7 @@ import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
+import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.ServiceTemplateService;
 
 import com.google.inject.Inject;
@@ -40,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceTemplateMigrationService extends NgMigrationService {
@@ -95,7 +99,8 @@ public class ServiceTemplateMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected boolean isNGEntityExists() {
-    return true;
+  protected boolean isNGEntityExists(MigrationContext migrationContext) {
+    NGMigrationEntityType rootType = migrationContext.getRoot();
+    return NGMigrationEntityType.APPLICATION == rootType;
   }
 }

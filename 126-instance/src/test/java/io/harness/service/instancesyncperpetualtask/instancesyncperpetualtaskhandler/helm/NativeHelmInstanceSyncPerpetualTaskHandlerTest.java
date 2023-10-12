@@ -37,6 +37,7 @@ import io.harness.dtos.deploymentinfo.NativeHelmDeploymentInfoDTO;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
+import io.harness.perpetualtask.instancesync.LabelSelectors;
 import io.harness.perpetualtask.instancesync.NativeHelmDeploymentRelease;
 import io.harness.perpetualtask.instancesync.NativeHelmInstanceSyncPerpetualTaskParams;
 import io.harness.rule.Owner;
@@ -48,6 +49,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import org.apache.groovy.util.Maps;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -85,11 +87,13 @@ public class NativeHelmInstanceSyncPerpetualTaskHandlerTest extends InstancesTes
                                                             .build();
     LinkedHashSet<String> namespaces = new LinkedHashSet<>();
     namespaces.add(NAMESPACE);
+    Map<String, List<String>> workloadLabelSelectors = Map.of("workload", List.of("label1=value1", "label2=value2"));
     DeploymentInfoDTO deploymentInfoDTO = NativeHelmDeploymentInfoDTO.builder()
                                               .namespaces(namespaces)
                                               .releaseName(RELEASE_NAME)
                                               .helmVersion(HELM_VERSION)
                                               .helmChartInfo(HELM_CHART_INFO)
+                                              .workloadLabelSelectors(workloadLabelSelectors)
                                               .build();
     List<DeploymentInfoDTO> deploymentInfoDTOList = Arrays.asList(deploymentInfoDTO);
     InfrastructureOutcome infrastructureOutcome = K8sDirectInfrastructureOutcome.builder().build();
@@ -115,6 +119,7 @@ public class NativeHelmInstanceSyncPerpetualTaskHandlerTest extends InstancesTes
             .namespaces(((NativeHelmDeploymentInfoDTO) deploymentInfoDTO).getNamespaces())
             .releaseName(((NativeHelmDeploymentInfoDTO) deploymentInfoDTO).getReleaseName())
             .helmChartInfo(((NativeHelmDeploymentInfoDTO) deploymentInfoDTO).getHelmChartInfo())
+            .workloadLabelSelectors(((NativeHelmDeploymentInfoDTO) deploymentInfoDTO).getWorkloadLabelSelectors())
             .build();
 
     NativeHelmDeploymentRelease nativeHelmDeploymentRelease =
@@ -123,6 +128,8 @@ public class NativeHelmInstanceSyncPerpetualTaskHandlerTest extends InstancesTes
             .addAllNamespaces(nativeHelmDeploymentReleaseData.getNamespaces())
             .setK8SInfraDelegateConfig(ByteString.copyFrom(bytes))
             .setHelmChartInfo(ByteString.copyFrom(bytes2))
+            .putAllWorkloadLabelSelectors(Map.of("workload",
+                LabelSelectors.newBuilder().addAllLabelSelectors(List.of("label1=value1", "label2=value2")).build()))
             .build();
     List<NativeHelmDeploymentRelease> nativeHelmDeploymentReleaseList = Arrays.asList(nativeHelmDeploymentRelease);
     NativeHelmInstanceSyncPerpetualTaskParams nativeHelmInstanceSyncPerpetualTaskParams =

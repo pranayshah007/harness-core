@@ -6,11 +6,13 @@
  */
 
 package io.harness.steps.approval.step.custom;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
@@ -19,6 +21,8 @@ import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 import io.harness.steps.shellscript.ShellType;
 import io.harness.yaml.core.timeout.Timeout;
 
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,6 +33,8 @@ import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Data
 @Builder
@@ -48,18 +54,7 @@ public class CustomApprovalSpecParameters implements SpecParameters {
   ParameterField<Timeout> scriptTimeout;
 
   @Override
-  public SpecParameters getViewJsonObject() {
-    // omit secretOutputVars since they should not be visible to users
-    return CustomApprovalSpecParameters.builder()
-        .retryInterval(this.retryInterval)
-        .outputVariables(this.outputVariables)
-        .environmentVariables(this.environmentVariables)
-        .shellType(this.shellType)
-        .source(this.source)
-        .delegateSelectors(this.delegateSelectors)
-        .approvalCriteria(this.approvalCriteria)
-        .rejectionCriteria(this.rejectionCriteria)
-        .scriptTimeout(this.scriptTimeout)
-        .build();
+  public List<String> stepInputsKeyExclude() {
+    return new LinkedList<>(Arrays.asList("specConfig.secretOutputVariables"));
   }
 }

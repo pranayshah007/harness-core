@@ -29,7 +29,8 @@ public class HarnessProjectToBackstageSystem
 
     BackstageCatalogEntity.Metadata metadata = new BackstageCatalogEntity.Metadata();
     metadata.setMetadata(projectDTO.getIdentifier(), projectDTO.getOrgIdentifier() + "-" + projectDTO.getIdentifier(),
-        truncateName(projectDTO.getIdentifier()), projectDTO.getDescription(), getTags(projectDTO.getTags()), null);
+        truncateName(projectDTO.getIdentifier()), projectDTO.getName(), projectDTO.getDescription(),
+        getTags(projectDTO.getTags()), null);
     backstageCatalogSystemEntity.setMetadata(metadata);
 
     BackstageCatalogSystemEntity.Spec spec = new BackstageCatalogSystemEntity.Spec();

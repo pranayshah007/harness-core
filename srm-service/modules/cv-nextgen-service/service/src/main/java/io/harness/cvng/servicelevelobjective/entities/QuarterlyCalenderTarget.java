@@ -7,6 +7,9 @@
 
 package io.harness.cvng.servicelevelobjective.entities;
 
+import static io.harness.cvng.servicelevelobjective.beans.QuarterStart.getFirstDayOfQuarter;
+
+import io.harness.cvng.servicelevelobjective.beans.QuarterStart;
 import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 
@@ -24,12 +27,19 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 public class QuarterlyCalenderTarget extends CalenderSLOTarget {
   private final SLOCalenderType calenderType = SLOCalenderType.QUARTERLY;
+  QuarterStart quarterStart;
 
   @Override
   public TimePeriod getCurrentTimeRange(LocalDateTime currentDateTime) {
-    LocalDate firstDayOfQuarter = currentDateTime.toLocalDate()
-                                      .with(currentDateTime.toLocalDate().getMonth().firstMonthOfQuarter())
-                                      .with(TemporalAdjusters.firstDayOfMonth());
+    LocalDate firstDayOfQuarter = getFirstDayOfQuarter(quarterStart, currentDateTime);
+
+    LocalDate lastDayOfQuarter = firstDayOfQuarter.plusMonths(2).with(TemporalAdjusters.lastDayOfMonth());
+    return TimePeriod.builder().startDate(firstDayOfQuarter).endDate(lastDayOfQuarter.plusDays(1)).build();
+  }
+
+  @Override
+  public TimePeriod getTimeRangeForHistory(LocalDateTime currentDateTime) {
+    LocalDate firstDayOfQuarter = getFirstDayOfQuarter(quarterStart, currentDateTime.minusMonths(3));
 
     LocalDate lastDayOfQuarter = firstDayOfQuarter.plusMonths(2).with(TemporalAdjusters.lastDayOfMonth());
     return TimePeriod.builder().startDate(firstDayOfQuarter).endDate(lastDayOfQuarter.plusDays(1)).build();
@@ -43,5 +53,13 @@ public class QuarterlyCalenderTarget extends CalenderSLOTarget {
     timeRangeFilterList.add(SLODashboardDetail.TimeRangeFilter.ONE_WEEK_FILTER);
     timeRangeFilterList.add(SLODashboardDetail.TimeRangeFilter.ONE_MONTH_FILTER);
     return timeRangeFilterList;
+  }
+
+  public QuarterStart getQuarterStart() {
+    if (quarterStart.getStartQuarter() == null) {
+      return QuarterStart.JAN_APR_JUL_OCT;
+    } else {
+      return quarterStart;
+    }
   }
 }

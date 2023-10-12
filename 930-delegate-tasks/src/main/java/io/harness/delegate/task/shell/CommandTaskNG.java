@@ -11,7 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.windows.CmdUtils.WIN_RM_MARKER;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
@@ -22,6 +25,7 @@ import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.shell.ssh.CommandHandler;
+import io.harness.delegate.task.shell.winrm.WinRmUtils;
 import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.secret.SecretSanitizerThreadLocal;
@@ -29,7 +33,6 @@ import io.harness.shell.CommandExecutionData;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ScriptType;
 import io.harness.shell.ShellExecutionData;
-import io.harness.shell.SshSessionManager;
 import io.harness.shell.ssh.SshClientManager;
 
 import com.google.common.base.Joiner;
@@ -45,6 +48,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRADITIONAL})
 @Slf4j
 @OwnedBy(CDP)
 public class CommandTaskNG extends AbstractDelegateRunnableTask {
@@ -81,14 +86,16 @@ public class CommandTaskNG extends AbstractDelegateRunnableTask {
       throw SshWinRmExceptionHandler.handle(e, log, commandUnitsProgress, true);
     } finally {
       if (!parameters.executeOnDelegate && isNotEmpty(parameters.getHost())) {
-        SshSessionManager.evictAndDisconnectCachedSession(parameters.getExecutionId(), parameters.getHost());
         SshClientManager.evictCacheAndDisconnect(parameters.getExecutionId(), parameters.getHost());
       }
     }
   }
 
   private DelegateResponseData runWinRm(WinrmTaskParameters parameters) {
-    getLogStreamingTaskClient().getMarkers().add(WIN_RM_MARKER);
+    if (!WinRmUtils.shouldDisableWinRmEnvVarsEscaping(parameters)) {
+      getLogStreamingTaskClient().getMarkers().add(WIN_RM_MARKER);
+    }
+
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
 
     try {

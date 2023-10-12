@@ -6,14 +6,21 @@
  */
 
 package io.harness;
-
 import static io.harness.cache.CacheBackend.CAFFEINE;
 import static io.harness.cache.CacheBackend.NOOP;
 
+import static org.mockito.Mockito.mock;
+
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
+import io.harness.eventsframework.EventsFrameworkConstants;
+import io.harness.eventsframework.api.Producer;
+import io.harness.eventsframework.impl.noop.NoOpProducer;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
@@ -38,6 +45,7 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.name.Names;
 import dev.morphia.converters.TypeConverter;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
@@ -50,6 +58,7 @@ import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 public class NGCommonUtilitiesRule implements MethodRule, InjectorRuleMixin {
   ClosingFactory closingFactory;
@@ -122,6 +131,9 @@ public class NGCommonUtilitiesRule implements MethodRule, InjectorRuleMixin {
             return false;
           }
         });
+        bind(Producer.class)
+            .annotatedWith(Names.named(EventsFrameworkConstants.ENTITY_ACTIVITY))
+            .toInstance(mock(NoOpProducer.class));
       }
     });
     return modules;

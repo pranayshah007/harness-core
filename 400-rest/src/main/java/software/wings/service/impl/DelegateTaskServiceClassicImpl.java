@@ -9,6 +9,7 @@ package software.wings.service.impl;
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.beans.DelegateTask.Status.ABORTED;
 import static io.harness.beans.DelegateTask.Status.ERROR;
+import static io.harness.beans.DelegateTask.Status.PARKED;
 import static io.harness.beans.DelegateTask.Status.QUEUED;
 import static io.harness.beans.DelegateTask.Status.STARTED;
 import static io.harness.beans.DelegateTask.Status.runningStatuses;
@@ -404,6 +405,18 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   @VisibleForTesting
+  public void checkParkedTaskRateLimit(DelegateTask task) {
+    String accountId = task.isExecuteOnHarnessHostedDelegates() ? task.getSecondaryAccountId() : task.getAccountId();
+    long currentParkedTaskCount = delegateCache.getParkedTasksCount(accountId);
+    long maxTaskCount = mainConfiguration.getPortal().getParkedDelegateTaskRejectAtLimit();
+    if (currentParkedTaskCount >= maxTaskCount) {
+      throw new RateLimitExceededException(
+          format("Rate limit reached for parked task tasks per account. Current task count %s and max limit %s ",
+              currentParkedTaskCount, maxTaskCount));
+    }
+  }
+
+  @VisibleForTesting
   @Override
   public void convertToExecutionCapability(DelegateTask task) {
     Set<ExecutionCapability> executionCapabilities = new HashSet<>();
@@ -615,7 +628,11 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
             throw new NoAvailableDelegatesException();
           }
         }
-        checkTaskRankRateLimit(task);
+        if (PARKED.equals(taskStatus)) {
+          checkParkedTaskRateLimit(task);
+        } else {
+          checkTaskRankRateLimit(task);
+        }
 
         // Added temporarily to help to identifying tasks whose task setup abstractions need to be fixed
         verifyTaskSetupAbstractions(task);
@@ -623,7 +640,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         saveDelegateTask(task, task.getAccountId());
         delegateSelectionLogsService.logBroadcastToDelegate(Sets.newHashSet(task.getBroadcastToDelegateIds()), task);
         // delegateMetricsService.recordDelegateTaskMetrics(task, DELEGATE_TASK_CREATION);
-        log.info("Task {} marked as {} with first attempt broadcast to {}", task.getUuid(), taskStatus,
+        log.debug("Task {} marked as {} with first attempt broadcast to {}", task.getUuid(), taskStatus,
             task.getBroadcastToDelegateIds());
         addToTaskActivityLog(task, "Task processing completed");
       } catch (Exception exception) {
@@ -690,7 +707,11 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
             throw new NoAvailableDelegatesException(errorMessage);
           }
         }
-        checkTaskRankRateLimit(task);
+        if (PARKED.equals(taskStatus)) {
+          checkParkedTaskRateLimit(task);
+        } else {
+          checkTaskRankRateLimit(task);
+        }
 
         // Added temporarily to help to identifying tasks whose task setup abstractions need to be fixed
         verifyTaskSetupAbstractions(task);
@@ -699,7 +720,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         saveDelegateTask(task, task.getAccountId());
         delegateSelectionLogsService.logBroadcastToDelegate(Sets.newHashSet(task.getBroadcastToDelegateIds()), task);
         delegateMetricsService.recordDelegateTaskMetrics(task, DELEGATE_TASK_CREATION);
-        log.info("Task {} marked as {} with first attempt broadcast to {}", task.getUuid(), taskStatus,
+        log.debug("Task {} marked as {} with first attempt broadcast to {}", task.getUuid(), taskStatus,
             task.getBroadcastToDelegateIds());
         addToTaskActivityLog(task, "Task processing completed");
       } catch (Exception exception) {
@@ -1555,6 +1576,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       log.debug("Task no longer available for delegate");
       return null;
     }
+
     copyTaskDataV2ToTaskData(task);
     task.getData().setParameters(delegateTask.getData().getParameters());
     log.info("Returning previously assigned task to delegate");

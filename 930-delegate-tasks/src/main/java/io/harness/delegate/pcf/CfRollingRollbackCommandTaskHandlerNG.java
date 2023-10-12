@@ -134,25 +134,24 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
     TasApplicationInfo currentProdInfo = null;
     try {
       CfRollingRollbackResponseNG cfRollingRollbackResponseNG;
-
-      if (cfRollingRollbackRequestNG.isFirstDeployment()) {
-        cfRollingRollbackResponseNG = CfRollingRollbackResponseNG.builder()
-                                          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-                                          .newApplicationInfo(null)
-                                          .currentProdInfo(null)
-                                          .build();
-        logCallback.saveExecutionLog(
-            "\n ---------  This is first rolling deployment hence skipping rollback", INFO, SUCCESS);
-        logCallback.saveExecutionLog("\n ---------  PCF Rolling Rollback completed successfully", INFO, SUCCESS);
-        return cfRollingRollbackResponseNG;
-      }
-
       List<ApplicationSummary> previousReleases = cfDeploymentManager.getPreviousReleasesForRolling(
           cfRequestConfig, ((CfRollingRollbackRequestNG) cfCommandRequestNG).getApplicationName());
       workingDirectory = generateWorkingDirectoryOnDelegate(cfRollingRollbackRequestNG);
       cfRequestConfig.setCfHomeDirPath(workingDirectory.getAbsolutePath());
       currentProdInfo = getCurrentProdInfo(previousReleases, clonePcfRequestConfig(cfRequestConfig).build(),
           workingDirectory, ((CfRollingRollbackRequestNG) cfCommandRequestNG).getTimeoutIntervalInMin(), logCallback);
+
+      if (cfRollingRollbackRequestNG.isFirstDeployment()) {
+        cfRollingRollbackResponseNG = CfRollingRollbackResponseNG.builder()
+                                          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                          .newApplicationInfo(currentProdInfo)
+                                          .currentProdInfo(currentProdInfo)
+                                          .build();
+        logCallback.saveExecutionLog(
+            "\n ---------  This is first rolling deployment hence skipping rollback", INFO, SUCCESS);
+        logCallback.saveExecutionLog("\n ---------  PCF Rolling Rollback completed successfully", INFO, SUCCESS);
+        return cfRollingRollbackResponseNG;
+      }
 
       CfAppAutoscalarRequestData cfAppAutoscalarRequestData =
           CfAppAutoscalarRequestData.builder()
@@ -253,6 +252,7 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
       Misc.logAllMessages(sanitizedException, logCallback);
       return CfRollingRollbackResponseNG.builder()
           .currentProdInfo(currentProdInfo)
+          .newApplicationInfo(currentProdInfo)
           .commandExecutionStatus(CommandExecutionStatus.FAILURE)
           .errorMessage(ExceptionUtils.getMessage(sanitizedException))
           .build();
@@ -533,8 +533,10 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
     try {
       isAutoScalarEnabled = cfDeploymentManager.checkIfAppHasAutoscalarEnabled(cfAppAutoscalarRequestData, logCallback);
     } catch (PivotalClientApiException e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       logCallback.saveExecutionLog(
           "Failed while fetching autoscalar state: " + encodeColor(currentActiveApplication.getName()), LogLevel.ERROR);
+      logCallback.saveExecutionLog(sanitizedException.getMessage(), LogLevel.ERROR);
     }
     return TasApplicationInfo.builder()
         .applicationName(currentActiveApplication.getName())

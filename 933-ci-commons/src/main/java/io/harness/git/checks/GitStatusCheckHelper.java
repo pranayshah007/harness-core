@@ -21,6 +21,8 @@ import io.harness.cistatus.service.bitbucket.BitbucketService;
 import io.harness.cistatus.service.gitlab.GitlabConfig;
 import io.harness.cistatus.service.gitlab.GitlabService;
 import io.harness.cistatus.service.gitlab.GitlabServiceImpl;
+import io.harness.code.CodeResourceClient;
+import io.harness.code.HarnessCodePayload;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
@@ -31,9 +33,11 @@ import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.task.ci.GitSCMType;
 import io.harness.exception.ConnectorNotFoundException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.git.GitClientHelper;
 import io.harness.git.GitTokenRetriever;
 import io.harness.impl.scm.ScmGitProviderMapper;
+import io.harness.remote.client.NGRestUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -55,7 +59,7 @@ public class GitStatusCheckHelper {
   @Inject private BitbucketService bitbucketService;
   @Inject private GitlabService gitlabService;
   @Inject private AzureRepoService azureRepoService;
-
+  @Inject(optional = true) private CodeResourceClient codeResourceClient;
   @Inject private GitTokenRetriever gitTokenRetriever;
   private static final String DESC = "description";
   private static final String STATE = "state";
@@ -88,8 +92,7 @@ public class GitStatusCheckHelper {
       } else if (gitStatusCheckParams.getGitSCMType() == GitSCMType.AZURE_REPO) {
         statusSent = sendBuildStatusToAzureRepo(gitStatusCheckParams);
       } else if (gitStatusCheckParams.getGitSCMType() == GitSCMType.HARNESS) {
-        log.info("Status API not yet implemented for Harness inbuilt SCM");
-        return false;
+        statusSent = sendBuildStatusToHarnessCode(gitStatusCheckParams);
       } else {
         throw new UnsupportedOperationException("Not supported");
       }
@@ -280,6 +283,34 @@ public class GitStatusCheckHelper {
       log.error("Not sending status because token is empty sha {}", gitStatusCheckParams.getSha());
       return false;
     }
+  }
+
+  private boolean sendBuildStatusToHarnessCode(GitStatusCheckParams gitStatusCheckParams) {
+    String checkUid = (gitStatusCheckParams.getOwner() + gitStatusCheckParams.getRepo() + gitStatusCheckParams.getSha())
+                          .replaceAll("/", "_");
+    HarnessCodePayload harnessCodePayload =
+        HarnessCodePayload.builder()
+            .status(HarnessCodePayload.CheckStatus.fromString(gitStatusCheckParams.getState()))
+            .link(gitStatusCheckParams.getDetailsUrl())
+            // todo(abhinav): add summary
+            .summary("Add status")
+            .payload(HarnessCodePayload.Payload.builder().kind(HarnessCodePayload.CheckPayloadKind.raw).build())
+            // todo(abhinav): find consistent check uid
+            .check_uid(checkUid)
+            .build();
+    String accountId = gitStatusCheckParams.getOwner();
+    String[] repoSplit = gitStatusCheckParams.getRepo().split("/");
+    if (repoSplit.length != 3) {
+      throw new InvalidRequestException(String.format("incorrect repo provided: %s", gitStatusCheckParams.getRepo()));
+    }
+    String orgId = repoSplit[0];
+    String projectId = repoSplit[1];
+    String repoId = repoSplit[2];
+    log.info("Sending status {} for sha {} and repo {}", harnessCodePayload.getStatus(), gitStatusCheckParams.getSha(),
+        gitStatusCheckParams.getRepo());
+    return NGRestUtils.getGeneralResponse(codeResourceClient.sendStatus(
+               accountId, orgId, projectId, repoId, gitStatusCheckParams.getSha(), harnessCodePayload))
+        != null;
   }
 
   private String getGitApiURL(String url) {

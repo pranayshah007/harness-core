@@ -33,6 +33,7 @@ public class EntityYamlRootNames {
   public static final String GITOPS_MERGE_PR = "MergePR";
   public static final String GITOPS_REVERT_PR = "RevertPR";
   public static final String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
+  public static final String UPDATE_GITOPS_APP = "UpdateGitOpsApp";
   public static final String GITOPS_FETCH_LINKED_APPS = "GitOpsFetchLinkedApps";
   public static final String GITOPS_SYNC = "GitOpsSync";
   public static final String ENVIRONMENT_GROUP = "environmentGroup";
@@ -158,6 +159,9 @@ public class EntityYamlRootNames {
   public static final String GCS_UPLOAD = "GCSUpload";
   public static final String S3_UPLOAD = "S3Upload";
   public static final String BUILD_AND_PUSH_GCR = "BuildAndPushGCR";
+
+  public static final String BUILD_AND_PUSH_GAR = "BuildAndPushGAR";
+
   public static final String BUILD_AND_PUSH_ACR = "BuildAndPushACR";
   public static final String BUILD_AND_PUSH_ECR = "BuildAndPushECR";
   public static final String BUILD_AND_PUSH_DOCKER_REGISTRY = "BuildAndPushDockerRegistry";
@@ -193,10 +197,14 @@ public class EntityYamlRootNames {
   public static final String ECS_BLUE_GREEN_CREATE_SERVICE = "EcsBlueGreenCreateService";
   public static final String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = "EcsBlueGreenSwapTargetGroups";
   public static final String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
+  public static final String ECS_SERVICE_SETUP = "EcsServiceSetup";
+  public static final String ECS_UPGRADE_CONTAINER = "EcsUpgradeContainer";
+  public static final String ECS_BASIC_ROLLBACK = "EcsBasicRollback";
   public static final String WAIT_STEP = "Wait";
   public static final String SHELL_SCRIPT_PROVISION_STEP = "ShellScriptProvision";
   public static final String FREEZE = "freeze";
   public static final String CHAOS_STEP = "Chaos";
+  public static final String CHAOS_INFRASTRUCTURE = "ChaosInfrastructure";
   public static final String ELASTIGROUP_DEPLOY_STEP = "ElastigroupDeploy";
   public static final String ELASTIGROUP_ROLLBACK_STEP = "ElastigroupRollback";
   public static final String IACM_STAGE = "IACMStage";

@@ -6,12 +6,14 @@
  */
 
 package io.harness.ngmigration.service.servicev2;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ngmigration.utils.MigratorUtility.generateFileIdentifier;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.configfile.ConfigFileWrapper;
@@ -37,14 +39,15 @@ import java.util.LinkedList;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public class AwsLambdaServiceV2Mapper implements ServiceV2Mapper {
   private static final String LAMBDA_REQUEST_FORMAT = "{\n"
-      + "   \"FunctionName\": \"%s\",\n"
-      + "   \"Handler\": \"%s\",\n"
-      + "   \"MemorySize\": %d,\n"
-      + "   \"Runtime\": \"%s\",\n"
-      + "   \"Timeout\": %d\n"
+      + "   \"functionName\": \"%s\",\n"
+      + "   \"handler\": \"%s\",\n"
+      + "   \"memorySize\": %d,\n"
+      + "   \"runtime\": \"%s\",\n"
+      + "   \"timeout\": %d\n"
       + "}";
 
   @Override

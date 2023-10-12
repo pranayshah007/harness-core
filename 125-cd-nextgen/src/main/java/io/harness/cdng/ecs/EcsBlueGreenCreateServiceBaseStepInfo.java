@@ -6,11 +6,14 @@
  */
 
 package io.harness.cdng.ecs;
-
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
@@ -25,6 +28,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @NoArgsConstructor
@@ -45,4 +49,12 @@ public class EcsBlueGreenCreateServiceBaseStepInfo {
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> stageListener;
 
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> stageListenerRuleArn;
+
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  ParameterField<Boolean> sameAsAlreadyRunningInstances;
+
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  ParameterField<Boolean> enableAutoScalingInSwapStep;
 }

@@ -145,9 +145,9 @@ public class PerpetualTaskRecordHandler extends IteratorPumpAndRedisModeHandler 
       String taskId = taskRecord.getUuid();
       if (!isEmpty(taskRecord.getDelegateId())
           && delegateService.checkDelegateConnected(taskRecord.getAccountId(), taskRecord.getDelegateId())) {
-        perpetualTaskRecordDao.appointDelegate(taskId, taskRecord.getDelegateId(), System.currentTimeMillis());
         log.info(
             "Assign perpetual task {} to previously appointed delegate id {}.", taskId, taskRecord.getDelegateId());
+        perpetualTaskRecordDao.appointDelegate(taskId, taskRecord.getDelegateId(), System.currentTimeMillis());
         return;
       }
       log.info("Start assigning perpetual task id:{} type:{} to delegate.", taskId, taskRecord.getPerpetualTaskType());

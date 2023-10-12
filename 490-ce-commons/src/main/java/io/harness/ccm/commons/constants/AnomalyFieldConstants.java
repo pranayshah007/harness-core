@@ -10,6 +10,8 @@ package io.harness.ccm.commons.constants;
 public interface AnomalyFieldConstants {
   String CLUSTER = "CLUSTER";
   String NAMESPACE = "namespace";
+  String SERVICE = "service";
+  String SERVICE_NAME = "serviceName";
   String WORKLOAD = "workload";
   String AWS = "AWS";
   String GCP = "GCP";

@@ -42,6 +42,8 @@ public interface SignupService {
 
   UserInfo oAuthSignup(OAuthSignupDTO dto) throws WingsException;
 
+  UserInfo oAuthSignupForDS(OAuthSignupDTO dto, String accountId);
+
   VerifyTokenResponseDTO verifyToken(String token);
 
   void resendVerificationEmail(String email);

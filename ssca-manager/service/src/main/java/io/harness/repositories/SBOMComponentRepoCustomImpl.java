@@ -14,13 +14,26 @@ import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.repository.support.PageableExecutionUtils;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Slf4j
 public class SBOMComponentRepoCustomImpl implements SBOMComponentRepoCustom {
   private final MongoTemplate mongoTemplate;
+
+  @Override
+  public Page<NormalizedSBOMComponentEntity> findAll(Criteria criteria, Pageable pageable) {
+    Query query = new Query(criteria).with(pageable);
+    List<NormalizedSBOMComponentEntity> normalizedSBOMComponentEntities =
+        mongoTemplate.find(query, NormalizedSBOMComponentEntity.class);
+    return PageableExecutionUtils.getPage(normalizedSBOMComponentEntities, pageable,
+        () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), NormalizedSBOMComponentEntity.class));
+  }
 
   @Override
   public List<NormalizedSBOMComponentEntity> findAllByQuery(Query query) {

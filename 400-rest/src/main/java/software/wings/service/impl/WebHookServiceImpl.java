@@ -6,8 +6,8 @@
  */
 
 package software.wings.service.impl;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.CDS_DISABLE_ALL_CG_TRIGGERS;
 import static io.harness.beans.FeatureName.GITHUB_WEBHOOK_AUTHENTICATION;
 import static io.harness.beans.FeatureName.WEBHOOK_TRIGGER_AUTHORIZATION;
 import static io.harness.beans.WorkflowType.PIPELINE;
@@ -25,8 +25,11 @@ import static software.wings.service.impl.trigger.WebhookEventUtils.X_HUB_SIGNAT
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
@@ -95,6 +98,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(CDC)
 @ValidateOnExecution
 @Singleton
@@ -205,6 +209,11 @@ public class WebHookServiceImpl implements WebHookService {
         return prepareResponse(webHookResponse, Response.Status.UNAUTHORIZED);
       }
 
+      if (featureFlagService.isEnabled(CDS_DISABLE_ALL_CG_TRIGGERS, app.getAccountId())) {
+        return prepareResponse(
+            WebHookResponse.builder().error("Trigger cannot be fired after migration to NextGen").build(),
+            Response.Status.MOVED_PERMANENTLY);
+      }
       return executeTriggerWebRequest(trigger.getAppId(), token, app, webHookRequest);
 
     } catch (WingsException ex) {

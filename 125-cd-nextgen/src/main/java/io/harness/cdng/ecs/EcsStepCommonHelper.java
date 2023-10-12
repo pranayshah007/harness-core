@@ -20,6 +20,9 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.ecs.beans.EcsBasicPrepareDeployDataOutcome;
+import io.harness.cdng.ecs.beans.EcsBasicPrepareDeployDataOutcome.EcsBasicPrepareDeployDataOutcomeBuilder;
+import io.harness.cdng.ecs.beans.EcsBasicPrepareRollbackDataOutcome;
 import io.harness.cdng.ecs.beans.EcsBlueGreenPrepareRollbackDataOutcome;
 import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsGitFetchFailurePassThroughData;
@@ -35,6 +38,7 @@ import io.harness.cdng.ecs.beans.EcsRunTaskS3FileConfigs;
 import io.harness.cdng.ecs.beans.EcsS3FetchFailurePassThroughData;
 import io.harness.cdng.ecs.beans.EcsS3FetchPassThroughData;
 import io.harness.cdng.ecs.beans.EcsS3ManifestFileConfigs;
+import io.harness.cdng.ecs.beans.EcsServiceDeployConfig;
 import io.harness.cdng.ecs.beans.EcsStepExceptionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
 import io.harness.cdng.expressions.CDExpressionResolver;
@@ -51,9 +55,13 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.service.steps.sweepingoutput.EcsServiceCustomSweepingOutput;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.ecs.EcsBasicDeployData;
+import io.harness.delegate.beans.ecs.EcsBasicPrepareRollbackData;
+import io.harness.delegate.beans.ecs.EcsBasicRollbackData;
 import io.harness.delegate.beans.ecs.EcsBlueGreenCreateServiceResult;
 import io.harness.delegate.beans.ecs.EcsBlueGreenPrepareRollbackDataResult;
 import io.harness.delegate.beans.ecs.EcsBlueGreenRollbackResult;
@@ -70,12 +78,15 @@ import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.ecs.EcsGitFetchFileConfig;
 import io.harness.delegate.task.ecs.EcsGitFetchRunTaskFileConfig;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
+import io.harness.delegate.task.ecs.EcsResizeStrategy;
 import io.harness.delegate.task.ecs.EcsS3FetchFileConfig;
 import io.harness.delegate.task.ecs.request.EcsCommandRequest;
 import io.harness.delegate.task.ecs.request.EcsGitFetchRequest;
 import io.harness.delegate.task.ecs.request.EcsGitFetchRunTaskRequest;
 import io.harness.delegate.task.ecs.request.EcsS3FetchRequest;
 import io.harness.delegate.task.ecs.request.EcsS3FetchRunTaskRequest;
+import io.harness.delegate.task.ecs.response.EcsBasicPrepareRollbackResponse;
+import io.harness.delegate.task.ecs.response.EcsBasicRollbackResponse;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenCreateServiceResponse;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenPrepareRollbackDataResponse;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenRollbackResponse;
@@ -90,6 +101,8 @@ import io.harness.delegate.task.ecs.response.EcsRollingRollbackResponse;
 import io.harness.delegate.task.ecs.response.EcsRunTaskResponse;
 import io.harness.delegate.task.ecs.response.EcsS3FetchResponse;
 import io.harness.delegate.task.ecs.response.EcsS3FetchRunTaskResponse;
+import io.harness.delegate.task.ecs.response.EcsServiceSetupResponse;
+import io.harness.delegate.task.ecs.response.EcsUpgradeContainerResponse;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.ecs.EcsCommandUnitConstants;
 import io.harness.exception.ExceptionUtils;
@@ -345,7 +358,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     List<String> ecsScalingPolicyHarnessContentList = ecsHarnessStoreContent.getScalingPolicyHarnessContentList();
 
     TaskChainResponse taskChainResponse = null;
-    if (ecsStepExecutor instanceof EcsRollingDeployStep) {
+    if (ecsStepExecutor instanceof EcsRollingDeployStep || ecsStepExecutor instanceof EcsServiceSetupStep) {
       EcsPrepareRollbackDataPassThroughData ecsPrepareRollbackDataPassThroughData =
           EcsPrepareRollbackDataPassThroughData.builder()
               .infrastructureOutcome(infrastructureOutcome)
@@ -1057,6 +1070,50 @@ public class EcsStepCommonHelper extends EcsStepUtils {
 
         taskChainResponse = handleEcsPrepareRollbackDataResponseRolling(
             ecsPrepareRollbackDataResponse, ecsStepExecutor, ambiance, stepElementParameters, ecsStepPassThroughData);
+      }
+    } catch (Exception e) {
+      taskChainResponse =
+          TaskChainResponse.builder()
+              .chainEnd(true)
+              .passThroughData(
+                  EcsStepExceptionPassThroughData.builder()
+                      .errorMessage(ExceptionUtils.getMessage(e))
+                      .unitProgressData(completeUnitProgressData(unitProgressData, ambiance, e.getMessage()))
+                      .build())
+              .build();
+    }
+
+    return taskChainResponse;
+  }
+
+  public TaskChainResponse executeNextLinkBasic(EcsStepExecutor ecsStepExecutor, Ambiance ambiance,
+      StepBaseParameters stepElementParameters, PassThroughData passThroughData,
+      ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+    ResponseData responseData = responseDataSupplier.get();
+    UnitProgressData unitProgressData = null;
+    TaskChainResponse taskChainResponse = null;
+    try {
+      if (responseData instanceof EcsGitFetchResponse) {
+        EcsGitFetchResponse ecsGitFetchResponse = (EcsGitFetchResponse) responseData;
+        EcsGitFetchPassThroughData ecsGitFetchPassThroughData = (EcsGitFetchPassThroughData) passThroughData;
+
+        taskChainResponse = handleEcsGitFetchFilesResponseRolling(
+            ecsGitFetchResponse, ecsStepExecutor, ambiance, stepElementParameters, ecsGitFetchPassThroughData);
+
+      } else if (responseData instanceof EcsS3FetchResponse) {
+        EcsS3FetchResponse ecsS3FetchResponse = (EcsS3FetchResponse) responseData;
+        EcsS3FetchPassThroughData ecsS3FetchPassThroughData = (EcsS3FetchPassThroughData) passThroughData;
+
+        taskChainResponse = handleEcsS3FetchFilesResponseRolling(
+            ecsS3FetchResponse, ecsStepExecutor, ambiance, stepElementParameters, ecsS3FetchPassThroughData);
+      } else if (responseData instanceof EcsBasicPrepareRollbackResponse) {
+        EcsBasicPrepareRollbackResponse ecsBasicPrepareRollbackResponse =
+            (EcsBasicPrepareRollbackResponse) responseData;
+        EcsPrepareRollbackDataPassThroughData ecsStepPassThroughData =
+            (EcsPrepareRollbackDataPassThroughData) passThroughData;
+
+        taskChainResponse = handleEcsPrepareRollbackDataResponseBasic(
+            ecsBasicPrepareRollbackResponse, ecsStepExecutor, ambiance, stepElementParameters, ecsStepPassThroughData);
       }
     } catch (Exception e) {
       taskChainResponse =
@@ -1868,6 +1925,99 @@ public class EcsStepCommonHelper extends EcsStepUtils {
         ecsPrepareRollbackDataResponse.getUnitProgressData(), ecsStepExecutorParams);
   }
 
+  private TaskChainResponse handleEcsPrepareRollbackDataResponseBasic(
+      EcsBasicPrepareRollbackResponse ecsBasicPrepareRollbackResponse, EcsStepExecutor ecsStepExecutor,
+      Ambiance ambiance, StepBaseParameters stepElementParameters,
+      EcsPrepareRollbackDataPassThroughData ecsStepPassThroughData) {
+    if (ecsBasicPrepareRollbackResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
+      EcsStepExceptionPassThroughData ecsStepExceptionPassThroughData =
+          EcsStepExceptionPassThroughData.builder()
+              .errorMessage(ecsBasicPrepareRollbackResponse.getErrorMessage())
+              .unitProgressData(ecsBasicPrepareRollbackResponse.getUnitProgressData())
+              .build();
+      return TaskChainResponse.builder().passThroughData(ecsStepExceptionPassThroughData).chainEnd(true).build();
+    }
+
+    EcsServiceSetupStepParameters ecsServiceSetupStepParameters =
+        (EcsServiceSetupStepParameters) stepElementParameters.getSpec();
+
+    boolean sameAsAlreadyRunningInstances = ParameterFieldHelper.getBooleanParameterFieldValue(
+        ecsServiceSetupStepParameters.getSameAsAlreadyRunningInstances());
+
+    EcsResizeStrategy resizeStrategy =
+        getResizeStrategy(ecsServiceSetupStepParameters, EcsResizeStrategy.RESIZE_NEW_FIRST);
+
+    EcsBasicPrepareRollbackData basicPrepareRollbackData = ecsBasicPrepareRollbackResponse.getPrepareRollbackData();
+
+    String taskDefinitionFileContent = ecsStepPassThroughData.getEcsTaskDefinitionManifestContent();
+
+    String serviceDefinitionFileContent = ecsStepPassThroughData.getEcsServiceDefinitionManifestContent();
+
+    List<String> scalableTargetManifestContentList = ecsStepPassThroughData.getEcsScalableTargetManifestContentList();
+
+    List<String> scalingPolicyManifestContentList = ecsStepPassThroughData.getEcsScalingPolicyManifestContentList();
+
+    String newServiceName = basicPrepareRollbackData.getServicePrefix() + basicPrepareRollbackData.getNextRevision();
+
+    EcsBasicPrepareRollbackDataOutcome basicPrepareRollbackDataOutcome =
+        EcsBasicPrepareRollbackDataOutcome.builder()
+            .isFirstDeployment(basicPrepareRollbackData.isFirstDeployment())
+            .oldServiceName(basicPrepareRollbackData.getCurrentServiceName())
+            .createServiceRequestYaml(basicPrepareRollbackData.getCreateServiceRequestYaml())
+            .registerScalableTargetRequestYaml(basicPrepareRollbackData.getRegisterScalableTargetRequestYaml())
+            .registerScalingPolicyRequestYaml(basicPrepareRollbackData.getRegisterScalingPolicyRequestYaml())
+            .newServiceName(newServiceName)
+            .build();
+
+    EcsBasicPrepareDeployDataOutcomeBuilder basicPrepareDeployDataOutcomeBuilder =
+        EcsBasicPrepareDeployDataOutcome.builder()
+            .isFirstDeployment(basicPrepareRollbackData.isFirstDeployment())
+            .currentServiceName(basicPrepareRollbackData.getCurrentServiceName())
+            .currentServiceInstanceCount(basicPrepareRollbackData.getCurrentServiceInstanceCount())
+            .serviceName(newServiceName)
+            .scalingPolicyManifestContentList(scalingPolicyManifestContentList)
+            .scalableTargetManifestContentList(scalableTargetManifestContentList)
+            .thresholdInstanceCount(basicPrepareRollbackData.getNewServiceThresholdInstanceCount())
+            .resizeStrategy(resizeStrategy);
+
+    if (sameAsAlreadyRunningInstances && !basicPrepareRollbackData.isFirstDeployment()) {
+      basicPrepareDeployDataOutcomeBuilder.thresholdInstanceCount(
+          basicPrepareRollbackData.getCurrentServiceInstanceCount());
+    }
+
+    executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ECS_BASIC_PREPARE_ROLLBACK_DATA_OUTCOME,
+        basicPrepareRollbackDataOutcome, StepOutcomeGroup.STEP.name());
+
+    executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ECS_BASIC_PREPARE_DEPLOY_DATA_OUTCOME,
+        basicPrepareDeployDataOutcomeBuilder.build(), StepOutcomeGroup.STEP.name());
+
+    EcsExecutionPassThroughData ecsExecutionPassThroughData =
+        EcsExecutionPassThroughData.builder()
+            .infrastructure(ecsStepPassThroughData.getInfrastructureOutcome())
+            .lastActiveUnitProgressData(ecsBasicPrepareRollbackResponse.getUnitProgressData())
+            .build();
+
+    EcsStepExecutorParams ecsStepExecutorParams =
+        EcsStepExecutorParams.builder()
+            .shouldOpenFetchFilesLogStream(false)
+            .ecsTaskDefinitionManifestContent(taskDefinitionFileContent)
+            .ecsServiceDefinitionManifestContent(serviceDefinitionFileContent)
+            .ecsScalableTargetManifestContentList(scalableTargetManifestContentList)
+            .ecsScalingPolicyManifestContentList(scalingPolicyManifestContentList)
+            .oldServiceName(basicPrepareRollbackData.getCurrentServiceName())
+            .newServiceName(newServiceName)
+            .firstTimeDeployment(basicPrepareRollbackData.isFirstDeployment())
+            .build();
+
+    return ecsStepExecutor.executeEcsTask(ambiance, stepElementParameters, ecsExecutionPassThroughData,
+        ecsBasicPrepareRollbackResponse.getUnitProgressData(), ecsStepExecutorParams);
+  }
+
+  private EcsResizeStrategy getResizeStrategy(
+      EcsServiceSetupStepParameters stepParameters, EcsResizeStrategy defaultResizeStrategy) {
+    return stepParameters.getResizeStrategy() == null ? defaultResizeStrategy : stepParameters.getResizeStrategy();
+  }
+
   private TaskChainResponse handleEcsBlueGreenPrepareRollbackDataResponse(
       EcsBlueGreenPrepareRollbackDataResponse ecsBlueGreenPrepareRollbackDataResponse, EcsStepExecutor ecsStepExecutor,
       Ambiance ambiance, StepBaseParameters stepElementParameters,
@@ -1884,12 +2034,32 @@ public class EcsStepCommonHelper extends EcsStepUtils {
     String prodTargetGroupArn = null;
     String stageTargetGroupArn = null;
 
+    String ecsTaskDefinitionFileContent = ecsStepPassThroughData.getEcsTaskDefinitionManifestContent();
+
+    String ecsServiceDefinitionFileContent = ecsStepPassThroughData.getEcsServiceDefinitionManifestContent();
+
+    List<String> ecsScalableTargetManifestContentList =
+        ecsStepPassThroughData.getEcsScalableTargetManifestContentList();
+
+    List<String> ecsScalingPolicyManifestContentList = ecsStepPassThroughData.getEcsScalingPolicyManifestContentList();
+
     if (ecsStepExecutor instanceof EcsBlueGreenCreateServiceStep) {
+      EcsBlueGreenCreateServiceStepParameters ecsBlueGreenCreateServiceStepParameters =
+          (EcsBlueGreenCreateServiceStepParameters) stepElementParameters.getSpec();
+      boolean enableAutoscalingInSwapStep = ParameterFieldHelper.getBooleanParameterFieldValue(
+          ecsBlueGreenCreateServiceStepParameters.getEnableAutoScalingInSwapStep());
       EcsBlueGreenPrepareRollbackDataResult ecsBlueGreenPrepareRollbackDataResult =
           ecsBlueGreenPrepareRollbackDataResponse.getEcsBlueGreenPrepareRollbackDataResult();
 
       prodTargetGroupArn = ecsBlueGreenPrepareRollbackDataResult.getEcsLoadBalancerConfig().getProdTargetGroupArn();
       stageTargetGroupArn = ecsBlueGreenPrepareRollbackDataResult.getEcsLoadBalancerConfig().getStageTargetGroupArn();
+
+      EcsServiceDeployConfig ecsServiceDeployConfig =
+          EcsServiceDeployConfig.builder()
+              .enableAutoscalingInSwapStep(enableAutoscalingInSwapStep)
+              .ecsScalableTargetManifestContentList(ecsScalableTargetManifestContentList)
+              .ecsScalingPolicyManifestContentList(ecsScalingPolicyManifestContentList)
+              .build();
 
       EcsBlueGreenPrepareRollbackDataOutcome ecsBlueGreenPrepareRollbackDataOutcome =
           EcsBlueGreenPrepareRollbackDataOutcome.builder()
@@ -1919,6 +2089,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
               .greenServiceScalingPolicyRequestBuilderStrings(
                   ecsBlueGreenPrepareRollbackDataResult.getGreenServiceScalingPolicyRequestBuilderStrings())
               .greenServiceRollbackDataExist(ecsBlueGreenPrepareRollbackDataResult.isGreenServiceRollbackDataExist())
+              .ecsBGServiceDeployConfig(ecsServiceDeployConfig)
               .build();
 
       executionSweepingOutputService.consume(ambiance,
@@ -1931,15 +2102,6 @@ public class EcsStepCommonHelper extends EcsStepUtils {
             .infrastructure(ecsStepPassThroughData.getInfrastructureOutcome())
             .lastActiveUnitProgressData(ecsBlueGreenPrepareRollbackDataResponse.getUnitProgressData())
             .build();
-
-    String ecsTaskDefinitionFileContent = ecsStepPassThroughData.getEcsTaskDefinitionManifestContent();
-
-    String ecsServiceDefinitionFileContent = ecsStepPassThroughData.getEcsServiceDefinitionManifestContent();
-
-    List<String> ecsScalableTargetManifestContentList =
-        ecsStepPassThroughData.getEcsScalableTargetManifestContentList();
-
-    List<String> ecsScalingPolicyManifestContentList = ecsStepPassThroughData.getEcsScalingPolicyManifestContentList();
 
     EcsStepExecutorParams ecsStepExecutorParams =
         EcsStepExecutorParams.builder()
@@ -2116,6 +2278,18 @@ public class EcsStepCommonHelper extends EcsStepUtils {
       EcsRunTaskResult ecsRunTaskResult = ((EcsRunTaskResponse) ecsCommandResponse).getEcsRunTaskResult();
       return EcsTaskToServerInstanceInfoMapper.toServerInstanceInfoList(
           ecsRunTaskResult.getEcsTasks(), infrastructureKey, ecsRunTaskResult.getRegion());
+    } else if (ecsCommandResponse instanceof EcsServiceSetupResponse) {
+      EcsBasicDeployData deployData = ((EcsServiceSetupResponse) ecsCommandResponse).getDeployData();
+      return EcsTaskToServerInstanceInfoMapper.toServerInstanceInfoList(
+          deployData.getOldServiceData().getTasks(), infrastructureKey, deployData.getOldServiceData().getRegion());
+    } else if (ecsCommandResponse instanceof EcsUpgradeContainerResponse) {
+      EcsBasicDeployData deployData = ((EcsUpgradeContainerResponse) ecsCommandResponse).getDeployData();
+      return EcsTaskToServerInstanceInfoMapper.toServerInstanceInfoList(
+          deployData.getNewServiceData().getTasks(), infrastructureKey, deployData.getNewServiceData().getRegion());
+    } else if (ecsCommandResponse instanceof EcsBasicRollbackResponse) {
+      EcsBasicRollbackData rollbackData = ((EcsBasicRollbackResponse) ecsCommandResponse).getRollbackData();
+      return EcsTaskToServerInstanceInfoMapper.toServerInstanceInfoList(
+          rollbackData.getOldServiceData().getTasks(), infrastructureKey, rollbackData.getOldServiceData().getRegion());
     }
     throw new GeneralException("Invalid ecs command response instance");
   }

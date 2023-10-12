@@ -6,11 +6,13 @@
  */
 
 package io.harness.ngmigration.service.entity;
-
 import static software.wings.ngmigration.NGMigrationEntityType.DUMMY_HEAD;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ngmigration.beans.DummyNode;
@@ -29,6 +31,7 @@ import java.util.HashSet;
 import java.util.Map;
 import org.apache.commons.lang3.NotImplementedException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public class DummyMigrationService extends NgMigrationService {
   @Override
@@ -67,7 +70,7 @@ public class DummyMigrationService extends NgMigrationService {
   }
 
   @Override
-  protected boolean isNGEntityExists() {
+  protected boolean isNGEntityExists(MigrationContext migrationContext) {
     return false;
   }
 }

@@ -6,6 +6,7 @@
  */
 
 package io.harness.delegate.task.helm;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper.populateDelegateSelectorCapability;
 
 import io.harness.annotations.dev.CodePulse;
@@ -91,17 +92,25 @@ public class HelmValuesFetchRequest implements TaskParameters, ExecutionCapabili
 
       case OCI_HELM:
         OciHelmStoreDelegateConfig ociHelmStoreConfig = (OciHelmStoreDelegateConfig) storeDelegateConfig;
-        if (ociHelmStoreConfig.getOciHelmConnector().getHelmRepoUrl() != null) {
+        String criteria = null;
+        if (ociHelmStoreConfig.getAwsConnectorDTO() != null) {
+          criteria = ociHelmStoreConfig.getRepoName() + ":" + ociHelmStoreConfig.getRegion();
+          capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
+              ociHelmStoreConfig.getAwsConnectorDTO(), maskingEvaluator));
+        } else if (ociHelmStoreConfig.getOciHelmConnector() != null) {
+          criteria = ociHelmStoreConfig.getRepoUrl();
           OciHelmConnectorDTO ociHelmConnector = ociHelmStoreConfig.getOciHelmConnector();
+          populateDelegateSelectorCapability(capabilities, ociHelmConnector.getDelegateSelectors());
+        }
+        if (isNotEmpty(criteria)) {
           capabilities.add(HelmInstallationCapability.builder()
                                .version(HelmVersion.V380)
-                               .criteria("OCI_HELM_REPO: " + ociHelmConnector.getHelmRepoUrl())
+                               .criteria("OCI_HELM_REPO: " + criteria)
                                .build());
         }
         capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
             ociHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));
-        populateDelegateSelectorCapability(
-            capabilities, ociHelmStoreConfig.getOciHelmConnector().getDelegateSelectors());
+
         break;
 
       case S3_HELM:

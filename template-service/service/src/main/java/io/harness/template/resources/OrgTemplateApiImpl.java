@@ -6,13 +6,15 @@
  */
 
 package io.harness.template.resources;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.template.v1.OrgTemplateApi;
 import io.harness.spec.server.template.v1.model.GitCreateDetails;
@@ -29,6 +31,7 @@ import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDC)
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @NextGenManagerAuth
@@ -38,10 +41,11 @@ public class OrgTemplateApiImpl implements OrgTemplateApi {
   public Response createTemplatesOrg(@OrgIdentifier String org, TemplateCreateRequestBody templateCreateRequestBody,
       @AccountIdentifier String account) {
     GitCreateDetails gitCreateDetails = templateCreateRequestBody.getGitDetails();
-    String templateYaml = templateCreateRequestBody.getTemplateYaml();
+    TemplateRequestInfoDTO requestInfoDTO =
+        templateResourceApiUtils.mapCreateToRequestInfoDTO(templateCreateRequestBody);
     Boolean isStable = Boolean.TRUE.equals(templateCreateRequestBody.isIsStable());
     return templateResourceApiUtils.createTemplate(
-        account, org, null, gitCreateDetails, templateYaml, isStable, templateCreateRequestBody.getComments());
+        account, org, null, gitCreateDetails, requestInfoDTO, isStable, templateCreateRequestBody.getComments());
   }
 
   @Override
@@ -88,9 +92,10 @@ public class OrgTemplateApiImpl implements OrgTemplateApi {
   public Response updateTemplateOrg(@ResourceIdentifier String templateIdentifier, @OrgIdentifier String org,
       String versionLabel, TemplateUpdateRequestBody templateUpdateRequestBody, @AccountIdentifier String account) {
     GitUpdateDetails gitUpdateDetails = templateUpdateRequestBody.getGitDetails();
-    String templateYaml = templateUpdateRequestBody.getTemplateYaml();
+    TemplateRequestInfoDTO requestInfoDTO =
+        templateResourceApiUtils.mapUpdateToRequestInfoDTO(templateUpdateRequestBody);
     return templateResourceApiUtils.updateTemplate(account, org, null, templateIdentifier, versionLabel,
-        gitUpdateDetails, templateYaml, false, templateUpdateRequestBody.getComments());
+        gitUpdateDetails, requestInfoDTO, false, templateUpdateRequestBody.getComments());
   }
 
   @Override

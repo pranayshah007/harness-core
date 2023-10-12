@@ -30,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -71,6 +72,7 @@ import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO.DeploymentVerificationDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO.LiveMonitoringDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.SLIDTO;
+import io.harness.cvng.core.beans.OnboardingResponseDTO;
 import io.harness.cvng.core.beans.RiskProfile;
 import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.monitoredService.ChangeSourceDTO;
@@ -98,6 +100,7 @@ import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.LiveMonitoringLogsFilter;
+import io.harness.cvng.core.beans.sidekick.RetryChangeSourceHandleDeleteSideKickData;
 import io.harness.cvng.core.entities.AnalysisInfo.SLI;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
@@ -108,19 +111,24 @@ import io.harness.cvng.core.entities.MonitoredService.MonitoredServiceKeys;
 import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.entities.PrometheusCVConfig.MetricInfo;
 import io.harness.cvng.core.entities.changeSource.PagerDutyChangeSource;
+import io.harness.cvng.core.jobs.ProjectChangeEventMessageProcessor;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.MetricPackService;
+import io.harness.cvng.core.services.api.OnboardingService;
+import io.harness.cvng.core.services.api.PagerDutyService;
 import io.harness.cvng.core.services.api.SetupUsageEventService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.WebhookConfigService;
+import io.harness.cvng.core.services.api.WebhookService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.services.api.monitoredService.ServiceDependencyService;
 import io.harness.cvng.core.services.impl.ChangeSourceUpdateHandler;
 import io.harness.cvng.core.services.impl.PagerdutyChangeSourceUpdateHandler;
+import io.harness.cvng.core.services.impl.sidekickexecutors.RetryChangeSourceHandleDeleteSideKickExecutor;
 import io.harness.cvng.dashboard.entities.HeatMap;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapRisk;
 import io.harness.cvng.dashboard.services.api.HeatMapService;
@@ -151,6 +159,7 @@ import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEven
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
+import io.harness.eventsframework.entity_crud.project.ProjectEntityChangeDTO;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.Edition;
@@ -220,13 +229,15 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Inject ServiceDependencyService serviceDependencyService;
   @Inject ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject SRMAnalysisStepService srmAnalysisStepService;
-
   @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject CVNGLogService cvngLogService;
   @Inject VerificationTaskService verificationTaskService;
   @Inject NotificationRuleService notificationRuleService;
   @Inject private ActivityService activityService;
   @Inject private OutboxService outboxService;
+  @Inject private ProjectChangeEventMessageProcessor projectChangeEventMessageProcessor;
+  @Inject private PagerDutyService pagerDutyService;
+  @Inject private WebhookService webhookService;
 
   @Mock SetupUsageEventService setupUsageEventService;
   @Mock ChangeSourceService changeSourceServiceMock;
@@ -306,6 +317,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(monitoredServiceService, "setupUsageEventService", setupUsageEventService, true);
     FieldUtils.writeField(changeSourceService, "changeSourceUpdateHandlerMap", changeSourceUpdateHandlerMap, true);
     FieldUtils.writeField(monitoredServiceService, "changeSourceService", changeSourceService, true);
+    FieldUtils.writeField(pagerdutyChangeSourceUpdateHandler, "pagerDutyService", pagerDutyService, true);
     FieldUtils.writeField(heatMapService, "clock", clock, true);
     FieldUtils.writeField(srmAnalysisStepService, "clock", clock, true);
     FieldUtils.writeField(monitoredServiceService, "heatMapService", heatMapService, true);
@@ -1070,7 +1082,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
             .sources(Sources.builder().healthSources(new HashSet<>()).build())
             .build();
     serviceLevelIndicatorService.create(builderFactory.getProjectParams(),
-        Arrays.asList(builderFactory.getServiceLevelIndicatorDTOBuilder()), "sloIdentifier",
+        Arrays.asList(builderFactory.getServiceLevelIndicatorDTO()), "sloIdentifier",
         existingMonitoredService.getIdentifier(), "healthSourceIdentifier");
     assertThatThrownBy(
         () -> monitoredServiceService.update(builderFactory.getContext().getAccountId(), updatingMonitoredService))
@@ -1124,7 +1136,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
             .build();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), existingMonitoredService);
     serviceLevelIndicatorService.create(builderFactory.getProjectParams(),
-        Arrays.asList(builderFactory.getServiceLevelIndicatorDTOBuilder()), "sloIdentifier",
+        Arrays.asList(builderFactory.getServiceLevelIndicatorDTO()), "sloIdentifier",
         existingMonitoredService.getIdentifier(), "healthSourceIdentifier");
     assertThatThrownBy(()
                            -> monitoredServiceService.delete(
@@ -1277,6 +1289,47 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(activityService.getByMonitoredServiceIdentifier(monitoredServiceParams).size()).isEqualTo(0);
     monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
     assertThat(monitoredService).isEqualTo(null);
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testProcessDeleteAction_deletePagerDutyWebhook() throws IllegalAccessException {
+    OnboardingService onboardingService = Mockito.mock(OnboardingService.class);
+    RetryChangeSourceHandleDeleteSideKickExecutor retryChangeSourceHandleDeleteSideKickExecutor =
+        Mockito.mock(RetryChangeSourceHandleDeleteSideKickExecutor.class);
+    when(retryChangeSourceHandleDeleteSideKickExecutor.canExecute(any())).thenCallRealMethod();
+    FieldUtils.writeField(pagerDutyService, "onboardingService", onboardingService, true);
+    FieldUtils.writeField(retryChangeSourceHandleDeleteSideKickExecutor, "changeSourceUpdateHandlerMap",
+        changeSourceUpdateHandlerMap, true);
+    when(onboardingService.getOnboardingResponse(any(), any()))
+        .thenReturn(OnboardingResponseDTO.builder().result("PPQKG2N").build());
+
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    monitoredServiceDTO.setSources(
+        MonitoredServiceDTO.Sources.builder()
+            .changeSources(new HashSet<>(List.of(builderFactory.getPagerDutyChangeSourceDTOBuilder().build())))
+            .build());
+    monitoredServiceService.create(accountId, monitoredServiceDTO);
+
+    MonitoredServiceParams monitoredServiceParams = MonitoredServiceParams.builderWithProjectParams(projectParams)
+                                                        .monitoredServiceIdentifier(monitoredServiceDTO.getIdentifier())
+                                                        .build();
+    MonitoredService monitoredService = monitoredServiceService.getMonitoredService(monitoredServiceParams);
+
+    // deletes project and its resources
+    projectChangeEventMessageProcessor.processDeleteAction(ProjectEntityChangeDTO.newBuilder()
+                                                               .setAccountIdentifier(accountId)
+                                                               .setOrgIdentifier(orgIdentifier)
+                                                               .setIdentifier(projectIdentifier)
+                                                               .build());
+    assertThat(monitoredServiceService.getMonitoredServiceDTO(monitoredServiceParams)).isNull();
+    doNothing()
+        .when(retryChangeSourceHandleDeleteSideKickExecutor)
+        .execute(any(RetryChangeSourceHandleDeleteSideKickData.class));
+    // will check if the pager duty webhook also gets deleted after the project is deleted
+    assertThat(webhookService.getPagerdutyWebhook(projectParams, monitoredService.getChangeSourceIdentifiers().get(0)))
+        .isNull();
   }
 
   @Test

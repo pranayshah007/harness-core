@@ -6,10 +6,12 @@
  */
 
 package io.harness.delegate.task.azure.appservice.webapp.ng.request;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryCapabilityHelper;
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsCapabilityHelper;
@@ -36,6 +38,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Data
 @OwnedBy(CDP)
 @EqualsAndHashCode(callSuper = true)
@@ -44,19 +47,22 @@ public class AzureWebAppSlotDeploymentRequest extends AbstractSlotDataRequest {
   private Set<String> prevExecUserAddedAppSettingNames;
   private Set<String> prevExecUserAddedConnStringNames;
   private boolean prevExecUserChangedStartupCommand;
+  private boolean cleanDeployment;
 
   @Builder
   public AzureWebAppSlotDeploymentRequest(String accountId, AzureAppServicePreDeploymentData preDeploymentData,
       CommandUnitsProgress commandUnitsProgress, AzureWebAppInfraDelegateConfig infrastructure,
       AppSettingsFile startupCommand, AppSettingsFile applicationSettings, AppSettingsFile connectionStrings,
       AzureArtifactConfig artifact, Integer timeoutIntervalInMin, Set<String> prevExecUserAddedAppSettingsNames,
-      Set<String> prevExecUserAddedConnStringsNames, boolean prevExecUserChangedStartupCommand) {
+      Set<String> prevExecUserAddedConnStringsNames, boolean prevExecUserChangedStartupCommand,
+      boolean cleanDeployment) {
     super(accountId, commandUnitsProgress, infrastructure, startupCommand, applicationSettings, connectionStrings,
         artifact, timeoutIntervalInMin);
     this.preDeploymentData = preDeploymentData;
     this.prevExecUserAddedAppSettingNames = prevExecUserAddedAppSettingsNames;
     this.prevExecUserAddedConnStringNames = prevExecUserAddedConnStringsNames;
     this.prevExecUserChangedStartupCommand = prevExecUserChangedStartupCommand;
+    this.cleanDeployment = cleanDeployment;
   }
 
   @Override

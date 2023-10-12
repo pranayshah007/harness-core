@@ -544,7 +544,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   private void persistKubernetesConfigFile(KubernetesConfig config, String dir) throws IOException {
     String configFileContent = getConfigFileContent(config);
     writeUtf8StringToFile(Paths.get(dir, K8sConstants.KUBECONFIG_FILENAME).toString(), configFileContent);
-    modifyConfigFileReadableProperties(dir);
+    modifyKubeConfigReadableProperties(dir);
   }
 
   @VisibleForTesting
@@ -2137,6 +2137,33 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   }
 
   @Override
+  public List<V1Pod> getRunningPodsWithLabels(
+      KubernetesConfig kubernetesConfig, String namespace, List<String> labels) {
+    final Supplier<List<V1Pod>> podSupplier = Retry.decorateSupplier(retry, () -> {
+      try {
+        if (isEmpty(labels)) {
+          return Collections.emptyList();
+        }
+        ApiClient apiClient = kubernetesHelperService.getApiClientWithReadTimeout(kubernetesConfig);
+        String labelSelector = String.join(K8S_SELECTOR_DELIMITER, labels);
+        V1PodList podList = new CoreV1Api(apiClient).listNamespacedPod(
+            namespace, null, null, null, null, labelSelector, null, null, null, null, false);
+        return podList.getItems()
+            .stream()
+            .filter(pod
+                -> pod.getMetadata() != null && pod.getMetadata().getDeletionTimestamp() == null
+                    && pod.getStatus() != null && StringUtils.equals(pod.getStatus().getPhase(), RUNNING))
+            .collect(toList());
+      } catch (ApiException exception) {
+        String message = format(
+            "Unable to get running pods. Code: %s, message: %s", exception.getCode(), getErrorMessage(exception));
+        throw new InvalidRequestException(message, exception, USER);
+      }
+    });
+    return podSupplier.get();
+  }
+
+  @Override
   public V1Deployment getDeployment(KubernetesConfig kubernetesConfig, String namespace, String name) {
     if (kubernetesConfig == null || isBlank(name)) {
       return null;
@@ -2342,8 +2369,12 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
         .replace(OIDC_RERESH_TOKEN, refreshToken)
         .replace(OIDC_AUTH_NAME, authConfigName);
   }
-  public void modifyConfigFileReadableProperties(String workingDirectory) {
-    Path configPath = Path.of(workingDirectory, K8sConstants.KUBECONFIG_FILENAME);
+  public void modifyKubeConfigReadableProperties(String path) {
+    modifyFileReadableProperties(Path.of(path, K8sConstants.KUBECONFIG_FILENAME).toString());
+  }
+
+  public void modifyFileReadableProperties(String path) {
+    Path configPath = Path.of(path);
     try {
       Set<PosixFilePermission> permissions = java.nio.file.Files.getPosixFilePermissions(configPath);
       // Remove group-readable and world-readable properties
@@ -2351,7 +2382,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
       permissions.remove(PosixFilePermission.OTHERS_READ);
       java.nio.file.Files.setPosixFilePermissions(configPath, permissions);
     } catch (Exception e) {
-      log.error("Error updating file permissions", ExceptionMessageSanitizer.sanitizeException(e));
+      log.warn("Error updating file permissions", ExceptionMessageSanitizer.sanitizeException(e));
     }
   }
 }

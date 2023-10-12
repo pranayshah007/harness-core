@@ -83,7 +83,7 @@ public class SLOHealthIndicatorServiceImplTest extends CvNextGenTestBase {
   public void testupsert_insertSuccess() {
     ProjectParams projectParams = builderFactory.getProjectParams();
     SimpleServiceLevelObjective serviceLevelObjective = builderFactory.getSimpleServiceLevelObjectiveBuilder().build();
-    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO = builderFactory.getServiceLevelIndicatorDTOBuilder();
+    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO = builderFactory.getServiceLevelIndicatorDTO();
     createAndSaveSLI(projectParams, serviceLevelIndicatorDTO, serviceLevelObjective.getIdentifier());
     sloHealthIndicatorService.upsert(serviceLevelObjective);
     SLOHealthIndicator newSLOHealthIndicator =
@@ -101,7 +101,7 @@ public class SLOHealthIndicatorServiceImplTest extends CvNextGenTestBase {
   public void testupsert_insertSuccess_ForFailedStateWithDCfailures() {
     ProjectParams projectParams = builderFactory.getProjectParams();
     SimpleServiceLevelObjective serviceLevelObjective = builderFactory.getSimpleServiceLevelObjectiveBuilder().build();
-    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO = builderFactory.getServiceLevelIndicatorDTOBuilder();
+    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO = builderFactory.getServiceLevelIndicatorDTO();
     createAndSaveSLI(projectParams, serviceLevelIndicatorDTO, serviceLevelObjective.getIdentifier());
     DataCollectionTask dataCollectionTask =
         SLIDataCollectionTask.builder()
@@ -153,7 +153,7 @@ public class SLOHealthIndicatorServiceImplTest extends CvNextGenTestBase {
   public void testupsert_insertSuccess_afterSLIUpdate() {
     ProjectParams projectParams = builderFactory.getProjectParams();
     SimpleServiceLevelObjective serviceLevelObjective = builderFactory.getSimpleServiceLevelObjectiveBuilder().build();
-    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO = builderFactory.getServiceLevelIndicatorDTOBuilder();
+    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO = builderFactory.getServiceLevelIndicatorDTO();
     createAndSaveSLI(projectParams, serviceLevelIndicatorDTO, serviceLevelObjective.getIdentifier());
     sloHealthIndicatorService.upsert(serviceLevelObjective);
     SLOHealthIndicator newSLOHealthIndicator =
@@ -183,7 +183,7 @@ public class SLOHealthIndicatorServiceImplTest extends CvNextGenTestBase {
   public void testupsert_insertSuccess_withDummySLIRecords() {
     ProjectParams projectParams = builderFactory.getProjectParams();
     SimpleServiceLevelObjective serviceLevelObjective = builderFactory.getSimpleServiceLevelObjectiveBuilder().build();
-    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO = builderFactory.getServiceLevelIndicatorDTOBuilder();
+    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO = builderFactory.getServiceLevelIndicatorDTO();
     serviceLevelIndicatorDTO.setIdentifier(sliId);
     createAndSaveSLI(projectParams, serviceLevelIndicatorDTO, serviceLevelObjective.getIdentifier());
     String sliIndicator =

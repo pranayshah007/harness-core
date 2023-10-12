@@ -13,9 +13,15 @@ import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toSet;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cache.CacheConfig;
+import io.harness.changestreams.DebeziumConsumerConfig;
+import io.harness.eventsframework.EventsFrameworkConfiguration;
+import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.MongoConfig;
+import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.ssca.S3Config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -64,8 +70,15 @@ public class SSCAManagerConfiguration extends Configuration {
   @JsonProperty("jwtAuthSecret") private String jwtAuthSecret;
   @JsonProperty("jwtIdentityServiceSecret") private String jwtIdentityServiceSecret;
   @JsonProperty(value = "enableAuth", defaultValue = "true") private boolean authEnabled;
+  @JsonProperty(value = "eventsFramework") private EventsFrameworkConfiguration eventsFrameworkConfiguration;
+  @JsonProperty("distributedLockImplementation") private DistributedLockImplementation distributedLockImplementation;
+  @JsonProperty("redisLockConfig") private RedisConfig redisLockConfig;
+  @JsonProperty("debeziumConsumerConfigs") DebeziumConsumerConfig debeziumConsumerConfigs;
+  @JsonProperty("cacheConfig") CacheConfig cacheConfig;
   @JsonProperty("hostname") String hostname = "localhost";
   @JsonProperty("basePathPrefix") String basePathPrefix = "";
+
+  @JsonProperty("s3Config") S3Config s3Config;
 
   public SwaggerBundleConfiguration getSwaggerBundleConfiguration() {
     SwaggerBundleConfiguration defaultSwaggerBundleConfiguration = new SwaggerBundleConfiguration();

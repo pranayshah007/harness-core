@@ -6,10 +6,12 @@
  */
 
 package io.harness.gitsync.common.service;
-
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.BranchFilterParamsDTO;
 import io.harness.beans.PageRequestDTO;
 import io.harness.beans.RepoFilterParamsDTO;
@@ -54,6 +56,8 @@ import java.util.List;
 import java.util.Set;
 
 // Don't inject this directly go through ScmClientOrchestrator.
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @OwnedBy(DX)
 public interface ScmClientFacilitatorService {
   List<String> listBranchesForRepoByConnector(String accountIdentifier, String orgIdentifier, String projectIdentifier,
@@ -86,6 +90,9 @@ public interface ScmClientFacilitatorService {
 
   GitDiffResultFileListDTO listCommitsDiffFiles(
       YamlGitConfigDTO yamlGitConfigDTO, String initialCommitId, String finalCommitId);
+
+  GitDiffResultFileListDTO listCommitsDiffFiles(
+      Scope scope, ScmConnector scmConnector, String initialCommitId, String finalCommitId);
 
   List<String> listCommits(YamlGitConfigDTO yamlGitConfigDTO, String branch);
 

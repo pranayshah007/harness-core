@@ -6,12 +6,15 @@
  */
 
 package io.harness.engine.executions.plan;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.observers.NodeStatusUpdateObserver;
 import io.harness.execution.PlanExecution;
+import io.harness.monitoring.ExecutionCountWithAccountResult;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 
@@ -24,6 +27,7 @@ import lombok.NonNull;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.CloseableIterator;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 public interface PlanExecutionService extends NodeStatusUpdateObserver {
   PlanExecution updateStatusForceful(@NonNull String planExecutionId, @NonNull Status status, Consumer<Update> ops,
@@ -58,9 +62,16 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
 
   Status calculateStatus(String planExecutionId);
 
+  Status calculateStatus(String planExecutionId, boolean shouldSkipIdentityNodes);
+
   PlanExecution updateCalculatedStatus(String planExecutionId);
 
-  Status calculateStatusExcluding(String planExecutionId, String excludedNodeExecutionId);
+  /**
+   * Updated planExecution status if calculated status are non-final and non-flowing statuses under Lock
+   * @param planExecutionId
+   * @param excludeNodeExecutionStatus
+   */
+  void calculateAndUpdateRunningStatusUnderLock(String planExecutionId, Status excludeNodeExecutionStatus);
 
   List<PlanExecution> findByStatusWithProjections(Set<Status> statuses, Set<String> fieldNames);
 
@@ -74,6 +85,7 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
   CloseableIterator<PlanExecution> fetchPlanExecutionsByStatusFromAnalytics(
       Set<Status> statuses, Set<String> fieldNames);
 
+  // Todo: Remove
   List<PlanExecution> findAllByAccountIdAndOrgIdAndProjectIdAndLastUpdatedAtInBetweenTimestamps(
       String accountId, String orgId, String projectId, long startTS, long endTS);
 
@@ -85,7 +97,8 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
    * Deletes the planExecution and its related metadata
    * @param planExecutionIds Ids of to be deleted planExecutions
    */
-  void deleteAllPlanExecutionAndMetadata(Set<String> planExecutionIds);
+  void deleteAllPlanExecutionAndMetadata(
+      Set<String> planExecutionIds, boolean retainPipelineExecutionDetailsAfterDelete);
 
   /**
    * Updates TTL all planExecution and its related metadata
@@ -93,5 +106,9 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
    */
   void updateTTL(String planExecutionId, Date ttlDate);
 
-  void calculateAndUpdateRunningStatus(String planNodeId, String nodeId);
+  /**
+   * Fetches aggregated running execution count per account from analytics node
+   * @return
+   */
+  List<ExecutionCountWithAccountResult> aggregateRunningExecutionCountPerAccount();
 }

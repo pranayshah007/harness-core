@@ -6,12 +6,14 @@
  */
 
 package io.harness.ngmigration.dto;
-
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigrationTrackReqPayload;
 import io.harness.ngmigration.utils.CaseFormat;
 
@@ -19,11 +21,13 @@ import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.v3.oas.annotations.Parameter;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 @Data
 @NoArgsConstructor
@@ -47,4 +51,5 @@ public class ImportDTO extends MigrationTrackReqPayload {
   @Parameter(description = "Required if trying migrate entities in an application") private String appId;
 
   private String accountIdentifier;
+  private Set<Flag> flags;
 }

@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: idp-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "idp-service.labels" . | nindent 4 }}
+    {{- if .Values.global.commonLabels }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if or .Values.service.annotations .Values.global.commonAnnotations }}
+  annotations:
+    {{- if .Values.service.annotations }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.service.annotations "context" $ ) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.global.commonAnnotations }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: idp-http
+    - port: {{ .Values.service.grpcport }}
+      targetPort: {{ .Values.service.grpcport }}
+      name: idp-svc-grpc
+  selector:
+    {{- include "idp-service.selectorLabels" . | nindent 4 }}

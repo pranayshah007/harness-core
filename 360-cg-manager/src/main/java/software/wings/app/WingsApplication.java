@@ -6,7 +6,6 @@
  */
 
 package software.wings.app;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.GLOBAL_DISABLE_HEALTH_CHECK;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
@@ -34,7 +33,10 @@ import static java.time.Duration.ofHours;
 import static java.time.Duration.ofSeconds;
 import static java.util.Arrays.asList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.app.GraphQLModule;
 import io.harness.artifact.ArtifactCollectionPTaskServiceClient;
 import io.harness.cache.CacheModule;
@@ -150,8 +152,6 @@ import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
 import io.harness.queue.RedisConsumerControllerCg;
 import io.harness.queue.TimerScheduledExecutorService;
-import io.harness.queue.consumers.GeneralEventConsumerCg;
-import io.harness.queue.consumers.NotifyEventConsumerCg;
 import io.harness.queue.publishers.CgGeneralEventPublisher;
 import io.harness.queue.publishers.CgNotifyEventPublisher;
 import io.harness.redis.DelegateHeartBeatSyncFromRedis;
@@ -208,6 +208,7 @@ import software.wings.exception.JsonProcessingExceptionMapper;
 import software.wings.exception.WingsExceptionMapper;
 import software.wings.filter.AuditRequestFilter;
 import software.wings.filter.AuditResponseFilter;
+import software.wings.filter.DisableFirstGenFilter;
 import software.wings.jersey.JsonViews;
 import software.wings.jersey.KryoFeature;
 import software.wings.licensing.LicenseService;
@@ -218,6 +219,7 @@ import software.wings.resources.AppResource;
 import software.wings.resources.SearchResource;
 import software.wings.resources.graphql.GraphQLResource;
 import software.wings.scheduler.AccessRequestHandler;
+import software.wings.scheduler.AccountDeletionJob;
 import software.wings.scheduler.AccountPasswordExpirationJob;
 import software.wings.scheduler.DelegateDisconnectAlertHelper;
 import software.wings.scheduler.DeletedEntityHandler;
@@ -227,7 +229,6 @@ import software.wings.scheduler.ManagerVersionsCleanUpJob;
 import software.wings.scheduler.ResourceLookupSyncHandler;
 import software.wings.scheduler.UsageMetricsHandler;
 import software.wings.scheduler.VaultSecretManagerRenewalHandler;
-import software.wings.scheduler.account.DeleteAccountHandler;
 import software.wings.scheduler.account.LicenseCheckHandler;
 import software.wings.scheduler.approval.ApprovalPollingHandler;
 import software.wings.scheduler.audit.EntityAuditRecordHandler;
@@ -280,6 +281,7 @@ import software.wings.service.impl.instance.AuditCleanupJob;
 import software.wings.service.impl.instance.DeploymentEventListener;
 import software.wings.service.impl.instance.InstanceEventListener;
 import software.wings.service.impl.instance.InstanceSyncPerpetualTaskMigrationJob;
+import software.wings.service.impl.instance.StaleAuditCleanupJob;
 import software.wings.service.impl.trigger.ScheduledTriggerHandler;
 import software.wings.service.impl.workflow.WorkflowServiceImpl;
 import software.wings.service.impl.yaml.YamlPushServiceImpl;
@@ -395,6 +397,8 @@ import ru.vyarus.guice.validator.aop.ValidationMethodInterceptor;
 /**
  * The main application - entry point for the entire Wings Application.
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 @OwnedBy(PL)
 public class WingsApplication extends Application<MainConfiguration> {
@@ -702,6 +706,7 @@ public class WingsApplication extends Application<MainConfiguration> {
     registerAuthFilters(configuration, environment, injector);
     registerCorrelationFilter(environment, injector);
     registerRequestContextFilter(environment);
+    registerDisableFirstGenFilter(environment, injector);
 
     if (BooleanUtils.isTrue(configuration.getEnableOpentelemetry())) {
       registerTraceFilter(environment, injector);
@@ -967,8 +972,9 @@ public class WingsApplication extends Application<MainConfiguration> {
         return configuration.getGrpcServerConfig();
       }
     });
-    modules.add(new GrpcServiceConfigurationModule(
-        configuration.getGrpcServerConfig(), configuration.getPortal().getJwtNextGenManagerSecret()));
+    modules.add(new GrpcServiceConfigurationModule(configuration.getGrpcServerConfig(),
+        configuration.getPortal().getJwtNextGenManagerSecret(),
+        configuration.getLogStreamingServiceConfig().getServiceToken()));
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
@@ -1213,6 +1219,7 @@ public class WingsApplication extends Application<MainConfiguration> {
     environment.lifecycle().manage(injector.getInstance(RedisConsumerControllerCg.class));
     environment.lifecycle().manage(injector.getInstance(UserAccountLevelDataMigrationJob.class));
     environment.lifecycle().manage(injector.getInstance(UpdateHeartBeatIntervalAndResetPerpetualTaskJob.class));
+    environment.lifecycle().manage(injector.getInstance(StaleAuditCleanupJob.class));
   }
 
   private void registerManagedBeansManager(
@@ -1257,6 +1264,12 @@ public class WingsApplication extends Application<MainConfiguration> {
     environment.jersey().register(new RequestContextFilter());
   }
 
+  private void registerDisableFirstGenFilter(Environment environment, Injector injector) {
+    if (isManager()) {
+      environment.jersey().register(injector.getInstance(DisableFirstGenFilter.class));
+    }
+  }
+
   private void registerQueueListeners(MainConfiguration configuration, Injector injector) {
     log.info("Initializing queue listeners...");
 
@@ -1291,8 +1304,6 @@ public class WingsApplication extends Application<MainConfiguration> {
         listenerConfig.getOrchestrationNotifyEventListenerCount());
 
     RedisConsumerControllerCg controller = injector.getInstance(RedisConsumerControllerCg.class);
-    controller.register(injector.getInstance(NotifyEventConsumerCg.class), listenerConfig.getNotifyConsumerCount());
-    controller.register(injector.getInstance(GeneralEventConsumerCg.class), listenerConfig.getGeneralConsumerCount());
     controller.register(injector.getInstance(ApplicationTimeScaleRedisChangeEventConsumer.class),
         configuration.getDebeziumConsumerConfigs().getApplicationTimescaleStreaming().getThreads());
   }
@@ -1356,6 +1367,10 @@ public class WingsApplication extends Application<MainConfiguration> {
     taskPollExecutor.scheduleWithFixedDelay(
         new Schedulable("Failed cleaning up manager versions.", injector.getInstance(ManagerVersionsCleanUpJob.class)),
         1, 5L, TimeUnit.MINUTES);
+
+    ScheduledExecutorService cgJobExecutor =
+        injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("cgJobExecutor")));
+    cgJobExecutor.scheduleWithFixedDelay(injector.getInstance(AccountDeletionJob.class), 0, 1, TimeUnit.HOURS);
   }
 
   private void scheduleJobsDelegateService(
@@ -1582,7 +1597,6 @@ public class WingsApplication extends Application<MainConfiguration> {
     injector.getInstance(DeploymentFreezeActivationHandler.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(DeploymentFreezeDeactivationHandler.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(CeLicenseExpiryHandler.class).registerIterator(iteratorExecutionHandler);
-    injector.getInstance(DeleteAccountHandler.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(DeletedEntityHandler.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(ResourceLookupSyncHandler.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(AccessRequestHandler.class).registerIterator(iteratorExecutionHandler);

@@ -29,8 +29,8 @@ import io.harness.plancreator.strategy.StrategyType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
-import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
+import io.harness.pms.contracts.plan.PostExecutionRollbackInfo;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
@@ -48,8 +48,9 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
-import io.harness.pms.utils.PipelineYamlHelper;
+import io.harness.pms.yaml.NGYamlHelper;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.utils.ExecutionModeUtils;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -105,10 +106,10 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
     String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
     String planExecutionId = ambiance.getPlanExecutionId();
     PlanExecution planExecution = planExecutionService.get(planExecutionId);
+    PlanExecutionMetadata planExecutionMetadata = orchestrationStartInfo.getPlanExecutionMetadata();
 
     ExecutionMetadata metadata = planExecution.getMetadata();
     String pipelineId = metadata.getPipelineIdentifier();
-    PlanExecutionMetadata planExecutionMetadata = orchestrationStartInfo.getPlanExecutionMetadata();
     boolean getMetadataOnly = true;
 
     // pipelineYaml in planExecutionMetadata is a transient field and not stored in db. It is passed by caller and can
@@ -128,14 +129,26 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
     // RetryInfo
     String rootExecutionId = planExecutionId;
     String parentExecutionId = planExecutionId;
-    if (metadata.getRetryInfo().getIsRetry()) {
-      rootExecutionId = metadata.getRetryInfo().getRootExecutionId();
-      parentExecutionId = metadata.getRetryInfo().getParentRetryId();
+    if (planExecutionMetadata.getRetryExecutionInfo() != null
+        && planExecutionMetadata.getRetryExecutionInfo().getIsRetry()) {
+      rootExecutionId = planExecutionMetadata.getRetryExecutionInfo().getRootExecutionId();
+      parentExecutionId = planExecutionMetadata.getRetryExecutionInfo().getParentRetryId();
 
       // updating isLatest and canRetry
       Update update = new Update();
       update.set(PlanExecutionSummaryKeys.isLatestExecution, false);
       pmsExecutionSummaryService.update(parentExecutionId, update);
+    } else {
+      // remove after next release
+      if (metadata.hasRetryInfo() && metadata.getRetryInfo().getIsRetry()) {
+        rootExecutionId = metadata.getRetryInfo().getRootExecutionId();
+        parentExecutionId = metadata.getRetryInfo().getParentRetryId();
+
+        // updating isLatest and canRetry
+        Update update = new Update();
+        update.set(PlanExecutionSummaryKeys.isLatestExecution, false);
+        pmsExecutionSummaryService.update(parentExecutionId, update);
+      }
     }
 
     recentExecutionsInfoHelper.onExecutionStart(accountId, orgId, projectId, pipelineId, planExecution);
@@ -146,16 +159,23 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
     Map<String, GraphLayoutNode> layoutNodeMap = new HashMap<>(plan.getGraphLayoutInfo().getLayoutNodesMap());
     String startingNodeId = plan.getGraphLayoutInfo().getStartingNodeId();
 
-    if (ambiance.getMetadata().getExecutionMode() == ExecutionMode.POST_EXECUTION_ROLLBACK) {
-      startingNodeId = ambiance.getMetadata().getPostExecutionRollbackInfo(0).getPostExecutionRollbackStageId();
+    if (ExecutionModeUtils.isPostExecutionRollbackMode(ambiance.getMetadata().getExecutionMode())) {
+      startingNodeId = getPostExecutionRollbackInfo(planExecutionMetadata, ambiance).getPostExecutionRollbackStageId();
       GraphLayoutNode layoutNode = layoutNodeMap.get(startingNodeId);
-      layoutNodeMap.put(startingNodeId,
+
+      Map<String, GraphLayoutNode> modifiedLayoutNodeMap = new HashMap<>();
+      modifiedLayoutNodeMap.put(startingNodeId,
           layoutNode.toBuilder()
               .setEdgeLayoutList(
                   EdgeLayoutList.newBuilder()
                       .addAllCurrentNodeChildren(layoutNode.getEdgeLayoutList().getCurrentNodeChildrenList())
                       .build())
               .build());
+      for (String childrenNode : layoutNode.getEdgeLayoutList().getCurrentNodeChildrenList()) {
+        GraphLayoutNode childrenLayoutNode = layoutNodeMap.get(childrenNode);
+        modifiedLayoutNodeMap.put(childrenNode, childrenLayoutNode);
+      }
+      layoutNodeMap = modifiedLayoutNodeMap;
     }
     Map<String, GraphLayoutNodeDTO> layoutNodeDTOMap = new HashMap<>();
     Set<String> modules = new LinkedHashSet<>();
@@ -212,7 +232,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .executionInputConfigured(orchestrationStartInfo.getPlanExecutionMetadata().getExecutionInputConfigured())
             .connectorRef(isEmpty(metadata.getPipelineConnectorRef()) ? null : metadata.getPipelineConnectorRef())
             .executionMode(metadata.getExecutionMode())
-            .pipelineVersion(PipelineYamlHelper.getVersion(planExecutionMetadata.getPipelineYaml()))
+            .pipelineVersion(NGYamlHelper.getVersion(planExecutionMetadata.getPipelineYaml()))
             .build();
     pmsExecutionSummaryService.save(pipelineExecutionSummaryEntity);
     unsetPipelineYamlInPlanExecutionMetadata(planExecutionMetadata);
@@ -220,13 +240,22 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
         orchestrationStartInfo.getAmbiance(), PipelineEventType.PIPELINE_START, null, null);
   }
 
+  private PostExecutionRollbackInfo getPostExecutionRollbackInfo(
+      PlanExecutionMetadata planExecutionMetadata, Ambiance ambiance) {
+    // TODO(archit): Remove get from execution_metadata from next release
+    if (EmptyPredicate.isEmpty(planExecutionMetadata.getPostExecutionRollbackInfos())) {
+      return ambiance.getMetadata().getPostExecutionRollbackInfo(0);
+    }
+    return planExecutionMetadata.getPostExecutionRollbackInfos().get(0);
+  }
+
   private String getPipelineTemplate(PlanExecutionMetadata planExecutionMetadata) {
     StagesExecutionMetadata stagesExecutionMetadata = planExecutionMetadata.getStagesExecutionMetadata();
     if (stagesExecutionMetadata != null && stagesExecutionMetadata.isStagesExecution()) {
-      return InputSetTemplateHelper.createTemplateFromPipelineForGivenStages(
+      return InputSetTemplateHelper.createTemplateFromWithDefaultValuesPipelineForGivenStages(
           planExecutionMetadata.getPipelineYaml(), stagesExecutionMetadata.getStageIdentifiers());
     }
-    return InputSetTemplateHelper.createTemplateFromPipeline(planExecutionMetadata.getPipelineYaml());
+    return InputSetTemplateHelper.createTemplateWithDefaultValuesFromPipeline(planExecutionMetadata.getPipelineYaml());
   }
 
   private void updateExecutionInfoInPipelineEntity(String accountId, String orgId, String projectId, String pipelineId,

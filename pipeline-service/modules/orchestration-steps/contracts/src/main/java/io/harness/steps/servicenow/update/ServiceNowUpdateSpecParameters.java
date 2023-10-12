@@ -6,14 +6,17 @@
  */
 
 package io.harness.steps.servicenow.update;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.steps.servicenow.beans.UpdateMultipleTaskNode;
 
 import java.util.List;
 import java.util.Map;
@@ -24,6 +27,7 @@ import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @OwnedBy(CDC)
 @Data
 @Builder
@@ -33,10 +37,12 @@ import org.springframework.data.annotation.TypeAlias;
 public class ServiceNowUpdateSpecParameters implements SpecParameters {
   @NotNull ParameterField<String> connectorRef;
   @NotNull ParameterField<String> ticketType;
-  @NotNull ParameterField<String> ticketNumber;
+  ParameterField<String> ticketNumber;
   Map<String, ParameterField<String>> fields;
 
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+
+  UpdateMultipleTaskNode updateMultiple;
 
   // template fields
   ParameterField<String> templateName;

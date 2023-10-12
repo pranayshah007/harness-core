@@ -6,24 +6,28 @@
  */
 
 package io.harness.gitsync.common.mappers;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.gitsync.caching.beans.CacheDetails;
 import io.harness.gitsync.common.beans.ScmCacheDetails;
 import io.harness.gitsync.common.helper.ScmCacheStateHelper;
 
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITX})
 @UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ScmCacheDetailsMapper {
-  public ScmCacheDetails getScmCacheDetails(CacheDetails cacheDetails) {
+  public ScmCacheDetails getScmCacheDetails(CacheDetails cacheDetails, boolean isSyncEnabled) {
     return ScmCacheDetails.builder()
         .cacheExpiryTTL(cacheDetails.getCacheExpiryTTL())
         .lastUpdatedAt(cacheDetails.getLastUpdatedAt())
         .validUntilTTL(cacheDetails.getValidUntilTTL())
         .scmCacheState(ScmCacheStateHelper.getScmCacheState(cacheDetails.isStale()))
+        .isSyncEnabled(isSyncEnabled)
         .build();
   }
 }

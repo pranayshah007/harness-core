@@ -6,12 +6,15 @@
  */
 
 package io.harness.cdng.provision.awscdk;
-
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.AwsCdkRollbackStepInfoVisitorHelper;
@@ -39,6 +42,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @NoArgsConstructor
@@ -61,8 +66,8 @@ public class AwsCdkRollbackStepInfo implements CDAbstractStepInfo, Visitable {
 
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> provisionerIdentifier;
 
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
-  @ApiModelProperty(hidden = true)
+  @YamlSchemaTypes({string})
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_MAP_CLASSPATH)
   ParameterField<Map<String, String>> envVariables;
 
   @Builder(builderMethodName = "infoBuilder")

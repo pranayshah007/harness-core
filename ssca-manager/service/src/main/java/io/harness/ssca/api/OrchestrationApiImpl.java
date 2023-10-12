@@ -11,6 +11,7 @@ import io.harness.annotations.SSCAServiceAuth;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.spec.server.ssca.v1.OrchestrationApi;
+import io.harness.spec.server.ssca.v1.model.ArtifactSbomResponseBody;
 import io.harness.spec.server.ssca.v1.model.OrchestrationSummaryResponse;
 import io.harness.ssca.services.OrchestrationStepService;
 
@@ -26,10 +27,18 @@ import lombok.extern.slf4j.Slf4j;
 @SSCAServiceAuth
 public class OrchestrationApiImpl implements OrchestrationApi {
   @Inject OrchestrationStepService orchestrationStepService;
+
   @Override
   public Response getOrchestrationSummary(String org, String project, String orchestrationId, String harnessAccount) {
     OrchestrationSummaryResponse response =
         orchestrationStepService.getOrchestrationSummary(harnessAccount, org, project, orchestrationId);
+    return Response.ok().entity(response).build();
+  }
+
+  @Override
+  public Response downloadSbom(String org, String project, String orchestrationId, String harnessAccount) {
+    String sbom = orchestrationStepService.sbom(harnessAccount, org, project, orchestrationId);
+    ArtifactSbomResponseBody response = new ArtifactSbomResponseBody().sbom(sbom);
     return Response.ok().entity(response).build();
   }
 }

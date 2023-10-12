@@ -279,6 +279,7 @@ import static org.assertj.core.groups.Tuple.tuple;
 import static org.assertj.core.util.Lists.newArrayList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -829,7 +830,8 @@ public class WorkflowServiceTest extends WingsBaseTest {
   public void shouldDeleteWorkflow() {
     Workflow workflow = createCustomWorkflow();
     String uuid = workflow.getUuid();
-    when(pipelineService.listPipelines(any(PageRequest.class))).thenReturn(aPageResponse().build());
+    when(pipelineService.listPipelines(any(PageRequest.class), anyBoolean(), anyString()))
+        .thenReturn(aPageResponse().build());
     workflowService.deleteWorkflow(APP_ID, uuid);
     workflow = workflowService.readWorkflow(APP_ID, uuid, null);
     assertThat(workflow).isNull();
@@ -852,7 +854,7 @@ public class WorkflowServiceTest extends WingsBaseTest {
     String workflowId = workflow.getUuid();
     Pipeline pipeline = constructPipeline(workflowId);
 
-    when(pipelineService.listPipelines(any(PageRequest.class)))
+    when(pipelineService.listPipelines(any(PageRequest.class), anyBoolean(), anyString()))
         .thenReturn(aPageResponse().withResponse(java.util.Arrays.asList(pipeline)).build());
     assertThatThrownBy(() -> workflowService.deleteWorkflow(APP_ID, workflowId))
         .isInstanceOf(WingsException.class)
@@ -869,7 +871,8 @@ public class WorkflowServiceTest extends WingsBaseTest {
     Workflow workflow = createCustomWorkflow();
     String uuid = workflow.getUuid();
     when(workflowExecutionService.runningExecutionsPresent(APP_ID, uuid)).thenReturn(true);
-    when(pipelineService.listPipelines(any(PageRequest.class))).thenReturn(aPageResponse().build());
+    when(pipelineService.listPipelines(any(PageRequest.class), anyBoolean(), anyString()))
+        .thenReturn(aPageResponse().build());
     workflowService.deleteWorkflow(APP_ID, uuid);
     workflow = workflowService.readWorkflow(APP_ID, uuid, null);
     assertThat(workflow).isNull();

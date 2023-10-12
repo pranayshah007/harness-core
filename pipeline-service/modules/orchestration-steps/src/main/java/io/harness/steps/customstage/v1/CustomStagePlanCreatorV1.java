@@ -9,17 +9,22 @@ package io.harness.steps.customstage.v1;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.InvalidYamlException;
+import io.harness.plancreator.DependencyMetadata;
 import io.harness.plancreator.PlanCreatorUtilsV1;
-import io.harness.plancreator.steps.common.StageElementParameters;
+import io.harness.plancreator.steps.common.v1.StageElementParametersV1.StageElementParametersV1Builder;
+import io.harness.plancreator.steps.common.v1.StepParametersUtilsV1;
 import io.harness.plancreator.strategy.StrategyUtilsV1;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
+import io.harness.pms.contracts.plan.HarnessStruct;
+import io.harness.pms.contracts.plan.HarnessValue;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
+import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
@@ -28,14 +33,15 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.yaml.DependenciesUtils;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.StepSpecTypeConstantsV1;
 import io.harness.steps.customstage.CustomStageSpecParams;
-import io.harness.steps.customstage.CustomStageStep;
 import io.harness.when.utils.v1.RunInfoUtilsV1;
+import io.harness.yaml.core.failurestrategy.v1.FailureConfigV1;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -59,7 +65,7 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
     return Collections.singletonMap(
-        YAMLFieldNameConstants.STAGE, Collections.singleton(StepSpecTypeConstants.CUSTOM_STAGE));
+        YAMLFieldNameConstants.STAGE, Collections.singleton(StepSpecTypeConstantsV1.CUSTOM_STAGE));
   }
 
   @Override
@@ -67,7 +73,6 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
       PlanCreationContext ctx, YamlField field) {
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
-    Map<String, ByteString> metadataMap = new HashMap<>();
 
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
@@ -80,31 +85,54 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
     dependenciesNodeMap.put(stepsField.getNode().getUuid(), stepsField);
 
     // adding support for strategy
-    StrategyUtilsV1.addStrategyFieldDependencyIfPresent(
-        kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap, metadataMap, getBuild(ctx.getDependency()));
+    Dependency strategyDependency = getDependencyForStrategy(dependenciesNodeMap, field, ctx);
 
+    // Both metadata and nodeMetadata contain the same metadata, the first one's value will be kryo serialized bytes
+    // while second one can have values in their primitive form like strings, int, etc. and will have kryo serialized
+    // bytes for complex objects. We will deprecate the first one in v1
     planCreationResponseMap.put(stepsField.getNode().getUuid(),
         PlanCreationResponse.builder()
-            .dependencies(
-                DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
-                    .toBuilder()
-                    .putDependencyMetadata(field.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
-                    .build())
+            .dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
+                              .toBuilder()
+                              .putDependencyMetadata(field.getUuid(), strategyDependency)
+                              .putDependencyMetadata(stepsField.getNode().getUuid(), getDependencyForSteps(field))
+                              .build())
             .build());
 
     return planCreationResponseMap;
+  }
+
+  Dependency getDependencyForStrategy(
+      Map<String, YamlField> dependenciesNodeMap, YamlField field, PlanCreationContext ctx) {
+    DependencyMetadata dependencyMetadata = StrategyUtilsV1.getStrategyFieldDependencyMetadataIfPresent(
+        kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap, getBuild(ctx.getDependency()));
+    return Dependency.newBuilder()
+        .putAllMetadata(dependencyMetadata.getMetadataMap())
+        .setNodeMetadata(HarnessStruct.newBuilder().putAllData(dependencyMetadata.getNodeMetadataMap()).build())
+        .build();
+  }
+
+  Dependency getDependencyForSteps(YamlField field) {
+    List<FailureConfigV1> stageFailureStrategies = PlanCreatorUtilsV1.getFailureStrategies(field.getNode());
+    if (stageFailureStrategies != null) {
+      return Dependency.newBuilder()
+          .setParentInfo(
+              HarnessStruct.newBuilder()
+                  .putData(PlanCreatorConstants.STAGE_FAILURE_STRATEGIES,
+                      HarnessValue.newBuilder()
+                          .setBytesValue(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(stageFailureStrategies)))
+                          .build())
+                  .build())
+          .build();
+    }
+    return Dependency.newBuilder().setNodeMetadata(HarnessStruct.newBuilder().build()).build();
   }
 
   @Override
   public GraphLayoutResponse getLayoutNodeInfo(PlanCreationContext context, YamlField config) {
     Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
     YamlField stageYamlField = context.getCurrentField();
-    String nextNodeUuid = null;
-    if (context.getDependency() != null && !EmptyPredicate.isEmpty(context.getDependency().getMetadataMap())
-        && context.getDependency().getMetadataMap().containsKey("nextId")) {
-      nextNodeUuid =
-          (String) kryoSerializer.asObject(context.getDependency().getMetadataMap().get("nextId").toByteArray());
-    }
+    String nextNodeUuid = PlanCreatorUtilsV1.getNextNodeUuid(kryoSerializer, context.getDependency());
     if (StrategyUtilsV1.isWrappedUnderStrategy(context.getCurrentField())) {
       stageYamlFieldMap = StrategyUtilsV1.modifyStageLayoutNodeGraph(stageYamlField, nextNodeUuid);
     }
@@ -113,18 +141,27 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
 
   @Override
   public PlanNode createPlanForParentNode(PlanCreationContext ctx, YamlField config, List<String> childrenNodeIds) {
-    CustomStageSpecParams params = CustomStageSpecParams.builder().childNodeID(childrenNodeIds.get(0)).build();
+    CustomStageNodeV1 customStageNodeV1;
+    try {
+      customStageNodeV1 = YamlUtils.read(config.getNode().toString(), CustomStageNodeV1.class);
+    } catch (Exception e) {
+      throw new InvalidYamlException(
+          "Unable to parse custom stage yaml. Please ensure that it is in correct format", e);
+    }
+    StageElementParametersV1Builder stageParameters = StepParametersUtilsV1.getStageParameters(customStageNodeV1);
+    stageParameters.type(StepSpecTypeConstantsV1.CUSTOM_STAGE);
+    stageParameters.spec(CustomStageSpecParams.builder().childNodeID(childrenNodeIds.get(0)).build());
     String name = config.getNodeName();
     PlanNodeBuilder builder =
         PlanNode.builder()
             .uuid(StrategyUtilsV1.getSwappedPlanNodeId(ctx, config.getUuid()))
             .identifier(StrategyUtilsV1.getIdentifierWithExpression(ctx, config.getId()))
-            .stepType(CustomStageStep.STEP_TYPE)
+            .stepType(CustomStageStepV1.STEP_TYPE)
             .group(StepOutcomeGroup.STAGE.name())
             .name(StrategyUtilsV1.getIdentifierWithExpression(ctx, name))
             .skipUnresolvedExpressionsCheck(true)
             .whenCondition(RunInfoUtilsV1.getStageWhenCondition(config))
-            .stepParameters(StageElementParameters.builder().specConfig(params).build())
+            .stepParameters(stageParameters.build())
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
@@ -144,6 +181,6 @@ public class CustomStagePlanCreatorV1 extends ChildrenPlanCreator<YamlField> {
 
   @Override
   public Set<String> getSupportedYamlVersions() {
-    return Set.of(PipelineVersion.V1);
+    return Set.of(HarnessYamlVersion.V1);
   }
 }

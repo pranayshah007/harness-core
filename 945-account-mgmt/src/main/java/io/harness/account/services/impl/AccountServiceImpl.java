@@ -17,7 +17,6 @@ import io.harness.beans.PageResponse;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.remote.client.CGRestUtils;
-import io.harness.signup.dto.SignupDTO;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;

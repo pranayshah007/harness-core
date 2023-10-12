@@ -273,7 +273,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     when(containerDeploymentDelegateHelper.useK8sSteadyStateCheck(anyBoolean(), eq(false), any(), any()))
         .thenReturn(true);
     when(k8sTaskHelperBase.readManifests(any(), any())).thenReturn(resources);
-    when(k8sTaskHelperBase.getContainerInfos(any(), any(), any(), anyLong())).thenReturn(containerInfos);
+    when(k8sTaskHelperBase.getContainerInfos(any(), any(), any(), any(), anyLong())).thenReturn(containerInfos);
     when(k8sTaskHelperBase.doStatusCheckAllResourcesForHelm(any(), anyList(), any(), any(), any(), any(), any(), any()))
         .thenReturn(true);
 
@@ -324,7 +324,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     when(containerDeploymentDelegateHelper.useK8sSteadyStateCheck(anyBoolean(), eq(false), any(), any()))
         .thenReturn(true);
     when(k8sTaskHelperBase.readManifests(any(), any())).thenReturn(resources);
-    when(k8sTaskHelperBase.getContainerInfos(any(), any(), any(), anyLong())).thenReturn(containerInfos);
+    when(k8sTaskHelperBase.getContainerInfos(any(), any(), any(), any(), anyLong())).thenReturn(containerInfos);
     when(k8sTaskHelperBase.doStatusCheckAllResourcesForHelm(
              any(), anyList(), any(), any(), eq("default"), any(), any(), any()))
         .thenReturn(true);
@@ -1099,11 +1099,14 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
         .thenReturn(
             HelmCliResponse.builder().output("Rollback was a success.").commandExecutionStatus(SUCCESS).build());
     when(k8sTaskHelperBase.getReleaseHistoryFromSecret(any(), eq("release"))).thenReturn(releaseHistory.getAsYaml());
-    when(k8sTaskHelperBase.getContainerInfos(any(), eq("release"), eq("default-1"), eq(LONG_TIMEOUT_INTERVAL)))
+    when(k8sTaskHelperBase.getContainerInfos(
+             any(), eq("release"), eq("default-1"), eq(Collections.emptyMap()), eq(LONG_TIMEOUT_INTERVAL)))
         .thenReturn(containerInfosDefault1);
-    when(k8sTaskHelperBase.getContainerInfos(any(), eq("release"), eq("default-2"), eq(LONG_TIMEOUT_INTERVAL)))
+    when(k8sTaskHelperBase.getContainerInfos(
+             any(), eq("release"), eq("default-2"), eq(Collections.emptyMap()), eq(LONG_TIMEOUT_INTERVAL)))
         .thenReturn(containerInfosDefault2);
-    when(k8sTaskHelperBase.getContainerInfos(any(), eq("release"), eq("default-3"), eq(LONG_TIMEOUT_INTERVAL)))
+    when(k8sTaskHelperBase.getContainerInfos(
+             any(), eq("release"), eq("default-3"), eq(Collections.emptyMap()), eq(LONG_TIMEOUT_INTERVAL)))
         .thenReturn(containerInfosDefault3);
     when(k8sTaskHelperBase.doStatusCheckAllResourcesForHelm(any(), anyList(), any(), any(), any(), any(), any(), any()))
         .thenReturn(true);
@@ -1936,7 +1939,9 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     doReturn(resources).when(helmSteadyStateService).readManifestFromHelmRelease(any(HelmCommandData.class));
     doReturn(singletonList(workloadId)).when(helmSteadyStateService).findEligibleWorkloadIds(eq(resources));
 
-    doReturn(containerInfos).when(k8sTaskHelperBase).getContainerInfos(any(), anyString(), eq("default-2"), anyLong());
+    doReturn(containerInfos)
+        .when(k8sTaskHelperBase)
+        .getContainerInfos(any(), anyString(), eq("default-2"), any(), anyLong());
     doReturn(true)
         .when(k8sTaskHelperBase)
         .doStatusCheckAllResourcesForHelm(
@@ -1987,7 +1992,9 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     doReturn(helmCliResponse).when(helmClient).rollback(any(HelmCommandData.class), eq(false));
     doReturn(resources).when(helmSteadyStateService).readManifestFromHelmRelease(any(HelmCommandData.class));
     doReturn(singletonList(workloadId)).when(helmSteadyStateService).findEligibleWorkloadIds(eq(resources));
-    doReturn(containerInfos).when(k8sTaskHelperBase).getContainerInfos(any(), anyString(), eq("rollback"), anyLong());
+    doReturn(containerInfos)
+        .when(k8sTaskHelperBase)
+        .getContainerInfos(any(), anyString(), eq("rollback"), any(), anyLong());
     doReturn(true)
         .when(k8sTaskHelperBase)
         .doStatusCheckAllResourcesForHelm(
@@ -2036,7 +2043,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
 
     // for k8sSteadyStateCheckEnabled it's called per namespace of resource id
     verify(k8sTaskHelperBase, times(k8sSteadyStateCheckEnabled ? 2 : 1))
-        .getContainerInfos(any(KubernetesConfig.class), anyString(), anyString(), eq(1000L));
+        .getContainerInfos(any(KubernetesConfig.class), anyString(), anyString(), any(), eq(1000L));
     verify(containerDeploymentDelegateBaseHelper, never())
         .getContainerInfosWhenReadyByLabels(any(KubernetesConfig.class), any(LogCallback.class), anyMap(), anyList());
     verify(k8sTaskHelperBase, never())

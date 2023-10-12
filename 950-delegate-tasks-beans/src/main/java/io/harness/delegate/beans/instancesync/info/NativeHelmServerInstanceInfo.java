@@ -6,10 +6,14 @@
  */
 
 package io.harness.delegate.beans.instancesync.info;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.k8s.model.HelmVersion;
@@ -19,6 +23,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @JsonTypeName("NativeHelmServerInstanceInfo")
 @Data
 @Builder
@@ -32,4 +37,12 @@ public class NativeHelmServerInstanceInfo extends ServerInstanceInfo {
   private String releaseName;
   private HelmChartInfo helmChartInfo;
   private HelmVersion helmVersion;
+
+  @Override
+  public String getReleaseKey() {
+    if (isEmpty(releaseName) || isEmpty(namespace)) {
+      return null;
+    }
+    return String.format("%s_%s", releaseName, namespace);
+  }
 }

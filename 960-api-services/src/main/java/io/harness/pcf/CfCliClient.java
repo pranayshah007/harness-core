@@ -117,6 +117,10 @@ public interface CfCliClient {
   void runPcfPluginScript(CfRunPluginScriptRequestData cfRunPluginScriptRequestData, LogCallback logCallback)
       throws PivotalClientApiException;
 
+  Map<String, String> runPcfPluginScriptWithEnvironmentVarInputsAndOutputs(
+      CfRunPluginScriptRequestData cfRunPluginScriptRequestData, LogCallback logCallback,
+      Map<String, String> inputVariables, List<String> outputVariables) throws PivotalClientApiException;
+
   /**
    * Set application env variables.
    *

@@ -11,9 +11,12 @@ import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.repositories.serviceoverridesv2.custom.ServiceOverrideRepositoryCustomV2;
 
 import java.util.Optional;
+import javax.validation.constraints.NotNull;
+import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 
@@ -27,5 +30,17 @@ public interface ServiceOverridesRepositoryV2
           "{ 'accountId': ?0, 'orgIdentifier': ?1, 'projectIdentifier': ?2, 'identifier': ?3,'spec': { '$exists': true, '$ne': null } }")
   Optional<NGServiceOverridesEntity>
   getNGServiceOverridesEntityByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndSpecExistsAndSpecNotNull(
+      String accountId, String orgIdentifier, String projectIdentifier, String identifier);
+
+  @Query(
+      value =
+          "{ 'accountId': ?0, 'orgIdentifier': ?1, 'projectIdentifier': ?2, 'identifier': ?3, 'type': ?4, 'yaml': { '$exists': true, '$ne': null } }")
+  Optional<NGServiceOverridesEntity>
+  findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndTypeAndYamlExistsAndYamlNotNull(
+      @NotEmpty String accountId, String orgIdentifier, String projectIdentifier, @NotNull String identifier,
+      ServiceOverridesType type);
+
+  Optional<NGServiceOverridesEntity>
+  getNGServiceOverridesEntityByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier);
 }

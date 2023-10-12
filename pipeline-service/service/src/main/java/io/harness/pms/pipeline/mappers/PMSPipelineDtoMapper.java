@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.pipeline.mappers;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -45,13 +46,13 @@ import io.harness.pms.pipeline.RecentExecutionInfoDTO;
 import io.harness.pms.pipeline.api.PipelineRequestInfoDTO;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.yaml.BasicPipeline;
-import io.harness.pms.pipeline.yaml.SimplifiedPipelineYaml;
-import io.harness.pms.utils.IdentifierGeneratorUtils;
-import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.scope.ScopeHelper;
 
+import com.google.common.hash.Hashing;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -126,6 +127,7 @@ public class PMSPipelineDtoMapper {
           .description(basicPipeline.getDescription())
           .tags(TagMapper.convertToList(basicPipeline.getTags()))
           .allowStageExecutions(basicPipeline.isAllowStageExecutions())
+          .yamlHash(getYamlHash(yaml))
           .build();
     } catch (IOException e) {
       throw new InvalidRequestException("Cannot create pipeline entity due to " + e.getMessage());
@@ -134,43 +136,36 @@ public class PMSPipelineDtoMapper {
 
   public PipelineEntity toSimplifiedPipelineEntity(
       String accountId, String orgId, String projectId, String pipelineId, String pipelineName, String yaml) {
-    try {
-      SimplifiedPipelineYaml simplifiedPipelineYaml = YamlUtils.read(yaml, SimplifiedPipelineYaml.class);
-      // give priority to yaml name
-      if (EmptyPredicate.isNotEmpty(simplifiedPipelineYaml.getName())) {
-        pipelineName = simplifiedPipelineYaml.getName();
-      }
-      if (isEmpty(pipelineName)) {
-        throw new InvalidRequestException("Pipeline name cannot be empty");
-      }
-
-      if (isEmpty(pipelineId)) {
-        pipelineId = IdentifierGeneratorUtils.getId(pipelineName);
-      }
-      if (NGExpressionUtils.matchesInputSetPattern(pipelineId)) {
-        throw new InvalidRequestException("Pipeline identifier cannot be runtime input");
-      }
-      return PipelineEntity.builder()
-          .yaml(yaml)
-          .accountId(accountId)
-          .orgIdentifier(orgId)
-          .projectIdentifier(projectId)
-          .name(pipelineName)
-          .identifier(pipelineId)
-          .tags(TagMapper.convertToList(null))
-          .build();
-    } catch (IOException e) {
-      throw new InvalidRequestException("Cannot create pipeline entity due to " + e.getMessage());
+    if (isEmpty(pipelineId)) {
+      throw new InvalidRequestException("Pipeline identifier cannot be empty");
     }
+
+    if (isEmpty(pipelineName)) {
+      throw new InvalidRequestException("Pipeline name cannot be empty");
+    }
+    if (NGExpressionUtils.matchesInputSetPattern(pipelineId)) {
+      throw new InvalidRequestException("Pipeline identifier cannot be runtime input");
+    }
+    return PipelineEntity.builder()
+        .yaml(yaml)
+        .accountId(accountId)
+        .orgIdentifier(orgId)
+        .projectIdentifier(projectId)
+        .name(pipelineName)
+        .identifier(pipelineId)
+        .tags(TagMapper.convertToList(null))
+        .harnessVersion(HarnessYamlVersion.V1)
+        .yamlHash(getYamlHash(yaml))
+        .build();
   }
 
-  public PipelineEntity toPipelineEntity(String accountId, String orgId, String projectId, String pipelineName,
-      String yaml, Boolean isDraft, String pipelineVersion) {
+  public PipelineEntity toPipelineEntity(String accountId, String orgId, String projectId, String pipelineIdentifier,
+      String pipelineName, String yaml, Boolean isDraft, String pipelineVersion) {
     PipelineEntity pipelineEntity;
     // Use the pipeline name from api request only for V1 yaml
-    if (pipelineVersion != null && !pipelineVersion.equals(PipelineVersion.V0)) {
+    if (pipelineVersion != null && !pipelineVersion.equals(HarnessYamlVersion.V0)) {
       // PipelineId is passed as null since it gets created using pipelineName
-      pipelineEntity = toSimplifiedPipelineEntity(accountId, orgId, projectId, null, pipelineName, yaml);
+      pipelineEntity = toSimplifiedPipelineEntity(accountId, orgId, projectId, pipelineIdentifier, pipelineName, yaml);
     } else {
       pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml);
     }
@@ -182,11 +177,15 @@ public class PMSPipelineDtoMapper {
     return pipelineEntity;
   }
 
+  Integer getYamlHash(String yaml) {
+    return Hashing.murmur3_32_fixed().hashString(yaml, StandardCharsets.UTF_8).asInt();
+  }
+
   public PipelineEntity toPipelineEntityWithPipelineId(String accountId, String orgId, String projectId,
       String pipelineId, String pipelineName, String yaml, Boolean isDraft, String pipelineVersion) {
     PipelineEntity pipelineEntity;
     // Use pipelineId for V1 yaml only since we can't change it if name gets changed
-    if (pipelineVersion != null && !pipelineVersion.equals(PipelineVersion.V0)) {
+    if (pipelineVersion != null && !pipelineVersion.equals(HarnessYamlVersion.V0)) {
       pipelineEntity = toSimplifiedPipelineEntity(accountId, orgId, projectId, pipelineId, pipelineName, yaml);
     } else {
       pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml);
@@ -199,13 +198,19 @@ public class PMSPipelineDtoMapper {
     return pipelineEntity;
   }
 
-  public PipelineEntity toPipelineEntity(
-      PipelineRequestInfoDTO requestInfoDTO, String accountId, String orgId, String projectId, Boolean isDraft) {
+  public PipelineEntity toPipelineEntity(PipelineRequestInfoDTO requestInfoDTO, String accountId, String orgId,
+      String projectId, Boolean isDraft, String pipelineVersion) {
     try {
       if (NGExpressionUtils.matchesInputSetPattern(requestInfoDTO.getIdentifier())) {
         throw new InvalidRequestException("Pipeline identifier cannot be runtime input");
       }
-      BasicPipeline basicPipeline = YamlUtils.read(requestInfoDTO.getYaml(), BasicPipeline.class);
+      BasicPipeline basicPipeline = null;
+      if (pipelineVersion != null && !pipelineVersion.equals(HarnessYamlVersion.V0)) {
+        return toSimplifiedPipelineEntity(accountId, orgId, projectId, requestInfoDTO.getIdentifier(),
+            requestInfoDTO.getName(), requestInfoDTO.getYaml());
+      } else {
+        basicPipeline = YamlUtils.read(requestInfoDTO.getYaml(), BasicPipeline.class);
+      }
       if (isNotEmpty(basicPipeline.getIdentifier())
           && !basicPipeline.getIdentifier().equals(requestInfoDTO.getIdentifier())) {
         throw new InvalidRequestException(String.format("Expected Pipeline identifier in YAML to be [%s], but was [%s]",
@@ -252,6 +257,7 @@ public class PMSPipelineDtoMapper {
       if (isDraft == null) {
         isDraft = false;
       }
+      pipelineEntity.setYamlHash(getYamlHash(requestInfoDTO.getYaml()));
       pipelineEntity.setIsDraft(isDraft);
       return pipelineEntity;
     } catch (IOException e) {
@@ -329,6 +335,7 @@ public class PMSPipelineDtoMapper {
         .gitDetails(entityGitDetails)
         .entityValidityDetails(getEntityValidityDetails(pipelineEntity))
         .isDraft(pipelineEntity.getIsDraft())
+        .yamlVersion(pipelineEntity.getHarnessVersion())
         .build();
   }
 
@@ -473,6 +480,7 @@ public class PMSPipelineDtoMapper {
           .cacheState(cacheResponse.getCacheState())
           .ttlLeft(cacheResponse.getTtlLeft())
           .lastUpdatedAt(cacheResponse.getLastUpdatedAt())
+          .isSyncEnabled(cacheResponse.isSyncEnabled())
           .build();
     }
     return null;

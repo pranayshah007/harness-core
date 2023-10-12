@@ -25,8 +25,8 @@ import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.exception.InvalidRequestException;
 
 import software.wings.beans.AccountEvent;
-import software.wings.beans.AccountEventType;
 import software.wings.beans.Event.Type;
+import software.wings.beans.account.AccountEventType;
 import software.wings.dl.WingsPersistence;
 import software.wings.features.CustomDashboardFeature;
 import software.wings.features.api.AccountId;

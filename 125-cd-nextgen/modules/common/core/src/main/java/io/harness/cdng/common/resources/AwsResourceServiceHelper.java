@@ -6,11 +6,13 @@
  */
 
 package io.harness.cdng.common.resources;
-
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
@@ -38,6 +40,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +50,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
@@ -100,6 +104,10 @@ public class AwsResourceServiceHelper {
   }
 
   public DelegateResponseData getResponseData(BaseNGAccess ngAccess, TaskParameters taskParameters, String taskType) {
+    return getResponseData(ngAccess, taskParameters, taskType, Duration.ofSeconds(timeoutInSecs));
+  }
+  public DelegateResponseData getResponseData(
+      BaseNGAccess ngAccess, TaskParameters taskParameters, String taskType, Duration timeout) {
     Map<String, String> taskSetupAbstractions = ArtifactUtils.getTaskSetupAbstractions(ngAccess);
 
     final DelegateTaskRequest delegateTaskRequest =
@@ -107,7 +115,7 @@ public class AwsResourceServiceHelper {
             .accountId(ngAccess.getAccountIdentifier())
             .taskType(taskType)
             .taskParameters(taskParameters)
-            .executionTimeout(java.time.Duration.ofSeconds(timeoutInSecs))
+            .executionTimeout(timeout)
             .taskSetupAbstractions(taskSetupAbstractions)
             .taskSelectors(((AwsTaskParams) taskParameters).getAwsConnector().getDelegateSelectors())
             .build();

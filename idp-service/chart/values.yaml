@@ -1,0 +1,250 @@
+# Default values for sto-manager
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  commonAnnotations: {}
+  commonLabels: {}
+  loadbalancerURL: "https://test"
+  delegate:
+    airgapped: false
+  imagePullSecrets: []
+  istio:
+    enabled: false
+    gateway:
+      create: true
+      port: 443
+      protocol: HTTPS
+    hosts:
+    - '*'
+    strict: true
+    tls:
+      credentialName: ""
+    virtualService:
+      hosts:
+      - ''
+      gateways: []
+  ingress:
+    enabled: true
+    objects:
+      annotations: {}
+    hosts:
+      - my-host.example.org
+    tls:
+      enabled: false
+      secretName: harness-cert
+  stackDriverLoggingEnabled: true
+  database:
+    postgres:
+      ## - installed = true if installed within cluster
+      installed: true
+      ## - protocol to use for connection
+      protocol: postgres
+      ## - host array for external
+      hosts:
+        - postgres:5432
+      ## - secret name containing external values
+      secretName: ""
+      ## - key within secret containing username
+      userKey: ""
+      ## - key within secret containing password
+      passwordKey: ""
+      ## - extra arguments set to connection string
+      extraArgs: ""
+    mongo:
+      installed: true
+      protocol: mongodb
+      # --  provide default values if mongo.installed is set to false
+      hosts: []
+      secretName: ""
+      userKey: ""
+      passwordKey: ""
+      extraArgs: ""
+    redis:
+      installed: true
+      protocol: "redis"
+      # --  provide default values if redis.installed is set to false
+      hosts:
+        - redis:6379
+      secretName: "redis-secret"
+      userKey: "redis-user"
+      passwordKey: "redis-password"
+      extraArgs: ""
+  opa:
+    enabled: false
+
+
+replicaCount: 1
+maxSurge: 100%
+maxUnavailable: 0
+java:
+  memory: "4096m"
+image:
+  registry: us.gcr.io
+  repository: platform-205701/idp-service
+  pullPolicy: IfNotPresent
+
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "1.16.23-idp-1137-b9f06d"
+  digest: ""
+  imagePullSecrets: []
+waitForInitContainer:
+  image:
+    registry: docker.io
+    repository: harness/helm-init-container
+    pullPolicy: IfNotPresent
+    tag: "latest"
+    digest: ""
+    imagePullSecrets: []
+securityImage:
+  image:
+    registry: docker.io
+    repository: harness/sto-plugin
+    pullPolicy: IfNotPresent
+    tag: 1.13.0
+    digest: ""
+    imagePullSecrets: []
+
+mongoSecrets:
+  userName:
+    name: harness-secrets
+    key: mongodbUsername
+  password:
+    name: mongodb-replicaset-chart
+    key: mongodb-root-password
+
+nameOverride: ""
+fullnameOverride: ""
+ngServiceAccount: "test"
+redislabsCATruststore: "test"
+defaultInternalImageConnector: "account.harnessImage"
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: "harness-default"
+podAnnotations: {}
+podSecurityContext: {}
+# fsGroup: 2000
+
+securityContext: {}
+# capabilities:
+#   drop:
+#   - ALL
+# readOnlyRootFilesystem: true
+# runAsNonRoot: true
+# runAsUser: 1000
+
+probes:
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 12003
+    initialDelaySeconds: 60
+    timeoutSeconds: 5
+    periodSeconds: 10
+    failureThreshold: 20
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 12003
+    initialDelaySeconds: 0
+    timeoutSeconds: 5
+    periodSeconds: 5
+    failureThreshold: 10
+  startupProbe:
+    httpGet:
+      path: /health
+      port: 12003
+    initialDelaySeconds: 45
+    timeoutSeconds: 5
+    periodSeconds: 5
+    failureThreshold: 30
+service:
+  annotations: {}
+  type: ClusterIP
+  port: 12003
+  grpcport: 9979
+
+resources:
+  limits:
+    memory: 6144Mi
+  requests:
+    cpu: 1
+    memory: 6144Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPU: ""
+  targetMemory: ""
+stoServiceGlobalToken:
+  name: harness-secrets
+  key: stoAppHarnessToken
+nodeSelector: {}
+tolerations: []
+affinity: {}
+# Commented out at request of Will as not needed.
+# env:
+#   secrets:
+#   config:
+#     APP_ENABLE_UI: "true"
+#     APP_TOKEN_JWT_SECRET: test
+#     APP_INTERNAL_TOKEN_JWT_SECRET: test
+#     STO_SERVICE_GLOBAL_TOKEN: "token"
+additionalConfigs: {}
+
+# extraVolumes:
+#   - name: volume-test
+#     configMap:
+#       name: test-config
+#       # readOnly: true
+extraVolumes: []
+
+# extraVolumeMounts:
+#   - name: volume-test
+#     mountPath: /opt/harness/config
+extraVolumeMounts: []
+
+lifecycleHooks: {}
+# lifecycleHooks:
+#   postStart:
+#     exec:
+#       command:
+#   preStop:
+#     exec:
+#       command:
+virtualService:
+  annotations: {}
+ingress:
+  annotations: {}
+ENV: "dev-spaces"
+BACKSTAGE_BASE_URL: "test"
+notificationConfigsPluginRequestsNotificationSlack: "default"
+cpu: 2
+scoreComputerThreadsPerCore: 2
+proxyAllowListConfigServices:
+  manager:
+    proxyPath: v1/idp-proxy-service/manager
+    clientConfig:
+      baseUrl: envSpecific
+      connectTimeOutSeconds: 15
+      readTimeOutSeconds: 15
+    secret: envSpecific
+    allowList:
+      - /users/validate-support-user
+  ng-manager:
+    proxyPath: v1/idp-proxy-service/ng-manager
+    clientConfig:
+      baseUrl: envSpecific
+      connectTimeOutSeconds: 15
+      readTimeOutSeconds: 15
+    secret: envSpecific
+    allowList:
+      - /user/aggregate
+      - /aggregate/acl/usergroups
+      - /token/validate
+name: idp-service

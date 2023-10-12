@@ -6,7 +6,6 @@
  */
 
 package io.harness.event.handler.impl.account;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -16,7 +15,11 @@ import static io.harness.event.model.EventConstants.LAST_NAME;
 
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.FeatureName;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.ccm.license.CeLicenseInfo;
 import io.harness.event.handler.EventHandler;
@@ -28,16 +31,17 @@ import io.harness.event.listener.EventListener;
 import io.harness.event.model.Event;
 import io.harness.event.model.EventData;
 import io.harness.event.model.EventType;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 import io.harness.secretmanagers.SecretManagerConfigService;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Account;
-import software.wings.beans.AccountStatus;
 import software.wings.beans.LicenseInfo;
 import software.wings.beans.Service;
 import software.wings.beans.Service.ServiceKeys;
 import software.wings.beans.User;
+import software.wings.beans.account.AccountStatus;
 import software.wings.beans.instance.dashboard.InstanceStatsUtils;
 import software.wings.service.impl.AuthServiceImpl.Keys;
 import software.wings.service.impl.event.AccountEntityEvent;
@@ -50,8 +54,10 @@ import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.ReadPreference;
 import com.segment.analytics.messages.GroupMessage;
 import com.segment.analytics.messages.IdentifyMessage;
+import dev.morphia.query.CountOptions;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +67,7 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(PL)
 @NoArgsConstructor
 @Singleton
@@ -74,6 +81,8 @@ public class AccountChangeHandler implements EventHandler {
   @Inject private HPersistence hPersistence;
   @Inject private AccountService accountService;
   @Inject private SalesforceApiCheck salesforceApiCheck;
+
+  @Inject private FeatureFlagService featureFlagService;
   @Inject private Utils utils;
 
   private Map<String, Boolean> integrations = new HashMap<>();
@@ -145,7 +154,9 @@ public class AccountChangeHandler implements EventHandler {
   }
 
   private long getCountOfServicesInAccount(Account account) {
-    return hPersistence.createQuery(Service.class).filter(ServiceKeys.accountId, account.getUuid()).count();
+    return hPersistence.createQuery(Service.class)
+        .filter(ServiceKeys.accountId, account.getUuid())
+        .count(createCountOptionsToHitSecondaryNode(account.getUuid()));
   }
 
   private void enqueueGroup(Account account) {
@@ -229,5 +240,12 @@ public class AccountChangeHandler implements EventHandler {
           return true;
         })
         .count();
+  }
+
+  private CountOptions createCountOptionsToHitSecondaryNode(String accountId) {
+    if (accountId != null && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION_V2, accountId)) {
+      return new CountOptions().readPreference(ReadPreference.secondaryPreferred());
+    }
+    return new CountOptions();
   }
 }

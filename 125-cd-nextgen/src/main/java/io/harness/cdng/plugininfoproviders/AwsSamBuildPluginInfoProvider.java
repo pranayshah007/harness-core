@@ -88,14 +88,14 @@ public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
     AwsSamBuildStepInfo awsSamBuildStepInfo = (AwsSamBuildStepInfo) cdAbstractStepNode.getStepSpecType();
 
     PluginDetails.Builder pluginDetailsBuilder = PluginInfoProviderHelper.buildPluginDetails(
-        awsSamBuildStepInfo.getResources(), awsSamBuildStepInfo.getRunAsUser(), usedPorts);
+        awsSamBuildStepInfo.getResources(), awsSamBuildStepInfo.getRunAsUser(), usedPorts, true);
 
     ImageDetails imageDetails = null;
 
     if (ParameterField.isNotNull(awsSamBuildStepInfo.getConnectorRef())
         || isNotEmpty(awsSamBuildStepInfo.getConnectorRef().getValue())) {
       imageDetails = PluginInfoProviderHelper.getImageDetails(awsSamBuildStepInfo.getConnectorRef(),
-          awsSamBuildStepInfo.getImage(), awsSamBuildStepInfo.getImagePullPolicy());
+          awsSamStepHelper.getImage(awsSamBuildStepInfo), awsSamBuildStepInfo.getImagePullPolicy());
 
     } else {
       // todo: If image is not provided by user, default to an harness provided image

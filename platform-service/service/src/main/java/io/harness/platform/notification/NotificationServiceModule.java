@@ -36,6 +36,7 @@ import io.harness.mongo.MongoPersistence;
 import io.harness.mongo.queue.NGMongoQueueConsumer;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.ngsettings.client.remote.NGSettingsClientModule;
 import io.harness.notification.SmtpConfig;
 import io.harness.notification.entities.MongoNotificationRequest;
 import io.harness.notification.eventbackbone.MessageConsumer;
@@ -216,6 +217,8 @@ public class NotificationServiceModule extends AbstractModule {
     bind(ChannelService.class).to(ChannelServiceImpl.class);
     install(new SmtpConfigClientModule(
         appConfig.getManagerServiceConfig(), appConfig.getPlatformSecrets().getNgManagerServiceSecret()));
+    install(new NGSettingsClientModule(appConfig.getNgManagerServiceConfig(),
+        this.appConfig.getPlatformSecrets().getNgManagerServiceSecret(), NOTIFICATION_SERVICE.getServiceId()));
     bind(NotificationSettingsService.class).to(NotificationSettingsServiceImpl.class);
     bind(SeedDataPopulaterService.class).to(SeedDataPopulaterServiceImpl.class);
     bind(ChannelService.class).annotatedWith(Names.named(MAILSERVICE)).to(MailServiceImpl.class);

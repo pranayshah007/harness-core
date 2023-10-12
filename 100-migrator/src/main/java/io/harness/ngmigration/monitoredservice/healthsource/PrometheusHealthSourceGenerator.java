@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.monitoredservice.healthsource;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.core.beans.PrometheusMetricDefinition;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
@@ -14,11 +16,14 @@ import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.AwsPrometheus
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.PrometheusHealthSourceSpec;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.monitoredservice.utils.HealthSourceFieldMapper;
 import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngmigration.utils.NGMigrationConstants;
 
 import software.wings.beans.GraphNode;
+import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.states.PrometheusState;
 
 import java.util.List;
@@ -28,18 +33,19 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class PrometheusHealthSourceGenerator extends HealthSourceGenerator {
   private static final String CG_HOSTNAME_PLACEHOLDER = "$hostName";
 
   @Override
-  public HealthSourceSpec generateHealthSourceSpec(GraphNode graphNode) {
+  public HealthSourceSpec generateHealthSourceSpec(GraphNode graphNode, MigrationContext migrationContext) {
     Map<String, Object> properties = CollectionUtils.emptyIfNull(graphNode.getProperties());
     PrometheusState state = new PrometheusState(graphNode.getName());
     state.parseProperties(properties);
     if (state.isAwsPrometheus()) {
-      return getAwsSpec(state);
+      return getAwsSpec(state, migrationContext);
     } else {
-      return getSpec(state);
+      return getSpec(state, migrationContext);
     }
   }
 
@@ -56,7 +62,7 @@ public class PrometheusHealthSourceGenerator extends HealthSourceGenerator {
   }
 
   @Override
-  public HealthSource generateHealthSource(GraphNode graphNode) {
+  public HealthSource generateHealthSource(GraphNode graphNode, MigrationContext migrationContext) {
     Map<String, Object> properties = CollectionUtils.emptyIfNull(graphNode.getProperties());
     PrometheusState state = new PrometheusState(graphNode.getName());
     state.parseProperties(properties);
@@ -66,34 +72,36 @@ public class PrometheusHealthSourceGenerator extends HealthSourceGenerator {
           .name(graphNode.getName())
           .identifier(MigratorUtility.generateIdentifier(graphNode.getName(), CaseFormat.LOWER_CASE))
           .type(MonitoredServiceDataSourceType.AWS_PROMETHEUS)
-          .spec(getSpec(state))
+          .spec(getSpec(state, migrationContext))
           .build();
     } else {
       return HealthSource.builder()
           .name(graphNode.getName())
           .identifier(MigratorUtility.generateIdentifier(graphNode.getName(), CaseFormat.LOWER_CASE))
           .type(MonitoredServiceDataSourceType.PROMETHEUS)
-          .spec(getSpec(state))
+          .spec(getSpec(state, migrationContext))
           .build();
     }
   }
-  public AwsPrometheusHealthSourceSpec getAwsSpec(PrometheusState state) {
+  public AwsPrometheusHealthSourceSpec getAwsSpec(PrometheusState state, MigrationContext migrationContext) {
     List<PrometheusMetricDefinition> prometheusMetricDefinitions = getPrometheusMetricDefenitions(state);
     Pattern lastPathElementInURLPattern = Pattern.compile("/([^/]+)/?$");
     String awsWorkSpaceId = lastPathElementInURLPattern.matcher(state.getAwsPrometheusUrl()).group();
     return AwsPrometheusHealthSourceSpec.builder()
-        .connectorRef(MigratorUtility.RUNTIME_INPUT.getValue())
+        .connectorRef(MigratorUtility.getIdentifierWithScopeDefaults(migrationContext.getMigratedEntities(),
+            state.getAnalysisServerConfigId(), NGMigrationEntityType.CONNECTOR, NGMigrationConstants.RUNTIME_INPUT))
         .metricDefinitions(prometheusMetricDefinitions)
         .region(state.getAwsPrometheusRegion())
         .workspaceId(awsWorkSpaceId)
         .build();
   }
 
-  public PrometheusHealthSourceSpec getSpec(PrometheusState state) {
+  public PrometheusHealthSourceSpec getSpec(PrometheusState state, MigrationContext migrationContext) {
     List<PrometheusMetricDefinition> prometheusMetricDefinitions = getPrometheusMetricDefenitions(state);
 
     return PrometheusHealthSourceSpec.builder()
-        .connectorRef(MigratorUtility.RUNTIME_INPUT.getValue())
+        .connectorRef(MigratorUtility.getIdentifierWithScopeDefaults(migrationContext.getMigratedEntities(),
+            state.getAnalysisServerConfigId(), NGMigrationEntityType.CONNECTOR, NGMigrationConstants.RUNTIME_INPUT))
         .metricDefinitions(prometheusMetricDefinitions)
         .build();
   }

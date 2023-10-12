@@ -6,12 +6,14 @@
  */
 
 package io.harness.ngmigration.service.artifactstream;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.NGMigrationConstants.TRIGGER_TAG_VALUE_DEFAULT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
@@ -40,11 +42,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class AmiArtifactStreamMapper implements ArtifactStreamMapper {
   @Override
   public PrimaryArtifact getArtifactDetails(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, ArtifactStream artifactStream,
-      Map<CgEntityId, NGYamlFile> migratedEntities) {
+      Map<CgEntityId, NGYamlFile> migratedEntities, String version) {
     AmiArtifactStream amiArtifactStream = (AmiArtifactStream) artifactStream;
     NgEntityDetail connector =
         migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(amiArtifactStream.getSettingId()).build())
@@ -72,7 +75,7 @@ public class AmiArtifactStreamMapper implements ArtifactStreamMapper {
                   .region(ParameterField.createValueField(amiArtifactStream.getRegion()))
                   .tags(ParameterField.createValueField(tags))
                   .filters(ParameterField.createValueField(filters))
-                  .version(ParameterField.createValueField("<+input>"))
+                  .version(ParameterField.createValueField(version == null ? "<+input>" : version))
                   .build())
         .build();
   }

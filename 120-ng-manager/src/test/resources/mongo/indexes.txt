@@ -30,6 +30,7 @@ connectors {"name": "nextTokenLookupIteration", "background": true} {"nextTokenL
 connectors {"name": "nextTokenRenewIteration", "background": true} {"nextTokenRenewIteration": 1}
 connectors {"name": "type_nextTokenLookupIteration", "background": true} {"type": 1, "nextTokenLookupIteration": 1}
 connectors {"name": "type_nextTokenRenewIteration", "background": true} {"type": 1, "nextTokenRenewIteration": 1}
+credits {"name": "accountIdentifier_creditType_creditStatus", "background": true} {"accountIdentifier": 1, "creditType": 1, "creditStatus": 1}
 credits {"name": "creditStatus_creditExpiryCheckIteration_expiryTime", "background": true} {"creditStatus": 1, "creditExpiryCheckIteration": 1, "expiryTime": 1}
 credits {"name": "creditStatus_creditsSendToSegmentIteration", "background": true} {"creditStatus": 1, "creditsSendToSegmentIteration": 1}
 delayQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
@@ -40,7 +41,7 @@ deploymentSummaryNG {"name": "idx_accountIdentifier_orgIdentifier_projectIdentif
 deploymentSummaryNG {"name": "idx_instanceSyncKey_createdAt", "background": true} {"instanceSyncKey": 1, "createdAt": -1}
 entityActivity {"name": "accountIdentifier_1", "background": true} {"accountIdentifier": 1}
 entityActivity {"name": "referredFqn_type_referredByType", "background": true} {"referredEntityFQN": 1, "referredEntityType": 1, "referredByEntityType": 1}
-entityActivity {"name": "referredFqn_type_time_referredByType", "background": true} {"referredEntityFQN": 1, "referredEntityType": 1, "activityTime": 1, "referredByEntityType": 1}
+entityActivity {"name": "referredFqn_type_time_referredByType_scope", "background": true} {"referredEntityFQN": 1, "referredEntityType": 1, "activityTime": 1, "referredByEntityType": 1, "referredByEntity.entityRef.scope": 1}
 entityActivity {"name": "type_referredFqn_referredByType_desSort_Index", "background": true} {"type": 1, "referredEntityFQN": 1, "referredEntityType": 1, "referredByEntityType": 1, "activityTime": -1}
 entitySetupUsage {"name": "EntitySetupUsage_unique_index", "unique": true} {"referredByEntityType": 1, "referredByEntityFQN": 1, "referredByEntityRepoIdentifier": 1, "referredByEntityBranch": 1, "referredEntityType": 1, "referredEntityFQN": 1, "referredEntityRepoIdentifier": 1, "referredEntityBranch": 1, "accountIdentifier": 1}
 entitySetupUsage {"name": "ReferredByEntityIndex", "background": true} {"accountIdentifier": 1, "referredByEntityType": 1, "referredByEntityFQN": 1}
@@ -81,14 +82,22 @@ gitFullSyncJob {"name": "account_org_project__idx", "background": true} {"accoun
 gitFullSyncJob {"name": "messageId_1", "unique": true} {"messageId": 1}
 gitFullSyncJob {"name": "nextRuntime_1", "background": true} {"nextRuntime": 1}
 gitProcessRequestSdk {"name": "accountId_repo_branch_commit_index", "background": true} {"accountId": 1, "repoUrl": 1, "branch": 1, "commitId": 1}
+gitRestraintInstances {"name": "releaseEntityId_state_idx", "background": true} {"releaseEntityId": 1, "state": 1}
+gitRestraintInstances {"name": "resourceUnit_order_idx", "unique": true} {"resourceUnit": 1, "order": 1}
+gitRestraintInstances {"name": "resourceUnit_state_idx", "background": true} {"resourceUnit": 1, "state": 1}
+gitRestraintInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 gitSyncErrorNG {"name": "accountId_commitId_repo_branch_errorType_filePath_unique_Index", "unique": true} {"accountIdentifier": 1, "additionalErrorDetails.gitCommitId": 1, "repoUrl": 1, "branchName": 1, "errorType": 1, "completeFilePath": 1, "createdAt": -1}
 gitSyncErrorNG {"name": "accountId_orgIdentifier_projectIdentifier_Index", "background": true} {"accountIdentifier": 1, "scopes.projectIdentifier": 1, "scopes.orgIdentifier": 1}
 gitSyncErrorNG {"name": "accountId_repo_branch_errorType_status_filePath_sort_Index", "background": true} {"accountIdentifier": 1, "repoUrl": 1, "branchName": 1, "errorType": 1, "status": 1, "completeFilePath": 1, "createdAt": -1}
 gitSyncErrorNG {"name": "accountId_repo_errorType_status_sort_Index", "background": true} {"accountIdentifier": 1, "repoUrl": 1, "errorType": 1, "status": 1, "createdAt": -1}
 gitSyncSettings {"name": "account_org_project_index", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 gitToHarnessProgress {"name": "yamlChangeSetId_1", "background": true} {"yamlChangeSetId": 1}
-gitXWebhooks {"name": "accountIdentifier_identifier_repoName_unique_idx", "unique": true} {"accountIdentifier": 1, "identifier": 1, "repoName": 1}
-gitXWebhooks {"name": "createdAt_1", "background": true} {"createdAt": 1}
+gitXWebhook {"name": "accountIdentifier_identifier_unique_idx", "unique": true} {"accountIdentifier": 1, "identifier": 1}
+gitXWebhook {"name": "accountIdentifier_repoName_unique_idx", "unique": true} {"accountIdentifier": 1, "repoName": 1}
+gitXWebhook {"name": "createdAt_1", "background": true} {"createdAt": 1}
+gitXWebhookEvent {"name": "accountIdentifier_eventIdentifier_unique_idx", "unique": true} {"accountIdentifier": 1, "eventIdentifier": 1}
+gitXWebhookEvent {"name": "createdAt_1", "background": true} {"createdAt": 1}
+gitXWebhookEvent {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 gitopsClusters {"name": "accountId_orgId_projId_envRef_createdAt", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "agentIdentifier": 1, "envRef": 1, "createdAt": 1}
 gitopsClusters {"name": "unique_accountId_orgId_projId_envRef_id", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "agentIdentifier": 1, "envRef": 1, "clusterRef": 1}
 gitopsproviders {"name": "unique_accIdentifier_orgIdentifier_projectIdentifier_gitOpsProvider_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
@@ -98,6 +107,7 @@ infrastructures {"name": "accountId_organizationIdentifier_projectIdentifier_env
 instanceDeploymentInfo {"name": "stage_execution_instance_deployment_info_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "envIdentifier": 1, "infraIdentifier": 1, "serviceIdentifier": 1, "stageExecutionId": 1}
 instanceDeploymentInfo {"name": "unique_instance_deployment_info_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "envIdentifier": 1, "infraIdentifier": 1, "serviceIdentifier": 1, "instanceInfo.host": 1}
 instanceNG {"name": "accountId_instanceInfo.Namespace_instanceInfoPodName_createdAt_idx", "background": true} {"accountIdentifier": 1, "instanceInfo.namespace": 1, "instanceInfo.podName": 1, "createdAt": 1}
+instanceNG {"name": "accountId_instanceInfoNamespace_instanceInfoReleaseName_isDeleted_createdAt_idx", "background": true} {"accountIdentifier": 1, "instanceInfo.namespace": 1, "instanceInfo.releaseName": 1, "isDeleted": 1, "createdAt": 1}
 instanceNG {"name": "accountId_isDeleted_createdAt_deletedAt_idx", "background": true} {"accountIdentifier": 1, "isDeleted": 1, "createdAt": 1, "deletedAt": 1}
 instanceNG {"name": "accountId_lastDeployedAt_idx", "background": true} {"accountIdentifier": 1, "lastDeployedAt": 1}
 instanceNG {"name": "accountId_organizationId_projectId_infrastructureMappingId_isDeleted_createdAt_deletedAt_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "infrastructureMappingId": 1, "isDeleted": 1, "createdAt": 1, "deletedAt": 1}
@@ -121,7 +131,8 @@ invites {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"
 ipAllowlist {"name": "accountId_allowedSourceType_index", "background": true} {"accountIdentifier": 1, "allowedSourceType": 1}
 ipAllowlist {"name": "accountId_identifier_unique_index", "unique": true} {"accountIdentifier": 1, "identifier": 1}
 mockRoleAssignments {"name": "uniqueMockRoleAssignment", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "roleAssignment.roleIdentifier": 1, "roleAssignment.resourceGroupIdentifier": 1, "roleAssignment.resourceGroupIdentifier.identifier": 1, "roleAssignment.resourceGroupIdentifier.type": 1}
-moduleLicenses {"name": "moduleType_status_nextIterations", "background": true} {"moduleType": 1, "status": 1, "nextIterations": 1}
+moduleLicenses {"name": "accountIdentifier_moduleLicense_query_index", "background": true} {"accountIdentifier": 1}
+moduleLicenses {"name": "moduleType_status_provisionMonthlyCICreditsIteration", "background": true} {"moduleType": 1, "status": 1, "provisionMonthlyCICreditsIteration": 1}
 moduleVersionInfo {"name": "moduleName_1", "unique": true} {"moduleName": 1}
 ngApiKeys {"name": "list_keys_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "parentIdentifier": 1}
 ngApiKeys {"name": "unique_idx", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "parentIdentifier": 1, "apiKeyType": 1}
@@ -158,6 +169,8 @@ projects {"name": "accountDeletedModulesLastModifiedAtIdx", "background": true} 
 projects {"name": "accountDeletedOrgIdentifierSortLastModifiedAtIdx", "background": true} {"accountIdentifier": 1, "deleted": 1, "orgIdentifier": 1, "identifier": 1, "lastModifiedAt": -1}
 projects {"name": "accountOrgIdentifierDeletedCreatedAtLastModifiedAtIdx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "identifier": 1, "deleted": 1, "createdAt": 1, "lastModifiedAt": 1}
 projects {"name": "unique_accountIdentifier_organizationIdentifier_projectIdentifier", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountIdentifier": 1, "orgIdentifier": 1, "identifier": 1}
+releaseDetailsMappingNG {"name": "accountId_orgIdentifier_projectIdentifier_releaseKey_infraKey_unique_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "releaseKey": 1, "infraKey": 1}
+releaseDetailsMappingNG {"name": "accountId_releaseKey_idx", "background": true} {"accountIdentifier": 1, "releaseKey": 1}
 secrets {"name": "migratedFromManager_1", "background": true} {"migratedFromManager": 1}
 secrets {"name": "unique_identification", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
 serviceAccounts {"name": "list_accounts_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}

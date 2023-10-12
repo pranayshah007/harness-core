@@ -15,6 +15,8 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.helpers.vault.NGVaultTaskHelper.getToken;
 import static io.harness.threading.Morpheus.sleep;
 
+import static software.wings.helpers.ext.vault.VaultRestClientFactory.DEFAULT_KEY_NAME;
+import static software.wings.helpers.ext.vault.VaultRestClientFactory.KEY_NAME_SEPARATOR;
 import static software.wings.helpers.ext.vault.VaultRestClientFactory.getFullPath;
 
 import static java.time.Duration.ofMillis;
@@ -222,8 +224,9 @@ public class HashicorpVaultEncryptor implements VaultEncryptor {
   }
 
   private char[] fetchSecretInternal(EncryptedRecord data, VaultConfig vaultConfig) throws IOException {
-    String fullPath =
-        isEmpty(data.getPath()) ? getFullPath(vaultConfig.getBasePath(), data.getEncryptionKey()) : data.getPath();
+    String fullPath = isEmpty(data.getPath())
+        ? getFullPath(vaultConfig.getBasePath(), data.getEncryptionKey()) + KEY_NAME_SEPARATOR + DEFAULT_KEY_NAME
+        : data.getPath();
     long startTime = System.currentTimeMillis();
     log.info("Reading secret {} from vault {}", fullPath, vaultConfig.getVaultUrl());
     String vaultToken = getToken(vaultConfig);

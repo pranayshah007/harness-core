@@ -6,18 +6,21 @@
  */
 
 package io.harness.grpc.server;
-
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 import static io.harness.exception.WingsException.ReportTarget.REST_API;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.ExceptionLogger;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 
+import com.google.inject.Inject;
 import io.grpc.ForwardingServerCallListener.SimpleForwardingServerCallListener;
 import io.grpc.Metadata;
 import io.grpc.ServerCall;
@@ -28,9 +31,11 @@ import io.grpc.StatusRuntimeException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public class PipelineServiceGrpcErrorHandler implements ServerInterceptor {
+  @Inject ExceptionManager exceptionManager;
   @Override
   public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
       ServerCall<ReqT, RespT> call, Metadata metadata, ServerCallHandler<ReqT, RespT> next) {
@@ -64,14 +69,11 @@ public class PipelineServiceGrpcErrorHandler implements ServerInterceptor {
       }
 
       private void handleException(Exception ex) {
-        if (ex instanceof WingsException) {
-          handleWingsException((WingsException) ex);
-        } else if (ex instanceof StatusRuntimeException) {
+        if (ex instanceof StatusRuntimeException) {
           handleStatusRuntimeException((StatusRuntimeException) ex);
         } else {
-          String message = ExceptionUtils.getMessage(ex);
-          log.error("Unknown exception in grpc call: " + message, ex);
-          call.close(Status.INTERNAL.withDescription(message).withCause(ex), new Metadata());
+          ex = exceptionManager.processException(ex);
+          handleWingsException((WingsException) ex);
         }
       }
 

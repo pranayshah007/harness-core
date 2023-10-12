@@ -9,8 +9,12 @@ package io.harness;
 
 import static io.harness.annotations.dev.HarnessTeam.SSCA;
 import static io.harness.authorization.AuthorizationServiceHeader.SSCA_SERVICE;
+import static io.harness.lock.DistributedLockImplementation.REDIS;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.app.PrimaryVersionManagerModule;
+import io.harness.lock.DistributedLockImplementation;
+import io.harness.lock.PersistentLockModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
@@ -18,19 +22,26 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
+import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.SSCAManagerModuleRegistrars;
+import io.harness.spec.server.ssca.v1.ArtifactApi;
 import io.harness.spec.server.ssca.v1.EnforcementApi;
 import io.harness.spec.server.ssca.v1.OrchestrationApi;
 import io.harness.spec.server.ssca.v1.SbomProcessorApi;
 import io.harness.spec.server.ssca.v1.TokenApi;
+import io.harness.ssca.S3Config;
+import io.harness.ssca.api.ArtifactApiImpl;
 import io.harness.ssca.api.EnforcementApiImpl;
 import io.harness.ssca.api.OrchestrationApiImpl;
 import io.harness.ssca.api.SbomProcessorApiImpl;
 import io.harness.ssca.api.TokenApiImpl;
+import io.harness.ssca.eventsframework.SSCAEventsFrameworkModule;
 import io.harness.ssca.services.ArtifactService;
 import io.harness.ssca.services.ArtifactServiceImpl;
+import io.harness.ssca.services.CdInstanceSummaryService;
+import io.harness.ssca.services.CdInstanceSummaryServiceImpl;
 import io.harness.ssca.services.EnforcementResultService;
 import io.harness.ssca.services.EnforcementResultServiceImpl;
 import io.harness.ssca.services.EnforcementStepService;
@@ -39,12 +50,22 @@ import io.harness.ssca.services.EnforcementSummaryService;
 import io.harness.ssca.services.EnforcementSummaryServiceImpl;
 import io.harness.ssca.services.NextGenService;
 import io.harness.ssca.services.NextGenServiceImpl;
+import io.harness.ssca.services.NormalisedSbomComponentService;
+import io.harness.ssca.services.NormalisedSbomComponentServiceImpl;
 import io.harness.ssca.services.OrchestrationStepService;
 import io.harness.ssca.services.OrchestrationStepServiceImpl;
 import io.harness.ssca.services.RuleEngineService;
 import io.harness.ssca.services.RuleEngineServiceImpl;
+import io.harness.ssca.services.S3StoreService;
+import io.harness.ssca.services.S3StoreServiceImpl;
+import io.harness.time.TimeModule;
 import io.harness.token.TokenClientModule;
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
@@ -90,8 +111,17 @@ public class SSCAManagerModule extends AbstractModule {
     bind(EnforcementResultService.class).to(EnforcementResultServiceImpl.class);
     bind(EnforcementSummaryService.class).to(EnforcementSummaryServiceImpl.class);
     bind(NextGenService.class).to(NextGenServiceImpl.class);
+    bind(S3StoreService.class).to(S3StoreServiceImpl.class);
+    bind(NormalisedSbomComponentService.class).to(NormalisedSbomComponentServiceImpl.class);
+    bind(ArtifactApi.class).to(ArtifactApiImpl.class);
+    bind(CdInstanceSummaryService.class).to(CdInstanceSummaryServiceImpl.class);
     install(new TokenClientModule(this.configuration.getNgManagerServiceHttpClientConfig(),
         this.configuration.getNgManagerServiceSecret(), SSCA_SERVICE.getServiceId()));
+    install(new SSCAEventsFrameworkModule(
+        this.configuration.getEventsFrameworkConfiguration(), this.configuration.getDebeziumConsumerConfigs()));
+    install(PrimaryVersionManagerModule.getInstance());
+    install(PersistentLockModule.getInstance());
+    install(TimeModule.getInstance());
   }
 
   @Provides
@@ -112,6 +142,46 @@ public class SSCAManagerModule extends AbstractModule {
   @Named("sscaManagerServiceSecret")
   public String sscaManagerServiceSecret() {
     return this.configuration.getSscaManagerServiceSecret();
+  }
+
+  @Provides
+  @Singleton
+  @Named("jwtAuthSecret")
+  public String jwtAuthSecret() {
+    return this.configuration.getJwtAuthSecret();
+  }
+
+  @Provides
+  @Singleton
+  public S3Config s3Config() {
+    return this.configuration.getS3Config();
+  }
+
+  @Provides
+  @Singleton
+  public AmazonS3 s3Client() {
+    BasicAWSCredentials googleCreds = new BasicAWSCredentials(
+        configuration.getS3Config().getAccessKeyId(), configuration.getS3Config().getAccessSecretKey());
+
+    return AmazonS3ClientBuilder.standard()
+        .withEndpointConfiguration(
+            new AwsClientBuilder.EndpointConfiguration(configuration.getS3Config().getEndpoint(), "auto"))
+        .withCredentials(new AWSStaticCredentialsProvider(googleCreds))
+        .build();
+  }
+
+  @Provides
+  @Named("lock")
+  @Singleton
+  RedisConfig redisConfig() {
+    return configuration.getRedisLockConfig();
+  }
+
+  @Provides
+  @Singleton
+  DistributedLockImplementation distributedLockImplementation() {
+    return configuration.getDistributedLockImplementation() == null ? REDIS
+                                                                    : configuration.getDistributedLockImplementation();
   }
 
   @Provides

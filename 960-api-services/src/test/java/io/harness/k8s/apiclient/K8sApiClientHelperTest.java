@@ -67,4 +67,23 @@ public class K8sApiClientHelperTest extends CategoryTest {
       assertThat(actualTimeout).contains(timeout);
     }
   }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testGetBooleanEnvVar() {
+    try (MockedStatic<SystemWrapper> mockClient = mockStatic(SystemWrapper.class)) {
+      when(SystemWrapper.getenv(any())).thenReturn("True");
+      assertThat(K8sApiClientHelper.isEnvVarSet("ENV_VAR")).isTrue();
+
+      when(SystemWrapper.getenv(any())).thenReturn("TRUE");
+      assertThat(K8sApiClientHelper.isEnvVarSet("ENV_VAR")).isTrue();
+
+      when(SystemWrapper.getenv(any())).thenReturn("true");
+      assertThat(K8sApiClientHelper.isEnvVarSet("ENV_VAR")).isTrue();
+
+      when(SystemWrapper.getenv(any())).thenReturn("anythingelse");
+      assertThat(K8sApiClientHelper.isEnvVarSet("ENV_VAR")).isFalse();
+    }
+  }
 }

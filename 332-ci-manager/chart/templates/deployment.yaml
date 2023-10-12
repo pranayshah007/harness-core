@@ -5,6 +5,12 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "ci-manager.labels" . | nindent 4 }}
+    {{- if .Values.global.commonLabels }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.global.commonAnnotations }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
 spec:
   progressDeadlineSeconds: 600
   {{- if not .Values.autoscaling.enabled }}
@@ -25,8 +31,17 @@ spec:
       {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .Values.global.commonAnnotations }}
+        {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 8 }}
+      {{- end }}
       labels:
         {{- include "ci-manager.selectorLabels" . | nindent 8 }}
+        {{- if .Values.global.commonLabels }}
+        {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 8 }}
+        {{- end }}
+        {{- if .Values.podLabels }}
+        {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.podLabels "context" $) | nindent 8 }}
+        {{- end }}
     spec:
       {{ include "ci-manager.pullSecrets" . | nindent 6 }}
       serviceAccountName: {{ include "ci-manager.serviceAccountName" . }}
@@ -73,6 +88,8 @@ spec:
               value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "harness" "context" $) }}
             - name: CIMANAGER_MONGO_URI
               value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "harness-ci" "context" $) }}
+            - name: PMS_MONGO_URI
+              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "pms-harness" "context" $) }}
             - name: TIMESCALE_URI
               value: {{ include "harnesscommon.dbconnection.timescaleConnection" (dict "protocol" "jdbc:postgresql" "database" "harness" "context" $) }}
           envFrom:

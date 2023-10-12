@@ -187,19 +187,19 @@ public class EventPublishHelperTest extends WingsBaseTest {
   public void testSendRBACEventForFirstUserGroup() {
     UserThreadLocal.set(user);
     try {
-      when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any()))
+      when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any(), anyBoolean()))
           .thenReturn(PageResponseBuilder.aPageResponse().build());
       eventPublishHelper.publishSetupRbacEvent(ACCOUNT_ID, USER_GROUP_ID, EntityType.USER_GROUP);
       verify(eventPublisher, never()).publishEvent(any(Event.class));
 
       UserGroup userGroup = UserGroup.builder().uuid("invalid").name("userGroup1").build();
-      when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any()))
+      when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any(), anyBoolean()))
           .thenReturn(PageResponseBuilder.aPageResponse().withResponse(Arrays.asList(userGroup)).withTotal(1).build());
       eventPublishHelper.publishSetupRbacEvent(ACCOUNT_ID, USER_GROUP_ID, EntityType.USER_GROUP);
       verify(eventPublisher, never()).publishEvent(any(Event.class));
 
       userGroup = UserGroup.builder().uuid(USER_GROUP_ID).name("userGroup1").build();
-      when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any()))
+      when(userGroupService.list(anyString(), any(PageRequest.class), anyBoolean(), any(), any(), anyBoolean()))
           .thenReturn(PageResponseBuilder.aPageResponse().withResponse(Arrays.asList(userGroup)).withTotal(1).build());
       eventPublishHelper.publishSetupRbacEvent(ACCOUNT_ID, USER_GROUP_ID, EntityType.USER_GROUP);
       verify(eventPublisher, times(1)).publishEvent(any(Event.class));

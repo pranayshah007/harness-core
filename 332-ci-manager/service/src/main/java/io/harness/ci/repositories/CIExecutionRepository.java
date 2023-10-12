@@ -13,18 +13,18 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.execution.execution.CIExecutionMetadata;
 
+import java.util.List;
 import org.springframework.data.repository.CrudRepository;
 
 @HarnessRepo
 @OwnedBy(HarnessTeam.CI)
 public interface CIExecutionRepository
     extends CrudRepository<CIExecutionMetadata, String>, CIExecutionRepositoryCustom {
-  long countByAccountId(String AccountID);
+  long countByAccountId(String accountID);
+  int countByAccountIdAndStatusIn(String accountId, List<String> status);
   long countByAccountIdAndStatus(String accountID, String status);
-  long countByAccountIdAndBuildType(String AccountID, OSType BuildType);
-
+  long countByAccountIdAndBuildTypeAndStatusIn(String accountID, OSType buildType, List<String> status);
   CIExecutionMetadata findByStageExecutionId(String stageExecutionId);
-
   void deleteByStageExecutionId(String stageExecutionId);
   void deleteAllByAccountId(String accountId);
 }

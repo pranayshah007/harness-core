@@ -45,6 +45,7 @@ import io.harness.cf.CfClientConfig;
 import io.harness.cf.CfMigrationConfig;
 import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.connector.services.ConnectorService;
+import io.harness.delay.DelayEventListener;
 import io.harness.delegate.DelegateServiceGrpc;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
@@ -68,6 +69,7 @@ import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.api.NGEncryptedDataService;
+import io.harness.ng.core.api.SecretCrudService;
 import io.harness.ng.core.entitysetupusage.EntitySetupUsageModule;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.services.impl.ServiceOverrideServiceImpl;
@@ -85,6 +87,7 @@ import io.harness.pms.sdk.PmsSdkConfiguration;
 import io.harness.pms.sdk.PmsSdkModule;
 import io.harness.pms.sdk.core.SdkDeployMode;
 import io.harness.queue.QueueController;
+import io.harness.queue.QueueListenerController;
 import io.harness.redis.RedisConfig;
 import io.harness.registrars.CDServiceAdviserRegistrar;
 import io.harness.remote.client.ClientMode;
@@ -112,6 +115,8 @@ import io.harness.timescaledb.TimeScaleDBConfig;
 import io.harness.timescaledb.TimeScaleDBService;
 import io.harness.timescaledb.TimeScaleDBServiceImpl;
 import io.harness.user.remote.UserClient;
+import io.harness.waiter.AbstractWaiterModule;
+import io.harness.waiter.WaiterConfiguration;
 import io.harness.yaml.YamlSdkModule;
 import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 import io.harness.yaml.schema.client.YamlSchemaClientModule;
@@ -141,6 +146,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -297,6 +303,9 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
         bind(Producer.class)
             .annotatedWith(Names.named(EventsFrameworkConstants.SETUP_USAGE))
             .toInstance(mock(NoOpProducer.class));
+        bind(Producer.class)
+            .annotatedWith(Names.named(EventsFrameworkConstants.ENTITY_ACTIVITY))
+            .toInstance(mock(NoOpProducer.class));
         bind(SecretNGManagerClient.class)
             .annotatedWith(Names.named(ClientMode.PRIVILEGED.name()))
             .toInstance(mock(SecretNGManagerClient.class));
@@ -317,6 +326,10 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
         bind(AccessControlClient.class)
             .annotatedWith(Names.named(ClientMode.PRIVILEGED.name()))
             .to(NoOpAccessControlClientImpl.class);
+        bind(ExecutorService.class)
+            .annotatedWith(Names.named("service-gitx-executor"))
+            .toInstance(mock(ExecutorService.class));
+        bind(SecretCrudService.class).toProvider(() -> mock(SecretCrudService.class)).asEagerSingleton();
       }
     });
 
@@ -365,6 +378,12 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
       }
     });
     modules.add(PersistentLockModule.getInstance());
+    modules.add(new AbstractWaiterModule() {
+      @Override
+      public WaiterConfiguration waiterConfiguration() {
+        return WaiterConfiguration.builder().persistenceLayer(WaiterConfiguration.PersistenceLayer.MORPHIA).build();
+      }
+    });
 
     CacheConfigBuilder cacheConfigBuilder =
         CacheConfig.builder().disabledCaches(new HashSet<>()).cacheNamespace("harness-cache");
@@ -419,6 +438,9 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
         }
       }
     }
+
+    final QueueListenerController queueListenerController = injector.getInstance(QueueListenerController.class);
+    queueListenerController.register(injector.getInstance(DelayEventListener.class), 1);
   }
 
   @Override

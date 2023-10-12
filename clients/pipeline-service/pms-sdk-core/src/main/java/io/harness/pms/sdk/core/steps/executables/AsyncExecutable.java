@@ -17,6 +17,7 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.tasks.ProgressData;
 import io.harness.tasks.ResponseData;
 
 import java.util.List;
@@ -37,9 +38,7 @@ import java.util.Map;
  *
  */
 @OwnedBy(PIPELINE)
-public interface AsyncExecutable<T extends StepParameters>
-    extends Step<T>, Abortable<T, AsyncExecutableResponse>, Failable<T>, Expirable<T, AsyncExecutableResponse>,
-            Progressable<T> {
+public interface AsyncExecutable<T extends StepParameters> extends Step<T> {
   AsyncExecutableResponse executeAsync(
       Ambiance ambiance, T stepParameters, StepInputPackage inputPackage, PassThroughData passThroughData);
 
@@ -55,13 +54,22 @@ public interface AsyncExecutable<T extends StepParameters>
 
   StepResponse handleAsyncResponse(Ambiance ambiance, T stepParameters, Map<String, ResponseData> responseDataMap);
 
-  @Override
-  default void handleFailureInterrupt(Ambiance ambiance, T stepParameters, Map<String, String> metadata) {
-    // NOOP : By default this is noop as task failure is handled by the PMS but you are free to override it
+  default void handleFailure(
+      Ambiance ambiance, T stepParameters, AsyncExecutableResponse response, Map<String, String> metadata) {
+    // NOOP : By default this is noop as task failure is handled by the PMS, but you are free to override it
   }
 
-  @Override
   default void handleExpire(Ambiance ambiance, T stepParameters, AsyncExecutableResponse executableResponse) {
-    // NOOP : By default this is noop as task expire is handled by the PMS but you are free to override it
+    // NOOP : By default this is noop as task expire is handled by the PMS, but you are free to override it
+  }
+
+  default void handleAbort(
+      Ambiance ambiance, T stepParameters, AsyncExecutableResponse executableResponse, boolean userMarked) {
+    // NOOP : By default this is noop as task expire is handled by the PMS, but you are free to override it
+  }
+
+  default ProgressData handleProgressAsync(Ambiance ambiance, T stepParameters, ProgressData progressData) {
+    // NOOP : By default this is noop as task expire is handled by the PMS, but you are free to override it
+    return progressData;
   }
 }

@@ -387,11 +387,11 @@ public class DataCollectionTaskServiceImpl implements DataCollectionTaskService 
           DataCollectionTaskResult.builder()
               .dataCollectionTaskId(dataCollectionTask.getUuid())
               .status(DataCollectionExecutionStatus.FAILED)
-              .exception("Exception while getting MontioringSourcePerpetualTask status with workerId:"
+              .exception("Exception while getting MonitoringSourcePerpetualTask status with workerId: "
                   + dataCollectionTask.getDataCollectionWorkerId() + ". " + exception.getMessage())
               .build();
       updateTaskStatus(dataCollectionTaskResult, false);
-      log.error("Exception while getting MontioringSourcePerpetualTask status with workerId:"
+      log.warn("Exception while getting MonitoringSourcePerpetualTask status with workerId: "
               + dataCollectionTask.getDataCollectionWorkerId(),
           exception);
       return;

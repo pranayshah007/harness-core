@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.core.infrastructure.services.impl;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -25,6 +26,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.customdeployment.helper.CustomDeploymentEntitySetupHelper;
+import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
+import io.harness.cdng.infra.yaml.Infrastructure;
+import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
@@ -85,6 +89,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.springframework.dao.DuplicateKeyException;
@@ -135,7 +141,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
       Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(infraEntity);
       InfrastructureEntity createdInfra =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-            InfrastructureEntity infrastructureEntity = infrastructureRepository.save(infraEntity);
+            InfrastructureEntity infrastructureEntity = infrastructureRepository.saveGitAware(infraEntity);
             outboxService.save(EnvironmentUpdatedEvent.builder()
                                    .accountIdentifier(infraEntity.getAccountId())
                                    .orgIdentifier(infraEntity.getOrgIdentifier())
@@ -176,22 +182,35 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
       String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String infraIdentifier) {
     checkArgument(isNotEmpty(accountId), "accountId must be present");
 
-    return getInfrastructureByRef(accountId, orgIdentifier, projectIdentifier, environmentRef, infraIdentifier);
+    return getInfrastructureByRef(
+        accountId, orgIdentifier, projectIdentifier, environmentRef, infraIdentifier, false, false);
   }
 
-  private Optional<InfrastructureEntity> getInfrastructureByRef(
-      String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String infraIdentifier) {
+  @Override
+  public Optional<InfrastructureEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
+      String environmentRef, String infraIdentifier, boolean loadFromCache, boolean loadFromFallbackBranch) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+
+    return getInfrastructureByRef(accountId, orgIdentifier, projectIdentifier, environmentRef, infraIdentifier,
+        loadFromCache, loadFromFallbackBranch);
+  }
+
+  private Optional<InfrastructureEntity> getInfrastructureByRef(String accountId, String orgIdentifier,
+      String projectIdentifier, String environmentRef, String infraIdentifier, boolean loadFromCache,
+      boolean loadFromFallbackBranch) {
     // get using environmentRef
     String[] envRefSplit = StringUtils.split(environmentRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
     if (envRefSplit == null || envRefSplit.length == 1) {
       return infrastructureRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvIdentifierAndIdentifier(
-          accountId, orgIdentifier, projectIdentifier, environmentRef, infraIdentifier);
+          accountId, orgIdentifier, projectIdentifier, environmentRef, infraIdentifier, loadFromCache,
+          loadFromFallbackBranch);
     } else {
       IdentifierRef envIdentifierRef =
           IdentifierRefHelper.getIdentifierRef(environmentRef, accountId, orgIdentifier, projectIdentifier);
       return infrastructureRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvIdentifierAndIdentifier(
           envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
-          envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier(), infraIdentifier);
+          envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier(), infraIdentifier, loadFromCache,
+          loadFromFallbackBranch);
     }
   }
 
@@ -208,14 +227,18 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
             requestInfra.getEnvIdentifier(), requestInfra.getIdentifier());
     if (infraEntityOptional.isPresent()) {
       InfrastructureEntity oldInfrastructureEntity = infraEntityOptional.get();
-
       validateImmutableFieldsAndThrow(requestInfra, oldInfrastructureEntity);
+      InfrastructureEntity infraToUpdate = oldInfrastructureEntity.withYaml(requestInfra.getYaml())
+                                               .withDescription(requestInfra.getDescription())
+                                               .withName(requestInfra.getName())
+                                               .withTags(requestInfra.getTags())
+                                               .withType(requestInfra.getType());
 
       InfrastructureEntity updatedInfra =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-            InfrastructureEntity updatedResult = infrastructureRepository.update(criteria, requestInfra);
+            InfrastructureEntity updatedResult = infrastructureRepository.update(criteria, infraToUpdate);
             if (updatedResult == null) {
-              throw new InvalidRequestException(String.format(
+              throw new InvalidRequestException(format(
                   "Infrastructure [%s] under Environment [%s], Project [%s], Organization [%s] couldn't be updated or doesn't exist.",
                   requestInfra.getIdentifier(), requestInfra.getEnvIdentifier(), requestInfra.getProjectIdentifier(),
                   requestInfra.getOrgIdentifier()));
@@ -238,7 +261,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
       return updatedInfra;
     } else {
       throw new InvalidRequestException(
-          String.format("Infrastructure [%s] under Environment [%s], Project [%s], Organization [%s] doesn't exist.",
+          format("Infrastructure [%s] under Environment [%s], Project [%s], Organization [%s] doesn't exist.",
               requestInfra.getIdentifier(), requestInfra.getEnvIdentifier(), requestInfra.getProjectIdentifier(),
               requestInfra.getOrgIdentifier()));
     }
@@ -901,6 +924,67 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     }
   }
 
+  @Override
+  public Page<InfrastructureEntity> getScopedInfrastructures(
+      Page<InfrastructureEntity> infrastructureEntities, List<String> serviceRefs) {
+    if (CollectionUtils.isEmpty(serviceRefs) || infrastructureEntities.getTotalElements() == 0) {
+      return infrastructureEntities;
+    }
+    // filter out invalid infrastructures from the list
+    List<InfrastructureEntity> scopedInfrastructureEntities =
+        infrastructureEntities.get()
+            .filter(infrastructureEntity -> validateInfrastructureScopes(infrastructureEntity, serviceRefs))
+            .collect(Collectors.toList());
+    return new PageImpl<>(
+        scopedInfrastructureEntities, infrastructureEntities.getPageable(), scopedInfrastructureEntities.size());
+  }
+
+  @Override
+  public List<String> filterServicesByScopedInfrastructures(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, List<String> serviceRefs, Map<String, List<String>> envRefInfraRefsMapping) {
+    if (MapUtils.isEmpty(envRefInfraRefsMapping) || CollectionUtils.isEmpty(serviceRefs)) {
+      return serviceRefs;
+    }
+
+    // looping over to each env and filtering out invalid services from the list by validating scopes in infras
+    envRefInfraRefsMapping.forEach((key, value)
+                                       -> filterServicesForScopedInfra(accountIdentifier, orgIdentifier,
+                                           projectIdentifier, serviceRefs, key, value));
+    return serviceRefs;
+  }
+
+  private void filterServicesForScopedInfra(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      List<String> serviceRefs, String envRef, List<String> infraRefs) {
+    List<InfrastructureEntity> infrastructureEntities =
+        getAllInfrastructureFromIdentifierList(accountIdentifier, orgIdentifier, projectIdentifier, envRef, infraRefs);
+    if (CollectionUtils.isEmpty(infrastructureEntities)) {
+      return;
+    }
+    for (InfrastructureEntity infrastructureEntity : infrastructureEntities) {
+      List<String> scopedToServices = getScopedToServicesField(infrastructureEntity);
+      // if there is no scoping, then all services are valid
+      if (CollectionUtils.isEmpty(scopedToServices)) {
+        continue;
+      }
+      // if there is scoping, filtering out invalid services
+      serviceRefs = serviceRefs.stream().filter(scopedToServices::contains).collect(Collectors.toList());
+    }
+  }
+
+  private boolean validateInfrastructureScopes(
+      InfrastructureEntity infrastructureEntity, @NotNull List<String> serviceRefs) {
+    List<String> scopedToServices = getScopedToServicesField(infrastructureEntity);
+    // here infra is valid if it is scoped to atleast all given services or if it is not scoped at all.
+    return CollectionUtils.isEmpty(scopedToServices) || scopedToServices.containsAll(serviceRefs);
+  }
+
+  private List<String> getScopedToServicesField(InfrastructureEntity infrastructureEntity) {
+    InfrastructureConfig infrastructureConfig =
+        InfrastructureEntityConfigMapper.toInfrastructureConfig(infrastructureEntity);
+    Infrastructure infrastructure = infrastructureConfig.getInfrastructureDefinitionConfig().getSpec();
+    return infrastructure.getScopedToServices();
+  }
+
   InfrastructureEntity getInfrastructureFromEnvAndInfraIdentifier(
       String accountId, String orgId, String projectId, String envRef, String infraId) {
     Optional<InfrastructureEntity> infrastructureEntity;
@@ -908,13 +992,13 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     if (envRefSplit == null || envRefSplit.length == 1) {
       infrastructureEntity =
           infrastructureRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvIdentifierAndIdentifier(
-              accountId, orgId, projectId, envRef, infraId);
+              accountId, orgId, projectId, envRef, infraId, false, false);
     } else {
       IdentifierRef envIdentifierRef = IdentifierRefHelper.getIdentifierRef(envRef, accountId, orgId, projectId);
       infrastructureEntity =
           infrastructureRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvIdentifierAndIdentifier(
               envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
-              envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier(), infraId);
+              envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier(), infraId, false, false);
     }
 
     return infrastructureEntity.orElse(null);

@@ -7,32 +7,38 @@
 
 package io.harness.pms.yaml;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.yaml.YamlNode.PATH_SEP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.YamlException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Arrays;
 import java.util.List;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.CDC)
 @UtilityClass
 public class YamlNodeUtils {
   public static final String FQN_SEP = "\\.";
 
   public void addToPath(YamlNode yamlNode, String path, JsonNode newNode) {
-    if (EmptyPredicate.isEmpty(path)) {
+    if (isEmpty(path)) {
       return;
     }
 
     List<String> pathList = Arrays.asList(path.split(PATH_SEP));
-    if (EmptyPredicate.isEmpty(pathList)) {
+    if (isEmpty(pathList)) {
       return;
     }
 
@@ -72,12 +78,12 @@ public class YamlNodeUtils {
    * @return yamlNode at the fqn path.
    */
   public YamlNode goToPathUsingFqn(YamlNode yamlNode, String fqn) {
-    if (EmptyPredicate.isEmpty(fqn)) {
+    if (isEmpty(fqn)) {
       return yamlNode;
     }
 
     List<String> pathList = Arrays.asList(fqn.split(FQN_SEP));
-    if (EmptyPredicate.isEmpty(pathList)) {
+    if (isEmpty(pathList)) {
       return yamlNode;
     }
 
@@ -172,8 +178,14 @@ public class YamlNodeUtils {
     return null;
   }
 
-  private YamlNode findFieldNameInObject(YamlNode yamlNode, String fieldName) {
-    if (yamlNode == null) {
+  /*
+ This method is specifically used currently only for check that the stage idenfier provided in useFromStage
+ field exists or not. To make it more extensible, we will need to modify it.
+  */
+
+  @VisibleForTesting
+  protected YamlNode findFieldNameInObject(YamlNode yamlNode, String fieldName) {
+    if (yamlNode == null || isEmpty(fieldName)) {
       return null;
     }
     for (YamlField childYamlField : yamlNode.fields()) {
@@ -198,8 +210,14 @@ public class YamlNodeUtils {
     return null;
   }
 
-  private YamlNode findFieldNameInArray(YamlNode yamlNode, String fieldName) {
-    if (yamlNode == null) {
+  /*
+  TODO: This method currently works for the cases when we want to check for field name being a stage
+identifier. But we need to modify it to handle other cases also in future. For e.g. We may need to check
+the field name as a leaf node's value also.
+ */
+  @VisibleForTesting
+  protected YamlNode findFieldNameInArray(YamlNode yamlNode, String fieldName) {
+    if (yamlNode == null || isEmpty(fieldName)) {
       return null;
     }
     for (YamlNode arrayElement : yamlNode.asArray()) {
@@ -207,11 +225,7 @@ public class YamlNodeUtils {
         return arrayElement;
       }
       YamlNode requiredNode = null;
-      if (arrayElement.isArray()) {
-        // Value -> Array
-        requiredNode = findFieldNameInArray(arrayElement, fieldName);
-      } else if (arrayElement.isObject()) {
-        // Value -> Object
+      if (arrayElement.isArray() || arrayElement.isObject()) {
         requiredNode = findFieldNameInArray(arrayElement, fieldName);
       }
       if (requiredNode != null) {

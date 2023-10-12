@@ -7,6 +7,7 @@
 
 package io.harness.cd;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.beans.FeatureName.CDS_REMOVE_TIME_BUCKET_GAPFILL_QUERY;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.timescaledb.Tables.ENVIRONMENTS;
 import static io.harness.timescaledb.Tables.NG_INSTANCE_STATS;
@@ -15,6 +16,15 @@ import static io.harness.timescaledb.Tables.SERVICES;
 import static io.harness.timescaledb.Tables.SERVICES_LICENSE_DAILY_REPORT;
 import static io.harness.timescaledb.Tables.SERVICE_INFRA_INFO;
 import static io.harness.timescaledb.Tables.SERVICE_INSTANCES_LICENSE_DAILY_REPORT;
+
+import static org.jooq.impl.DSL.currentSchema;
+import static org.jooq.impl.DSL.field;
+import static org.jooq.impl.DSL.inline;
+import static org.jooq.impl.DSL.name;
+import static org.jooq.impl.DSL.sum;
+import static org.jooq.impl.DSL.table;
+import static org.jooq.impl.DSL.unquotedName;
+import static org.jooq.impl.DSL.val;
 
 import io.harness.aggregates.AggregateProjectInfo;
 import io.harness.aggregates.AggregateServiceInfo;
@@ -26,6 +36,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.usage.pojos.LicenseDailyUsage;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.pms.dashboards.GroupBy;
+import io.harness.timescaledb.Routines;
 import io.harness.timescaledb.tables.pojos.PipelineExecutionSummaryCd;
 import io.harness.timescaledb.tables.pojos.ServiceInfraInfo;
 import io.harness.timescaledb.tables.pojos.ServiceInstancesLicenseDailyReport;
@@ -33,8 +44,10 @@ import io.harness.timescaledb.tables.pojos.Services;
 import io.harness.timescaledb.tables.pojos.ServicesLicenseDailyReport;
 import io.harness.timescaledb.tables.records.ServiceInstancesLicenseDailyReportRecord;
 import io.harness.timescaledb.tables.records.ServicesLicenseDailyReportRecord;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import javax.validation.constraints.NotNull;
@@ -44,6 +57,8 @@ import org.jooq.Field;
 import org.jooq.InsertValuesStep3;
 import org.jooq.Record2;
 import org.jooq.Record3;
+import org.jooq.Record9;
+import org.jooq.SelectOrderByStep;
 import org.jooq.Table;
 import org.jooq.impl.DSL;
 
@@ -59,6 +74,7 @@ public class TimeScaleDAL {
   public static final int BULK_INSERT_LIMIT = 100;
 
   @Inject private DSLContext dsl;
+  @Inject NGFeatureFlagHelperService featureFlagHelperService;
 
   public List<ServiceInfraInfo> getDistinctServiceWithExecutionInTimeRange(
       @NotNull final String accountId, Long startIntervalInMillis, Long endIntervalInMillis) {
@@ -97,7 +113,7 @@ public class TimeScaleDAL {
                                         (Field<String>) orgProjectTable.field(PROJECT_ID)))))
           .groupBy(
               SERVICE_INFRA_INFO.ORGIDENTIFIER, SERVICE_INFRA_INFO.PROJECTIDENTIFIER, SERVICE_INFRA_INFO.SERVICE_ID)
-          .orderBy(DSL.inline(4).desc())
+          .orderBy(inline(4).desc())
           .limit(RECORDS_LIMIT)
           .fetchInto(AggregateServiceInfo.class);
     } catch (Exception e) {
@@ -123,7 +139,7 @@ public class TimeScaleDAL {
                   .where(NG_INSTANCE_STATS.ORGID.eq((Field<String>) orgProjectTable.field(ORG_ID))
                              .and(NG_INSTANCE_STATS.PROJECTID.eq((Field<String>) orgProjectTable.field(PROJECT_ID)))))
           .groupBy(NG_INSTANCE_STATS.ORGID, NG_INSTANCE_STATS.PROJECTID, NG_INSTANCE_STATS.SERVICEID)
-          .orderBy(DSL.inline(4).desc())
+          .orderBy(inline(4).desc())
           .limit(RECORDS_LIMIT)
           .fetchInto(AggregateServiceInfo.class);
     } catch (Exception e) {
@@ -153,7 +169,7 @@ public class TimeScaleDAL {
                                     .and(NG_INSTANCE_STATS.SERVICEID.eq(
                                         (Field<String>) orgProjectServiceTable.field(SERVICE_ID)))))
           .groupBy(NG_INSTANCE_STATS.ORGID, NG_INSTANCE_STATS.PROJECTID, NG_INSTANCE_STATS.SERVICEID)
-          .orderBy(DSL.inline(4).desc())
+          .orderBy(inline(4).desc())
           .limit(RECORDS_LIMIT)
           .fetchInto(AggregateServiceInfo.class);
     } catch (Exception e) {
@@ -263,7 +279,7 @@ public class TimeScaleDAL {
                              .and(PIPELINE_EXECUTION_SUMMARY_CD.PROJECTIDENTIFIER.eq(
                                  (Field<String>) orgProjectTable.field(PROJECT_ID)))))
           .groupBy(PIPELINE_EXECUTION_SUMMARY_CD.ORGIDENTIFIER, PIPELINE_EXECUTION_SUMMARY_CD.PROJECTIDENTIFIER)
-          .orderBy(DSL.inline(3).desc())
+          .orderBy(inline(3).desc())
           .limit(RECORDS_LIMIT)
           .fetchInto(AggregateProjectInfo.class);
     } catch (Exception e) {
@@ -300,10 +316,39 @@ public class TimeScaleDAL {
   public List<TimeWiseExecutionSummary> getTimeExecutionStatusWiseDeploymentCount(String accountIdentifier,
       long startInterval, long endInterval, GroupBy groupBy, Table<Record2<String, String>> orgProjectTable,
       List<String> statusList) {
-    Field<Long> epoch = DSL.field("time_bucket_gapfill(" + groupBy.getNoOfMilliseconds() + ", {0})", Long.class,
-        PIPELINE_EXECUTION_SUMMARY_CD.STARTTS);
-
     try {
+      if (featureFlagHelperService.isEnabled(accountIdentifier, CDS_REMOVE_TIME_BUCKET_GAPFILL_QUERY)) {
+        Field<Long> tb_status_startts = field("tb_status.startts", Long.class);
+        Field<String> tb_status_status = field("tb_status.status", String.class);
+        Field<Long> t3_startts = field("t3.startts", Long.class);
+        Field<String> t3_status = field("t3.status", String.class);
+        Field<Integer> caseConditionStep = DSL.case_().when(t3_status.isNotNull(), DSL.count()).otherwise(0);
+        return dsl.select(tb_status_startts.as("time_bucket_gapfill"), tb_status_status, caseConditionStep.as("count"))
+            .from(dsl.select(DSL.asterisk())
+                      .from(Routines.timeBucketListCdStatus(val(groupBy.getNoOfMilliseconds()), val(startInterval),
+                          val(endInterval), val(statusList.toArray(new String[0])), val(Boolean.FALSE)))
+                      .asTable("tb_status"))
+            .leftJoin(dsl.select(DSL.asterisk())
+                          .from(PIPELINE_EXECUTION_SUMMARY_CD)
+                          .where(PIPELINE_EXECUTION_SUMMARY_CD.ACCOUNTID.eq(accountIdentifier)
+                                     .and(PIPELINE_EXECUTION_SUMMARY_CD.STARTTS.greaterOrEqual(startInterval))
+                                     .and(PIPELINE_EXECUTION_SUMMARY_CD.STARTTS.lessThan(endInterval))
+                                     .and(PIPELINE_EXECUTION_SUMMARY_CD.STATUS.in(statusList)))
+                          .andExists(dsl.selectOne()
+                                         .from(orgProjectTable)
+                                         .where(PIPELINE_EXECUTION_SUMMARY_CD.ORGIDENTIFIER
+                                                    .eq((Field<String>) orgProjectTable.field(ORG_ID))
+                                                    .and(PIPELINE_EXECUTION_SUMMARY_CD.PROJECTIDENTIFIER.eq(
+                                                        (Field<String>) orgProjectTable.field(PROJECT_ID)))))
+                          .asTable("t3"))
+            .on(tb_status_status.eq(t3_status))
+            .and(tb_status_startts.eq(t3_startts.subtract(t3_startts.mod(groupBy.getNoOfMilliseconds()))))
+            .groupBy(tb_status_startts, t3_status, tb_status_status)
+            .orderBy(tb_status_startts)
+            .fetchInto(TimeWiseExecutionSummary.class);
+      }
+      Field<Long> epoch = field("time_bucket_gapfill(" + groupBy.getNoOfMilliseconds() + ", {0})", Long.class,
+          PIPELINE_EXECUTION_SUMMARY_CD.STARTTS);
       return dsl.select(epoch, PIPELINE_EXECUTION_SUMMARY_CD.STATUS, DSL.count().as("count"))
           .from(PIPELINE_EXECUTION_SUMMARY_CD)
           .where(PIPELINE_EXECUTION_SUMMARY_CD.ACCOUNTID.eq(accountIdentifier)
@@ -433,6 +478,71 @@ public class TimeScaleDAL {
     }
   }
 
+  public Integer getDeploymentCount() {
+    SelectOrderByStep<Record9<Object, Object, Object, Object, Object, Object, Object, Object, Integer>> selectInto =
+        dsl.select(field(name("t3", "nspname")).as(unquotedName("partitioned_table_schema")),
+               field(name("t2", "relname")).as(unquotedName("partitioned_table")),
+               field(name("t3", "nspname")).as(unquotedName("parent_table_schema")),
+               field(name("t2", "relname")).as(unquotedName("parent_table")),
+               field(name("t5", "nspname")).as(unquotedName("child_table_schema")),
+               field(name("t4", "relname")).as(unquotedName("child_table")), field(name("t1", "inhparent")),
+               field(name("t1", "inhrelid")), inline(0).as(unquotedName("level")))
+            .from(table(name("pg_catalog", "pg_inherits"))
+                      .as(unquotedName("t1"))
+                      .join(table(name("pg_catalog", "pg_class")).as(unquotedName("t2")))
+                      .on(field(name("t1", "inhparent")).eq(field(name("t2", "oid"))))
+                      .join(table(name("pg_catalog", "pg_namespace")).as(unquotedName("t3")))
+                      .on(field(name("t2", "relnamespace")).eq(field(name("t3", "oid"))))
+                      .join(table(name("pg_catalog", "pg_class")).as(unquotedName("t4")))
+                      .on(field(name("t1", "inhrelid")).eq(field(name("t4", "oid"))))
+                      .join(table(name("pg_catalog", "pg_namespace")).as(unquotedName("t5")))
+                      .on(field(name("t4", "relnamespace")).eq(field(name("t5", "oid")))))
+            .where(field(name("t3", "nspname"))
+                       .eq(currentSchema())
+                       .and(field(name("t2", "relispartition")).eq(inline(false)))
+                       .and(field(name("t2", "relkind")).in(inline("p"), inline("r"))))
+            .union(dsl.select(field(name("t", "partitioned_table_schema")), field(name("t", "partitioned_table")),
+                          field(name("t3", "nspname")).as(unquotedName("parent_table_schema")),
+                          field(name("t2", "relname")).as(unquotedName("parent_table")),
+                          field(name("t5", "nspname")).as(unquotedName("child_table_schema")),
+                          field(name("t4", "relname")).as(unquotedName("child_table")), field(name("i", "inhparent")),
+                          field(name("i", "inhrelid")), inline(1).as(unquotedName("level")))
+                       .from(table(unquotedName("cte_part_tree"))
+                                 .as(unquotedName("t"))
+                                 .join(table(name("pg_catalog", "pg_inherits")).as(unquotedName("i")))
+                                 .on(field(name("t", "inhrelid")).eq(field(name("i", "inhparent"))))
+                                 .join(table(name("pg_catalog", "pg_class")).as(unquotedName("t2")))
+                                 .on(field(name("i", "inhparent")).eq(field(name("t2", "oid"))))
+                                 .join(table(name("pg_catalog", "pg_namespace")).as(unquotedName("t3")))
+                                 .on(field(name("t2", "relnamespace")).eq(field(name("t3", "oid"))))
+                                 .join(table(name("pg_catalog", "pg_class")).as(unquotedName("t4")))
+                                 .on(field(name("i", "inhrelid")).eq(field(name("t4", "oid"))))
+                                 .join(table(name("pg_catalog", "pg_namespace")).as(unquotedName("t5")))
+                                 .on(field(name("t4", "relnamespace")).eq(field(name("t5", "oid"))))));
+
+    try {
+      BigDecimal countRows =
+          (BigDecimal) dsl.withRecursive("cte_part_tree")
+              .as(selectInto)
+              .select(field(name("t", "partitioned_table")),
+                  sum(field(name("stats", "n_live_tup")).coerce(Integer.class)).as(unquotedName("row_count")))
+              .from(table(unquotedName("cte_part_tree"))
+                        .as(unquotedName("t"))
+                        .join(table(unquotedName("pg_stat_user_tables")).as(unquotedName("stats")))
+                        .on(field(name("t", "child_table_schema"))
+                                .eq(field(name("stats", "schemaname")))
+                                .and(field(name("t", "child_table")).eq(field(name("stats", "relname"))))))
+              .where(field(name("t", "partitioned_table")).in(inline("pipeline_execution_summary_cd")))
+              .groupBy(field(name("t", "partitioned_table")))
+              .fetch(field(name("row_count")))
+              .get(0);
+      return countRows.intValueExact();
+    } catch (Exception e) {
+      log.error("Exception caught while getting deployment count", e);
+      throw e;
+    }
+  }
+
   public Integer getNewEnvCount(
       String accountIdentifier, Long startInterval, Long endInterval, Table<Record2<String, String>> orgProjectTable) {
     try {
@@ -541,7 +651,7 @@ public class TimeScaleDAL {
       return dsl.select()
           .from(SERVICE_INSTANCES_LICENSE_DAILY_REPORT)
           .where(SERVICE_INSTANCES_LICENSE_DAILY_REPORT.ACCOUNT_ID.eq(accountId))
-          .orderBy(DSL.field(SERVICE_INSTANCES_LICENSE_DAILY_REPORT.REPORTED_DAY).desc())
+          .orderBy(field(SERVICE_INSTANCES_LICENSE_DAILY_REPORT.REPORTED_DAY).desc())
           .limit(1)
           .fetchInto(ServiceInstancesLicenseDailyReport.class);
     } catch (Exception e) {
@@ -555,7 +665,7 @@ public class TimeScaleDAL {
       return dsl.select()
           .from(SERVICES_LICENSE_DAILY_REPORT)
           .where(SERVICES_LICENSE_DAILY_REPORT.ACCOUNT_ID.eq(accountId))
-          .orderBy(DSL.field(SERVICES_LICENSE_DAILY_REPORT.REPORTED_DAY).desc())
+          .orderBy(field(SERVICES_LICENSE_DAILY_REPORT.REPORTED_DAY).desc())
           .limit(1)
           .fetchInto(ServicesLicenseDailyReport.class);
     } catch (Exception e) {
@@ -572,7 +682,7 @@ public class TimeScaleDAL {
           .where(SERVICE_INSTANCES_LICENSE_DAILY_REPORT.ACCOUNT_ID.eq(accountId)
                      .and(SERVICE_INSTANCES_LICENSE_DAILY_REPORT.REPORTED_DAY.greaterOrEqual(fromDate))
                      .and(SERVICE_INSTANCES_LICENSE_DAILY_REPORT.REPORTED_DAY.lessOrEqual(toDate)))
-          .orderBy(DSL.field(SERVICE_INSTANCES_LICENSE_DAILY_REPORT.REPORTED_DAY).asc())
+          .orderBy(field(SERVICE_INSTANCES_LICENSE_DAILY_REPORT.REPORTED_DAY).asc())
           .fetchInto(ServiceInstancesLicenseDailyReport.class);
     } catch (Exception e) {
       log.warn("Exception while listing service instances license daily report for account {}", accountId, e);
@@ -588,7 +698,7 @@ public class TimeScaleDAL {
           .where(SERVICES_LICENSE_DAILY_REPORT.ACCOUNT_ID.eq(accountId)
                      .and(SERVICES_LICENSE_DAILY_REPORT.REPORTED_DAY.greaterOrEqual(fromDate))
                      .and(SERVICES_LICENSE_DAILY_REPORT.REPORTED_DAY.lessOrEqual(toDate)))
-          .orderBy(DSL.field(SERVICES_LICENSE_DAILY_REPORT.REPORTED_DAY).asc())
+          .orderBy(field(SERVICES_LICENSE_DAILY_REPORT.REPORTED_DAY).asc())
           .fetchInto(ServicesLicenseDailyReport.class);
     } catch (Exception e) {
       log.warn("Exception while listing services license daily report for account {}", accountId, e);

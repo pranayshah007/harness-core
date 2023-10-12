@@ -9,7 +9,7 @@ package io.harness.platform.resourcegroup;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.authorization.AuthorizationServiceHeader.RESOUCE_GROUP_SERVICE;
-import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.lock.DistributedLockImplementation.REDIS;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
 import io.harness.AccessControlClientModule;
@@ -39,6 +39,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.platform.PlatformConfiguration;
+import io.harness.platform.audit.EventsFrameworkModule;
 import io.harness.queue.QueueController;
 import io.harness.redis.RedisConfig;
 import io.harness.redis.RedissonClientFactory;
@@ -153,13 +154,14 @@ public class ResourceGroupServiceModule extends AbstractModule {
 
     install(new TokenClientModule(this.appConfig.getRbacServiceConfig(),
         this.appConfig.getPlatformSecrets().getNgManagerServiceSecret(), RESOUCE_GROUP_SERVICE.getServiceId()));
+    install(new EventsFrameworkModule(this.appConfig.getEventsFrameworkConfiguration()));
   }
 
   @Provides
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
     return appConfig.getResoureGroupServiceConfig().getDistributedLockImplementation() == null
-        ? MONGO
+        ? REDIS
         : appConfig.getResoureGroupServiceConfig().getDistributedLockImplementation();
   }
 

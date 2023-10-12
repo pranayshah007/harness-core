@@ -15,12 +15,14 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.CreatedByType;
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ExportExecutionsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.export.request.ExportExecutionsRequest.ExportExecutionsRequestKeys;
 import io.harness.execution.export.request.ExportExecutionsRequest.Status;
 import io.harness.execution.export.request.ExportExecutionsRequestLimitChecks.LimitCheck;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 
 import software.wings.beans.WorkflowExecution;
@@ -45,12 +47,14 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @Slf4j
 public class ExportExecutionsRequestService {
-  private static final long EXPIRE_MILLIS = 75L * 60 * 60 * 1000; // 75 hours
+  private static final long EXPIRE_MILLIS = 12L * 60 * 60 * 1000; // 12 hours
 
   private static final long MAX_QUEUED_REQUESTS = 3;
   private static final long MAX_WORKFLOW_EXECUTIONS = 1000;
+  private static final long MAX_FIVE_WORKFLOW_EXECUTIONS = 5;
 
   @Inject private WingsPersistence wingsPersistence;
+  @Inject private FeatureFlagService ffService;
 
   public ExportExecutionsRequest get(@NotNull String accountId, @NotNull String requestId) {
     ExportExecutionsRequest request = wingsPersistence.createQuery(ExportExecutionsRequest.class)
@@ -129,9 +133,13 @@ public class ExportExecutionsRequestService {
     long totalWorkflowExecutions = query.count(new CountOptions()
                                                    .limit((int) MAX_WORKFLOW_EXECUTIONS * 5)
                                                    .readPreference(ReadPreference.secondaryPreferred()));
+
+    long wfeLimit = ffService.isEnabled(FeatureName.CDS_CG_REDUCED_EXPORT_LOG_LIMIT, accountId)
+        ? MAX_FIVE_WORKFLOW_EXECUTIONS
+        : MAX_WORKFLOW_EXECUTIONS;
     return ExportExecutionsRequestLimitChecks.builder()
         .queuedRequests(LimitCheck.builder().limit(MAX_QUEUED_REQUESTS).value(currQueuedRequests).build())
-        .executionCount(LimitCheck.builder().limit(MAX_WORKFLOW_EXECUTIONS).value(totalWorkflowExecutions).build())
+        .executionCount(LimitCheck.builder().limit(wfeLimit).value(totalWorkflowExecutions).build())
         .build();
   }
 

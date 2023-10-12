@@ -6,10 +6,12 @@
  */
 
 package io.harness.ng.core.template;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.validator.EntityName;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.StoreType;
@@ -24,6 +26,8 @@ import javax.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Value;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @Value
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -57,4 +61,5 @@ public class TemplateMetadataSummaryResponseDTO {
   StoreType storeType;
   String connectorRef;
   String icon;
+  String yamlVersion;
 }

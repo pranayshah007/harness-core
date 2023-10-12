@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-name
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      label1: label-1-name
+      label2: label-2-name
+    matchExpressions:
+      - { key: label3, operator: In, values: [ label-3-a, label-3-b ] }
+      - { key: label4, operator: NotIn, values: [ label-4 ] }
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.15.4
+          ports:
+            - containerPort: 80

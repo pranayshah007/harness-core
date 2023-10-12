@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: idp-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- if .Values.global.commonLabels }}
+    {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.global.commonAnnotations }}
+  annotations: {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
+data:
+  DEPLOY_MODE: KUBERNETES_ONPREM
+  MANAGER_CLIENT_BASE_URL: 'http://harness-manager.{{ .Release.Namespace }}.svc.cluster.local:9090/api/'
+  NG_MANAGER_GITSYNC_TARGET: ng-manager:13002
+  NG_MANAGER_GITSYNC_AUTHORITY: ng-manager:13002
+  NG_MANAGER_BASE_URL: 'http://ng-manager:7090/'
+  EVENTS_FRAMEWORK_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  EVENTS_FRAMEWORK_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
+  EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
+  EVENTS_FRAMEWORK_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  LOCK_CONFIG_REDIS_URL: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  LOCK_CONFIG_USE_SENTINEL: {{ .Values.global.database.redis.installed | quote }}
+  LOCK_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
+  LOCK_CONFIG_REDIS_SENTINELS: {{ include "harnesscommon.dbconnection.redisConnection" (dict "context" .Values.global.database.redis) }}
+  DISTRIBUTED_LOCK_IMPLEMENTATION: REDIS
+  AUTH_ENABLED: 'true'
+  LOG_STREAMING_SERVICE_BASEURL: 'http://log-service.{{ .Release.Namespace }}.svc.cluster.local:8079/'
+  GRPC_SERVER_PORT: "9979"
+  PMS_TARGET: pipeline-service:12011
+  PMS_AUTHORITY: pipeline-service:12011
+  SHOULD_CONFIGURE_WITH_PMS: 'true'
+#  CACHE_NAMESPACE: {{.Values.CACHE_NAMESPACE}}
+#  CACHE_BACKEND: {{.Values.CACHE_BACKEND | quote}}
+  STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
+  MONGO_INDEX_MANAGER_MODE: AUTO
+  MONGO_TRANSACTIONS_ALLOWED: 'true'
+  ACCESS_CONTROL_ENABLED: 'true'
+  ACCESS_CONTROL_BASE_URL: 'http://access-control.{{ .Release.Namespace }}.svc.cluster.local:9006/api/'
+#  GOOGLE_APPLICATION_CREDENTIALS: /opt/harness/svc/cloud_stackdriver.json
+  ENABLE_AUDIT: 'false'
+  AUDIT_SERVICE_BASE_URL: http://platform-service:9005/api/
+  MEMORY: {{ .Values.java.memory | quote }}
+  BACKSTAGE_MASTER_URL: "TBD"    #TBD
+  BACKSTAGE_POD_LABEL: "TBD"     #TBD
+  TRIGGER_PIPELINE_URL: "TBD"    #TBD
+  ENV: {{.Values.ENV}}
+#  BACKSTAGE_BASE_URL: {{.Values.BACKSTAGE_BASE_URL | quote}}
+  ONBOARDING_MODULE_CONFIG_HARNESS_CI_CD_ANNOTATIONS_PROJECT_URL: "https://qa.harness.io/ng/account/accountIdentifier/home/orgs/orgIdentifier/projects/projectIdentifier/details"
+  ONBOARDING_MODULE_CONFIG_HARNESS_CI_CD_ANNOTATIONS_SERVICE_URL: "https://qa.harness.io/ng/account/accountIdentifier/cd/orgs/orgIdentifier/projects/projectIdentifier/services/serviceIdentifier"
+#  BACKSTAGE_APP_BASE_URL: TBD
+#  BACKSTAGE_POSTGRES_HOST: TBD
+  ENABLE_APPDYNAMICS: 'false'
+  ONBOARDING_MODULE_CONFIG_USE_GIT_SERVICE_GRPC_FOR_SINGLE_ENTITY_PUSH: 'true'
+  MANAGER_TARGET: harness-manager:9879
+  MANAGER_AUTHORITY: harness-manager:9879
+  PIPELINE_SERVICE_CLIENT_BASEURL: 'http://pipeline-service:12001/api/'
+  TI_SERVICE_ENDPOINT: '{{ .Values.global.loadbalancerURL }}/ti-service/'
+  SCORECARD_ITERATOR_ENABLED: 'true'
+  SCORECARD_ITERATOR_THREAD_POOL_COUNT: '5'
+  SCORECARD_ITERATOR_TARGET_INTERVAL_IN_SECONDS: '14400'
+  NOTIFICATION_CLIENT_SECRET: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+  NOTIFICATION_BASE_URL: 'http://platform-service:9005/api/'
+  NOTIFICATION_CONFIGS_PLUGIN_REQUESTS_NOTIFICATION_SLACK: {{.Values.notificationConfigsPluginRequestsNotificationSlack}}  #TBD
+  SHOULD_CONFIGURE_WITH_NOTIFICATION: 'false'
+  {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}
+  CPU: {{ .Values.cpu | quote}}
+  SCORE_COMPUTER_THREADS_PER_CORE: {{.Values.scoreComputerThreadsPerCore | quote}}
+

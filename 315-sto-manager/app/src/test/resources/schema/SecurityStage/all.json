@@ -65,6 +65,10 @@
         "type": "string"
       }
     },
+    "timeout": {
+      "type": "string",
+      "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(.*<\\+.*>(?!.*\\.executionInput\\(\\)).*)|(^$))$"
+    },
     "type": {
       "type": "string",
       "enum": [
@@ -536,6 +540,40 @@
     "AttestationSpec": {
       "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AttestationSpecV1": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AttestationV1": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "cosign"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "cosign"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CosignAttestationV1"
+              }
+            }
+          }
+        }
+      ]
     },
     "AwsEcrStepInfo": {
       "allOf": [
@@ -1611,7 +1649,8 @@
           "enum": [
             "branch",
             "tag",
-            "PR"
+            "PR",
+            "commitSha"
           ]
         }
       },
@@ -1645,6 +1684,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/BranchBuildSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "commitSha"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CommitShaBuildSpec"
               }
             }
           }
@@ -1958,6 +2013,18 @@
             }
           ]
         },
+        "override": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
         "paths": {
           "oneOf": [
             {
@@ -1965,6 +2032,23 @@
               "items": {
                 "type": "string"
               }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "policy": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "pull",
+                "push",
+                "pull-push"
+              ]
             },
             {
               "type": "string",
@@ -2505,6 +2589,25 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CommitShaBuildSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/BuildSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "commitSha"
+          ],
+          "properties": {
+            "commitSha": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ConnectorConversionInfo": {
       "type": "object",
       "properties": {
@@ -2684,6 +2787,23 @@
             }
           ]
         },
+        "imagePullPolicy": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "Always",
+                "Never",
+                "IfNotPresent"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "(<\\+.+>.*)",
+              "minLength": 1
+            }
+          ]
+        },
         "initTimeout": {
           "type": "string"
         },
@@ -2836,6 +2956,41 @@
               "type": "string"
             },
             "privateKey": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CosignAttestationV1": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AttestationSpecV1"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "password": {
+              "type": "string"
+            },
+            "private_key": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CosignSlsaVerifyAttestation": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/SlsaVerifyAttestationSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "public_key": {
               "type": "string"
             }
           }
@@ -3467,6 +3622,42 @@
     },
     "DockerRuntimeSpec": {
       "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "DockerSourceSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ProvenanceSourceSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "repo",
+            "tags"
+          ],
+          "properties": {
+            "connector": {
+              "type": "string"
+            },
+            "repo": {
+              "type": "string"
+            },
+            "tags": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "DockerStepInfo": {
@@ -4175,6 +4366,142 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "GARStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "host",
+            "imageName",
+            "projectID",
+            "tags"
+          ],
+          "properties": {
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
+            "buildArgs": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheFrom": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheTo": {
+              "type": "string"
+            },
+            "caching": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "connectorRef": {
+              "type": "string"
+            },
+            "context": {
+              "type": "string"
+            },
+            "dockerfile": {
+              "type": "string"
+            },
+            "host": {
+              "type": "string"
+            },
+            "imageName": {
+              "type": "string"
+            },
+            "labels": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "optimize": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "projectID": {
+              "type": "string"
+            },
+            "remoteCacheImage": {
+              "type": "string"
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "runAsUser": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "tags": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "target": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "GCRStepInfo": {
       "allOf": [
         {
@@ -4305,6 +4632,51 @@
             },
             "target": {
               "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GcrSourceSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ProvenanceSourceSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connector",
+            "host",
+            "imageName",
+            "projectID",
+            "tags"
+          ],
+          "properties": {
+            "connector": {
+              "type": "string"
+            },
+            "host": {
+              "type": "string"
+            },
+            "imageName": {
+              "type": "string"
+            },
+            "projectID": {
+              "type": "string"
+            },
+            "tags": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
             }
           }
         }
@@ -4900,6 +5272,9 @@
         {
           "type": "object",
           "properties": {
+            "autoApprove": {
+              "type": "boolean"
+            },
             "image": {
               "type": "string"
             }
@@ -5436,6 +5811,23 @@
             {
               "type": "string",
               "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "imagePullPolicy": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "Always",
+                "Never",
+                "IfNotPresent"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -7950,6 +8342,76 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ProvenanceSource": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "docker",
+            "gcr"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "docker"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/DockerSourceSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "gcr"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GcrSourceSpec"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ProvenanceSourceSpec": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ProvenanceStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "attestation": {
+              "$ref": "#/definitions/AttestationV1"
+            },
+            "source": {
+              "$ref": "#/definitions/ProvenanceSource"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ProwlerStepInfo": {
       "allOf": [
         {
@@ -8779,7 +9241,6 @@
         {
           "type": "object",
           "required": [
-            "args",
             "buildTool",
             "language"
           ],
@@ -10243,6 +10704,10 @@
             "type": "string"
           }
         },
+        "timeout": {
+          "type": "string",
+          "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(.*<\\+.*>(?!.*\\.executionInput\\(\\)).*)|(^$))$"
+        },
         "type": {
           "type": "string",
           "enum": [
@@ -10625,6 +11090,122 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SlsaDockerSourceSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/SlsaVerificationSourceSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "image_path",
+            "tag"
+          ],
+          "properties": {
+            "connector": {
+              "type": "string"
+            },
+            "image_path": {
+              "type": "string"
+            },
+            "tag": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SlsaVerificationSource": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "Docker"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Docker"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/SlsaDockerSourceSpec"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "SlsaVerificationSourceSpec": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SlsaVerificationStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "source": {
+              "$ref": "#/definitions/SlsaVerificationSource"
+            },
+            "verify_attestation": {
+              "$ref": "#/definitions/SlsaVerifyAttestation"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SlsaVerifyAttestation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "cosign"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "cosign"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CosignSlsaVerifyAttestation"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "SlsaVerifyAttestationSpec": {
+      "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "SniperStepInfo": {
@@ -11434,6 +12015,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "BuildAndPushGAR"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GARStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "BuildAndPushGCR"
               }
             }
@@ -12106,6 +12703,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "SlsaVerification"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/SlsaVerificationStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Sniper"
               }
             }
@@ -12306,6 +12919,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/PluginStepInfoV1"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "provenance"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ProvenanceStepInfo"
               }
             }
           }

@@ -9,6 +9,7 @@ package io.harness.ci.registrars;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.steps.stepinfo.GARStepInfo;
 import io.harness.ci.execution.states.ACRStep;
 import io.harness.ci.execution.states.ActionStep;
 import io.harness.ci.execution.states.BackgroundStep;
@@ -17,6 +18,7 @@ import io.harness.ci.execution.states.CISpecStep;
 import io.harness.ci.execution.states.CleanupStep;
 import io.harness.ci.execution.states.DockerStep;
 import io.harness.ci.execution.states.ECRStep;
+import io.harness.ci.execution.states.GARStep;
 import io.harness.ci.execution.states.GCRStep;
 import io.harness.ci.execution.states.GitCloneStep;
 import io.harness.ci.execution.states.InitializeTaskStep;
@@ -32,6 +34,8 @@ import io.harness.ci.execution.states.SecurityStep;
 import io.harness.ci.execution.states.UploadToArtifactoryStep;
 import io.harness.ci.execution.states.UploadToGCSStep;
 import io.harness.ci.execution.states.UploadToS3Step;
+import io.harness.ci.execution.states.ssca.ProvenanceStep;
+import io.harness.ci.execution.states.ssca.SlsaVerificationStep;
 import io.harness.ci.execution.states.ssca.SscaEnforcementStep;
 import io.harness.ci.execution.states.ssca.SscaOrchestrationStep;
 import io.harness.ci.states.V1.InitializeTaskStepV2;
@@ -61,6 +65,7 @@ public class ExecutionRegistrar {
     engineSteps.putAll(STOStepType.addSTOEngineSteps(SecurityStep.class));
     engineSteps.put(ECRStep.STEP_TYPE, ECRStep.class);
     engineSteps.put(GCRStep.STEP_TYPE, GCRStep.class);
+    engineSteps.put(GARStepInfo.STEP_TYPE, GARStep.class);
     engineSteps.put(ACRStep.STEP_TYPE, ACRStep.class);
     engineSteps.put(DockerStep.STEP_TYPE, DockerStep.class);
     engineSteps.put(UploadToS3Step.STEP_TYPE, UploadToS3Step.class);
@@ -79,6 +84,8 @@ public class ExecutionRegistrar {
     engineSteps.put(CISpecStep.STEP_TYPE, CISpecStep.class);
     engineSteps.put(SscaOrchestrationStep.STEP_TYPE, SscaOrchestrationStep.class);
     engineSteps.put(SscaEnforcementStep.STEP_TYPE, SscaEnforcementStep.class);
+    engineSteps.put(ProvenanceStep.STEP_TYPE, ProvenanceStep.class);
+    engineSteps.put(SlsaVerificationStep.STEP_TYPE, SlsaVerificationStep.class);
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
     return engineSteps;
   }

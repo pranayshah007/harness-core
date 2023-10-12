@@ -24,6 +24,7 @@ import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.CommonUtils;
 import io.harness.idp.common.encryption.EncryptionUtils;
+import io.harness.idp.envvariable.beans.entity.BackstageEnvConfigVariableEntity;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvSecretVariableEntity;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity;
 import io.harness.idp.envvariable.beans.entity.BackstageEnvVariableEntity.BackstageEnvVariableMapper;
@@ -55,8 +56,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.math3.util.Pair;
 
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
@@ -112,10 +115,12 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
   @Override
   public BackstageEnvVariable create(BackstageEnvVariable envVariable, String accountIdentifier) {
     envVariable = removeAccountFromIdentifierForBackstageEnvVariable(envVariable);
-    sync(Collections.singletonList(envVariable), accountIdentifier, false);
+    sync(Collections.singletonList(envVariable), accountIdentifier);
     BackstageEnvVariableMapper envVariableMapper =
         getEnvVariableMapper(BackstageEnvVariableType.valueOf(envVariable.getType().name()));
-    BackstageEnvVariableEntity backstageEnvVariableEntity = envVariableMapper.fromDto(envVariable, accountIdentifier);
+    long secretLastModifiedAt = getSecretLastModifiedAt(envVariable, accountIdentifier);
+    BackstageEnvVariableEntity backstageEnvVariableEntity =
+        envVariableMapper.fromDto(envVariable, accountIdentifier, secretLastModifiedAt);
     BackstageEnvVariable responseEnvVariable =
         envVariableMapper.toDto(backstageEnvVariableRepository.save(backstageEnvVariableEntity));
 
@@ -126,7 +131,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
 
   List<BackstageEnvVariable> createMulti(List<BackstageEnvVariable> requestEnvVariables, String accountIdentifier) {
     requestEnvVariables = removeAccountFromIdentifierForBackstageEnvVarList(requestEnvVariables);
-    sync(requestEnvVariables, accountIdentifier, false);
+    sync(requestEnvVariables, accountIdentifier);
     List<BackstageEnvVariableEntity> entities = getEntitiesFromDtos(requestEnvVariables, accountIdentifier);
     List<BackstageEnvVariable> responseEnvVariables = new ArrayList<>();
     backstageEnvVariableRepository.saveAll(entities).forEach(envVariableEntity -> {
@@ -142,10 +147,12 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
   @Override
   public BackstageEnvVariable update(BackstageEnvVariable envVariable, String accountIdentifier) {
     envVariable = removeAccountFromIdentifierForBackstageEnvVariable(envVariable);
-    sync(Collections.singletonList(envVariable), accountIdentifier, false);
+    sync(Collections.singletonList(envVariable), accountIdentifier);
     BackstageEnvVariableMapper envVariableMapper =
         getEnvVariableMapper(BackstageEnvVariableType.valueOf(envVariable.getType().name()));
-    BackstageEnvVariableEntity backstageEnvVariableEntity = envVariableMapper.fromDto(envVariable, accountIdentifier);
+    long secretLastModifiedAt = getSecretLastModifiedAt(envVariable, accountIdentifier);
+    BackstageEnvVariableEntity backstageEnvVariableEntity =
+        envVariableMapper.fromDto(envVariable, accountIdentifier, secretLastModifiedAt);
     backstageEnvVariableEntity.setAccountIdentifier(accountIdentifier);
     BackstageEnvVariable responseVariable =
         envVariableMapper.toDto(backstageEnvVariableRepository.update(backstageEnvVariableEntity));
@@ -159,7 +166,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
 
   List<BackstageEnvVariable> updateMulti(List<BackstageEnvVariable> requestEnvVariables, String accountIdentifier) {
     requestEnvVariables = removeAccountFromIdentifierForBackstageEnvVarList(requestEnvVariables);
-    sync(requestEnvVariables, accountIdentifier, false);
+    sync(requestEnvVariables, accountIdentifier);
     List<BackstageEnvVariableEntity> entities = getEntitiesFromDtos(requestEnvVariables, accountIdentifier);
     List<BackstageEnvVariable> responseVariables = new ArrayList<>();
     entities.forEach(entity -> {
@@ -230,7 +237,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
   @Override
   public void findAndSync(String accountIdentifier) {
     List<BackstageEnvVariable> variables = findByAccountIdentifier(accountIdentifier);
-    sync(variables, accountIdentifier, true);
+    createOrUpdate(variables, accountIdentifier);
   }
 
   @Override
@@ -278,7 +285,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
       log.info("Secret {} is used by backstage env variable {}. Processing secret update for account {}",
           secretIdentifier, envVariableEntityOpt.get().getEnvName(), accountIdentifier);
       BackstageEnvVariableMapper envVariableMapper = getEnvVariableMapper((envVariableEntityOpt.get().getType()));
-      sync(Collections.singletonList(envVariableMapper.toDto(envVariableEntityOpt.get())), accountIdentifier, false);
+      sync(Collections.singletonList(envVariableMapper.toDto(envVariableEntityOpt.get())), accountIdentifier);
     }
   }
 
@@ -295,7 +302,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     }
   }
 
-  public void sync(List<BackstageEnvVariable> envVariables, String accountIdentifier, boolean replace) {
+  public void sync(List<BackstageEnvVariable> envVariables, String accountIdentifier) {
     if (envVariables.isEmpty()) {
       return;
     }
@@ -307,29 +314,52 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     Map<String, byte[]> secretData = new HashMap<>();
 
     Set<String> envNames = envVariables.stream().map(BackstageEnvVariable::getEnvName).collect(Collectors.toSet());
-    log.info("Adding/Updating envs {} for account {}", envNames, accountIdentifier);
+    log.info("Checking if envs {} need to be added/updated for account {}", envNames, accountIdentifier);
+
+    Map<String, BackstageEnvVariableEntity> entitiesMap =
+        backstageEnvVariableRepository
+            .findAllByAccountIdentifierAndMultipleEnvNames(accountIdentifier, new ArrayList<>(envNames))
+            .stream()
+            .collect(Collectors.toMap(BackstageEnvVariableEntity::getEnvName, Function.identity()));
 
     for (BackstageEnvVariable envVariable : envVariables) {
       String envName = envVariable.getEnvName();
+      BackstageEnvVariableEntity entity = entitiesMap.get(envVariable.getEnvName());
 
       if (envVariable.getType().name().equals(BackstageEnvVariableType.SECRET.name())) {
-        if (loadSecretsDynamically) {
-          secretData.put(
-              LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES, String.valueOf(System.currentTimeMillis()).getBytes());
-        } else {
-          BackstageEnvSecretVariable secretEnvVariable = (BackstageEnvSecretVariable) envVariable;
-          secretData.put(envName,
-              getDecryptedValue(
-                  secretEnvVariable.getEnvName(), secretEnvVariable.getHarnessSecretIdentifier(), accountIdentifier)
-                  .getBytes());
-        }
+        BackstageEnvSecretVariable secretEnvVariable = (BackstageEnvSecretVariable) envVariable;
+        BackstageEnvSecretVariableEntity secretEntity = (BackstageEnvSecretVariableEntity) entity;
+        Pair<String, Long> decryptedValueAndLastModifiedAt = getDecryptedValueAndLastModifiedTime(
+            secretEnvVariable.getEnvName(), secretEnvVariable.getHarnessSecretIdentifier(), accountIdentifier);
+        String decryptedValue = decryptedValueAndLastModifiedAt.getFirst();
+        Long lastModifiedAt = decryptedValueAndLastModifiedAt.getSecond();
 
+        if (secretEntity == null // create scenario
+            || !secretEntity.getHarnessSecretIdentifier().equals(
+                secretEnvVariable.getHarnessSecretIdentifier()) // different secret scenario
+            || lastModifiedAt == 0 // old ng-manager scenario
+            || secretEntity.getSecretLastModifiedAt() < lastModifiedAt) { // secret update scenario
+          if (loadSecretsDynamically) {
+            log.info("Updating LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES for env {} for account {}",
+                envVariable.getEnvName(), accountIdentifier);
+            secretData.put(
+                LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES, String.valueOf(System.currentTimeMillis()).getBytes());
+          } else {
+            log.info("Adding/Updating secret env {} for account {}", envVariable.getEnvName(), accountIdentifier);
+            secretData.put(envName, decryptedValue.getBytes());
+          }
+        }
       } else {
-        secretData.put(envName, ((BackstageEnvConfigVariable) envVariable).getValue().getBytes());
+        BackstageEnvConfigVariable configEnvVariable = (BackstageEnvConfigVariable) envVariable;
+        if (entity == null
+            || !((BackstageEnvConfigVariableEntity) entity).getValue().equals(configEnvVariable.getValue())) {
+          log.info("Adding/Updating config env {} for account {}", envVariable.getEnvName(), accountIdentifier);
+          secretData.put(envName, ((BackstageEnvConfigVariable) envVariable).getValue().getBytes());
+        }
       }
     }
     String namespace = getNamespaceForAccount(accountIdentifier);
-    k8sClient.updateSecretData(namespace, BACKSTAGE_SECRET, secretData, replace);
+    k8sClient.updateSecretData(namespace, BACKSTAGE_SECRET, secretData);
     log.info("Successfully updated secret {} in the namespace {}", BACKSTAGE_SECRET, namespace);
   }
 
@@ -380,8 +410,9 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
       BackstageEnvSecretVariableEntity secretVariableEntity = ((BackstageEnvSecretVariableEntity) entity);
       ResolvedEnvVariable resolvedEnv = new ResolvedEnvVariable();
       resolvedEnv.setEnvName(secretVariableEntity.getEnvName());
-      resolvedEnv.setDecryptedValue(getDecryptedValue(
-          secretVariableEntity.getEnvName(), secretVariableEntity.getHarnessSecretIdentifier(), accountIdentifier));
+      resolvedEnv.setDecryptedValue(getDecryptedValueAndLastModifiedTime(
+          secretVariableEntity.getEnvName(), secretVariableEntity.getHarnessSecretIdentifier(), accountIdentifier)
+                                        .getFirst());
       resolvedEnvVariables.add(resolvedEnv);
     }
     String json = gson.toJson(resolvedEnvVariables);
@@ -408,7 +439,8 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
         .map(envVariable -> {
           BackstageEnvVariableMapper envVariableMapper =
               getEnvVariableMapper(BackstageEnvVariableType.valueOf(envVariable.getType().name()));
-          return envVariableMapper.fromDto(envVariable, accountIdentifier);
+          long secretLastModifiedAt = getSecretLastModifiedAt(envVariable, accountIdentifier);
+          return envVariableMapper.fromDto(envVariable, accountIdentifier, secretLastModifiedAt);
         })
         .collect(Collectors.toList());
   }
@@ -421,6 +453,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     }
     return returnList;
   }
+
   private BackstageEnvVariable removeAccountFromIdentifierForBackstageEnvVariable(
       BackstageEnvVariable backstageEnvVariable) {
     if (backstageEnvVariable.getType().name().equals(BackstageEnvVariableType.SECRET.name())) {
@@ -431,8 +464,9 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     }
     return backstageEnvVariable;
   }
-
-  private String getDecryptedValue(String envName, String secretIdentifier, String accountIdentifier) {
+  @Override
+  public Pair<String, Long> getDecryptedValueAndLastModifiedTime(
+      String envName, String secretIdentifier, String accountIdentifier) {
     int maxRetries = 3;
     int baseDelayMillis = 1000;
     int retryAttempts = 0;
@@ -454,7 +488,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
             decryptedValue.setDecryptedValue(privateKeyFormatted);
           }
         }
-        return decryptedValue.getDecryptedValue();
+        return new Pair<>(decryptedValue.getDecryptedValue(), decryptedValue.getLastModifiedAt());
       } catch (Exception e) {
         log.warn("Error while decrypting secret {} for account {}", secretIdentifier, accountIdentifier, e);
 
@@ -470,7 +504,24 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
       }
     }
 
-    throw new RuntimeException("Failed to retrieve decrypted value after multiple retries.");
+    log.error("Failed to retrieve decrypted value after multiple retries for env {}, secret {}, account {}", envName,
+        secretIdentifier, accountIdentifier);
+    return new Pair<>("", 0L);
+  }
+
+  @Override
+  public void reloadSecrets(String harnessAccount, String namespace) {
+    NamespaceInfo namespaceInfo = namespaceService.getNamespaceForAccountIdentifier(harnessAccount);
+    if (!namespaceInfo.getNamespace().equals(namespace)) {
+      throw new InvalidRequestException(
+          String.format("The request namespace [%s] does not match with the account namespace [%s] for account [%s]",
+              namespace, namespaceInfo.getNamespace(), harnessAccount));
+    }
+    Map<String, byte[]> secretData = new HashMap<>();
+    secretData.put(LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES, String.valueOf(System.currentTimeMillis()).getBytes());
+    k8sClient.updateSecretData(namespace, BACKSTAGE_SECRET, secretData);
+    log.info("Successfully updated LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES in secret {} in the namespace {}",
+        BACKSTAGE_SECRET, namespace);
   }
 
   private String formatPrivateKey(String privateKey) {
@@ -481,5 +532,15 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     privateKeyFormatted = privateKeyFormatted + privateKey;
     privateKeyFormatted = privateKeyFormatted + PRIVATE_KEY_END;
     return privateKeyFormatted;
+  }
+
+  private long getSecretLastModifiedAt(BackstageEnvVariable envVariable, String accountIdentifier) {
+    if (envVariable.getType().equals(BackstageEnvVariable.TypeEnum.CONFIG)) {
+      return 0L;
+    }
+    BackstageEnvSecretVariable secret = (BackstageEnvSecretVariable) envVariable;
+    return getDecryptedValueAndLastModifiedTime(
+        secret.getEnvName(), secret.getHarnessSecretIdentifier(), accountIdentifier)
+        .getSecond();
   }
 }
