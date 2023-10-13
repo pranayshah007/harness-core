@@ -6742,11 +6742,13 @@
           "type": "object",
           "required": [
             "connectorRef",
-            "ticketType",
-            "useServiceNowTemplate"
+            "ticketType"
           ],
           "properties": {
             "connectorRef": {
+              "type": "string"
+            },
+            "createType": {
               "type": "string"
             },
             "delegateSelectors": {
