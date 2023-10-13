@@ -17,6 +17,7 @@ import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVI
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.entityusageactivity.EntityUsageTypes.PIPELINE_EXECUTION;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -66,6 +67,8 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.validator.EntityIdentifierValidator;
 import io.harness.delegate.beans.TaskData;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.eventsframework.schemas.entity.EntityUsageDetailProto;
+import io.harness.eventsframework.schemas.entity.PipelineExecutionUsageDataProto;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.LogLevel;
@@ -97,6 +100,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.secretusage.SecretRuntimeUsageService;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.EntityReferenceExtractorUtils;
@@ -104,11 +108,13 @@ import io.harness.steps.TaskRequestsUtils;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
+import io.harness.walktree.visitor.entityreference.beans.VisitedSecretReference;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
 import software.wings.beans.LogWeight;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.time.Duration;
@@ -153,6 +159,8 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject private StrategyHelper strategyHelper;
   @Inject private ServiceEnvironmentsLogCallbackUtility serviceEnvironmentsLogUtility;
+  @Inject private SecretRuntimeUsageService secretRuntimeUsageService;
+
   private static final String OVERRIDE_PROJECT_SETTING_IDENTIFIER = "service_override_v2";
 
   @Override
@@ -361,6 +369,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
     validateConnectors(ambiance, manifestAttributes);
 
     checkForAccessOrThrow(ambiance, manifestAttributes);
+    reportSecretRuntimeUsage(ambiance, manifestAttributes);
 
     final ManifestsOutcome manifestsOutcome = new ManifestsOutcome();
     for (int i = 0; i < manifestAttributes.size(); i++) {
@@ -592,6 +601,30 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters>, Asy
       }
     }
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, true);
+  }
+
+  @VisibleForTesting
+  void reportSecretRuntimeUsage(Ambiance ambiance, List<ManifestAttributes> manifestAttributes) {
+    if (EmptyPredicate.isEmpty(manifestAttributes)) {
+      return;
+    }
+
+    for (ManifestAttributes manifestAttribute : manifestAttributes) {
+      Set<VisitedSecretReference> secretReferences = manifestAttribute == null
+          ? Set.of()
+          : entityReferenceExtractorUtils.extractReferredSecrets(ambiance, manifestAttribute);
+
+      for (VisitedSecretReference secretRef : secretReferences) {
+        secretRuntimeUsageService.createSecretRuntimeUsage(secretRef.getSecretRef(), secretRef.getReferredBy(),
+            EntityUsageDetailProto.newBuilder()
+                .setPipelineExecutionUsageData(PipelineExecutionUsageDataProto.newBuilder()
+                                                   .setPlanExecutionId(ambiance.getPlanExecutionId())
+                                                   .setStageExecutionId(ambiance.getStageExecutionId())
+                                                   .build())
+                .setUsageType(PIPELINE_EXECUTION)
+                .build());
+      }
+    }
   }
 
   private void checkAndWarnIfDoesNotFollowIdentifierRegex(String str, NGLogCallback logCallback) {
