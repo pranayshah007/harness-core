@@ -5215,7 +5215,7 @@ plain_artifacts = [
     "org.eclipse.jetty:jetty-alpn-server:9.4.51.v20230217",
     "org.eclipse.jetty:jetty-client:9.4.51.v20230217",
     "org.eclipse.jetty:jetty-continuation:9.4.51.v20230217",
-    "org.eclipse.jetty:jetty-http:9.4.51.v20230217",
+    "org.eclipse.jetty:jetty-http:9.4.53.v20231009",
     "org.eclipse.jetty:jetty-io:9.4.51.v20230217",
     "org.eclipse.jetty:jetty-security:9.4.51.v20230217",
     "org.eclipse.jetty:jetty-server:9.4.51.v20230217",
