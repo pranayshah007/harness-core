@@ -78,8 +78,6 @@ public class ErrorTrackingTemplateDataGenerator
     final Map<String, String> templateData =
         super.getTemplateData(projectParams, entityDetails, condition, notificationDataMap);
 
-    templateData.putAll(getConditionTemplateVariables(condition));
-
     templateData.put(ENVIRONMENT_NAME, notificationDataMap.get(ENVIRONMENT_NAME));
 
     // Slack variables
@@ -125,25 +123,6 @@ public class ErrorTrackingTemplateDataGenerator
       NotificationRuleType notificationRuleType, CVNGNotificationChannelType notificationChannelType) {
     return String.format("cvng_%s_et_%s", notificationRuleType.getTemplateSuffixIdentifier().toLowerCase(),
         notificationChannelType.getTemplateSuffixIdentifier().toLowerCase());
-  }
-
-  /**
-   * Sets variables from the Monitored Service condition that triggered the notification
-   */
-  private Map<String, String> getConditionTemplateVariables(MonitoredServiceCodeErrorCondition condition) {
-    // Event status example is "New Events" or "Critical Events"
-    String changeEventStatusString = condition.getErrorTrackingEventStatus()
-                                         .stream()
-                                         .map(ErrorTrackingEventStatus::getDisplayName)
-                                         .collect(Collectors.joining(", "));
-
-    // Event type example is "Exception", "Log Errors", etc
-    String changeEventTypeString = condition.getErrorTrackingEventTypes()
-                                       .stream()
-                                       .map(ErrorTrackingEventType::getDisplayName)
-                                       .collect(Collectors.joining(", "));
-
-    return Map.of(EVENT_STATUS, changeEventStatusString, NOTIFICATION_EVENT_TRIGGER_LIST, changeEventTypeString);
   }
 
   @Override

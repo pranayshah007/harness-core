@@ -16,6 +16,7 @@ import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDa
 import static io.harness.cvng.notification.utils.ErrorTrackingNotificationRuleUtils.buildMonitoredServiceConfigurationTabUrl;
 import static io.harness.cvng.notification.utils.ErrorTrackingNotificationRuleUtils.getCodeErrorHitSummaryTemplateData;
 import static io.harness.cvng.notification.utils.ErrorTrackingNotificationRuleUtils.getCodeErrorTemplateData;
+import static io.harness.cvng.notification.utils.ErrorTrackingNotificationRuleUtils.getConditionTemplateVariables;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_IDENTIFIER;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_NAME;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_IDENTIFIER;
@@ -194,8 +195,8 @@ public class ErrorTrackingNotificationServiceImpl implements ErrorTrackingNotifi
             ((ErrorTrackingTemplateDataGenerator) notificationRuleConditionTypeTemplateDataGeneratorMap.get(
                  CODE_ERRORS))
                 .getBaseLinkUrl(monitoredService.getAccountId());
-        templateDataMap.putAll(
-            getCodeErrorTemplateData(codeErrorCondition.getErrorTrackingEventStatus(), notificationData, baseLinkUrl));
+        templateDataMap.putAll(getCodeErrorTemplateData(codeErrorCondition, notificationData, baseLinkUrl));
+        templateDataMap.putAll(getConditionTemplateVariables(codeErrorCondition, notificationData));
         templateDataMap.put(
             NOTIFICATION_URL, buildMonitoredServiceConfigurationTabUrl(baseLinkUrl, monitoredServiceParams));
         templateDataMap.put(NOTIFICATION_NAME, notificationRule.getName());
