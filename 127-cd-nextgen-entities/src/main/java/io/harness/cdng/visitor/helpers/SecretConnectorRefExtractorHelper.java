@@ -49,7 +49,7 @@ public class SecretConnectorRefExtractorHelper extends ConnectorRefExtractorHelp
       String projectIdentifier, Map<String, Object> contextMap) {
     final Set<EntityDetailProtoDTO> connectorDetails =
         addReference(object, accountIdentifier, orgIdentifier, projectIdentifier, contextMap);
-    final Set<VisitedSecretReference> secretReferences = new HashSet<>();
+    final Set<VisitedSecretReference> secretReferences = new HashSet<>(connectorDetails.size());
 
     for (EntityDetailProtoDTO connectorDetail : connectorDetails) {
       IdentifierRefProtoDTO connectorIdentifierRef = connectorDetail.getIdentifierRef();
