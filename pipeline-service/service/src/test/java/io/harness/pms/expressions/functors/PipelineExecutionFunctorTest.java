@@ -199,8 +199,8 @@ public class PipelineExecutionFunctorTest extends CategoryTest {
     assertEquals(response.get("resumedExecutionId"),
         pipelineExecutionSummaryEntity.getRetryExecutionMetadata().getRootExecutionId());
     assertEquals(response.get("storeType"), StoreType.REMOTE);
-    assertEquals(response.get("branchName"), "main");
-    assertEquals(response.get("repoName"), "test");
+    assertEquals(response.get("branch"), "main");
+    assertEquals(response.get("repo"), "test");
     pipelineExecutionSummaryEntity =
         PipelineExecutionSummaryEntity.builder()
             .allowStagesExecution(false)

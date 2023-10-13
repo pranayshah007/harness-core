@@ -76,8 +76,8 @@ public class PipelineExecutionFunctor implements LateBindingValue {
         pipelineExecutionSummaryEntity.getStoreType() != null ? pipelineExecutionSummaryEntity.getStoreType()
                                                               : StoreType.INLINE);
     if (pipelineExecutionSummaryEntity.getEntityGitDetails() != null) {
-      jsonObject.put("branchName", pipelineExecutionSummaryEntity.getEntityGitDetails().getBranch());
-      jsonObject.put("repoName", pipelineExecutionSummaryEntity.getEntityGitDetails().getRepoName());
+      jsonObject.put("branch", pipelineExecutionSummaryEntity.getEntityGitDetails().getBranch());
+      jsonObject.put("repo", pipelineExecutionSummaryEntity.getEntityGitDetails().getRepoName());
     }
 
     // block to add selected stages identifier
