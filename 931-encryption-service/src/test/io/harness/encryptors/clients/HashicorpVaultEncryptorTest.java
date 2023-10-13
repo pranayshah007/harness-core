@@ -670,6 +670,11 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
     char[] value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
     assertThat(valueOf(value)).isEqualTo("value-for-key-with-dot");
 
+    data = Map.of("key-having-value-with-curly-braces", "{01dkd7}op910");
+    encryptedRecord = setupJsonResponseMockingV2(data, "key-having-value-with-curly-braces");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo("{01dkd7}op910");
+
     data = Map.of("key-1", "value-1", "key-2", Map.of("key-21", "value-21"), "key-3",
         Map.of("key-31", Map.of("key-311", "value-311")));
 

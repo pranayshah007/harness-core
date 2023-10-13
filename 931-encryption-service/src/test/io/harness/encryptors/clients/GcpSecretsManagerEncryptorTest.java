@@ -227,6 +227,40 @@ public class GcpSecretsManagerEncryptorTest extends CategoryTest {
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
+  public void test_itShouldFetchSecretValue() {
+    String secretValue = "";
+    doReturn(AccessSecretVersionResponse.newBuilder()
+                 .setPayload(SecretPayload.newBuilder().setData(ByteString.copyFromUtf8(secretValue)).build())
+                 .build())
+        .when(secretManagerServiceClient)
+        .accessSecretVersion(any(SecretVersionName.class));
+
+    EncryptedRecordData.EncryptedRecordDataBuilder encryptedRecordDataBuilder =
+        EncryptedRecordData.builder()
+            .encryptionKey(mockedSecret.getName())
+            .path(mockedSecrectVersion.getName())
+            .additionalMetadata(AdditionalMetadata.builder().value(VERSION, "v1").build())
+            .encryptedValue(mockedSecrectVersion.getName().toCharArray());
+
+    char[] fetchedSecretValue = gcpSecretsManagerEncryptor.fetchSecretValue(
+        accountId, encryptedRecordDataBuilder.build(), gcpSecretsManagerConfig);
+    assertThat(valueOf(fetchedSecretValue)).isEqualTo(secretValue);
+
+    secretValue = "{01dkd7}op910";
+    doReturn(AccessSecretVersionResponse.newBuilder()
+                 .setPayload(SecretPayload.newBuilder().setData(ByteString.copyFromUtf8(secretValue)).build())
+                 .build())
+        .when(secretManagerServiceClient)
+        .accessSecretVersion(any(SecretVersionName.class));
+
+    fetchedSecretValue = gcpSecretsManagerEncryptor.fetchSecretValue(
+        accountId, encryptedRecordDataBuilder.build(), gcpSecretsManagerConfig);
+    assertThat(valueOf(fetchedSecretValue)).isEqualTo(secretValue);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
   public void test_itShouldFetchJsonSecretValueByKeyAndPath() throws IOException {
     String jsonText =
         "{\"key1\":\"value1\",\"key2\":{\"key21\":\"value21\",\"key22\":\"value22\"},\"key3\":{\"key31\":{\"key311\":\"value311\"}}}";

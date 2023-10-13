@@ -599,6 +599,22 @@ public class AzureVaultEncryptorTest extends CategoryTest {
     when(keyVaultClient.getSecretWithResponse(any(), any(), any(Context.class))).thenReturn(response);
     char[] value = azureVaultEncryptor.fetchSecretValue(azureVaultConfig.getAccountId(), record, azureVaultConfig);
     assertThat(value).isEqualTo(plainText.toCharArray());
+
+    String valueWithCurlyBraces = "{01dkd7}op910";
+    record = EncryptedRecordData.builder().name(name).path(UUIDGenerator.generateUuid()).build();
+    keyVaultSecret = mockKeyVaultSecret(name, valueWithCurlyBraces);
+    response = new SimpleResponse(null, 200, null, keyVaultSecret);
+    when(keyVaultClient.getSecretWithResponse(any(), any(), any(Context.class))).thenReturn(response);
+    value = azureVaultEncryptor.fetchSecretValue(azureVaultConfig.getAccountId(), record, azureVaultConfig);
+    assertThat(value).isEqualTo(valueWithCurlyBraces.toCharArray());
+
+    String emptyValue = "";
+    record = EncryptedRecordData.builder().name(name).path(UUIDGenerator.generateUuid()).build();
+    keyVaultSecret = mockKeyVaultSecret(name, emptyValue);
+    response = new SimpleResponse(null, 200, null, keyVaultSecret);
+    when(keyVaultClient.getSecretWithResponse(any(), any(), any(Context.class))).thenReturn(response);
+    value = azureVaultEncryptor.fetchSecretValue(azureVaultConfig.getAccountId(), record, azureVaultConfig);
+    assertThat(value).isEqualTo(emptyValue.toCharArray());
   }
 
   @Test

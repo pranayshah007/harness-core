@@ -389,7 +389,7 @@ public class AzureVaultEncryptor implements VaultEncryptor {
         throw new AzureKeyVaultOperationException("Received null value for " + parsedSecretReference.getSecretName(),
             AZURE_KEY_VAULT_OPERATION_ERROR, USER_SRE);
       }
-      return getValueByJsonPath(parse(response.getValue().getValue()), parsedSecretReference.getKey()).toCharArray();
+      return getValueByJsonPath(response.getValue().getValue(), parsedSecretReference.getKey()).toCharArray();
     } catch (KeyVaultErrorException | MsalException ex) {
       throw ex;
     } catch (Exception ex) {

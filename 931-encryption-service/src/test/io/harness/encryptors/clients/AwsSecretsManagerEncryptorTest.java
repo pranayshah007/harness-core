@@ -731,6 +731,26 @@ public class AwsSecretsManagerEncryptorTest extends CategoryTest {
     char[] returnedValue = awsSecretsManagerEncryptor.fetchSecretValue(
         awsSecretsManagerConfig.getAccountId(), encryptedRecord, awsSecretsManagerConfig);
     assertThat(returnedValue).isEqualTo(value.toCharArray());
+
+    value = "{01dkd7}op910";
+    result = "{\"" + key + "\":\"" + value + "\"}";
+    getSecretRequest = new GetSecretValueRequest().withSecretId(fullSecretName);
+    getSecretValueResult = new GetSecretValueResult().withSecretString(result);
+    when(awsSecretsManager.getSecretValue(getSecretRequest)).thenReturn(getSecretValueResult);
+    encryptedRecord = builder().path(fullSecretNameAndKey).build();
+    returnedValue = awsSecretsManagerEncryptor.fetchSecretValue(
+        awsSecretsManagerConfig.getAccountId(), encryptedRecord, awsSecretsManagerConfig);
+    assertThat(returnedValue).isEqualTo(value.toCharArray());
+
+    value = "";
+    result = "{\"" + key + "\":\"" + value + "\"}";
+    getSecretRequest = new GetSecretValueRequest().withSecretId(fullSecretName);
+    getSecretValueResult = new GetSecretValueResult().withSecretString(result);
+    when(awsSecretsManager.getSecretValue(getSecretRequest)).thenReturn(getSecretValueResult);
+    encryptedRecord = builder().path(fullSecretNameAndKey).build();
+    returnedValue = awsSecretsManagerEncryptor.fetchSecretValue(
+        awsSecretsManagerConfig.getAccountId(), encryptedRecord, awsSecretsManagerConfig);
+    assertThat(returnedValue).isEqualTo(value.toCharArray());
   }
 
   @Test
