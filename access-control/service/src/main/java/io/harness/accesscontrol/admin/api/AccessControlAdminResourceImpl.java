@@ -56,4 +56,12 @@ public class AccessControlAdminResourceImpl implements AccessControlAdminResourc
             .collect(Collectors.toList());
     return Response.ok().entity(blockAccountDTOS).build();
   }
+
+  @Override
+  @InternalApi
+  public Response generateACLs(GenerateACLDTO generateACLDTO) {
+    accessControlAdminService.generateACLs(
+        generateACLDTO.getAccountIdentifier(), generateACLDTO.getRoleAssignmentIds());
+    return Response.accepted().build();
+  }
 }

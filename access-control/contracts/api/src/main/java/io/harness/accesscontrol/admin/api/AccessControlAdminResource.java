@@ -72,4 +72,14 @@ public interface AccessControlAdminResource {
   @Operation(operationId = "getBlockedAccounts", summary = "Get list of blocked accounts", hidden = true)
   @InternalApi
   Response getBlockedAccounts();
+
+  @POST
+  @Path("generate-acls")
+  @ApiOperation(
+      value = "Generate ACLs for a given account and role-assignments", nickname = "generate-acls", hidden = true)
+  @Operation(
+      operationId = "generate-acls", summary = "Generate ACLs for a given account and role-assignments", hidden = true)
+  @InternalApi
+  Response
+  generateACLs(@Valid GenerateACLDTO generateACLDTO);
 }

@@ -13,7 +13,6 @@ import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import static io.harness.accesscontrol.scopes.core.ScopeHelper.toParentScope;
 import static io.harness.aggregator.ACLUtils.buildACL;
 import static io.harness.aggregator.ACLUtils.buildResourceSelector;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.accesscontrol.acl.api.Principal;
@@ -134,9 +133,19 @@ public class ACLGeneratorServiceImpl implements ACLGeneratorService {
     long numberOfACLsCreated = 0;
     long maxACLsAllowed = 2000000;
     List<ACL> acls = new ArrayList<>();
-    long aclCount = isEmpty(principals) || isEmpty(permissions) || isEmpty(resourceSelectors)
-        ? 0
-        : principals.size() * permissions.size() * resourceSelectors.size();
+    long aclCount = 0;
+
+    for (String permission : permissions) {
+      for (ResourceSelector resourceSelector : resourceSelectors) {
+        if (!inMemoryPermissionRepository.isPermissionCompatibleWithResourceSelector(
+                permission, resourceSelector.getSelector())) {
+          continue;
+        }
+        aclCount++;
+      }
+    }
+    aclCount = aclCount * principals.size();
+
     if (aclCount > maxACLsAllowed) {
       log.error(String.format(
           "Skipping ACLs creation for roleAssignment id: %s defined at scope %s as it is attempting to create %d ACLs greater than maxAllowed %d",

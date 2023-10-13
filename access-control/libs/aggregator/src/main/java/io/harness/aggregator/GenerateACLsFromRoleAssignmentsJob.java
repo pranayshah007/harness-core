@@ -7,6 +7,8 @@
 
 package io.harness.aggregator;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.accesscontrol.acl.persistence.ACL;
 import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
 import io.harness.accesscontrol.principals.usergroups.persistence.UserGroupRepository;
@@ -20,6 +22,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.HashSet;
+import java.util.List;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -46,9 +49,13 @@ public class GenerateACLsFromRoleAssignmentsJob {
     this.userGroupRepository = userGroupRepository;
   }
 
-  private CloseableIterator<RoleAssignmentDBO> runQueryWithBatch(String scopeIdentifier, int batchSize) {
+  private CloseableIterator<RoleAssignmentDBO> runQueryWithBatch(
+      String scopeIdentifier, List<String> roleAssignments, int batchSize) {
     Pattern startsWithScope = Pattern.compile("^" + scopeIdentifier);
     Criteria criteria = Criteria.where(RoleAssignmentDBOKeys.scopeIdentifier).regex(startsWithScope);
+    if (isNotEmpty(roleAssignments)) {
+      criteria.andOperator(Criteria.where(RoleAssignmentDBOKeys.id).in(roleAssignments));
+    }
     Query query = new Query();
     query.addCriteria(criteria);
     query.cursorBatchSize(batchSize);
@@ -56,22 +63,22 @@ public class GenerateACLsFromRoleAssignmentsJob {
   }
 
   private long upsertACLs(RoleAssignmentDBO roleAssignment) {
-    // aclRepository.deleteByRoleAssignmentId(roleAssignment.getId());
+    aclRepository.deleteByRoleAssignmentId(roleAssignment.getId());
     long numberOfACLsCreated = aclGeneratorService.createACLsForRoleAssignment(roleAssignment);
     numberOfACLsCreated +=
         aclGeneratorService.createImplicitACLsForRoleAssignment(roleAssignment, new HashSet<>(), new HashSet<>());
     return numberOfACLsCreated;
   }
 
-  public void migrate(String accountIdentifier) {
+  public void run(String accountIdentifier, List<String> roleAssignments) {
     String scopeIdentifier = "/ACCOUNT/" + accountIdentifier;
-    log.info("[CreateACLsFromRoleAssignmentsMigration] starting migration....");
-    try (CloseableIterator<RoleAssignmentDBO> iterator = runQueryWithBatch(scopeIdentifier, BATCH_SIZE)) {
+    log.info("[CreateACLsFromRoleAssignmentsMigration] starting migration for scope {}....", scopeIdentifier);
+    try (CloseableIterator<RoleAssignmentDBO> iterator =
+             runQueryWithBatch(scopeIdentifier, roleAssignments, BATCH_SIZE)) {
       while (iterator.hasNext()) {
         RoleAssignmentDBO roleAssignmentDBO = iterator.next();
         try {
-          log.info(
-              "[CreateACLsFromRoleAssignmentsMigration] Number of ACLs created during for roleAssignment {} is : {}",
+          log.info("[CreateACLsFromRoleAssignmentsMigration] Number of ACLs created for roleAssignment {} is : {}",
               roleAssignmentDBO.getIdentifier(), upsertACLs(roleAssignmentDBO));
         } catch (Exception e) {
           log.info("[CreateACLsFromRoleAssignmentsMigration] Unable to process roleassignment: {} due to exception {}",
@@ -79,6 +86,6 @@ public class GenerateACLsFromRoleAssignmentsJob {
         }
       }
     }
-    log.info("[CreateACLsFromRoleAssignmentsMigration] migration successful....");
+    log.info("[CreateACLsFromRoleAssignmentsMigration] migration successful for scope {}....", scopeIdentifier);
   }
 }
