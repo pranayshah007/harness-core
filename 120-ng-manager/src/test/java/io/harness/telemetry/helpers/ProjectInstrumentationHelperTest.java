@@ -56,8 +56,7 @@ public class ProjectInstrumentationHelperTest {
     String orgIdentifier = randomAlphabetic(10);
     ProjectDTO projectDTO = createProjectDTO(orgIdentifier, randomAlphabetic(10));
     Project project = toProject(projectDTO);
-    CompletableFuture<Void> telemetryTask =
-        instrumentationHelper.sendProjectCreateEvent(project, accountIdentifier, projectDTO.getUniqueId());
+    CompletableFuture<Void> telemetryTask = instrumentationHelper.sendProjectCreateEvent(project, accountIdentifier);
     telemetryTask.join();
     assertTrue(telemetryTask.isDone());
   }

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import io.harness.OrganizationConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
@@ -29,6 +30,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import software.wings.jersey.JsonViews;
 
 @OwnedBy(PL)
 @Data
@@ -43,7 +45,7 @@ public class OrganizationDTO {
   @EntityIdentifier(allowBlank = false)
   @Schema(description = OrganizationConstants.IDENTIFIER)
   String identifier;
-  @Schema(hidden = true, description = "UniqueId of Organization") String uniqueId;
+  @JsonView(JsonViews.Internal.class) String uniqueId;
   @ApiModelProperty(required = true) @NGEntityName @Schema(description = OrganizationConstants.NAME) String name;
   @Size(max = 1024) @Schema(description = "Description of the Organization.") String description;
   @Size(max = 128) @Schema(description = "Tags for the Organization.") Map<String, String> tags;

@@ -32,10 +32,10 @@ public class ProjectCreateEvent implements Event {
   private String accountIdentifier;
   private String uniqueId;
 
-  public ProjectCreateEvent(String accountIdentifier, ProjectDTO project, String uniqueId) {
+  public ProjectCreateEvent(String accountIdentifier, ProjectDTO project) {
     this.project = project;
     this.accountIdentifier = accountIdentifier;
-    this.uniqueId = uniqueId;
+    this.uniqueId = project.getUniqueId();
   }
 
   @JsonIgnore
