@@ -21,7 +21,6 @@ import static io.harness.threading.Morpheus.sleep;
 
 import static java.lang.String.format;
 import static java.time.Duration.ofMillis;
-import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SecretText;
@@ -53,6 +52,7 @@ import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.microsoft.aad.msal4j.MsalException;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -82,8 +82,8 @@ public class AzureVaultEncryptor implements VaultEncryptor {
       String name = secretText.getName();
       try {
         SecretClient keyVaultClient = getAzureVaultSecretsClient(azureConfig);
-        return HTimeLimiter.callInterruptible21(
-            timeLimiter, ofSeconds(15), () -> upsertInternal(accountId, secretText, null, azureConfig, keyVaultClient));
+        return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(15),
+            () -> upsertInternal(accountId, secretText, null, azureConfig, keyVaultClient));
       } catch (KeyVaultErrorException e) {
         // Key Vault Error Exception is non-retryable
         throw new SecretManagementDelegateException(
@@ -119,7 +119,7 @@ public class AzureVaultEncryptor implements VaultEncryptor {
     while (true) {
       try {
         SecretClient keyVaultClient = getAzureVaultSecretsClient(azureConfig);
-        return HTimeLimiter.callInterruptible21(timeLimiter, ofSeconds(15),
+        return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(15),
             () -> upsertInternal(accountId, secretText, existingRecord, azureConfig, keyVaultClient));
       } catch (KeyVaultErrorException e) {
         // Key Vault Error Exception is non-retryable
@@ -158,7 +158,7 @@ public class AzureVaultEncryptor implements VaultEncryptor {
     while (true) {
       try {
         SecretClient keyVaultClient = getAzureVaultSecretsClient(azureConfig);
-        return HTimeLimiter.callInterruptible21(timeLimiter, ofSeconds(15),
+        return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(15),
             () -> renameSecretInternal(accountId, secretText, existingRecord, azureConfig, keyVaultClient));
       } catch (KeyVaultErrorException e) {
         // Key Vault Error Exception is non-retryable
@@ -271,7 +271,7 @@ public class AzureVaultEncryptor implements VaultEncryptor {
         if (Boolean.TRUE.equals(azureVaultConfig.getEnablePurge())) {
           purgeSecret(existingRecord.getName(), azureVaultConfig.getVaultName(), keyVaultClient);
           log.info("Successfully purged deleted Secret {} from azure vault: {}", existingRecord.getName(),
-                  azureVaultConfig.getVaultName());
+              azureVaultConfig.getVaultName());
         }
         return true;
       }
@@ -312,8 +312,8 @@ public class AzureVaultEncryptor implements VaultEncryptor {
       try {
         SecretClient keyVaultClient = getAzureVaultSecretsClient(azureConfig);
         log.info("Trying to decrypt record {} by {}", encryptedRecord.getEncryptionKey(), azureConfig.getVaultName());
-        return HTimeLimiter.callInterruptible21(
-            timeLimiter, ofSeconds(15), () -> fetchSecretValueInternal(encryptedRecord, azureConfig, keyVaultClient));
+        return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(15),
+            () -> fetchSecretValueInternal(encryptedRecord, azureConfig, keyVaultClient));
       } catch (KeyVaultErrorException e) {
         throw new SecretManagementDelegateException(
             AZURE_KEY_VAULT_OPERATION_ERROR, prepareKeyVaultErrorMessage(e, accountId, azureConfig.getName()), e, USER);
@@ -424,14 +424,14 @@ public class AzureVaultEncryptor implements VaultEncryptor {
       } catch (Exception ex) {
         failedAttempts++;
         log.error("Failed to purge deleted Secret {} from azure vault: {} failed attempt{}", recordName, vaultName,
-                failedAttempts);
+            failedAttempts);
         if (failedAttempts == NUM_OF_RETRIES) {
           throw new SecretManagementDelegateException(AZURE_KEY_VAULT_OPERATION_ERROR,
-                  "Failed to complete the purge operation. The secret will remain in the deleted/recoverable state in Azure. To successfully purge it, please navigate to Azure Key Vault.",
-                  ex, USER);
+              "Failed to complete the purge operation. The secret will remain in the deleted/recoverable state in Azure. To successfully purge it, please navigate to Azure Key Vault.",
+              ex, USER);
         }
       }
-      sleep(ofSeconds(5));
+      sleep(Duration.ofSeconds(5));
     }
   }
 }

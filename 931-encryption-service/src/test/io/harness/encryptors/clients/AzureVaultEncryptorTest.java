@@ -792,6 +792,7 @@ public class AzureVaultEncryptorTest extends CategoryTest {
     PollResponse<DeletedSecret> pollResponse = mock(PollResponse.class);
     when(syncPoller.waitUntil(any(Duration.class), any(LongRunningOperationStatus.class))).thenReturn(pollResponse);
     when(keyVaultClient.beginDeleteSecret(any())).thenReturn(syncPoller);
+    when(keyVaultClient.getSecret(any())).thenThrow(ResourceNotFoundException.class);
     azureVaultEncryptor.deleteSecret(azureVaultConfig.getAccountId(), encryptedRecord, azureVaultConfig);
     assertThat(encryptedRecord).isNotNull();
     verify(keyVaultClient, times(1)).beginDeleteSecret(any());
