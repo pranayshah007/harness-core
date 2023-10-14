@@ -32,10 +32,10 @@ public class OrganizationCreateEvent implements Event {
   private String accountIdentifier;
   private String uniqueId;
 
-  public OrganizationCreateEvent(String accountIdentifier, OrganizationDTO organization) {
+  public OrganizationCreateEvent(String accountIdentifier, OrganizationDTO organization, String uniqueId) {
     this.organization = organization;
     this.accountIdentifier = accountIdentifier;
-    this.uniqueId = organization.getUniqueId();
+    this.uniqueId = uniqueId;
   }
 
   @JsonIgnore

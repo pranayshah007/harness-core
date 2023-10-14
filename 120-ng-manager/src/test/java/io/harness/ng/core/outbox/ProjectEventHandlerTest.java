@@ -93,7 +93,8 @@ public class ProjectEventHandlerTest extends CategoryTest {
     String orgIdentifier = randomAlphabetic(10);
     String identifier = randomAlphabetic(10);
     ProjectDTO projectDTO = getProjectDTO(orgIdentifier, identifier);
-    ProjectCreateEvent projectCreateEvent = new ProjectCreateEvent(accountIdentifier, projectDTO);
+    ProjectCreateEvent projectCreateEvent =
+        new ProjectCreateEvent(accountIdentifier, projectDTO, projectDTO.getUniqueId());
     String eventData = objectMapper.writeValueAsString(projectCreateEvent);
     GlobalContext globalContext = new GlobalContext();
     SourcePrincipalContextData sourcePrincipalContextData =
