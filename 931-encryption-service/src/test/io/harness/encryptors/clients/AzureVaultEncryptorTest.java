@@ -615,6 +615,38 @@ public class AzureVaultEncryptorTest extends CategoryTest {
     when(keyVaultClient.getSecretWithResponse(any(), any(), any(Context.class))).thenReturn(response);
     value = azureVaultEncryptor.fetchSecretValue(azureVaultConfig.getAccountId(), record, azureVaultConfig);
     assertThat(value).isEqualTo(emptyValue.toCharArray());
+
+    String valueWithSpecialCharacters = "[,\":]";
+    record = EncryptedRecordData.builder().name(name).path(UUIDGenerator.generateUuid()).build();
+    keyVaultSecret = mockKeyVaultSecret(name, valueWithSpecialCharacters);
+    response = new SimpleResponse(null, 200, null, keyVaultSecret);
+    when(keyVaultClient.getSecretWithResponse(any(), any(), any(Context.class))).thenReturn(response);
+    value = azureVaultEncryptor.fetchSecretValue(azureVaultConfig.getAccountId(), record, azureVaultConfig);
+    assertThat(value).isEqualTo(valueWithSpecialCharacters.toCharArray());
+
+    String someValue = "[1,2,3]";
+    record = EncryptedRecordData.builder().name(name).path(UUIDGenerator.generateUuid()).build();
+    keyVaultSecret = mockKeyVaultSecret(name, someValue);
+    response = new SimpleResponse(null, 200, null, keyVaultSecret);
+    when(keyVaultClient.getSecretWithResponse(any(), any(), any(Context.class))).thenReturn(response);
+    value = azureVaultEncryptor.fetchSecretValue(azureVaultConfig.getAccountId(), record, azureVaultConfig);
+    assertThat(value).isEqualTo(someValue.toCharArray());
+
+    someValue = "[\"adfd\"]";
+    record = EncryptedRecordData.builder().name(name).path(UUIDGenerator.generateUuid()).build();
+    keyVaultSecret = mockKeyVaultSecret(name, someValue);
+    response = new SimpleResponse(null, 200, null, keyVaultSecret);
+    when(keyVaultClient.getSecretWithResponse(any(), any(), any(Context.class))).thenReturn(response);
+    value = azureVaultEncryptor.fetchSecretValue(azureVaultConfig.getAccountId(), record, azureVaultConfig);
+    assertThat(value).isEqualTo(someValue.toCharArray());
+
+    someValue = "[\"adfd:asdf\"]";
+    record = EncryptedRecordData.builder().name(name).path(UUIDGenerator.generateUuid()).build();
+    keyVaultSecret = mockKeyVaultSecret(name, someValue);
+    response = new SimpleResponse(null, 200, null, keyVaultSecret);
+    when(keyVaultClient.getSecretWithResponse(any(), any(), any(Context.class))).thenReturn(response);
+    value = azureVaultEncryptor.fetchSecretValue(azureVaultConfig.getAccountId(), record, azureVaultConfig);
+    assertThat(value).isEqualTo(someValue.toCharArray());
   }
 
   @Test

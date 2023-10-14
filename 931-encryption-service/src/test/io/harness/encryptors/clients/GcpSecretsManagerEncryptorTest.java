@@ -256,6 +256,50 @@ public class GcpSecretsManagerEncryptorTest extends CategoryTest {
     fetchedSecretValue = gcpSecretsManagerEncryptor.fetchSecretValue(
         accountId, encryptedRecordDataBuilder.build(), gcpSecretsManagerConfig);
     assertThat(valueOf(fetchedSecretValue)).isEqualTo(secretValue);
+
+    secretValue = "[,\":]";
+    doReturn(AccessSecretVersionResponse.newBuilder()
+                 .setPayload(SecretPayload.newBuilder().setData(ByteString.copyFromUtf8(secretValue)).build())
+                 .build())
+        .when(secretManagerServiceClient)
+        .accessSecretVersion(any(SecretVersionName.class));
+
+    fetchedSecretValue = gcpSecretsManagerEncryptor.fetchSecretValue(
+        accountId, encryptedRecordDataBuilder.build(), gcpSecretsManagerConfig);
+    assertThat(valueOf(fetchedSecretValue)).isEqualTo(secretValue);
+
+    secretValue = "[1,2,3]";
+    doReturn(AccessSecretVersionResponse.newBuilder()
+                 .setPayload(SecretPayload.newBuilder().setData(ByteString.copyFromUtf8(secretValue)).build())
+                 .build())
+        .when(secretManagerServiceClient)
+        .accessSecretVersion(any(SecretVersionName.class));
+
+    fetchedSecretValue = gcpSecretsManagerEncryptor.fetchSecretValue(
+        accountId, encryptedRecordDataBuilder.build(), gcpSecretsManagerConfig);
+    assertThat(valueOf(fetchedSecretValue)).isEqualTo(secretValue);
+
+    secretValue = "[\"adfd\"]";
+    doReturn(AccessSecretVersionResponse.newBuilder()
+                 .setPayload(SecretPayload.newBuilder().setData(ByteString.copyFromUtf8(secretValue)).build())
+                 .build())
+        .when(secretManagerServiceClient)
+        .accessSecretVersion(any(SecretVersionName.class));
+
+    fetchedSecretValue = gcpSecretsManagerEncryptor.fetchSecretValue(
+        accountId, encryptedRecordDataBuilder.build(), gcpSecretsManagerConfig);
+    assertThat(valueOf(fetchedSecretValue)).isEqualTo(secretValue);
+
+    secretValue = "[\"adfd:asdf\"]";
+    doReturn(AccessSecretVersionResponse.newBuilder()
+                 .setPayload(SecretPayload.newBuilder().setData(ByteString.copyFromUtf8(secretValue)).build())
+                 .build())
+        .when(secretManagerServiceClient)
+        .accessSecretVersion(any(SecretVersionName.class));
+
+    fetchedSecretValue = gcpSecretsManagerEncryptor.fetchSecretValue(
+        accountId, encryptedRecordDataBuilder.build(), gcpSecretsManagerConfig);
+    assertThat(valueOf(fetchedSecretValue)).isEqualTo(secretValue);
   }
 
   @Test
