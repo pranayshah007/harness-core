@@ -1033,8 +1033,7 @@ def ingest_data_to_unified(jsonData):
     """ % (tableName, jsonData["min_usagestartdate"], jsonData["max_usagestartdate"],
            jsonData["usageaccountid"])
 
-    if jsonData["accountId"] == "pC_7h33wQTeZ_j-libvF4A":
-        delete_query = delete_query + " AND DATE(awsbillingperiodstartdate) = '%s' AND DATE(awsbillingperiodenddate) = '%s'" % (jsonData["billingperiodstartdate"], jsonData["billingperiodenddate"])
+    delete_query = delete_query + " AND DATE(awsbillingperiodstartdate) = '%s' AND DATE(awsbillingperiodenddate) = '%s'" % (jsonData["billingperiodstartdate"], jsonData["billingperiodenddate"])
 
     query = """%s;
                INSERT INTO `%s` (%s)
