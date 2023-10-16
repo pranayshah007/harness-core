@@ -55,7 +55,7 @@ public class ProjectDTO {
   @Schema(description = PROJECT_PARAM_MESSAGE)
   @EntityIdentifier(allowBlank = false)
   String identifier;
-  @JsonView(JsonViews.Internal.class) String uniqueId;
+  @JsonView(JsonViews.Internal.class) @Schema(hidden = true, description = "UniqueId of Organization") String uniqueId;
   @ApiModelProperty(required = true) @Schema(description = "Project Name for the entity") @NGEntityName String name;
   @Schema(description = "Color") @VariableExpression(skipVariableExpression = true) String color;
 
