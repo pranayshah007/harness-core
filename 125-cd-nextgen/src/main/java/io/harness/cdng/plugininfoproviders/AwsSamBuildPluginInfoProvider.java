@@ -187,6 +187,7 @@ public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
 
     String samDir =
         awsSamStepHelper.getSamDirectoryPathFromAwsSamDirectoryManifestOutcome(awsSamDirectoryManifestOutcome);
+    String samTemplateFilePath = awsSamStepHelper.getSamTemplateFilePath(awsSamDirectoryManifestOutcome);
 
     samBuildEnvironmentVariablesMap.put("PLUGIN_SAM_DIR", samDir);
 
@@ -195,7 +196,11 @@ public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
           "PLUGIN_BUILD_COMMAND_OPTIONS", String.join(" ", buildCommandOptions.getValue()));
     }
 
-    samBuildEnvironmentVariablesMap.put("PLUGIN_SAM_TEMPLATE_FILE_PATH", "template.yaml");
+    if (ParameterField.isBlank(buildCommandOptions)) {
+      samBuildEnvironmentVariablesMap.put("PLUGIN_SAM_TEMPLATE_FILE_PATH", "template.yaml");
+    } else {
+      samBuildEnvironmentVariablesMap.put("PLUGIN_SAM_TEMPLATE_FILE_PATH", samTemplateFilePath);
+    }
 
     if (envVariables != null && envVariables.getValue() != null) {
       samBuildEnvironmentVariablesMap.putAll(envVariables.getValue());

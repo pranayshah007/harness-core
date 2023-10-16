@@ -8,8 +8,10 @@
 package io.harness.cdng.aws.sam;
 
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
+import static java.lang.String.format;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -221,6 +223,14 @@ public class AwsSamStepHelper {
     GitStoreConfig gitStoreConfig = (GitStoreConfig) awsSamDirectoryManifestOutcome.getStore();
 
     return awsSamDirectoryManifestOutcome.getIdentifier() + "/" + gitStoreConfig.getPaths().getValue().get(0);
+  }
+
+  public String getSamTemplateFilePath(ManifestOutcome manifestOutcome) {
+    if (manifestOutcome instanceof AwsSamDirectoryManifestOutcome) {
+      AwsSamDirectoryManifestOutcome awsSamDirectoryManifestOutcome = (AwsSamDirectoryManifestOutcome) manifestOutcome;
+      return getParameterFieldValue(awsSamDirectoryManifestOutcome.getSamTemplateFile());
+    }
+    throw new UnsupportedOperationException(format("Unsupported sam manifest type: [%s]", manifestOutcome.getType()));
   }
 
   public ParameterField<String> getImage(AwsSamBaseStepInfo awsSamBaseStepInfo) {
