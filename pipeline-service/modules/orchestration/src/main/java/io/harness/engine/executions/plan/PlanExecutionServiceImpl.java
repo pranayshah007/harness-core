@@ -366,6 +366,18 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   }
 
   @Override
+  public long countRunningExecutionsForGivenPipelineInAccountExcludingWaitingStatuses(
+      String accountId, String pipelineIdentifier) {
+    // Uses - accountId_status_idx
+    Criteria criteria = new Criteria()
+                            .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.accountId)
+                            .is(accountId)
+                            .and(PlanExecutionKeys.status)
+                            .in(StatusUtils.getActiveStatusesExcludingWaiting());
+    return mongoTemplate.count(new Query(criteria), PlanExecution.class);
+  }
+
+  @Override
   public PlanExecution findNextExecutionToRunInAccount(String accountId) {
     Criteria criteria = new Criteria()
                             .and(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.accountId)
