@@ -35,6 +35,7 @@ import static org.mockito.Mockito.verify;
 import io.harness.CategoryTest;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
+import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.execution.ServiceExecutionSummaryDetails;
@@ -63,14 +64,16 @@ import io.harness.cdng.manifest.yaml.summary.HelmChartManifestSummary;
 import io.harness.cdng.manifestConfigs.ManifestConfigurations;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
-import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.cdng.utilities.ServiceEnvironmentsLogCallbackUtility;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.eventsframework.schemas.entity.EntityUsageDetailProto;
+import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.k8s.model.HelmVersion;
@@ -96,14 +99,17 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.secretusage.SecretRuntimeUsageService;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.NGFeatureFlagHelperService;
+import io.harness.walktree.visitor.entityreference.beans.VisitedSecretReference;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.StringValue;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -137,7 +143,6 @@ public class ManifestsStepV2Test extends CategoryTest {
   @Mock EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Mock private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Mock private PipelineRbacHelper pipelineRbacHelper;
-  @Mock private ServiceStepsHelper serviceStepsHelper;
   @Mock private NGLogCallback logCallback;
   @Mock NGFeatureFlagHelperService featureFlagHelperService;
   @Mock private NGSettingsClient ngSettingsClient;
@@ -147,6 +152,8 @@ public class ManifestsStepV2Test extends CategoryTest {
   @Mock private StrategyHelper strategyHelper;
   @Mock private KryoSerializer referenceFalseKryoSerializer;
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Mock private ServiceEnvironmentsLogCallbackUtility serviceEnvironmentsLogUtility;
+  @Mock private SecretRuntimeUsageService secretRuntimeUsageService;
 
   @InjectMocks private ManifestsStepV2 step = new ManifestsStepV2();
 
@@ -163,7 +170,7 @@ public class ManifestsStepV2Test extends CategoryTest {
                              .build()))
         .when(connectorService)
         .get(anyString(), anyString(), anyString(), anyString());
-    doReturn(logCallback).when(serviceStepsHelper).getServiceLogCallback(any(), anyBoolean(), anyString());
+    doReturn(logCallback).when(serviceEnvironmentsLogUtility).getLogCallback(any(), anyBoolean());
   }
 
   @After
@@ -310,7 +317,7 @@ public class ManifestsStepV2Test extends CategoryTest {
     doReturn(listEntityDetail)
         .when(entityDetailProtoToRestMapper)
         .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
-    verify(stageExecutionInfoService, times(0)).updateStageExecutionInfo(any(), any());
+    verify(stageExecutionInfoService, times(0)).upsertStageExecutionInfo(any(), any());
 
     T response = executeMethod.get();
 
@@ -363,7 +370,7 @@ public class ManifestsStepV2Test extends CategoryTest {
     T response = executeMethod.get();
 
     ArgumentCaptor<StageExecutionInfoUpdateDTO> captor = ArgumentCaptor.forClass(StageExecutionInfoUpdateDTO.class);
-    verify(stageExecutionInfoService, times(1)).updateStageExecutionInfo(any(), captor.capture());
+    verify(stageExecutionInfoService, times(1)).upsertStageExecutionInfo(any(), captor.capture());
     StageExecutionInfoUpdateDTO stageExecutionInfoUpdateDTO = captor.getValue();
     ServiceExecutionSummaryDetails.ManifestsSummary manifestsSummary =
         stageExecutionInfoUpdateDTO.getManifestsSummary();
@@ -427,7 +434,7 @@ public class ManifestsStepV2Test extends CategoryTest {
     doReturn(listEntityDetail)
         .when(entityDetailProtoToRestMapper)
         .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
-    verify(stageExecutionInfoService, times(0)).updateStageExecutionInfo(any(), any());
+    verify(stageExecutionInfoService, times(0)).upsertStageExecutionInfo(any(), any());
 
     T response = executeMethod.get();
 
@@ -1345,6 +1352,51 @@ public class ManifestsStepV2Test extends CategoryTest {
     assertThatThrownBy(() -> step.executeAsync(buildAmbiance(), new EmptyStepParameters(), null, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("primaryManifestRef: helm2 does not match to any [HELMCHART] manifests");
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testReportSecretRuntimeUsage() {
+    Ambiance ambiance = buildAmbiance();
+    IdentifierRef secretRef = IdentifierRef.builder().identifier("TEST-123").build();
+    EntityDetailProtoDTO referredBy =
+        EntityDetailProtoDTO.newBuilder()
+            .setIdentifierRef(IdentifierRefProtoDTO.newBuilder()
+                                  .setIdentifier(StringValue.newBuilder().setValue("TEST-123").build())
+                                  .build())
+            .build();
+
+    ManifestAttributes manifestWithSecrets = mock(ManifestAttributes.class);
+    ManifestAttributes manifestWithoutSecrets = mock(ManifestAttributes.class);
+    List<ManifestAttributes> manifestAttributes =
+        List.of(manifestWithSecrets, manifestWithSecrets, manifestWithoutSecrets);
+
+    doReturn(Set.of(VisitedSecretReference.builder().secretRef(secretRef).referredBy(referredBy).build()))
+        .when(entityReferenceExtractorUtils)
+        .extractReferredSecrets(ambiance, manifestWithSecrets);
+
+    step.reportSecretRuntimeUsage(ambiance, manifestAttributes);
+
+    verify(secretRuntimeUsageService, times(2))
+        .createSecretRuntimeUsage(eq(secretRef), eq(referredBy), any(EntityUsageDetailProto.class));
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testReportSecretRuntimeUsageEmptyOrNull() {
+    Ambiance ambiance = buildAmbiance();
+    List<ManifestAttributes> nullManifestAttributes = new ArrayList<>();
+    nullManifestAttributes.add(null);
+    step.reportSecretRuntimeUsage(ambiance, List.of());
+    step.reportSecretRuntimeUsage(ambiance, null);
+    step.reportSecretRuntimeUsage(ambiance, nullManifestAttributes);
+
+    verify(entityReferenceExtractorUtils, never()).extractReferredSecrets(any(Ambiance.class), any());
+    verify(secretRuntimeUsageService, never())
+        .createSecretRuntimeUsage(
+            any(IdentifierRef.class), any(EntityDetailProtoDTO.class), any(EntityUsageDetailProto.class));
   }
 
   private ManifestConfigWrapper sampleManifestFile(String identifier, ManifestConfigType type) {

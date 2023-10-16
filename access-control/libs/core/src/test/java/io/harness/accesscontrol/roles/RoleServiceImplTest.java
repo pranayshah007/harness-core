@@ -127,7 +127,7 @@ public class RoleServiceImplTest extends AccessControlCoreTestBase {
     when(scopeService.buildScopeFromScopeIdentifier(role.getScopeIdentifier()))
         .thenReturn(Scope.builder().level(TestScopeLevels.TEST_SCOPE).build());
     testCreateRole(role);
-    verify(scopeService, times(1)).buildScopeFromScopeIdentifier(any());
+    verify(scopeService, times(2)).buildScopeFromScopeIdentifier(any());
   }
 
   @Test

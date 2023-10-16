@@ -63,6 +63,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.product.ci.engine.proto.UnitStep;
+import io.harness.repositories.CILogKeyRepository;
 import io.harness.repositories.CIStageOutputRepository;
 import io.harness.rule.Owner;
 import io.harness.vm.VmExecuteStepUtils;
@@ -95,6 +96,7 @@ public class BackgroundStepTest extends CIExecutionTestBase {
   @Mock private VmExecuteStepUtils vmExecuteStepUtils;
   @Mock protected CIFeatureFlagService featureFlagService;
   @Mock protected CIStageOutputRepository ciStageOutputRepository;
+  @Mock protected CILogKeyRepository ciLogKeyRepository;
   @InjectMocks BackgroundStep backgroundStep;
   private Ambiance ambiance;
   private BackgroundStepInfo stepInfo;

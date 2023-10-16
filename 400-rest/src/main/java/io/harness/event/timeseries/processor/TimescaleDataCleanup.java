@@ -34,18 +34,22 @@ public class TimescaleDataCleanup {
     boolean successful = false;
     int retryCount = 0;
     while (!successful && retryCount < MAX_RETRY_COUNT) {
-      try {
-        Connection connection = timeScaleDBService.getDBConnection();
+      try (Connection connection = timeScaleDBService.getDBConnection()) {
         List<PreparedStatement> queriesToExecute = prepareQueriesForDeletion(connection, accountId);
         queriesToExecute.forEach(statement -> {
           try {
             statement.execute();
+            statement.close();
           } catch (SQLException e) {
-            log.error(errorMessage, accountId, e);
+            log.error(
+                "Error while deleting the timescale data for account: {} for statement: {}", accountId, statement, e);
           }
         });
         successful = true;
         log.info("TimeScale DB data is deleted successfully for account: {}", accountId);
+      } catch (SQLException e) {
+        log.error("SQL error while deleting TimeScale data for account: {}", accountId, e);
+        return;
       } catch (Exception e) {
         retryCount += 1;
         log.error(errorMessage, accountId, e);

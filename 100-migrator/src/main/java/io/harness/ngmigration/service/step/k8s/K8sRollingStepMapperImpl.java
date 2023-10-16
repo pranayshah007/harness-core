@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.service.step.k8s;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.k8s.K8sRollingStepInfo;
 import io.harness.cdng.k8s.K8sRollingStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -19,6 +21,7 @@ import io.harness.pms.yaml.ParameterField;
 import software.wings.beans.GraphNode;
 import software.wings.sm.State;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class K8sRollingStepMapperImpl extends K8sAbstractStepMapperImpl {
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {

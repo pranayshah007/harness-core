@@ -19,6 +19,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.WorkflowType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.utils.NGYamlUtils;
 import io.harness.ngmigration.beans.DiscoverEntityInput;
 import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
@@ -206,7 +207,7 @@ public class TriggerImportService implements ImportService {
                   RequestBody.create(MediaType.parse("application/yaml"), yaml))
               .execute();
       log.info("Trigger creation Response details {} {}", resp.code(), resp.message());
-      log.info("Trigger yaml is \n - {}", yaml);
+      log.info("Trigger yaml is \n - {}", NGYamlUtils.getYamlString(triggerConfigSchemaWrapper));
       return MigratorUtility.handleEntityMigrationResp(ngYamlFile, resp);
     } catch (Exception e) {
       log.error("Error creating the trigger", e);

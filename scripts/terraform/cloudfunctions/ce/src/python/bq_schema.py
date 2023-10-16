@@ -287,12 +287,12 @@ unifiedTableTableSchema = [
                 {"mode": "NULLABLE", "name": "pricing_unit_quantity", "type": "NUMERIC"}
                 ], "mode": "NULLABLE", "name": "gcpPrice", "type": "RECORD"},
     {"fields": [{"mode": "NULLABLE", "name": "amount", "type": "FLOAT64"},
-                {"mode": "NULLABLE", "name": "pricing_unit", "type": "STRING"},
                 {"mode": "NULLABLE", "name": "unit", "type": "STRING"},
-                {"mode": "NULLABLE", "name": "amount_in_pricing_unit", "type": "FLOAT64"}
+                {"mode": "NULLABLE", "name": "amount_in_pricing_units", "type": "FLOAT64"},
+                {"mode": "NULLABLE", "name": "pricing_unit", "type": "STRING"}
                 ], "mode": "NULLABLE", "name": "gcpUsage", "type": "RECORD"},
     {"fields": [{"name": "key", "mode": "NULLABLE", "type": "STRING"},
-                {"name": "valye", "mode": "NULLABLE", "type": "STRING"},
+                {"name": "value", "mode": "NULLABLE", "type": "STRING"},
                 ], "mode": "REPEATED", "name": "gcpSystemLabels", "type": "RECORD"}
 ]
 

@@ -124,6 +124,7 @@ public class ServiceAllInOnePlanCreatorUtils {
     }
     final ServiceStepV3ParametersBuilder stepParameters = ServiceStepV3Parameters.builder()
                                                               .serviceRef(finalServiceYaml.getServiceRef())
+                                                              .gitBranch(finalServiceYaml.getGitBranch())
                                                               .inputs(finalServiceYaml.getServiceInputs())
                                                               .infraId(infraRef)
                                                               .childrenNodeIds(childrenNodeIds)
@@ -150,6 +151,7 @@ public class ServiceAllInOnePlanCreatorUtils {
     ServiceStepV3ParametersBuilder stepParameters =
         ServiceStepV3Parameters.builder()
             .serviceRef(finalServiceYaml.getServiceRef())
+            .gitBranch(finalServiceYaml.getGitBranch())
             .inputs(finalServiceYaml.getServiceInputs())
             .childrenNodeIds(childrenNodeIds)
             .deploymentType(serviceType)
@@ -188,6 +190,7 @@ public class ServiceAllInOnePlanCreatorUtils {
     final ServiceStepV3ParametersBuilder stepParameters =
         ServiceStepV3Parameters.builder()
             .serviceRef(finalServiceYaml.getServiceRef())
+            .gitBranch(finalServiceYaml.getGitBranch())
             .inputs(finalServiceYaml.getServiceInputs())
             .childrenNodeIds(childrenNodeIds)
             .deploymentType(serviceType)
@@ -267,42 +270,16 @@ public class ServiceAllInOnePlanCreatorUtils {
         artifactsNode.getUuid(), PlanCreationResponse.builder().planNode(artifactsNode).build());
 
     // Add manifests node
-    final PlanNode manifestsNode =
-        PlanNode.builder()
-            .uuid("manifests-" + UUIDGenerator.generateUuid())
-            .stepType(ManifestsStepV2.STEP_TYPE)
-            .name(PlanCreatorConstants.MANIFESTS_NODE_NAME)
-            .identifier(YamlTypes.MANIFEST_LIST_CONFIG)
-            .stepParameters(new EmptyStepParameters())
-            .facilitatorObtainment(
-                FacilitatorObtainment.newBuilder()
-                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
-                    .build())
-            .skipExpressionChain(true)
-            .skipGraphType(SkipType.SKIP_TREE)
-            .build();
-    nodeIds.add(manifestsNode.getUuid());
+    PlanNode manifestsNode = getManifestsNode();
     planCreationResponseMap.put(
         manifestsNode.getUuid(), PlanCreationResponse.builder().planNode(manifestsNode).build());
+    nodeIds.add(manifestsNode.getUuid());
 
     // Add configFiles node
-    final PlanNode configFilesNode =
-        PlanNode.builder()
-            .uuid("configFiles-" + UUIDGenerator.generateUuid())
-            .stepType(ConfigFilesStepV2.STEP_TYPE)
-            .name(PlanCreatorConstants.CONFIG_FILES_NODE_NAME)
-            .identifier(YamlTypes.CONFIG_FILES)
-            .stepParameters(new EmptyStepParameters())
-            .facilitatorObtainment(
-                FacilitatorObtainment.newBuilder()
-                    .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
-                    .build())
-            .skipExpressionChain(true)
-            .skipGraphType(SkipType.SKIP_TREE)
-            .build();
-    nodeIds.add(configFilesNode.getUuid());
+    PlanNode configFilesNode = getConfigFilesNode();
     planCreationResponseMap.put(
         configFilesNode.getUuid(), PlanCreationResponse.builder().planNode(configFilesNode).build());
+    nodeIds.add(configFilesNode.getUuid());
 
     // Add serviceHooks node
     final PlanNode serviceHooksNode =
@@ -541,5 +518,37 @@ public class ServiceAllInOnePlanCreatorUtils {
             stage));
       }
     }
+  }
+
+  public PlanNode getManifestsNode() {
+    return PlanNode.builder()
+        .uuid("manifests-" + UUIDGenerator.generateUuid())
+        .stepType(ManifestsStepV2.STEP_TYPE)
+        .name(PlanCreatorConstants.MANIFESTS_NODE_NAME)
+        .identifier(YamlTypes.MANIFEST_LIST_CONFIG)
+        .stepParameters(new EmptyStepParameters())
+        .facilitatorObtainment(
+            FacilitatorObtainment.newBuilder()
+                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
+                .build())
+        .skipExpressionChain(true)
+        .skipGraphType(SkipType.SKIP_TREE)
+        .build();
+  }
+
+  public PlanNode getConfigFilesNode() {
+    return PlanNode.builder()
+        .uuid("configFiles-" + UUIDGenerator.generateUuid())
+        .stepType(ConfigFilesStepV2.STEP_TYPE)
+        .name(PlanCreatorConstants.CONFIG_FILES_NODE_NAME)
+        .identifier(YamlTypes.CONFIG_FILES)
+        .stepParameters(new EmptyStepParameters())
+        .facilitatorObtainment(
+            FacilitatorObtainment.newBuilder()
+                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
+                .build())
+        .skipExpressionChain(true)
+        .skipGraphType(SkipType.SKIP_TREE)
+        .build();
   }
 }

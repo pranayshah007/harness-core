@@ -9,6 +9,7 @@ package io.harness.ng.core.outbox;
 
 import static io.harness.ng.core.utils.NGYamlUtils.getYamlString;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.SOURABH;
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 import static junit.framework.TestCase.assertEquals;
@@ -269,6 +270,65 @@ public class ServiceOutboxEventHandlerTest extends CategoryTest {
     assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.UPSERT, auditEntry.getAction());
     assertNull(auditEntry.getOldYaml());
+    assertEquals(newYaml, auditEntry.getNewYaml());
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testUpsertWithOldYaml() throws JsonProcessingException {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String identifier = randomAlphabetic(10);
+    ServiceEntity service = ServiceEntity.builder()
+                                .name("dummy")
+                                .identifier(identifier)
+                                .accountId(accountIdentifier)
+                                .orgIdentifier(orgIdentifier)
+                                .projectIdentifier(projectIdentifier)
+                                .build();
+
+    ServiceEntity oldService = ServiceEntity.builder()
+                                   .name("service")
+                                   .accountId(accountIdentifier)
+                                   .orgIdentifier(orgIdentifier)
+                                   .projectIdentifier(projectIdentifier)
+                                   .build();
+    ServiceUpsertEvent serviceUpsertEvent = ServiceUpsertEvent.builder()
+                                                .service(service)
+                                                .oldService(oldService)
+                                                .accountIdentifier(accountIdentifier)
+                                                .orgIdentifier(orgIdentifier)
+                                                .projectIdentifier(projectIdentifier)
+                                                .build();
+
+    GlobalContext globalContext = new GlobalContext();
+    Principal principal =
+        new UserPrincipal(randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10), randomAlphabetic(10));
+    SourcePrincipalContextData sourcePrincipalContextData =
+        SourcePrincipalContextData.builder().principal(principal).build();
+    globalContext.upsertGlobalContextRecord(sourcePrincipalContextData);
+    String eventData = objectMapper.writeValueAsString(serviceUpsertEvent);
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .eventType(ServiceOutboxEvents.SERVICE_UPSERTED)
+                                  .resourceScope(serviceUpsertEvent.getResourceScope())
+                                  .resource(serviceUpsertEvent.getResource())
+                                  .globalContext(globalContext)
+                                  .eventData(eventData)
+                                  .createdAt(Long.valueOf(randomNumeric(6)))
+                                  .id(randomAlphabetic(10))
+                                  .blocked(false)
+                                  .build();
+    String newYaml = getYamlString(ServiceRequest.builder().service(service).build());
+    final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
+    when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);
+    serviceEventHandler.handle(outboxEvent);
+    verify(auditClientService, times(1)).publishAudit(auditEntryArgumentCaptor.capture(), any(), any());
+    AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
+    assertAuditEntry(accountIdentifier, orgIdentifier, projectIdentifier, identifier, auditEntry, outboxEvent);
+    assertEquals(Action.UPSERT, auditEntry.getAction());
+    assertNotNull(auditEntry.getOldYaml());
     assertEquals(newYaml, auditEntry.getNewYaml());
   }
 

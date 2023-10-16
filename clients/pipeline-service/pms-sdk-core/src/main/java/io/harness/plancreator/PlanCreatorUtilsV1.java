@@ -6,7 +6,6 @@
  */
 
 package io.harness.plancreator;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.advisers.manualIntervention.ManualInterventionAdviserRollbackParameters;
@@ -19,8 +18,11 @@ import io.harness.advisers.retry.RetryAdviserRollbackParameters;
 import io.harness.advisers.retry.RetryAdviserWithRollback;
 import io.harness.advisers.retry.RetryStepGroupAdvisor;
 import io.harness.advisers.rollback.OnFailRollbackAdviser;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 import io.harness.govern.Switch;
 import io.harness.plancreator.steps.v1.FailureStrategiesUtilsV1;
@@ -67,6 +69,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
 public class PlanCreatorUtilsV1 {

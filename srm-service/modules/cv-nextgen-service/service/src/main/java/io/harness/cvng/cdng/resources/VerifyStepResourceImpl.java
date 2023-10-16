@@ -36,6 +36,7 @@ import io.harness.cvng.cdng.beans.v2.BaselineType;
 import io.harness.cvng.cdng.beans.v2.HealthSource;
 import io.harness.cvng.cdng.beans.v2.MetricsAnalysis;
 import io.harness.cvng.cdng.beans.v2.ProviderType;
+import io.harness.cvng.cdng.beans.v2.VerificationAbortDTO;
 import io.harness.cvng.cdng.beans.v2.VerificationMetricsTimeSeries;
 import io.harness.cvng.cdng.beans.v2.VerificationMetricsTimeSeries.Metric;
 import io.harness.cvng.cdng.beans.v2.VerificationMetricsTimeSeries.Node;
@@ -75,6 +76,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -122,6 +124,12 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
                    .providerType(ProviderType.fromVerificationType(dto.getVerificationType()))
                    .build())
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public boolean abortVerifyStep(VerifyStepPathParams verifyStepPathParams, VerificationAbortDTO verificationAbortDTO) {
+    return verificationJobInstanceService.abort(
+        Arrays.asList(verifyStepPathParams.getVerifyStepExecutionId()), verificationAbortDTO);
   }
 
   private void sendTelemetryEvent(String verifyStepResult, String projectId, String orgId) {

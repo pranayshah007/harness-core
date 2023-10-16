@@ -27,6 +27,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.utils.NGYamlUtils;
 import io.harness.ngmigration.beans.DiscoverEntityInput;
 import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.beans.InputDefaults;
@@ -190,12 +191,12 @@ public class WorkflowImportService implements ImportService {
 
       log.info("Workflow as pipeline creation Response details {} {}", resp.code(), resp.message());
       if (resp.code() >= 400) {
-        log.info("Workflows as pipeline template is \n - {}", yaml);
+        log.info("Workflows as pipeline template is \n - {}", NGYamlUtils.getYamlString(pipelineConfig));
       }
       if (resp.code() >= 200 && resp.code() < 300) {
         return;
       }
-      log.info("The Yaml of the generated data was - {}", yaml);
+      log.info("The Yaml of the generated data was - {}", NGYamlUtils.getYamlString(pipelineConfig));
       Map<String, Object> error = null;
       error = JsonUtils.asObject(
           resp.errorBody() != null ? resp.errorBody().string() : "{}", new TypeReference<Map<String, Object>>() {});

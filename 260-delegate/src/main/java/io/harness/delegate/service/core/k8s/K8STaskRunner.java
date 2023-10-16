@@ -122,7 +122,7 @@ public class K8STaskRunner {
       final V1Volume delegateConfigVolume) {
     return new K8SJob(getJobName(taskId), HARNESS_DELEGATE_NG)
         .addContainer(
-            "delegate-task", runtime.getUses(), runtime.getResource().getMemory(), runtime.getResource().getCpu())
+            "delegate-task", runtime.getUses(), runtime.getCompute().getMemory(), runtime.getCompute().getCpu())
         .addVolume(taskPackageVolume, TASK_INPUT_MNT_PATH) // FixMe: Volume should be property of container, not job
         .addVolume(delegateConfigVolume, DELEGATE_CONFIG_MNT_PATH)
         .addEnvVar("ACCOUNT_ID",

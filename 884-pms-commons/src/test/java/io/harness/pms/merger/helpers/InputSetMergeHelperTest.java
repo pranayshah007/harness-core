@@ -376,67 +376,31 @@ public class InputSetMergeHelperTest extends CategoryTest {
   public void testMergeInputSetsV1() {
     List<JsonNode> inputSetYamlList = new ArrayList<>();
     inputSetYamlList.add(YamlUtils.readAsJsonNode("version: 1\n"
-        + "name: partialset1\n"
-        + "inputs:\n"
+        + "kind: input-set\n"
+        + "spec:\n"
         + "  image: alpine\n"
         + "  repo: harness-core\n"
         + "  count: 0\n"
-        + "options:\n"
-        + "  clone:\n"
-        + "    ref:\n"
-        + "      type: commit\n"
-        + "      name: asdf"));
+        + "options:\n"));
 
     inputSetYamlList.add(YamlUtils.readAsJsonNode("version: 1\n"
-        + "name: partialset2\n"
-        + "inputs:\n"
+        + "kind: input-set\n"
+        + "spec:\n"
         + "  count: 1\n"
-        + "  tag: latest\n"
-        + "options:\n"
-        + "  clone:\n"
-        + "    ref:\n"
-        + "      type: tag\n"
-        + "      name: main"));
+        + "  tag: latest\n"));
 
-    Set<String> possibleResponses = Set.of("options:\n"
-            + "  clone:\n"
-            + "    ref:\n"
-            + "      type: \"tag\"\n"
-            + "      name: \"main\"\n"
-            + "inputs:\n"
-            + "  image: \"alpine\"\n"
-            + "  repo: \"harness-core\"\n"
-            + "  count: 1\n"
-            + "  tag: \"latest\"\n",
-        "inputs:\n"
-            + "  image: alpine\n"
-            + "  repo: harness-core\n"
-            + "  count: 1\n"
-            + "  tag: latest\n"
-            + "options:\n"
-            + "  clone:\n"
-            + "    ref:\n"
-            + "      type: tag\n"
-            + "      name: main\n");
+    Set<String> possibleResponses = Set.of("image: alpine\n"
+        + "repo: harness-core\n"
+        + "count: 1\n"
+        + "tag: latest\n");
     JsonNode mergedInputSetYaml = InputSetMergeHelper.mergeInputSetsV1(inputSetYamlList);
     assertThat(possibleResponses.contains(YamlUtils.writeYamlString(mergedInputSetYaml))).isTrue();
 
-    inputSetYamlList = Arrays.asList(YamlUtils.readAsJsonNode("inputs:\n  a: a"),
-        YamlUtils.readAsJsonNode("inputs:\n  b: b"), YamlUtils.readAsJsonNode("inputs:\n  c: c"));
+    inputSetYamlList = Arrays.asList(YamlUtils.readAsJsonNode("spec:\n  a: a"),
+        YamlUtils.readAsJsonNode("spec:\n  b: b"), YamlUtils.readAsJsonNode("spec:\n  c: c"));
     assertThat(YamlUtils.writeYamlString(InputSetMergeHelper.mergeInputSetsV1(inputSetYamlList)))
-        .isEqualTo("inputs:\n"
-            + "  a: a\n"
-            + "  b: b\n"
-            + "  c: c\n");
-
-    inputSetYamlList = Arrays.asList(
-        YamlUtils.readAsJsonNode("options:\n  clone:\n    ref:\n      type: branch\n      name: harness-core"),
-        YamlUtils.readAsJsonNode("options:\n  clone:\n    ref:\n      type: tag"));
-    assertThat(YamlUtils.writeYamlString(InputSetMergeHelper.mergeInputSetsV1(inputSetYamlList)))
-        .isEqualTo("options:\n"
-            + "  clone:\n"
-            + "    ref:\n"
-            + "      type: tag\n"
-            + "      name: harness-core\n");
+        .isEqualTo("a: a\n"
+            + "b: b\n"
+            + "c: c\n");
   }
 }

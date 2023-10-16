@@ -64,6 +64,8 @@ public class TerraformPlanExecutionData {
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) @YamlSchemaTypes({string}) ParameterField<Boolean> skipRefreshCommand;
   @VariableExpression(skipVariableExpression = true) List<TerraformCliOptionFlag> commandFlags;
 
+  @JsonProperty("providerCredential") TerraformProviderCredential providerCredential;
+
   public TerraformPlanExecutionDataParameters toStepParameters() {
     validateParams();
     TerraformPlanExecutionDataParametersBuilder builder =
@@ -76,7 +78,8 @@ public class TerraformPlanExecutionData {
             .command(command)
             .secretManagerRef(secretManagerRef)
             .exportTerraformPlanJson(exportTerraformPlanJson)
-            .exportTerraformHumanReadablePlan(exportTerraformHumanReadablePlan);
+            .exportTerraformHumanReadablePlan(exportTerraformHumanReadablePlan)
+            .providerCredential(providerCredential);
     LinkedHashMap<String, TerraformVarFile> varFiles = new LinkedHashMap<>();
     if (EmptyPredicate.isNotEmpty(terraformVarFiles)) {
       terraformVarFiles.forEach(terraformVarFile -> {

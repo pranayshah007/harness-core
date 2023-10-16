@@ -6,7 +6,6 @@
  */
 
 package io.harness.graph.stepDetail;
-
 import static io.harness.plancreator.strategy.StrategyConstants.ITEM;
 import static io.harness.plancreator.strategy.StrategyConstants.ITERATION;
 import static io.harness.plancreator.strategy.StrategyConstants.ITERATIONS;
@@ -16,8 +15,11 @@ import static io.harness.plancreator.strategy.StrategyConstants.REPEAT;
 import static io.harness.plancreator.strategy.StrategyConstants.TOTAL_ITERATIONS;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.stepDetail.NodeExecutionDetailsInfo;
 import io.harness.beans.stepDetail.NodeExecutionsInfo;
 import io.harness.beans.stepDetail.NodeExecutionsInfo.NodeExecutionsInfoBuilder;
@@ -63,6 +65,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 @Slf4j

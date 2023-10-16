@@ -6,11 +6,12 @@
  */
 
 package io.harness.pms.plan.creation;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.YamlException;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.contracts.plan.Dependency;
@@ -39,6 +40,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
 public class PlanCreatorUtils {
@@ -187,18 +189,6 @@ public class PlanCreatorUtils {
     Map<String, String> logContextMap =
         new HashMap<>(ImmutableMap.of("planExecutionId", planExecutionId, "pipelineIdentifier", pipelineIdentifier,
             "accountIdentifier", accountId, "orgIdentifier", orgIdentifier, "projectIdentifier", projectIdentifier));
-    return new AutoLogContext(logContextMap, AutoLogContext.OverrideBehavior.OVERRIDE_NESTS);
-  }
-
-  public AutoLogContext autoLogContextWithRandomRequestId(
-      ExecutionMetadata executionMetadata, String accountId, String orgIdentifier, String projectIdentifier) {
-    Map<String, String> logContextMap = new HashMap<>();
-    logContextMap.put("planExecutionId", executionMetadata.getExecutionUuid());
-    logContextMap.put("pipelineIdentifier", executionMetadata.getPipelineIdentifier());
-    logContextMap.put("accountIdentifier", accountId);
-    logContextMap.put("orgIdentifier", orgIdentifier);
-    logContextMap.put("projectIdentifier", projectIdentifier);
-    logContextMap.put("sdkPlanCreatorRequestId", UUIDGenerator.generateUuid());
     return new AutoLogContext(logContextMap, AutoLogContext.OverrideBehavior.OVERRIDE_NESTS);
   }
 

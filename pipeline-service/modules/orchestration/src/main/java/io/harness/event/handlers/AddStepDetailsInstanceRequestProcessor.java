@@ -6,9 +6,11 @@
  */
 
 package io.harness.event.handlers;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.data.stepdetails.PmsStepDetails;
@@ -17,6 +19,7 @@ import io.harness.pms.execution.utils.SdkResponseEventUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @OwnedBy(HarnessTeam.PIPELINE)
 public class AddStepDetailsInstanceRequestProcessor implements SdkResponseProcessor {

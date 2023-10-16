@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,7 +35,9 @@ import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.security.SimpleEncryption;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.security.encryption.EncryptionType;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.VaultConfig;
@@ -42,6 +45,7 @@ import software.wings.service.intfc.security.SecretManager;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.google.inject.Inject;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -51,6 +55,7 @@ import org.mockito.Mock;
 
 @OwnedBy(CDP)
 public class NgSecretManagerFunctorTest extends WingsBaseTest {
+  public static final String SECRET_CONTENT_ISO_8859_1 = "secret content";
   @Mock private SecretManagerClientService ngSecretService;
   @Mock private DelegateMetricsService delegateMetricsService;
   @Inject private SecretManager secretManager;
@@ -98,6 +103,26 @@ public class NgSecretManagerFunctorTest extends WingsBaseTest {
     encryptedDataDetails.add(EncryptedDataDetail.builder()
                                  .encryptedData(SecretManager.buildRecordData(encryptedData))
                                  .encryptionConfig(vaultConfig)
+                                 .build());
+
+    return encryptedDataDetails;
+  }
+
+  private List<EncryptedDataDetail> generateEncryptedDataDetailsLocal() {
+    VaultConfig vaultConfig = VaultConfig.builder().build();
+    SimpleEncryption encryption = new SimpleEncryption("encryptionKey");
+    byte[] encryptSecretFile = encryption.encrypt(SECRET_CONTENT_ISO_8859_1.getBytes(StandardCharsets.ISO_8859_1));
+    EncryptedData encryptedData = EncryptedData.builder().accountId(ACCOUNT_ID).build();
+    encryptedData.setUuid(UUIDGenerator.generateUuid());
+    encryptedData.setEncryptionType(EncryptionType.LOCAL);
+    encryptedData.setEncryptionKey("encryptionKey");
+    encryptedData.setEncryptedValue(new String(encryptSecretFile, StandardCharsets.ISO_8859_1).toCharArray());
+
+    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+    encryptedDataDetails.add(EncryptedDataDetail.builder()
+                                 .encryptedData(SecretManager.buildRecordData(encryptedData))
+                                 .encryptionConfig(vaultConfig)
+                                 .fieldName("secret")
                                  .build());
 
     return encryptedDataDetails;
@@ -241,6 +266,25 @@ public class NgSecretManagerFunctorTest extends WingsBaseTest {
     assertDelegateDecryptedSecretFile(
         getBase64SecretIdentifier(secretIdentifier), ngSecretManagerFunctor, decryptedValue);
     verify(ngSecretService, times(1)).getEncryptionDetails(any(BaseNGAccess.class), any(SecretVariableDTO.class));
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testObtainSecretFileAsBase64WithISO_8859_1EncodedLocalEncryptionType() {
+    final String secretIdentifier = "secretIdentifier";
+    int token = HashGenerator.generateIntegerHash();
+    NgSecretManagerFunctor ngSecretManagerFunctor = buildFunctor(token);
+    assertFunctor(ngSecretManagerFunctor);
+
+    List<EncryptedDataDetail> encryptedDataDetails = generateEncryptedDataDetailsLocal();
+    doReturn(encryptedDataDetails)
+        .when(ngSecretService)
+        .getEncryptionDetails(any(BaseNGAccess.class), any(SecretVariableDTO.class));
+
+    String decryptedValue = (String) ngSecretManagerFunctor.obtainSecretFileAsBase64(secretIdentifier, token);
+
+    assertThat(decryptedValue).isEqualTo("c2VjcmV0IGNvbnRlbnQ=");
   }
 
   private void assertDelegateDecryptedValue(

@@ -6,19 +6,23 @@
  */
 
 package io.harness.template.helpers;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDC)
 @Data
 @Builder
 public class MergeTemplateInputsInObject {
   private Map<String, Object> resMap;
   private Map<String, Object> resMapWithOpaResponse;
+  String processedYamlVersion;
 }

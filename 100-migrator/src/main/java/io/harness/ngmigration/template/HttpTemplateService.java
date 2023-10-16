@@ -6,11 +6,13 @@
  */
 
 package io.harness.ngmigration.template;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.serializer.JsonUtils;
@@ -28,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class HttpTemplateService implements NgTemplateService {
   @Override
   public boolean isMigrationSupported() {

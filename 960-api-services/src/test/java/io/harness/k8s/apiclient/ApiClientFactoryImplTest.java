@@ -15,6 +15,8 @@ import static io.harness.rule.OwnerRule.BOGDAN;
 import static io.harness.rule.OwnerRule.PRATYUSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mockStatic;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -34,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import okhttp3.HttpUrl;
+import okhttp3.logging.HttpLoggingInterceptor;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okio.ByteString;
@@ -41,6 +44,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.MockedStatic;
 
 public class ApiClientFactoryImplTest extends CategoryTest {
   private static final String TEST_CERT = "-----BEGIN CERTIFICATE-----\n"
@@ -180,6 +184,24 @@ public class ApiClientFactoryImplTest extends CategoryTest {
     assertThat(client.isVerifyingSsl()).isEqualTo(false);
     assertThat(client.getSslCaCert()).isNull();
     assertThat(client.getKeyManagers()).isNotEmpty();
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testApiClientLoggingInterceptor() {
+    try (MockedStatic<K8sApiClientHelper> mockedStatic = mockStatic(K8sApiClientHelper.class)) {
+      mockedStatic.when(() -> K8sApiClientHelper.isEnvVarSet(anyString())).thenReturn(true);
+
+      KubernetesConfig kubernetesConfig = KubernetesConfig.builder()
+                                              .masterUrl("https://34.66.78.221")
+                                              .clientCert(TEST_CERT.toCharArray())
+                                              .clientKey(TEST_KEY.toCharArray())
+                                              .build();
+      ApiClient client = apiClientFactory.getClient(kubernetesConfig);
+      assertThat(client.getHttpClient().networkInterceptors()).hasSize(2);
+      assertThat(client.getHttpClient().networkInterceptors().get(1)).isInstanceOf(HttpLoggingInterceptor.class);
+    }
   }
 
   @Test

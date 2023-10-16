@@ -6,11 +6,13 @@
  */
 
 package io.harness.pms.sdk.core.execution.invokers;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutableResponse;
@@ -44,6 +46,7 @@ import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @SuppressWarnings({"rawtypes", "unchecked"})
 @OwnedBy(PIPELINE)
 @Slf4j
@@ -91,16 +94,19 @@ public class AsyncStrategy implements ExecuteStrategy {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     String stepParamString = RecastOrchestrationUtils.toJson(stepParameters);
 
-    // TODO : This is the last use of add executable response need to remove it as causing issues. Find a way to remove
-    // this
-    sdkNodeExecutionService.addExecutableResponse(ambiance, ExecutableResponse.newBuilder().setAsync(response).build());
-
     if (isEmpty(response.getCallbackIdsList())) {
       log.warn("StepResponse has no callbackIds - currentState : " + AmbianceUtils.obtainStepIdentifier(ambiance)
           + ", nodeExecutionId: " + nodeExecutionId);
-      sdkNodeExecutionService.resumeNodeExecution(ambiance, Collections.emptyMap(), false);
+      sdkNodeExecutionService.resumeNodeExecution(
+          ambiance, Collections.emptyMap(), false, ExecutableResponse.newBuilder().setAsync(response).build());
       return;
     }
+
+    // TODO : This is the last use of add executable response need to remove it as causing issues. Find a way to remove
+    // this
+    // Send Executable response only if there are callbacks Ids, to avoid race condition
+    sdkNodeExecutionService.addExecutableResponse(ambiance, ExecutableResponse.newBuilder().setAsync(response).build());
+
     queueCallbacks(ambiance, mode, response, stepParamString);
   }
 

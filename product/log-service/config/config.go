@@ -59,7 +59,7 @@ type Config struct {
 		UseSentinel          bool     `envconfig:"LOG_SERVICE_REDIS_USE_SENTINEL"`
 		MasterName           string   `envconfig:"LOG_SERVICE_REDIS_MASTER_NAME"`
 		SentinelAddrs        []string `envconfig:"LOG_SERVICE_REDIS_SENTINEL_ADDRS"`
-		MaxLineLimit         int64    `envconfig:"LOG_SERVICE_REDIS_MAX_LINE_LIMIT" default:"2196"`
+		MaxLineLimit         int64    `envconfig:"LOG_SERVICE_REDIS_MAX_LINE_LIMIT" default:"25600"`
 		MaxStreamSize        int64    `envconfig:"LOG_SERVICE_REDIS_MAX_STREAM_SIZE" default:"5000"`
 		ScanBatch            int64    `envconfig:"LOG_SERVICE_REDIS_SCAN_BATCH" default:"1000"`
 	}
@@ -68,6 +68,10 @@ type Config struct {
 		WorkerPool    int    `envconfig:"LOG_SERVICE_WORKER_POOL" default:"1"`
 		StreamName    string `envconfig:"LOG_SERVICE_STREAM_NAME" default:"zip-download-stream"`
 		ConsumerGroup string `envconfig:"LOG_SERVICE_CONSUMER_GROUP" default:"group-one"`
+	}
+
+	Stackdriver struct {
+		ProjectID string `envconfig:"LOG_SERVICE_STACKDRIVER_PROJECT_ID"`
 	}
 
 	// Whether to use secret env variables as they are, or talk to GCP secret

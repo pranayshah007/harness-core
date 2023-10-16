@@ -93,6 +93,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.product.ci.engine.proto.UnitStep;
+import io.harness.repositories.CILogKeyRepository;
 import io.harness.repositories.CIStageOutputRepository;
 import io.harness.rule.Owner;
 import io.harness.tasks.ResponseData;
@@ -140,6 +141,8 @@ public class RunStepTest extends CIExecutionTestBase {
 
   @Mock protected CIFeatureFlagService featureFlagService;
   @Mock protected CIStageOutputRepository ciStageOutputRepository;
+  @Mock protected CILogKeyRepository ciLogKeyRepository;
+
   @Inject private ExceptionManager exceptionManager;
   @InjectMocks RunStep runStep;
   //@InjectMocks private DliteVmInfraInfo dliteVmInfraInfo;
@@ -383,7 +386,7 @@ public class RunStepTest extends CIExecutionTestBase {
                                                             .addFailureTypes(FailureType.APPLICATION_FAILURE)
                                                             .setLevel(io.harness.eraro.Level.ERROR.name())
                                                             .setCode(GENERAL_ERROR.name())
-                                                            .setMessage("HINT. EXPLANATION. INVALID_REQUEST")
+                                                            .setMessage("HINT. EXPLANATION")
                                                             .build())
                                         .build())
                        .build());

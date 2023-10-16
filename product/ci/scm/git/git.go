@@ -35,7 +35,7 @@ const (
 )
 
 func RefreshToken(ctx context.Context, request *pb.RefreshTokenRequest, log *zap.SugaredLogger) (out *pb.RefreshTokenResponse, err error) {
-	log.Infow("RefreshToken starting:", request.Endpoint, "ClientID:", request.ClientID)
+	log.Infow("RefreshToken starting:", "Endpoint:", request.Endpoint, "ClientID:", request.ClientID)
 
 	before := &scm.Token{
 		Refresh: request.RefreshToken,
@@ -51,12 +51,12 @@ func RefreshToken(ctx context.Context, request *pb.RefreshTokenRequest, log *zap
 	after, err := r.Token(ctx)
 
 	if err != nil {
-		log.Errorw("RefreshToken failure:", request.Endpoint, "Error:", err)
+		log.Errorw("RefreshToken failure:", "Endpoint", request.Endpoint, "Error:", err)
 		return nil, err
 	}
 
 	if after == nil {
-		log.Errorw("RefreshToken failure result:", request.Endpoint)
+		log.Errorw("RefreshToken failure result:", "Endpoint", request.Endpoint)
 		return nil, err
 	}
 
@@ -325,13 +325,40 @@ func GetLatestCommit(ctx context.Context, request *pb.GetLatestCommitRequest, lo
 				ref = branch.Sha
 			}
 		}
-	case scm.DriverAzure, scm.DriverHarness:
+	case scm.DriverAzure:
 		// Azure doesn't support getting a commit by ref/branch name. So we get the latest commit from the branch using the root folder.
 		// Harness only supports a ref
 		contents, _, err := listContentsWithRetry(ctx, log, client, provider, slug, "", ref, scm.ListOptions{}, serverErrorRetryCount)
 		if err == nil {
 			ref = contents[0].Sha
 		}
+	case scm.DriverHarness:
+		var commits *pb.ListCommitsResponse
+		if request.GetBranch() == "" {
+			commits, err = ListCommits(ctx, &pb.ListCommitsRequest{
+				Type:     &pb.ListCommitsRequest_Ref{Ref: request.GetRef()},
+				Slug:     slug,
+				Provider: request.Provider,
+			}, log)
+		} else {
+			commits, err = ListCommits(ctx, &pb.ListCommitsRequest{
+				Type:     &pb.ListCommitsRequest_Branch{Branch: request.GetBranch()},
+				Slug:     slug,
+				Provider: request.Provider,
+			}, log)
+		}
+
+		if err == nil && (commits == nil || len(commits.GetCommitIds()) < 1) {
+			err = fmt.Errorf("empty repo")
+		}
+		if err != nil {
+			log.Errorw("GetLatestCommit failure", "provider", provider, "slug", slug, "ref", ref, "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+			out = &pb.GetLatestCommitResponse{
+				Error: err.Error(),
+			}
+			return out, nil
+		}
+		ref = commits.GetCommitIds()[0]
 	}
 
 	refResponse, response, err := findCommitWithRetry(ctx, log, client, provider, slug, ref, serverErrorRetryCount)
@@ -354,7 +381,6 @@ func GetLatestCommit(ctx context.Context, request *pb.GetLatestCommitRequest, lo
 		namespace, name := scm.Split(slug)
 		refResponse.Link = fmt.Sprintf("%sprojects/%s/repos/%s/commits/%s", client.BaseURL, namespace, name, refResponse.Sha)
 	}
-
 	commit, err := converter.ConvertCommit(refResponse)
 	if err != nil {
 		log.Errorw("GetLatestCommit convert commit failure", "provider", provider, "slug", slug, "ref", ref, "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
@@ -594,7 +620,7 @@ func CompareCommits(ctx context.Context, request *pb.CompareCommitsRequest, log 
 
 func GetAuthenticatedUser(ctx context.Context, request *pb.GetAuthenticatedUserRequest, log *zap.SugaredLogger) (out *pb.GetAuthenticatedUserResponse, err error) {
 	start := time.Now()
-	log.Infow("GetAuthenticatedUser starting")
+	log.Infow("GetAuthenticatedUser starting", "provider", request.GetProvider())
 
 	client, err := gitclient.GetGitClient(*request.GetProvider(), log)
 	if err != nil {
@@ -627,7 +653,7 @@ func GetAuthenticatedUser(ctx context.Context, request *pb.GetAuthenticatedUserR
 
 func GetUserRepos(ctx context.Context, request *pb.GetUserReposRequest, log *zap.SugaredLogger) (out *pb.GetUserReposResponse, err error) {
 	start := time.Now()
-	log.Infow("GetUserRepos starting")
+	log.Infow("GetUserRepos starting", "provider", request.GetProvider())
 
 	client, err := gitclient.GetGitClient(*request.GetProvider(), log)
 

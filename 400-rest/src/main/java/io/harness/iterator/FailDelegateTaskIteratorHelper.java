@@ -124,12 +124,10 @@ public class FailDelegateTaskIteratorHelper {
               .asList();
 
       for (DelegateTask task : tasks) {
-        if (shouldExpireTask(task)) {
-          tasksToExpire.add(task);
-          taskIdsToExpire.add(task.getUuid());
-          delegateMetricsService.recordDelegateTaskMetrics(task, DELEGATE_TASK_EXPIRED);
-          logValidationFailedErrorsInSelectionLog(task);
-        }
+        tasksToExpire.add(task);
+        taskIdsToExpire.add(task.getUuid());
+        delegateMetricsService.recordDelegateTaskMetrics(task, DELEGATE_TASK_EXPIRED);
+        logValidationFailedErrorsInSelectionLog(task);
       }
 
       delegateTasks.putAll(tasksToExpire.stream().collect(toMap(DelegateTask::getUuid, identity())));
@@ -144,13 +142,11 @@ public class FailDelegateTaskIteratorHelper {
               persistence.createQuery(DelegateTask.class, excludeAuthority, isDelegateTaskMigrationEnabled)
                   .filter(DelegateTaskKeys.uuid, taskId)
                   .get();
-          if (shouldExpireTask(task)) {
-            taskIdsToExpire.add(taskId);
-            delegateTasks.put(taskId, task);
-            delegateMetricsService.recordDelegateTaskMetrics(task, DELEGATE_TASK_EXPIRED);
-            if (isNotEmpty(task.getWaitId())) {
-              taskWaitIds.put(taskId, task.getWaitId());
-            }
+          taskIdsToExpire.add(taskId);
+          delegateTasks.put(taskId, task);
+          delegateMetricsService.recordDelegateTaskMetrics(task, DELEGATE_TASK_EXPIRED);
+          if (isNotEmpty(task.getWaitId())) {
+            taskWaitIds.put(taskId, task.getWaitId());
           }
         } catch (Exception e2) {
           log.error("Could not deserialize task {}. Trying again with only waitId field.", taskId, e2);
@@ -199,10 +195,6 @@ public class FailDelegateTaskIteratorHelper {
         }
       });
     }
-  }
-
-  private boolean shouldExpireTask(DelegateTask task) {
-    return !task.isForceExecute();
   }
 
   @VisibleForTesting

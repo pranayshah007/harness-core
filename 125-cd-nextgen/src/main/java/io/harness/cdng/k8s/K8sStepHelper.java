@@ -14,6 +14,7 @@ import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
+import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.OCI_HELM;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
@@ -63,6 +64,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.helper.EncryptionHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchResponse;
@@ -71,6 +73,7 @@ import io.harness.delegate.task.helm.HelmFetchFileResult;
 import io.harness.delegate.task.helm.HelmValuesFetchResponse;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
+import io.harness.delegate.task.k8s.ManifestDelegateConfig;
 import io.harness.delegate.task.k8s.RancherK8sInfraDelegateConfig;
 import io.harness.delegate.task.localstore.LocalStoreFetchFilesResult;
 import io.harness.delegate.task.localstore.ManifestFiles;
@@ -178,13 +181,23 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
   }
 
   private TaskType getK8sTaskType(K8sDeployRequest k8sDeployRequest, Ambiance ambiance) {
+    ManifestDelegateConfig manifestDelegateConfig = k8sDeployRequest.getManifestDelegateConfig();
+    if (manifestDelegateConfig != null && manifestDelegateConfig.getStoreDelegateConfig() != null
+        && OCI_HELM.equals(manifestDelegateConfig.getStoreDelegateConfig().getType())
+        && ((OciHelmStoreDelegateConfig) manifestDelegateConfig.getStoreDelegateConfig()).getAwsConnectorDTO()
+            != null) {
+      return TaskType.K8S_COMMAND_TASK_NG_OCI_ECR_CONFIG;
+    }
+
     if (k8sDeployRequest.getK8sInfraDelegateConfig() instanceof RancherK8sInfraDelegateConfig) {
       return TaskType.K8S_COMMAND_TASK_NG_RANCHER;
     }
+
     if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_K8S_SERVICE_HOOKS_NG)
         && isNotEmpty(k8sDeployRequest.getServiceHooks())) {
       return TaskType.K8S_COMMAND_TASK_NG_V2;
     }
+
     return TaskType.K8S_COMMAND_TASK_NG;
   }
 

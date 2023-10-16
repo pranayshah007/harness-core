@@ -6,7 +6,6 @@
  */
 
 package io.harness.engine.pms.execution.strategy.plan;
-
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.contracts.execution.Status.ERRORED;
 
@@ -14,8 +13,11 @@ import io.harness.ModuleType;
 import io.harness.OrchestrationPublisherName;
 import io.harness.PipelineSettingsService;
 import io.harness.PlanExecutionSettingResponse;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.GovernanceService;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.events.OrchestrationEventEmitter;
@@ -57,6 +59,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -125,6 +128,8 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
       if (!planExecutionSettingResponse.isShouldQueue()) {
         // Start the planExecution if it should not be queued.
         startPlanExecution(plan, ambiance);
+      } else {
+        log.info("Marking execution as queued because the account has reached its limit.");
       }
       return planExecution;
     } finally {

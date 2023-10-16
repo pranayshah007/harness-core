@@ -6,8 +6,8 @@
  */
 
 package io.harness.steps.barriers.service;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.distribution.barrier.Barrier.State;
 import static io.harness.distribution.barrier.Barrier.State.STANDING;
 import static io.harness.distribution.barrier.Barrier.builder;
@@ -26,7 +26,10 @@ import static java.time.Duration.ofSeconds;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.distribution.barrier.Barrier;
 import io.harness.distribution.barrier.BarrierId;
@@ -39,13 +42,17 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
 import io.harness.iterator.PersistenceIteratorFactory;
+import io.harness.lock.AcquiredLock;
+import io.harness.lock.PersistentLocker;
 import io.harness.mongo.iterator.IteratorConfig;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.filter.SpringFilterExpander;
 import io.harness.mongo.iterator.provider.SpringPersistenceProvider;
+import io.harness.plancreator.steps.barrier.BarrierStepNode;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.BarrierNodeRepository;
@@ -59,6 +66,7 @@ import io.harness.steps.barriers.beans.BarrierPositionInfo.BarrierPosition.Barri
 import io.harness.steps.barriers.beans.BarrierResponseData;
 import io.harness.steps.barriers.beans.BarrierResponseData.BarrierError;
 import io.harness.steps.barriers.beans.BarrierSetupInfo;
+import io.harness.steps.barriers.beans.StageDetail;
 import io.harness.steps.barriers.beans.StageDetail.StageDetailKeys;
 import io.harness.steps.barriers.service.visitor.BarrierVisitor;
 import io.harness.waiter.WaitNotifyEngine;
@@ -68,6 +76,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -82,6 +91,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @Slf4j
 public class BarrierServiceImpl implements BarrierService, ForceProctor {
@@ -91,7 +101,9 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
   private static final String STEP_GROUP = "stepGroup";
   private static final String STEP = "step";
   private static final String PLAN_EXECUTION_ID = "planExecutionId";
+  private static final String BARRIER_UPSERT_LOCK = "BARRIER_UPSERT_LOCK_";
 
+  @Inject private PersistentLocker persistentLocker;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private BarrierNodeRepository barrierNodeRepository;
   @Inject private MongoTemplate mongoTemplate;
@@ -150,6 +162,13 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
        have positions that are children of a given strategy node. */
     return barrierNodeRepository.findManyByPlanExecutionIdAndSetupInfo_StrategySetupIds(
         planExecutionId, strategySetupId);
+  }
+
+  @Override
+  public boolean existsByPlanExecutionIdAndStrategySetupId(String planExecutionId, String strategySetupId) {
+    /* This method is used by `BarrierWithinStrategyExpander` for fetching all BarrierExecutionInstances which
+       have positions that are children of a given strategy node. */
+    return barrierNodeRepository.existsByPlanExecutionIdAndSetupInfo_StrategySetupIds(planExecutionId, strategySetupId);
   }
 
   @Override
@@ -500,5 +519,66 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
     return PersistenceUtils.getRetryPolicy(failedAttemptMessage, failureMessage);
+  }
+
+  public void upsertBarrierExecutionInstance(BarrierStepNode field, String planExecutionId,
+      String parentInfoStrategyNodeType, String stageId, String stepGroupId, String strategyId) {
+    String setupId = field.getUuid();
+    String barrierId = field.getBarrierStepInfo().getIdentifier();
+    BarrierPositionType strategyNodeType =
+        getStrategyNodeType(parentInfoStrategyNodeType, setupId, barrierId, planExecutionId);
+    BarrierExecutionInstance barrierExecutionInstance = getBarrierExecutionInstance(
+        field, barrierId, planExecutionId, stageId, stepGroupId, strategyId, strategyNodeType);
+    try (AcquiredLock<?> ignore = persistentLocker.waitToAcquireLock(
+             BARRIER_UPSERT_LOCK + barrierId, Duration.ofSeconds(10), Duration.ofSeconds(30))) {
+      upsert(barrierExecutionInstance);
+    }
+  }
+
+  private BarrierPositionType getStrategyNodeType(
+      String parentInfoStrategyNodeType, String stepSetupId, String barrierId, String planExecutionId) {
+    BarrierPositionType strategyNodeType = null;
+    if (isNotEmpty(parentInfoStrategyNodeType)) {
+      if (YAMLFieldNameConstants.STAGE.equals(parentInfoStrategyNodeType)) {
+        strategyNodeType = BarrierPositionType.STAGE;
+      } else if (YAMLFieldNameConstants.STEP_GROUP.equals(parentInfoStrategyNodeType)) {
+        strategyNodeType = BarrierPositionType.STEP_GROUP;
+      } else {
+        log.warn(
+            "parentInfoStrategyNodeType [{}] for Barrier Step with setupId: [{}], barrierId: [{}], planExecutionId: [{}], is neither stage or stepGroup."
+                + " Setting strategyNodeType to null.",
+            parentInfoStrategyNodeType, stepSetupId, barrierId, planExecutionId);
+      }
+    }
+    return strategyNodeType;
+  }
+
+  private BarrierExecutionInstance getBarrierExecutionInstance(BarrierStepNode field, String barrierId,
+      String planExecutionId, String stageId, String stepGroupId, String strategyId,
+      BarrierPositionType strategyNodeType) {
+    return BarrierExecutionInstance.builder()
+        .setupInfo(BarrierSetupInfo.builder()
+                       .name(field.getBarrierStepInfo().getName())
+                       .identifier(barrierId)
+                       .stages(Set.of(StageDetail.builder().identifier(stageId).build()))
+                       .strategySetupIds(isNotEmpty(strategyId) ? Set.of(strategyId) : null)
+                       .build())
+        .positionInfo(
+            BarrierPositionInfo.builder()
+                .planExecutionId(planExecutionId)
+                .barrierPositionList(List.of(BarrierPositionInfo.BarrierPosition.builder()
+                                                 .stageSetupId(stageId)
+                                                 .stepGroupSetupId(isNotEmpty(stepGroupId) ? stepGroupId : null)
+                                                 .strategySetupId(isNotEmpty(strategyId) ? strategyId : null)
+                                                 .strategyNodeType(strategyNodeType)
+                                                 .stepSetupId(field.getUuid())
+                                                 .stepGroupRollback(false)
+                                                 .build()))
+                .build())
+        .name(field.getBarrierStepInfo().getName())
+        .barrierState(Barrier.State.STANDING)
+        .identifier(field.getBarrierStepInfo().getIdentifier())
+        .planExecutionId(planExecutionId)
+        .build();
   }
 }

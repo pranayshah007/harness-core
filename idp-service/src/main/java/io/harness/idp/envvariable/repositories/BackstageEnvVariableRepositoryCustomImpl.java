@@ -46,6 +46,7 @@ public class BackstageEnvVariableRepositoryCustomImpl implements BackstageEnvVar
       BackstageEnvSecretVariableEntity secretEntity = ((BackstageEnvSecretVariableEntity) backstageEnvVariableEntity);
       update.set(BackstageEnvSecretVariableKeys.harnessSecretIdentifier, secretEntity.getHarnessSecretIdentifier());
       update.set(BackstageEnvSecretVariableKeys.isDeleted, secretEntity.isDeleted());
+      update.set(BackstageEnvSecretVariableKeys.secretLastModifiedAt, secretEntity.getSecretLastModifiedAt());
     }
     FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true);
     return mongoTemplate.findAndModify(query, update, options, BackstageEnvVariableEntity.class);

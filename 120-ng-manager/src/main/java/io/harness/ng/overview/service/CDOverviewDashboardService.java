@@ -94,7 +94,7 @@ public interface CDOverviewDashboardService {
       long startTime, long endTime, List<String> sort) throws Exception;
 
   ServiceDetailsInfoDTOV2 getServiceDetailsListV2(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, long startTime, long endTime, List<String> sort) throws Exception;
+      String projectIdentifier, long startTime, long endTime, List<String> sort, String repoName) throws Exception;
 
   io.harness.ng.overview.dto.TimeValuePairListDTO<Integer> getServicesGrowthTrend(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, long startTimeInMs, long endTimeInMs,

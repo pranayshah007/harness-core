@@ -8,6 +8,7 @@
 package io.harness.idp.app;
 
 import static io.harness.audit.ResourceTypeConstants.IDP_APP_CONFIGS;
+import static io.harness.audit.ResourceTypeConstants.IDP_CATALOG_CONNECTOR;
 import static io.harness.audit.ResourceTypeConstants.IDP_CONFIG_ENV_VARIABLES;
 import static io.harness.authorization.AuthorizationServiceHeader.IDP_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
@@ -45,6 +46,7 @@ import io.harness.idp.allowlist.services.AllowListService;
 import io.harness.idp.allowlist.services.AllowListServiceImpl;
 import io.harness.idp.audittrials.eventhandlers.AppConfigEventHandler;
 import io.harness.idp.audittrials.eventhandlers.BackstageSecretEnvEventHandler;
+import io.harness.idp.audittrials.eventhandlers.CatalogConnectorEventHandler;
 import io.harness.idp.audittrials.eventhandlers.IDPNextGenOutboxEventHandler;
 import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
 import io.harness.idp.common.delegateselectors.cache.memory.DelegateSelectorsInMemoryCache;
@@ -450,6 +452,7 @@ public class IdpModule extends AbstractModule {
         MapBinder.newMapBinder(binder(), String.class, OutboxEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(IDP_APP_CONFIGS).to(AppConfigEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(IDP_CONFIG_ENV_VARIABLES).to(BackstageSecretEnvEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(IDP_CATALOG_CONNECTOR).to(CatalogConnectorEventHandler.class);
   }
 
   @Provides

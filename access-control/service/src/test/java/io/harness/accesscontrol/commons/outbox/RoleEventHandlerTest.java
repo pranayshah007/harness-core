@@ -193,6 +193,28 @@ public class RoleEventHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = {KARAN, JIMIT_GANDHI})
   @Category(UnitTests.class)
+  public void testCreate_ForManagedRole_EventV1() throws JsonProcessingException {
+    String identifier = randomAlphabetic(10);
+    RoleDTO roleDTO = getRoleDTO(identifier);
+    RoleCreateEvent roleCreateEvent = new RoleCreateEvent(null, roleDTO, null);
+    String eventData = objectMapper.writeValueAsString(roleCreateEvent);
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .id(randomAlphabetic(10))
+                                  .blocked(false)
+                                  .eventType("RoleCreated")
+                                  .eventData(eventData)
+                                  .resourceScope(roleCreateEvent.getResourceScope())
+                                  .resource(roleCreateEvent.getResource())
+                                  .createdAt(Long.parseLong(randomNumeric(5)))
+                                  .build();
+    when(auditClientService.publishAudit(any(), any())).thenReturn(true);
+    roleEventHandler.handle(outboxEvent);
+    verify(auditClientService, never()).publishAudit(any(), any());
+  }
+
+  @Test
+  @Owner(developers = {KARAN, JIMIT_GANDHI})
+  @Category(UnitTests.class)
   public void testUpdate() throws JsonProcessingException {
     String accountIdentifier = randomAlphabetic(10);
     String orgIdentifier = randomAlphabetic(10);
@@ -323,6 +345,31 @@ public class RoleEventHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = {KARAN, JIMIT_GANDHI})
   @Category(UnitTests.class)
+  public void updateManagedRoleWithAclProcessingNotEnabled_EventV1_DoesNotDoAclProcessing()
+      throws JsonProcessingException {
+    String identifier = randomAlphabetic(10);
+    RoleDTO oldRole = getRoleDTO(identifier);
+    RoleDTO newRole = getRoleDTO(identifier);
+    RoleUpdateEvent roleUpdateEvent = new RoleUpdateEvent(null, newRole, oldRole, null);
+    String eventData = objectMapper.writeValueAsString(roleUpdateEvent);
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .id(randomAlphabetic(10))
+                                  .blocked(false)
+                                  .eventType("RoleUpdated")
+                                  .eventData(eventData)
+                                  .resourceScope(roleUpdateEvent.getResourceScope())
+                                  .resource(roleUpdateEvent.getResource())
+                                  .createdAt(Long.parseLong(randomNumeric(5)))
+                                  .build();
+    roleEventHandler.handle(outboxEvent);
+    verify(auditClientService, never()).publishAudit(any(), any());
+    verify(scopeService, never()).buildScopeFromScopeIdentifier(any());
+    verify(roleChangeConsumer, never()).consumeUpdateEvent(any(), any());
+  }
+
+  @Test
+  @Owner(developers = {KARAN, JIMIT_GANDHI})
+  @Category(UnitTests.class)
   public void updateManagedRoleWithAclProcessingNotEnabled_EventV2_DoesNotDoAclProcessing()
       throws JsonProcessingException {
     String identifier = randomAlphabetic(10);
@@ -427,6 +474,40 @@ public class RoleEventHandlerTest extends CategoryTest {
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.UPDATE, auditEntry.getAction());
+  }
+
+  @Test
+  @Owner(developers = {KARAN, JIMIT_GANDHI})
+  @Category(UnitTests.class)
+  public void updateManagedRole_WithAclProcessingEnabledAnd_EventV1_DoesAclProcessing() throws JsonProcessingException {
+    String identifier = randomAlphabetic(10);
+    roleEventHandler = spy(new RoleEventHandler(auditClientService, roleChangeConsumer, true, scopeService));
+    RoleDTO oldRole = getRoleDTO(identifier);
+    RoleDTO newRole = getRoleDTO(identifier);
+    RoleUpdateEvent roleUpdateEvent = new RoleUpdateEvent(null, newRole, oldRole, null);
+    String eventData = objectMapper.writeValueAsString(roleUpdateEvent);
+    roleEventHandler = spy(new RoleEventHandler(auditClientService, roleChangeConsumer, true, scopeService));
+    Role newCoreRole = RoleDTOMapper.fromDTO(null, newRole);
+
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .id(randomAlphabetic(10))
+                                  .blocked(false)
+                                  .eventType("RoleUpdated")
+                                  .eventData(eventData)
+                                  .resourceScope(roleUpdateEvent.getResourceScope())
+                                  .resource(roleUpdateEvent.getResource())
+                                  .createdAt(Long.parseLong(randomNumeric(5)))
+                                  .build();
+    Set<String> permissionsAddedToRole = Sets.difference(newRole.getPermissions(), oldRole.getPermissions());
+    Set<String> permissionsRemovedFromRole = Sets.difference(oldRole.getPermissions(), newRole.getPermissions());
+    RoleChangeEventData roleChangeEventData = RoleChangeEventData.builder()
+                                                  .updatedRole(newCoreRole)
+                                                  .permissionsAdded(permissionsAddedToRole)
+                                                  .permissionsRemoved(permissionsRemovedFromRole)
+                                                  .build();
+    roleEventHandler.handle(outboxEvent);
+    verify(auditClientService, never()).publishAudit(any(), any());
+    verify(roleChangeConsumer, times(1)).consumeUpdateEvent(null, roleChangeEventData);
   }
 
   @Test

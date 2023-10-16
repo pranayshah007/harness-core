@@ -8,7 +8,6 @@
 package io.harness.notification.senders;
 
 import io.harness.delegate.beans.NotificationProcessingResponse;
-import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.notification.helper.NotificationSettingsHelper;
 
 import java.util.ArrayList;
@@ -34,9 +33,8 @@ public class SlackSenderImpl {
   }
 
   public NotificationProcessingResponse send(
-      List<String> slackWebhookUrls, String message, String notificationId, String accountId) {
-    slackWebhookUrls = NotificationSettingsHelper.getRecipientsWithValidDomain(
-        slackWebhookUrls, accountId, SettingIdentifiers.SLACK_NOTIFICATION_ENDPOINTS_ALLOWLIST);
+      List<String> slackWebhookUrls, String message, String notificationId, List<String> validDomains) {
+    slackWebhookUrls = NotificationSettingsHelper.getRecipientsWithValidDomain(slackWebhookUrls, validDomains);
     List<Boolean> results = new ArrayList<>();
     for (String webhookUrl : slackWebhookUrls) {
       boolean ret = sendJSONMessage(message, webhookUrl);

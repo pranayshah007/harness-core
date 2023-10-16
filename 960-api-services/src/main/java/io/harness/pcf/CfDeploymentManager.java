@@ -21,6 +21,7 @@ import io.harness.pcf.model.CfRequestConfig;
 import io.harness.pcf.model.CfRunPluginScriptRequestData;
 
 import java.util.List;
+import java.util.Map;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
 
@@ -102,6 +103,10 @@ public interface CfDeploymentManager {
       throws PivotalClientApiException;
 
   void runPcfPluginScript(CfRunPluginScriptRequestData requestData, LogCallback logCallback)
+      throws PivotalClientApiException;
+
+  Map<String, String> runPcfPluginScriptWithEnvironmentVarInputsAndOutputs(CfRunPluginScriptRequestData requestData,
+      LogCallback logCallback, Map<String, String> inputVariables, List<String> outputVariables)
       throws PivotalClientApiException;
 
   ApplicationDetail createRollingApplicationWithSteadyStateCheck(CfCreateApplicationRequestData requestData,

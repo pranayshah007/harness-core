@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.ReleaseMetadataFactory;
 import io.harness.cdng.executables.CdTaskChainExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.helm.ReleaseHelmChartOutcome;
@@ -85,6 +86,7 @@ public class K8sRollingStep extends CdTaskChainExecutable implements K8sStepExec
   @Inject private InstanceInfoService instanceInfoService;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
+  @Inject private ReleaseMetadataFactory releaseMetadataFactory;
   @Override
   public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
     // Noop
@@ -155,6 +157,9 @@ public class K8sRollingStep extends CdTaskChainExecutable implements K8sStepExec
 
     if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
       rollingRequestBuilder.serviceHooks(k8sStepHelper.getServiceHooks(ambiance));
+    }
+    if (cdStepHelper.shouldPassReleaseMetadata(accountId)) {
+      rollingRequestBuilder.releaseMetadata(releaseMetadataFactory.createReleaseMetadata(infrastructure, ambiance));
     }
 
     Map<String, String> k8sCommandFlag =

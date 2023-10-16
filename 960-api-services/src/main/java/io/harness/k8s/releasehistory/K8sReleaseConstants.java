@@ -35,6 +35,12 @@ public class K8sReleaseConstants {
   public static final String RELEASE_SECRET_RELEASE_COLOR_KEY = "color";
   public static final String RELEASE_SECRET_RELEASE_BG_ENVIRONMENT_KEY = "harness.io/bg-environment";
   public static final String RELEASE_SECRET_RELEASE_MANIFEST_HASH_KEY = "harness.io/manifest-hash";
+
+  public static final String RELEASE_SECRET_HELM_CHART_NAME_KEY = "metadata.helm.harness.io/chart-name";
+  public static final String RELEASE_SECRET_HELM_CHART_VERSION_KEY = "metadata.helm.harness.io/chart-version";
+  public static final String RELEASE_SECRET_HELM_CHART_REPO_URL_KEY = "metadata.helm.harness.io/chart-repo-url";
+  public static final String RELEASE_SECRET_HELM_CHART_SUB_CHART_PATH_KEY =
+      "metadata.helm.harness.io/chart-sub-chart-path";
   public static final Map<String, String> RELEASE_SECRET_TYPE_MAP =
       Map.of(RELEASE_SECRET_TYPE_KEY, RELEASE_SECRET_TYPE_VALUE);
   public static final Map<String, String> RELEASE_SECRET_LABELS_MAP =
@@ -43,4 +49,9 @@ public class K8sReleaseConstants {
   public static final String RELEASE_LABEL_QUERY_SET_FORMAT = "%s in (%s)";
   public static final String RELEASE_LABEL_QUERY_LIST_FORMAT = "%s=%s";
   public static final Set<String> BLUE_GREEN_COLORS = ImmutableSet.of(colorBlue, colorGreen);
+
+  public static final String RELEASE_SECRET_ANNOTATION_SERVICE = "harness.io/service";
+  public static final String RELEASE_SECRET_ANNOTATION_ENV = "harness.io/env";
+  public static final String RELEASE_SECRET_ANNOTATION_INFRA_ID = "harness.io/infra";
+  public static final String RELEASE_SECRET_ANNOTATION_INFRA_KEY = "harness.io/infra-key";
 }

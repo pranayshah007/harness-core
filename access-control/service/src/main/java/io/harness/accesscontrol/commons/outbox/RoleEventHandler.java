@@ -220,10 +220,13 @@ public class RoleEventHandler implements OutboxEventHandler {
   }
 
   private Pair<Optional<ResourceScopeDTO>, Optional<Scope>> getScopes(OutboxEvent outboxEvent) {
-    Optional<ResourceScopeDTO> resourceScopeDTO;
-    Optional<Scope> scope;
+    Optional<ResourceScopeDTO> resourceScopeDTO = Optional.empty();
+    Optional<Scope> scope = Optional.empty();
+    if (Objects.isNull(outboxEvent.getResourceScope())) {
+      return Pair.of(resourceScopeDTO, scope);
+    }
     if (isEventV2(outboxEvent)) {
-      scope = Objects.nonNull(outboxEvent.getResourceScope()) && !isEmpty(outboxEvent.getResourceScope().getScope())
+      scope = !isEmpty(outboxEvent.getResourceScope().getScope())
           ? Optional.of(scopeService.buildScopeFromScopeIdentifier(outboxEvent.getResourceScope().getScope()))
           : Optional.empty();
       resourceScopeDTO = scope.map(ScopeMapper::toResourceScopeDTO);

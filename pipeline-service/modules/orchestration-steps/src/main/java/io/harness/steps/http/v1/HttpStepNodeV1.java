@@ -20,14 +20,13 @@ import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.v1.StepElementParametersV1;
 import io.harness.plancreator.steps.common.v1.StepElementParametersV1.StepElementParametersV1Builder;
 import io.harness.plancreator.steps.common.v1.StepParametersUtilsV1;
-import io.harness.plancreator.steps.http.HttpStepInfo;
+import io.harness.plancreator.steps.http.v1.HttpStepInfoV1;
 import io.harness.plancreator.steps.internal.v1.PmsAbstractStepNodeV1;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.StepSpecTypeConstantsV1;
 import io.harness.steps.StepUtils;
-import io.harness.steps.http.HttpStepParameters;
-import io.harness.yaml.utils.NGVariablesUtils;
+import io.harness.yaml.utils.v1.NGVariablesUtilsV1;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -36,36 +35,38 @@ import java.util.stream.Collectors;
 import lombok.Data;
 
 @OwnedBy(PIPELINE)
-@JsonTypeName(StepSpecTypeConstants.HTTP)
+@JsonTypeName(StepSpecTypeConstantsV1.HTTP)
 @Data
 public class HttpStepNodeV1 extends PmsAbstractStepNodeV1 {
-  String type = StepSpecTypeConstants.HTTP;
+  String type = StepSpecTypeConstantsV1.HTTP;
 
-  @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true) HttpStepInfo spec;
+  @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true) HttpStepInfoV1 spec;
 
   // TODO: set rollback parameters
   public StepElementParametersV1 getStepParameters(PlanCreationContext ctx) {
     StepElementParametersV1Builder stepBuilder = StepParametersUtilsV1.getStepParameters(this);
     stepBuilder.spec(getSpecParameters());
-    stepBuilder.type(StepSpecTypeConstants.HTTP);
+    stepBuilder.type(StepSpecTypeConstantsV1.HTTP);
     StepUtils.appendDelegateSelectorsToSpecParameters(spec, ctx);
     return stepBuilder.build();
   }
 
   public SpecParameters getSpecParameters() {
-    return HttpStepParameters.infoBuilder()
+    return HttpStepParametersV1.infoBuilder()
         .assertion(spec.getAssertion())
         .headers(EmptyPredicate.isEmpty(spec.getHeaders()) ? Collections.emptyMap()
                                                            : spec.getHeaders().stream().collect(Collectors.toMap(
                                                                HttpHeaderConfig::getKey, HttpHeaderConfig::getValue)))
-        .certificate(spec.getCertificate())
-        .certificateKey(spec.getCertificateKey())
+        .cert(spec.getCert())
+        .cert_key(spec.getCert_key())
         .method(spec.getMethod())
-        .outputVariables(NGVariablesUtils.getMapOfVariables(spec.getOutputVariables(), 0L))
-        .inputVariables(NGVariablesUtils.getMapOfVariables(spec.getInputVariables(), 0L))
-        .requestBody(spec.getRequestBody())
-        .delegateSelectors(ParameterField.createValueField(CollectionUtils.emptyIfNull(
-            spec.getDelegateSelectors() != null ? spec.getDelegateSelectors().getValue() : null)))
+        .output_vars(NGVariablesUtilsV1.getMapOfVariables(
+            spec.getOutput_vars() != null ? spec.getOutput_vars().getMap() : null, 0L))
+        .input_vars(NGVariablesUtilsV1.getMapOfVariables(
+            spec.getInput_vars() != null ? spec.getInput_vars().getMap() : null, 0L))
+        .body(spec.getBody())
+        .delegate(ParameterField.createValueField(
+            CollectionUtils.emptyIfNull(spec.getDelegate() != null ? spec.getDelegate().getValue() : null)))
         .url(spec.getUrl())
         .build();
   }
