@@ -59,7 +59,7 @@ mongodb:
     nameOverride: "mongodb-replicaset-chart"
   auth:
     rootUser: "admin"
-    existingSecret: '{{ include "harnesscommon.secrets.InstalledDBSecret" (dict "ctx" $ "dbKey" "mongo" "defaultSecret" "mongodb-replicaset-chart") }}'
+    existingSecret: '{{ include "harnesscommon.secrets.InstalledDBSecret" (dict "ctx" $ "dbKey" "mongo" "defaultSecret" "mongodb-replicaset-chart1") }}'
   podLabels: { app: mongodb-replicaset }
   resources:
     limits:
