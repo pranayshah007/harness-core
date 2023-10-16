@@ -294,6 +294,13 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
       RedisConfig redisConfig() {
         return RedisConfig.builder().build();
       }
+
+      @Provides
+      @Singleton
+      @Named("harnessCodeGitBaseUrl")
+      String getHarnessCodeGitBaseUrl() {
+        return "http://localhost:3000/git";
+      }
     });
     modules.add(PersistentLockModule.getInstance());
 
