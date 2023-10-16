@@ -212,8 +212,6 @@ public enum FeatureName {
   CD_AI_ENHANCED_REMEDIATIONS(
       "Enables use of generative AI to provide remediation information in CD step logs", HarnessTeam.CDP),
   CD_GIT_WEBHOOK_POLLING("Used to poll git webhook recent delivery events", HarnessTeam.CDP),
-  CD_NG_DOCKER_ARTIFACT_DIGEST(
-      "Use SHA256 digest as optional parameter for docker image artifact config", HarnessTeam.SPG),
   CD_NG_DYNAMIC_PROVISIONING_ENV_V2(
       "Enable dynamic provisioning support in v2 environment. Epic: CDS-39606", HarnessTeam.CDC),
   CD_ONBOARDING_HELP_ENABLED("Enables help panel for CD onboarding ", HarnessTeam.CDP),
