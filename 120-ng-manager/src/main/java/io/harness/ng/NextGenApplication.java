@@ -259,6 +259,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.ServiceManager;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
@@ -933,14 +934,19 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
   }
 
   private void registerResources(NextGenConfiguration appConfig, Environment environment, Injector injector) {
-    for (Class<?> resource : HARNESS_RESOURCE_CLASSES) {
-      if (Resource.isAcceptable(resource)) {
-        environment.jersey().register(injector.getInstance(resource));
+    try {
+      for (Class<?> resource : HARNESS_RESOURCE_CLASSES) {
+        if (Resource.isAcceptable(resource)) {
+          environment.jersey().register(injector.getInstance(resource));
+        }
       }
+      environment.jersey().register(injector.getInstance(VersionInfoResource.class));
+      environment.jersey().property(
+          ServerProperties.RESOURCE_VALIDATION_DISABLE, appConfig.isDisableResourceValidation());
+    } catch (Exception e) {
+      log.error("Failed to register resources. Classes are: {}", Iterables.toString(HARNESS_RESOURCE_CLASSES));
+      throw e;
     }
-    environment.jersey().register(injector.getInstance(VersionInfoResource.class));
-    environment.jersey().property(
-        ServerProperties.RESOURCE_VALIDATION_DISABLE, appConfig.isDisableResourceValidation());
   }
 
   private void registerJerseyProviders(Environment environment, Injector injector) {
