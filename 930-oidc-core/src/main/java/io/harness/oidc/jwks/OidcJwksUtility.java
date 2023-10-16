@@ -16,7 +16,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.oidc.entities.OidcJwks;
 import io.harness.oidc.entities.OidcJwks.OidcJwksKeys;
+import io.harness.oidc.rsa.OidcRsaKeyService;
 import io.harness.persistence.HPersistence;
+import io.harness.rsa.RsaKeyPair;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -33,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 public class OidcJwksUtility {
   private static final Duration CACHE_EXPIRATION = Duration.ofHours(12);
   @Inject private HPersistence persistence;
+  @Inject private OidcRsaKeyService oidcRsaKeyService;
 
   private LoadingCache<String, OidcJwks> jwksCache =
       CacheBuilder.newBuilder()
@@ -57,14 +60,33 @@ public class OidcJwksUtility {
   public OidcJwks getJwksKeys(String accountId) {
     try {
       OidcJwks oidcJwks = jwksCache.getUnchecked(accountId);
-      if (oidcJwks == null) {
-        // TODO: OidcJwks for this accountId is not created yet. Create it.
-        String kid = generateOidcIdTokenKid();
+      if (!isNull(oidcJwks)) {
+        return oidcJwks;
       }
-      return oidcJwks;
+
+      String kid = generateOidcIdTokenKid();
+      RsaKeyPair rsaKeyPair = oidcRsaKeyService.generateRsaKeyPair(accountId);
+      OidcJwks newOidcJwks = OidcJwks.builder().accountId(accountId).keyId(kid).rsaKeyPair(rsaKeyPair).build();
+      this.saveOidcJwks(newOidcJwks);
+
+      return newOidcJwks;
     } catch (CacheLoader.InvalidCacheLoadException e) {
       return null;
     }
+  }
+
+  /**
+   * Utility method to get the OIDC key identifier and RSA private key in PEM format.
+   *
+   * @param accountId The accountId for which kid and RSA pvt key has to be fetched.
+   * @return the OIDC Kid and RSA Pvt key.
+   */
+  public OidcJwksKeysForIdToken getJwksKeysForIdToken(String accountId) {
+    OidcJwks oidcJwks = getJwksKeys(accountId);
+    return OidcJwksKeysForIdToken.builder()
+        .kid(oidcJwks.getKeyId())
+        .rsaPrivateKey(oidcRsaKeyService.getOidcJwksPrivateKeyPEM(accountId, oidcJwks.getRsaKeyPair()))
+        .build();
   }
 
   /**

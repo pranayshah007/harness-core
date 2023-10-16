@@ -26,7 +26,7 @@
       "account_id": "{account_id}"
     },
     "access_token_sts_endpoint": "https://sts.googleapis.com/v1/token",
-    "access_token_iam_sa_credentials_endpoint": "",
+    "access_token_iam_sa_credentials_endpoint": "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/{service_account_email}:generateAccessToken",
     "workload_access_token_config": {
       "audience": "https://iam.googleapis.com/projects/{gcp_project_id}/locations/global/workloadIdentityPools/{workload_pool_id}/providers/{provider_id}",
       "grant_type": "urn:ietf:params:oauth:grant-type:token-exchange",

@@ -5,15 +5,16 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.oidc.accesstoken;
+package io.harness.oidc.gcp;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.Headers;
 import retrofit2.http.POST;
 
-public interface OidcAccessTokenStsApi {
+public interface GcpOidcAccessTokenIamSaAPI {
   @POST
   @Headers("Content-Type: application/json")
-  Call<OidcWorkloadAccessTokenResponse> exchangeWorkloadAccessToken(@Body OidcWorkloadAccessTokenRequest request);
+  Call<GcpOidcServiceAccountAccessTokenResponse> exchangeServiceAccountAccessToken(
+      @Body GcpOidcServiceAccountAccessTokenRequest request);
 }
