@@ -294,7 +294,6 @@ public enum FeatureName {
   CI_TESTTAB_NAVIGATION,
   CI_TI_DASHBOARDS_ENABLED,
   CI_USE_S3_FOR_CACHE("Use S3 bucket for cache intelligence instead of GCP", HarnessTeam.CI),
-  CI_USE_S3_FOR_DLC("Use S3 bucket for DLC cache", HarnessTeam.CI),
   CI_YAML_VERSIONING("Feature flag for yaml simplification", HarnessTeam.CI),
   CI_NEW_CODEBASE_INPUTSET("Feature flag for new codebase input set", HarnessTeam.CI),
   CI_DLITE_DISTRIBUTED("Feature flag to use dlite in distributed mode", HarnessTeam.CI),
