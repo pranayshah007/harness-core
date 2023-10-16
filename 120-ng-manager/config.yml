@@ -574,6 +574,8 @@ gitXWebhookEventQueueConfig:
 
 useQueueServiceForWebhookTriggers: ${USE_QUEUE_SERVICE_FOR_WEBHOOK_TRIGGERS:-false}
 
+useQueueServiceForGitXWebhook: ${USE_QUEUE_SERVICE_FOR_GITX_WEBHOOK:-false}
+
 proxy:
   enabled: false
   host: localhost
