@@ -121,7 +121,7 @@ func (r *Redis) Write(ctx context.Context, key string, lines ...*stream.Line) er
 		return stream.ErrNotFound
 	}
 
-	lines, cnt := sanitizeLines(lines, int(r.maxLineLimit), int(r.maxStreamSize))
+	lines, cnt := sanitizeLines(lines, int(r.maxLineLimit), int(r.maxStreamSize), key)
 	if cnt > 0 {
 		logrus.Infof("trimmed %d line entries for key %s", cnt, key)
 	}
@@ -247,7 +247,7 @@ func (r *Redis) ListPrefix(ctx context.Context, prefix string, scanBatch int64) 
 // it just keeps the last maxStreamSize lines. This is because writing 10000 lines in a buffer
 // with 5000 entries is the same as writing the last 5000 entries.
 // It returns a count of number of entries which were affected
-func sanitizeLines(lines []*stream.Line, maxLineLimit, maxStreamSize int) ([]*stream.Line, int) {
+func sanitizeLines(lines []*stream.Line, maxLineLimit, maxStreamSize int, key string) ([]*stream.Line, int) {
 	if len(lines) > maxStreamSize {
 		lines = lines[len(lines)-maxStreamSize:]
 	}
@@ -256,6 +256,7 @@ func sanitizeLines(lines []*stream.Line, maxLineLimit, maxStreamSize int) ([]*st
 		// truncate any lines longer than maxLineLimit
 		if len(lines[i].Message) > maxLineLimit {
 			lines[i].Message = lines[i].Message[:maxLineLimit] + "... (log line truncated)"
+			logrus.Infof("trimmed line with length %d for key %s", len(lines[i].Message), key)
 			cnt++
 		}
 	}
