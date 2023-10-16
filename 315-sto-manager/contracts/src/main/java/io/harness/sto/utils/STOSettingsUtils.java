@@ -13,6 +13,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.steps.stepinfo.security.AnchoreStepInfo;
 import io.harness.beans.steps.stepinfo.security.AquaTrivyStepInfo;
 import io.harness.beans.steps.stepinfo.security.AwsEcrStepInfo;
 import io.harness.beans.steps.stepinfo.security.AwsSecurityHubStepInfo;
@@ -346,6 +347,16 @@ public final class STOSettingsUtils {
       map.put(getSTOKey("ingestion_file"),
           resolveStringParameter("ingestion.file", stepType, identifier, ingestion.getFile(), false));
     }
+
+    return map;
+  }
+
+  private static Map<String, String> processSTOAnchoreFields(
+      AnchoreStepInfo stepInfo, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
+    map.putAll(processSTOImageFields(stepInfo.getImage(), stepType, identifier));
 
     return map;
   }
@@ -710,6 +721,9 @@ public final class STOSettingsUtils {
     map.putAll(processSTOIngestionFields(stepInfo.getIngestion(), stepType, identifier));
 
     switch (stepInfo.getSTOStepType()) {
+      case ANCHORE:
+        map.putAll(processSTOAnchoreFields((AnchoreStepInfo) stepInfo, stepType, identifier));
+        break;
       case AWS_ECR:
         map.putAll(processSTOAwsEcrFields((AwsEcrStepInfo) stepInfo, stepType, identifier));
         break;

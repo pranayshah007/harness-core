@@ -543,3 +543,5 @@ io.harness.delegate.beans.instancesync.NativeHelmDeploymentOutcomeMetadata
 io.harness.beans.steps.nodes.BuildAndPushGARNode
 io.harness.beans.steps.stepinfo.GARStepInfo
 io.harness.beans.yaml.extended.cache.CachePolicy
+io.harness.beans.steps.nodes.security.AnchoreScanNode
+io.harness.beans.steps.stepinfo.security.AnchoreStepInfo
