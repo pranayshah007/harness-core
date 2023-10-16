@@ -39,18 +39,18 @@ global:
         secretManagement: 
           externalSecretsOperator:
             - secretStore:
-                name: "project"
-                kind: "ClusterSecretStore"
+                name: ""
+                kind: ""
               remoteKeys:
                 MONGO_USER:
-                  name: "saitejavn-external-secrets"
-                  property: "MONGO_USER"
+                  name: ""
+                  property: ""
                 MONGO_PASSWORD:
-                  name: "saitejavn-external-secrets"
-                  property: "MONGO_PASSWORD"
+                  name: ""
+                  property: ""
                 MONGO_REPLICA_SET_KEY:
-                  name: "saitejavn-external-secrets"
-                  property: "MONGO_REPLICA_SET_KEY"
+                  name: ""
+                  property: ""
     postgres:
       installed: true
     timescaledb:
