@@ -19,6 +19,7 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -30,6 +31,8 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @OwnedBy(HarnessTeam.PL)
 public class AccessControlAdminService {
+  private static final List<String> ALL_ROLE_ASSIGNMENTS = Collections.emptyList();
+
   private final BlockedEntityRepository blockedEntityRepository;
   private final GenerateACLsFromRoleAssignmentsJob generateACLsFromRoleAssignmentsJob;
   private final ExecutorService executorService;
@@ -70,7 +73,11 @@ public class AccessControlAdminService {
     blockedEntityRepository.delete(accountIdentifier);
 
     blockedAccountCache.invalidate(accountIdentifier);
-    executorService.execute(() -> generateACLsFromRoleAssignmentsJob.migrate(accountIdentifier));
+    recreateACLs(accountIdentifier, ALL_ROLE_ASSIGNMENTS);
+  }
+
+  public void recreateACLs(String accountIdentifier, List<String> roleAssignments) {
+    executorService.execute(() -> generateACLsFromRoleAssignmentsJob.run(accountIdentifier, roleAssignments));
   }
 
   public boolean isBlocked(String accountIdentifier) {
