@@ -61,7 +61,7 @@ public class AccountDeletionJob implements Runnable {
   }
 
   void execute() {
-    if (isWeekend()) {
+    if (!isWeekend()) {
       return;
     } else {
       try (ResponseTimeRecorder ignore1 =
