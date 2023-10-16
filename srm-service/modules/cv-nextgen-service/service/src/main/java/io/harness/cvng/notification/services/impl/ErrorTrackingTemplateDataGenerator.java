@@ -13,15 +13,12 @@ import static io.harness.cvng.notification.utils.NotificationRuleConstants.NO_ME
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.URL;
 
 import io.harness.cvng.core.beans.params.ProjectParams;
-import io.harness.cvng.notification.beans.ErrorTrackingEventStatus;
-import io.harness.cvng.notification.beans.ErrorTrackingEventType;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.channelDetails.CVNGNotificationChannelType;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceCodeErrorCondition;
 import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator;
 
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class ErrorTrackingTemplateDataGenerator
     extends MonitoredServiceTemplateDataGenerator<MonitoredServiceCodeErrorCondition> {
