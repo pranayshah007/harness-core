@@ -102,7 +102,7 @@ public class AzureCommonHelperTest extends CategoryTest {
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
     List<EncryptedDataDetail> apiEncryptedDataDetails = new ArrayList<>();
     doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
-    doReturn(GitConfigDTO.builder().build()).when(cdStepHelper).getScmConnector(any(), any(), any());
+    doReturn(GitConfigDTO.builder().build()).when(cdStepHelper).getScmConnector(any(), any(), any(), any());
   }
 
   @Test
@@ -423,7 +423,7 @@ public class AzureCommonHelperTest extends CategoryTest {
                                             .connectorType(ConnectorType.GIT)
                                             .connectorConfig(githubConnectorDTO)
                                             .build();
-    doReturn(githubConnectorDTO).when(cdStepHelper).getScmConnector(any(), any(), any());
+    doReturn(githubConnectorDTO).when(cdStepHelper).getScmConnector(any(), any(), any(), any());
     doNothing().when(cdStepHelper).validateGitStoreConfig(store);
     doReturn(connectorInfoDTO).when(cdStepHelper).getConnector(any(), any());
     ArrayList<String> paths = new ArrayList<>(Arrays.asList("Foo"));
