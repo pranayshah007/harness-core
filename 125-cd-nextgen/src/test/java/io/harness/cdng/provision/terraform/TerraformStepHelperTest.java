@@ -23,6 +23,7 @@ import static io.harness.rule.OwnerRule.NGONZALEZ;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.SATYAM;
 import static io.harness.rule.OwnerRule.SOURABH;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VLICA;
 
@@ -94,6 +95,7 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConne
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsernamePasswordAuthDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
@@ -116,6 +118,9 @@ import io.harness.delegate.task.terraform.TerraformCommandUnit;
 import io.harness.delegate.task.terraform.TerraformTaskNGParameters;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.delegate.task.terraform.TerraformVarFileInfo;
+import io.harness.delegate.task.terraform.provider.TerraformAwsProviderCredentialDelegateInfo;
+import io.harness.delegate.task.terraform.provider.TerraformProviderCredentialDelegateInfo;
+import io.harness.delegate.task.terraform.provider.TerraformProviderType;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
@@ -3274,5 +3279,98 @@ public class TerraformStepHelperTest extends CategoryTest {
             .isInstanceOf(GithubConnectorDTO.class);
       }
     }
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testGetProviderCredentialDelegateInfoNull() {
+    Ambiance ambiance = getAmbiance();
+    TerraformProviderCredentialDelegateInfo credentialDelegateInfo =
+        helper.getProviderCredentialDelegateInfo(null, ambiance);
+    assertThat(credentialDelegateInfo).isNull();
+    credentialDelegateInfo = helper.getProviderCredentialDelegateInfo(
+        TerraformProviderCredential.builder().type(TerraformProviderType.AWS).build(), ambiance);
+    assertThat(credentialDelegateInfo).isNull();
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testGetProviderCredentialDelegateInfoInvalidConnector() {
+    Ambiance ambiance = getAmbiance();
+    doReturn(
+        ConnectorInfoDTO.builder().connectorConfig(GitConfigDTO.builder().gitAuthType(GitAuthType.SSH).build()).build())
+        .when(cdStepHelper)
+        .getConnector(anyString(), any());
+    assertThatThrownBy(()
+                           -> helper.getProviderCredentialDelegateInfo(
+                               TerraformProviderCredential.builder()
+                                   .type(TerraformProviderType.AWS)
+                                   .spec(AWSIAMRoleCredentialSpec.builder()
+                                             .connectorRef(ParameterField.createValueField("dummyConnector"))
+                                             .build())
+                                   .build(),
+                               ambiance))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Connector provided for terraform Aws provider must be of type AWS");
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testGetProviderCredentialDelegateInfo() {
+    Ambiance ambiance = getAmbiance();
+    ConnectorInfoDTO connectorInfoDTO =
+        ConnectorInfoDTO.builder()
+            .connectorConfig(
+                AwsConnectorDTO.builder()
+                    .credential(
+                        AwsCredentialDTO.builder().awsCredentialType(AwsCredentialType.MANUAL_CREDENTIALS).build())
+                    .build())
+            .build();
+
+    doReturn(connectorInfoDTO).when(cdStepHelper).getConnector(any(), any());
+    doReturn(null).when(mockSecretManagerClientService).getEncryptionDetails(any(), any());
+
+    TerraformProviderCredentialDelegateInfo credentialDelegateInfo = helper.getProviderCredentialDelegateInfo(
+        TerraformProviderCredential.builder()
+            .type(TerraformProviderType.AWS)
+            .spec(AWSIAMRoleCredentialSpec.builder()
+                      .connectorRef(ParameterField.createValueField("aws-connector"))
+                      .region(ParameterField.createValueField("us-east-1"))
+                      .roleArn(ParameterField.createValueField("dummy-role-arn"))
+                      .build())
+            .build(),
+        ambiance);
+
+    assertThat(credentialDelegateInfo).isNotNull();
+    assertThat(credentialDelegateInfo).isInstanceOf(TerraformAwsProviderCredentialDelegateInfo.class);
+    TerraformAwsProviderCredentialDelegateInfo tfAwsDelegateInfo =
+        (TerraformAwsProviderCredentialDelegateInfo) credentialDelegateInfo;
+    assertThat(tfAwsDelegateInfo.getConnectorDTO()).isSameAs(connectorInfoDTO);
+    assertThat(tfAwsDelegateInfo.getRegion()).isEqualTo("us-east-1");
+    assertThat(tfAwsDelegateInfo.getRoleArn()).isEqualTo("dummy-role-arn");
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testToTerraformProviderCredential() {
+    TerraformProviderCredential providerCredential =
+        helper.toTerraformProviderCredential(TerraformAwsProviderCredentialConfig.builder()
+                                                 .connectorRef("connectorRef")
+                                                 .roleArn("roleArn")
+                                                 .region("region")
+                                                 .type(TerraformProviderType.AWS)
+                                                 .build());
+
+    assertThat(providerCredential).isNotNull();
+    assertThat(providerCredential.getSpec()).isNotNull();
+    assertThat(providerCredential.getSpec()).isInstanceOf(AWSIAMRoleCredentialSpec.class);
+    AWSIAMRoleCredentialSpec spec = (AWSIAMRoleCredentialSpec) providerCredential.getSpec();
+    assertThat(ParameterFieldHelper.getParameterFieldValue(spec.getConnectorRef())).isEqualTo("connectorRef");
+    assertThat(ParameterFieldHelper.getParameterFieldValue(spec.getRoleArn())).isEqualTo("roleArn");
+    assertThat(ParameterFieldHelper.getParameterFieldValue(spec.getRegion())).isEqualTo("region");
   }
 }
