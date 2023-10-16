@@ -28,7 +28,11 @@ import com.codahale.metrics.health.HealthCheck;
 import com.codahale.metrics.health.jvm.ThreadDeadlockHealthCheck;
 import io.swagger.annotations.Api;
 import io.swagger.v3.oas.annotations.Operation;
+import java.util.ArrayList;
 import java.util.List;
+import javax.enterprise.context.RequestScoped;
+import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -48,10 +52,13 @@ import lombok.extern.slf4j.Slf4j;
 @PublicApi
 public class HealthResource {
   private final List<HealthService> healthServices;
+  private final Provider<MyObject> myObjectProvider;
   private final ThreadDeadlockHealthCheck threadDeadlockHealthCheck;
 
-  public HealthResource(List<HealthService> healthServices) {
-    this.healthServices = healthServices;
+  @Inject
+  public HealthResource(Provider<MyObject> myObjectProvider) {
+    this.healthServices = new ArrayList<>();
+    this.myObjectProvider = myObjectProvider;
     this.threadDeadlockHealthCheck = new ThreadDeadlockHealthCheck();
   }
 
@@ -59,7 +66,8 @@ public class HealthResource {
   @Timed
   @ExceptionMetered
   @Operation(hidden = true)
-  public ResponseDTO<String> get(@Context MyObject myObject) throws Exception {
+  public ResponseDTO<String> get() throws Exception {
+    System.out.println(myObjectProvider.get());
     if (getMaintenanceFlag()) {
       log.info("In maintenance mode. Throwing exception to prevent traffic.");
       throw NoResultFoundException.newBuilder()

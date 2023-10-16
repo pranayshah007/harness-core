@@ -12,4 +12,9 @@ import java.util.Date;
 public class MyObject {
   final Date d = new Date();
   public MyObject() {}
+
+  @Override
+  public String toString() {
+    return d.toString();
+  }
 }

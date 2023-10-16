@@ -203,7 +203,7 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
     environment.jersey().getResourceConfig().register(new AbstractBinder() {
       @Override
       protected void configure() {
-        bindFactory(MyObjectFactory.class).to(MyObject.class);
+        bindFactory(MyObjectFactory.class).to(MyObject.class).to(MyObjectFactory.class);
       }
     });
 
@@ -251,7 +251,7 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
       if (appConfig.getAuditServiceConfig().isEnableAuditService()) {
         healthServices.add(godInjector.get(AUDIT_SERVICE).getInstance(HealthService.class));
       }
-      environment.jersey().register(new HealthResource(healthServices));
+      environment.jersey().register(godInjector.get(PLATFORM_SERVICE).getInstance(HealthResource.class));
     }
   }
 
