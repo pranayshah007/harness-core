@@ -82,7 +82,6 @@ import io.harness.ng.core.dto.ErrorDetail;
 import io.harness.ng.opa.entities.connector.OpaConnectorService;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.perpetualtask.PerpetualTaskId;
-import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.ConnectorRepository;
 import io.harness.security.encryption.AccessType;
 import io.harness.telemetry.helpers.ConnectorInstrumentationHelper;
