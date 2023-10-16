@@ -13,6 +13,8 @@ import static io.harness.connector.ConnectivityStatus.SUCCESS;
 import static io.harness.connector.ConnectorCategory.SECRET_MANAGER;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.connector.ConnectorType.CE_AWS;
+import static io.harness.delegate.beans.connector.ConnectorType.CE_AZURE;
 import static io.harness.errorhandling.NGErrorHelper.DEFAULT_ERROR_SUMMARY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_IDENTIFIER_METRICS_KEY;
 import static io.harness.exception.HintException.HINT_INVALID_GIT_API_AUTHORIZATION;
@@ -55,6 +57,8 @@ import io.harness.connector.services.ConnectorHeartbeatService;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.stats.ConnectorStatistics;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
+import io.harness.delegate.beans.connector.ceazure.CEAzureConnectorDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.eventsframework.EventsFrameworkConstants;
@@ -78,6 +82,7 @@ import io.harness.ng.core.dto.ErrorDetail;
 import io.harness.ng.opa.entities.connector.OpaConnectorService;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.perpetualtask.PerpetualTaskId;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.ConnectorRepository;
 import io.harness.security.encryption.AccessType;
 import io.harness.telemetry.helpers.ConnectorInstrumentationHelper;
@@ -120,6 +125,8 @@ public class ConnectorServiceImpl implements ConnectorService {
   private final ConnectorInstrumentationHelper instrumentationHelper;
   private final OpaConnectorService opaConnectorService;
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
+
+  private static final String TARGET_ACCOUNT = "TARGET_ACCOUNT";
 
   @Inject
   public ConnectorServiceImpl(@Named(DEFAULT_CONNECTOR_SERVICE) ConnectorService defaultConnectorService,
@@ -401,6 +408,16 @@ public class ConnectorServiceImpl implements ConnectorService {
       EntityChangeDTO.Builder connectorUpdateDTOBuilder = EntityChangeDTO.newBuilder()
                                                               .setAccountIdentifier(StringValue.of(accountIdentifier))
                                                               .setIdentifier(StringValue.of(identifier));
+      if (connectorType == CE_AWS) {
+        CEAwsConnectorDTO awsConnectorDTO =
+            (CEAwsConnectorDTO) getConnectorConfigDTO(accountIdentifier, identifier).getConnectorConfig();
+        connectorUpdateDTOBuilder.putMetadata(TARGET_ACCOUNT, awsConnectorDTO.getAwsAccountId());
+      }
+      if (connectorType == CE_AZURE) {
+        CEAzureConnectorDTO azureConnectorDTO =
+            (CEAzureConnectorDTO) getConnectorConfigDTO(accountIdentifier, identifier).getConnectorConfig();
+        connectorUpdateDTOBuilder.putMetadata(TARGET_ACCOUNT, azureConnectorDTO.getSubscriptionId());
+      }
       if (isNotBlank(orgIdentifier)) {
         connectorUpdateDTOBuilder.setOrgIdentifier(StringValue.of(orgIdentifier));
       }
@@ -418,6 +435,21 @@ public class ConnectorServiceImpl implements ConnectorService {
     } catch (Exception ex) {
       log.info("Exception while publishing the event of connector update for {}",
           String.format(CONNECTOR_STRING, identifier, accountIdentifier, orgIdentifier, projectIdentifier));
+    }
+  }
+
+  private ConnectorInfoDTO getConnectorConfigDTO(String accountIdentifier, String connectorIdentifierRef) {
+    try {
+      Optional<ConnectorResponseDTO> connectorResponseDTO = get(connectorIdentifierRef, accountIdentifier, null, null);
+
+      if (connectorResponseDTO.isEmpty()) {
+        throw new InvalidRequestException(format("Connector not found for identifier : [%s]", connectorIdentifierRef));
+      }
+
+      return connectorResponseDTO.get().getConnector();
+    } catch (Exception e) {
+      throw new InvalidRequestException(
+          format("Error while getting connector information : [%s]", connectorIdentifierRef));
     }
   }
 
