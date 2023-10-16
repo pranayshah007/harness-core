@@ -890,8 +890,8 @@ public class ServiceResourceV2 {
           hidden = true) @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @Parameter(description = "Specifies whether to load the entity from cache", hidden = true) @HeaderParam(
           "Load-From-Cache") @DefaultValue("false") String loadFromCache) {
-    Optional<ServiceEntity> serviceEntity =
-        serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, false);
+    Optional<ServiceEntity> serviceEntity = serviceEntityService.get(accountId, orgIdentifier, projectIdentifier,
+        serviceIdentifier, false, GitXUtils.parseLoadFromCacheHeaderParam(loadFromCache), false);
 
     if (serviceEntity.isPresent()) {
       if (EmptyPredicate.isEmpty(serviceEntity.get().getYaml())) {
