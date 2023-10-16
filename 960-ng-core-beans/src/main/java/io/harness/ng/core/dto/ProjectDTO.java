@@ -19,9 +19,12 @@ import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.NGEntityName;
 import io.harness.yaml.core.VariableExpression;
 
+import software.wings.jersey.JsonViews;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonView;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -52,7 +55,7 @@ public class ProjectDTO {
   @Schema(description = PROJECT_PARAM_MESSAGE)
   @EntityIdentifier(allowBlank = false)
   String identifier;
-  @Schema(hidden = true, description = "UniqueId of Project") String uniqueId;
+  @JsonView(JsonViews.Internal.class) String uniqueId;
   @ApiModelProperty(required = true) @Schema(description = "Project Name for the entity") @NGEntityName String name;
   @Schema(description = "Color") @VariableExpression(skipVariableExpression = true) String color;
 
