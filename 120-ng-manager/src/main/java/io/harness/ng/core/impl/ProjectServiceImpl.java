@@ -190,8 +190,8 @@ public class ProjectServiceImpl implements ProjectService {
       validate(project);
       Project createdProject = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         Project savedProject = projectRepository.save(project);
-        outboxService.save(new ProjectCreateEvent(
-            project.getAccountIdentifier(), ProjectMapper.writeDTO(savedProject), savedProject.getUniqueId()));
+        outboxService.save(
+            new ProjectCreateEvent(project.getAccountIdentifier(), ProjectMapper.writeDTO(savedProject)));
         return savedProject;
       }));
       setupProject(Scope.of(accountIdentifier, orgIdentifier, projectDTO.getIdentifier()));

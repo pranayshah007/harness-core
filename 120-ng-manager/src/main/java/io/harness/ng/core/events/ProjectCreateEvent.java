@@ -30,12 +30,10 @@ import lombok.NoArgsConstructor;
 public class ProjectCreateEvent implements Event {
   private ProjectDTO project;
   private String accountIdentifier;
-  private String uniqueId;
 
-  public ProjectCreateEvent(String accountIdentifier, ProjectDTO project, String uniqueId) {
+  public ProjectCreateEvent(String accountIdentifier, ProjectDTO project) {
     this.project = project;
     this.accountIdentifier = accountIdentifier;
-    this.uniqueId = uniqueId;
   }
 
   @JsonIgnore
@@ -53,7 +51,7 @@ public class ProjectCreateEvent implements Event {
         .identifier(project.getIdentifier())
         .type(PROJECT)
         .labels(labels)
-        .uniqueId(uniqueId)
+        .uniqueId(project.getUniqueId())
         .build();
   }
 

@@ -89,8 +89,7 @@ public class OrganizationEventHandlerTest extends CategoryTest {
     String accountIdentifier = randomAlphabetic(10);
     String identifier = randomAlphabetic(10);
     OrganizationDTO organizationDTO = getOrganizationDTO(identifier);
-    OrganizationCreateEvent organizationCreateEvent =
-        new OrganizationCreateEvent(accountIdentifier, organizationDTO, organizationDTO.getUniqueId());
+    OrganizationCreateEvent organizationCreateEvent = new OrganizationCreateEvent(accountIdentifier, organizationDTO);
     String eventData = objectMapper.writeValueAsString(organizationCreateEvent);
     GlobalContext globalContext = new GlobalContext();
     Principal principal =

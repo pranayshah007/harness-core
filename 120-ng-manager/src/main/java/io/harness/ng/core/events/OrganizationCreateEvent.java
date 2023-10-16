@@ -30,12 +30,10 @@ import lombok.NoArgsConstructor;
 public class OrganizationCreateEvent implements Event {
   private OrganizationDTO organization;
   private String accountIdentifier;
-  private String uniqueId;
 
-  public OrganizationCreateEvent(String accountIdentifier, OrganizationDTO organization, String uniqueId) {
+  public OrganizationCreateEvent(String accountIdentifier, OrganizationDTO organization) {
     this.organization = organization;
     this.accountIdentifier = accountIdentifier;
-    this.uniqueId = uniqueId;
   }
 
   @JsonIgnore
@@ -53,7 +51,7 @@ public class OrganizationCreateEvent implements Event {
         .identifier(organization.getIdentifier())
         .type(ORGANIZATION)
         .labels(labels)
-        .uniqueId(uniqueId)
+        .uniqueId(organization.getUniqueId())
         .build();
   }
 
