@@ -15,7 +15,6 @@ import static io.harness.eraro.ErrorCode.VAULT_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.helpers.GlobalSecretManagerUtils.getValueByJsonPath;
-import static io.harness.helpers.GlobalSecretManagerUtils.parse;
 import static io.harness.threading.Morpheus.sleep;
 
 import static software.wings.helpers.ext.vault.VaultRestClientFactory.getFullPath;
@@ -332,7 +331,7 @@ public class AwsSecretsManagerEncryptor implements VaultEncryptor {
     String secretValue = result.getSecretString();
 
     log.info("Done decrypting AWS secret {} in {}ms", secretName, System.currentTimeMillis() - startTime);
-    return getValueByJsonPath(parse(secretValue), refKeyName).toCharArray();
+    return getValueByJsonPath(secretValue, refKeyName).toCharArray();
   }
 
   @VisibleForTesting
