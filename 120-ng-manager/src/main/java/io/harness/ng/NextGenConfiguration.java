@@ -296,6 +296,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("proxy") private CEProxyConfig ceProxyConfig;
   @JsonProperty("awsServiceEndpointUrls") private CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig;
   private boolean useQueueServiceForWebhookTriggers;
+  @JsonProperty("useQueueServiceForGitXWebhook") private boolean useQueueServiceForGitXWebhook;
   @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;
   @JsonProperty("serviceGitXThreadConfig") @ConfigSecret private ServiceGitXThreadConfiguration serviceGitXThreadConfig;
 

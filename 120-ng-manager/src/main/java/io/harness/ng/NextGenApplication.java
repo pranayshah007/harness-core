@@ -916,6 +916,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     if (appConfig.isUseQueueServiceForWebhookTriggers()) {
       environment.lifecycle().manage(injector.getInstance(WebhookBranchHookEventQueueProcessor.class));
       environment.lifecycle().manage(injector.getInstance(WebhookPushEventQueueProcessor.class));
+    }
+    if (appConfig.isUseQueueServiceForGitXWebhook()) {
       environment.lifecycle().manage(injector.getInstance(GitXWebhookQueueProcessor.class));
     }
     createConsumerThreadsToListenToEvents(environment, injector);
