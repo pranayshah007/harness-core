@@ -429,8 +429,9 @@ public class ExecutionHelper {
       in pipelineJsonNode will be 12h.allowedValues(12h, 1d) for validation during execution. However, this value will
       give an error in schema validation. That's why we need a value that doesn't have this validator appended.
        */
-      pipelineJsonNodeForSchemaValidations = MergeHelper.mergeRuntimeInputValuesIntoOriginalJsonNode(
-          YamlUtils.readAsJsonNode(pipelineEntity.getYaml()), mergedRuntimeInputJsonNode, false);
+      pipelineJsonNodeForSchemaValidations =
+          MergeHelper.mergeRuntimeInputValuesIntoOriginalJsonNode(YamlUtils.readAsJsonNode(pipelineEntity.getYaml()),
+              Collections.singletonList(mergedRuntimeInputJsonNode), false);
     }
     pipelineJsonNodeForSchemaValidations = InputSetSanitizer.trimValues(pipelineJsonNodeForSchemaValidations);
     return pipelineJsonNodeForSchemaValidations;
