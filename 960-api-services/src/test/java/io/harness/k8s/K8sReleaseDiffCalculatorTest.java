@@ -10,8 +10,8 @@ package io.harness.k8s;
 import static io.harness.k8s.K8sReleaseDiffCalculator.DIFF_FORMAT;
 import static io.harness.k8s.K8sReleaseDiffCalculator.DIFF_KEY_ENV_ID;
 import static io.harness.k8s.K8sReleaseDiffCalculator.DIFF_KEY_INFRA_ID;
-import static io.harness.k8s.K8sReleaseDiffCalculator.DIFF_KEY_INFRA_KEY;
 import static io.harness.k8s.K8sReleaseDiffCalculator.DIFF_KEY_SVC_ID;
+import static io.harness.k8s.K8sReleaseDiffCalculator.ORIGINAL_OWNER_FORMAT;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_NUMBER_LABEL_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_ANNOTATION_ENV;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_ANNOTATION_INFRA_ID;
@@ -100,7 +100,9 @@ public class K8sReleaseDiffCalculatorTest extends CategoryTest {
     ReleaseMetadata sampleMetadata2 =
         ReleaseMetadata.builder().serviceId("svcId2").envId("envId").infraId("infraId").infraKey("infraKey").build();
 
-    String expectedMessage = String.format(DIFF_FORMAT, DIFF_KEY_SVC_ID, "svcId1", "svcId2");
+    String expectedMessage = String.format(DIFF_FORMAT, DIFF_KEY_SVC_ID, "svcId1", "svcId2")
+        + String.format(ORIGINAL_OWNER_FORMAT, DIFF_KEY_SVC_ID, sampleMetadata1.getServiceId(), DIFF_KEY_ENV_ID,
+            sampleMetadata1.getEnvId(), DIFF_KEY_INFRA_ID, sampleMetadata1.getInfraId());
     assertThat(K8sReleaseDiffCalculator.calculateDiffForLogging(sampleMetadata2, sampleMetadata1))
         .isEqualTo(expectedMessage);
   }
@@ -117,7 +119,8 @@ public class K8sReleaseDiffCalculatorTest extends CategoryTest {
     String expectedMessage = String.format(DIFF_FORMAT, DIFF_KEY_SVC_ID, "svcId1", "svcId2")
         + String.format(DIFF_FORMAT, DIFF_KEY_ENV_ID, "envId1", "envId2")
         + String.format(DIFF_FORMAT, DIFF_KEY_INFRA_ID, "infraId1", "infraId2")
-        + String.format(DIFF_FORMAT, DIFF_KEY_INFRA_KEY, "infraKey1", "infraKey2");
+        + String.format(ORIGINAL_OWNER_FORMAT, DIFF_KEY_SVC_ID, sampleMetadata1.getServiceId(), DIFF_KEY_ENV_ID,
+            sampleMetadata1.getEnvId(), DIFF_KEY_INFRA_ID, sampleMetadata1.getInfraId());
     assertThat(K8sReleaseDiffCalculator.calculateDiffForLogging(sampleMetadata2, sampleMetadata1))
         .isEqualTo(expectedMessage);
   }
@@ -202,6 +205,18 @@ public class K8sReleaseDiffCalculatorTest extends CategoryTest {
     assertThat(previousReleaseMetadata.getEnvId()).isEmpty();
     assertThat(previousReleaseMetadata.getInfraId()).isEmpty();
     assertThat(previousReleaseMetadata.getInfraKey()).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testReleaseMetadataEquality() {
+    ReleaseMetadata releaseMetadata1 =
+        ReleaseMetadata.builder().serviceId("svcId").envId("envId").infraId("infraId").infraKey("key1").build();
+    ReleaseMetadata releaseMetadata2 =
+        ReleaseMetadata.builder().serviceId("svcId").envId("envId").infraId("infraId").infraKey("key2").build();
+
+    assertThat(releaseMetadata1).isEqualTo(releaseMetadata2);
   }
 
   private V1Secret createSecret(String releaseNumber, String status) {
