@@ -6,7 +6,11 @@
  */
 
 package io.harness.pms.yaml;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public enum YamlSchemaFieldConstants {
   INTERNAL_TYPE("internalType"),
   TYPE("type"),
@@ -16,6 +20,8 @@ public enum YamlSchemaFieldConstants {
   PIPELINE("pipeline"),
   TEMPLATE("template"),
   INPUTS("inputs"),
+  VERSION("version"),
+  SPEC("spec"),
 
   ;
 

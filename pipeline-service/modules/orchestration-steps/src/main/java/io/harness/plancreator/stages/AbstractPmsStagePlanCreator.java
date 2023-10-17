@@ -6,11 +6,13 @@
  */
 
 package io.harness.plancreator.stages;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -42,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.SneakyThrows;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @TargetModule(HarnessModule._882_PMS_SDK_CORE)
 public abstract class AbstractPmsStagePlanCreator<T extends PmsAbstractStageNode> extends AbstractStagePlanCreator<T> {

@@ -7,36 +7,29 @@
 
 package io.harness.steps.http;
 
-import static io.harness.expression.EngineExpressionEvaluator.PIE_EXECUTION_JSON_SUPPORT;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
-import static io.harness.rule.OwnerRule.ROHITKARELIA;
-import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.steps.StepUtils.PIE_SIMPLIFY_LOG_BASE_KEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
-import io.harness.beans.HttpCertificateNG;
 import io.harness.category.element.UnitTests;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.http.HttpTaskNG;
 import io.harness.delegate.task.http.HttpStepResponse;
 import io.harness.delegate.task.http.HttpTaskParametersNg;
-import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
@@ -48,9 +41,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
-import io.harness.pms.utils.NGPipelineSettingsConstant;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.StepHelper;
@@ -68,19 +59,14 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import org.joor.Reflect;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -93,7 +79,6 @@ public class HttpStepTest extends CategoryTest {
   @Inject private StepElementParameters stepElementParameters;
   @Inject private Ambiance ambiance;
 
-  @Mock EngineExpressionService engineExpressionService;
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   @InjectMocks private HttpStepParameters httpStepParameters;
 
@@ -102,8 +87,8 @@ public class HttpStepTest extends CategoryTest {
   @Mock private ILogStreamingStepClient iLogStreamingStepClient;
   @Mock private NGLogCallback ngLogCallback;
   @InjectMocks HttpStep httpStep;
+  @Mock HttpStepUtils httpStepUtils;
   @Mock private StepHelper stepHelper;
-  @Captor private ArgumentCaptor<Map<String, String>> argCaptor;
   private MockedStatic<TaskRequestsUtils> aStatic;
 
   private String TEST_URL = "https://www.google.com";
@@ -113,73 +98,18 @@ public class HttpStepTest extends CategoryTest {
     aStatic = Mockito.mockStatic(TaskRequestsUtils.class);
     LogStreamingStepClientImpl logClient = mock(LogStreamingStepClientImpl.class);
     Mockito.when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(logClient);
-    Reflect.on(httpStep).set("engineExpressionService", engineExpressionService);
-
     ambiance =
         Ambiance.newBuilder()
             .putSetupAbstractions("accountId", "accountId")
             .setMetadata(
                 ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
             .build();
-
     Mockito.when(pmsFeatureFlagHelper.isEnabled(anyString(), any(FeatureName.class))).thenReturn(false);
   }
 
   @After
   public void cleanup() {
     aStatic.close();
-  }
-
-  @Test
-  @Owner(developers = NAMAN)
-  @Category(UnitTests.class)
-  public void testOutputVariablesEvaluation() {
-    String body = "{\n"
-        + "    \"status\": \"SUCCESS\",\n"
-        + "    \"metaData\": \"metadataValue\",\n"
-        + "    \"correlationId\": \"333333344444444\"\n"
-        + "}";
-    HttpStepResponse response1 = HttpStepResponse.builder().httpResponseBody(body).build();
-    ParameterField<Object> var1 =
-        ParameterField.createExpressionField(true, "<+json.object(httpResponseBody).metaData>", null, true);
-    ParameterField<Object> var2 =
-        ParameterField.createExpressionField(true, "<+json.object(httpResponseBody).notPresent>", null, true);
-    ParameterField<Object> var3 = ParameterField.createExpressionField(true, "<+json.not.a.valid.expr>", null, true);
-    ParameterField<Object> var4 = ParameterField.createValueField("directValue");
-    Map<String, Object> variables = new LinkedHashMap<>();
-    variables.put("name1", var1);
-    variables.put("name4", var4);
-
-    Ambiance ambianceBuilder =
-        Ambiance.newBuilder()
-            .setMetadata(
-                ExecutionMetadata.newBuilder()
-                    .putSettingToValueMap(NGPipelineSettingsConstant.ENABLE_EXPRESSION_ENGINE_V2.getName(), "true")
-                    .build())
-            .build();
-
-    doReturn("metadataValue")
-        .when(engineExpressionService)
-        .evaluateExpression(any(), eq("<+json.object(httpResponseBody).metaData>"), any(), any());
-
-    Map<String, String> evaluatedVariables = httpStep.evaluateOutputVariables(variables, response1, ambianceBuilder);
-    verify(engineExpressionService).evaluateExpression(eq(ambianceBuilder), anyString(), any(), argCaptor.capture());
-    Map<String, String> output = argCaptor.getValue();
-    assertThat(output).isNotEmpty();
-    assertThat(output.get("ENABLED_FEATURE_FLAGS")).isEqualTo(PIE_EXECUTION_JSON_SUPPORT);
-    assertThat(evaluatedVariables).isNotEmpty();
-    assertThat(evaluatedVariables.get("name1")).isEqualTo("metadataValue");
-    assertThat(evaluatedVariables.get("name4")).isEqualTo("directValue");
-    assertThat(evaluatedVariables.get("name4")).isEqualTo("directValue");
-
-    variables.put("name2", var2);
-    variables.put("name3", var3);
-
-    HttpStepResponse response2 = HttpStepResponse.builder().httpResponseBody(body).build();
-    evaluatedVariables = httpStep.evaluateOutputVariables(variables, response2, ambiance);
-    assertThat(evaluatedVariables).isNotEmpty();
-    assertThat(evaluatedVariables.get("name2")).isNull();
-    assertThat(evaluatedVariables.get("name3")).isNull();
   }
 
   @Test
@@ -195,27 +125,27 @@ public class HttpStepTest extends CategoryTest {
     HttpStepParameters stepParameters = HttpStepParameters.infoBuilder().build();
 
     // no assertion
-    boolean assertion = HttpStep.validateAssertions(response, stepParameters);
+    boolean assertion = HttpStepUtils.validateAssertions(response, stepParameters.getAssertion());
     assertThat(assertion).isTrue();
 
     // not a valid assertion
     stepParameters.setAssertion(ParameterField.createValueField("<+httpResponseCode> 200"));
-    assertThatThrownBy(() -> HttpStep.validateAssertions(response, stepParameters))
+    assertThatThrownBy(() -> HttpStepUtils.validateAssertions(response, stepParameters.getAssertion()))
         .hasMessage("Assertion provided is not a valid expression");
 
     // status code assertion
     stepParameters.setAssertion(ParameterField.createValueField("<+httpResponseCode> == 200"));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = HttpStepUtils.validateAssertions(response, stepParameters.getAssertion());
     assertThat(assertion).isTrue();
 
     stepParameters.setAssertion(ParameterField.createValueField("<+httpResponseCode> > 200"));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = HttpStepUtils.validateAssertions(response, stepParameters.getAssertion());
     assertThat(assertion).isFalse();
 
     // json.select() assertions
     stepParameters.setAssertion(ParameterField.createValueField(
         "<+json.select(\"support.url\", httpResponseBody)> == \"https://reqres.in/#support-heading\""));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = HttpStepUtils.validateAssertions(response, stepParameters.getAssertion());
     assertThat(assertion).isTrue();
 
     //    stepParameters.setAssertion(ParameterField.createValueField(
@@ -224,64 +154,64 @@ public class HttpStepTest extends CategoryTest {
     //    assertThat(assertion).isTrue();
 
     stepParameters.setAssertion(ParameterField.createValueField("\"<+pipeline.name>\" == \"http\""));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = HttpStepUtils.validateAssertions(response, stepParameters.getAssertion());
     assertThat(assertion).isFalse();
 
     // json.object() assertions
     stepParameters.setAssertion(ParameterField.createValueField(
         "<+json.object(httpResponseBody).support.url> == \"https://reqres.in/#support-heading\""));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = HttpStepUtils.validateAssertions(response, stepParameters.getAssertion());
     assertThat(assertion).isTrue();
 
     stepParameters.setAssertion(ParameterField.createValueField("<+json.object(httpResponseBody).data[0].id> == 1"));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = HttpStepUtils.validateAssertions(response, stepParameters.getAssertion());
     assertThat(assertion).isTrue();
 
     stepParameters.setAssertion(ParameterField.createValueField("<+json.object(httpResponseBody).page> == 1"));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = HttpStepUtils.validateAssertions(response, stepParameters.getAssertion());
     assertThat(assertion).isTrue();
 
     // json.list() assertions
     stepParameters.setAssertion(
         ParameterField.createValueField("<+json.list(\"data\", httpResponseBody).get(1).name> == \"fuchsia rose\""));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = HttpStepUtils.validateAssertions(response, stepParameters.getAssertion());
     assertThat(assertion).isTrue();
 
     stepParameters.setAssertion(
         ParameterField.createValueField("<+json.list(\"data\", httpResponseBody).get(5).id> == 5"));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = HttpStepUtils.validateAssertions(response, stepParameters.getAssertion());
     assertThat(assertion).isFalse();
 
     // null case
     stepParameters.setAssertion(ParameterField.createValueField(null));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = HttpStepUtils.validateAssertions(response, stepParameters.getAssertion());
     assertThat(assertion).isTrue();
 
     // empty string case
     stepParameters.setAssertion(ParameterField.createValueField("  "));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = HttpStepUtils.validateAssertions(response, stepParameters.getAssertion());
     assertThat(assertion).isTrue();
 
     // non expression true case
     stepParameters.setAssertion(ParameterField.createValueField("true"));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = HttpStepUtils.validateAssertions(response, stepParameters.getAssertion());
     assertThat(assertion).isTrue();
 
     // non expression true case
     stepParameters.setAssertion(ParameterField.createValueField("1 == 5"));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = HttpStepUtils.validateAssertions(response, stepParameters.getAssertion());
     assertThat(assertion).isFalse();
 
     // boolean expression field
     stepParameters.setAssertion(
         ParameterField.createExpressionField(true, "<+json.object(httpResponseBody).page> == 1", null, false));
-    assertion = HttpStep.validateAssertions(response, stepParameters);
+    assertion = HttpStepUtils.validateAssertions(response, stepParameters.getAssertion());
     assertThat(assertion).isTrue();
 
     // non boolean expression field
     stepParameters.setAssertion(
         ParameterField.createExpressionField(true, "<+json.object(httpResponseBody).page>", null, false));
-    assertThatThrownBy(() -> HttpStep.validateAssertions(response, stepParameters))
+    assertThatThrownBy(() -> HttpStepUtils.validateAssertions(response, stepParameters.getAssertion()))
         .hasMessage("Assertion provided is not a valid expression");
   }
 
@@ -335,6 +265,8 @@ public class HttpStepTest extends CategoryTest {
             .setMetadata(
                 ExecutionMetadata.newBuilder().putFeatureFlagToValueMap(PIE_SIMPLIFY_LOG_BASE_KEY, false).build())
             .build();
+    when(httpStepUtils.getNGLogCallback(logStreamingStepClientFactory, ambiance, HttpTaskNG.COMMAND_UNIT, false))
+        .thenReturn(ngLogCallback);
 
     when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(iLogStreamingStepClient);
 
@@ -345,6 +277,8 @@ public class HttpStepTest extends CategoryTest {
                                  delegateSelectors != null ? delegateSelectors.getValue() : null)))
                              .assertion(ParameterField.createValueField("<+httpResponseCode> == 200"))
                              .build();
+    when(httpStepUtils.fetchFinalValue(httpStepParameters.getMethod())).thenReturn("GET");
+    when(httpStepUtils.fetchFinalValue(httpStepParameters.getUrl())).thenReturn(TEST_URL);
     stepElementParameters = StepElementParameters.builder().spec(httpStepParameters).build();
 
     // assertion true
@@ -419,42 +353,6 @@ public class HttpStepTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = ROHITKARELIA)
-  @Category(UnitTests.class)
-  public void testCreateCertificateReturnsEmptyIfCertAndCertKeyIsEmpty() {
-    HttpStepParameters httpStepParameters = HttpStepParameters.infoBuilder()
-                                                .certificate(ParameterField.createValueField(""))
-                                                .certificateKey(ParameterField.createValueField(""))
-                                                .build();
-    Optional<HttpCertificateNG> certificate = httpStep.createCertificate(httpStepParameters);
-    assertThat(certificate).isEmpty();
-  }
-
-  @Test
-  @Owner(developers = ROHITKARELIA)
-  @Category(UnitTests.class)
-  public void testCreateCertificateCertKeyCanBeEmpty() {
-    HttpStepParameters httpStepParameters = HttpStepParameters.infoBuilder()
-                                                .certificate(ParameterField.createValueField("value"))
-                                                .certificateKey(ParameterField.createValueField(""))
-                                                .build();
-    Optional<HttpCertificateNG> certificate = httpStep.createCertificate(httpStepParameters);
-    assertThat(certificate).isNotEmpty();
-  }
-
-  @Test
-  @Owner(developers = ROHITKARELIA)
-  @Category(UnitTests.class)
-  public void testCreateCertificateCertCannotBeEmpty() {
-    assertThatThrownBy(()
-                           -> httpStep.createCertificate(HttpStepParameters.infoBuilder()
-                                                             .certificate(ParameterField.createValueField(""))
-                                                             .certificateKey(ParameterField.createValueField("value"))
-                                                             .build()))
-        .isInstanceOf(InvalidRequestException.class);
-  }
-
-  @Test
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
   public void testObtainTaskWithInputVariables() {
@@ -493,33 +391,5 @@ public class HttpStepTest extends CategoryTest {
                                 .build();
 
     assertThat(httpStep.obtainTask(ambiance, stepElementParameters, null)).isEqualTo(TaskRequest.newBuilder().build());
-  }
-
-  @Test
-  @Owner(developers = TMACARI)
-  @Category(UnitTests.class)
-  public void testEncodeURL() {
-    NGLogCallback logCallback = mock(NGLogCallback.class);
-    String url1 = "https://www.example.com/path%20with%20encoded%20spaces";
-    assertThat(httpStep.encodeURL(url1, logCallback)).isEqualTo(url1);
-
-    String url2 =
-        "https://www.example.com/Apply MS patches AMA Prod servers (Monthly-Sun)?api-version=2017-05-15-preview";
-    String expected2 =
-        "https://www.example.com/Apply%20MS%20patches%20AMA%20Prod%20servers%20(Monthly-Sun)?api-version=2017-05-15-preview";
-    assertThat(httpStep.encodeURL(url2, logCallback)).isEqualTo(expected2);
-    verify(logCallback)
-        .saveExecutionLog(eq(
-            "Encoded URL: https://www.example.com/Apply%20MS%20patches%20AMA%20Prod%20servers%20(Monthly-Sun)?api-version=2017-05-15-preview"));
-
-    String url3 = "https://www.example.com/@user?param=value";
-    assertThat(httpStep.encodeURL(url3, logCallback)).isEqualTo(url3);
-    verify(logCallback).saveExecutionLog(eq("Encoded URL: https://www.example.com/@user?param=value"));
-
-    String url4 = "https://www.example.com/already%20encoded?param=value";
-    assertThat(httpStep.encodeURL(url4, logCallback)).isEqualTo(url4);
-
-    String url5 = "";
-    assertThat(httpStep.encodeURL(url5, logCallback)).isEqualTo(url5);
   }
 }

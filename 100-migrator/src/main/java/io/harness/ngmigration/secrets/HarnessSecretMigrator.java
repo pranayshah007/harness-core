@@ -6,11 +6,13 @@
  */
 
 package io.harness.ngmigration.secrets;
-
 import static io.harness.secretmanagerclient.SecretType.SecretText;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
@@ -29,6 +31,7 @@ import com.google.inject.Inject;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class HarnessSecretMigrator implements io.harness.ngmigration.secrets.SecretMigrator {

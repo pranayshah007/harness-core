@@ -64,7 +64,7 @@ public class GitResourceServiceHelperTest extends CategoryTest {
         spy(new GitResourceServiceHelper(connectorService, gitConfigAuthenticationInfoHelper, cdStepHelper));
     doReturn(GitConfigDTO.builder().url("url/reponame").build())
         .when(cdStepHelper)
-        .getScmConnector(any(), any(), any());
+        .getScmConnector(any(), any(), any(), any());
   }
 
   @Test

@@ -211,6 +211,8 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
             .useOptimizedTfPlan(true)
             .isTerraformCloudCli(isTerraformCloudCli)
             .skipTerraformRefresh(skipRefreshCommand)
+            .providerCredentialDelegateInfo(
+                helper.getProviderCredentialDelegateInfo(spec.getProviderCredential(), ambiance))
             .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
             .build();
 
@@ -244,6 +246,14 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
     builder.terraformCommandFlags(helper.getTerraformCliFlags(stepParameters.getConfiguration().getCliOptions()));
 
     TerraformInheritOutput inheritOutput = helper.getSavedInheritOutput(provisionerIdentifier, APPLY.name(), ambiance);
+
+    if (inheritOutput.getProviderCredentialConfig() != null) {
+      TerraformProviderCredential terraformProviderCredential =
+          helper.toTerraformProviderCredential(inheritOutput.getProviderCredentialConfig());
+      builder.providerCredentialDelegateInfo(
+          helper.getProviderCredentialDelegateInfo(terraformProviderCredential, ambiance));
+    }
+
     TerraformTaskNGParameters terraformTaskNGParameters =
         builder.workspace(inheritOutput.getWorkspace())
             .configFile(helper.getGitFetchFilesConfig(
@@ -272,7 +282,6 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
                 helper.tfPlanEncryptionOnManager(accountId, inheritOutput.getEncryptionConfig()))
             .useOptimizedTfPlan(true)
             .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
-
             .build();
 
     TaskData taskData =

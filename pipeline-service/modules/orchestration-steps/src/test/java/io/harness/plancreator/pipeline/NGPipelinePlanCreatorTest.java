@@ -17,8 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
+import io.harness.pms.contracts.plan.PlanExecutionContext;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.plan.PlanNode;
@@ -91,10 +91,10 @@ public class NGPipelinePlanCreatorTest extends CategoryTest {
     String stagesUuid = Objects.requireNonNull(stagesField).getNode().getUuid();
     List<String> childrenNodeIds = Collections.singletonList(stagesUuid);
 
-    ExecutionMetadata executionMetadata =
-        ExecutionMetadata.newBuilder().setRunSequence(860).setExecutionUuid("executionUuid").build();
+    PlanExecutionContext executionMetadata =
+        PlanExecutionContext.newBuilder().setRunSequence(860).setExecutionUuid("executionUuid").build();
     context.setGlobalContext(Collections.singletonMap(
-        "metadata", PlanCreationContextValue.newBuilder().setMetadata(executionMetadata).build()));
+        "metadata", PlanCreationContextValue.newBuilder().setExecutionContext(executionMetadata).build()));
 
     NGPipelinePlanCreator ngPipelinePlanCreator = new NGPipelinePlanCreator();
     PlanNode planForParentNode =
@@ -128,10 +128,10 @@ public class NGPipelinePlanCreatorTest extends CategoryTest {
     String stagesUuid = Objects.requireNonNull(stagesField).getNode().getUuid();
     List<String> childrenNodeIds = Collections.singletonList(stagesUuid);
 
-    ExecutionMetadata executionMetadata =
-        ExecutionMetadata.newBuilder().setRunSequence(860).setExecutionUuid("executionUuid").build();
+    PlanExecutionContext executionMetadata =
+        PlanExecutionContext.newBuilder().setRunSequence(860).setExecutionUuid("executionUuid").build();
     context.setGlobalContext(Collections.singletonMap(
-        "metadata", PlanCreationContextValue.newBuilder().setMetadata(executionMetadata).build()));
+        "metadata", PlanCreationContextValue.newBuilder().setExecutionContext(executionMetadata).build()));
 
     NGPipelinePlanCreator ngPipelinePlanCreator = new NGPipelinePlanCreator();
     pipelineInfoConfig.setTimeout(ParameterField.ofNull());
@@ -168,10 +168,10 @@ public class NGPipelinePlanCreatorTest extends CategoryTest {
     String stagesUuid = Objects.requireNonNull(stagesField).getNode().getUuid();
     List<String> childrenNodeIds = Collections.singletonList(stagesUuid);
 
-    ExecutionMetadata executionMetadata =
-        ExecutionMetadata.newBuilder().setRunSequence(860).setExecutionUuid("executionUuid").build();
+    PlanExecutionContext executionMetadata =
+        PlanExecutionContext.newBuilder().setRunSequence(860).setExecutionUuid("executionUuid").build();
     context.setGlobalContext(Collections.singletonMap(
-        "metadata", PlanCreationContextValue.newBuilder().setMetadata(executionMetadata).build()));
+        "metadata", PlanCreationContextValue.newBuilder().setExecutionContext(executionMetadata).build()));
 
     NGPipelinePlanCreator ngPipelinePlanCreator = new NGPipelinePlanCreator();
     pipelineInfoConfig.setTimeout(ParameterField.createValueField(Timeout.builder().timeoutString("10s").build()));
@@ -209,10 +209,10 @@ public class NGPipelinePlanCreatorTest extends CategoryTest {
     String stagesUuid = Objects.requireNonNull(stagesField).getNode().getUuid();
     List<String> childrenNodeIds = Collections.singletonList(stagesUuid);
 
-    ExecutionMetadata executionMetadata =
-        ExecutionMetadata.newBuilder().setRunSequence(860).setExecutionUuid("executionUuid").build();
+    PlanExecutionContext executionMetadata =
+        PlanExecutionContext.newBuilder().setRunSequence(860).setExecutionUuid("executionUuid").build();
     context.setGlobalContext(Collections.singletonMap(
-        "metadata", PlanCreationContextValue.newBuilder().setMetadata(executionMetadata).build()));
+        "metadata", PlanCreationContextValue.newBuilder().setExecutionContext(executionMetadata).build()));
 
     NGPipelinePlanCreator ngPipelinePlanCreator = new NGPipelinePlanCreator();
     pipelineInfoConfig.setTimeout(ParameterField.createValueField(Timeout.fromString("5m")));

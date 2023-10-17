@@ -48,7 +48,7 @@ public class PagerDutySenderDelegateTask extends AbstractDelegateRunnableTask {
     try {
       NotificationProcessingResponse processingResponse = pagerDutySender.send(pagerDutyTaskParams.getPagerDutyKeys(),
           pagerDutyTaskParams.getPayload(), pagerDutyTaskParams.getLinks(), pagerDutyTaskParams.getNotificationId(),
-          pagerDutyTaskParams.getAccountId());
+          pagerDutyTaskParams.getPagerDutyKeysAllowlist());
       return NotificationTaskResponse.builder().processingResponse(processingResponse).build();
     } catch (Exception e) {
       return NotificationTaskResponse.builder()

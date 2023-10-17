@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.service.workflow;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.exception.InvalidRequestException;
 
@@ -21,6 +23,7 @@ import software.wings.beans.Workflow;
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 public class WorkflowHandlerFactory {
   @Inject RollingWorkflowHandlerImpl rollingWorkflowHandler;

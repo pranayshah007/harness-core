@@ -13,11 +13,13 @@ import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 import static io.harness.validation.Validator.notEmptyCheck;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 import io.harness.EntityType;
@@ -110,6 +112,9 @@ import io.harness.delegate.task.terraform.TerraformTaskNGParameters.TerraformTas
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.delegate.task.terraform.TerraformVarFileInfo;
 import io.harness.delegate.task.terraform.cleanup.TerraformSecretCleanupTaskParameters;
+import io.harness.delegate.task.terraform.provider.TerraformAwsProviderCredentialDelegateInfo;
+import io.harness.delegate.task.terraform.provider.TerraformProviderCredentialDelegateInfo;
+import io.harness.delegate.task.terraform.provider.TerraformProviderType;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -192,6 +197,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -335,8 +341,8 @@ public class TerraformStepHelper {
     } else {
       paths.addAll(getParameterFieldValue(gitStoreConfig.getPaths()));
     }
-    ScmConnector scmConnector = cdStepHelper.getScmConnector(
-        (ScmConnector) connectorDTO.getConnectorConfig(), basicNGAccessObject.getAccountIdentifier(), gitConfigDTO);
+    ScmConnector scmConnector = cdStepHelper.getScmConnector((ScmConnector) connectorDTO.getConnectorConfig(),
+        basicNGAccessObject.getAccountIdentifier(), gitConfigDTO, repoName);
     List<EncryptedDataDetail> encryptedDataDetails =
         gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(scmConnector, sshKeySpecDTO, basicNGAccessObject);
     GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder()
@@ -373,6 +379,58 @@ public class TerraformStepHelper {
       return manifestFileDirectory.getPath();
     }
     return null;
+  }
+
+  public TerraformProviderCredential toTerraformProviderCredential(
+      @NonNull TerraformProviderCredentialConfig credentialConfig) {
+    if (!TerraformProviderType.AWS.equals(credentialConfig.getType())) {
+      throw new InvalidRequestException(
+          String.format("Provider Type [%s] is not supported", credentialConfig.getType()));
+    }
+
+    TerraformAwsProviderCredentialConfig awsCredentialConfig = (TerraformAwsProviderCredentialConfig) credentialConfig;
+
+    return TerraformProviderCredential.builder()
+        .uuid(generateUuid())
+        .type(awsCredentialConfig.getType())
+        .spec(AWSIAMRoleCredentialSpec.builder()
+                  .connectorRef(ParameterField.createValueField(awsCredentialConfig.getConnectorRef()))
+                  .region(ParameterField.createValueField(awsCredentialConfig.getRegion()))
+                  .roleArn(ParameterField.createValueField(awsCredentialConfig.getRoleArn()))
+                  .build())
+        .build();
+  }
+
+  @Nullable
+  public TerraformProviderCredentialDelegateInfo getProviderCredentialDelegateInfo(
+      TerraformProviderCredential providerCredential, Ambiance ambiance) {
+    if (providerCredential == null || providerCredential.getSpec() == null) {
+      return null;
+    }
+    List<EncryptedDataDetail> encryptedDataDetails;
+
+    if (TerraformProviderType.AWS.equals(providerCredential.getType())) {
+      AWSIAMRoleCredentialSpec spec = (AWSIAMRoleCredentialSpec) providerCredential.getSpec();
+      ConnectorInfoDTO connectorDTO =
+          cdStepHelper.getConnector(getParameterFieldValue(spec.getConnectorRef()), ambiance);
+      if (!(connectorDTO.getConnectorConfig() instanceof AwsConnectorDTO)) {
+        throw new InvalidRequestException("Connector provided for terraform Aws provider must be of type AWS");
+      }
+
+      NGAccess basicNGAccessObject = AmbianceUtils.getNgAccess(ambiance);
+      encryptedDataDetails = secretManagerClientService.getEncryptionDetails(
+          basicNGAccessObject, ((AwsConnectorDTO) connectorDTO.getConnectorConfig()).getCredential().getConfig());
+
+      return TerraformAwsProviderCredentialDelegateInfo.builder()
+          .encryptedDataDetails(encryptedDataDetails)
+          .connectorDTO(connectorDTO)
+          .roleArn(getParameterFieldValue(spec.getRoleArn()))
+          .region(getParameterFieldValue(spec.getRegion()))
+          .build();
+    } else {
+      throw new InvalidRequestException(
+          "Explicit provider credentials are not supported for provider type" + providerCredential.getType());
+    }
   }
 
   public FileStoreFetchFilesConfig getFileStoreFetchFilesConfig(
@@ -509,6 +567,10 @@ public class TerraformStepHelper {
       builder.varFileConfigs(toTerraformVarFileConfigWithPTD(configuration.getVarFiles(), terraformPassThroughData));
     } else {
       builder.varFileConfigs(toTerraformVarFileConfig(configuration.getVarFiles(), terraformTaskNGResponse));
+    }
+
+    if (configuration.getProviderCredential() != null) {
+      builder.providerCredentialConfig(toTerraformProviderCredentialConfig(configuration.getProviderCredential()));
     }
 
     builder.backendConfig(getBackendConfig(configuration.getBackendConfig()))
@@ -892,6 +954,7 @@ public class TerraformStepHelper {
             .environmentVariables(inheritOutput.getEnvironmentVariables())
             .workspace(inheritOutput.getWorkspace())
             .targets(inheritOutput.getTargets())
+            .providerCredentialConfig(inheritOutput.getProviderCredentialConfig())
             .build();
 
     terraformConfigDAL.saveTerraformConfig(terraformConfig);
@@ -991,6 +1054,9 @@ public class TerraformStepHelper {
         .workspace(getParameterFieldValue(spec.getWorkspace()))
         .targets(getParameterFieldValue(spec.getTargets()))
         .isTerraformCloudCli(getParameterFieldValue(spec.getIsTerraformCloudCli()));
+    if (spec.getProviderCredential() != null) {
+      builder.providerCredentialConfig(toTerraformProviderCredentialConfig(spec.getProviderCredential()));
+    }
 
     terraformConfigDAL.saveTerraformConfig(builder.build());
   }
@@ -1222,6 +1288,20 @@ public class TerraformStepHelper {
       return varFileInfo;
     }
     return Collections.emptyList();
+  }
+
+  public TerraformProviderCredentialConfig toTerraformProviderCredentialConfig(
+      @NonNull TerraformProviderCredential providerCredential) {
+    if (TerraformProviderType.AWS.equals(providerCredential.getType())) {
+      AWSIAMRoleCredentialSpec awsIamRoleCredentialSpec = (AWSIAMRoleCredentialSpec) providerCredential.getSpec();
+      return TerraformAwsProviderCredentialConfig.builder()
+          .connectorRef(getParameterFieldValue(awsIamRoleCredentialSpec.getConnectorRef()))
+          .region(getParameterFieldValue(awsIamRoleCredentialSpec.getRegion()))
+          .roleArn(getParameterFieldValue(awsIamRoleCredentialSpec.getRoleArn()))
+          .type(providerCredential.getType())
+          .build();
+    }
+    return null;
   }
 
   public TerraformBackendConfigFileConfig toTerraformBackendConfigFileConfig(
@@ -1671,9 +1751,15 @@ public class TerraformStepHelper {
                                        .fileStoreConfigDTO(fileStorageConfigDTO)
                                        .build());
               } else {
-                GitStoreConfigDTO gitStoreConfigDTO = getStoreConfigAtCommitId(
-                    storeConfig, terraformPassThroughData.getFetchedCommitIdsMap().get(file.getIdentifier()))
-                                                          .toGitStoreConfigDTO();
+                GitStoreConfigDTO gitStoreConfigDTO;
+                String fetchedCommitId = getFetchedCommitId(terraformPassThroughData, file.getIdentifier());
+
+                if (isNotBlank(fetchedCommitId)) {
+                  gitStoreConfigDTO = getStoreConfigAtCommitId(storeConfig, fetchedCommitId).toGitStoreConfigDTO();
+                } else {
+                  GitStoreConfig gitStoreConfig = (GitStoreConfig) storeConfig.cloneInternal();
+                  gitStoreConfigDTO = gitStoreConfig.toGitStoreConfigDTO();
+                }
 
                 varFileConfigs.add(TerraformRemoteVarFileConfig.builder()
                                        .identifier(file.getIdentifier())
@@ -1687,6 +1773,29 @@ public class TerraformStepHelper {
       return varFileConfigs;
     }
     return Collections.emptyList();
+  }
+
+  @VisibleForTesting
+  protected String getFetchedCommitId(TerraformPassThroughData terraformPassThroughData, String fileIdentifier) {
+    String fetchedCommitId = null;
+    if (terraformPassThroughData.getFetchedCommitIdsMap() != null
+        && isNotEmpty(terraformPassThroughData.getFetchedCommitIdsMap()) && isNotBlank(fileIdentifier)) {
+      fetchedCommitId = terraformPassThroughData.getFetchedCommitIdsMap().get(fileIdentifier);
+    }
+
+    if (isNotBlank(fetchedCommitId)) {
+      return fetchedCommitId;
+    }
+
+    if (terraformPassThroughData.getGitVarFilesFromMultipleRepo() != null && isNotBlank(fileIdentifier)
+        && terraformPassThroughData.getGitVarFilesFromMultipleRepo().get(fileIdentifier) != null) {
+      FetchFilesResult gitFetchFilesResult =
+          terraformPassThroughData.getGitVarFilesFromMultipleRepo().get(fileIdentifier);
+      if (gitFetchFilesResult != null && gitFetchFilesResult.getCommitResult() != null) {
+        fetchedCommitId = gitFetchFilesResult.getCommitResult().getCommitId();
+      }
+    }
+    return fetchedCommitId;
   }
 
   public StepResponse handleStepExceptionFailure(StepExceptionPassThroughData stepExceptionPassThroughData) {
@@ -1982,7 +2091,7 @@ public class TerraformStepHelper {
     return outputKeys;
   }
 
-  private List<String> getGitFetchFilesFromMultipleRepos(
+  private List<GitFile> getGitFetchFilesFromMultipleRepos(
       Map<String, FetchFilesResult> gitVarFilesFromMultipleRepo, String gitVarFileIdentifier) {
     Map<String, FetchFilesResult> filteredMapByIdentifier =
         gitVarFilesFromMultipleRepo.entrySet()
@@ -1994,11 +2103,10 @@ public class TerraformStepHelper {
         .stream()
         .map(FetchFilesResult::getFiles)
         .flatMap(Collection::stream)
-        .map(GitFile::getFileContent)
         .collect(Collectors.toList());
   }
 
-  private List<String> getS3RemoteFilesContentFiltered(
+  private List<S3FileDetailResponse> getS3RemoteFilesContentFiltered(
       Map<String, List<S3FileDetailResponse>> s3filesDetailsMap, String s3VarFileIdentifier) {
     Map<String, List<S3FileDetailResponse>> s3filesDetails =
         s3filesDetailsMap.entrySet()
@@ -2006,11 +2114,7 @@ public class TerraformStepHelper {
             .filter(x -> x.getKey().equals(s3VarFileIdentifier))
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-    return s3filesDetails.values()
-        .stream()
-        .map(list -> list.stream().map(S3FileDetailResponse::getFileContent).collect(Collectors.toList()))
-        .flatMap(Collection::stream)
-        .collect(Collectors.toList());
+    return s3filesDetails.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
   }
 
   @VisibleForTesting
@@ -2030,15 +2134,14 @@ public class TerraformStepHelper {
             if (storeConfigWrapper != null) {
               StoreConfig storeConfig = storeConfigWrapper.getSpec();
               if (storeConfig != null && ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
-                List<String> gitVarFilesContent = getGitFetchFilesFromMultipleRepos(
+                List<GitFile> gitVarFiles = getGitFetchFilesFromMultipleRepos(
                     terraformPassThroughData.getGitVarFilesFromMultipleRepo(), varFileIdentifier);
-                gitVarFilesContent.forEach(
-                    gitFileContent -> varFileInfo.add(createInlineAndUpdateExpression(ambiance, gitFileContent)));
+                gitVarFiles.forEach(gitFile -> varFileInfo.add(createInlineAndUpdateExpressionGit(ambiance, gitFile)));
               } else if (storeConfig != null && ManifestStoreType.S3.equals(storeConfig.getKind())) {
-                List<String> s3VarFilesContent =
+                List<S3FileDetailResponse> s3VarFilesResponse =
                     getS3RemoteFilesContentFiltered(terraformPassThroughData.getS3VarFilesDetails(), varFileIdentifier);
-                s3VarFilesContent.forEach(
-                    s3FileContent -> varFileInfo.add(createInlineAndUpdateExpression(ambiance, s3FileContent)));
+                s3VarFilesResponse.forEach(
+                    s3FileResponse -> varFileInfo.add(createInlineAndUpdateExpressionS3(ambiance, s3FileResponse)));
               } else if (storeConfig != null && ManifestStoreType.ARTIFACTORY.equals(storeConfig.getKind())) {
                 TerraformVarFileInfo artifactoryVarFileInfo =
                     getArtifactoryVarFile(tfTaskParametersBuilder.build().getVarFileInfos(), varFileIdentifier);
@@ -2072,18 +2175,17 @@ public class TerraformStepHelper {
             (TerraformRemoteVarFileConfig) terraformVarFileConfig;
 
         if (terraformRemoteVarFileConfig.getGitStoreConfigDTO() != null) {
-          List<String> gitVarFilesContent = getGitFetchFilesFromMultipleRepos(
+          List<GitFile> gitVarFiles = getGitFetchFilesFromMultipleRepos(
               terraformPassThroughData.getGitVarFilesFromMultipleRepo(), varFileIdentifier);
-          gitVarFilesContent.forEach(
-              gitFileContent -> varFileInfo.add(createInlineAndUpdateExpression(ambiance, gitFileContent)));
+          gitVarFiles.forEach(gitFile -> varFileInfo.add(createInlineAndUpdateExpressionGit(ambiance, gitFile)));
         } else if (terraformRemoteVarFileConfig.getFileStoreConfigDTO() != null) {
           FileStorageConfigDTO fileStorageConfigDTO = terraformRemoteVarFileConfig.getFileStoreConfigDTO();
 
           if (fileStorageConfigDTO.getKind().equals(ManifestStoreType.S3)) {
-            List<String> s3VarFilesContent =
+            List<S3FileDetailResponse> s3VarFilesResponse =
                 getS3RemoteFilesContentFiltered(terraformPassThroughData.getS3VarFilesDetails(), varFileIdentifier);
-            s3VarFilesContent.forEach(
-                s3FileContent -> varFileInfo.add(createInlineAndUpdateExpression(ambiance, s3FileContent)));
+            s3VarFilesResponse.forEach(
+                s3FileResponse -> varFileInfo.add(createInlineAndUpdateExpressionS3(ambiance, s3FileResponse)));
           } else if (fileStorageConfigDTO.getKind().equals(ManifestStoreType.ARTIFACTORY)) {
             TerraformVarFileInfo artifactoryVarFileInfo =
                 getArtifactoryVarFile(tfTaskParametersBuilder.build().getVarFileInfos(), varFileIdentifier);
@@ -2097,9 +2199,18 @@ public class TerraformStepHelper {
     return varFileInfo;
   }
 
-  private TerraformVarFileInfo createInlineAndUpdateExpression(Ambiance ambiance, String varFileContent) {
+  private TerraformVarFileInfo createInlineAndUpdateExpressionGit(Ambiance ambiance, GitFile gitFile) {
     return InlineTerraformVarFileInfo.builder()
-        .varFileContent(cdExpressionResolver.updateExpressions(ambiance, varFileContent).toString())
+        .varFileContent(cdExpressionResolver.updateExpressions(ambiance, gitFile.getFileContent()).toString())
+        .filePath(gitFile.getFilePath())
+        .build();
+  }
+
+  private TerraformVarFileInfo createInlineAndUpdateExpressionS3(
+      Ambiance ambiance, S3FileDetailResponse varFileContent) {
+    return InlineTerraformVarFileInfo.builder()
+        .varFileContent(cdExpressionResolver.updateExpressions(ambiance, varFileContent.getFileContent()).toString())
+        .filePath(varFileContent.getFileKey())
         .build();
   }
 

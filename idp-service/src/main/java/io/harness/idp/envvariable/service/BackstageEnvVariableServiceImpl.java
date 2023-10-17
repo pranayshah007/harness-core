@@ -328,13 +328,17 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
 
       if (envVariable.getType().name().equals(BackstageEnvVariableType.SECRET.name())) {
         BackstageEnvSecretVariable secretEnvVariable = (BackstageEnvSecretVariable) envVariable;
+        BackstageEnvSecretVariableEntity secretEntity = (BackstageEnvSecretVariableEntity) entity;
         Pair<String, Long> decryptedValueAndLastModifiedAt = getDecryptedValueAndLastModifiedTime(
             secretEnvVariable.getEnvName(), secretEnvVariable.getHarnessSecretIdentifier(), accountIdentifier);
         String decryptedValue = decryptedValueAndLastModifiedAt.getFirst();
         Long lastModifiedAt = decryptedValueAndLastModifiedAt.getSecond();
 
-        if (lastModifiedAt == null || entity == null
-            || ((BackstageEnvSecretVariableEntity) entity).getSecretLastModifiedAt() < lastModifiedAt) {
+        if (secretEntity == null // create scenario
+            || !secretEntity.getHarnessSecretIdentifier().equals(
+                secretEnvVariable.getHarnessSecretIdentifier()) // different secret scenario
+            || lastModifiedAt == 0 // old ng-manager scenario
+            || secretEntity.getSecretLastModifiedAt() < lastModifiedAt) { // secret update scenario
           if (loadSecretsDynamically) {
             log.info("Updating LAST_UPDATED_TIMESTAMP_FOR_ENV_VARIABLES for env {} for account {}",
                 envVariable.getEnvName(), accountIdentifier);
@@ -502,7 +506,7 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
 
     log.error("Failed to retrieve decrypted value after multiple retries for env {}, secret {}, account {}", envName,
         secretIdentifier, accountIdentifier);
-    return new Pair<>("", null);
+    return new Pair<>("", 0L);
   }
 
   @Override

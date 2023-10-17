@@ -6,13 +6,15 @@
  */
 
 package io.harness.steps.barriers.event;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.Math.min;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.engine.observers.BarrierExpandObserver;
 import io.harness.engine.observers.BarrierExpandRequest;
 import io.harness.exception.InvalidRequestException;
@@ -30,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)

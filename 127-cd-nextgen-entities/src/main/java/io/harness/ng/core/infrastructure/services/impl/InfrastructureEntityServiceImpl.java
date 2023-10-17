@@ -141,7 +141,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
       Set<EntityDetailProtoDTO> referredEntities = getAndValidateReferredEntities(infraEntity);
       InfrastructureEntity createdInfra =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-            InfrastructureEntity infrastructureEntity = infrastructureRepository.save(infraEntity);
+            InfrastructureEntity infrastructureEntity = infrastructureRepository.saveGitAware(infraEntity);
             outboxService.save(EnvironmentUpdatedEvent.builder()
                                    .accountIdentifier(infraEntity.getAccountId())
                                    .orgIdentifier(infraEntity.getOrgIdentifier())
@@ -182,22 +182,35 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
       String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String infraIdentifier) {
     checkArgument(isNotEmpty(accountId), "accountId must be present");
 
-    return getInfrastructureByRef(accountId, orgIdentifier, projectIdentifier, environmentRef, infraIdentifier);
+    return getInfrastructureByRef(
+        accountId, orgIdentifier, projectIdentifier, environmentRef, infraIdentifier, false, false);
   }
 
-  private Optional<InfrastructureEntity> getInfrastructureByRef(
-      String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String infraIdentifier) {
+  @Override
+  public Optional<InfrastructureEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
+      String environmentRef, String infraIdentifier, boolean loadFromCache, boolean loadFromFallbackBranch) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+
+    return getInfrastructureByRef(accountId, orgIdentifier, projectIdentifier, environmentRef, infraIdentifier,
+        loadFromCache, loadFromFallbackBranch);
+  }
+
+  private Optional<InfrastructureEntity> getInfrastructureByRef(String accountId, String orgIdentifier,
+      String projectIdentifier, String environmentRef, String infraIdentifier, boolean loadFromCache,
+      boolean loadFromFallbackBranch) {
     // get using environmentRef
     String[] envRefSplit = StringUtils.split(environmentRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
     if (envRefSplit == null || envRefSplit.length == 1) {
       return infrastructureRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvIdentifierAndIdentifier(
-          accountId, orgIdentifier, projectIdentifier, environmentRef, infraIdentifier);
+          accountId, orgIdentifier, projectIdentifier, environmentRef, infraIdentifier, loadFromCache,
+          loadFromFallbackBranch);
     } else {
       IdentifierRef envIdentifierRef =
           IdentifierRefHelper.getIdentifierRef(environmentRef, accountId, orgIdentifier, projectIdentifier);
       return infrastructureRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvIdentifierAndIdentifier(
           envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
-          envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier(), infraIdentifier);
+          envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier(), infraIdentifier, loadFromCache,
+          loadFromFallbackBranch);
     }
   }
 
@@ -214,14 +227,18 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
             requestInfra.getEnvIdentifier(), requestInfra.getIdentifier());
     if (infraEntityOptional.isPresent()) {
       InfrastructureEntity oldInfrastructureEntity = infraEntityOptional.get();
-
       validateImmutableFieldsAndThrow(requestInfra, oldInfrastructureEntity);
+      InfrastructureEntity infraToUpdate = oldInfrastructureEntity.withYaml(requestInfra.getYaml())
+                                               .withDescription(requestInfra.getDescription())
+                                               .withName(requestInfra.getName())
+                                               .withTags(requestInfra.getTags())
+                                               .withType(requestInfra.getType());
 
       InfrastructureEntity updatedInfra =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-            InfrastructureEntity updatedResult = infrastructureRepository.update(criteria, requestInfra);
+            InfrastructureEntity updatedResult = infrastructureRepository.update(criteria, infraToUpdate);
             if (updatedResult == null) {
-              throw new InvalidRequestException(String.format(
+              throw new InvalidRequestException(format(
                   "Infrastructure [%s] under Environment [%s], Project [%s], Organization [%s] couldn't be updated or doesn't exist.",
                   requestInfra.getIdentifier(), requestInfra.getEnvIdentifier(), requestInfra.getProjectIdentifier(),
                   requestInfra.getOrgIdentifier()));
@@ -244,7 +261,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
       return updatedInfra;
     } else {
       throw new InvalidRequestException(
-          String.format("Infrastructure [%s] under Environment [%s], Project [%s], Organization [%s] doesn't exist.",
+          format("Infrastructure [%s] under Environment [%s], Project [%s], Organization [%s] doesn't exist.",
               requestInfra.getIdentifier(), requestInfra.getEnvIdentifier(), requestInfra.getProjectIdentifier(),
               requestInfra.getOrgIdentifier()));
     }
@@ -975,13 +992,13 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     if (envRefSplit == null || envRefSplit.length == 1) {
       infrastructureEntity =
           infrastructureRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvIdentifierAndIdentifier(
-              accountId, orgId, projectId, envRef, infraId);
+              accountId, orgId, projectId, envRef, infraId, false, false);
     } else {
       IdentifierRef envIdentifierRef = IdentifierRefHelper.getIdentifierRef(envRef, accountId, orgId, projectId);
       infrastructureEntity =
           infrastructureRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndEnvIdentifierAndIdentifier(
               envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
-              envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier(), infraId);
+              envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier(), infraId, false, false);
     }
 
     return infrastructureEntity.orElse(null);

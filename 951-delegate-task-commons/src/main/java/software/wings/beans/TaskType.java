@@ -519,7 +519,12 @@ public enum TaskType {
   ECS_BASIC_PREPARE_ROLLBACK_TASK_NG(TaskGroup.ECS, "ECS Basic Prepare Rollback Task"),
   ECS_SERVICE_SETUP_TASK_NG(TaskGroup.ECS, "ECS Service Setup Task"),
   ECS_UPGRADE_CONTAINER_TASK_NG(TaskGroup.ECS, "ECS Upgrade Container Task"),
-  ECS_BASIC_ROLLBACK_TASK_NG(TaskGroup.ECS, "ECS Basic Rollback Task");
+  ECS_BASIC_ROLLBACK_TASK_NG(TaskGroup.ECS, "ECS Basic Rollback Task"),
+  HELM_VALUES_FETCH_NG_OCI_ECR_CONFIG(
+      TaskGroup.HELM_VALUES_FETCH_TASK, "Helm Values Fetch Task with Oci Helm Ecr config"),
+  K8S_COMMAND_TASK_NG_OCI_ECR_CONFIG(TaskGroup.K8S_NG, "K8s Task with Oci Helm Ecr Config"),
+  HELM_COMMAND_TASK_NG_OCI_ECR_CONFIG(TaskGroup.HELM, "Helm Command Task with Oci Helm Ecr Config"),
+  TERRAFORM_TASK_NG_V7(TaskGroup.TERRAFORM_NG, "Terraform Task NG V7");
 
   private final TaskGroup taskGroup;
   private final String displayName;

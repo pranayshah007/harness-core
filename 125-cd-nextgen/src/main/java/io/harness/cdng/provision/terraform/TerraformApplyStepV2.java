@@ -298,7 +298,9 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
         .useOptimizedTfPlan(true)
         .isTerraformCloudCli(isTerraformCloudCli)
         .skipColorLogs(cdFeatureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
-        .skipTerraformRefresh(skipRefreshCommand);
+        .skipTerraformRefresh(skipRefreshCommand)
+        .providerCredentialDelegateInfo(
+            helper.getProviderCredentialDelegateInfo(spec.getProviderCredential(), ambiance));
     return builder;
   }
 
@@ -318,6 +320,13 @@ public class TerraformApplyStepV2 extends CdTaskChainExecutable {
     builder.terraformCommandFlags(helper.getTerraformCliFlags(stepParameters.getConfiguration().getCliOptions()));
 
     TerraformInheritOutput inheritOutput = helper.getSavedInheritOutput(provisionerIdentifier, APPLY.name(), ambiance);
+
+    if (inheritOutput.getProviderCredentialConfig() != null) {
+      TerraformProviderCredential terraformProviderCredential =
+          helper.toTerraformProviderCredential(inheritOutput.getProviderCredentialConfig());
+      builder.providerCredentialDelegateInfo(
+          helper.getProviderCredentialDelegateInfo(terraformProviderCredential, ambiance));
+    }
 
     return builder.workspace(inheritOutput.getWorkspace())
         .configFile(helper.getGitFetchFilesConfig(

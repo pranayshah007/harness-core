@@ -11,31 +11,21 @@ import lombok.Data;
 
 @Data
 public class UpsertOptions {
-  boolean sendOutboxEvent;
-  boolean publishSetupUsages;
+  final boolean sendOutboxEvent;
+  final boolean publishSetupUsages;
 
-  public UpsertOptions() {
-    this.sendOutboxEvent = true;
-    this.publishSetupUsages = true;
-  }
-
-  public UpsertOptions(boolean sendOutboxEvent) {
+  public UpsertOptions(boolean sendOutboxEvent, boolean publishSetupUsages) {
     this.sendOutboxEvent = sendOutboxEvent;
+    this.publishSetupUsages = publishSetupUsages;
   }
 
-  public static final UpsertOptions DEFAULT = new UpsertOptions();
+  public static final UpsertOptions DEFAULT = new UpsertOptions(true, true);
 
   public UpsertOptions withNoOutbox() {
-    this.sendOutboxEvent = false;
-    return this;
+    return new UpsertOptions(false, this.publishSetupUsages);
   }
 
   public UpsertOptions withNoSetupUsage() {
-    this.publishSetupUsages = false;
-    return this;
-  }
-
-  public static UpsertOptions none() {
-    return DEFAULT;
+    return new UpsertOptions(this.sendOutboxEvent, false);
   }
 }

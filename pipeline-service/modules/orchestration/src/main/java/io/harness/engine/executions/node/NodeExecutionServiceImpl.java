@@ -821,8 +821,11 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
 
   @VisibleForTesting
   void emitEvent(NodeExecution nodeExecution, OrchestrationEventType orchestrationEventType) {
+    if (nodeExecution == null) {
+      return;
+    }
     TriggerPayload triggerPayload = TriggerPayload.newBuilder().build();
-    if (nodeExecution != null && nodeExecution.getAmbiance() != null) {
+    if (nodeExecution.getAmbiance() != null) {
       PlanExecutionMetadata metadata =
           planExecutionMetadataService.findByPlanExecutionId(nodeExecution.getAmbiance().getPlanExecutionId())
               .orElseThrow(()
@@ -906,7 +909,6 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   public List<NodeExecution> fetchStageExecutionsWithProjection(
       String planExecutionId, Set<String> fieldsToBeIncluded) {
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
-                      .addCriteria(where(NodeExecutionKeys.status).ne(Status.SKIPPED))
                       .addCriteria(where(NodeExecutionKeys.stepCategory).in(StepCategory.STAGE, StepCategory.STRATEGY));
     for (String field : fieldsToBeIncluded) {
       query.fields().include(field);

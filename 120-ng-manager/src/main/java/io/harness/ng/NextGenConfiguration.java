@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng;
+
 import static io.harness.swagger.SwaggerBundleConfigurationFactory.buildSwaggerBundleConfiguration;
 
 import static java.util.stream.Collectors.toSet;
@@ -37,6 +38,7 @@ import io.harness.hsqs.client.model.QueueServiceClientConfig;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.mongo.MongoConfig;
+import io.harness.ng.core.service.ServiceGitXThreadConfiguration;
 import io.harness.ng.support.client.CannyConfig;
 import io.harness.notification.NotificationClientConfiguration;
 import io.harness.opaclient.OpaServiceConfiguration;
@@ -282,17 +284,21 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
   @JsonProperty("gitService") private GitServiceConfiguration gitServiceConfiguration;
   @JsonProperty(value = "disableFreezeNotificationTemplate") private boolean disableFreezeNotificationTemplate;
+  @JsonProperty("dashboardExecutorServiceConfig") private ThreadPoolConfig dashboardExecutorServiceConfig;
   @JsonProperty(value = "pluginExecutionConfig") private PluginExecutionConfig pluginExecutionConfig;
   @JsonProperty("signupDomainDenylistConfig")
   private SignupDomainDenylistConfiguration signupDomainDenylistConfiguration;
   @JsonProperty("queueServiceClientConfig") private QueueServiceClientConfig queueServiceClientConfig;
   @JsonProperty("webhookBranchHookEventHsqsDequeueConfig")
   private HsqsDequeueConfig webhookBranchHookEventHsqsDequeueConfig;
+  @JsonProperty("gitXWebhookEventQueueConfig") private HsqsDequeueConfig gitXWebhookEventQueueConfig;
   @JsonProperty("webhookPushEventHsqsDequeueConfig") private HsqsDequeueConfig webhookPushEventHsqsDequeueConfig;
   @JsonProperty("proxy") private CEProxyConfig ceProxyConfig;
   @JsonProperty("awsServiceEndpointUrls") private CEAwsServiceEndpointConfig ceAwsServiceEndpointConfig;
   private boolean useQueueServiceForWebhookTriggers;
+  @JsonProperty("useQueueServiceForGitXWebhook") private boolean useQueueServiceForGitXWebhook;
   @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;
+  @JsonProperty("serviceGitXThreadConfig") @ConfigSecret private ServiceGitXThreadConfiguration serviceGitXThreadConfig;
 
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database
   //  @JsonProperty("secondary-mongo") MongoConfig secondaryMongoConfig;

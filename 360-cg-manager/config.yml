@@ -396,6 +396,7 @@ portal:
   optionalDelegateTaskRejectAtLimit: 5000
   importantDelegateTaskRejectAtLimit: 5000
   criticalDelegateTaskRejectAtLimit: 100000
+  parkedDelegateTaskRejectAtLimit: 10000
 
 totp:
   secOpsEmail: secops.fake.email@mailnator.com
@@ -818,3 +819,5 @@ awsServiceEndpointUrls:
   stsEndPointUrl: https://sts.us-east-1.amazonaws.com
   ecsEndPointUrl: https://ecs.us-east-1.amazonaws.com
   cloudwatchEndPointUrl: https://monitoring.us-east-1.amazonaws.com
+
+maxAccountsToDeleteInParallel: 6

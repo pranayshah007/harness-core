@@ -9,6 +9,8 @@ package io.harness.steps.servicenow.create;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
+import static io.harness.steps.servicenow.create.ServiceNowCreateSpecParameters.getAction;
+import static io.harness.steps.servicenow.create.ServiceNowCreateSpecParameters.getUseServiceNowTemplate;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.CodePulse;
@@ -34,7 +36,6 @@ import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
-import io.harness.servicenow.ServiceNowActionNG;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
 import io.harness.steps.executables.PipelineTaskExecutable;
@@ -80,10 +81,10 @@ public class ServiceNowCreateStep extends PipelineTaskExecutable<ServiceNowTaskN
 
     ServiceNowTaskNGParametersBuilder paramsBuilder =
         ServiceNowTaskNGParameters.builder()
-            .action(ServiceNowActionNG.CREATE_TICKET)
+            .action(getAction(specParameters))
             .ticketType(specParameters.getTicketType().getValue())
             .templateName(specParameters.getTemplateName().getValue())
-            .useServiceNowTemplate(specParameters.getUseServiceNowTemplate().getValue())
+            .useServiceNowTemplate(getUseServiceNowTemplate(specParameters))
             .delegateSelectors(
                 StepUtils.getDelegateSelectorListFromTaskSelectorYaml(specParameters.getDelegateSelectors()))
             .fields(ServiceNowStepUtils.processServiceNowFieldsInSpec(specParameters.getFields(), logCallback));

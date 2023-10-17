@@ -25,4 +25,6 @@ public interface GitXWebhookEventsRepository
     extends CrudRepository<GitXWebhookEvent, String>, GitXWebhookEventsRepositoryCustom {
   List<GitXWebhookEvent> findByAccountIdentifierAndWebhookIdentifier(
       String accountIdentifier, String webhookIdentifier);
+
+  GitXWebhookEvent findByAccountIdentifierAndEventIdentifier(String accountIdentifier, String eventIdentifier);
 }

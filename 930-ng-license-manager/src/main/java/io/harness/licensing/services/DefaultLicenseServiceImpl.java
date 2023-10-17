@@ -726,10 +726,10 @@ public class DefaultLicenseServiceImpl implements LicenseService {
                              .build());
     } catch (EventsFrameworkDownException ex) {
       log.error("Failed to send event to events framework for account: {} on entity: {} with action: {}",
-          moduleLicense.getAccountIdentifier(), MODULE_LICENSE, CREATE_ACTION, ex);
+          moduleLicense.getAccountIdentifier(), MODULE_LICENSE, action, ex);
     } catch (Exception ex) {
       log.error("Failure to send event to events framework for account: {} on entity: {} with action: {}",
-          moduleLicense.getAccountIdentifier(), MODULE_LICENSE, CREATE_ACTION, ex);
+          moduleLicense.getAccountIdentifier(), MODULE_LICENSE, action, ex);
     }
   }
 }

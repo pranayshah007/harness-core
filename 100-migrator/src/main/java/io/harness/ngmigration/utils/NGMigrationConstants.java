@@ -6,9 +6,12 @@
  */
 
 package io.harness.ngmigration.utils;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.yaml.ParameterField;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public interface NGMigrationConstants {
   String DISCOVERY_IMAGE_PATH = "/tmp/viz-output/viz.png";
   String DEFAULT_ZIP_DIRECTORY = "/tmp/zip-output";

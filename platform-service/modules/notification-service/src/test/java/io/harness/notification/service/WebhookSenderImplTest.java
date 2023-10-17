@@ -113,4 +113,33 @@ public class WebhookSenderImplTest extends CategoryTest {
     assertThat(header.get(CONTENT_TYPE_HEADER_KEY)).isEqualTo("test");
     assertThat(header.get(ACCEPT_HEADER_KEY)).isNotEmpty();
   }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void send_ValidArguments_withDomainFilters() {
+    List<String> wekbhookUrl = Arrays.asList("http://harness.url.com/webhook1", "http://test.url.com/webhook2");
+    String message = "test message";
+    String notificationId = "test";
+    Request mockrequest1 = new Request.Builder().url(wekbhookUrl.get(0)).build();
+    Response responseSuccess = new Response.Builder()
+                                   .code(200)
+                                   .message("success")
+                                   .request(mockrequest1)
+                                   .protocol(Protocol.HTTP_2)
+                                   .body(ResponseBody.create(MediaType.parse("application/json"), "{}"))
+                                   .build();
+
+    Call call = mock(Call.class);
+    when(call.execute()).thenReturn(responseSuccess);
+    when(okHttpClient.newCall(any())).thenReturn(call);
+
+    NotificationProcessingResponse notificationProcessingResponse =
+        webhookSender.send(wekbhookUrl, message, notificationId, null, Arrays.asList("harness.url.com"));
+
+    verify(okHttpClient, times(1)).newCall(any());
+
+    assertTrue(notificationProcessingResponse.getResult().get(0));
+  }
 }

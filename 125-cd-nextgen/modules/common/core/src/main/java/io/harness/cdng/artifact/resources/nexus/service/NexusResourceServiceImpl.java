@@ -99,9 +99,6 @@ public class NexusResourceServiceImpl implements NexusResourceService {
     switch (RepositoryFormat.valueOf(repositoryFormat)) {
       case docker:
         ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGArtifactConstants.ARTIFACT_PATH, artifactPath));
-        ArtifactUtils.validateIfAnyValueAssigned(
-            MutablePair.of(NGArtifactConstants.REPOSITORY_URL, artifactRepositoryUrl),
-            MutablePair.of(NGArtifactConstants.REPOSITORY_PORT, repositoryPort));
         break;
 
       case maven:

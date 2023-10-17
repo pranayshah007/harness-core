@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.service.step.k8s;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.k8s.K8sApplyStepInfo;
 import io.harness.cdng.k8s.K8sApplyStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -25,6 +27,7 @@ import software.wings.sm.states.k8s.K8sTrafficSplitState;
 import java.util.Collections;
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class K8sTrafficSplitStepMapperImpl extends StepMapper {
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {

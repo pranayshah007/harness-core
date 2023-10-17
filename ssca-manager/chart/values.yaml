@@ -194,5 +194,24 @@ affinity: {}
 java:
   memory: 512m
 
-secrets:
-  JWT_IDENTITY_SERVICE_SECRET: ""
+virtualService:
+  annotations: {}
+
+s3:
+  ### Default values are configured to work with Minio, override if you are using own s3 buckets
+  endpoint: ""
+  sbomBucketName: "sbom_store"
+  policyBucketName: "policy_store"
+  region: "us-east-1"
+  accessKeyId: ""
+  secretAccessKey: ""
+
+s3AccessKeyID:
+  name: minio
+  key: root-user
+
+s3SecretAccessKey:
+  name: minio
+  key: root-password
+
+java17flags: ""

@@ -18,6 +18,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.resources.githubpackages.dtos.GithubPackagesResponseDTO;
 import io.harness.cdng.artifact.resources.githubpackages.mappers.GithubPackagesResourceMapper;
+import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
@@ -77,6 +78,7 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
   private final ConnectorService connectorService;
   private final SecretManagerClientService secretManagerClientService;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Inject private ArtifactStepHelper artifactStepHelper;
   @Inject ExceptionManager exceptionManager;
   @VisibleForTesting static final int timeoutInSecs = 90;
 
@@ -168,7 +170,8 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
 
     BaseNGAccess baseNGAccess = getBaseNGAccess(connectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
 
-    List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(githubConnector, baseNGAccess);
+    List<EncryptedDataDetail> encryptionDetails =
+        artifactStepHelper.getGithubEncryptedDetails(githubConnector, baseNGAccess);
 
     GithubPackagesArtifactDelegateRequest githubPackagesArtifactDelegateRequest =
         ArtifactDelegateRequestUtils.getGithubPackagesDelegateRequest(packageName, packageType, version, versionRegex,

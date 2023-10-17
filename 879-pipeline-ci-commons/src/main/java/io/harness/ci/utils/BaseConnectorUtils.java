@@ -103,7 +103,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
-import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -204,21 +203,6 @@ public class BaseConnectorUtils {
                                                           .encryptedDataDetails(encryptedDataDetails);
 
     return connectorDetailsBuilder.build();
-  }
-
-  public static String getSCMBaseUrl(String baseUrl) {
-    try {
-      URL url = new URL(baseUrl);
-      String host = url.getHost();
-      String protocol = url.getProtocol();
-      if (host.equals("localhost")) {
-        return "";
-      }
-      return protocol + "://" + host + "/code/git";
-    } catch (Exception e) {
-      log.error("There was error while generating scm base URL", e);
-    }
-    return "";
   }
 
   public ConnectorDetails getConnectorDetailsInternalWithRetries(NGAccess ngAccess, IdentifierRef connectorRef) {

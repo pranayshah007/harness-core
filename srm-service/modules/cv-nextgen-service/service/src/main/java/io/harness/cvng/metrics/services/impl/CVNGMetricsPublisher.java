@@ -14,6 +14,7 @@ import static dev.morphia.aggregation.Accumulator.accumulator;
 import static dev.morphia.aggregation.Group.grouping;
 import static dev.morphia.aggregation.Group.id;
 
+import io.harness.CVNGPrometheusExporterUtils;
 import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskKeys;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
@@ -41,6 +42,8 @@ import io.harness.mongo.metrics.MongoMetricsContext;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.PersistentEntity;
 
+import com.codahale.metrics.MetricFilter;
+import com.codahale.metrics.Timer;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.mongodb.AggregationOptions;
@@ -56,6 +59,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -69,7 +73,7 @@ import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionInitializer {
-  private static final String METRIC_PREFIX = "io_harness_cvng_mongodb_";
+  private static final String METRIC_PREFIX_FOR_DB = "io_harness_cvng_mongodb_";
   private static final Pattern METRIC_NAME_RE = Pattern.compile("[^a-zA-Z0-9_]");
   private static final String CONNECTION_POOL_SIZE = "connection_pool_size";
   private static final String CONNECTIONS_CHECKED_OUT = "connections_checked_out";
@@ -79,6 +83,10 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
   private static final Map<Class<? extends PersistentEntity>, QueryParams> TASKS_INFO = new HashMap<>();
   private static final String ENV = isEmpty(System.getenv("ENV")) ? "localhost" : System.getenv("ENV");
 
+  private static final Double SNAPSHOT_FACTOR = 1.0D / (double) TimeUnit.SECONDS.toNanos(1L);
+  public static final String MEAN_SUFFIX = "_mean";
+
+  private static final Map<String, Boolean> LE_TASKS_METRICS_TO_BE_RECORDED = new HashMap<>();
   @Inject private Clock clock;
   @Inject private HarnessMetricRegistry metricRegistry;
   @Inject private HarnessConnectionPoolListener harnessConnectionPoolListener;
@@ -114,6 +122,8 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
             .statusField(AnalysisStateMachineKeys.status)
             .name("analysis_state_machine")
             .build());
+    LE_TASKS_METRICS_TO_BE_RECORDED.put("learning_engine_service_health_task", false);
+    LE_TASKS_METRICS_TO_BE_RECORDED.put("learning_engine_deployment_task", true);
   }
   @Inject private MetricService metricService;
   @Inject private HPersistence hPersistence;
@@ -122,8 +132,10 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
   public void recordMetrics() {
     try {
       sendTaskStatusMetrics();
+      sendLETaskStatusMetrics();
       sendLEAutoscaleMetrics();
       recordDBMetrics();
+      recordMeanForTimers();
     } catch (Exception ignored) {
       log.warn("Metric could not be recorded.");
     }
@@ -136,14 +148,38 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
       String clientDescription = sanitizeName(serverId.getClusterId().getDescription());
       try (MongoMetricsContext ignore =
                new MongoMetricsContext(NAMESPACE, CONTAINER_NAME, serverAddress, clientDescription)) {
-        metricRegistry.recordGaugeValue(
-            METRIC_PREFIX + CONNECTION_POOL_MAX_SIZE, null, harnessConnectionPoolStatistics.getMaxSize());
-        metricRegistry.recordGaugeValue(
-            METRIC_PREFIX + CONNECTION_POOL_SIZE, null, harnessConnectionPoolStatistics.getSize());
-        metricRegistry.recordGaugeValue(
-            METRIC_PREFIX + CONNECTIONS_CHECKED_OUT, null, harnessConnectionPoolStatistics.getCheckedOutCount());
+        metricRegistry.recordGaugeValue(METRIC_PREFIX_FOR_DB + CONNECTION_POOL_MAX_SIZE,
+            CVNGPrometheusExporterUtils.contextLabels.values().toArray(new String[0]),
+            harnessConnectionPoolStatistics.getMaxSize());
+        metricRegistry.recordGaugeValue(METRIC_PREFIX_FOR_DB + CONNECTION_POOL_SIZE,
+            CVNGPrometheusExporterUtils.contextLabels.values().toArray(new String[0]),
+            harnessConnectionPoolStatistics.getSize());
+        metricRegistry.recordGaugeValue(METRIC_PREFIX_FOR_DB + CONNECTIONS_CHECKED_OUT,
+            CVNGPrometheusExporterUtils.contextLabels.values().toArray(new String[0]),
+            harnessConnectionPoolStatistics.getCheckedOutCount());
       }
     });
+  }
+
+  public void recordMeanForTimers() {
+    Set<Map.Entry<String, Timer>> webMetricsTimerSet =
+        metricRegistry.getMetricRegistry()
+            .getTimers(MetricFilter.startsWith("io.dropwizard.jetty.MutableServletContextHandler"))
+            .entrySet();
+    if (!metricRegistry.getNamesToCollectors().containsKey(
+            "io_harness_custom_metric_io_dropwizard_jetty_MutableServletContextHandler_requests" + MEAN_SUFFIX)) {
+      webMetricsTimerSet.forEach(entry
+          -> metricRegistry.registerGaugeMetric(sanitizeName(entry.getKey()) + MEAN_SUFFIX,
+              CVNGPrometheusExporterUtils.contextLabels.keySet().toArray(new String[0]),
+              "Metrics from CVNG for Web server Servlet"));
+    }
+    webMetricsTimerSet.forEach(entry -> recordTimerMeanWithMetricRegistry(entry.getKey(), entry.getValue()));
+  }
+
+  private void recordTimerMeanWithMetricRegistry(String metricName, Timer timer) {
+    metricRegistry.recordGaugeValue(sanitizeName(metricName) + MEAN_SUFFIX,
+        CVNGPrometheusExporterUtils.contextLabels.values().toArray(new String[0]),
+        timer.getSnapshot().getMean() * SNAPSHOT_FACTOR);
   }
 
   private static String sanitizeName(String labelName) {
@@ -203,6 +239,70 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
   }
 
   @VisibleForTesting
+  void sendLETaskStatusMetrics() {
+    Class<LearningEngineTask> clazz = LearningEngineTask.class;
+    LE_TASKS_METRICS_TO_BE_RECORDED.forEach((metricName, isDeploymentTask) -> {
+      Query<? extends PersistentEntity> query = hPersistence.createQuery(clazz);
+      if (Boolean.TRUE.equals(isDeploymentTask)) {
+        query = query.field(LearningEngineTaskKeys.analysisType).in(LearningEngineTaskType.getDeploymentTaskTypes());
+
+      } else {
+        query = query.field(LearningEngineTaskKeys.analysisType).notIn(LearningEngineTaskType.getDeploymentTaskTypes());
+      }
+      query =
+          query.field(LearningEngineTaskKeys.taskStatus).in(LearningEngineTask.ExecutionStatus.getNonFinalStatues());
+      log.info("Starting getting tasks status based metrics {}", metricName);
+      long startTime = clock.instant().toEpochMilli();
+      int limit = hPersistence.getMaxDocumentLimit(clazz);
+      AggregationPipeline aggregationPipeline =
+          hPersistence.getDatastore(clazz).createAggregation(clazz).match(query).group(
+              id(grouping("accountId", "accountId")), grouping("count", accumulator("$sum", 1)));
+      if (limit > 0) {
+        aggregationPipeline.limit(limit);
+      }
+      aggregationPipeline
+          .aggregate(InstanceCount.class,
+              AggregationOptions.builder().maxTime(hPersistence.getMaxTimeMs(clazz), TimeUnit.MILLISECONDS).build())
+          .forEachRemaining(instanceCount -> {
+            try (AccountMetricContext accountMetricContext = new AccountMetricContext(instanceCount.id.accountId)) {
+              metricService.recordMetric(getNonFinalStatusMetricName(metricName), instanceCount.count);
+              metricService.recordMetric(getNonFinalStatusMetricNameWithEnv(metricName, ENV), instanceCount.count);
+            }
+          });
+      LearningEngineTask.ExecutionStatus.getNonFinalStatues().forEach(status -> {
+        AggregationPipeline aggregatePipeline = hPersistence.getDatastore(clazz).createAggregation(clazz).match(
+            hPersistence.createQuery(clazz).field(LearningEngineTaskKeys.taskStatus).equal(status));
+        if (isDeploymentTask) {
+          aggregatePipeline = aggregatePipeline.match(hPersistence.createQuery(clazz)
+                                                          .field(LearningEngineTaskKeys.analysisType)
+                                                          .in(LearningEngineTaskType.getDeploymentTaskTypes()));
+        } else {
+          aggregatePipeline = aggregatePipeline.match(hPersistence.createQuery(clazz)
+                                                          .field(LearningEngineTaskKeys.analysisType)
+                                                          .notIn(LearningEngineTaskType.getDeploymentTaskTypes()));
+        }
+        aggregatePipeline =
+            aggregatePipeline.group(id(grouping("accountId", "accountId")), grouping("count", accumulator("$sum", 1)));
+        if (limit > 0) {
+          aggregatePipeline.limit(limit);
+        }
+        aggregatePipeline
+            .aggregate(InstanceCount.class,
+                AggregationOptions.builder().maxTime(hPersistence.getMaxTimeMs(clazz), TimeUnit.MILLISECONDS).build())
+            .forEachRemaining(instanceCount -> {
+              try (AutoMetricContext accountMetricContext = new AccountMetricContext(instanceCount.id.accountId)) {
+                metricService.recordMetric(getStatusMetricName(metricName, status.toString()), instanceCount.count);
+                metricService.recordMetric(
+                    getStatusMetricNameWithEnv(metricName, status.toString(), ENV), instanceCount.count);
+              }
+            });
+      });
+      log.info("Total time taken to collect metrics for class {} {} (ms)", metricName,
+          clock.instant().toEpochMilli() - startTime);
+    });
+  }
+
+  @VisibleForTesting
   void sendLEAutoscaleMetrics() {
     long now = clock.instant().toEpochMilli();
     recordLEMaxQueuedTime(now);
@@ -254,6 +354,34 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
   @Override
   public List<MetricConfiguration> getMetricConfiguration() {
     List<MetricConfiguration.Metric> metrics = new ArrayList<>();
+    LE_TASKS_METRICS_TO_BE_RECORDED.forEach((metricName, isDeploymentTask) -> {
+      metrics.add(MetricConfiguration.Metric.builder()
+                      .metricName(getNonFinalStatusMetricName(metricName))
+                      .type("LastValue")
+                      .unit("1")
+                      .metricDefinition(metricName + " non final status count")
+                      .build());
+      LearningEngineTask.ExecutionStatus.getNonFinalStatues().forEach(status
+          -> metrics.add(MetricConfiguration.Metric.builder()
+                             .metricName(getStatusMetricName(metricName, status.toString()))
+                             .type("LastValue")
+                             .unit("1")
+                             .metricDefinition(metricName + " " + status + " count")
+                             .build()));
+      metrics.add(MetricConfiguration.Metric.builder()
+                      .metricName(getNonFinalStatusMetricNameWithEnv(metricName, ENV))
+                      .type("LastValue")
+                      .unit("1")
+                      .metricDefinition(metricName + " non final status " + ENV + "count")
+                      .build());
+      LearningEngineTask.ExecutionStatus.getNonFinalStatues().forEach(status
+          -> metrics.add(MetricConfiguration.Metric.builder()
+                             .metricName(getStatusMetricNameWithEnv(metricName, status.toString(), ENV))
+                             .type("LastValue")
+                             .unit("1")
+                             .metricDefinition(metricName + " " + status + ENV + " count")
+                             .build()));
+    });
     TASKS_INFO.forEach((clazz, queryParam) -> {
       metrics.add(MetricConfiguration.Metric.builder()
                       .metricName(getNonFinalStatusMetricName(queryParam.getName()))
@@ -291,9 +419,20 @@ public class CVNGMetricsPublisher implements MetricsPublisher, MetricDefinitionI
   private String getNonFinalStatusMetricName(String name) {
     return name + "_non_final_status_count";
   }
+
+  private String getNonFinalStatusMetricNameWithEnv(String name, String env) {
+    return name + "_non_final_status_" + env + "_count";
+  }
   @NotNull
   private String getStatusMetricName(QueryParams queryParams, String s) {
     return queryParams.getName() + "_" + s.toLowerCase() + "_count";
+  }
+
+  private String getStatusMetricName(String name, String s) {
+    return name + "_" + s.toLowerCase() + "_count";
+  }
+  private String getStatusMetricNameWithEnv(String name, String status, String env) {
+    return name + "_" + status.toLowerCase() + "_" + env + "_count";
   }
 
   @Value

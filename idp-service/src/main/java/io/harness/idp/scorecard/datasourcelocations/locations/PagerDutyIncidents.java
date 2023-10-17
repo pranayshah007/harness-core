@@ -57,12 +57,10 @@ public class PagerDutyIncidents implements DataSourceLocation {
         ((HttpDataSourceLocationEntity) dataSourceLocationEntity).getApiRequestDetails();
 
     String apiUrl = apiRequestDetails.getUrl();
-    log.info("PagerDutyIncidents DSL -  URL before replacements - {}", apiUrl);
 
     Map<String, Object> inputValueData = new HashMap<>();
 
     if (replaceableHeaders.get(AUTHORIZATION_HEADER) == null) {
-      log.info("PagerDutyIncidents DSL - Pager duty plugin is not enabled");
       inputValueData.put(ERROR_MESSAGE_KEY, PAGERDUTY_PLUGIN_NOT_ENABLED_ERROR_MESSAGE);
       return inputValueData;
     }
@@ -71,25 +69,18 @@ public class PagerDutyIncidents implements DataSourceLocation {
 
     String serviceId = possibleReplaceableUrlPairs.get(PAGERDUTY_SERVICE_ID);
     if (serviceId == null) {
-      log.info("PagerDutyIncidents DSL - pager duty annotation is missing");
       inputValueData.put(ERROR_MESSAGE_KEY, PAGERDUTY_ANNOTATION_MISSING_ERROR);
       return inputValueData;
     }
 
     apiUrl = replaceUrlsPlaceholdersIfAny(apiUrl, possibleReplaceableUrlPairs);
 
-    log.info("PagerDutyIncidents DSL - Replaced API URL - {} ", apiUrl);
-
     apiUrl = replaceUrlsPlaceholdersIfAny(apiUrl, getDynamicReplaceableURLPlaceHolders());
-    log.info("PagerDutyIncidents DSL - Replaced Dynamic API URL - {} ", apiUrl);
 
     apiRequestDetails.setUrl(apiUrl);
 
     DslClient dslClient = dslClientFactory.getClient(accountIdentifier, null);
     Response response = getResponse(apiRequestDetails, dslClient, accountIdentifier);
-
-    log.info("PagerDutyIncidents DSL - Response Status - {}", response.getStatus());
-    log.info("PagerDutyIncidents DSL - Response Entity - {}", response.getEntity().toString());
 
     if (response.getStatus() == 200) {
       inputValueData.put(DSL_RESPONSE, GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class));
@@ -101,8 +92,6 @@ public class PagerDutyIncidents implements DataSourceLocation {
       inputValueData.put(ERROR_MESSAGE_KEY, PAGERDUTY_UNABLE_TO_FETCH_DATA_ERROR_MESSAGE);
     }
 
-    log.info("PagerDutyIncidents DSL - Response status code - {} and returned response -{}", response.getStatus(),
-        inputValueData);
     return inputValueData;
   }
 

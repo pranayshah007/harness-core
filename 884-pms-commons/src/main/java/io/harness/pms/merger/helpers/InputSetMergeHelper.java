@@ -8,7 +8,6 @@
 package io.harness.pms.merger.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -20,7 +19,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -52,17 +51,13 @@ public class InputSetMergeHelper {
   public JsonNode mergeInputSetsForGivenStages(JsonNode template, List<JsonNode> inputSetJsonNodeList,
       boolean appendInputSetValidator, List<String> stageIdentifiers) {
     List<JsonNode> inputSetPipelineCompJsonNodeList =
-        getInputSetPipelineCompJsonNodeListWithJsonNode(inputSetJsonNodeList);
-    JsonNode res = template;
-    for (JsonNode jsonNode : inputSetPipelineCompJsonNodeList) {
-      JsonNode jsonNodeWithRequiredStages = removeNonRequiredStages(jsonNode, stageIdentifiers);
-      if (isEmpty(jsonNodeWithRequiredStages)) {
-        continue;
-      }
-      res = MergeHelper.mergeRuntimeInputValuesIntoOriginalJsonNode(
-          res, jsonNodeWithRequiredStages, appendInputSetValidator);
-    }
-    return res;
+        getInputSetPipelineCompJsonNodeListWithJsonNode(inputSetJsonNodeList)
+            .stream()
+            .map(o -> removeNonRequiredStages(o, stageIdentifiers))
+            .collect(Collectors.toList());
+    Collections.reverse(inputSetPipelineCompJsonNodeList);
+    return MergeHelper.mergeRuntimeInputValuesIntoOriginalJsonNode(
+        template, inputSetPipelineCompJsonNodeList, appendInputSetValidator);
   }
 
   private List<JsonNode> getInputSetPipelineCompJsonNodeListWithJsonNode(List<JsonNode> inputSetJsonNodeList) {
@@ -82,14 +77,7 @@ public class InputSetMergeHelper {
       return null;
     }
     JsonNode mergedInputSetNode = getMergedInputSetNodeWithJsonNode(inputSetJsonNodeList);
-    Map<String, Object> inputsMap = new HashMap<>();
-    if (mergedInputSetNode.get(YAMLFieldNameConstants.INPUTS) != null) {
-      inputsMap.put(YAMLFieldNameConstants.INPUTS, mergedInputSetNode.get(YAMLFieldNameConstants.INPUTS));
-    }
-    if (mergedInputSetNode.get(YAMLFieldNameConstants.OPTIONS) != null) {
-      inputsMap.put(YAMLFieldNameConstants.OPTIONS, mergedInputSetNode.get(YAMLFieldNameConstants.OPTIONS));
-    }
-    return JsonUtils.asTree(inputsMap);
+    return mergedInputSetNode != null ? mergedInputSetNode.get(YAMLFieldNameConstants.SPEC) : JsonUtils.readTree("{}");
   }
 
   private JsonNode getMergedInputSetNodeWithJsonNode(List<JsonNode> inputSetJsonNodeList) {

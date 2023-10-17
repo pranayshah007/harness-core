@@ -7,6 +7,7 @@
 
 package io.harness.cdng.provision.awscdk;
 
+import static io.harness.cdng.provision.awscdk.AwsCdkHelper.CDK_OUTPUT_OUTCOME_NAME;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -14,6 +15,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.cdng.provision.awscdk.beans.AwsCdkConfig;
+import io.harness.cdng.provision.awscdk.beans.AwsCdkOutcome;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepMapOutput;
 import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
@@ -92,9 +94,6 @@ public class AwsCdkRollbackStep extends AbstractContainerStepV2<StepElementParam
         && stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus() == StepExecutionStatus.SUCCESS) {
       AwsCdkRollbackStepParameters awsCdkRollbackStepParameters =
           (AwsCdkRollbackStepParameters) stepParameters.getSpec();
-      StepMapOutput stepOutput = (StepMapOutput) stepStatusTaskResponseData.getStepStatus().getOutput();
-      Map<String, String> processedOutput = awsCdkStepHelper.processOutput(stepOutput);
-      stepOutput.setMap(processedOutput);
       awsCdkConfigDAL.deleteAwsCdkConfig(
           ambiance, getParameterFieldValue(awsCdkRollbackStepParameters.getProvisionerIdentifier()));
     }
@@ -113,6 +112,18 @@ public class AwsCdkRollbackStep extends AbstractContainerStepV2<StepElementParam
   @Override
   public StepResponse.StepOutcome getAnyOutComeForStep(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
+    awsCdkStepHelper.handleBinaryResponseData(responseDataMap);
+    StepStatusTaskResponseData stepStatusTaskResponseData =
+        containerStepExecutionResponseHelper.filterK8StepResponse(responseDataMap);
+    if (stepStatusTaskResponseData != null
+        && stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus() == StepExecutionStatus.SUCCESS) {
+      StepMapOutput stepOutput = (StepMapOutput) stepStatusTaskResponseData.getStepStatus().getOutput();
+      Map<String, Object> processedOutput = awsCdkStepHelper.processOutput(stepOutput);
+      return StepResponse.StepOutcome.builder()
+          .name(CDK_OUTPUT_OUTCOME_NAME)
+          .outcome(new AwsCdkOutcome(processedOutput))
+          .build();
+    }
     return null;
   }
 

@@ -18,7 +18,9 @@ import io.harness.steps.container.utils.PluginUtils;
 import io.harness.steps.plugin.PluginStep;
 
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 @OwnedBy(HarnessTeam.SSCA)
@@ -43,7 +45,9 @@ public class PluginStepSerializer {
         io.harness.product.ci.engine.proto.PluginStep.newBuilder()
             .setContainerPort(port)
             .setImage(pluginExecutionConfigHelper.getPluginImage(pluginStep).getImage())
-            .addAllEntrypoint(pluginExecutionConfigHelper.getPluginImage(pluginStep).getEntrypoint())
+            .addAllEntrypoint(
+                Optional.ofNullable(pluginExecutionConfigHelper.getPluginImage(pluginStep).getEntrypoint())
+                    .orElse(Collections.emptyList()))
             .setContext(stepContext)
             .putAllEnvironment(envVarMap)
             .build();

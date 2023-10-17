@@ -23,21 +23,24 @@ https://harness.atlassian.net/wiki/spaces/BT/pages/21101969665/How+to+setup+loca
 
    To setup the recommended version, download the OpenJDK 1.8-242 (jdk8u242-b08) JRE .pkg from [AdoptOpenJDK](https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/tag/jdk8u242-b08) and install it. Make sure to update `JAVA_HOME` and `PATH` accordingly (see step 5).~~
 
-2. Install JDK11 locally - 11.0.15 Temurin build 
+2. Install JDK17 locally - 17.0.7+7 Temurin build 
    
-Download JDK 11 for MAC
-`curl -OL https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.15%2B10/OpenJDK11U-jdk_x64_mac_hotspot_11.0.15_10.tar.gz`
+Download JDK 17 for MAC
+`curl -OL https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.7%2B7/OpenJDK17U-jdk_x64_mac_hotspot_17.0.7_7.tar.gz`
 
 Untar it
-`tar -xzf OpenJDK11U-jdk_x64_mac_hotspot_11.0.15_10.tar.gz`
+`tar -xzf OpenJDK17U-jdk_x64_mac_hotspot_17.0.7_7.tar.gz`
+
+Move to java virtual machines
+`sudo mv jdk-17.0.7+7 /Library/Java/JavaVirtualMachines/`
 
 Update java home (Also update in .bashrc/.zshrc)
-`export JAVA_HOME=path_to_folder/jdk-11.0.15+10/Contents/Home`
+`export JAVA_HOME=$(/usr/libexec/java_home -v17)`
 
 Update path (Also update in .bashrc/.zshrc)
 `export PATH=$JAVA_HOME/bin:$PATH`
 
-Check java version, should be 11
+Check java version, should be 17
 `java --version`
 
 3. Install bazel:

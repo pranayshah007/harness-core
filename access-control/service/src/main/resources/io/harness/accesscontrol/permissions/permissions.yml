@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 59
+version: 61
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -590,6 +590,13 @@ permissions:
   - identifier: ff_featureflag_toggle
     name: Toggle a Feature Flag On or Off
     status: ACTIVE
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: ff_featureflag_editStaleState
+    name: Edit a Feature Flags Stale State
+    status: STAGING
     allowedScopeLevels:
       - account
       - organization
@@ -1701,13 +1708,13 @@ permissions:
       - project
   - identifier: ccm_anomalies_view
     name: View CCM Anomalies
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account
   - identifier: ccm_recommendations_view
     name: View CCM Recommendations
-    status: EXPERIMENTAL
+    status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:
       - account

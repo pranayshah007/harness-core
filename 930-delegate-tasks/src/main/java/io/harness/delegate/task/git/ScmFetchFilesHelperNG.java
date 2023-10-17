@@ -215,19 +215,36 @@ public class ScmFetchFilesHelperNG {
     FileContentBatchResponse fileBatchContentResponse =
         fetchFilesByFilePaths(useBranch, branch, commitId, filePathList, scmConnector);
 
-    List<GitFile> gitFiles =
-        fileBatchContentResponse.getFileBatchContentResponse()
-            .getFileContentsList()
-            .stream()
-            .filter(fileContent -> fileContent.getStatus() == 200)
-            .map(fileContent
-                -> GitFile.builder().fileContent(fileContent.getContent()).filePath(fileContent.getPath()).build())
-            .collect(Collectors.toList());
+    if (fileBatchContentResponse.getFileBatchContentResponse() == null) {
+      throwFailedToFetchFileException(useBranch, branch, commitId);
+    }
+    List<GitFile> gitFiles = new ArrayList<>();
+    List<FileContent> fileContents = fileBatchContentResponse.getFileBatchContentResponse().getFileContentsList();
+
+    for (FileContent fileContent : fileContents) {
+      if (fileContent.getStatus() == 0) {
+        // when there is no response from the git provider
+        // when this happens fileContent will be empty and error will be empty (all fields will have their zero values)
+        throwFailedToFetchFileException(useBranch, branch, commitId);
+      }
+      if (fileContent.getStatus() == 200) {
+        GitFile gitFile =
+            GitFile.builder().fileContent(fileContent.getContent()).filePath(fileContent.getPath()).build();
+        gitFiles.add(gitFile);
+      }
+    }
 
     if (isNotEmpty(gitFiles)) {
       gitFiles.forEach(gitFile -> log.info("File fetched : " + gitFile.getFilePath()));
     }
     return gitFiles;
+  }
+
+  private void throwFailedToFetchFileException(boolean useBranch, String branch, String commitId) {
+    String failedToFetchErrorMessage = "Unable to fetch files" + (useBranch ? " for Branch: " : " for CommitId: ")
+        + (useBranch ? branch : commitId) + " due to connectivity issue. Please try again after some time";
+    log.info(failedToFetchErrorMessage);
+    throw new GitClientException(failedToFetchErrorMessage, USER);
   }
 
   private FileContentBatchResponse fetchFilesByFilePaths(

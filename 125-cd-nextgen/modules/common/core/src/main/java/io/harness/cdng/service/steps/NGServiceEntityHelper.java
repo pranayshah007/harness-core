@@ -55,8 +55,9 @@ public class NGServiceEntityHelper {
     if (isEmpty(serviceRefs)) {
       return Collections.emptyMap();
     }
+
     List<ServiceEntity> serviceEntityList =
-        serviceEntityService.getServices(accountIdentifier, orgIdentifier, projectIdentifier, serviceRefs);
+        serviceEntityService.getMetadata(accountIdentifier, orgIdentifier, projectIdentifier, serviceRefs);
 
     Map<String, List<NGTag>> serviceToTagsMap = new LinkedHashMap<>();
     for (ServiceEntity serviceEntity : serviceEntityList) {

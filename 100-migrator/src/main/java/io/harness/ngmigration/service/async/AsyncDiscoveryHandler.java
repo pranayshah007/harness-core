@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.service.async;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.MigrationTrackReqPayload;
 import io.harness.beans.MigrationTrackRespPayload;
 import io.harness.ngmigration.beans.summary.BaseSummary;
@@ -23,6 +25,7 @@ import com.google.inject.Inject;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class AsyncDiscoveryHandler extends AsyncTaskHandler {

@@ -127,6 +127,8 @@ public class SlackServiceImpl implements ChannelService {
     String template = templateOpt.get();
     StrSubstitutor strSubstitutor = new StrSubstitutor(templateData);
     String message = strSubstitutor.replace(template);
+    List<String> validDomains = notificationSettingsHelper.getTargetAllowlistFromSettings(
+        SettingIdentifiers.SLACK_NOTIFICATION_ENDPOINTS_ALLOWLIST, accountId);
     NotificationProcessingResponse processingResponse = null;
     if (notificationSettingsService.checkIfWebhookIsSecret(slackWebhookUrls)) {
       DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.builder()
@@ -136,7 +138,7 @@ public class SlackServiceImpl implements ChannelService {
                                                                         .notificationId(notificationId)
                                                                         .message(message)
                                                                         .slackWebhookUrls(slackWebhookUrls)
-                                                                        .accountId(accountId)
+                                                                        .slackWebhookUrlDomainAllowlist(validDomains)
                                                                         .build())
                                                     .taskSetupAbstractions(abstractionMap)
                                                     .expressionFunctorToken(expressionFunctorToken)
@@ -146,7 +148,7 @@ public class SlackServiceImpl implements ChannelService {
       log.info("Async delegate task created with taskID {}", taskId);
       processingResponse = NotificationProcessingResponse.allSent(slackWebhookUrls.size());
     } else {
-      processingResponse = slackSender.send(slackWebhookUrls, message, notificationId, accountId);
+      processingResponse = slackSender.send(slackWebhookUrls, message, notificationId, validDomains);
     }
     log.info(NotificationProcessingResponse.isNotificationRequestFailed(processingResponse)
             ? "Failed to send notification for request {}"

@@ -63,6 +63,15 @@ public class EnvironmentMapper {
       NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environmentRequestDTO);
 
       validateOrThrow(environmentRequestDTO, ngEnvironmentConfig);
+
+      String description = isEmpty(environmentRequestDTO.getDescription())
+          ? ngEnvironmentConfig.getNgEnvironmentInfoConfig().getDescription()
+          : environmentRequestDTO.getDescription();
+
+      Map<String, String> tags = isEmpty(environmentRequestDTO.getTags())
+          ? ngEnvironmentConfig.getNgEnvironmentInfoConfig().getTags()
+          : environmentRequestDTO.getTags();
+
       environment = Environment.builder()
                         .identifier(environmentRequestDTO.getIdentifier())
                         .accountId(accountId)
@@ -70,9 +79,9 @@ public class EnvironmentMapper {
                         .projectIdentifier(environmentRequestDTO.getProjectIdentifier())
                         .name(environmentRequestDTO.getName())
                         .color(Optional.ofNullable(environmentRequestDTO.getColor()).orElse(HARNESS_BLUE))
-                        .description(environmentRequestDTO.getDescription())
+                        .description(description)
                         .type(environmentRequestDTO.getType())
-                        .tags(convertToList(environmentRequestDTO.getTags()))
+                        .tags(convertToList(tags))
                         .build();
 
       environment.setYaml(environmentRequestDTO.getYaml());
@@ -149,7 +158,10 @@ public class EnvironmentMapper {
 
   private EntityGitDetails getEntityGitDetails(Environment environment) {
     if (environment.getStoreType() == StoreType.REMOTE) {
-      return GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata();
+      EntityGitDetails entityGitDetails = GitAwareContextHelper.getEntityGitDetails(environment);
+
+      // add additional details from scm metadata
+      return GitAwareContextHelper.updateEntityGitDetailsFromScmGitMetadata(entityGitDetails);
     }
     return null; // Default if storeType is not remote
   }

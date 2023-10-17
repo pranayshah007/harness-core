@@ -1,7 +1,7 @@
 .gitleaksignore pranay.shah@harness.io jyoti.raval@harness.io
-DockerFile* udham.singh@harness.io
-.bazel* udham.singh@harness.io
-bazel* udham.singh@harness.io
+DockerFile* @harness/build-engineering
+.bazel* @harness/build-engineering
+bazel* @harness/build-engineering
 /access-control/ ankit.singhal@harness.io mallavarapu.reetika@harness.io manish.manchanda@harness.io jimit.gandhi@harness.io ashish.sanodia@harness.io meenakshi.raikwar@harness.io
 /batch-processing/ hitesh.aringa@harness.io nikunj.badjatya@harness.io shubhanshu.verma@harness.io trunapushpa.surkar@harness.io anmol.maheshwari@harness.io abhinav.singh3@harness.io sahildeep.singh@harness.io abhijeet.sharma@harness.io
 /clients/access-control/ ankit.singhal@harness.io mallavarapu.reetika@harness.io manish.manchanda@harness.io jimit.gandhi@harness.io ashish.sanodia@harness.io meenakshi.raikwar@harness.io
