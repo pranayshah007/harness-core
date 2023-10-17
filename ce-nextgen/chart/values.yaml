@@ -108,7 +108,7 @@ image:
   repository: harness/ce-nextgen-signed
   pullPolicy: IfNotPresent
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "80806-000"
+  tag: "81100-000"
   digest: ""
 # image pull secrets to use for ce-nextgen image
   imagePullSecrets: []
@@ -118,7 +118,7 @@ imageClickhouseEnabled:
   repository: harness/ce-nextgen-signed
   pullPolicy: Always
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "80806-000"
+  tag: "81100-000"
   digest: ""
 # image pull secrets to use for ce-nextgen image
   imagePullSecrets: []
