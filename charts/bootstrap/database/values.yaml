@@ -20,7 +20,7 @@ minio:
   mode: standalone
   defaultBuckets: "logs, sbom_store, policy_store"
   image:
-    tag: 2023.7.18-debian-11-r2
+    tag: 2023.10.7-debian-11-r2
   persistence:
     size: 200Gi
   auth:
