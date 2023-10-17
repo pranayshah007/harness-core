@@ -87,11 +87,11 @@ spec:
         resources:
           {{- toYaml .Values.resources | nindent 12 }}
         env:
-          {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" . "variableName" "OPA_SERVER_SECRET" "defaultKubernetesSecretName" "pipeline-service" "defaultKubernetesSecretKey" "OPA_SERVER_SECRET") | indent 10 }}
-          {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" . "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 10 }}
-          {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" . "userVariableName" "CACHE_CONFIG_REDIS_USERNAME" "passwordVariableName" "CACHE_CONFIG_REDIS_PASSWORD") | indent 10 }}
-          {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" . "userVariableName" "LOCK_CONFIG_REDIS_USERNAME" "passwordVariableName" "LOCK_CONFIG_REDIS_PASSWORD") | indent 10 }}
-          {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" .) | indent 10 }}
+          {{- include "harnesscommon.secrets.manageAppEnv" (dict "ctx" $ "variableName" "OPA_SERVER_SECRET" "defaultKubernetesSecretName" "pipeline-service" "defaultKubernetesSecretKey" "OPA_SERVER_SECRET") | indent 10 }}
+          {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "EVENTS_FRAMEWORK_REDIS_USERNAME" "passwordVariableName" "EVENTS_FRAMEWORK_REDIS_PASSWORD") | indent 10 }}
+          {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "CACHE_CONFIG_REDIS_USERNAME" "passwordVariableName" "CACHE_CONFIG_REDIS_PASSWORD") | indent 10 }}
+          {{- include "harnesscommon.dbconnectionv2.redisEnv" (dict "ctx" $ "userVariableName" "LOCK_CONFIG_REDIS_USERNAME" "passwordVariableName" "LOCK_CONFIG_REDIS_PASSWORD") | indent 10 }}
+          {{- include "harnesscommon.dbconnectionv2.mongoEnv" (dict "ctx" $) | indent 10 }}
           {{- include "harnesscommon.dbconnectionv2.timescaleEnv" (dict "ctx" .) | indent 10 }}
           - name: MONGO_URI
             value: {{ include "harnesscommon.dbconnectionv2.mongoConnection" (dict "database" "pms-harness" "ctx" $) }}
