@@ -16,9 +16,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.NGEntityName;
 
+import software.wings.jersey.JsonViews;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonView;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -43,6 +46,7 @@ public class OrganizationDTO {
   @EntityIdentifier(allowBlank = false)
   @Schema(description = OrganizationConstants.IDENTIFIER)
   String identifier;
+  @JsonView(JsonViews.Internal.class) @Schema(hidden = true, description = "UniqueId of Organization") String uniqueId;
   @ApiModelProperty(required = true) @NGEntityName @Schema(description = OrganizationConstants.NAME) String name;
   @Size(max = 1024) @Schema(description = "Description of the Organization.") String description;
   @Size(max = 128) @Schema(description = "Tags for the Organization.") Map<String, String> tags;
@@ -50,10 +54,12 @@ public class OrganizationDTO {
   @JsonIgnore boolean harnessManaged;
 
   @Builder
-  public OrganizationDTO(String identifier, String name, String description, Map<String, String> tags) {
+  public OrganizationDTO(
+      String identifier, String name, String description, Map<String, String> tags, String uniqueId) {
     this.identifier = identifier;
     this.name = name;
     this.description = description;
     this.tags = tags;
+    this.uniqueId = uniqueId;
   }
 }
