@@ -75,7 +75,7 @@ USAGE:
     {{- $ := .ctx }}
     {{- $hasAtleastOneSecret := false }}
     {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
-    {{- if eq (include "harnesscommon.secrets.isDefault" (dict "ctx" $ "variableName" "OPA_SERVER_SECRET" "extKubernetesSecretCtxs" (list $.Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict $localESOSecretCtxIdentifier $.Values.secrets.secretManagement.externalSecretsOperator)))) "true" }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "OPA_SERVER_SECRET")) "true" }}
     {{- $hasAtleastOneSecret = true }}
 OPA_SERVER_SECRET: {{ .ctx.Values.secrets.default.OPA_SERVER_SECRET | b64enc }}
     {{- end }}
