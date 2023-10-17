@@ -17,7 +17,6 @@ import io.harness.dto.PollingResponseDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.polling.bean.PolledResponse;
 import io.harness.polling.bean.PollingDocument;
-import io.harness.polling.bean.PollingResponse;
 import io.harness.polling.contracts.PollingItem;
 
 import java.util.List;
@@ -26,7 +25,7 @@ import javax.validation.Valid;
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_TRIGGERS})
 @OwnedBy(HarnessTeam.CDC)
 public interface PollingService {
-  PollingResponse save(@Valid PollingDocument pollingDocument);
+  PollingResponseDTO save(@Valid PollingDocument pollingDocument);
 
   PollingDocument get(String accountId, String pollingDocId);
 

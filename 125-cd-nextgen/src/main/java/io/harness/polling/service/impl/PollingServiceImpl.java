@@ -29,7 +29,6 @@ import io.harness.polling.bean.ManifestPolledResponse;
 import io.harness.polling.bean.PolledResponse;
 import io.harness.polling.bean.PollingDocument;
 import io.harness.polling.bean.PollingDocument.PollingDocumentKeys;
-import io.harness.polling.bean.PollingResponse;
 import io.harness.polling.bean.PollingType;
 import io.harness.polling.contracts.PollingItem;
 import io.harness.polling.mapper.PollingDocumentMapper;
@@ -61,25 +60,34 @@ public class PollingServiceImpl implements PollingService {
   @Inject @Getter private final Subject<PollingServiceObserver> subject = new Subject<>();
 
   @Override
-  public PollingResponse save(PollingDocument pollingDocument) {
-    Boolean isExistingPollingDoc = true;
+  public PollingResponseDTO save(PollingDocument pollingDocument) {
+    List<String> lastPolled = new ArrayList<>();
+    Long lastPollingUpdate = null;
     validatePollingDocument(pollingDocument);
     PollingDocument savedPollingDoc = pollingRepository.addSubscribersToExistingPollingDoc(
         pollingDocument.getAccountId(), pollingDocument.getOrgIdentifier(), pollingDocument.getProjectIdentifier(),
         pollingDocument.getPollingType(), pollingDocument.getPollingInfo(), pollingDocument.getSignatures(),
         pollingDocument.getSignaturesLock());
+    if (savedPollingDoc != null) {
+      lastPollingUpdate = savedPollingDoc.getLastModifiedPolledResponseTime() == null
+          ? savedPollingDoc.getLastModifiedAt()
+          : savedPollingDoc.getLastModifiedPolledResponseTime();
+      lastPolled = getPolledKeys(savedPollingDoc);
+    }
     // savedPollingDoc will be null if we couldn't find polling doc with the same entries as pollingDocument.
     if (savedPollingDoc == null) {
       // Setting uuid as null so that on saving database generates a new uuid and does not use the old one as some other
       // trigger might still be consuming that polling document
       pollingDocument.setUuid(null);
       savedPollingDoc = pollingRepository.save(pollingDocument);
-      isExistingPollingDoc = false;
       createPerpetualTask(savedPollingDoc);
+      return PollingResponseDTO.builder().isExistingPollingDoc(false).pollingDocId(savedPollingDoc.getUuid()).build();
     }
-    return PollingResponse.builder()
-        .pollingDocument(savedPollingDoc)
-        .isExistingPollingDoc(isExistingPollingDoc)
+    return PollingResponseDTO.builder()
+        .isExistingPollingDoc(true)
+        .lastPolled(lastPolled)
+        .lastPollingUpdate(lastPollingUpdate)
+        .pollingDocId(savedPollingDoc.getUuid())
         .build();
   }
 
@@ -163,23 +171,7 @@ public class PollingServiceImpl implements PollingService {
 
     // Determine if update request
     if (existingPollingDoc == null) {
-      PollingResponse pollingResponse = save(pollingDocument);
-      if (pollingResponse.getIsExistingPollingDoc().equals(Boolean.TRUE)) {
-        lastPollingUpdate = pollingResponse.getPollingDocument().getLastModifiedPolledResponseTime() == null
-            ? pollingResponse.getPollingDocument().getLastModifiedAt()
-            : pollingResponse.getPollingDocument().getLastModifiedPolledResponseTime();
-        lastPolled = getPolledKeys(pollingResponse.getPollingDocument());
-        return PollingResponseDTO.builder()
-            .isExistingPollingDoc(pollingResponse.getIsExistingPollingDoc())
-            .pollingDocId(pollingResponse.getPollingDocument().getUuid())
-            .lastPolled(lastPolled)
-            .lastPollingUpdate(lastPollingUpdate)
-            .build();
-      }
-      return PollingResponseDTO.builder()
-          .isExistingPollingDoc(pollingResponse.getIsExistingPollingDoc())
-          .pollingDocId(pollingResponse.getPollingDocument().getUuid())
-          .build();
+      return save(pollingDocument);
     }
 
     if (existingPollingDoc.getPollingInfo().equals(pollingDocument.getPollingInfo())) {
@@ -194,7 +186,7 @@ public class PollingServiceImpl implements PollingService {
       // Note: This is intentional. The pollingDocId sent to us is stale, we need to set it to null so that the save
       // call creates a new pollingDoc
       pollingDocument.setUuid(null);
-      pollingDocId = save(pollingDocument).getPollingDocument().getUuid();
+      pollingDocId = save(pollingDocument).getPollingDocId();
     }
     return PollingResponseDTO.builder()
         .pollingDocId(pollingDocId)
