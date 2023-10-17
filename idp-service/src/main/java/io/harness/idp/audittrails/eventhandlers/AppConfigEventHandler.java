@@ -4,7 +4,7 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
-package io.harness.idp.audittrials.eventhandlers;
+package io.harness.idp.audittrails.eventhandlers;
 
 import static io.harness.idp.configmanager.events.appconfigs.AppConfigCreateEvent.APP_CONFIG_CREATED;
 import static io.harness.idp.configmanager.events.appconfigs.AppConfigUpdateEvent.APP_CONFIG_UPDATED;
@@ -12,6 +12,8 @@ import static io.harness.idp.configmanager.events.appconfigs.AppConfigUpdateEven
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 
 import io.harness.ModuleType;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.Action;
 import io.harness.audit.beans.AuditEntry;
 import io.harness.audit.beans.ResourceDTO;
@@ -19,7 +21,7 @@ import io.harness.audit.beans.ResourceScopeDTO;
 import io.harness.audit.client.api.AuditClientService;
 import io.harness.context.GlobalContext;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.idp.audittrials.eventhandlers.dtos.ConfigDTO;
+import io.harness.idp.audittrails.eventhandlers.dtos.ConfigDTO;
 import io.harness.idp.configmanager.events.appconfigs.AppConfigCreateEvent;
 import io.harness.idp.configmanager.events.appconfigs.AppConfigUpdateEvent;
 import io.harness.ng.core.utils.NGYamlUtils;
@@ -33,6 +35,7 @@ import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@OwnedBy(HarnessTeam.IDP)
 public class AppConfigEventHandler implements OutboxEventHandler {
   private static final ObjectMapper objectMapper = NG_DEFAULT_OBJECT_MAPPER;
   private final AuditClientService auditClientService;

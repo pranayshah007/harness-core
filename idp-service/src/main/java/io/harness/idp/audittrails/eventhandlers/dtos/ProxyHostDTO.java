@@ -4,13 +4,12 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
-package io.harness.idp.audittrials.eventhandlers.dtos;
+package io.harness.idp.audittrails.eventhandlers.dtos;
 
 import io.harness.gitsync.beans.YamlDTO;
-import io.harness.spec.server.idp.v1.model.AppConfig;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import javax.validation.Valid;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -20,6 +19,8 @@ import lombok.experimental.FieldDefaults;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class ConfigDTO implements YamlDTO {
-  @Valid AppConfig appConfig;
+public class ProxyHostDTO implements YamlDTO {
+  String pluginId;
+  String host;
+  List<String> delegateSelectors;
 }
