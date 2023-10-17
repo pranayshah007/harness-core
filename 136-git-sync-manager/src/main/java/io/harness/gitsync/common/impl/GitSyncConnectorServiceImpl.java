@@ -5,48 +5,30 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.gitsync.common.helper;
+package io.harness.gitsync.common.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.exception.WingsException.USER;
-
-import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.Scope;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
-import io.harness.connector.ConnectorValidationResult;
-import io.harness.connector.ManagerExecutable;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
-import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
-import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
-import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
-import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
-import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
-import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.exception.ConnectorNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.gitsync.beans.GitRepositoryDTO;
-import io.harness.gitsync.common.dtos.AzureRepoSCMDTO;
-import io.harness.gitsync.common.dtos.BitbucketSCMDTO;
-import io.harness.gitsync.common.dtos.GithubSCMDTO;
-import io.harness.gitsync.common.dtos.GitlabSCMDTO;
-import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
-import io.harness.gitsync.common.dtos.UserSourceCodeManagerDTO;
-import io.harness.gitsync.common.dtos.gitAccess.GitAccessDTO;
+import io.harness.gitsync.common.helper.GitSyncUtils;
+import io.harness.gitsync.common.service.GitSyncConnectorService;
 import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
-import io.harness.gitsync.utils.GitProviderUtils;
 import io.harness.manage.GlobalContextManager;
 import io.harness.security.PrincipalContextData;
 import io.harness.tasks.DecryptGitApiAccessHelper;
@@ -56,29 +38,28 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.NotImplementedException;
 
 @Singleton
 @OwnedBy(DX)
 @Slf4j
-public class GitSyncConnectorHelper {
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+public class GitSyncConnectorServiceImpl implements GitSyncConnectorService {
   ConnectorService connectorService;
   DecryptGitApiAccessHelper decryptGitApiAccessHelper;
   YamlGitConfigService yamlGitConfigService;
-  UserSourceCodeManagerHelper userSourceCodeManagerHelper;
 
   @Inject
-  public GitSyncConnectorHelper(@Named("connectorDecoratorService") ConnectorService connectorService,
-      DecryptGitApiAccessHelper decryptGitApiAccessHelper, YamlGitConfigService yamlGitConfigService,
-      UserSourceCodeManagerHelper userSourceCodeManagerHelper) {
+  public GitSyncConnectorServiceImpl(@Named("connectorDecoratorService") ConnectorService connectorService,
+      DecryptGitApiAccessHelper decryptGitApiAccessHelper, YamlGitConfigService yamlGitConfigService) {
     this.connectorService = connectorService;
     this.decryptGitApiAccessHelper = decryptGitApiAccessHelper;
     this.yamlGitConfigService = yamlGitConfigService;
-    this.userSourceCodeManagerHelper = userSourceCodeManagerHelper;
   }
 
+  @Override
   public ScmConnector getDecryptedConnector(
       String yamlGitConfigIdentifier, String projectIdentifier, String orgIdentifier, String accountId) {
     final YamlGitConfigDTO yamlGitConfigDTO =
@@ -91,6 +72,7 @@ public class GitSyncConnectorHelper {
     return getDecryptedConnector(yamlGitConfigDTO, accountId);
   }
 
+  @Override
   public ScmConnector getDecryptedConnector(YamlGitConfigDTO gitSyncConfigDTO, String accountId) {
     final String connectorRef = gitSyncConfigDTO.getGitConnectorRef();
     IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(
@@ -120,11 +102,13 @@ public class GitSyncConnectorHelper {
     }
   }
 
+  @Override
   public ScmConnector getDecryptedConnector(
       String accountId, String orgIdentifier, String projectIdentifier, ScmConnector connectorDTO) {
     return decryptGitApiAccessHelper.decryptScmApiAccess(connectorDTO, accountId, projectIdentifier, orgIdentifier);
   }
 
+  @Override
   public ScmConnector getDecryptedConnectorForNewGitX(
       String accountId, String orgIdentifier, String projectIdentifier, ScmConnector connectorDTO) {
     PrincipalContextData currentPrincipal = GlobalContextManager.get(PrincipalContextData.PRINCIPAL_CONTEXT);
@@ -137,6 +121,7 @@ public class GitSyncConnectorHelper {
     return scmConnector;
   }
 
+  @Override
   public ScmConnector getDecryptedConnector(
       YamlGitConfigDTO gitSyncConfigDTO, String accountId, ConnectorResponseDTO connectorDTO) {
     ConnectorInfoDTO connector = connectorDTO.getConnector();
@@ -155,57 +140,7 @@ public class GitSyncConnectorHelper {
     }
   }
 
-  public void decryptGitAccessDTO(GitAccessDTO gitAccessDTO) {
-    decryptGitApiAccessHelper.decryptGitAccessDTO(gitAccessDTO);
-  }
-
-  public void validateTheAPIAccessPresence(ScmConnector scmConnector) {
-    if (scmConnector instanceof GithubConnectorDTO) {
-      checkAPIAccessFieldPresence((GithubConnectorDTO) scmConnector);
-    } else if (scmConnector instanceof GitlabConnectorDTO) {
-      checkAPIAccessFieldPresence((GitlabConnectorDTO) scmConnector);
-    } else if (scmConnector instanceof BitbucketConnectorDTO) {
-      checkAPIAccessFieldPresence((BitbucketConnectorDTO) scmConnector);
-    } else if (scmConnector instanceof AzureRepoConnectorDTO) {
-      checkAPIAccessFieldPresence((AzureRepoConnectorDTO) scmConnector);
-    } else {
-      throw new NotImplementedException(
-          String.format("The scm apis for the provider type %s is not supported", scmConnector.getClass()));
-    }
-  }
-
-  private void checkAPIAccessFieldPresence(GithubConnectorDTO githubConnectorDTO) {
-    GithubApiAccessDTO apiAccess = githubConnectorDTO.getApiAccess();
-    if (apiAccess == null) {
-      throw new InvalidRequestException(
-          "The connector doesn't contain api access field which is required for the git sync ");
-    }
-  }
-
-  private void checkAPIAccessFieldPresence(GitlabConnectorDTO gitlabConnectorDTO) {
-    GitlabApiAccessDTO apiAccess = gitlabConnectorDTO.getApiAccess();
-    if (apiAccess == null) {
-      throw new InvalidRequestException(
-          "The connector doesn't contain api access field which is required for the git sync ");
-    }
-  }
-
-  private void checkAPIAccessFieldPresence(BitbucketConnectorDTO bitbucketConnectorDTO) {
-    BitbucketApiAccessDTO apiAccess = bitbucketConnectorDTO.getApiAccess();
-    if (apiAccess == null) {
-      throw new InvalidRequestException(
-          "The connector doesn't contain api access field which is required for the git sync ");
-    }
-  }
-
-  private void checkAPIAccessFieldPresence(AzureRepoConnectorDTO azureRepoConnectorDTO) {
-    AzureRepoApiAccessDTO apiAccess = azureRepoConnectorDTO.getApiAccess();
-    if (apiAccess == null) {
-      throw new InvalidRequestException(
-          "The connector doesn't contain api access field which is required for the git sync ");
-    }
-  }
-
+  @Override
   public ScmConnector getScmConnector(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String connectorRef, String connectorRepo, String connectorBranch) {
     IdentifierRef identifierRef =
@@ -213,12 +148,13 @@ public class GitSyncConnectorHelper {
     final Optional<ConnectorResponseDTO> connectorResponseDTO = getConnectorFromDefaultBranchElseFromGitBranch(
         identifierRef.getAccountIdentifier(), identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(),
         identifierRef.getIdentifier(), connectorRepo, connectorBranch);
-    if (!connectorResponseDTO.isPresent()) {
-      throw new InvalidRequestException(String.format("Ref Connector [{}] doesn't exist.", connectorRef));
+    if (connectorResponseDTO.isEmpty()) {
+      throw new InvalidRequestException(String.format("Ref Connector [%s] doesn't exist.", connectorRef));
     }
     return (ScmConnector) connectorResponseDTO.get().getConnector().getConnectorConfig();
   }
 
+  @Override
   public ScmConnector getDecryptedConnector(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef, String repoUrl) {
     Optional<YamlGitConfigDTO> yamlGitConfigDTO = yamlGitConfigService.getByProjectIdAndRepoOptional(
@@ -245,9 +181,10 @@ public class GitSyncConnectorHelper {
     }
   }
 
+  @Override
   public Optional<ConnectorResponseDTO> getConnectorFromDefaultBranchElseFromGitBranch(String accountId,
       String orgIdentifier, String projectIdentifier, String identifier, String connectorRepo, String connectorBranch) {
-    Optional<ConnectorResponseDTO> connectorResponseDTO = Optional.empty();
+    Optional<ConnectorResponseDTO> connectorResponseDTO;
     GitEntityInfo oldGitEntityInfo = GitContextHelper.getGitEntityInfo();
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard()) {
       final GitEntityInfo emptyInfo = GitEntityInfo.builder().build();
@@ -264,7 +201,8 @@ public class GitSyncConnectorHelper {
         accountId, orgIdentifier, projectIdentifier, identifier, connectorRepo, connectorBranch);
   }
 
-  private Optional<ConnectorResponseDTO> getConnectorFromRepoBranch(String accountId, String orgIdentifier,
+  @Override
+  public Optional<ConnectorResponseDTO> getConnectorFromRepoBranch(String accountId, String orgIdentifier,
       String projectIdentifier, String identifier, String connectorRepo, String connectorBranch) {
     GitEntityInfo oldGitEntityInfo = GitContextHelper.getGitEntityInfo();
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard()) {
@@ -281,6 +219,7 @@ public class GitSyncConnectorHelper {
 
   // ----------------------- GIT-SIMPLIFICATION METHODS ---------------------------
 
+  @Override
   public ScmConnector getScmConnector(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef) {
     Optional<ConnectorResponseDTO> connectorDTO =
@@ -303,6 +242,7 @@ public class GitSyncConnectorHelper {
         USER);
   }
 
+  @Override
   public ScmConnector getDecryptedConnectorByRef(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef) {
     ScmConnector gitConnectorConfig =
@@ -310,6 +250,7 @@ public class GitSyncConnectorHelper {
     return getDecryptedConnectorForNewGitX(accountIdentifier, orgIdentifier, projectIdentifier, gitConnectorConfig);
   }
 
+  @Override
   public ScmConnector getScmConnectorForGivenRepo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef, String repoName) {
     ScmConnector scmConnector = getScmConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
@@ -318,6 +259,7 @@ public class GitSyncConnectorHelper {
     return scmConnector;
   }
 
+  @Override
   public ScmConnector getScmConnectorForGivenRepo(Scope scope, String connectorRef, String repoName) {
     ScmConnector scmConnector = getScmConnector(
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorRef);
@@ -326,14 +268,7 @@ public class GitSyncConnectorHelper {
     return scmConnector;
   }
 
-  public boolean isScmConnectorManagerExecutable(ScmConnector scmConnector) {
-    if (scmConnector instanceof ManagerExecutable) {
-      final Boolean executeOnDelegate = ((ManagerExecutable) scmConnector).getExecuteOnDelegate();
-      return executeOnDelegate == Boolean.FALSE;
-    }
-    return false;
-  }
-
+  @Override
   public ScmConnector getDecryptedConnectorForGivenRepo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef, String repoName) {
     ScmConnector scmConnector =
@@ -341,62 +276,5 @@ public class GitSyncConnectorHelper {
     scmConnector.setGitConnectionUrl(
         scmConnector.getGitConnectionUrl(GitRepositoryDTO.builder().name(repoName).build()));
     return scmConnector;
-  }
-
-  public void testConnectionAsync(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef) {
-    CompletableFuture.runAsync(() -> {
-      try {
-        ConnectorValidationResult testConnectionResult =
-            connectorService.testConnection(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
-        log.info(format("testConnectionResult for %s Connector: %s, project %s, org %s, account %s", connectorRef,
-            testConnectionResult.getStatus(), projectIdentifier, orgIdentifier, accountIdentifier));
-      } catch (Exception ex) {
-        log.error(format("failed to test connection for %s Connector for project %s, org %s, account %s", connectorRef,
-                      projectIdentifier, orgIdentifier, accountIdentifier),
-            ex);
-      }
-    });
-  }
-
-  public void setUserGitCredsInConnectorIfPresent(String accountIdentifier, ScmConnector connectorDTO) {
-    try {
-      Optional<UserSourceCodeManagerDTO> userSourceCodeManagerDTO =
-          userSourceCodeManagerHelper.fetchUserSourceCodeManagerDTO(accountIdentifier, connectorDTO);
-      if (userSourceCodeManagerDTO.isPresent()) {
-        switch (connectorDTO.getConnectorType()) {
-          case GITHUB:
-            GithubSCMDTO githubSCMDTO = (GithubSCMDTO) userSourceCodeManagerDTO.get();
-            GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO;
-            githubConnectorDTO.setApiAccess(githubSCMDTO.getApiAccess());
-            break;
-          case GITLAB:
-            GitlabSCMDTO gitlabSCMDTO = (GitlabSCMDTO) userSourceCodeManagerDTO.get();
-            GitlabConnectorDTO gitlabConnectorDTO = (GitlabConnectorDTO) connectorDTO;
-            gitlabConnectorDTO.setApiAccess(gitlabSCMDTO.getApiAccess());
-            break;
-          case AZURE_REPO:
-            AzureRepoSCMDTO azureRepoSCMDTO = (AzureRepoSCMDTO) userSourceCodeManagerDTO.get();
-            AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) connectorDTO;
-            azureRepoConnectorDTO.setApiAccess(azureRepoSCMDTO.getApiAccess());
-            break;
-          case BITBUCKET:
-            if (GitProviderUtils.isBitbucketSaas(connectorDTO)) {
-              BitbucketSCMDTO bitbucketSCMDTO = (BitbucketSCMDTO) userSourceCodeManagerDTO.get();
-              BitbucketConnectorDTO bitbucketConnectorDTO = (BitbucketConnectorDTO) connectorDTO;
-              bitbucketConnectorDTO.setApiAccess(bitbucketSCMDTO.getApiAccess());
-            }
-            break;
-          default:
-            log.info("OAUTH not supported for connector type: {}", connectorDTO.getConnectorType());
-        }
-      }
-    } catch (Exception ex) {
-      log.error("Invalid type of connector: {}", connectorDTO.getConnectorType(), ex);
-    }
-  }
-
-  public Optional<UserDetailsResponseDTO> getUserDetails(String accountIdentifier, ScmConnector connectorDTO) {
-    return userSourceCodeManagerHelper.getUserDetails(accountIdentifier, connectorDTO);
   }
 }

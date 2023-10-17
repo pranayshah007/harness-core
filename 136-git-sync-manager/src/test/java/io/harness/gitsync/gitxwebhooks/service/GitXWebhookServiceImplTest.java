@@ -24,7 +24,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.InternalServerErrorException;
 import io.harness.gitsync.GitSyncTestBase;
 import io.harness.gitsync.common.helper.GitRepoHelper;
-import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
+import io.harness.gitsync.common.service.GitSyncConnectorService;
 import io.harness.gitsync.gitxwebhooks.dtos.CreateGitXWebhookRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.CreateGitXWebhookResponseDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.DeleteGitXWebhookRequestDTO;
@@ -61,7 +61,7 @@ public class GitXWebhookServiceImplTest extends GitSyncTestBase {
   @InjectMocks GitXWebhookServiceImpl gitXWebhookService;
   @Mock GitXWebhookRepository gitXWebhookRepository;
   @Mock GitRepoHelper gitRepoHelper;
-  @Mock GitSyncConnectorHelper gitSyncConnectorHelper;
+  @Mock GitSyncConnectorService gitSyncConnectorService;
   @Mock WebhookEventService webhookEventService;
 
   private static final String ACCOUNT_IDENTIFIER = "accountId";

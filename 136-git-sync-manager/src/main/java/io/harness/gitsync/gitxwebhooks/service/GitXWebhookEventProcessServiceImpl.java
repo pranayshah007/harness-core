@@ -24,7 +24,7 @@ import io.harness.gitsync.common.beans.GitXWebhookEventStatus;
 import io.harness.gitsync.common.dtos.GitDiffResultFileDTO;
 import io.harness.gitsync.common.dtos.GitDiffResultFileListDTO;
 import io.harness.gitsync.common.helper.GitRepoHelper;
-import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
+import io.harness.gitsync.common.service.GitSyncConnectorService;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
 import io.harness.gitsync.gitxwebhooks.dtos.GitXCacheUpdateHelperRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.GitXEventUpdateRequestDTO;
@@ -53,7 +53,7 @@ public class GitXWebhookEventProcessServiceImpl implements GitXWebhookEventProce
   @Inject private GitXWebhookCacheUpdateHelper gitXWebhookCacheUpdateHelper;
   @Inject private GitXWebhookEventService gitXWebhookEventService;
   @Inject private ScmOrchestratorService scmOrchestratorService;
-  @Inject private GitSyncConnectorHelper gitSyncConnectorHelper;
+  @Inject private GitSyncConnectorService gitSyncConnectorService;
   @Inject private GitRepoHelper gitRepoHelper;
 
   @Override
@@ -179,9 +179,9 @@ public class GitXWebhookEventProcessServiceImpl implements GitXWebhookEventProce
   }
 
   public ScmConnector getScmConnector(String accountIdentifier, String connectorRef, String repoName) {
-    ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnector(accountIdentifier, "", "", connectorRef);
+    ScmConnector scmConnector = gitSyncConnectorService.getScmConnector(accountIdentifier, "", "", connectorRef);
     scmConnector.setUrl(gitRepoHelper.getRepoUrl(scmConnector, repoName));
-    return gitSyncConnectorHelper.getDecryptedConnectorForNewGitX(accountIdentifier, "", "", scmConnector);
+    return gitSyncConnectorService.getDecryptedConnectorForNewGitX(accountIdentifier, "", "", scmConnector);
   }
 
   private void updateEventStatus(
