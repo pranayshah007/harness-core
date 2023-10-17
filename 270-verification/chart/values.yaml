@@ -76,13 +76,13 @@ global:
       enabled: false
       secretName: harness-cert
     additionalPaths:
-      # - path: abc
-      #   pathType: ImplementationSpecific
-      #     backend:
-      #         service:
-      #           name: release-name-harness-ui
-      #           port:
-      #             number: 80
+    # - path: abc
+    #   pathType: ImplementationSpecific
+    #     backend:
+    #         service:
+    #           name: release-name-harness-ui
+    #           port:
+    #             number: 80
   istio:
     enabled: false
     gateway:
@@ -93,16 +93,14 @@ global:
 replicaCount: 1
 maxSurge: 1
 maxUnavailable: 0
-
 image:
-  registry: docker.io
-  repository: harness/verification-service-signed
+  registry: us.gcr.io
+  repository: platform-205701/verification-service
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "80209"
+  tag: "0.10.0"
   digest: ""
   imagePullSecrets: []
-
 waitForInitContainer:
   image:
     registry: docker.io
@@ -111,7 +109,6 @@ waitForInitContainer:
     tag: "latest"
     digest: ""
     imagePullSecrets: []
-
 mongoSecrets:
   userName:
     name: harness-secrets
@@ -119,10 +116,8 @@ mongoSecrets:
   password:
     name: mongodb-replicaset-chart
     key: mongodb-root-password
-
 nameOverride: ""
 fullnameOverride: ""
-
 serviceAccount:
   # Specifies whether a service account should be created
   create: false
@@ -131,11 +126,9 @@ serviceAccount:
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: "harness-default"
-
 podAnnotations: {}
-
 podSecurityContext: {}
-  # fsGroup: 2000
+# fsGroup: 2000
 
 securityContext:
   runAsNonRoot: true
@@ -146,12 +139,10 @@ securityContext:
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
-
 service:
   type: ClusterIP
   port: 7070
   annotations: {}
-
 resources:
   limits:
     cpu: 500m
@@ -159,40 +150,32 @@ resources:
   requests:
     cpu: 500m
     memory: 3000Mi
-
 ingress:
   annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
+  # kubernetes.io/ingress.class: nginx
+  # kubernetes.io/tls-acme: "true"
   hosts:
     - host: ""
       paths:
         - path: /verification
           pathType: ImplementationSpecific
   tls: []
-
 autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 100
   targetCPU: ""
   targetMemory: ""
-
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
 # -- appLogInfo can be INFO DEBUG WARN ERROR
 appLogInfo: INFO
 # -- Specify Java memory to be used
 java:
   memory: 2048
-
 additionalConfigs: {}
-
 java17flags: ""
-
 virtualService:
   annotations: {}
 ingress:
