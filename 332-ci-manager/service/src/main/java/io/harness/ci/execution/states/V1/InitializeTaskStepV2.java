@@ -72,6 +72,7 @@ import io.harness.ci.execution.validation.CIAccountValidationService;
 import io.harness.ci.execution.validation.CIYAMLSanitizationService;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.cimanager.stages.IntegrationStageConfigImpl;
+import io.harness.data.encoding.EncodingUtils;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.TaskSelector;
@@ -312,7 +313,11 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
     // Secrets are in decrypted format for DLITE_VM type
     if (buildSetupTaskParams.getType() != DLITE_VM) {
-      log.info("Created params for build task: {}", buildSetupTaskParams);
+      try {
+        log.info("Created params for build task: {}", EncodingUtils.convertToBase64String(buildSetupTaskParams));
+      } catch (Exception e) {
+        log.error("Could not serialize class CIInitializeTaskParams", e);
+      }
     }
     if (buildSetupTaskParams.getType() == DLITE_VM) {
       AccountDTO accountDTO =
