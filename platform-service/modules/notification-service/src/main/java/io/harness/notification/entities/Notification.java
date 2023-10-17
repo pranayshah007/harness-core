@@ -58,7 +58,7 @@ public class Notification implements PersistentRegularIterable, PersistentEntity
   }
   @Id @dev.morphia.annotations.Id String uuid;
   String id;
-  String accountIdentifier;
+  @FdIndex String accountIdentifier;
   @Builder.Default Team team = OTHER;
 
   Channel channel;
