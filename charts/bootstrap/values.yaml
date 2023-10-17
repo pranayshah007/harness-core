@@ -21,7 +21,6 @@ global:
     tls:
       enabled: true
       secretName: harness-cert
-
   # -- Istio Ingress Settings
   istio:
     enabled: false
@@ -55,3 +54,7 @@ global:
       hosts:
 harness-secrets:
   enabled: true
+image:
+  registry: us.gcr.io
+  repository: platform-205701/bootstrap
+  tag: "null"
