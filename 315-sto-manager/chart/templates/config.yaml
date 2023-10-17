@@ -12,8 +12,8 @@ metadata:
   {{- end }}
 data:
   DEPLOY_MODE: KUBERNETES_ONPREM
-  ADDON_IMAGE: {{ include "common.images.image" (dict "imageRoot" .Values.addOnImage.image "global" .Values.global) | quote }}
-  LE_IMAGE: {{ include "common.images.image" (dict "imageRoot" .Values.leImage.image "global" .Values.global) | quote }}
+  ADDON_IMAGE: '{{ .Values.addOnImage.image.repository }}:{{ .Values.addOnImage.image.tag }}'
+  LE_IMAGE: '{{ .Values.leImage.image.repository }}:{{ .Values.leImage.image.tag }}'
   MEMORY: {{ .Values.java.memory | quote }}
   MANAGER_TARGET: harness-manager:9879
   MANAGER_AUTHORITY: harness-manager:9879
@@ -63,9 +63,9 @@ data:
   {{- end}}
   ENFORCEMENT_CHECK_ENABLED: "false"
   PMS_SDK_ORCHESTRATION_EVENT_POOL_CORE_SIZE: "15"
-  S3_UPLOAD_IMAGE: {{ include "common.images.image" (dict "imageRoot" .Values.s3UploadImage.image "global" .Values.global) | quote }}
+  S3_UPLOAD_IMAGE: '{{ .Values.s3UploadImage.image.repository }}:{{ .Values.s3UploadImage.image.tag }}'
   USE_DMS: "false"
-  SECURITY_IMAGE: {{ include "common.images.image" (dict "imageRoot" .Values.securityImage.image "global" .Values.global) | quote }}
+  SECURITY_IMAGE: '{{ .Values.securityImage.image.repository }}:{{ .Values.securityImage.image.tag }}'
   {{- if .Values.additionalConfigs }}
   {{- toYaml .Values.additionalConfigs | nindent 2 }}
   {{- end }}
