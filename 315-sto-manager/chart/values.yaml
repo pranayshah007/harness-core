@@ -15,13 +15,13 @@ global:
       port: 443
       protocol: HTTPS
     hosts:
-    - '*'
+      - '*'
     strict: true
     tls:
       credentialName: ""
     virtualService:
       hosts:
-      - ''
+        - ''
       gateways: []
   ingress:
     enabled: false
@@ -83,8 +83,6 @@ global:
       extraArgs: ""
   opa:
     enabled: false
-
-
 replicaCount: 1
 maxSurge: 100%
 maxUnavailable: 0
@@ -92,11 +90,11 @@ java:
   memory: 2500
   memoryLimit: 600
 image:
-  registry: docker.io
-  repository: harness/stomanager-signed
+  registry: us.gcr.io
+  repository: platform-205701/sto-manager
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "80800-000"
+  tag: "1.19.0"
   digest: ""
   imagePullSecrets: []
 waitForInitContainer:
@@ -137,7 +135,7 @@ s3UploadImage:
     repository: plugins/s3
     pullPolicy: IfNotPresent
     tag: "1.2.4"
-    digest: ""  
+    digest: ""
     imagePullSecrets: []
 mongoSecrets:
   userName:
@@ -244,19 +242,16 @@ affinity: {}
 #     APP_INTERNAL_TOKEN_JWT_SECRET: test
 #     STO_SERVICE_GLOBAL_TOKEN: "token"
 additionalConfigs: {}
-
 # extraVolumes:
 #   - name: volume-test
 #     configMap:
 #       name: test-config
 #       # readOnly: true
 extraVolumes: []
-
 # extraVolumeMounts:
 #   - name: volume-test
 #     mountPath: /opt/harness/config
 extraVolumeMounts: []
-
 lifecycleHooks: {}
 # lifecycleHooks:
 #   postStart:
