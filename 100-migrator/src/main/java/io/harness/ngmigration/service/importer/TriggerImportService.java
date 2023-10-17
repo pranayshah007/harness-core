@@ -319,43 +319,47 @@ public class TriggerImportService implements ImportService {
 
   private void resolveEnvDetails(JsonNode stageNode, Trigger trigger, MigrationInputDTO inputDTO) {
     Map<String, String> workflowVariables = trigger.getWorkflowVariables();
-    String envCGId = workflowVariables.get("Environment");
-    if (envCGId != null) {
-      Environment env = environmentService.get(trigger.getAppId(), envCGId);
-      String envNGId = MigratorUtility.generateIdentifier(env.getName(), inputDTO.getIdentifierCaseFormat());
+    if (workflowVariables != null) {
+      String envCGId = workflowVariables.get("Environment");
+      if (envCGId != null) {
+        Environment env = environmentService.get(trigger.getAppId(), envCGId);
+        String envNGId = MigratorUtility.generateIdentifier(env.getName(), inputDTO.getIdentifierCaseFormat());
 
-      String envRef = stageNode.at("/stage/template/templateInputs/spec/environment/environmentRef").asText();
-      if (RUNTIME_INPUT.equals(envRef) && envNGId != null) {
-        ObjectNode envNode = (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/environment");
-        envNode.put("environmentRef", envNGId);
+        String envRef = stageNode.at("/stage/template/templateInputs/spec/environment/environmentRef").asText();
+        if (RUNTIME_INPUT.equals(envRef) && envNGId != null) {
+          ObjectNode envNode = (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/environment");
+          envNode.put("environmentRef", envNGId);
+        }
       }
     }
   }
 
   private void resolveInfraDetails(JsonNode stageNode, Trigger trigger, MigrationInputDTO inputDTO) {
     Map<String, String> workflowVariables = trigger.getWorkflowVariables();
-    String pattern = ".*InfraDefinition.*";
-    Pattern regexPattern = Pattern.compile(pattern);
-    String infraCGId = null;
-    for (Map.Entry<String, String> entry : workflowVariables.entrySet()) {
-      String key = entry.getKey();
-      String value = entry.getValue();
-      Matcher matcher = regexPattern.matcher(key);
-      if (matcher.matches()) {
-        infraCGId = value;
+    if (workflowVariables != null) {
+      String pattern = ".*InfraDefinition.*";
+      Pattern regexPattern = Pattern.compile(pattern);
+      String infraCGId = null;
+      for (Map.Entry<String, String> entry : workflowVariables.entrySet()) {
+        String key = entry.getKey();
+        String value = entry.getValue();
+        Matcher matcher = regexPattern.matcher(key);
+        if (matcher.matches()) {
+          infraCGId = value;
+        }
       }
-    }
-    if (infraCGId != null) {
-      InfrastructureDefinition infra = infrastructureDefinitionService.get(trigger.getAppId(), infraCGId);
-      if (infra != null) {
-        String infraNGId = MigratorUtility.generateIdentifier(infra.getName(), inputDTO.getIdentifierCaseFormat());
-        String infraRef =
-            stageNode.at("/stage/template/templateInputs/spec/environment/infrastructureDefinitions").asText();
-        if (RUNTIME_INPUT.equals(infraRef) && infraNGId != null) {
-          ObjectNode infraNodeObj = (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/environment");
-          JsonNode infraNode = objectMapper.createObjectNode().put("identifier", infraNGId);
-          ArrayNode infraArrayNode = objectMapper.createArrayNode().add(infraNode);
-          infraNodeObj.set("infrastructureDefinitions", infraArrayNode);
+      if (infraCGId != null) {
+        InfrastructureDefinition infra = infrastructureDefinitionService.get(trigger.getAppId(), infraCGId);
+        if (infra != null) {
+          String infraNGId = MigratorUtility.generateIdentifier(infra.getName(), inputDTO.getIdentifierCaseFormat());
+          String infraRef =
+              stageNode.at("/stage/template/templateInputs/spec/environment/infrastructureDefinitions").asText();
+          if (RUNTIME_INPUT.equals(infraRef) && infraNGId != null) {
+            ObjectNode infraNodeObj = (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/environment");
+            JsonNode infraNode = objectMapper.createObjectNode().put("identifier", infraNGId);
+            ArrayNode infraArrayNode = objectMapper.createArrayNode().add(infraNode);
+            infraNodeObj.set("infrastructureDefinitions", infraArrayNode);
+          }
         }
       }
     }
