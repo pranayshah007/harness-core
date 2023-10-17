@@ -439,12 +439,10 @@ public class ConnectorServiceImpl implements ConnectorService {
 
   private ConnectorInfoDTO getConnectorConfigDTO(String accountIdentifier, String connectorIdentifierRef) {
     try {
-      Optional<ConnectorResponseDTO> connectorResponseDTO = get(connectorIdentifierRef, accountIdentifier, null, null);
-
+      Optional<ConnectorResponseDTO> connectorResponseDTO = get(accountIdentifier, null, null, connectorIdentifierRef);
       if (connectorResponseDTO.isEmpty()) {
         throw new InvalidRequestException(format("Connector not found for identifier : [%s]", connectorIdentifierRef));
       }
-
       return connectorResponseDTO.get().getConnector();
     } catch (Exception e) {
       throw new InvalidRequestException(
