@@ -37,7 +37,7 @@ global:
           - secretName: ""
             keys:
               MONGO_USER: ""
-              MONGO_PASSWORD": ""
+              MONGO_PASSWORD: ""
         secretManagement: 
           externalSecretsOperator:
             - secretStore:
@@ -47,7 +47,7 @@ global:
                 MONGO_USER:
                   name: ""
                   property: ""
-                MONGO_PASSWORD":
+                MONGO_PASSWORD:
                   name: ""
                   property: ""
     timescaledb:
@@ -140,7 +140,7 @@ global:
       hosts:
   mongoSSL: false
   license:
-    cg: 'a'
+    cg: ''
     ng: ''
     secrets:
       kubernetesSecrets:
@@ -192,6 +192,36 @@ global:
     SMTP_USERNAME: ""
     SMTP_USE_SSL: "true"
     SMTP_PORT: "465"
+    secrets:
+      kubernetesSecrets:
+        - secretName: ""
+          keys:
+            SMTP_USERNAME: ""
+            SMTP_PASSWORD: ""
+            SMTP_HOST: ""
+            SMTP_PORT": ""
+            SMTP_USE_SSL: ""
+      secretManagement: 
+        externalSecretsOperator:
+          - secretStore:
+              name: ""
+              kind: ""
+            remoteKeys:
+              SMTP_USERNAME:
+                name: ""
+                property: ""
+              SMTP_PASSWORD:
+                name: ""
+                property: ""
+              SMTP_HOST:
+                name: ""
+                property: ""
+              SMTP_PORT:
+                name: ""
+                property: ""
+              SMTP_USE_SSL:
+                name: ""
+                property: ""
   ha: false
 
 redis:
@@ -216,7 +246,7 @@ redis:
             EVENTS_FRAMEWORK_REDIS_USERNAME:
               name: ""
               property: ""
-            EVENTS_FRAMEWORK_REDIS_USERNAME":
+            EVENTS_FRAMEWORK_REDIS_PASSWORD:
               name: ""
               property: ""
 
@@ -260,7 +290,7 @@ mongo:
       - secretName: ""
         keys:
           MONGO_USER: ""
-          MONGO_PASSWORD": ""
+          MONGO_PASSWORD: ""
     secretManagement: 
       externalSecretsOperator:
         - secretStore:
@@ -270,7 +300,7 @@ mongo:
             MONGO_USER:
               name: ""
               property: ""
-            MONGO_PASSWORD":
+            MONGO_PASSWORD:
               name: ""
               property: ""
 
@@ -739,10 +769,10 @@ java17flags: ""
 
 secrets:
   default:
-    LOG_STREAMING_SERVICE_TOKEN: c76e567a-b341-404d-a8dd-d9738714eb82
-    VERIFICATION_SERVICE_SECRET: 59MR5RlVARcdH7zb7pNx6GzqiglBmXR8
-    MONGO_SSL_CA_TRUST_STORE_PATH: /opt/harness/keystore.jks
-    MONGO_SSL_CA_TRUST_STORE_PASSWORD: password
+    LOG_STREAMING_SERVICE_TOKEN: "c76e567a-b341-404d-a8dd-d9738714eb82"
+    VERIFICATION_SERVICE_SECRET: "59MR5RlVARcdH7zb7pNx6GzqiglBmXR8"
+    MONGO_SSL_CA_TRUST_STORE_PATH: "/opt/harness/keystore.jks"
+    MONGO_SSL_CA_TRUST_STORE_PASSWORD: "password"
   kubernetesSecrets:
   - secretName: ""
     keys:
