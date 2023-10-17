@@ -15,7 +15,6 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
 import io.harness.category.element.UnitTests;
-import io.harness.proxyapikey.ProxyApiKeyClient;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
