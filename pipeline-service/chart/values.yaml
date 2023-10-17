@@ -90,18 +90,15 @@ global:
 replicaCount: 1
 maxSurge: 1
 maxUnavailable: 0
-
 allowedOrigins: ""
-
 image:
-  registry: docker.io
+  registry: us.gcr.io
   digest: ""
-  repository: harness/pipeline-service-signed
+  repository: platform-205701/pipeline-service
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "1.41.3"
+  tag: "0.10.0"
   imagePullSecrets: []
-
 waitForInitContainer:
   image:
     registry: docker.io
@@ -110,7 +107,6 @@ waitForInitContainer:
     tag: "latest"
     digest: ""
     imagePullSecrets: []
-
 mongoSecrets:
   userName:
     name: harness-secrets
@@ -118,20 +114,15 @@ mongoSecrets:
   password:
     name: mongodb-replicaset-chart
     key: mongodb-root-password
-
 timescaleSecret:
   password:
     name: harness-secrets
     key: timescaledbPostgresPassword
-
 appLogLevel: INFO
-
 java:
   memory: "4096m"
-
 nameOverride: ""
 fullnameOverride: ""
-
 serviceAccount:
   # Specifies whether a service account should be created
   create: false
@@ -140,16 +131,13 @@ serviceAccount:
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: "harness-default"
-
 podAnnotations: {}
-
 podSecurityContext: {}
-  # fsGroup: 2000
+# fsGroup: 2000
 
 securityContext:
   runAsUser: 65534
   runAsNonRoot: true
-
 probes:
   readinessProbe:
     httpGet:
@@ -172,7 +160,6 @@ probes:
     timeoutSeconds: 2
     periodSeconds: 10
     failureThreshold: 25
-
 service:
   annotations: {}
   type: ClusterIP
@@ -180,14 +167,12 @@ service:
   port: 12001
   grpcport: 12011
   gitsyncgrpcport: 14002
-
 resources:
   limits:
     memory: 6144Mi
   requests:
     cpu: 1
     memory: 6144Mi
-
 autoscaling:
   enabled: false
   minReplicas: 1
@@ -195,29 +180,21 @@ autoscaling:
   targetCPU: ""
   targetMemory: ""
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
-
 imagePullSecrets: {}
-
 additionalConfigs: {}
-
 java17flags: ""
-
 # extraVolumes:
 # - name: volume-test
 #   configMap:
 #     name: test-config
 #     readOnly: true
 extraVolumes: []
-
 # extraVolumeMounts:
 #   - name: test-volume-mount
 #     mountPath: /opt/harness/config
 extraVolumeMounts: []
-
 # lifecycleHooks:
 #   postStart:
 #     exec:
@@ -232,7 +209,6 @@ extraVolumeMounts: []
 #     fieldRef:
 #       fieldPath: metadata.name
 extraEnvVars: []
-
 virtualService:
   annotations: {}
 ingress:
