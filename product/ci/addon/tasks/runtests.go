@@ -176,7 +176,7 @@ func (r *runTestsTask) Run(ctx context.Context) (map[string]string, int32, error
 
 func (r *runTestsTask) collectRunTestData(ctx context.Context, cgDirPath string, testSt time.Time, shouldCollectCg bool) error {
 
-	var errCg error = nil
+	var errCg error
 	if shouldCollectCg {
 		cgStart := time.Now()
 		errCg = collectCgFn(ctx, r.id, cgDirPath, time.Since(testSt).Milliseconds(), r.log, cgStart)
