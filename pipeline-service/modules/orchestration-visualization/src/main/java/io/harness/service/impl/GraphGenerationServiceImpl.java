@@ -6,6 +6,7 @@
  */
 
 package io.harness.service.impl;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.CodePulse;
@@ -75,6 +76,7 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
   public static final int THRESHOLD_LOG = 1000;
 
   private static final String GRAPH_LOCK = "GRAPH_LOCK_";
+  private static final int MAX_EXPECTED_GRAPH_UPDATE_TIME = 1000;
 
   @Inject private PlanExecutionService planExecutionService;
   @Inject private NodeExecutionService nodeExecutionService;
@@ -226,8 +228,11 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
       executionSummaryUpdate.set(PlanExecutionSummaryKeys.lastUpdatedAt, lastUpdatedAt);
       pmsExecutionSummaryService.update(planExecutionId, executionSummaryUpdate);
     }
-    log.info("[PMS_GRAPH] Processing of [{}] orchestration event logs completed in [{}ms]", unprocessedEventLogs.size(),
-        System.currentTimeMillis() - startTs);
+    long diff = System.currentTimeMillis() - startTs;
+    if (diff > MAX_EXPECTED_GRAPH_UPDATE_TIME) {
+      log.warn("[PMS_GRAPH] Processing of [{}] orchestration event logs completed in [{}ms]",
+          unprocessedEventLogs.size(), diff);
+    }
     return shouldAck;
   }
 

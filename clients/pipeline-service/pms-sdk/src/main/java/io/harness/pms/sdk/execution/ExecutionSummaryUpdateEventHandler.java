@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.sdk.execution;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -45,12 +46,11 @@ public class ExecutionSummaryUpdateEventHandler implements OrchestrationEventHan
   @Override
   public void handleEvent(OrchestrationEvent orchestrationEvent) {
     if (orchestrationEvent.getEventType() == OrchestrationEventType.NODE_EXECUTION_STATUS_UPDATE) {
-      log.info("Starting ExecutionSummaryUpdateEvent handler orchestration event of type [{}] for status [{}]",
+      log.debug("Starting ExecutionSummaryUpdateEvent handler orchestration event of type [{}] for status [{}]",
           orchestrationEvent.getEventType(), orchestrationEvent.getStatus());
     }
     if (executionSummaryModuleInfoProvider == null
         || !executionSummaryModuleInfoProvider.shouldRun(orchestrationEvent)) {
-      log.info("Ignoring ExecutionSummaryUpdate handler because the module info won't update for this step");
       return;
     }
     Ambiance ambiance = orchestrationEvent.getAmbiance();
@@ -85,7 +85,7 @@ public class ExecutionSummaryUpdateEventHandler implements OrchestrationEventHan
     } catch (Exception ex) {
       throw ex;
     }
-    log.info("Completed ExecutionSummaryUpdateEvent handler orchestration event of type [{}] for nodeExecutionId [{}]",
+    log.debug("Completed ExecutionSummaryUpdateEvent handler orchestration event of type [{}] for nodeExecutionId [{}]",
         orchestrationEvent.getEventType(), orchestrationEvent.getStatus());
   }
 }

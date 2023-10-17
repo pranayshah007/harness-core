@@ -252,7 +252,7 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
         log.info("Not Proceeding with  Execution. Reason : {}", check.getReason());
         return;
       }
-      log.info("Proceeding with  Execution. Reason : {}", check.getReason());
+      log.debug("Proceeding with  Execution. Reason : {}", check.getReason());
 
       if (waitForExecutionInputHelper.waitForExecutionInput(ambiance, nodeExecutionId, planNode)) {
         return;
@@ -318,7 +318,7 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
       }
       if (nodeExecution.getStatus() != RUNNING) {
         Status previousNodeExecutionStatus = nodeExecution.getStatus();
-        log.info("Marking the nodeExecution with id {} as RUNNING as previous status {}", nodeExecutionId,
+        log.debug("Marking the nodeExecution with id {} as RUNNING as previous status {}", nodeExecutionId,
             previousNodeExecutionStatus);
         nodeExecution = Preconditions.checkNotNull(
             nodeExecutionService.updateStatusWithOps(nodeExecutionId, RUNNING, null, EnumSet.noneOf(Status.class)));
