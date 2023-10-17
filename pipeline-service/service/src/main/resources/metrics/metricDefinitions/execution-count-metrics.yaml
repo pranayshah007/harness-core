@@ -6,3 +6,7 @@ metrics:
     metricDefinition: Number of active pipeline executions at a given instant
     type: LastValue
     unit: "1"
+  - metricName: node_execution_active_count
+    metricDefinition: Number of active node executions at a given instant
+    type: LastValue
+    unit: "1"

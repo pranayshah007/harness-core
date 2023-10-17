@@ -172,11 +172,6 @@ public class ResourceGroupChangeConsumerImpl implements ChangeConsumer<ResourceG
         Set<ResourceSelector> resourceSelectorsAddedToResourceGroup =
             Sets.difference(newResourceSelectors, existingResourceSelectors);
 
-        Set<String> existingPermissions =
-            Sets.newHashSet(aclRepository.getDistinctPermissionsInACLsForRoleAssignment(roleAssignmentDBO.getId()));
-        Set<String> existingPrincipals =
-            Sets.newHashSet(aclRepository.getDistinctPrincipalsInACLsForRoleAssignment(roleAssignmentDBO.getId()));
-
         if (newResourceSelectors.size() == 0) {
           numberOfACLsDeleted += aclRepository.deleteByRoleAssignmentId(roleAssignmentDBO.getId());
         } else {
@@ -184,12 +179,8 @@ public class ResourceGroupChangeConsumerImpl implements ChangeConsumer<ResourceG
               roleAssignmentDBO.getId(), resourceSelectorsRemovedFromResourceGroup);
         }
 
-        if (existingPermissions.isEmpty() || existingPrincipals.isEmpty()) {
-          numberOfACLsCreated += changeConsumerService.createACLsForRoleAssignment(roleAssignmentDBO);
-        } else {
-          numberOfACLsCreated += changeConsumerService.createACLs(
-              roleAssignmentDBO, existingPrincipals, existingPermissions, resourceSelectorsAddedToResourceGroup);
-        }
+        numberOfACLsCreated += changeConsumerService.createACLsFromResourceSelectors(
+            roleAssignmentDBO, resourceSelectorsAddedToResourceGroup);
 
         if (updatedResourceGroup.getScopeSelectors() != null) {
           numberOfACLsDeleted += aclRepository.deleteByRoleAssignmentIdAndImplicitForScope(roleAssignmentDBO.getId());

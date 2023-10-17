@@ -6,7 +6,6 @@
  */
 
 package io.harness.ng.core.template;
-
 import static io.harness.NGCommonEntityConstants.IDENTIFIER_KEY;
 import static io.harness.NGCommonEntityConstants.NAME_KEY;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
@@ -29,8 +28,11 @@ import static io.harness.ng.core.template.TemplateEntityConstants.STEP_ROOT_FIEL
 
 import static java.util.Arrays.asList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -39,6 +41,7 @@ import java.util.Arrays;
 import java.util.List;
 import lombok.Getter;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDC)
 public enum TemplateEntityType {
   @JsonProperty(STEP)

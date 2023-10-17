@@ -8,6 +8,8 @@
 package io.harness.steps.servicenow;
 
 import static io.harness.rule.OwnerRule.vivekveman;
+import static io.harness.servicenow.ServiceNowActionNG.CREATE_TICKET;
+import static io.harness.servicenow.ServiceNowActionNG.CREATE_TICKET_USING_STANDARD_TEMPLATE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -35,6 +37,7 @@ import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.approval.step.ApprovalInstanceService;
+import io.harness.steps.servicenow.beans.ServiceNowCreateType;
 import io.harness.steps.servicenow.create.ServiceNowCreateSpecParameters;
 import io.harness.steps.servicenow.create.ServiceNowCreateStep;
 
@@ -66,6 +69,7 @@ public class ServiceNowCreateStepTest extends CategoryTest {
   @Mock private ServiceNowStepHelperService serviceNowStepHelperService;
   @Mock private PipelineRbacHelper pipelineRbacHelper;
   @InjectMocks private ServiceNowCreateStep serviceNowCreateStep;
+  @InjectMocks private ServiceNowCreateSpecParameters serviceNowCreateSpecParameters;
   @Captor ArgumentCaptor<List<EntityDetail>> captor;
   @Mock private NGLogCallback mockNgLogCallback;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
@@ -121,6 +125,63 @@ public class ServiceNowCreateStepTest extends CategoryTest {
     verify(pipelineRbacHelper, times(1)).checkRuntimePermissions(eq(ambiance), captor.capture(), eq(true));
   }
 
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetUseServiceNowTemplate() {
+    assertThat(serviceNowCreateSpecParameters.getUseServiceNowTemplate(
+                   ServiceNowCreateSpecParameters.builder().createType(ServiceNowCreateType.STANDARD).build()))
+        .isTrue();
+
+    assertThat(serviceNowCreateSpecParameters.getUseServiceNowTemplate(
+                   ServiceNowCreateSpecParameters.builder().createType(ServiceNowCreateType.FORM).build()))
+        .isTrue();
+
+    assertThat(serviceNowCreateSpecParameters.getUseServiceNowTemplate(
+                   ServiceNowCreateSpecParameters.builder().createType(ServiceNowCreateType.NORMAL).build()))
+        .isFalse();
+
+    assertThat(serviceNowCreateSpecParameters.getUseServiceNowTemplate(
+                   ServiceNowCreateSpecParameters.builder()
+                       .useServiceNowTemplate(ParameterField.createValueField(true))
+                       .build()))
+        .isTrue();
+
+    assertThat(serviceNowCreateSpecParameters.getUseServiceNowTemplate(
+                   ServiceNowCreateSpecParameters.builder()
+                       .useServiceNowTemplate(ParameterField.createValueField(false))
+                       .build()))
+        .isFalse();
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetAction() {
+    assertThat(serviceNowCreateSpecParameters.getAction(
+                   ServiceNowCreateSpecParameters.builder().createType(ServiceNowCreateType.STANDARD).build()))
+        .isEqualTo(CREATE_TICKET_USING_STANDARD_TEMPLATE);
+
+    assertThat(serviceNowCreateSpecParameters.getAction(
+                   ServiceNowCreateSpecParameters.builder().createType(ServiceNowCreateType.FORM).build()))
+        .isEqualTo(CREATE_TICKET);
+
+    assertThat(serviceNowCreateSpecParameters.getAction(
+                   ServiceNowCreateSpecParameters.builder().createType(ServiceNowCreateType.NORMAL).build()))
+        .isEqualTo(CREATE_TICKET);
+
+    assertThat(
+        serviceNowCreateSpecParameters.getAction(ServiceNowCreateSpecParameters.builder()
+                                                     .useServiceNowTemplate(ParameterField.createValueField(true))
+                                                     .build()))
+        .isEqualTo(CREATE_TICKET);
+
+    assertThat(
+        serviceNowCreateSpecParameters.getAction(ServiceNowCreateSpecParameters.builder()
+                                                     .useServiceNowTemplate(ParameterField.createValueField(false))
+                                                     .build()))
+        .isEqualTo(CREATE_TICKET);
+  }
   private StepElementParameters getStepElementParameters() {
     return StepElementParameters.builder()
         .type("SERVICENOW_CREATE")

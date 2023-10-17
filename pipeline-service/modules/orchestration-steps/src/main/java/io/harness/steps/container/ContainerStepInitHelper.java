@@ -61,6 +61,7 @@ import io.harness.delegate.beans.ci.pod.PodVolume;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
 import io.harness.delegate.task.citasks.cik8handler.params.CIConstants;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -70,6 +71,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.ExpressionResolverUtils;
 import io.harness.pms.sdk.core.plugin.ContainerUnitStepUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.execution.ContainerDetailsSweepingOutput;
 import io.harness.steps.container.execution.plugin.PluginExecutionConfigHelper;
@@ -536,11 +538,15 @@ public class ContainerStepInitHelper {
   private ContainerDefinitionInfo createStepContainerDefinition(
       ContainerStepInfo runStepInfo, PortFinder portFinder, String accountId, OSType os) {
     if (runStepInfo.getImage() == null) {
-      throw new ContainerStepExecutionException("image can't be empty in k8s infrastructure");
+      throw new CIStageExecutionException(
+          String.format("image can't be empty in k8s infrastructure for stepId: %s and stepName: %s",
+              runStepInfo.getIdentifier(), runStepInfo.getName()));
     }
 
-    if (runStepInfo.getConnectorRef() == null) {
-      throw new ContainerStepExecutionException("connector ref can't be empty in k8s infrastructure");
+    if (ParameterField.isNull(runStepInfo.getConnectorRef())) {
+      throw new ContainerStepExecutionException(
+          String.format("connector ref can't be empty in k8s infrastructure for stepId: %s and stepName: %s",
+              runStepInfo.getIdentifier(), runStepInfo.getName()));
     }
     String identifier = ContainerUnitStepUtils.getKubernetesStandardPodName(runStepInfo.getIdentifier());
     Integer port = portFinder.getNextPort();

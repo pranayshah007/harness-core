@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.infra.beans.AzureWebAppInfraMapping;
 import io.harness.cdng.infra.beans.InfraMapping;
-import io.harness.filters.ConnectorRefExtractorHelper;
+import io.harness.cdng.visitor.helpers.SecretConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.yaml.ParameterField;
@@ -40,7 +40,7 @@ import org.springframework.data.annotation.TypeAlias;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName(InfrastructureKind.AZURE_WEB_APP)
-@SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
+@SimpleVisitorHelper(helperClass = SecretConnectorRefExtractorHelper.class)
 @TypeAlias("azureWebAppInfrastructure")
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.infra.yaml.AzureWebAppInfrastructure")

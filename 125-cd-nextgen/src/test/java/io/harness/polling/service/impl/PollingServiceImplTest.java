@@ -8,6 +8,7 @@
 package io.harness.polling.service.impl;
 
 import static io.harness.rule.OwnerRule.MEET;
+import static io.harness.rule.OwnerRule.SRIDHAR;
 import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
@@ -77,6 +78,38 @@ public class PollingServiceImplTest extends CategoryTest {
             .build();
     PollingInfoForTriggers pollingInfoForTriggers =
         PollingInfoForTriggers.builder()
+            .perpetualTaskId(perpetualTaskId)
+            .polledResponse(PolledResponse.builder().allPolledKeys(Set.of("key1")).build())
+            .pollingDocId("pollingDocId")
+            .build();
+
+    // For artifacts
+    when(pollingRepository.findByUuidAndAccountId(pollingDocId, accountId)).thenReturn(pollingDocument);
+    assertThat(pollingService.getPollingInfoForTriggers(accountId, pollingDocId)).isEqualTo(pollingInfoForTriggers);
+
+    // For manifests
+    pollingDocument.setPollingType(PollingType.MANIFEST);
+    pollingDocument.setPolledResponse(ManifestPolledResponse.builder().allPolledKeys(Set.of("key1")).build());
+    when(pollingRepository.findByUuidAndAccountId(pollingDocId, accountId)).thenReturn(pollingDocument);
+    assertThat(pollingService.getPollingInfoForTriggers(accountId, pollingDocId)).isEqualTo(pollingInfoForTriggers);
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testGetPollingInfoWithPollingDocIdForTriggers() {
+    PollingDocument pollingDocument =
+        PollingDocument.builder()
+            .accountId(accountId)
+            .orgIdentifier(orgId)
+            .projectIdentifier(projectId)
+            .pollingType(PollingType.ARTIFACT)
+            .perpetualTaskId(perpetualTaskId)
+            .polledResponse(ArtifactPolledResponse.builder().allPolledKeys(Set.of("key1")).build())
+            .build();
+    PollingInfoForTriggers pollingInfoForTriggers =
+        PollingInfoForTriggers.builder()
+            .pollingDocId(pollingDocId)
             .perpetualTaskId(perpetualTaskId)
             .polledResponse(PolledResponse.builder().allPolledKeys(Set.of("key1")).build())
             .build();

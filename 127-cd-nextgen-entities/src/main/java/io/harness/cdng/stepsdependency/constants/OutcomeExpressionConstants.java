@@ -60,6 +60,8 @@ public class OutcomeExpressionConstants {
   public final String APPLICATION_SETTINGS = "applicationSettings";
   public final String CONNECTION_STRINGS = "connectionStrings";
   public final String ECS_ROLLING_ROLLBACK_OUTCOME = "ecsRollingRollbackOutcome";
+  public final String ECS_BASIC_PREPARE_ROLLBACK_DATA_OUTCOME = "ecsBasicPrepareRollbackDataOutcome";
+  public final String ECS_BASIC_PREPARE_DEPLOY_DATA_OUTCOME = "ecsBasicPrepareDeployDataOutcome";
   public final String ECS_CANARY_DELETE_DATA_OUTCOME = "ecsCanaryDeleteDataOutcome";
   public final String ECS_CANARY_DELETE_OUTCOME = "ecsCanaryDeleteOutcome";
   public final String ECS_CANARY_DEPLOY_OUTCOME = "ecsCanaryDeployOutcome";

@@ -20,6 +20,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.exception.JsonSchemaValidationException;
 import io.harness.logging.AccountLogContext;
@@ -28,7 +29,11 @@ import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper;
 import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
+import io.harness.pms.plan.execution.preprocess.PipelinePreprocessor;
+import io.harness.pms.plan.execution.preprocess.PipelinePreprocessorFactory;
+import io.harness.pms.yaml.NGYamlHelper;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.utils.PipelineVersionConstants;
 import io.harness.yaml.individualschema.PipelineSchemaMetadata;
 import io.harness.yaml.individualschema.PipelineSchemaParserFactory;
 import io.harness.yaml.individualschema.PipelineSchemaRequest;
@@ -68,9 +73,11 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   private ExecutorService yamlSchemaExecutor;
 
   @Inject PipelineSchemaParserFactory pipelineSchemaParserFactory;
+  @Inject PipelinePreprocessorFactory pipelinePreprocessorFactory;
   Integer allowedParallelStages;
 
   private final String PIPELINE_VERSION_V0 = "v0";
+  private final String PIPELINE_VERSION_V1 = "v1";
 
   @Inject
   public PMSYamlSchemaServiceImpl(YamlSchemaValidator yamlSchemaValidator, PmsYamlSchemaHelper pmsYamlSchemaHelper,
@@ -182,17 +189,31 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   @Override
   @SneakyThrows
   public List<YamlInputDetails> getInputSchemaDetails(String yaml) {
+    PipelinePreprocessor preprocessor = pipelinePreprocessorFactory.getProcessorInstance(NGYamlHelper.getVersion(yaml));
+    // Preprocessing the YAML to add the id fields at the required places if not already present.
+    yaml = preprocessor.preProcess(yaml);
     YamlConfig yamlConfig = new YamlConfig(yaml);
     SchemaParserInterface staticSchemaParser = getStaticSchemaParser(yamlConfig);
-
     return inputsSchemaService.getInputsSchemaRelations(staticSchemaParser, yaml);
   }
 
   private SchemaParserInterface getStaticSchemaParser(YamlConfig yamlConfig) {
     if (yamlConfig.getYamlMap().get("pipeline") != null) {
-      return pipelineSchemaParserFactory.getPipelineSchemaParser(PIPELINE_VERSION_V0);
+      return pipelineSchemaParserFactory.getPipelineSchemaParser(
+          PipelineVersionConstants.PIPELINE_VERSION_V0.getValue());
     }
-    // TODO add more cases for other versions of yaml for pipeline
-    return pipelineSchemaParserFactory.getPipelineSchemaParser(PIPELINE_VERSION_V0);
+
+    JsonNode versionNode = yamlConfig.getYamlMap().get("version");
+    if (versionNode != null) {
+      switch (versionNode.asText()) {
+        case "1":
+          return pipelineSchemaParserFactory.getPipelineSchemaParser(
+              PipelineVersionConstants.PIPELINE_VERSION_V1.getValue());
+        default:
+          throw new InvalidRequestException("Invalid version found in yaml : " + versionNode.asText());
+      }
+    } else {
+      throw new InvalidRequestException("No version field found in yaml");
+    }
   }
 }

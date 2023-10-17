@@ -27,7 +27,9 @@ public class CalenderSLOTargetTransformer implements SLOTargetTransformer<Calend
             .windowEndDayOfMonth(((MonthlyCalenderSpec) spec.getSpec()).getDayOfMonth())
             .build();
       case QUARTERLY:
-        return QuarterlyCalenderTarget.builder().build();
+        return QuarterlyCalenderTarget.builder()
+            .quarterStart(((CalenderSLOTargetSpec.QuarterlyCalenderSpec) spec.getSpec()).getQuarterStart())
+            .build();
       default:
         throw new IllegalStateException("type: " + spec.getSpec().getType() + " is not handled");
     }
@@ -51,7 +53,9 @@ public class CalenderSLOTargetTransformer implements SLOTargetTransformer<Calend
       case QUARTERLY:
         return CalenderSLOTargetSpec.builder()
             .type(SLOCalenderType.QUARTERLY)
-            .spec(CalenderSLOTargetSpec.QuarterlyCalenderSpec.builder().build())
+            .spec(CalenderSLOTargetSpec.QuarterlyCalenderSpec.builder()
+                      .quarterStart(((QuarterlyCalenderTarget) entity).getQuarterStart())
+                      .build())
             .build();
       default:
         throw new IllegalStateException("type: " + entity.getCalenderType() + " is not handled");

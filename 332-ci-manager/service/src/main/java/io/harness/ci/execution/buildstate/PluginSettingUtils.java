@@ -50,6 +50,7 @@ import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.stepinfo.ACRStepInfo;
 import io.harness.beans.steps.stepinfo.DockerStepInfo;
 import io.harness.beans.steps.stepinfo.ECRStepInfo;
+import io.harness.beans.steps.stepinfo.GARStepInfo;
 import io.harness.beans.steps.stepinfo.GCRStepInfo;
 import io.harness.beans.steps.stepinfo.GitCloneStepInfo;
 import io.harness.beans.steps.stepinfo.IACMApprovalInfo;
@@ -102,6 +103,8 @@ import org.apache.commons.lang3.StringUtils;
 @Singleton
 public class PluginSettingUtils extends PluginServiceImpl {
   public static final String PLUGIN_REGISTRY = "PLUGIN_REGISTRY";
+
+  public static final String PLUGIN_REGISTRY_TYPE = "PLUGIN_REGISTRY_TYPE";
   public static final String TAG_BUILD_EVENT = "tag";
 
   public static final String REPOSITORY = "REPOSITORY";
@@ -139,6 +142,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
   public static final String PLUGIN_BACKEND = "PLUGIN_BACKEND";
   public static final String PLUGIN_OVERRIDE = "PLUGIN_OVERRIDE";
   public static final String PLUGIN_ARCHIVE_FORMAT = "PLUGIN_ARCHIVE_FORMAT";
+  public static final String ZSTD_ARCHIVE_FORMAT = "zstd";
   public static final String PLUGIN_ARTIFACT_FILE = "PLUGIN_ARTIFACT_FILE";
   public static final String PLUGIN_DAEMON_OFF = "PLUGIN_DAEMON_OFF";
   public static final String ECR_REGISTRY_PATTERN = "%s.dkr.ecr.%s.amazonaws.com";
@@ -169,6 +173,8 @@ public class PluginSettingUtils extends PluginServiceImpl {
         return getACRStepInfoEnvVariables((ACRStepInfo) stepInfo, identifier, infraType, isContainerizedPlugin);
       case GCR:
         return getGCRStepInfoEnvVariables((GCRStepInfo) stepInfo, identifier, infraType, isContainerizedPlugin);
+      case GAR:
+        return getGARStepInfoEnvVariables((GARStepInfo) stepInfo, identifier, infraType, isContainerizedPlugin);
       case DOCKER:
         return getDockerStepInfoEnvVariables((DockerStepInfo) stepInfo, identifier, infraType, isContainerizedPlugin);
       case UPLOAD_ARTIFACTORY:
@@ -270,6 +276,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
         map.put(EnvVariableEnum.AZURE_CERT, CLIENT_CERTIFICATE);
         return map;
       case GCR:
+      case GAR:
       case RESTORE_CACHE_GCS:
       case SAVE_CACHE_GCS:
       case UPLOAD_GCS:
@@ -394,6 +401,124 @@ public class PluginSettingUtils extends PluginServiceImpl {
     }
 
     return map;
+  }
+
+  private static Map<String, String> getGARStepInfoEnvVariables(
+      GARStepInfo stepInfo, String identifier, Type infraType, boolean isContainerizedPlugin) {
+    Map<String, String> map = new HashMap<>();
+
+    String host = resolveStringParameter("host", "BuildAndPushGAR", identifier, stepInfo.getHost(), true);
+    String projectID =
+        resolveStringParameter("projectID", "BuildAndPushGAR", identifier, stepInfo.getProjectID(), true);
+    String registry = null;
+    if (isNotEmpty(host) && isNotEmpty(projectID)) {
+      registry = format("%s/%s", trimTrailingCharacter(host, '/'), trimLeadingCharacter(projectID, '/'));
+    }
+    PluginServiceImpl.setMandatoryEnvironmentVariable(map, PLUGIN_REGISTRY, registry);
+
+    PluginServiceImpl.setMandatoryEnvironmentVariable(map, PLUGIN_REPO,
+        resolveStringParameter("imageName", "BuildAndPushGAR", identifier, stepInfo.getImageName(), true));
+
+    PluginServiceImpl.setMandatoryEnvironmentVariable(map, PLUGIN_TAGS,
+        listToStringSlice(resolveListParameter("tags", "BuildAndPushGAR", identifier, stepInfo.getTags(), true)));
+
+    String dockerfile =
+        resolveStringParameter("dockerfile", "BuildAndPushGAR", identifier, stepInfo.getDockerfile(), false);
+    if (dockerfile != null && !dockerfile.equals(UNRESOLVED_PARAMETER)) {
+      PluginServiceImpl.setOptionalEnvironmentVariable(map, PLUGIN_DOCKERFILE, dockerfile);
+    }
+
+    String context = resolveStringParameter("context", "BuildAndPushGAR", identifier, stepInfo.getContext(), false);
+    if (context != null && !context.equals(UNRESOLVED_PARAMETER)) {
+      PluginServiceImpl.setOptionalEnvironmentVariable(map, PLUGIN_CONTEXT, context);
+    }
+
+    String target = resolveStringParameter("target", "BuildAndPushGAR", identifier, stepInfo.getTarget(), false);
+    if (target != null && !target.equals(UNRESOLVED_PARAMETER)) {
+      PluginServiceImpl.setOptionalEnvironmentVariable(map, PLUGIN_TARGET, target);
+    }
+
+    Map<String, String> buildArgs =
+        resolveMapParameter("buildArgs", "BuildAndPushGAR", identifier, stepInfo.getBuildArgs(), false);
+    if (isNotEmpty(buildArgs)) {
+      PluginServiceImpl.setOptionalEnvironmentVariable(map, PLUGIN_BUILD_ARGS, mapToStringSlice(buildArgs));
+    }
+
+    Map<String, String> labels =
+        resolveMapParameter("labels", "BuildAndPushGAR", identifier, stepInfo.getLabels(), false);
+    if (isNotEmpty(labels)) {
+      PluginServiceImpl.setOptionalEnvironmentVariable(map, PLUGIN_CUSTOM_LABELS, mapToStringSlice(labels));
+    }
+
+    getGARStepInfoEnvVariablesByInfra(stepInfo, identifier, infraType, isContainerizedPlugin, map, "BuildAndPushGAR");
+    PluginServiceImpl.setMandatoryEnvironmentVariable(map, PLUGIN_REGISTRY_TYPE, "gar");
+
+    return map;
+  }
+
+  private static void getGARStepInfoEnvVariablesByInfra(GARStepInfo stepInfo, String identifier, Type infraType,
+      boolean isContainerizedPlugin, Map<String, String> map, String stepType) {
+    if (infraType == Type.K8) {
+      handleK8Type(stepInfo, identifier, map, stepType);
+    } else if (infraType == Type.VM) {
+      handleVMType(stepInfo, identifier, isContainerizedPlugin, map, stepType);
+    }
+  }
+
+  private static void handleK8Type(GARStepInfo stepInfo, String identifier, Map<String, String> map, String stepType) {
+    handleOptimize(stepInfo, map);
+    handleRemoteCacheImage(stepInfo, identifier, map, stepType);
+    PluginServiceImpl.setOptionalEnvironmentVariable(map, PLUGIN_ARTIFACT_FILE, PLUGIN_ARTIFACT_FILE_VALUE);
+  }
+
+  private static void handleOptimize(GARStepInfo stepInfo, Map<String, String> map) {
+    boolean optimize = resolveBooleanParameter(stepInfo.getOptimize(), true);
+    if (optimize) {
+      PluginServiceImpl.setOptionalEnvironmentVariable(map, PLUGIN_SNAPSHOT_MODE, REDO_SNAPSHOT_MODE);
+    }
+  }
+
+  private static void handleRemoteCacheImage(
+      GARStepInfo stepInfo, String identifier, Map<String, String> map, String stepType) {
+    String remoteCacheImage =
+        resolveStringParameter("remoteCacheImage", stepType, identifier, stepInfo.getRemoteCacheImage(), false);
+    if (remoteCacheImage != null && !remoteCacheImage.equals(UNRESOLVED_PARAMETER)) {
+      PluginServiceImpl.setOptionalEnvironmentVariable(map, PLUGIN_ENABLE_CACHE, "true");
+      PluginServiceImpl.setOptionalEnvironmentVariable(map, PLUGIN_CACHE_REPO, remoteCacheImage);
+    }
+  }
+
+  private static void handleVMType(GARStepInfo stepInfo, String identifier, boolean isContainerizedPlugin,
+      Map<String, String> map, String stepType) {
+    PluginServiceImpl.setMandatoryEnvironmentVariable(map, PLUGIN_DAEMON_OFF, "true");
+    if (!isContainerizedPlugin) {
+      handleCacheFrom(stepInfo, identifier, map, stepType);
+      handleCacheTo(stepInfo, identifier, map, stepType);
+      handleCaching(stepInfo, map);
+      setOptionalEnvironmentVariable(map, PLUGIN_METADATA_FILE, PLUGIN_METADATA_FILE_NAME);
+    }
+  }
+
+  private static void handleCacheFrom(
+      GARStepInfo stepInfo, String identifier, Map<String, String> map, String stepType) {
+    List<String> cacheFromList =
+        resolveListParameter("cacheFrom", stepType, identifier, stepInfo.getCacheFrom(), false);
+    if (!isEmpty(cacheFromList)) {
+      setOptionalEnvironmentVariable(map, PLUGIN_CACHE_FROM, listToCustomStringSlice(cacheFromList));
+    }
+  }
+
+  private static void handleCacheTo(GARStepInfo stepInfo, String identifier, Map<String, String> map, String stepType) {
+    String cacheTo = resolveStringParameterV2("cacheTo", stepType, identifier, stepInfo.getCacheTo(), false);
+    if (!isEmpty(cacheTo)) {
+      setOptionalEnvironmentVariable(map, PLUGIN_CACHE_TO, cacheTo);
+    }
+  }
+
+  private static void handleCaching(GARStepInfo stepInfo, Map<String, String> map) {
+    if (resolveBooleanParameter(stepInfo.getCaching(), false)) {
+      setOptionalEnvironmentVariable(map, PLUGIN_BUILDER_DRIVER_OPTS, String.format("image=%s", DOCKER_BUILDKIT_IMAGE));
+    }
   }
 
   private static Map<String, String> getACRStepInfoEnvVariables(
@@ -961,6 +1086,12 @@ public class PluginSettingUtils extends PluginServiceImpl {
         cacheFrom = resolveListParameter("cacheFrom", "BuildAndPushGCR", "", gcrStepInfo.getCacheFrom(), false);
         cacheTo = resolveStringParameter("cacheTo", "BuildAndPushGCR", "", gcrStepInfo.getCacheTo(), false);
         break;
+      case GAR:
+        GARStepInfo garStepInfo = (GARStepInfo) stepInfo;
+        caching = resolveBooleanParameter(garStepInfo.getCaching(), false);
+        cacheFrom = resolveListParameter("cacheFrom", "BuildAndPushGAR", "", garStepInfo.getCacheFrom(), false);
+        cacheTo = resolveStringParameter("cacheTo", "BuildAndPushGAR", "", garStepInfo.getCacheTo(), false);
+        break;
       case ACR:
         ACRStepInfo acrStepInfo = (ACRStepInfo) stepInfo;
         caching = resolveBooleanParameter(acrStepInfo.getCaching(), false);
@@ -984,6 +1115,9 @@ public class PluginSettingUtils extends PluginServiceImpl {
       case GCR:
         GCRStepInfo gcrStepInfo = (GCRStepInfo) stepInfo;
         return resolveBooleanParameter(gcrStepInfo.getCaching(), false);
+      case GAR:
+        GARStepInfo garStepInfo = (GARStepInfo) stepInfo;
+        return resolveBooleanParameter(garStepInfo.getCaching(), false);
       case ACR:
         ACRStepInfo acrStepInfo = (ACRStepInfo) stepInfo;
         return resolveBooleanParameter(acrStepInfo.getCaching(), false);
@@ -1006,6 +1140,10 @@ public class PluginSettingUtils extends PluginServiceImpl {
       case GCR:
         GCRStepInfo gcrStepInfo = (GCRStepInfo) stepInfo;
         repo = resolveStringParameter("imageName", "BuildAndPushGCR", identifier, gcrStepInfo.getImageName(), true);
+        return String.format("%s/%s/", accountId, repo);
+      case GAR:
+        GARStepInfo garStepInfo = (GARStepInfo) stepInfo;
+        repo = resolveStringParameter("imageName", "BuildAndPushGAR", identifier, garStepInfo.getImageName(), true);
         return String.format("%s/%s/", accountId, repo);
       case ACR:
         ACRStepInfo acrStepInfo = (ACRStepInfo) stepInfo;
@@ -1067,6 +1205,22 @@ public class PluginSettingUtils extends PluginServiceImpl {
 
         // Overwrite cacheTo with cacheToArg
         gcrStepInfo.setCacheTo(ParameterField.createValueField(cacheToArg));
+        return;
+      case GAR:
+        GARStepInfo garStepInfo = (GARStepInfo) stepInfo;
+
+        // Append cacheFromArg to the list
+        cacheFrom = resolveListParameter("cacheFrom", "BuildAndPushGAR", identifier, garStepInfo.getCacheFrom(), false);
+        if (isEmpty(cacheFrom)) {
+          cacheFrom = new ArrayList<>();
+        } else {
+          cacheFrom = new ArrayList(cacheFrom);
+        }
+        cacheFrom.add(cacheFromArg);
+        garStepInfo.setCacheFrom(ParameterField.createValueField(cacheFrom));
+
+        // Overwrite cacheTo with cacheToArg
+        garStepInfo.setCacheTo(ParameterField.createValueField(cacheToArg));
         return;
       case ACR:
         ACRStepInfo acrStepInfo = (ACRStepInfo) stepInfo;

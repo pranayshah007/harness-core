@@ -6,11 +6,14 @@
  */
 
 package io.harness.steps.barriers;
-
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.FeatureName;
 import io.harness.distribution.barrier.Barrier;
 import io.harness.engine.observers.OrchestrationStartObserver;
 import io.harness.engine.observers.beans.OrchestrationStartInfo;
@@ -29,6 +32,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class BarrierInitializer implements OrchestrationStartObserver {
@@ -36,6 +40,10 @@ public class BarrierInitializer implements OrchestrationStartObserver {
 
   @Override
   public void onStart(OrchestrationStartInfo orchestrationStartInfo) {
+    if (AmbianceUtils.checkIfFeatureFlagEnabled(
+            orchestrationStartInfo.getAmbiance(), FeatureName.CDS_NG_BARRIER_STEPS_WITHIN_LOOPING_STRATEGIES.name())) {
+      return;
+    }
     String version = AmbianceUtils.getPipelineVersion(orchestrationStartInfo.getAmbiance());
     String planExecutionId = orchestrationStartInfo.getPlanExecutionId();
     PlanExecutionMetadata planExecutionMetadata = orchestrationStartInfo.getPlanExecutionMetadata();

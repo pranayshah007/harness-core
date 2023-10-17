@@ -6,12 +6,14 @@
  */
 
 package io.harness.ngmigration.client;
-
 import static io.harness.security.NextGenAuthenticationFilter.X_API_KEY;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.ng.core.dto.ProjectRequest;
 import io.harness.ng.core.dto.ProjectResponse;
@@ -33,6 +35,7 @@ import retrofit2.http.POST;
 import retrofit2.http.Part;
 import retrofit2.http.Query;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public interface NGClient {
   @POST("projects")

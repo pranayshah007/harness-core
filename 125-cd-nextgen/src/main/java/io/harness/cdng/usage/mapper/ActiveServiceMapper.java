@@ -6,12 +6,14 @@
  */
 
 package io.harness.cdng.usage.mapper;
-
-import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.TIME_PERIOD_IN_DAYS;
+import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.TIME_PERIOD_30_DAYS;
 
 import io.harness.ModuleType;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.cdng.usage.pojos.ActiveService;
 import io.harness.cdng.usage.pojos.ActiveServiceFetchData;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import org.springframework.data.domain.Pageable;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(HarnessTeam.CDP)
 @UtilityClass
 public class ActiveServiceMapper {
@@ -49,7 +52,7 @@ public class ActiveServiceMapper {
 
   public static ActiveServiceFetchData buildActiveServiceFetchData(
       Scope scope, String serviceIdentifier, Pageable pageRequest, long timestamp) {
-    long startInterval = LicenseUsageUtils.getEpochMilliNDaysAgo(timestamp, TIME_PERIOD_IN_DAYS);
+    long startInterval = LicenseUsageUtils.getEpochMilliNDaysAgo(timestamp, TIME_PERIOD_30_DAYS);
     return ActiveServiceFetchData.builder()
         .accountIdentifier(scope.getAccountIdentifier())
         .orgIdentifier(scope.getOrgIdentifier())
@@ -65,7 +68,7 @@ public class ActiveServiceMapper {
 
   public static ActiveServiceFetchData buildActiveServiceFetchData(
       String accountIdentifier, Pageable pageRequest, long currentTSInMS) {
-    long startTSInMs = LicenseUsageUtils.getEpochMilliNDaysAgo(currentTSInMS, TIME_PERIOD_IN_DAYS);
+    long startTSInMs = LicenseUsageUtils.getEpochMilliNDaysAgo(currentTSInMS, TIME_PERIOD_30_DAYS);
     return ActiveServiceFetchData.builder()
         .accountIdentifier(accountIdentifier)
         .pageSize(pageRequest.getPageSize())

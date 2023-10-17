@@ -13,8 +13,8 @@ import io.harness.accesscontrol.principals.PrincipalDTO;
 import io.harness.accesscontrol.principals.PrincipalDTO.PrincipalDTOKeys;
 import io.harness.accesscontrol.roles.api.RoleDTO;
 import io.harness.accesscontrol.roles.api.RoleDTO.RoleDTOKeys;
+import io.harness.accesscontrol.scopes.HarnessScopeLevel;
 import io.harness.accesscontrol.scopes.core.ScopeLevel;
-import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 

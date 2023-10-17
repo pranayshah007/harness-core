@@ -7,8 +7,11 @@
 
 package io.harness.pms.sdk.core.execution.events.node.advise;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.advisers.AdviseEvent;
 import io.harness.pms.contracts.advisers.AdviseType;
@@ -28,6 +31,7 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 @Singleton
@@ -60,17 +64,17 @@ public class NodeAdviseEventHandler extends PmsBaseEventHandler<AdviseEvent> imp
       AdviserResponse adviserResponse = handleAdviseEvent(event);
 
       if (adviserResponse != null) {
-        log.info("Calculated Adviser response is of type {}", adviserResponse.getType());
+        log.debug("Calculated Adviser response is of type {}", adviserResponse.getType());
         sdkNodeExecutionService.handleAdviserResponse(event.getAmbiance(), event.getNotifyId(), adviserResponse);
       } else {
-        log.info("Calculated Adviser response is null. Proceeding with UNKNOWN adviser type.");
+        log.debug("Calculated Adviser response is null. Proceeding with UNKNOWN adviser type.");
         sdkNodeExecutionService.handleAdviserResponse(
             event.getAmbiance(), event.getNotifyId(), AdviserResponse.newBuilder().setType(AdviseType.UNKNOWN).build());
       }
     } catch (Exception ex) {
       log.error("Error while advising execution", ex);
       if (EmptyPredicate.isEmpty(event.getNotifyId())) {
-        log.info("NotifyId is empty for nodeExecutionId {} and planExecutionId {}. Nothing will happen.",
+        log.debug("NotifyId is empty for nodeExecutionId {} and planExecutionId {}. Nothing will happen.",
             AmbianceUtils.obtainCurrentRuntimeId(event.getAmbiance()), event.getAmbiance().getPlanExecutionId());
       } else {
         sdkNodeExecutionService.handleEventError(NodeExecutionEventType.ADVISE, event.getAmbiance(),

@@ -6,11 +6,13 @@
  */
 
 package io.harness.pms.sdk.core.execution.invokers;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.contracts.execution.Status.SUSPENDED;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ChildChainExecutableResponse;
@@ -20,6 +22,7 @@ import io.harness.pms.contracts.execution.events.SuspendChainRequest;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.execution.ChainDetails;
 import io.harness.pms.sdk.core.execution.ExecuteStrategy;
+import io.harness.pms.sdk.core.execution.InterruptPackage;
 import io.harness.pms.sdk.core.execution.InvokerPackage;
 import io.harness.pms.sdk.core.execution.ResumePackage;
 import io.harness.pms.sdk.core.execution.SdkNodeExecutionService;
@@ -37,6 +40,7 @@ import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @SuppressWarnings({"rawtypes", "unchecked"})
 @OwnedBy(PIPELINE)
 public class ChildChainStrategy implements ExecuteStrategy {
@@ -69,6 +73,21 @@ public class ChildChainStrategy implements ExecuteStrategy {
               resumePackage.getStepInputPackage(), chainDetails.getPassThroughBytes(), accumulatedResponse);
       handleResponse(ambiance, chainResponse);
     }
+  }
+
+  @Override
+  public void abort(InterruptPackage interruptPackage) {
+    throw new UnsupportedOperationException("Abort not supported for Child Chain");
+  }
+
+  @Override
+  public void expire(InterruptPackage interruptPackage) {
+    throw new UnsupportedOperationException("Expire not supported for Child Chain");
+  }
+
+  @Override
+  public void failure(InterruptPackage interruptPackage) {
+    throw new UnsupportedOperationException("Expire not supported for Child Chain");
   }
 
   @Override

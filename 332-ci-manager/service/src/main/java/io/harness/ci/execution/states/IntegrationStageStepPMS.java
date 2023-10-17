@@ -37,6 +37,7 @@ import io.harness.ci.execution.buildstate.ConnectorUtils;
 import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
 import io.harness.ci.execution.utils.CompletableFutures;
 import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.data.encoding.EncodingUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.ngexception.CIStageExecutionException;
@@ -109,8 +110,16 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
   public ChildExecutableResponse obtainChild(
       Ambiance ambiance, StageElementParameters stepParameters, StepInputPackage inputPackage) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    log.info("Executing integration stage with params accountId {} projectId {} [{}]", ngAccess.getAccountIdentifier(),
-        ngAccess.getProjectIdentifier(), stepParameters);
+
+    try {
+      String jsonString = RecastOrchestrationUtils.toJson(stepParameters);
+      byte[] jsonByte = EncodingUtils.compressString(jsonString);
+      String base64String = EncodingUtils.encodeBase64(jsonByte);
+      log.info("Executing integration stage with params accountId {} projectId {} [{}]",
+          ngAccess.getAccountIdentifier(), ngAccess.getProjectIdentifier(), base64String);
+    } catch (Exception e) {
+      log.error("Could not serialize class StageElementParameters", e);
+    }
 
     String stageRuntimeId = AmbianceUtils.getStageRuntimeIdAmbiance(ambiance);
 
@@ -294,6 +303,9 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
     CodeBase codeBase = integrationStageStepParametersPMS.getCodeBase();
     if (codeBase == null) {
       return null;
+    }
+    if (ParameterField.isNull(codeBase.getBuild())) {
+      throw new CIStageExecutionException(" build properties must be defined when codebase is enabled");
     }
     ExecutionTriggerInfo triggerInfo = ambiance.getMetadata().getTriggerInfo();
     TriggerPayload triggerPayload = integrationStageStepParametersPMS.getTriggerPayload();

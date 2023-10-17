@@ -6,9 +6,11 @@
  */
 
 package io.harness.delegate.task.shell;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.connector.task.shell.SshSessionConfigMapper;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
@@ -32,7 +34,6 @@ import io.harness.shell.ScriptProcessExecutor;
 import io.harness.shell.ScriptSshExecutor;
 import io.harness.shell.ShellExecutorConfig;
 import io.harness.shell.SshSessionConfig;
-import io.harness.shell.SshSessionManager;
 import io.harness.shell.ssh.SshClientManager;
 
 import com.google.inject.Inject;
@@ -42,6 +43,7 @@ import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @Slf4j
 public class ShellScriptTaskNG extends AbstractDelegateRunnableTask {
   public static final String COMMAND_UNIT = "Execute";
@@ -94,7 +96,6 @@ public class ShellScriptTaskNG extends AbstractDelegateRunnableTask {
             .build();
       } finally {
         if (isNotEmpty(taskParameters.getExecutionId()) && isNotEmpty(taskParameters.getHost())) {
-          SshSessionManager.evictAndDisconnectCachedSession(taskParameters.getExecutionId(), taskParameters.getHost());
           SshClientManager.evictCacheAndDisconnect(taskParameters.getExecutionId(), taskParameters.getHost());
         }
       }
@@ -119,7 +120,6 @@ public class ShellScriptTaskNG extends AbstractDelegateRunnableTask {
             .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
             .build();
       } finally {
-        SshSessionManager.evictAndDisconnectCachedSession(taskParameters.getExecutionId(), taskParameters.getHost());
         SshClientManager.evictCacheAndDisconnect(taskParameters.getExecutionId(), taskParameters.getHost());
       }
     }

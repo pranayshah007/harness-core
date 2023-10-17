@@ -653,7 +653,7 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
             OutputAliasSweepingOutput.builder().outputVariables(outputVars).build(), StepOutcomeGroup.PIPELINE.name());
     // negative cases
     when(executionSweepingOutputService.consume(any(), any(), any(), any()))
-        .thenThrow(new GeneralException("DuplicateKeyException"))
+        .thenThrow(new GeneralException("Sweeping output with name 2507ee91 is already saved"))
         .thenThrow(new GeneralException("random"));
     assertThatThrownBy(()
                            -> shellScriptHelperServiceImpl.exportOutputVariablesUsingAlias(ambiance, stepParameters,

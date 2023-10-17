@@ -6,7 +6,9 @@
  */
 
 package io.harness.engine.pms.data;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -16,6 +18,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public interface Resolver {
   String resolve(Ambiance ambiance, RefObject refObject);
 

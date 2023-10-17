@@ -6,6 +6,7 @@
  */
 
 package io.harness.ng.core.environment.mappers;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -164,7 +165,7 @@ public class EnvironmentFilterHelper {
 
   public Criteria createCriteriaForGetList(String accountId, String orgIdentifier, String projectIdentifier,
       boolean deleted, String searchTerm, String filterIdentifier, EnvironmentFilterPropertiesDTO filterProperties,
-      boolean includeAllAccessibleAtScope) {
+      boolean includeAllAccessibleAtScope, String repoName) {
     if (isNotBlank(filterIdentifier) && filterProperties != null) {
       throw new InvalidRequestException("Can not apply both filter properties and saved filter together");
     }
@@ -182,6 +183,9 @@ public class EnvironmentFilterHelper {
           criteria, filterIdentifier, accountId, orgIdentifier, projectIdentifier, searchTerm, andCriteriaList);
     } else {
       populateEnvironmentFiltersInTheCriteria(criteria, filterProperties, searchTerm, andCriteriaList);
+    }
+    if (isNotEmpty(repoName)) {
+      criteria.and(EnvironmentKeys.repo).is(repoName);
     }
     if (andCriteriaList.size() != 0) {
       criteria.andOperator(andCriteriaList.toArray(new Criteria[0]));

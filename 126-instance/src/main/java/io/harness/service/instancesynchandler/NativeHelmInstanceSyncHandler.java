@@ -119,7 +119,9 @@ public class NativeHelmInstanceSyncHandler extends AbstractInstanceSyncHandler {
             deploymentInfoDTO != null ? deploymentInfoDTO.getClass().getSimpleName() : null);
       } else {
         helmDeploymentReleaseDetailsList.add(
-            K8sAndHelmInfrastructureUtility.getNativeHelmDeploymentReleaseDetails(deploymentInfoDTO));
+            K8sAndHelmInfrastructureUtility.getNativeHelmDeploymentReleaseDetails(deploymentInfoDTO,
+                cdFeatureFlagHelper.isEnabled(
+                    instanceSyncPerpetualTaskInfoDTO.getAccountIdentifier(), FeatureName.CDS_EKS_ADD_REGIONAL_PARAM)));
       }
     }
     return DeploymentReleaseDetails.builder()

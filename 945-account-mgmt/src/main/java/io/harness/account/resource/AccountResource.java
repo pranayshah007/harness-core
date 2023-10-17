@@ -28,6 +28,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.remote.client.CGRestUtils;
+import io.harness.rest.RestResponse;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 
@@ -172,6 +173,7 @@ public class AccountResource {
   }
 
   @PUT
+  @Hidden
   @Path("{accountIdentifier}/harness-support-access")
   @ApiOperation(value = "Enable/Disable Harness Support Access", nickname = "updateHarnessSupportAccessNG")
   @Operation(operationId = "updateHarnessSupportAccessNG", summary = "Enable/Disable Harness Support Access",
@@ -181,7 +183,7 @@ public class AccountResource {
         ApiResponse(responseCode = "default", description = "Returns an account")
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = EDIT_ACCOUNT_PERMISSION)
-  public ResponseDTO<Boolean>
+  public RestResponse<Boolean>
   updateHarnessSupportAccess(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @PathParam(
                                  "accountIdentifier") @AccountIdentifier String accountIdentifier,
       @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
@@ -193,7 +195,7 @@ public class AccountResource {
     Boolean response = CGRestUtils.getResponse(
         accountClient.updateHarnessSupportAccess(accountIdentifier, isHarnessSupportAccessAllowed));
 
-    return ResponseDTO.newResponse(response);
+    return new RestResponse(response);
   }
 
   @PUT

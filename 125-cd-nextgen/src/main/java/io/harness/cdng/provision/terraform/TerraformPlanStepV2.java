@@ -356,7 +356,9 @@ public class TerraformPlanStepV2 extends CdTaskChainExecutable {
             StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
         .useOptimizedTfPlan(true)
         .skipColorLogs(featureFlagHelper.isEnabled(accountId, CDS_TF_TG_SKIP_ERROR_LOGS_COLORING))
-        .isTerraformCloudCli(isTerraformCloudCli);
+        .isTerraformCloudCli(isTerraformCloudCli)
+        .providerCredentialDelegateInfo(
+            helper.getProviderCredentialDelegateInfo(configuration.getProviderCredential(), ambiance));
 
     return builder;
   }

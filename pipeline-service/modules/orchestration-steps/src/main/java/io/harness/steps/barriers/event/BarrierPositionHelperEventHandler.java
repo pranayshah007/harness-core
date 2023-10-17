@@ -6,9 +6,11 @@
  */
 
 package io.harness.steps.barriers.event;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.engine.observers.NodeStatusUpdateObserver;
 import io.harness.engine.observers.NodeUpdateInfo;
@@ -20,7 +22,6 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.steps.barriers.beans.BarrierExecutionInstance;
 import io.harness.steps.barriers.beans.BarrierPositionInfo.BarrierPosition.BarrierPositionType;
 import io.harness.steps.barriers.service.BarrierService;
-import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -30,13 +31,13 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class BarrierPositionHelperEventHandler implements AsyncInformObserver, NodeStatusUpdateObserver {
   @Inject @Named("OrchestrationVisualizationExecutorService") ExecutorService executorService;
   @Inject BarrierService barrierService;
-  @Inject PmsFeatureFlagService featureFlagService;
 
   @Override
   public void onNodeStatusUpdate(NodeUpdateInfo nodeUpdateInfo) {
@@ -54,8 +55,8 @@ public class BarrierPositionHelperEventHandler implements AsyncInformObserver, N
         positionType = BarrierPositionType.STEP;
       }
       if (positionType != null) {
-        String accountId = AmbianceUtils.getAccountId(nodeExecution.getAmbiance());
-        if (featureFlagService.isEnabled(accountId, FeatureName.CDS_NG_BARRIER_STEPS_WITHIN_LOOPING_STRATEGIES)) {
+        if (AmbianceUtils.checkIfFeatureFlagEnabled(nodeUpdateInfo.getNodeExecution().getAmbiance(),
+                FeatureName.CDS_NG_BARRIER_STEPS_WITHIN_LOOPING_STRATEGIES.name())) {
           updatePosition(planExecutionId, positionType, nodeExecution);
         } else {
           updatePositionWithoutFiltersForLoopingStrategy(planExecutionId, positionType, nodeExecution);

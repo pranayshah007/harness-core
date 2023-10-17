@@ -664,11 +664,42 @@ public class HashicorpVaultEncryptorTest extends CategoryTest {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testFetchSecretV2() throws IOException {
-    Map<String, Object> data = Map.of("key-1", "value-1", "key-2", Map.of("key-21", "value-21"), "key-3",
+    Map<String, Object> data = Map.of("key.with.dot", "value-for-key-with-dot");
+
+    EncryptedRecord encryptedRecord = setupJsonResponseMockingV2(data, "key.with.dot");
+    char[] value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo("value-for-key-with-dot");
+
+    data = Map.of("key-having-value-with-curly-braces", "{01dkd7}op910");
+    encryptedRecord = setupJsonResponseMockingV2(data, "key-having-value-with-curly-braces");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo("{01dkd7}op910");
+
+    data = Map.of("key-having-special-characters-in-value-1", "[,\":]");
+    encryptedRecord = setupJsonResponseMockingV2(data, "key-having-special-characters-in-value-1");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo("[,\":]");
+
+    data = Map.of("key-having-special-characters-in-value-2", "[1,2,3]");
+    encryptedRecord = setupJsonResponseMockingV2(data, "key-having-special-characters-in-value-2");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo("[1,2,3]");
+
+    data = Map.of("key-having-special-characters-in-value-3", "[\"adfd\"]");
+    encryptedRecord = setupJsonResponseMockingV2(data, "key-having-special-characters-in-value-3");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo("[\"adfd\"]");
+
+    data = Map.of("key-having-special-characters-in-value-4", "[\"adfd:asdf\"]");
+    encryptedRecord = setupJsonResponseMockingV2(data, "key-having-special-characters-in-value-4");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    assertThat(valueOf(value)).isEqualTo("[\"adfd:asdf\"]");
+
+    data = Map.of("key-1", "value-1", "key-2", Map.of("key-21", "value-21"), "key-3",
         Map.of("key-31", Map.of("key-311", "value-311")));
 
-    EncryptedRecord encryptedRecord = setupJsonResponseMockingV2(data, "key-1");
-    char[] value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
+    encryptedRecord = setupJsonResponseMockingV2(data, "key-1");
+    value = hashicorpVaultEncryptor.fetchSecretValue(vaultConfig.getAccountId(), encryptedRecord, vaultConfig);
     assertThat(valueOf(value)).isEqualTo("value-1");
 
     encryptedRecord = setupJsonResponseMockingV2(data, "key-2");

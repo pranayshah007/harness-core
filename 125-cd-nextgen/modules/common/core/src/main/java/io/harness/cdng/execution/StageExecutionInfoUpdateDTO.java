@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.execution;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
@@ -14,6 +15,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.utils.StageStatus;
 
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
@@ -32,4 +34,7 @@ public class StageExecutionInfoUpdateDTO {
   private Status status;
   private StageStatus stageStatus;
   private Long endTs;
+  private String stageName;
+  private String stageIdentifier;
+  private Map<String, String> tags;
 }

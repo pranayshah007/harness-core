@@ -105,6 +105,7 @@ public class EntityYamlRootNames {
   public static final String PLUGIN = "Plugin";
   public static final String SECURITY = "Security";
 
+  public static final String ANCHORE = "Anchore";
   public static final String AQUA_TRIVY = "AquaTrivy";
   public static final String AWS_ECR = "AWSECR";
   public static final String AWS_SECURITY_HUB = "AWSSecurityHub";
@@ -159,6 +160,9 @@ public class EntityYamlRootNames {
   public static final String GCS_UPLOAD = "GCSUpload";
   public static final String S3_UPLOAD = "S3Upload";
   public static final String BUILD_AND_PUSH_GCR = "BuildAndPushGCR";
+
+  public static final String BUILD_AND_PUSH_GAR = "BuildAndPushGAR";
+
   public static final String BUILD_AND_PUSH_ACR = "BuildAndPushACR";
   public static final String BUILD_AND_PUSH_ECR = "BuildAndPushECR";
   public static final String BUILD_AND_PUSH_DOCKER_REGISTRY = "BuildAndPushDockerRegistry";
@@ -201,6 +205,7 @@ public class EntityYamlRootNames {
   public static final String SHELL_SCRIPT_PROVISION_STEP = "ShellScriptProvision";
   public static final String FREEZE = "freeze";
   public static final String CHAOS_STEP = "Chaos";
+  public static final String CHAOS_INFRASTRUCTURE = "ChaosInfrastructure";
   public static final String ELASTIGROUP_DEPLOY_STEP = "ElastigroupDeploy";
   public static final String ELASTIGROUP_ROLLBACK_STEP = "ElastigroupRollback";
   public static final String IACM_STAGE = "IACMStage";

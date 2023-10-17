@@ -116,8 +116,7 @@
     "NGTag": {
       "type": "object",
       "required": [
-        "key",
-        "value"
+        "key"
       ],
       "properties": {
         "key": {

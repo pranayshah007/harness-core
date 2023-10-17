@@ -6,11 +6,13 @@
  */
 
 package io.harness.cdng.artifact.steps;
+
 import static io.harness.beans.FeatureName.CDS_ARTIFACTS_PRIMARY_IDENTIFIER;
 import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_STEP_COMMAND_UNIT;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.entityusageactivity.EntityUsageTypes.PIPELINE_EXECUTION;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -47,6 +49,8 @@ import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.eventsframework.schemas.entity.EntityUsageDetailProto;
+import io.harness.eventsframework.schemas.entity.PipelineExecutionUsageDataProto;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
@@ -74,6 +78,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.secretusage.SecretRuntimeUsageService;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.EntityReferenceExtractorUtils;
@@ -83,6 +88,7 @@ import io.harness.tasks.ResponseData;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
+import io.harness.walktree.visitor.entityreference.beans.VisitedSecretReference;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
@@ -124,6 +130,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
   @Inject private TemplateResourceClient templateResourceClient;
   @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
+  @Inject private SecretRuntimeUsageService secretRuntimeUsageService;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject ServiceEntityService serviceEntityService;
 
@@ -195,6 +202,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
     }
 
     resolveExpressions(ambiance, artifacts);
+    publishRuntimeSecretUsage(ambiance, artifacts);
 
     checkForAccessOrThrow(ambiance, artifacts);
     final Set<String> taskIds = new HashSet<>();
@@ -292,6 +300,21 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
 
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, true);
   }
+
+  private void publishRuntimeSecretUsage(Ambiance ambiance, ArtifactListConfig artifacts) {
+    Set<VisitedSecretReference> secretReferences =
+        artifacts == null ? Set.of() : entityReferenceExtractorUtils.extractReferredSecrets(ambiance, artifacts);
+
+    secretRuntimeUsageService.createSecretRuntimeUsage(secretReferences,
+        EntityUsageDetailProto.newBuilder()
+            .setPipelineExecutionUsageData(PipelineExecutionUsageDataProto.newBuilder()
+                                               .setPlanExecutionId(ambiance.getPlanExecutionId())
+                                               .setStageExecutionId(ambiance.getStageExecutionId())
+                                               .build())
+            .setUsageType(PIPELINE_EXECUTION)
+            .build());
+  }
+
   private void resolveExpressions(Ambiance ambiance, ArtifactListConfig artifacts) {
     final List<Object> toResolve = new ArrayList<>();
     if (artifacts.getPrimary() != null) {
@@ -402,8 +425,8 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
   }
 
   @Override
-  public void handleAbort(
-      Ambiance ambiance, EmptyStepParameters stepParameters, AsyncExecutableResponse executableResponse) {
+  public void handleAbort(Ambiance ambiance, EmptyStepParameters stepParameters,
+      AsyncExecutableResponse executableResponse, boolean userMarked) {
     final NGLogCallback logCallback =
         serviceStepsHelper.getServiceLogCallback(ambiance, false, SERVICE_STEP_COMMAND_UNIT);
     logCallback.saveExecutionLog("Artifacts Step was aborted", LogLevel.ERROR, CommandExecutionStatus.FAILURE);

@@ -23,6 +23,7 @@ import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.terraform.TerraformConfig;
 import io.harness.cdng.provision.terraform.TerraformConfigDAL;
 import io.harness.cdng.provision.terraform.TerraformConfigHelper;
+import io.harness.cdng.provision.terraform.TerraformProviderCredential;
 import io.harness.cdng.provision.terraform.TerraformStepHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
@@ -169,6 +170,12 @@ public class TerraformRollbackStep extends CdTaskExecutable<TerraformTaskNGRespo
       builder.isTerraformCloudCli(rollbackConfig.isTerraformCloudCli());
 
       builder.terraformCommandFlags(terraformStepHelper.getTerraformCliFlags(stepParametersSpec.getCommandFlags()));
+      if (rollbackConfig.getProviderCredentialConfig() != null) {
+        TerraformProviderCredential providerCredential =
+            terraformStepHelper.toTerraformProviderCredential(rollbackConfig.getProviderCredentialConfig());
+        builder.providerCredentialDelegateInfo(
+            terraformStepHelper.getProviderCredentialDelegateInfo(providerCredential, ambiance));
+      }
 
       builder.backendConfig(rollbackConfig.getBackendConfig())
           .targets(rollbackConfig.getTargets())

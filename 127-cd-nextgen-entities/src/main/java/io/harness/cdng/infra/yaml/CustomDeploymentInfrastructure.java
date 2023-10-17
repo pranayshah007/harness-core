@@ -18,7 +18,7 @@ import io.harness.cdng.customdeployment.CustomDeploymentNGVariable;
 import io.harness.cdng.customdeployment.CustomDeploymentNGVariableType;
 import io.harness.cdng.infra.beans.CustomDeploymentInfraMapping;
 import io.harness.cdng.infra.beans.InfraMapping;
-import io.harness.filters.ConnectorRefExtractorHelper;
+import io.harness.cdng.visitor.helpers.SecretConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.plancreator.customDeployment.StepTemplateRef;
@@ -41,7 +41,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Value
 @Builder
 @JsonTypeName(InfrastructureKind.CUSTOM_DEPLOYMENT)
-@SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
+@SimpleVisitorHelper(helperClass = SecretConnectorRefExtractorHelper.class)
 @TypeAlias("customDeploymentInfrastructure")
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure")

@@ -6,10 +6,12 @@
  */
 
 package io.harness.engine.pms.data;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.experimental.UtilityClass;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDC)
 @UtilityClass
 public class ResolverUtils {
@@ -41,6 +44,29 @@ public class ResolverUtils {
     levelRuntimeIdIndices.add("");
     for (int i = 1; i <= ambiance.getLevelsList().size(); i++) {
       levelRuntimeIdIndices.add(prepareLevelRuntimeIdIdx(ambiance.getLevelsList().subList(0, i)));
+    }
+    return levelRuntimeIdIndices;
+  }
+
+  public List<String> prepareLevelRuntimeIdIndicesUsingGroupName(
+      @NotNull Ambiance ambiance, @NotNull String groupName) {
+    if (EmptyPredicate.isEmpty(groupName) || EmptyPredicate.isEmpty(ambiance.getLevelsList())) {
+      // If group name is not provided, calculate levelRuntimeId without any restrictions
+      return prepareLevelRuntimeIdIndices(ambiance);
+    }
+
+    if (ResolverUtils.GLOBAL_GROUP_SCOPE.equals(groupName)) {
+      // in consume flow, global scope is mapped to empty runtimeIdIdx
+      return Collections.singletonList("");
+    }
+    List<String> levelRuntimeIdIndices = new ArrayList<>();
+    levelRuntimeIdIndices.add("");
+    List<Level> levels = ambiance.getLevelsList();
+    for (int i = levels.size() - 1; i >= 0; i--) {
+      Level level = levels.get(i);
+      if (groupName.equals(level.getGroup())) {
+        levelRuntimeIdIndices.add(prepareLevelRuntimeIdIdx(ambiance.getLevelsList().subList(0, i + 1)));
+      }
     }
     return levelRuntimeIdIndices;
   }

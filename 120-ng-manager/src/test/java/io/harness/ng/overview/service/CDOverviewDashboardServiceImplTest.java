@@ -9,6 +9,7 @@ package io.harness.ng.overview.service;
 
 import static io.harness.ng.core.template.TemplateListType.STABLE_TEMPLATE_TYPE;
 import static io.harness.rule.OwnerRule.ABHISHEK;
+import static io.harness.rule.OwnerRule.RISHABH;
 import static io.harness.rule.OwnerRule.SOURABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -52,6 +53,7 @@ import io.harness.ng.overview.dto.ActiveServiceDeploymentsInfo;
 import io.harness.ng.overview.dto.ActiveServiceDeploymentsInfo.ActiveServiceDeploymentsInfoBuilder;
 import io.harness.ng.overview.dto.ArtifactDeploymentDetail;
 import io.harness.ng.overview.dto.ArtifactInstanceDetails;
+import io.harness.ng.overview.dto.ChartVersionInstanceDetails;
 import io.harness.ng.overview.dto.EnvironmentGroupInstanceDetails;
 import io.harness.ng.overview.dto.IconDTO;
 import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
@@ -113,12 +115,15 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
   private final String ENVIRONMENT_GROUP_NAME_1 = "envgroupN1";
   private final String ENVIRONMENT_GROUP_NAME_2 = "envgroupN2";
   private final String INFRASTRUCTURE_1 = "infra1";
+  private final String CHART_VERSION_1 = "chartVersion1";
+  private final String CHART_VERSION_2 = "chartVersion2";
   private final String DISPLAY_NAME_1 = "display1:1";
   private final String DISPLAY_NAME_2 = "display2:2";
   private final String PLAN_EXECUTION_1 = "planexec:1";
   private final String PIPELINE_EXECUTION_SUMMARY_CD_ID_1 = "sumarryid1";
   private final String PIPELINE_EXECUTION_SUMMARY_CD_ID_2 = "sumarryid2";
   private final String PLAN_EXECUTION_2 = "planexec:2";
+  private final String PLAN_EXECUTION_3 = "planexec:3";
   private final String ACCOUNT_ID = "accountID";
   private final String ORG_ID = "orgId";
   private final String PROJECT_ID = "projectId";
@@ -698,6 +703,26 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     return artifactDeploymentDetailModels;
   }
 
+  private List<ArtifactDeploymentDetailModel> getArtifactDeploymentDetailModelList_ChartVersionCard() {
+    List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels = new ArrayList<>();
+    artifactDeploymentDetailModels.add(
+        new ArtifactDeploymentDetailModel(ENVIRONMENT_1, DISPLAY_NAME_1, CHART_VERSION_1, 1L, PLAN_EXECUTION_1, null));
+    artifactDeploymentDetailModels.add(
+        new ArtifactDeploymentDetailModel(ENVIRONMENT_2, DISPLAY_NAME_2, CHART_VERSION_2, 2L, PLAN_EXECUTION_2, null));
+    return artifactDeploymentDetailModels;
+  }
+
+  private List<ArtifactDeploymentDetailModel> getArtifactDeploymentDetailModelList_ChartVersionCard_WithoutGroup() {
+    List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels = new ArrayList<>();
+    artifactDeploymentDetailModels.add(
+        new ArtifactDeploymentDetailModel(ENVIRONMENT_1, DISPLAY_NAME_1, CHART_VERSION_1, 2L, PLAN_EXECUTION_2, null));
+    artifactDeploymentDetailModels.add(
+        new ArtifactDeploymentDetailModel(ENVIRONMENT_1, DISPLAY_NAME_1, null, 1L, PLAN_EXECUTION_1, null));
+    artifactDeploymentDetailModels.add(
+        new ArtifactDeploymentDetailModel(ENVIRONMENT_2, DISPLAY_NAME_2, CHART_VERSION_2, 3L, PLAN_EXECUTION_3, null));
+    return artifactDeploymentDetailModels;
+  }
+
   private List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> getEnvironmentGroupInstanceDetailList() {
     List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> environmentInstanceDetails = new ArrayList<>();
     environmentInstanceDetails.add(
@@ -744,6 +769,178 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
                     .build()))
             .build());
     return environmentInstanceDetails;
+  }
+
+  private List<ChartVersionInstanceDetails.ChartVersionInstanceDetail> getChartVersionInstanceDetailList() {
+    List<ChartVersionInstanceDetails.ChartVersionInstanceDetail> chartVersionInstanceDetails = new ArrayList<>();
+    List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> environmentInstanceDetails1 =
+        new ArrayList<>();
+    environmentInstanceDetails1.add(
+        EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail.builder()
+            .id(ENVIRONMENT_GROUP_1)
+            .name(ENVIRONMENT_GROUP_NAME_1)
+            .isEnvGroup(true)
+            .isDrift(false)
+            .environmentTypes(List.of(EnvironmentType.PreProduction))
+            .artifactDeploymentDetails(Collections.singletonList(ArtifactDeploymentDetail.builder()
+                                                                     .envName(ENVIRONMENT_NAME_1)
+                                                                     .envId(ENVIRONMENT_1)
+                                                                     .lastPipelineExecutionId(PLAN_EXECUTION_1)
+                                                                     .artifact(DISPLAY_NAME_1)
+                                                                     .chartVersion(CHART_VERSION_1)
+                                                                     .lastDeployedAt(1L)
+                                                                     .build()))
+            .build());
+    environmentInstanceDetails1.add(
+        EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail.builder()
+            .id(ENVIRONMENT_GROUP_2)
+            .name(ENVIRONMENT_GROUP_NAME_2)
+            .isEnvGroup(true)
+            .isDrift(true)
+            .environmentTypes(Arrays.asList(EnvironmentType.PreProduction, EnvironmentType.Production))
+            .artifactDeploymentDetails(Arrays.asList(ArtifactDeploymentDetail.builder()
+                                                         .envId(ENVIRONMENT_2)
+                                                         .envName(ENVIRONMENT_NAME_2)
+                                                         .lastPipelineExecutionId(PLAN_EXECUTION_2)
+                                                         .artifact(DISPLAY_NAME_2)
+                                                         .chartVersion(CHART_VERSION_2)
+                                                         .lastDeployedAt(2L)
+                                                         .build(),
+                ArtifactDeploymentDetail.builder()
+                    .envName(ENVIRONMENT_NAME_1)
+                    .envId(ENVIRONMENT_1)
+                    .lastPipelineExecutionId(PLAN_EXECUTION_1)
+                    .artifact(DISPLAY_NAME_1)
+                    .chartVersion(CHART_VERSION_1)
+                    .lastDeployedAt(1L)
+                    .build()))
+            .build());
+
+    List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> environmentInstanceDetails2 =
+        new ArrayList<>();
+    environmentInstanceDetails2.add(
+        EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail.builder()
+            .id(ENVIRONMENT_GROUP_2)
+            .name(ENVIRONMENT_GROUP_NAME_2)
+            .isEnvGroup(true)
+            .isDrift(true)
+            .environmentTypes(Arrays.asList(EnvironmentType.PreProduction, EnvironmentType.Production))
+            .artifactDeploymentDetails(Arrays.asList(ArtifactDeploymentDetail.builder()
+                                                         .envId(ENVIRONMENT_2)
+                                                         .envName(ENVIRONMENT_NAME_2)
+                                                         .lastPipelineExecutionId(PLAN_EXECUTION_2)
+                                                         .artifact(DISPLAY_NAME_2)
+                                                         .chartVersion(CHART_VERSION_2)
+                                                         .lastDeployedAt(2L)
+                                                         .build(),
+                ArtifactDeploymentDetail.builder()
+                    .envName(ENVIRONMENT_NAME_1)
+                    .envId(ENVIRONMENT_1)
+                    .lastPipelineExecutionId(PLAN_EXECUTION_1)
+                    .artifact(DISPLAY_NAME_1)
+                    .chartVersion(CHART_VERSION_1)
+                    .lastDeployedAt(1L)
+                    .build()))
+            .build());
+
+    chartVersionInstanceDetails.add(
+        ChartVersionInstanceDetails.ChartVersionInstanceDetail.builder()
+            .chartVersion(CHART_VERSION_1)
+            .environmentGroupInstanceDetails(EnvironmentGroupInstanceDetails.builder()
+                                                 .environmentGroupInstanceDetails(environmentInstanceDetails1)
+                                                 .build())
+            .build());
+    chartVersionInstanceDetails.add(
+        ChartVersionInstanceDetails.ChartVersionInstanceDetail.builder()
+            .chartVersion(CHART_VERSION_2)
+            .environmentGroupInstanceDetails(EnvironmentGroupInstanceDetails.builder()
+                                                 .environmentGroupInstanceDetails(environmentInstanceDetails2)
+                                                 .build())
+            .build());
+    return chartVersionInstanceDetails;
+  }
+
+  private List<ChartVersionInstanceDetails.ChartVersionInstanceDetail> getChartVersionInstanceDetailWithoutGroupList() {
+    List<ChartVersionInstanceDetails.ChartVersionInstanceDetail> chartVersionInstanceDetails = new ArrayList<>();
+    List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> environmentInstanceDetails1 =
+        new ArrayList<>();
+    environmentInstanceDetails1.add(
+        EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail.builder()
+            .id(ENVIRONMENT_1)
+            .name(ENVIRONMENT_NAME_1)
+            .isEnvGroup(false)
+            .isDrift(true)
+            .environmentTypes(List.of(EnvironmentType.PreProduction))
+            .artifactDeploymentDetails(Collections.singletonList(ArtifactDeploymentDetail.builder()
+                                                                     .envName(ENVIRONMENT_NAME_1)
+                                                                     .envId(ENVIRONMENT_1)
+                                                                     .lastPipelineExecutionId(PLAN_EXECUTION_2)
+                                                                     .artifact(DISPLAY_NAME_1)
+                                                                     .chartVersion(CHART_VERSION_1)
+                                                                     .lastDeployedAt(2l)
+                                                                     .build()))
+            .build());
+
+    List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> environmentInstanceDetails2 =
+        new ArrayList<>();
+    environmentInstanceDetails2.add(
+        EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail.builder()
+            .id(ENVIRONMENT_1)
+            .name(ENVIRONMENT_NAME_1)
+            .isEnvGroup(false)
+            .isDrift(false)
+            .environmentTypes(List.of(EnvironmentType.PreProduction))
+            .artifactDeploymentDetails(List.of(ArtifactDeploymentDetail.builder()
+                                                   .envId(ENVIRONMENT_1)
+                                                   .envName(ENVIRONMENT_NAME_1)
+                                                   .lastPipelineExecutionId(PLAN_EXECUTION_2)
+                                                   .artifact(DISPLAY_NAME_1)
+                                                   .chartVersion(CHART_VERSION_1)
+                                                   .lastDeployedAt(2L)
+                                                   .build()))
+            .build());
+
+    List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> environmentInstanceDetails3 =
+        new ArrayList<>();
+    environmentInstanceDetails3.add(
+        EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail.builder()
+            .id(ENVIRONMENT_2)
+            .name(ENVIRONMENT_NAME_2)
+            .isEnvGroup(false)
+            .isDrift(false)
+            .environmentTypes(List.of(EnvironmentType.Production))
+            .artifactDeploymentDetails(List.of(ArtifactDeploymentDetail.builder()
+                                                   .envId(ENVIRONMENT_2)
+                                                   .envName(ENVIRONMENT_NAME_2)
+                                                   .lastPipelineExecutionId(PLAN_EXECUTION_3)
+                                                   .artifact(DISPLAY_NAME_2)
+                                                   .chartVersion(CHART_VERSION_2)
+                                                   .lastDeployedAt(3L)
+                                                   .build()))
+            .build());
+
+    chartVersionInstanceDetails.add(
+        ChartVersionInstanceDetails.ChartVersionInstanceDetail.builder()
+            .chartVersion("")
+            .environmentGroupInstanceDetails(EnvironmentGroupInstanceDetails.builder()
+                                                 .environmentGroupInstanceDetails(environmentInstanceDetails1)
+                                                 .build())
+            .build());
+    chartVersionInstanceDetails.add(
+        ChartVersionInstanceDetails.ChartVersionInstanceDetail.builder()
+            .chartVersion(CHART_VERSION_1)
+            .environmentGroupInstanceDetails(EnvironmentGroupInstanceDetails.builder()
+                                                 .environmentGroupInstanceDetails(environmentInstanceDetails2)
+                                                 .build())
+            .build());
+    chartVersionInstanceDetails.add(
+        ChartVersionInstanceDetails.ChartVersionInstanceDetail.builder()
+            .chartVersion(CHART_VERSION_2)
+            .environmentGroupInstanceDetails(EnvironmentGroupInstanceDetails.builder()
+                                                 .environmentGroupInstanceDetails(environmentInstanceDetails3)
+                                                 .build())
+            .build());
+    return chartVersionInstanceDetails;
   }
 
   private List<ArtifactInstanceDetails.ArtifactInstanceDetail> getArtifactInstanceDetailList() {
@@ -1353,6 +1550,137 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
         .isEqualTo(artifactInstanceDetailsResult.getArtifactInstanceDetails().size());
     verify(instanceDashboardService)
         .getLastDeployedInstance(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, false, false, false);
+    verify(environmentService).fetchesNonDeletedEnvironmentFromListOfRefs(ACCOUNT_ID, ORG_ID, PROJECT_ID, envIds);
+    verifyServiceEntityCall(1);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void test_getChartVersionInstanceDetails() {
+    List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels =
+        getArtifactDeploymentDetailModelList_ChartVersionCard();
+    List<Environment> environments = getEnvironmentList();
+    List<String> envIds = Arrays.asList(ENVIRONMENT_2, ENVIRONMENT_1);
+
+    when(instanceDashboardService.getLastDeployedInstance(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, false, false, true))
+        .thenReturn(artifactDeploymentDetailModels);
+    when(environmentService.fetchesNonDeletedEnvIdentifiersFromList(any(), any(), any(), any()))
+        .thenReturn(Arrays.asList(ENVIRONMENT_2, ENVIRONMENT_1));
+    when(environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(ACCOUNT_ID, ORG_ID, PROJECT_ID, envIds))
+        .thenReturn(environments);
+    mockServiceEntityForNonGitOps();
+
+    Page<EnvironmentGroupEntity> page = mock(Page.class);
+    when(environmentGroupService.list(any(), any(), any(), any(), any())).thenReturn(page);
+    EnvironmentGroupEntity environmentGroupEntity1 = EnvironmentGroupEntity.builder()
+                                                         .accountId(ACCOUNT_ID)
+                                                         .orgIdentifier(ORG_ID)
+                                                         .projectIdentifier(PROJECT_ID)
+                                                         .identifier(ENVIRONMENT_GROUP_1)
+                                                         .name(ENVIRONMENT_GROUP_NAME_1)
+                                                         .envIdentifiers(Collections.singletonList(ENVIRONMENT_1))
+                                                         .build();
+    EnvironmentGroupEntity environmentGroupEntity2 = EnvironmentGroupEntity.builder()
+                                                         .accountId(ACCOUNT_ID)
+                                                         .orgIdentifier(ORG_ID)
+                                                         .projectIdentifier(PROJECT_ID)
+                                                         .identifier(ENVIRONMENT_GROUP_2)
+                                                         .name(ENVIRONMENT_GROUP_NAME_2)
+                                                         .envIdentifiers(Arrays.asList(ENVIRONMENT_1, ENVIRONMENT_2))
+                                                         .build();
+    when(page.getContent()).thenReturn(Arrays.asList(environmentGroupEntity1, environmentGroupEntity2));
+
+    ChartVersionInstanceDetails chartVersionInstanceDetailsReq =
+        ChartVersionInstanceDetails.builder().chartVersionInstanceDetails(getChartVersionInstanceDetailList()).build();
+    ChartVersionInstanceDetails chartVersionInstanceDetails =
+        cdOverviewDashboardService.getChartVersionInstanceDetails(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
+    assertThat(chartVersionInstanceDetailsReq.getChartVersionInstanceDetails().size())
+        .isEqualTo(chartVersionInstanceDetails.getChartVersionInstanceDetails().size())
+        .isEqualTo(2);
+    assertChart(chartVersionInstanceDetailsReq, chartVersionInstanceDetails);
+
+    verify(instanceDashboardService)
+        .getLastDeployedInstance(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, false, false, true);
+    verify(environmentService).fetchesNonDeletedEnvironmentFromListOfRefs(ACCOUNT_ID, ORG_ID, PROJECT_ID, envIds);
+    verifyServiceEntityCall(1);
+  }
+
+  private void assertChart(ChartVersionInstanceDetails chartVersionInstanceDetailsReq,
+      ChartVersionInstanceDetails chartVersionInstanceDetails) {
+    assertThat(chartVersionInstanceDetailsReq.getChartVersionInstanceDetails().size())
+        .isEqualTo(chartVersionInstanceDetails.getChartVersionInstanceDetails().size());
+    for (int i = 0; i < chartVersionInstanceDetailsReq.getChartVersionInstanceDetails().size(); i++) {
+      assertThat(chartVersionInstanceDetailsReq.getChartVersionInstanceDetails().get(i).getChartVersion())
+          .isEqualTo(chartVersionInstanceDetails.getChartVersionInstanceDetails().get(i).getChartVersion());
+      assertThat(chartVersionInstanceDetailsReq.getChartVersionInstanceDetails()
+                     .get(i)
+                     .getEnvironmentGroupInstanceDetails()
+                     .getEnvironmentGroupInstanceDetails()
+                     .size())
+          .isEqualTo(chartVersionInstanceDetails.getChartVersionInstanceDetails()
+                         .get(i)
+                         .getEnvironmentGroupInstanceDetails()
+                         .getEnvironmentGroupInstanceDetails()
+                         .size());
+      for (int j = 0; j < chartVersionInstanceDetailsReq.getChartVersionInstanceDetails()
+                              .get(i)
+                              .getEnvironmentGroupInstanceDetails()
+                              .getEnvironmentGroupInstanceDetails()
+                              .size();
+           j++) {
+        assertThat(chartVersionInstanceDetailsReq.getChartVersionInstanceDetails()
+                       .get(i)
+                       .getEnvironmentGroupInstanceDetails()
+                       .getEnvironmentGroupInstanceDetails()
+                       .get(j))
+            .usingRecursiveComparison()
+            .ignoringCollectionOrder()
+            .isEqualTo(chartVersionInstanceDetails.getChartVersionInstanceDetails()
+                           .get(i)
+                           .getEnvironmentGroupInstanceDetails()
+                           .getEnvironmentGroupInstanceDetails()
+                           .get(j));
+      }
+    }
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void test_getChartVersionInstanceDetails_without_group() {
+    List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels =
+        getArtifactDeploymentDetailModelList_ChartVersionCard_WithoutGroup();
+    List<Environment> environments = getEnvironmentList();
+    List<String> envIds = Arrays.asList(ENVIRONMENT_2, ENVIRONMENT_1);
+
+    when(instanceDashboardService.getLastDeployedInstance(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, false, false, true))
+        .thenReturn(artifactDeploymentDetailModels);
+    when(environmentService.fetchesNonDeletedEnvIdentifiersFromList(any(), any(), any(), any()))
+        .thenReturn(Arrays.asList(ENVIRONMENT_2, ENVIRONMENT_1));
+    when(environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(ACCOUNT_ID, ORG_ID, PROJECT_ID, envIds))
+        .thenReturn(environments);
+    mockServiceEntityForNonGitOps();
+
+    Page<EnvironmentGroupEntity> page = mock(Page.class);
+    when(environmentGroupService.list(any(), any(), any(), any(), any())).thenReturn(page);
+    when(page.getContent()).thenReturn(Collections.emptyList());
+
+    ChartVersionInstanceDetails chartVersionInstanceDetailsReq =
+        ChartVersionInstanceDetails.builder()
+            .chartVersionInstanceDetails(getChartVersionInstanceDetailWithoutGroupList())
+            .build();
+    ChartVersionInstanceDetails chartVersionInstanceDetails =
+        cdOverviewDashboardService.getChartVersionInstanceDetails(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
+    assertThat(chartVersionInstanceDetailsReq.getChartVersionInstanceDetails().size())
+        .isEqualTo(chartVersionInstanceDetails.getChartVersionInstanceDetails().size())
+        .isEqualTo(3);
+    assertChart(chartVersionInstanceDetailsReq, chartVersionInstanceDetails);
+
+    verify(instanceDashboardService)
+        .getLastDeployedInstance(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, false, false, true);
     verify(environmentService).fetchesNonDeletedEnvironmentFromListOfRefs(ACCOUNT_ID, ORG_ID, PROJECT_ID, envIds);
     verifyServiceEntityCall(1);
   }

@@ -15,11 +15,14 @@ public enum ActivityVerificationStatus {
   NOT_STARTED,
   VERIFICATION_PASSED,
   VERIFICATION_FAILED,
+  ABORTED_AS_SUCCESS,
+  ABORTED_AS_FAILURE,
   ERROR,
   ABORTED,
   IN_PROGRESS;
 
   public static List<ActivityVerificationStatus> getFinalStates() {
-    return Arrays.asList(ERROR, VERIFICATION_PASSED, VERIFICATION_FAILED, ABORTED);
+    return Arrays.asList(
+        ERROR, VERIFICATION_PASSED, VERIFICATION_FAILED, ABORTED_AS_SUCCESS, ABORTED_AS_FAILURE, ABORTED);
   }
 }

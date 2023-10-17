@@ -919,15 +919,15 @@ public class PipelineServiceModule extends AbstractModule {
 
   @Provides
   @Singleton
-  @Named("useNewNodeEntityConfiguration")
-  public Boolean getUseNewNodeEntityConfiguration() {
-    return configuration.getUseNewNodeEntityConfiguration();
+  @Named("publishAdviserEventForCustomAdvisers")
+  public Boolean getPublishAdviserEventForCustomAdvisers() {
+    return configuration.getPublishAdviserEventForCustomAdvisers();
   }
 
   @Provides
   @Singleton
-  @Named("publishAdviserEventForCustomAdvisers")
-  public Boolean getPublishAdviserEventForCustomAdvisers() {
-    return configuration.getPublishAdviserEventForCustomAdvisers();
+  @Named("disableCustomStageInPipelineService")
+  public Boolean getDisableCustomStageInPipelineService() {
+    return configuration.getDisableCustomStageInPipelineService();
   }
 }

@@ -54,8 +54,8 @@ import static io.harness.ci.commonconstants.ContainerExecutionConstants.GOLANG_C
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.GOLANG_CACHE_ENV_NAME;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.GRADLE_CACHE_DIR;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.GRADLE_CACHE_ENV_NAME;
-import static io.harness.ci.commonconstants.ContainerExecutionConstants.HARNESS_STAGE_ID_VARIABLE;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.PLUGIN_PIPELINE;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.POD_WAIT_BUFFER_SECONDS;
 import static io.harness.ci.execution.utils.UsageUtils.getExecutionUser;
 import static io.harness.common.STOExecutionConstants.STO_SERVICE_ENDPOINT_VARIABLE;
 import static io.harness.common.STOExecutionConstants.STO_SERVICE_TOKEN_VARIABLE;
@@ -407,7 +407,7 @@ public class K8InitializeTaskUtils {
     int podWaitUntilReadyTimeout = POD_MAX_WAIT_UNTIL_READY_SECS;
     if (timeout != null && timeout.fetchFinalValue() != null && isNotEmpty((String) timeout.fetchFinalValue())) {
       long timeoutInMillis = Timeout.fromString((String) timeout.fetchFinalValue()).getTimeoutInMillis();
-      podWaitUntilReadyTimeout = (int) (timeoutInMillis / 1000);
+      podWaitUntilReadyTimeout = (int) (timeoutInMillis / 1000) + POD_WAIT_BUFFER_SECONDS;
     }
     return podWaitUntilReadyTimeout;
   }

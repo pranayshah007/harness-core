@@ -7,6 +7,7 @@
 
 package io.harness.idp.configmanager.service;
 
+import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.rule.OwnerRule.DEVESH;
 
 import static junit.framework.TestCase.*;
@@ -30,15 +31,21 @@ import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
 import io.harness.idp.k8s.client.K8sClient;
 import io.harness.idp.namespace.service.NamespaceService;
+import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.*;
 import io.harness.springdata.TransactionHelper;
 
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.*;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(HarnessTeam.IDP)
 public class ConfigManagerServiceImplTest extends CategoryTest {
@@ -56,15 +63,17 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
   @Mock private NamespaceService namespaceService;
   @Mock private PluginsProxyInfoService pluginsProxyInfoService;
   @Mock private TransactionHelper transactionHelper;
+  @Mock private TransactionTemplate transactionTemplate;
+  @Mock private OutboxService outboxService;
   String env = "prod";
   ConfigManagerServiceImpl configManagerServiceImpl;
 
   @Before
   public void setUp() {
     openMocks = MockitoAnnotations.openMocks(this);
-    configManagerServiceImpl =
-        new ConfigManagerServiceImpl(env, appConfigRepository, mergedAppConfigRepository, k8sClient, namespaceService,
-            configEnvVariablesService, backstageEnvVariableService, pluginsProxyInfoService, transactionHelper);
+    configManagerServiceImpl = new ConfigManagerServiceImpl(env, appConfigRepository, mergedAppConfigRepository,
+        k8sClient, namespaceService, configEnvVariablesService, backstageEnvVariableService, pluginsProxyInfoService,
+        transactionHelper, transactionTemplate, outboxService);
   }
 
   static final String TEST_ID = "test_id";
@@ -96,6 +105,13 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
       + "      /api/proxy/harness/prod/?: /\n"
       + "    allowedHeaders:\n"
       + "    - authorization\n"
+      + "  /harness/scorecard:\n"
+      + "    target: https://app.harness.io/\n"
+      + "    pathRewrite:\n"
+      + "      /api/proxy/harness/scorecard/?: /\n"
+      + "    allowedHeaders:\n"
+      + "    - authorization\n"
+      + "    - Harness-Account\n"
       + "kafka:\n"
       + "  clientId: backstage\n"
       + "  clusters:\n"
@@ -191,6 +207,10 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
     when(pluginsProxyInfoService.insertProxyHostDetailsForPlugin(any(), any(), any()))
         .thenReturn(Collections.singletonList(new ProxyHostDetail()));
     when(appConfigRepository.save(any(AppConfigEntity.class))).thenReturn(getTestAppConfigEntity());
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     AppConfig appConfig = new AppConfig();
     appConfig.setConfigId(TEST_CONFIG_ID);
     appConfig.setConfigs(TEST_CONFIG_VALUE);
@@ -234,6 +254,11 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
     when(pluginsProxyInfoService.updateProxyHostDetailsForPlugin(any(), any(), any()))
         .thenReturn(Collections.singletonList(new ProxyHostDetail()));
     when(appConfigRepository.updateConfig(any(AppConfigEntity.class), any(ConfigType.class))).thenReturn(null);
+    when(appConfigRepository.findByAccountIdentifierAndConfigId(any(), any())).thenReturn(getTestAppConfigEntity());
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     AppConfig appConfig = new AppConfig();
     appConfig.setConfigId(TEST_CONFIG_ID);
     appConfig.setConfigs(TEST_CONFIG_VALUE);
@@ -271,6 +296,10 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
 
     when(appConfigRepository.findByAccountIdentifierAndConfigId(TEST_ACCOUNT_IDENTIFIER, TEST_CONFIG_ID))
         .thenReturn(null);
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
     AppConfig appConfig = new AppConfig();
     appConfig.setConfigId(TEST_CONFIG_ID);
     appConfig.setConfigs(TEST_CONFIG_VALUE);

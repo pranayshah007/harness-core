@@ -13,6 +13,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.task.helm.HelmTaskHelperBase.RESOURCE_DIR_BASE;
 import static io.harness.helm.HelmConstants.CHARTS_YAML_KEY;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -33,11 +34,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.task.git.ScmConnectorMapperDelegate;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
+import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
@@ -271,6 +274,51 @@ public class HelmChartManifestTaskServiceTest extends CategoryTest {
   public void testFetchHelmChartManifestGcsChartCache() {
     testFetchHelmRepoWithCacheCheck(
         GcsHelmStoreDelegateConfig.builder().bucketName("test-bucket").build(), RES_CHART_YAML_DEFAULT);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testFetchHelmChartManifestOciGenericChart() {
+    testFetchHelmRepo(OciHelmStoreDelegateConfig.builder()
+                          .repoName("repo-name")
+                          .basePath("/")
+                          .ociHelmConnector(OciHelmConnectorDTO.builder()
+                                                .helmRepoUrl("helm/repo/url")
+                                                .delegateSelectors(Collections.singleton("delegate1"))
+                                                .build())
+                          .build(),
+        RES_CHART_YAML_DEFAULT, null);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testFetchHelmChartManifestOciGenericChartSubChart() {
+    testFetchHelmRepo(OciHelmStoreDelegateConfig.builder()
+                          .repoName("repo-name")
+                          .basePath("/")
+                          .ociHelmConnector(OciHelmConnectorDTO.builder()
+                                                .helmRepoUrl("helm/repo/url")
+                                                .delegateSelectors(Collections.singleton("delegate1"))
+                                                .build())
+                          .build(),
+        RES_CHART_YAML_DEFAULT, "repo/subcharts/subchart1");
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testFetchHelmChartManifestOciGenericChartCache() {
+    testFetchHelmRepoWithCacheCheck(OciHelmStoreDelegateConfig.builder()
+                                        .repoName("repo-name")
+                                        .basePath("/")
+                                        .ociHelmConnector(OciHelmConnectorDTO.builder()
+                                                              .helmRepoUrl("helm/repo/url")
+                                                              .delegateSelectors(Collections.singleton("delegate1"))
+                                                              .build())
+                                        .build(),
+        RES_CHART_YAML_DEFAULT);
   }
 
   @Test

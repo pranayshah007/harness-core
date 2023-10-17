@@ -269,6 +269,118 @@
       },
       "requestBody": "{\"jql\" : \"project = {PROJECT_COMPONENT_REPLACER} AND {JQL_EXPRESSION}\",\n    \"fields\": [\"status\"],\n    \"maxResults\": 100}"
     }
+  },
+  {
+    "id": "651c0fc2381555cde1290f9f",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "gitlab_mean_time_to_merge_pr",
+    "dataSourceIdentifier": "gitlab",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "POST",
+      "url": "https://{API_BASE_URL}/api/graphql",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "{BEARER_AUTH}"
+      },
+      "requestBody": "{\"query\":\"{\\n  project(fullPath: \\\"{PROJECT_PATH}\\\") {\\n    mergeRequests(state: merged, last: 100{REPOSITORY_BRANCH_NAME_REPLACER}) {\\n      nodes {\\n        title\\n        createdAt\\n        mergedAt\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
+    }
+  },
+  {
+    "id": "651c0fcadf7e3948a05eb5d6",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "gitlab_is_branch_protection_set",
+    "dataSourceIdentifier": "gitlab",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "POST",
+      "url": "https://{API_BASE_URL}/api/graphql",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "{BEARER_AUTH}"
+      },
+      "requestBody": "{\"query\":\"{\\n  project(fullPath: \\\"{PROJECT_PATH}\\\") {\\n    branchRules {\\n      nodes {\\n        name\\n        branchProtection {\\n          allowForcePush\\n        }\\n        approvalRules {\\n          nodes {\\n            approvalsRequired\\n          }\\n        }\\n        isDefault\\n        isProtected\\n      }\\n    }\\n  }\\n}\\n\",\"variables\":{}}"
+    }
+  },
+  {
+    "id": "651c0fd0da000b6007577bc2",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "gitlab_is_file_exists",
+    "dataSourceIdentifier": "gitlab",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "POST",
+      "url": "https://{API_BASE_URL}/api/graphql",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "{BEARER_AUTH}"
+      },
+      "requestBody": "{\"query\":\"{\\n  project(fullPath: \\\"{PROJECT_PATH}\\\") {\\n    repository {\\n      tree(ref: \\\"HEAD\\\", path: \\\"{FILE_PATH_REPLACER}\\\") {\\n        blobs {\\n          nodes {\\n            name\\n            path\\n          }\\n        }\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
+    }
+  },
+  {
+    "id": "6523d9755284ab11055761ea",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "github_workflows_count",
+    "dataSourceIdentifier": "github",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "{API_BASE_URL}/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/actions/workflows",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "{BEARER_AUTH}"
+      }
+    }
+  },
+  {
+    "id": "6523d97ada3444298db8964a",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "github_workflow_success_rate",
+    "dataSourceIdentifier": "github",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "{API_BASE_URL}/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/actions/workflows/{WORKFLOW_ID}/runs?status=completed&per_page=100",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "{BEARER_AUTH}"
+      }
+    }
+  },
+  {
+    "id": "6524098b0e61b22bb32ec25c",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "github_mean_time_to_complete_workflow_runs",
+    "dataSourceIdentifier": "github",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "{API_BASE_URL}/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/actions/workflows/{WORKFLOW_ID}/runs?status=completed&per_page=100",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "{BEARER_AUTH}"
+      }
+    }
+  },
+  {
+    "id": "6524089b1f61b22bb32fc34d",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "github_mean_time_to_complete_success_workflow_runs",
+    "dataSourceIdentifier": "github",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "{API_BASE_URL}/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/actions/workflows/{WORKFLOW_ID}/runs?status=success&per_page=100",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "{BEARER_AUTH}"
+      }
+    }
   }
 ]
 

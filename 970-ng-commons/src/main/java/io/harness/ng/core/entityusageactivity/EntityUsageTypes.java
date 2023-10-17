@@ -9,4 +9,5 @@ package io.harness.ng.core.entityusageactivity;
 
 public class EntityUsageTypes {
   public static String TEST_CONNECTION = "Test Connection";
+  public static String PIPELINE_EXECUTION = "Pipeline Execution";
 }

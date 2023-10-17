@@ -10,11 +10,9 @@ package io.harness.ngtriggers.expressions;
 import static io.harness.rule.OwnerRule.MEET;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
-import io.harness.exception.InvalidRequestException;
 import io.harness.ngtriggers.expressions.functors.PayloadFunctor;
 import io.harness.rule.Owner;
 
@@ -41,8 +39,6 @@ public class PayloadFunctorTest extends CategoryTest {
 
     // Exception case
     payloadFunctor = new PayloadFunctor(",");
-    assertThatThrownBy(() -> payloadFunctor.bind())
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Event payload could not be converted to a hashmap");
+    assertThat(payloadFunctor.bind()).isEqualTo(",");
   }
 }

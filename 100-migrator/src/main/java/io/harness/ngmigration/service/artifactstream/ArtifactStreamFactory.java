@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.service.artifactstream;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.InvalidRequestException;
 
 import software.wings.beans.artifact.ArtifactStream;
@@ -17,6 +19,7 @@ import software.wings.beans.artifact.ArtifactStreamType;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public class ArtifactStreamFactory {
   private static final ArtifactStreamMapper gcrArtifactStreamMapper = new GCRArtifactStreamMapper();

@@ -22,7 +22,7 @@ public class Constants {
   public static final String IDP_PERMISSION = "idp_idpsettings_manage";
   public static final List<String> pluginIds = List.of("circleci", "confluence", "firehydrant", "github-actions",
       "github-catalog-discovery", "github-insights", "github-pull-requests", "grafana", "harness-ci-cd",
-      "harness-feature-flags", "jenkins", "jira", "kubernetes", "pager-duty", "todo");
+      "harness-feature-flags", "jenkins", "jira", "kubernetes", "pager-duty", "sonarqube", "todo");
   public static final String GITHUB_TOKEN = "HARNESS_GITHUB_TOKEN";
   public static final String GITHUB_APP_ID = "HARNESS_GITHUB_APP_APPLICATION_ID";
   public static final String GITHUB_APP_PRIVATE_KEY_REF = "HARNESS_GITHUB_APP_PRIVATE_KEY_REF";
@@ -61,6 +61,7 @@ public class Constants {
 
   public static final String HARNESS_IDENTIFIER = "harness";
   public static final String GITHUB_IDENTIFIER = "github";
+  public static final String GITLAB_IDENTIFIER = "gitlab";
   public static final String BITBUCKET_IDENTIFIER = "bitbucket";
   public static final String CATALOG_IDENTIFIER = "catalog";
   public static final String KUBERNETES_IDENTIFIER = "kubernetes";
@@ -71,6 +72,7 @@ public class Constants {
   public static final String DATA_POINT_VALUE_KEY = "value";
   public static final String ERROR_MESSAGE_KEY = "error_messages";
   public static final String ERROR_MESSAGES_KEY = "errorMessages";
+  public static final String ERRORS = "errors";
   public static final String MESSAGE_KEY = "message";
 
   public static final String QA_HOST = "qa.harness.io";

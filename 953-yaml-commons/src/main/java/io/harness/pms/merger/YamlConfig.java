@@ -110,6 +110,9 @@ public class YamlConfig {
       return null;
     }
     String currentFieldName = fqn.getFqnList().get(currentFqnIndex).getKey();
+    if (currentFieldName == null) {
+      return getParentNodeTypeForGivenFQNField(fqn, currentFqnIndex + 1, jsonNode);
+    }
     if (JsonFieldUtils.isObjectTypeField(jsonNode, currentFieldName)) {
       String resultantType =
           getParentNodeTypeForGivenFQNField(fqn, currentFqnIndex + 1, jsonNode.get(currentFieldName));

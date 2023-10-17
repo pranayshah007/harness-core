@@ -7,6 +7,8 @@
 
 package io.harness.changehandlers;
 
+import static io.harness.changehandlers.constants.StageExecutionHandlerConstants.DEPLOYMENT_STAGE_STEP;
+
 import static java.util.Arrays.asList;
 
 import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
@@ -35,6 +37,12 @@ public class CDStageExecutionHandler extends AbstractChangeDataHandler {
     DBObject dbObject = changeEvent.getFullDocument();
 
     if (dbObject == null) {
+      return null;
+    }
+
+    // for custom stage, separate CustomStageExecutionHandler is being used
+    if (((dbObject.get(StageExecutionInfoKeys.stageType)) != null)
+        && !(DEPLOYMENT_STAGE_STEP.equals((dbObject.get(StageExecutionInfoKeys.stageType)).toString()))) {
       return null;
     }
 

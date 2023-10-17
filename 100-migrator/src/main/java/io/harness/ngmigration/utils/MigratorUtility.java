@@ -29,6 +29,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.filestore.FileUsage;
+import io.harness.ng.core.utils.NGYamlUtils;
 import io.harness.ngmigration.beans.BaseProvidedInput;
 import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.InputDefaults;
@@ -38,6 +39,8 @@ import io.harness.ngmigration.beans.MigrationInputSettings;
 import io.harness.ngmigration.beans.MigrationInputSettingsType;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.context.ImportDtoThreadLocal;
+import io.harness.ngmigration.dto.Flag;
 import io.harness.ngmigration.dto.ImportDTO;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
@@ -755,7 +758,7 @@ public class MigratorUtility {
     if (resp.code() >= 200 && resp.code() < 300) {
       return MigrationImportSummaryDTO.builder().success(true).errors(Collections.emptyList()).build();
     }
-    log.info("The Yaml of the generated data was - {}", yamlFile.getYaml());
+    log.info("The Yaml of the generated data was - {}", NGYamlUtils.getYamlString(yamlFile.getYaml()));
     Map<String, Object> error = JsonUtils.asObject(
         resp.errorBody() != null ? resp.errorBody().string() : "{}", new TypeReference<Map<String, Object>>() {});
     log.error(String.format("There was error creating the %s. Response from NG - %s with error body errorBody -  %s",
@@ -929,5 +932,13 @@ public class MigratorUtility {
       return false;
     }
     return str.startsWith("${") && str.endsWith("}");
+  }
+
+  public static boolean isEnabled(Flag flag) {
+    ImportDTO importDTO = ImportDtoThreadLocal.get();
+    if (null != flag && null != importDTO && null != importDTO.getFlags()) {
+      return importDTO.getFlags().contains(flag);
+    }
+    return false;
   }
 }

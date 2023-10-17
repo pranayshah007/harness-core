@@ -30,10 +30,8 @@ public interface NGGlobalTemplateRepositoryCustom {
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean notDeleted,
       boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch);
   GlobalTemplateEntity save(GlobalTemplateEntity templateToSave, String comments) throws InvalidRequestException;
-  Optional<GlobalTemplateEntity> findGlobalTemplateByIdentifierAndVersionLabelAndDeletedNot(
-      String templateIdentifier, String versionLabel, boolean notDeleted, boolean getMetadataOnly);
 
-  Page<GlobalTemplateEntity> findALLGlobalTemplateAndDeletedNot(
+  Page<GlobalTemplateEntity> findAllGlobalTemplateAndDeletedNot(
       boolean notDeleted, boolean getMetadataOnly, Pageable pageable);
   GlobalTemplateEntity updateIsStableTemplate(GlobalTemplateEntity globalTemplateEntity, boolean value);
   Page<GlobalTemplateEntity> findAll(String accountIdentifier, Criteria criteria, Pageable pageable);

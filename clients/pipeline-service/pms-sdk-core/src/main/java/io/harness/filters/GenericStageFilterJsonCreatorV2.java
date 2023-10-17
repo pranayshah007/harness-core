@@ -9,6 +9,7 @@ package io.harness.filters;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.yaml.ParameterField.isNotNull;
+import static io.harness.walktree.visitor.entityreference.EntityReferenceExtractorVisitor.SETUP_METADATA_KEY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -16,6 +17,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.stages.stage.StageInfoConfig;
+import io.harness.pms.contracts.plan.SetupMetadata;
 import io.harness.pms.exception.runtime.InvalidYamlRuntimeException;
 import io.harness.pms.filter.creation.FilterCreationResponse;
 import io.harness.pms.filter.creation.FilterCreationResponse.FilterCreationResponseBuilder;
@@ -96,23 +98,30 @@ public abstract class GenericStageFilterJsonCreatorV2<T extends AbstractStageNod
   public Set<EntityDetailProtoDTO> getReferredEntities(FilterCreationContext filterCreationContext, T stageNode) {
     Set<EntityDetailProtoDTO> referredEntities = getReferences(filterCreationContext.getSetupMetadata().getAccountId(),
         filterCreationContext.getSetupMetadata().getOrgId(), filterCreationContext.getSetupMetadata().getProjectId(),
-        stageNode.getStageInfoConfig(), filterCreationContext.getCurrentField());
+        stageNode.getStageInfoConfig(), filterCreationContext.getCurrentField(),
+        filterCreationContext.getSetupMetadata());
     referredEntities.addAll(extractSecretRefs(filterCreationContext));
     return referredEntities;
   }
 
   private Set<EntityDetailProtoDTO> getReferences(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, StageInfoConfig stageInfoConfig, YamlField stageYamlField) {
+      String projectIdentifier, StageInfoConfig stageInfoConfig, YamlField stageYamlField,
+      SetupMetadata setupMetadata) {
     YamlField specYamlField = stageYamlField.getNode().getField(YAMLFieldNameConstants.SPEC);
     String fullQualifiedNameFromRoot = YamlUtils.getFullyQualifiedName(specYamlField.getNode());
     List<String> qualifiedNameList = new LinkedList<>(Arrays.asList(fullQualifiedNameFromRoot.split("\\.")));
+
+    // Setup metadata is used for set the SourcePrincipal
+    Map<String, Object> additionalContext = new HashMap<>();
+    additionalContext.put(SETUP_METADATA_KEY, setupMetadata);
+
     EntityReferenceExtractorVisitor visitor = simpleVisitorFactory.obtainEntityReferenceExtractorVisitor(
-        accountIdentifier, orgIdentifier, projectIdentifier, qualifiedNameList);
+        accountIdentifier, orgIdentifier, projectIdentifier, qualifiedNameList, additionalContext);
     visitor.walkElementTree(stageInfoConfig);
     return visitor.getEntityReferenceSet();
   }
 
-  private Set<EntityDetailProtoDTO> extractSecretRefs(FilterCreationContext context) {
+  protected Set<EntityDetailProtoDTO> extractSecretRefs(FilterCreationContext context) {
     String accountId = context.getSetupMetadata().getAccountId();
     String orgId = context.getSetupMetadata().getOrgId();
     String projectId = context.getSetupMetadata().getProjectId();

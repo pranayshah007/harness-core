@@ -6,10 +6,12 @@
  */
 
 package io.harness.pms.sdk.core.execution;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ExecutableResponse;
@@ -44,6 +46,7 @@ import java.util.Map;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @Slf4j
 @Singleton
@@ -97,6 +100,27 @@ public class SdkNodeExecutionServiceImpl implements SdkNodeExecutionService {
 
     ResumeNodeExecutionRequest resumeNodeExecutionRequest =
         ResumeNodeExecutionRequest.newBuilder().putAllResponseData(responseDataBytes).setAsyncError(asyncError).build();
+    SdkResponseEventProto sdkResponseEvent = SdkResponseEventProto.newBuilder()
+                                                 .setSdkResponseEventType(SdkResponseEventType.RESUME_NODE_EXECUTION)
+                                                 .setResumeNodeExecutionRequest(resumeNodeExecutionRequest)
+                                                 .setAmbiance(ambiance)
+                                                 .build();
+
+    sdkResponseEventPublisher.publishEvent(sdkResponseEvent);
+  }
+
+  @Override
+  public void resumeNodeExecution(Ambiance ambiance, Map<String, ResponseData> response, boolean asyncError,
+      ExecutableResponse executableResponse) {
+    Map<String, ResponseDataProto> responseDataBytes = responseDataMapper.toResponseDataProtoV2(response);
+
+    ResumeNodeExecutionRequest.Builder resumeNodeExecutionRequestBuilder =
+        ResumeNodeExecutionRequest.newBuilder().putAllResponseData(responseDataBytes).setAsyncError(asyncError);
+    if (executableResponse != null) {
+      resumeNodeExecutionRequestBuilder.setExecutableResponse(executableResponse);
+    }
+    ResumeNodeExecutionRequest resumeNodeExecutionRequest = resumeNodeExecutionRequestBuilder.build();
+
     SdkResponseEventProto sdkResponseEvent = SdkResponseEventProto.newBuilder()
                                                  .setSdkResponseEventType(SdkResponseEventType.RESUME_NODE_EXECUTION)
                                                  .setResumeNodeExecutionRequest(resumeNodeExecutionRequest)

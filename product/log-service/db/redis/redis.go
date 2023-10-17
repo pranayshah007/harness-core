@@ -22,7 +22,7 @@ const (
 	connectionPool = 5000
 )
 
-func NewConnection(endpoint, password string, useTLS, useSentinel bool, certPathForTLS string, masterName string, sentinelAddrs []string) *redis.Cmdable {
+func NewConnection(endpoint, password string, useTLS, useSentinel bool, certPathForTLS string, masterName string, sentinelAddrs []string) redis.Cmdable {
 	var client redis.Cmdable
 	if useSentinel {
 		// Create Sentinel instance
@@ -50,7 +50,7 @@ func NewConnection(endpoint, password string, useTLS, useSentinel bool, certPath
 		client = redis.NewClient(opt)
 	}
 
-	return &client
+	return client
 }
 
 func newTlSConfig(certPathForTLS string) (*tls.Config, error) {

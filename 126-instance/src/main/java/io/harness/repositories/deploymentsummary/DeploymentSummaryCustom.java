@@ -17,7 +17,7 @@ import java.util.Optional;
 @OwnedBy(HarnessTeam.DX)
 public interface DeploymentSummaryCustom {
   Optional<DeploymentSummary> fetchNthRecordFromNow(
-      int N, String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO);
+      int N, String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO, Boolean isRollbackDeployment);
 
   Optional<DeploymentSummary> fetchLatestByInstanceKeyAndPipelineExecutionIdNot(
       String instanceSyncKey, InfrastructureMappingDTO infrastructureMappingDTO, String pipelineExecutionId);

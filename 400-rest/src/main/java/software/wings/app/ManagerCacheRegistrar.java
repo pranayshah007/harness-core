@@ -6,12 +6,14 @@
  */
 
 package software.wings.app;
-
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import static java.util.Objects.isNull;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.event.reconciliation.deployment.DeploymentReconRecord;
 import io.harness.version.VersionInfoManager;
@@ -37,6 +39,7 @@ import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.CreatedExpiryPolicy;
 import javax.cache.expiry.Duration;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(PL)
 public class ManagerCacheRegistrar extends AbstractModule {
   public static final String AUTH_TOKEN_CACHE = "authTokenCache";

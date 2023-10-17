@@ -9,8 +9,10 @@ package io.harness.delegate.task.servicenow;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.delegate.beans.connector.servicenow.ServiceNowConstants.CHANGE_TASK;
+import static io.harness.delegate.beans.connector.servicenow.ServiceNowConstants.IGNOREFIELDS;
 import static io.harness.delegate.beans.connector.servicenow.ServiceNowConstants.INVALID_SERVICE_NOW_CREDENTIALS;
 import static io.harness.delegate.beans.connector.servicenow.ServiceNowConstants.ISSUE_NUMBER;
+import static io.harness.delegate.beans.connector.servicenow.ServiceNowConstants.META;
 import static io.harness.delegate.beans.connector.servicenow.ServiceNowConstants.NOT_FOUND;
 import static io.harness.delegate.beans.connector.servicenow.ServiceNowConstants.QUERY_FOR_GETTING_CHANGE_TASK;
 import static io.harness.delegate.beans.connector.servicenow.ServiceNowConstants.QUERY_FOR_GETTING_CHANGE_TASK_ALL;
@@ -27,6 +29,7 @@ import static io.harness.delegate.task.servicenow.ServiceNowUtils.isUnauthorized
 import static io.harness.eraro.ErrorCode.SERVICENOW_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.network.Http.getOkHttpClientBuilder;
+import static io.harness.servicenow.ServiceNowUtils.getTicketUrlFromTicketIdOrNumber;
 
 import static java.util.Objects.isNull;
 
@@ -76,6 +79,7 @@ import software.wings.helpers.ext.servicenow.ServiceNowRestClient;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Joiner;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -122,6 +126,10 @@ public class ServiceNowTaskNgHelper {
   public static final String RESPONSE_MESSAGE_SERVICENOW = "Response received from serviceNow: {}";
   public static final String FAILURE_MESSAGE_SERVICENOW_STANDARD_TEMPLATE =
       "Failed to get ServiceNow Standard template";
+  public static final String FAILURE_MESSAGE_SERVICENOW_CREATE_STANDARD_TEMPLATE =
+      "Failed to create ServiceNow ticket from standard template";
+  public static final String ERROR_OCCURRED_MESSAGE_SERVICENOW_CREATE_STANDARD_TEMPLATE =
+      "Error occurred while creating serviceNow ticket from standard template: %s";
 
   @Inject
   public ServiceNowTaskNgHelper(SecretDecryptionService secretDecryptionService) {
@@ -145,6 +153,8 @@ public class ServiceNowTaskNgHelper {
         return getTicket(serviceNowTaskNGParameters);
       case CREATE_TICKET:
         return createTicket(serviceNowTaskNGParameters);
+      case CREATE_TICKET_USING_STANDARD_TEMPLATE:
+        return createTicketUsingServiceNowStandardTemplate(serviceNowTaskNGParameters);
       case UPDATE_TICKET:
         return updateTicket(serviceNowTaskNGParameters);
       case GET_METADATA:
@@ -213,8 +223,10 @@ public class ServiceNowTaskNgHelper {
       ServiceNowTicketNGBuilder serviceNowTicketNGBuilder = parseFromServiceNowTicketResponse(responseObj);
       ServiceNowTicketNG ticketNg = serviceNowTicketNGBuilder.build();
       log.info("ticketNumber created for ServiceNow: {}", ticketNg.getNumber());
-      String ticketUrlFromTicketId = ServiceNowUtils.prepareTicketUrlFromTicketNumber(
-          serviceNowConnectorDTO.getServiceNowUrl(), ticketNg.getNumber(), serviceNowTaskNGParameters.getTicketType());
+
+      String ticketUrlFromTicketId = "";
+      ticketUrlFromTicketId = getTicketUrlFromTicketIdOrNumber(
+          serviceNowTaskNGParameters.getTicketType(), serviceNowConnectorDTO.getServiceNowUrl(), ticketNg);
       ticketNg.setUrl(ticketUrlFromTicketId);
       return ServiceNowTaskNGResponse.builder().ticket(ticketNg).build();
     } catch (ServiceNowException e) {
@@ -267,6 +279,66 @@ public class ServiceNowTaskNgHelper {
       log.error("Failed to create ServiceNow ticket: {}", ExceptionUtils.getMessage(ex), ex);
       throw new ServiceNowException(
           String.format("Error occurred while creating serviceNow ticket: %s", ExceptionUtils.getMessage(ex)),
+          SERVICENOW_ERROR, USER, ex);
+    }
+  }
+  private ServiceNowTaskNGParameters getTaskNGParametersForFetchingStandardTemplate(
+      ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
+    return ServiceNowTaskNGParameters.builder()
+        .serviceNowConnectorDTO(serviceNowTaskNGParameters.getServiceNowConnectorDTO())
+        .templateName(serviceNowTaskNGParameters.getTemplateName())
+        .templateListOffset(0)
+        .templateListLimit(1)
+        .build();
+  }
+
+  private ServiceNowTaskNGResponse createTicketUsingServiceNowStandardTemplate(
+      ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
+    if (StringUtils.isBlank(serviceNowTaskNGParameters.getTemplateName())) {
+      throw new ServiceNowException("templateName cannot be empty", SERVICENOW_ERROR, USER);
+    }
+
+    String sys_id = "";
+    try {
+      ServiceNowTaskNGResponse standardTemplate =
+          getStandardTemplate(getTaskNGParametersForFetchingStandardTemplate(serviceNowTaskNGParameters));
+      sys_id = standardTemplate.getServiceNowTemplateList().get(0).getSys_id();
+    } catch (Exception ex) {
+      log.error(String.format(FAILURE_MESSAGE_SERVICENOW_STANDARD_TEMPLATE, ExceptionUtils.getMessage(ex)), ex);
+      throw new ServiceNowException(
+          String.format(FAILURE_MESSAGE_SERVICENOW_STANDARD_TEMPLATE, ExceptionUtils.getMessage(ex)), SERVICENOW_ERROR,
+          USER, ex);
+    }
+    ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
+    ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
+
+    final Call<JsonNode> request = serviceNowRestClient.createTicketUsingStandardTemplate(
+        ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO), sys_id, serviceNowTaskNGParameters.getFields());
+    Response<JsonNode> response = null;
+
+    try {
+      log.info("createUsingStandardChangeTemplate called for ticketType: {}, templateName: {}",
+          serviceNowTaskNGParameters.getTicketType(), serviceNowTaskNGParameters.getTemplateName());
+      response = request.execute();
+      log.info("Response received for createUsingStandardChangeTemplate: {}", response);
+      handleResponse(response, FAILURE_MESSAGE_SERVICENOW_CREATE_STANDARD_TEMPLATE);
+      JsonNode responseObj = response.body().get(RESULT);
+      ServiceNowTicketNGBuilder serviceNowTicketNGBuilder = parseFromServiceNowTicketResponse(responseObj, true);
+      ServiceNowTicketNG ticketNg = serviceNowTicketNGBuilder.build();
+      log.info("ticketNumber created for ServiceNow ticket: {} , templateName: {}", ticketNg.getNumber(),
+          serviceNowTaskNGParameters.getTemplateName());
+      String ticketUrlFromTicketId = ServiceNowUtils.getTicketUrlFromTicketIdOrNumber(
+          serviceNowTaskNGParameters.getTicketType(), serviceNowConnectorDTO.getServiceNowUrl(), ticketNg);
+
+      ticketNg.setUrl(ticketUrlFromTicketId);
+      return ServiceNowTaskNGResponse.builder().ticket(ticketNg).build();
+    } catch (ServiceNowException e) {
+      log.error(FAILURE_MESSAGE_SERVICENOW_CREATE_STANDARD_TEMPLATE + ": {}", ExceptionUtils.getMessage(e), e);
+      throw e;
+    } catch (Exception ex) {
+      log.error(FAILURE_MESSAGE_SERVICENOW_CREATE_STANDARD_TEMPLATE + ": {}", ExceptionUtils.getMessage(ex), ex);
+      throw new ServiceNowException(
+          String.format(ERROR_OCCURRED_MESSAGE_SERVICENOW_CREATE_STANDARD_TEMPLATE, ExceptionUtils.getMessage(ex)),
           SERVICENOW_ERROR, USER, ex);
     }
   }
@@ -516,18 +588,45 @@ public class ServiceNowTaskNgHelper {
       throw new ServiceNowException(errorMsg + ExceptionUtils.getMessage(e), SERVICENOW_ERROR, USER, e);
     }
   }
-
   private ServiceNowTicketNGBuilder parseFromServiceNowTicketResponse(JsonNode node) {
+    return parseFromServiceNowTicketResponse(node, false);
+  }
+  private ServiceNowTicketNGBuilder parseFromServiceNowTicketResponse(JsonNode node, Boolean includeIgnoredFields) {
     Map<String, ServiceNowFieldValueNG> fields = new HashMap<>();
+
     for (Iterator<Map.Entry<String, JsonNode>> it = node.fields(); it.hasNext();) {
       Map.Entry<String, JsonNode> f = it.next();
+
+      if (includeIgnoredFields && f.getKey().equals(META)) {
+        List<String> ignoredFieldsAsList = new ArrayList<>();
+
+        if (f.getValue() == null || f.getValue().get(IGNOREFIELDS) == null
+            || !f.getValue().get(IGNOREFIELDS).isArray()) {
+          continue;
+        }
+        for (JsonNode element : f.getValue().get(IGNOREFIELDS)) {
+          // Append the element as a string followed by a comma
+          ignoredFieldsAsList.add(element.asText());
+        }
+
+        if (ignoredFieldsAsList.isEmpty()) {
+          continue;
+        }
+        String result = Joiner.on(", ").join(ignoredFieldsAsList);
+        fields.put(IGNOREFIELDS, ServiceNowFieldValueNG.builder().displayValue(result).build());
+        continue;
+      }
       String displayValue = JsonNodeUtils.getString(f.getValue(), "display_value");
       if (EmptyPredicate.isNotEmpty(displayValue)) {
         fields.put(f.getKey().trim(), ServiceNowFieldValueNG.builder().displayValue(displayValue.trim()).build());
       }
     }
 
-    return ServiceNowTicketNG.builder().number(fields.get("number").getDisplayValue()).fields(fields);
+    if (fields.get("number") != null) {
+      return ServiceNowTicketNG.builder().number(fields.get("number").getDisplayValue()).fields(fields);
+    }
+
+    return ServiceNowTicketNG.builder().fields(fields);
   }
 
   private ServiceNowTaskNGResponse updateTicketWithoutTemplate(

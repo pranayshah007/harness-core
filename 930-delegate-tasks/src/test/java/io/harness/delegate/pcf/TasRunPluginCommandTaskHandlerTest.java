@@ -15,7 +15,6 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -45,6 +44,7 @@ import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableList;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Rule;
@@ -90,9 +90,10 @@ public class TasRunPluginCommandTaskHandlerTest extends CategoryTest {
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void test_executeTaskInternal() throws Exception {
-    doNothing()
+    doReturn(Collections.emptyMap())
         .when(cfDeploymentManager)
-        .runPcfPluginScript(any(CfRunPluginScriptRequestData.class), Mockito.eq(executionLogCallback));
+        .runPcfPluginScriptWithEnvironmentVarInputsAndOutputs(
+            any(CfRunPluginScriptRequestData.class), Mockito.eq(executionLogCallback), eq(null), eq(null));
     CfRunPluginCommandRequestNG pcfCommandRequest = getPcfRunPluginCommandRequest();
     char[] password = {'a'};
     char[] username = {'b'};
@@ -107,7 +108,9 @@ public class TasRunPluginCommandTaskHandlerTest extends CategoryTest {
     // verify
     ArgumentCaptor<CfRunPluginScriptRequestData> argumentCaptor =
         ArgumentCaptor.forClass(CfRunPluginScriptRequestData.class);
-    verify(cfDeploymentManager).runPcfPluginScript(argumentCaptor.capture(), eq(executionLogCallback));
+    verify(cfDeploymentManager)
+        .runPcfPluginScriptWithEnvironmentVarInputsAndOutputs(
+            argumentCaptor.capture(), eq(executionLogCallback), eq(null), eq(null));
 
     final CfRunPluginScriptRequestData pcfRunPluginScriptRequestData = argumentCaptor.getValue();
     assertThat(pcfRunPluginScriptRequestData.getWorkingDirectory()).isNotNull();

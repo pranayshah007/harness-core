@@ -222,7 +222,7 @@ public class StringReplacer {
   private boolean checkIfValueHasMethodInvocation(StringBuffer buf, int expressionEndPos) {
     // Right substring
     CharSequence charSequence = buf.subSequence(expressionEndPos, buf.length());
-    Pattern pattern = Pattern.compile("\\.\\w+\\(");
+    Pattern pattern = Pattern.compile("^\\.\\w+\\(");
     Matcher matcher = pattern.matcher(charSequence);
     return matcher.find();
   }
@@ -238,11 +238,14 @@ public class StringReplacer {
     int minLength = 2;
     int maxLength = 5;
 
+    // checking if any of above keywords separated by space or '\n' is present in the expression
     if (leftSubString) {
       for (int i = minLength; i <= maxLength; i++) {
         if (currentPos - i + 1 >= 0 && currentPos + 1 < s.length()) {
           String substring = s.substring(currentPos - i + 1, currentPos + 1).trim();
-          if (jexlKeywordOperators.contains(substring)) {
+          if (jexlKeywordOperators.contains(substring) && currentPos - i >= 0
+              && (s.charAt(currentPos + 1) == ' ' || s.charAt(currentPos + 1) == '\n')
+              && (s.charAt(currentPos - i) == ' ' || s.charAt(currentPos - i) == '\n')) {
             return true;
           }
         }
@@ -252,7 +255,9 @@ public class StringReplacer {
     for (int i = minLength; i <= maxLength; i++) {
       if (currentPos >= 0 && currentPos + i < s.length()) {
         String substring = s.substring(currentPos, currentPos + i).trim();
-        if (jexlKeywordOperators.contains(substring)) {
+        if (jexlKeywordOperators.contains(substring) && currentPos - 1 >= 0
+            && (s.charAt(currentPos - 1) == ' ' || s.charAt(currentPos - 1) == '\n')
+            && (s.charAt(currentPos + i) == ' ' || s.charAt(currentPos + i) == '\n')) {
           return true;
         }
       }
@@ -274,7 +279,7 @@ public class StringReplacer {
   }
 
   private boolean skipNonCriticalCharacters(char c) {
-    return c == ' ' || c == '(' || c == ')' || c == ';';
+    return c == ' ' || c == '(' || c == ')' || c == ';' || c == '\n';
   }
 
   private static boolean isMatch(char ch, StringBuffer buf, int bufStart, int bufEnd) {
