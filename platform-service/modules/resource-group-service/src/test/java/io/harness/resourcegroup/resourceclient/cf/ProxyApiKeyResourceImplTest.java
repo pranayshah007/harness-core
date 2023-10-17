@@ -18,17 +18,17 @@ import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.beans.Scope;
-import java.util.ArrayList;
 import io.harness.beans.ScopeLevel;
 import io.harness.category.element.UnitTests;
-import io.harness.proxyapikey.ProxyApiKeyClient;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.proxyapikey.ProxyApiKeyClient;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Before;
