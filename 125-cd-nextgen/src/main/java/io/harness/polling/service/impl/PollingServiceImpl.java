@@ -164,7 +164,7 @@ public class PollingServiceImpl implements PollingService {
     // Determine if update request
     if (existingPollingDoc == null) {
       PollingResponse pollingResponse = save(pollingDocument);
-      if (pollingResponse.getIsExistingPollingDoc()) {
+      if (pollingResponse.getIsExistingPollingDoc().equals(Boolean.TRUE)) {
         lastPollingUpdate = pollingResponse.getPollingDocument().getLastModifiedPolledResponseTime() == null
             ? pollingResponse.getPollingDocument().getLastModifiedAt()
             : pollingResponse.getPollingDocument().getLastModifiedPolledResponseTime();
