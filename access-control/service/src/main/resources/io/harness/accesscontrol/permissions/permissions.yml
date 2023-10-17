@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 60
+version: 61
 permissions:
   - identifier: core_project_delete
     name: Delete Project
