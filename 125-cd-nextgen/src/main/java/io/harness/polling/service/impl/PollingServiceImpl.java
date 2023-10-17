@@ -294,6 +294,7 @@ public class PollingServiceImpl implements PollingService {
       }
     }
     return PollingInfoForTriggers.builder()
+        .pollingDocId(pollingDocId)
         .polledResponse(polledResponse)
         .perpetualTaskId(pollingDocument.getPerpetualTaskId())
         .build();
