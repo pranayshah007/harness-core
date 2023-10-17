@@ -188,6 +188,7 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("asyncFilterCreationConsumerSleepIntervalMs")
   private Integer asyncFilterCreationConsumerSleepIntervalMs;
   @JsonProperty("publishAdviserEventForCustomAdvisers") private Boolean publishAdviserEventForCustomAdvisers;
+  @JsonProperty(value = "disableCustomStageInPipelineService") private Boolean disableCustomStageInPipelineService;
   private boolean useQueueServiceForWebhookTriggers;
 
   private String managerServiceSecret;

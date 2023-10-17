@@ -923,4 +923,11 @@ public class PipelineServiceModule extends AbstractModule {
   public Boolean getPublishAdviserEventForCustomAdvisers() {
     return configuration.getPublishAdviserEventForCustomAdvisers();
   }
+
+  @Provides
+  @Singleton
+  @Named("disableCustomStageInPipelineService")
+  public Boolean getDisableCustomStageInPipelineService() {
+    return configuration.getDisableCustomStageInPipelineService();
+  }
 }
