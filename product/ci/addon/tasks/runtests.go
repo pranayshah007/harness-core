@@ -161,10 +161,8 @@ func (r *runTestsTask) Run(ctx context.Context) (map[string]string, int32, error
 	stepOutput, err := r.execute(ctx)
 
 	shouldCollectCg := true
-	if isPushTriggerFn() {
-		if err !=nil {
-			shouldCollectCg = false
-		}
+	if isPushTriggerFn() && err != nil {
+		shouldCollectCg = false
 	}
 	collectionErr := r.collectRunTestData(ctx, cgDirPath, testSt, shouldCollectCg)
 	if err == nil {
