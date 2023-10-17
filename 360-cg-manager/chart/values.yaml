@@ -40,7 +40,7 @@ global:
           - secretName: ""
             keys:
               MONGO_USER: ""
-              MONGO_PASSWORD": ""
+              MONGO_PASSWORD: ""
         secretManagement: 
           externalSecretsOperator:
             - secretStore:
@@ -50,7 +50,7 @@ global:
                 MONGO_USER:
                   name: ""
                   property: ""
-                MONGO_PASSWORD":
+                MONGO_PASSWORD:
                   name: ""
                   property: ""
     timescaledb:
@@ -186,10 +186,10 @@ global:
         - secretName: ""
           keys:
             SMTP_USERNAME: ""
-            SMTP_PASSWORD": ""
+            SMTP_PASSWORD: ""
             SMTP_HOST: ""
             SMTP_PORT": ""
-            SMTP_USE_SSL": ""
+            SMTP_USE_SSL: ""
       secretManagement: 
         externalSecretsOperator:
           - secretStore:
@@ -199,7 +199,7 @@ global:
               SMTP_USERNAME:
                 name: ""
                 property: ""
-              SMTP_PASSWORD":
+              SMTP_PASSWORD:
                 name: ""
                 property: ""
               SMTP_HOST:
@@ -324,7 +324,7 @@ mongo:
       - secretName: ""
         keys:
           MONGO_USER: ""
-          MONGO_PASSWORD": ""
+          MONGO_PASSWORD: ""
     secretManagement: 
       externalSecretsOperator:
         - secretStore:
@@ -334,7 +334,7 @@ mongo:
             MONGO_USER:
               name: ""
               property: ""
-            MONGO_PASSWORD":
+            MONGO_PASSWORD:
               name: ""
               property: ""
 
