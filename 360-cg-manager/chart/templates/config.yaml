@@ -40,12 +40,12 @@ data:
   HAZELCAST_SERVICE: harness-manager
   HZ_CLUSTER_NAME: harness-manager
   LOGGING_LEVEL: '{{ .Values.appLogLevel }}'
-  MEMORY: {{ .Values.java.memory | quote }}
-  REDIS_SENTINEL: {{ .Values.global.database.redis.installed  | quote }}
+  MEMORY: '{{ .Values.java.memory }}'
+  REDIS_SENTINEL: '{{ .Values.global.database.redis.installed }}'
   REDIS_URL: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
   REDIS_MASTER_NAME: 'harness-redis'
   REDIS_SENTINELS: {{ include "harnesscommon.dbconnectionv2.redisConnection" (dict "context" $) }}
-  REDIS_NETTY_THREADS: {{ .Values.redisConfig.nettyThreads | quote }}
+  REDIS_NETTY_THREADS: '{{ .Values.redisConfig.nettyThreads }}'
   SERVER_PORT: "9090"
   SERVICE_ACC: /opt/harness/svc/service_acc.json
   VERSION: '{{ .Values.version }}'
