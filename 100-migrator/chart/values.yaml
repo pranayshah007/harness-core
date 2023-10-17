@@ -10,18 +10,18 @@ global:
       external:
         ## if FALSE, Generate all secrets within K8s Namespace
         ## If TRUE, use one of the followings kids to inject
-        enabled: false 
+        enabled: false
         kind:
           # use ExternalSecrets Operator
-          externalSecrets: false 
+          externalSecrets: false
           # Use CSI Driver volume mount
-          csiSecretDriver: false          
+          csiSecretDriver: false
     database:
       external:
         enabled: false
         kind:
           externalSecrets: false
-          csiSecretDriver: false 
+          csiSecretDriver: false
   loadbalancerURL: ""
   database:
     postgres:
@@ -137,21 +137,18 @@ global:
     SMTP_USE_SSL: "true"
     SMTP_PORT: "465"
   ha: false
-
 replicaCount: 1
 maxSurge: 1
 maxUnavailable: 0
-
 image:
-  registry: docker.io
-  repository: harness/migrator-signed
+  registry: us.gcr.io
+  repository: platform-205701/migrator
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "100578-000"
+  tag: "0.10.0"
   digest: ""
   imagePullSecrets:
-  - gcr-io-secret
-
+    - gcr-io-secret
 waitForInitContainer:
   image:
     registry: docker.io
@@ -160,7 +157,6 @@ waitForInitContainer:
     tag: "latest"
     digest: ""
     imagePullSecrets: []
-
 initContainer:
   image:
     registry: docker.io
@@ -168,7 +164,6 @@ initContainer:
     pullPolicy: IfNotPresent
     tag: latest
     digest: ""
-
 config:
   ALLOWED_ORIGINS: ""
   DELEGATE_METADATA_URL: ""
@@ -217,7 +212,6 @@ config:
   ENABLE_ITERATORS: 'true'
   ITERATOR_CONFIG_PATH: '/opt/harness/config'
   LICENSE_INFO:
-
 iteratorConfig:
   alertReconciliation:
     enabled: true
@@ -471,13 +465,11 @@ iteratorConfig:
     nextIterationMode: "TARGET"
     targetIntervalInSeconds: 86400
     throttleIntervalInSeconds: 0
-
 secrets:
   LOG_STREAMING_SERVICE_TOKEN: c76e567a-b341-404d-a8dd-d9738714eb82
   MONGO_SSL_CA_TRUST_STORE_PATH: /opt/harness/keystore.jks
   MONGO_SSL_CA_TRUST_STORE_PASSWORD: password
   VERIFICATION_SERVICE_SECRET: 59MR5RlVARcdH7zb7pNx6GzqiglBmXR8
-
 mongoSecrets:
   userName:
     name: harness-secrets
@@ -485,40 +477,32 @@ mongoSecrets:
   password:
     name: mongodb-replicaset-chart
     key: mongodb-root-password
-
 timescaleSecret:
   password:
     name: harness-secrets
     key: timescaledbPostgresPassword
-
 delegate_docker_image:
   image:
     registry: docker.io
     repository: harness/delegate
     tag: latest
     digest: ""
-
 immutable_delegate_docker_image:
   image:
     registry: docker.io
     repository: harness/delegate
     tag: 22.12.77617
     digest: ""
-
 upgrader_docker_image:
   image:
     registry: docker.io
     repository: harness/upgrader
     tag: latest
     digest: ""
-
 appLogLevel: INFO
-
 external_graphql_rate_limit: "500"
-
 nameOverride: ""
 fullnameOverride: ""
-
 serviceAccount:
   # Specifies whether a service account should be created
   create: false
@@ -527,42 +511,33 @@ serviceAccount:
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: "harness-default"
-
 podAnnotations: {}
-
 podSecurityContext: {}
-  # fsGroup: 2000
+# fsGroup: 2000
 
 securityContext:
   runAsUser: 65534
   runAsNonRoot: true
-
 service:
   annotations: {}
   type: ClusterIP
   port: 9080
   grpcport: 9879
-
 resources:
   limits:
     memory: 8192Mi
   requests:
     cpu: 2
     memory: 3000Mi
-
 autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 100
   targetCPU: ""
   targetMemory: ""
-
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
-
 migrator:
   mongodb:
     override: false
@@ -572,19 +547,16 @@ migrator:
     userKey: ""
     passwordKey: ""
     extraArgs: ""
-
 # extraVolumes:
 # - name: volume-test
 #   configMap:
 #     name: test-config
 #     readOnly: true
 extraVolumes: []
-
 # extraVolumeMounts:
 #   - name: test-volume-mount
 #     mountPath: /opt/harness/config
 extraVolumeMounts: []
-
 # lifecycleHooks:
 #   postStart:
 #     exec:
@@ -599,10 +571,8 @@ extraVolumeMounts: []
 #     fieldRef:
 #       fieldPath: metadata.name
 extraEnvVars: []
-
 virtualService:
   annotations: {}
 ingress:
   annotations: {}
-
 java17flags: ""
