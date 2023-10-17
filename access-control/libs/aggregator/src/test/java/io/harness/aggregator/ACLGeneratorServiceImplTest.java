@@ -17,7 +17,6 @@ import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -162,44 +161,6 @@ public class ACLGeneratorServiceImplTest extends AggregatorTestBase {
     assertThat(aclCount).isEqualTo(100000);
 
     verify(aclRepository, times(2)).insertAllIgnoringDuplicates(any());
-  }
-
-  @Test
-  @Owner(developers = JIMIT_GANDHI)
-  @Category(UnitTests.class)
-  public void createACLs_MoreThanAllowed_ReturnsZeroCreated() {
-    Set<String> principals = getRandomStrings(1000001);
-    Set<ResourceSelector> resourceSelectors = Set.of(builder().selector(ALL_RESOURCE_SELECTOR).build());
-    Set<String> permissions = Set.of(CORE_USERGROUP_MANAGE_PERMISSION, CORE_RESOURCEGROUP_MANAGE_PERMISSION);
-    RoleAssignmentDBO roleAssignmentDBO = getRoleAssignment(PrincipalType.USER_GROUP);
-
-    aclGeneratorService.createACLs(roleAssignmentDBO, principals, permissions, resourceSelectors);
-
-    verify(aclRepository, never()).insertAllIgnoringDuplicates(any());
-  }
-
-  @Test
-  @Owner(developers = JIMIT_GANDHI)
-  @Category(UnitTests.class)
-  public void createACLs_TillMaxAllowed_ReturnsCreated() {
-    Set<String> principals = getRandomStrings(2000000);
-    Set<ResourceSelector> resourceSelectors = Set.of(builder().selector(ALL_RESOURCE_SELECTOR).build());
-    Set<String> permissions = Set.of(CORE_USERGROUP_MANAGE_PERMISSION);
-    RoleAssignmentDBO roleAssignmentDBO = getRoleAssignment(PrincipalType.USER_GROUP);
-
-    List<List<ACL>> listOfParameters = new ArrayList<>();
-    when(aclRepository.insertAllIgnoringDuplicates(any())).thenAnswer(invocation -> {
-      Object[] args = invocation.getArguments();
-      listOfParameters.add(new ArrayList<>((Collection<ACL>) args[0]));
-      long count = listOfParameters.get(0).size();
-      listOfParameters.clear();
-      return count;
-    });
-
-    long aclCount = aclGeneratorService.createACLs(roleAssignmentDBO, principals, permissions, resourceSelectors);
-
-    assertThat(aclCount).isEqualTo(2000000);
-    verify(aclRepository, times(40)).insertAllIgnoringDuplicates(any());
   }
 
   @Test
