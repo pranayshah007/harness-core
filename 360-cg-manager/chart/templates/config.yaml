@@ -63,7 +63,6 @@ data:
   {{- end }}
   ENABLE_ITERATORS: 'true'
   ITERATOR_CONFIG_PATH: '/opt/harness/config'
-  LICENSE_INFO: '{{ .Values.global.license.cg }}'
   {{- if .Values.global.proxy.enabled }}
   PROXY_ENABLED: '{{ .Values.global.proxy.enabled }}'
   PROXY_HOST: {{ .Values.global.proxy.host }}
