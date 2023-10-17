@@ -125,6 +125,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filesystem.FileIo;
+import io.harness.git.model.CommitResult;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.logging.UnitProgress;
@@ -3372,5 +3373,76 @@ public class TerraformStepHelperTest extends CategoryTest {
     assertThat(ParameterFieldHelper.getParameterFieldValue(spec.getConnectorRef())).isEqualTo("connectorRef");
     assertThat(ParameterFieldHelper.getParameterFieldValue(spec.getRoleArn())).isEqualTo("roleArn");
     assertThat(ParameterFieldHelper.getParameterFieldValue(spec.getRegion())).isEqualTo("region");
+  }
+
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testGetFetchedCommitId() {
+    String gitFileId = "gitFileId-test-123";
+    String commitId = "ag4j34m";
+    TerraformPassThroughData terraformPassThroughData = TerraformPassThroughData.builder()
+                                                            .fetchedCommitIdsMap(new HashMap<>() {
+                                                              { put(gitFileId, commitId); }
+                                                            })
+                                                            .gitVarFilesFromMultipleRepo(null)
+                                                            .build();
+    String fetchedCommitId = helper.getFetchedCommitId(terraformPassThroughData, gitFileId);
+
+    assertThat(fetchedCommitId).isNotNull();
+    assertThat(fetchedCommitId).isEqualTo(commitId);
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testGetFetchedCommitIdFromVarFilesRemoteRepo() {
+    String gitFileId = "gitFileId-test-123";
+    String commitId = "ag4j35a";
+    FetchFilesResult fetchFilesResult =
+        FetchFilesResult.builder().commitResult(CommitResult.builder().commitId(commitId).build()).build();
+
+    TerraformPassThroughData terraformPassThroughData = TerraformPassThroughData.builder()
+                                                            .fetchedCommitIdsMap(null)
+                                                            .gitVarFilesFromMultipleRepo(new HashMap<>() {
+                                                              { put(gitFileId, fetchFilesResult); }
+                                                            })
+                                                            .build();
+    String fetchedCommitId = helper.getFetchedCommitId(terraformPassThroughData, gitFileId);
+
+    assertThat(fetchedCommitId).isNotNull();
+    assertThat(fetchedCommitId).isEqualTo(commitId);
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testGetFetchedCommitIdWhenFileIdIsNull() {
+    String gitFileId = null;
+    String commitId = "ag4j35a";
+    FetchFilesResult fetchFilesResult =
+        FetchFilesResult.builder().commitResult(CommitResult.builder().commitId(commitId).build()).build();
+
+    TerraformPassThroughData terraformPassThroughData = TerraformPassThroughData.builder()
+                                                            .fetchedCommitIdsMap(null)
+                                                            .gitVarFilesFromMultipleRepo(new HashMap<>() {
+                                                              { put(gitFileId, fetchFilesResult); }
+                                                            })
+                                                            .build();
+    String fetchedCommitId = helper.getFetchedCommitId(terraformPassThroughData, gitFileId);
+
+    assertThat(fetchedCommitId).isNull();
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testGetFetchedCommitIdWhenFetchedCommitIdsMapAndVarFilesFromMultipleRepoIsNull() {
+    String gitFileId = "gitFileId-test-123";
+
+    TerraformPassThroughData terraformPassThroughData =
+        TerraformPassThroughData.builder().fetchedCommitIdsMap(null).gitVarFilesFromMultipleRepo(null).build();
+    String fetchedCommitId = helper.getFetchedCommitId(terraformPassThroughData, gitFileId);
+
+    assertThat(fetchedCommitId).isNull();
   }
 }
