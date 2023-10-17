@@ -92,19 +92,19 @@ USAGE:
     {{- $ := .ctx }}
     {{- $hasAtleastOneSecret := false }}
     {{- $localESOSecretCtxIdentifier := (include "harnesscommon.secrets.localESOSecretCtxIdentifier" (dict "ctx" $ )) }}
-    {{- if eq (include "harnesscommon.secrets.isDefault" (dict "ctx" $ "variableName" "LOG_STREAMING_SERVICE_TOKEN" "extKubernetesSecretCtxs" (list $.Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict $localESOSecretCtxIdentifier $.Values.secrets.secretManagement.externalSecretsOperator)))) "true" }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "LOG_STREAMING_SERVICE_TOKEN")) "true" }}
     {{- $hasAtleastOneSecret = true }}
 LOG_STREAMING_SERVICE_TOKEN: {{ .ctx.Values.secrets.default.LOG_STREAMING_SERVICE_TOKEN | b64enc }}
     {{- end }}
-    {{- if eq (include "harnesscommon.secrets.isDefault" (dict "ctx" $ "variableName" "VERIFICATION_SERVICE_SECRET" "extKubernetesSecretCtxs" (list $.Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict $localESOSecretCtxIdentifier $.Values.secrets.secretManagement.externalSecretsOperator)))) "true" }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "VERIFICATION_SERVICE_SECRET")) "true" }}
     {{- $hasAtleastOneSecret = true }}
 VERIFICATION_SERVICE_SECRET: {{ .ctx.Values.secrets.default.VERIFICATION_SERVICE_SECRET | b64enc }}
     {{- end }}
-    {{- if eq (include "harnesscommon.secrets.isDefault" (dict "ctx" $ "variableName" "MONGO_SSL_CA_TRUST_STORE_PATH" "extKubernetesSecretCtxs" (list $.Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict $localESOSecretCtxIdentifier $.Values.secrets.secretManagement.externalSecretsOperator)))) "true" }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "MONGO_SSL_CA_TRUST_STORE_PATH")) "true" }}
     {{- $hasAtleastOneSecret = true }}
 MONGO_SSL_CA_TRUST_STORE_PATH: {{ .ctx.Values.secrets.default.MONGO_SSL_CA_TRUST_STORE_PATH | b64enc }}
     {{- end }}
-    {{- if eq (include "harnesscommon.secrets.isDefault" (dict "ctx" $ "variableName" "MONGO_SSL_CA_TRUST_STORE_PASSWORD" "extKubernetesSecretCtxs" (list $.Values.secrets.kubernetesSecrets) "esoSecretCtxs" (list (dict $localESOSecretCtxIdentifier $.Values.secrets.secretManagement.externalSecretsOperator)))) "true" }}
+    {{- if eq (include "harnesscommon.secrets.isDefaultAppSecret" (dict "ctx" $ "variableName" "MONGO_SSL_CA_TRUST_STORE_PASSWORD")) "true" }}
     {{- $hasAtleastOneSecret = true }}
 MONGO_SSL_CA_TRUST_STORE_PASSWORD: {{ .ctx.Values.secrets.default.MONGO_SSL_CA_TRUST_STORE_PASSWORD | b64enc }}
     {{- end }}
@@ -117,19 +117,3 @@ MONGO_SSL_CA_TRUST_STORE_PASSWORD: {{ .ctx.Values.secrets.default.MONGO_SSL_CA_T
 {{- define "migrator.pullSecrets" -}}
 {{ include "common.images.pullSecrets" (dict "images" (list .Values.image .Values.waitForInitContainer.image) "global" .Values.global ) }}
 {{- end -}}
-
-{{/*
-Overrride mongoUri if provided, else use the default
-*/}}
-{{- define "migrator.mongoConnection" }}
-{{- $type := "MONGO" }}
-{{- $override := .Values.migrator.mongodb.override }}
-{{- $hosts := .Values.migrator.mongodb.hosts }}
-{{- $protocol := .Values.migrator.mongodb.protocol }}
-{{- $extraArgs:= .Values.migrator.mongodb.extraArgs }}
-{{- if $override }}
-{{- include "harnesscommon.dbconnection.connection" (dict "type" $type "hosts" $hosts "protocol" $protocol "extraArgs" $extraArgs )}}
-{{- else }}
-{{- include "harnesscommon.dbconnection.mongoConnection" (dict "database" "harness" "context" $) }}
-{{- end }}
-{{- end }}

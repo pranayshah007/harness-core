@@ -281,9 +281,6 @@ timescaledb:
 mongo:
   protocol: "mongodb"
   hosts: []
-  secretName: ""
-  userKey: ""
-  passwordKey: ""
   extraArgs: ""
   secrets:
     kubernetesSecrets:
