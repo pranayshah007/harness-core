@@ -141,6 +141,16 @@ public class ExpiryHelper {
         nodeExecutionService.updateStatusWithOps(nodeExecution.getUuid(), Status.EXPIRED, ops -> {
           ops.set(NodeExecutionKeys.endTs, System.currentTimeMillis());
           ops.set(NodeExecutionKeys.unitProgresses, unitProgresses);
+          ops.set(NodeExecutionKeys.failureInfo,
+              FailureInfo.newBuilder()
+                  .setErrorMessage(EXPIRE_ERROR_MESSAGE)
+                  .addFailureTypes(FailureType.TIMEOUT_FAILURE)
+                  .addFailureData(FailureData.newBuilder()
+                                      .addFailureTypes(FailureType.TIMEOUT_FAILURE)
+                                      .setLevel(Level.ERROR.name())
+                                      .setCode(TIMEOUT_ENGINE_EXCEPTION.name())
+                                      .setMessage(EXPIRE_ERROR_MESSAGE)
+                                      .build()));
           ops.addToSet(NodeExecutionKeys.interruptHistories,
               InterruptEffect.builder()
                   .interruptId(interruptId)
