@@ -23,6 +23,7 @@ public class SBOMUtils {
   public static String EXTERNAL_REF_CATEGORY_PURL = "PACKAGE-MANAGER";
   public static char EXTERNAL_REF_LOCATOR_DELIM_PRIMARY = ':';
   public static char EXTERNAL_REF_LOCATOR_DELIM_SECONDAY = '/';
+  public static char EXTERNAL_REF_LOCATOR_DELIM_TERTIARY = '@';
   public static char PACKAGE_VERSION_DELIM = '.';
   public static String PACKAGE_VERSION_EPOCH_DELIM = ":";
   public static String LICENSE_REF_DELIM = "LicenseRef-";

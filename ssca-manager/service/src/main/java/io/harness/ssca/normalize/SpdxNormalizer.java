@@ -74,6 +74,9 @@ public class SpdxNormalizer implements Normalizer<SpdxDTO> {
         normalizedSBOMEntityBuilder.purl(packageManagerInfo.get(0));
         normalizedSBOMEntityBuilder.packageNamespace(packageManagerInfo.get(1));
         normalizedSBOMEntityBuilder.packageManager(packageManagerInfo.get(2));
+        if (packageManagerInfo.get(3) != null) {
+          normalizedSBOMEntityBuilder.packageName(packageManagerInfo.get(3));
+        }
       } catch (InvalidArgumentsException e) {
         log.error(String.format("Error Message: %s, Stacktrace: %s", e.getMessage(), e.getStackTrace()));
         continue;
@@ -106,6 +109,7 @@ public class SpdxNormalizer implements Normalizer<SpdxDTO> {
     String packagePurl = null;
     String packageNamespace = null;
     String packageManager = null;
+    String packageName = null;
     for (SpdxDTO.Package.ExternalRefs externalRef : spdxPackage.getExternalRefs()) {
       if (externalRef.getReferenceCategory().equals(SBOMUtils.EXTERNAL_REF_CATEGORY_PURL)) {
         String purl = externalRef.getReferenceLocator();
@@ -127,10 +131,16 @@ public class SpdxNormalizer implements Normalizer<SpdxDTO> {
         if (splitPurl.length > 2) {
           // if purl is of the format pkg:<package-manager>/<namespace>/<name>@<version>
           packageNamespace = splitPurl[1];
+          // if the purl includes package of the format <name>@<version>
+          if (splitPurl[splitPurl.length - 1].indexOf(SBOMUtils.EXTERNAL_REF_LOCATOR_DELIM_TERTIARY) > -1) {
+            String[] splitPackage =
+                Strings.split(splitPurl[splitPurl.length - 1], SBOMUtils.EXTERNAL_REF_LOCATOR_DELIM_TERTIARY);
+            packageName = splitPackage[0];
+          }
         }
         packageManager = splitPurl[0];
       }
     }
-    return Arrays.asList(packagePurl, packageNamespace, packageManager);
+    return Arrays.asList(packagePurl, packageNamespace, packageManager, packageName);
   }
 }

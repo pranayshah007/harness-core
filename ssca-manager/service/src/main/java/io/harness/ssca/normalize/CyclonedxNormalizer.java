@@ -72,6 +72,9 @@ public class CyclonedxNormalizer implements Normalizer<CyclonedxDTO> {
         normalizedSBOMEntityBuilder.purl(packageManagerInfo.get(0));
         normalizedSBOMEntityBuilder.packageNamespace(packageManagerInfo.get(1));
         normalizedSBOMEntityBuilder.packageManager(packageManagerInfo.get(2));
+        if (packageManagerInfo.get(3) != null) {
+          normalizedSBOMEntityBuilder.packageName(packageManagerInfo.get(3));
+        }
       } catch (InvalidArgumentsException e) {
         continue;
       }
@@ -84,6 +87,7 @@ public class CyclonedxNormalizer implements Normalizer<CyclonedxDTO> {
   private List<String> getPackageManagerCyclonedx(CyclonedxDTO.Component component) {
     String packageNamespace = null;
     String packageManager = null;
+    String packageName = null;
     String purl = component.getPurl();
     if (purl == null) {
       throw new InvalidArgumentsException("Invalid Purl");
@@ -101,9 +105,15 @@ public class CyclonedxNormalizer implements Normalizer<CyclonedxDTO> {
     if (splitPurl.length > 2) {
       // if purl is of the format pkg:<package-manager>/<namespace>/<name>@<version>
       packageNamespace = splitPurl[1];
+      // if the purl includes package of the format <name>@<version>
+      if (splitPurl[splitPurl.length - 1].indexOf(SBOMUtils.EXTERNAL_REF_LOCATOR_DELIM_TERTIARY) > -1) {
+        String[] splitPackage =
+            Strings.split(splitPurl[splitPurl.length - 1], SBOMUtils.EXTERNAL_REF_LOCATOR_DELIM_TERTIARY);
+        packageName = splitPackage[0];
+      }
     }
     packageManager = splitPurl[0];
-    return Arrays.asList(purl, packageNamespace, packageManager);
+    return Arrays.asList(purl, packageNamespace, packageManager, packageName);
   }
 
   private List<String> getPackageLicense(List<CyclonedxDTO.Component.License> licenses) {
