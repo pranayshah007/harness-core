@@ -63,27 +63,20 @@ global:
   # image pull secrets to use for every image
   imagePullSecrets: []
   stackDriverLoggingEnabled: false
-
 replicaCount: 1
-
-
 maxSurge: 100%
-
 maxUnavailable: 0
-
 java:
   memory: 1024
-
 image:
-  registry: docker.io
-  repository: harness/event-service-signed
+  registry: us.gcr.io
+  repository: platform-205701/event-server
   pullPolicy: Always
-# Overrides the image tag whose default is the chart appVersion.
-  tag: "79404-000"
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "0.10.0"
   digest: ""
-# image pull secrets to use for event-service image
+  # image pull secrets to use for event-service image
   imagePullSecrets: []
-
 waitForInitContainer:
   image:
     registry: docker.io
@@ -91,9 +84,8 @@ waitForInitContainer:
     pullPolicy: IfNotPresent
     tag: "latest"
     digest: ""
-# image pull secrets to use for helm-init-container image
+    # image pull secrets to use for helm-init-container image
     imagePullSecrets: []
-
 mongoSecrets:
   userName:
     name: harness-secrets
@@ -101,31 +93,24 @@ mongoSecrets:
   password:
     name: mongodb-replicaset-chart
     key: mongodb-root-password
-
 timescaleSecret:
   password:
     name: harness-secrets
     key: timescaledbPostgresPassword
-
 nameOverride: ""
 fullnameOverride: ""
-
 ngServiceAccount: "test"
 redislabsCATruststore: "test"
-
 defaultInternalImageConnector: "test"
-
 serviceAccount:
-# Specifies whether a service account should be created
+  # Specifies whether a service account should be created
   create: false
-# Annotations to add to the service account
+  # Annotations to add to the service account
   annotations: {}
-# The name of the service account to use.
-# If not set and create is true, a name is generated using the fullname template
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
   name: "harness-default"
-
 podAnnotations: {}
-
 podSecurityContext: {}
 # fsGroup: 2000
 
@@ -142,46 +127,35 @@ service:
   type: ClusterIP
   port: 7280
   port2: 9889
-
 ingress:
   className: nginx
-
 resources:
   limits:
     memory: "1840Mi"
   requests:
     cpu: "512m"
     memory: "1840Mi"
-
 autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 100
   targetCPU: ""
   targetMemory: ""
-
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
-
 additionalConfigs: {}
-
 java17flags: ""
-
 # extraVolumes:
 #   - name: volume-test
 #     configMap:
 #       name: test-config
 #       # readOnly: true
 extraVolumes: []
-
 # extraVolumeMounts:
 #   - name: volume-test
 #     mountPath: /opt/harness/config
 extraVolumeMounts: []
-
 lifecycleHooks: {}
 # lifecycleHooks:
 #   postStart:
