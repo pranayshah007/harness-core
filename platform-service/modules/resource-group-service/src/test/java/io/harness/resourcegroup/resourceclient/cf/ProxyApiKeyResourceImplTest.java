@@ -7,38 +7,23 @@
 
 package io.harness.resourcegroup.resourceclient.proxyapikey;
 
-import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_IDENTIFIER;
-import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_TYPE;
-import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES;
 import static io.harness.rule.OwnerRule.DMACK;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
 import io.harness.category.element.UnitTests;
-import io.harness.eventsframework.EventsFrameworkMetadataConstants;
-import io.harness.ng.beans.PageResponse;
-import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.proxyapikey.ProxyApiKeyClient;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import retrofit2.Call;
-import retrofit2.Response;
 
 public class ProxyApiKeyResourceImplTest {
   @Inject @InjectMocks ProxyApiKeyResourceImplTest proxyApiKeyResource;
