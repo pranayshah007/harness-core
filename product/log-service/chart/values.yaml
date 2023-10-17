@@ -33,9 +33,9 @@ global:
         - redis-sentinel-harness-announce-0:26379
         - redis-sentinel-harness-announce-1:26379
         - redis-sentinel-harness-announce-2:26379
-      secretName: "redis-secret"
-      userKey: "redis-user"
-      passwordKey: "redis-password"
+      secretName: ""
+      userKey: ""
+      passwordKey: ""
       extraArgs: ""
       secrets:
         kubernetesSecrets:
@@ -80,18 +80,18 @@ redis:
     kubernetesSecrets:
       - secretName: ""
         keys:
-          REDIS_USERNAME: ""
-          REDIS_PASSWORD": ""
+          LOG_SERVICE_REDIS_USERNAME: ""
+          LOG_SERVICE_REDIS_PASSWORD": ""
     secretManagement:
       externalSecretsOperator:
         - secretStore:
             name: ""
             kind: ""
           remoteKeys:
-            REDIS_USERNAME:
+            LOG_SERVICE_REDIS_USERNAME:
               name: ""
               property: ""
-            REDIS_PASSWORD":
+            LOG_SERVICE_REDIS_PASSWORD":
               name: ""
               property: ""
 
