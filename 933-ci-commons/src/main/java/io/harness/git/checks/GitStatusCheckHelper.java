@@ -286,7 +286,7 @@ public class GitStatusCheckHelper {
   }
 
   private boolean sendBuildStatusToHarnessCode(GitStatusCheckParams gitStatusCheckParams) {
-    String checkUid = "check_" + gitStatusCheckParams.getIdentifier().replaceAll("/", "_").replaceAll("\\s", "");
+    String checkUid = gitStatusCheckParams.getIdentifier().replaceAll("/", "_").replaceAll("\\s", "");
     HarnessCodePayload harnessCodePayload =
         HarnessCodePayload.builder()
             .status(HarnessCodePayload.CheckStatus.fromString(gitStatusCheckParams.getState()))
