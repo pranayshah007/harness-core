@@ -73,9 +73,15 @@ public class PollingServiceImpl implements PollingService {
           ? savedPollingDoc.getLastModifiedAt()
           : savedPollingDoc.getLastModifiedPolledResponseTime();
       lastPolled = getPolledKeys(savedPollingDoc);
+      return PollingResponseDTO.builder()
+          .isExistingPollingDoc(true)
+          .lastPolled(lastPolled)
+          .lastPollingUpdate(lastPollingUpdate)
+          .pollingDocId(savedPollingDoc.getUuid())
+          .build();
     }
     // savedPollingDoc will be null if we couldn't find polling doc with the same entries as pollingDocument.
-    if (savedPollingDoc == null) {
+    else {
       // Setting uuid as null so that on saving database generates a new uuid and does not use the old one as some other
       // trigger might still be consuming that polling document
       pollingDocument.setUuid(null);
@@ -83,12 +89,6 @@ public class PollingServiceImpl implements PollingService {
       createPerpetualTask(savedPollingDoc);
       return PollingResponseDTO.builder().isExistingPollingDoc(false).pollingDocId(savedPollingDoc.getUuid()).build();
     }
-    return PollingResponseDTO.builder()
-        .isExistingPollingDoc(true)
-        .lastPolled(lastPolled)
-        .lastPollingUpdate(lastPollingUpdate)
-        .pollingDocId(savedPollingDoc.getUuid())
-        .build();
   }
 
   private void validatePollingDocument(PollingDocument pollingDocument) {
