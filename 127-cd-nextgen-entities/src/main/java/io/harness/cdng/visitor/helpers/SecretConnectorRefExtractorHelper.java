@@ -8,6 +8,7 @@
 package io.harness.cdng.visitor.helpers;
 
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.grpc.utils.StringValueUtils.getStringFromStringValue;
 
@@ -85,6 +86,10 @@ public class SecretConnectorRefExtractorHelper extends ConnectorRefExtractorHelp
   private Set<IdentifierRef> getSecretRefsFromConnector(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, ConnectorInfoDTO connectorInfoDTO) {
     if (connectorInfoDTO == null) {
+      return Collections.emptySet();
+    }
+
+    if (isEmpty(connectorInfoDTO.getConnectorConfig().getDecryptableEntities())) {
       return Collections.emptySet();
     }
 
