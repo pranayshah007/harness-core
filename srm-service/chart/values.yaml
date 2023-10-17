@@ -68,7 +68,7 @@ global:
       secretName: ''
     # -- add annotations to ingress objects
     objects:
-      annotations: { }
+      annotations: {}
   istio:
     # -- create virtualServices objects
     enabled: false
@@ -82,11 +82,9 @@ global:
   ha: false
   imagePullSecrets: []
   stackDriverLoggingEnabled: false
-
 replicaCount: 1
 maxSurge: 1
 maxUnavailable: 0
-
 config:
   DEPLOY_MODE: KUBERNETES_ONPREM
   ENV: KUBERNETES_ONPREM
@@ -108,16 +106,14 @@ config:
   CACHE_CONFIG_USE_SENTINEL: true
   MOCK_ACCESS_CONTROL_SERVICE: false
   ACCESS_CONTROL_ENABLED: true
-
 image:
-  registry: docker.io
-  repository: harness/cv-nextgen-signed
+  registry: us.gcr.io
+  repository: platform-205701/srm-service
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "80209"
+  tag: "0.10.0"
   digest: ""
   imagePullSecrets: []
-
 mongoSecrets:
   userName:
     name: harness-secrets
@@ -125,12 +121,10 @@ mongoSecrets:
   password:
     name: mongodb-replicaset-chart
     key: mongodb-root-password
-
 timescaleSecret:
   password:
     name: harness-secrets
     key: timescaledbPostgresPassword
-
 waitForInitContainer:
   image:
     registry: docker.io
@@ -138,15 +132,11 @@ waitForInitContainer:
     pullPolicy: IfNotPresent
     tag: "latest"
     digest: ""
-
 java:
   memory: 4096
-
 appLogLevel: INFO
-
 nameOverride: ""
 fullnameOverride: ""
-
 serviceAccount:
   # Specifies whether a service account should be created
   create: false
@@ -155,11 +145,9 @@ serviceAccount:
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: "harness-default"
-
 podAnnotations: {}
-
 podSecurityContext: {}
-  # fsGroup: 2000
+# fsGroup: 2000
 
 securityContext:
   runAsUser: 65534
@@ -170,13 +158,11 @@ securityContext:
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
-
 service:
   type: ClusterIP
   port: 6060
   grpcport: 9979
   annotations: {}
-
 resources:
   limits:
     cpu: 1
@@ -184,7 +170,6 @@ resources:
   requests:
     cpu: 1
     memory: 6144Mi
-
 autoscaling:
   enabled: false
   minReplicas: 1
@@ -192,27 +177,20 @@ autoscaling:
   targetCPU: ""
   targetMemory: ""
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
-
 additionalConfigs: {}
-
 java17flags: ""
-
 # extraVolumes:
 # - name: volume-test
 #   configMap:
 #     name: test-config
 #     readOnly: true
 extraVolumes: []
-
 # extraVolumeMounts:
 #   - name: test-volume-mount
 #     mountPath: /opt/harness/config
 extraVolumeMounts: []
-
 # lifecycleHooks:
 #   postStart:
 #     exec:
@@ -226,7 +204,6 @@ extraVolumeMounts: []
 #     fieldRef:
 #       fieldPath: metadata.name
 extraEnvVars: []
-
 virtualService:
   annotations: {}
 ingress:
