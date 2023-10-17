@@ -6,7 +6,6 @@
  */
 
 package software.wings.utils;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.utils.PhysicalDataCenterUtils.extractHostnameFromHost;
 import static io.harness.eraro.ErrorCode.UNKNOWN_ERROR;
@@ -17,7 +16,10 @@ import static software.wings.beans.command.CommandExecutionContext.Builder.aComm
 import static software.wings.common.Constants.WINDOWS_HOME_DIR;
 import static software.wings.utils.SshHelperUtils.createSshSessionConfig;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.task.executioncapability.SocketConnectivityCapabilityCheck;
@@ -59,6 +61,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @Singleton
 @Slf4j
 @OwnedBy(CDP)

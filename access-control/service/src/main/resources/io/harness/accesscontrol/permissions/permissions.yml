@@ -609,6 +609,13 @@ permissions:
       - account
       - organization
       - project
+  - identifier: ff_featureflag_editStaleState
+    name: Edit a Feature Flags Stale State
+    status: STAGING
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
   - identifier: core_dashboards_view
     name: View Dashboards
     status: ACTIVE

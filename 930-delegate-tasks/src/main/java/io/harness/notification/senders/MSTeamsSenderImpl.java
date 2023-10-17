@@ -11,7 +11,6 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.apache.http.entity.mime.MIME.CONTENT_TYPE;
 
 import io.harness.delegate.beans.NotificationProcessingResponse;
-import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.notification.helper.NotificationSettingsHelper;
 
 import java.util.ArrayList;
@@ -25,7 +24,13 @@ import okhttp3.Response;
 
 @Slf4j
 public class MSTeamsSenderImpl {
-  private final OkHttpClient okHttpClient = new OkHttpClient.Builder().retryOnConnectionFailure(true).build();
+  private OkHttpClient okHttpClient;
+  public MSTeamsSenderImpl(OkHttpClient client) {
+    this.okHttpClient = client;
+  }
+  public MSTeamsSenderImpl() {
+    okHttpClient = new OkHttpClient.Builder().retryOnConnectionFailure(true).build();
+  }
 
   private static final MediaType APPLICATION_JSON_VALUE = MediaType.parse(APPLICATION_JSON);
 
@@ -47,10 +52,10 @@ public class MSTeamsSenderImpl {
     }
   }
 
-  public NotificationProcessingResponse send(
-      List<String> microsoftTeamsWebhookUrls, String message, String notificationId, String accountId) {
+  public NotificationProcessingResponse send(List<String> microsoftTeamsWebhookUrls, String message,
+      String notificationId, List<String> microsoftTeamsWebhookUrlDomainAllowlist) {
     microsoftTeamsWebhookUrls = NotificationSettingsHelper.getRecipientsWithValidDomain(
-        microsoftTeamsWebhookUrls, accountId, SettingIdentifiers.MSTEAM_NOTIFICATION_ENDPOINTS_ALLOWLIST);
+        microsoftTeamsWebhookUrls, microsoftTeamsWebhookUrlDomainAllowlist);
     List<Boolean> results = new ArrayList<>();
     for (String microsoftTeamsWebhookUrl : microsoftTeamsWebhookUrls) {
       int responseCode = sendMessage(message, microsoftTeamsWebhookUrl);

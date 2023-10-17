@@ -1,0 +1,7 @@
+name: Access Control Entity Metrics Group
+identifier: access_control_entity_metrics_group
+labels:
+  - entityIdentifier
+  - entityType
+  - action
+  - serviceId

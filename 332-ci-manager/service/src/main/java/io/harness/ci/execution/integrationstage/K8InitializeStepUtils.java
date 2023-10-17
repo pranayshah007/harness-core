@@ -79,6 +79,7 @@ import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.steps.matrix.StrategyExpansionData;
 import io.harness.utils.TimeoutUtils;
@@ -337,7 +338,8 @@ public class K8InitializeStepUtils {
             extraCPUPerStep);
       case RUN_TESTS:
         return createRunTestsStepContainerDefinition((RunTestsStepInfo) ciStepInfo, stageNode, ciExecutionArgs,
-            portFinder, stepIndex, stepElement.getIdentifier(), accountId, os, extraMemoryPerStep, extraCPUPerStep);
+            portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(), accountId, os,
+            extraMemoryPerStep, extraCPUPerStep);
       default:
         return null;
     }
@@ -424,11 +426,13 @@ public class K8InitializeStepUtils {
       Integer extraCPUPerStep) {
     String image = resolveStringParameter("Image", "Run", identifier, runStepInfo.getImage(), true);
     if (isEmpty(image) || image.equals(NULL_STR)) {
-      throw new CIStageExecutionException("image can't be empty in k8s infrastructure");
+      throw new CIStageExecutionException(String.format(
+          "image can't be empty in k8s infrastructure for stepId: %s and stepName: %s", identifier, name));
     }
 
-    if (runStepInfo.getConnectorRef() == null) {
-      throw new CIStageExecutionException("connector ref can't be empty in k8s infrastructure");
+    if (ParameterField.isNull(runStepInfo.getConnectorRef())) {
+      throw new CIStageExecutionException(String.format(
+          "connector ref can't be empty in k8s infrastructure for stepId: %s and stepName: %s", identifier, name));
     }
 
     Integer port = portFinder.getNextPort();
@@ -489,20 +493,23 @@ public class K8InitializeStepUtils {
       Integer extraCPUPerStep) {
     String image = resolveStringParameter("Image", "Background", identifier, backgroundStepInfo.getImage(), true);
     if (isEmpty(image) || image.equals(NULL_STR)) {
-      throw new CIStageExecutionException("image can't be empty in k8s infrastructure");
+      throw new CIStageExecutionException(String.format(
+          "image can't be empty in k8s infrastructure for stepId: %s and stepName: %s", identifier, name));
     }
 
     String connectorRef =
         resolveStringParameter("connectorRef", "Background", identifier, backgroundStepInfo.getConnectorRef(), true);
     if (isEmpty(connectorRef)) {
-      throw new CIStageExecutionException("connectorRef can't be empty in k8s infrastructure");
+      throw new CIStageExecutionException(String.format(
+          "connectorRef can't be empty in k8s infrastructure for stepId: %s and stepName: %s", identifier, name));
     }
 
     Map<String, String> portBindings =
         resolveMapParameter("portBindings", "Background", identifier, backgroundStepInfo.getPortBindings(), false);
 
     if (portBindings != null) {
-      throw new CIStageExecutionException("portBindings should be empty in k8s infrastructure");
+      throw new CIStageExecutionException(String.format(
+          "portBindings should be empty in k8s infrastructure for stepId: %s and stepName: %s", identifier, name));
     }
 
     Integer port = portFinder.getNextPort();
@@ -552,16 +559,19 @@ public class K8InitializeStepUtils {
 
   private ContainerDefinitionInfo createRunTestsStepContainerDefinition(RunTestsStepInfo runTestsStepInfo,
       IntegrationStageNode stageNode, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
-      String identifier, String accountId, OSType os, Integer extraMemoryPerStep, Integer extraCPUPerStep) {
+      String identifier, String name, String accountId, OSType os, Integer extraMemoryPerStep,
+      Integer extraCPUPerStep) {
     Integer port = portFinder.getNextPort();
 
     String image = resolveStringParameter("Image", "RunTest", identifier, runTestsStepInfo.getImage(), true);
     if (isEmpty(image) || image.equals(NULL_STR)) {
-      throw new CIStageExecutionException("image can't be empty in k8s infrastructure");
+      throw new CIStageExecutionException(String.format(
+          "image can't be empty in k8s infrastructure for stepId: %s and stepName: %s", identifier, name));
     }
 
-    if (runTestsStepInfo.getConnectorRef() == null) {
-      throw new CIStageExecutionException("connector ref can't be empty in k8s infrastructure");
+    if (ParameterField.isNull(runTestsStepInfo.getConnectorRef())) {
+      throw new CIStageExecutionException(String.format(
+          "connector ref can't be empty in k8s infrastructure for stepId: %s and stepName: %s", identifier, name));
     }
 
     String containerName = format("%s%d", STEP_PREFIX, stepIndex);
@@ -612,8 +622,10 @@ public class K8InitializeStepUtils {
 
     String containerName = format("%s%d", STEP_PREFIX, stepIndex);
     Map<String, String> envVarMap = new HashMap<>();
-    envVarMap.putAll(getVariablesMap(stageNode.getPipelineVariables(), stageNode.getIdentifier()));
-    envVarMap.putAll(getVariablesMap(stageNode.getVariables(), stageNode.getIdentifier()));
+    if (stageNode != null) {
+      envVarMap.putAll(getVariablesMap(stageNode.getPipelineVariables(), stageNode.getIdentifier()));
+      envVarMap.putAll(getVariablesMap(stageNode.getVariables(), stageNode.getIdentifier()));
+    }
     envVarMap.putAll(BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgs));
 
     envVarMap.putAll(resolveMapParameterV2("envs", "pluginStep", identifier, pluginStepInfo.getEnvVariables(), false));
@@ -621,8 +633,10 @@ public class K8InitializeStepUtils {
     Integer runAsUser = resolveIntegerParameter(pluginStepInfo.getRunAsUser(), null);
 
     Map<String, SecretNGVariable> secretVarMap = new HashMap<>();
-    secretVarMap.putAll(getSecretVariablesMap(stageNode.getPipelineVariables()));
-    secretVarMap.putAll(getSecretVariablesMap(stageNode.getVariables()));
+    if (stageNode != null) {
+      secretVarMap.putAll(getSecretVariablesMap(stageNode.getPipelineVariables()));
+      secretVarMap.putAll(getSecretVariablesMap(stageNode.getVariables()));
+    }
 
     return ContainerDefinitionInfo.builder()
         .name(containerName)

@@ -163,6 +163,9 @@ public class ServiceStepOverrideHelper {
 
   public static void validateOverridesTypeAndUniqueness(
       Map<String, List<ManifestConfigWrapper>> locationManifestsMap, String svcIdentifier, String envIdentifier) {
+    if (isEmpty(locationManifestsMap)) {
+      return;
+    }
     final List<ManifestConfigWrapper> svcManifests = locationManifestsMap.get(SERVICE);
     final List<ManifestConfigWrapper> envGlobalManifests = locationManifestsMap.get(ENVIRONMENT_GLOBAL_OVERRIDES);
     final List<ManifestConfigWrapper> svcOverrideManifests = locationManifestsMap.get(SERVICE_OVERRIDES);
@@ -198,6 +201,9 @@ public class ServiceStepOverrideHelper {
 
   private static void checkDuplicateIdentifiersAndThrow(
       List<ManifestConfigWrapper> svcManifests, Set<String> existingUniqueIdentifier, String location) {
+    if (isEmpty(svcManifests)) {
+      return;
+    }
     List<String> duplicateIdentifiers = svcManifests.stream()
                                             .filter(manifestWrapper -> manifestWrapper.getManifest() != null)
                                             .map(manifestWrapper -> manifestWrapper.getManifest().getIdentifier())
@@ -794,11 +800,12 @@ public class ServiceStepOverrideHelper {
     Map<String, List<ManifestConfigWrapper>> finalLocationManifestsMap = new HashMap<>();
 
     // Processing envGroups. EnvironmentConfig and serviceOverrideConfig is null for envGroup. GitOps Flow
+    List<ManifestConfigWrapper> envGlobalManifests = Collections.emptyList();
     if (ngEnvironmentConfig != null) {
-      final List<ManifestConfigWrapper> envGlobalManifests =
+      envGlobalManifests =
           getEnvGlobalManifests(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride());
-      finalLocationManifestsMap.put(ENVIRONMENT_GLOBAL_OVERRIDES, envGlobalManifests);
     }
+    finalLocationManifestsMap.put(ENVIRONMENT_GLOBAL_OVERRIDES, envGlobalManifests);
 
     final NgManifestsMetadataSweepingOutput manifestSweepingOutput =
         NgManifestsMetadataSweepingOutput.builder()

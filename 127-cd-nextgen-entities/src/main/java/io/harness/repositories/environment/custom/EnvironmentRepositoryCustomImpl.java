@@ -241,6 +241,9 @@ public class EnvironmentRepositoryCustomImpl implements EnvironmentRepositoryCus
   public Optional<Environment> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String environmentIdentifier,
       boolean notDeleted, boolean loadFromCache, boolean loadFromFallbackBranch, boolean getMetadataOnly) {
+    if (EmptyPredicate.isEmpty(environmentIdentifier)) {
+      return Optional.empty();
+    }
     Query query = new Query(buildCriteriaForEnvironmentIdentifier(
         accountIdentifier, orgIdentifier, projectIdentifier, environmentIdentifier, !notDeleted));
 
@@ -321,7 +324,7 @@ public class EnvironmentRepositoryCustomImpl implements EnvironmentRepositoryCus
   }
 
   private Criteria buildCriteriaForEnvironmentIdentifier(@NonNull String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, @NonNull String environmentIdentifier, boolean deleted) {
+      String projectIdentifier, String environmentIdentifier, boolean deleted) {
     return Criteria.where(EnvironmentKeys.accountId)
         .is(accountIdentifier)
         .and(EnvironmentKeys.orgIdentifier)

@@ -23,6 +23,7 @@ public class VerificationOverview {
   VerificationSpec spec;
   AppliedDeploymentAnalysisType appliedDeploymentAnalysisType;
   ActivityVerificationStatus verificationStatus;
+
   int verificationProgressPercentage;
   Long verificationStartTimestamp;
   Long verificationEndTimestamp;

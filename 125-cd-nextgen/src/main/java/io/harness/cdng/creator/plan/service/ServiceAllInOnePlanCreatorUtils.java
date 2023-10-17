@@ -124,6 +124,7 @@ public class ServiceAllInOnePlanCreatorUtils {
     }
     final ServiceStepV3ParametersBuilder stepParameters = ServiceStepV3Parameters.builder()
                                                               .serviceRef(finalServiceYaml.getServiceRef())
+                                                              .gitBranch(finalServiceYaml.getGitBranch())
                                                               .inputs(finalServiceYaml.getServiceInputs())
                                                               .infraId(infraRef)
                                                               .childrenNodeIds(childrenNodeIds)
@@ -150,6 +151,7 @@ public class ServiceAllInOnePlanCreatorUtils {
     ServiceStepV3ParametersBuilder stepParameters =
         ServiceStepV3Parameters.builder()
             .serviceRef(finalServiceYaml.getServiceRef())
+            .gitBranch(finalServiceYaml.getGitBranch())
             .inputs(finalServiceYaml.getServiceInputs())
             .childrenNodeIds(childrenNodeIds)
             .deploymentType(serviceType)
@@ -188,6 +190,7 @@ public class ServiceAllInOnePlanCreatorUtils {
     final ServiceStepV3ParametersBuilder stepParameters =
         ServiceStepV3Parameters.builder()
             .serviceRef(finalServiceYaml.getServiceRef())
+            .gitBranch(finalServiceYaml.getGitBranch())
             .inputs(finalServiceYaml.getServiceInputs())
             .childrenNodeIds(childrenNodeIds)
             .deploymentType(serviceType)

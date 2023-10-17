@@ -12,6 +12,7 @@ import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_MAX_EVENTS_POLLED;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_UNBLOCK_RETRY_INTERVAL_IN_MINUTES;
 import static io.harness.outbox.OutboxSDKConstants.OUTBOX_EVENT_PROCESSING_TIME_METRIC_NAME;
+import static io.harness.outbox.OutboxSDKConstants.OUTBOX_EVENT_WAITING_TIME_METRIC_NAME;
 import static io.harness.outbox.TransactionOutboxModule.SERVICE_ID_FOR_OUTBOX;
 
 import static java.time.Duration.ofMillis;
@@ -106,6 +107,8 @@ public class OutboxEventPollJob implements Runnable {
             outboxEventProcessingTime));
         outboxMetricsService.recordMetricsWithDuration(serviceId, outbox.getEventType(), outbox.getResource().getType(),
             ofMillis(outboxEventProcessingTime), OUTBOX_EVENT_PROCESSING_TIME_METRIC_NAME);
+        outboxMetricsService.recordMetricsWithDuration(serviceId, outbox.getEventType(), outbox.getResource().getType(),
+            ofMillis(outboxEventWaitingTime), OUTBOX_EVENT_WAITING_TIME_METRIC_NAME);
         try {
           if (success) {
             outboxService.delete(outbox.getId());

@@ -8,6 +8,7 @@
 package io.harness.ng.core.service.mappers;
 
 import static io.harness.rule.OwnerRule.ABHINAV2;
+import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,7 +26,9 @@ import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.junit.Test;
@@ -42,6 +45,82 @@ public class ServiceElementMapperTest extends CategoryTest {
     ServiceEntity mappedService = ServiceElementMapper.toServiceEntity("ACCOUNT_ID", input);
     assertThat(mappedService).isNotNull();
     assertThat(mappedService).isEqualTo(output);
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testToServiceEntityCheckDescriptionAndTags() {
+    Map<String, String> tags = new HashMap<>();
+    tags.put("k1", "v1");
+    tags.put("k2", "v2");
+    ServiceRequestDTO serviceRequestDTO = ServiceRequestDTO.builder()
+                                              .identifier("IDENTIFIER")
+                                              .orgIdentifier("ORG_ID")
+                                              .projectIdentifier("PROJECT_ID")
+                                              .description("svc description")
+                                              .tags(new HashMap<>())
+                                              .name("Service")
+                                              .tags(ImmutableMap.of("k1", "v1", "k2", "v2"))
+                                              .yaml("service:\n"
+                                                  + " name: Service\n"
+                                                  + " identifier: IDENTIFIER\n"
+                                                  + " orgIdentifier: ORG_ID\n"
+                                                  + " projectIdentifier: PROJECT_ID\n"
+                                                  + " gitOpsEnabled: false\n"
+                                                  + " serviceDefinition:\n"
+                                                  + "    type: \"Kubernetes\"\n"
+                                                  + "    spec:\n"
+                                                  + "        variables: []\n"
+                                                  + "        artifacts:\n"
+                                                  + "            primary:\n"
+                                                  + "                spec:\n"
+                                                  + "                    connectorRef: \"account.harnessImage\"\n"
+                                                  + "                    imagePath: \"nginx\"\n"
+                                                  + "                    tag: \"latest\"\n"
+                                                  + "                type: \"DockerRegistry\"\n")
+                                              .build();
+    ServiceEntity mappedService = ServiceElementMapper.toServiceEntity("ACCOUNT_ID", serviceRequestDTO);
+    assertThat(mappedService).isNotNull();
+    assertThat(mappedService.getDescription()).isEqualTo("svc description");
+    assertThat(mappedService.getTags().size()).isEqualTo(2);
+    assertThat(mappedService.getTags().get(0).getKey()).isEqualTo("k1");
+    assertThat(mappedService.getTags().get(0).getValue()).isEqualTo("v1");
+    assertThat(mappedService.getTags().get(1).getKey()).isEqualTo("k2");
+    assertThat(mappedService.getTags().get(1).getValue()).isEqualTo("v2");
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  @Parameters(method = "getDataForMultipleManifestsFailureTest")
+  public void testToServiceEntityFailureCheck(ServiceRequestDTO input) {
+    ServiceRequestDTO serviceRequestDTO = ServiceRequestDTO.builder()
+                                              .identifier("IDENTIFIER")
+                                              .orgIdentifier("ORG_ID")
+                                              .projectIdentifier("PROJECT_ID")
+                                              .description("svc description")
+                                              .tags(new HashMap<>())
+                                              .name("Service")
+                                              .tags(ImmutableMap.of("k1", "v1", "k2", "v2"))
+                                              .yaml("service:\n"
+                                                  + " name: Service\n"
+                                                  + " identifier: DIFF_IDENTIFIER\n"
+                                                  + " orgIdentifier: ORG_ID\n"
+                                                  + " projectIdentifier: PROJECT_ID\n"
+                                                  + " gitOpsEnabled: false\n"
+                                                  + " serviceDefinition:\n"
+                                                  + "    type: \"Kubernetes\"\n"
+                                                  + "    spec\n"
+                                                  + "        variables: []\n"
+                                                  + "        arti\nnectorRef: \"account.harnessImage\"\n"
+                                                  + "                    imagePath: \"nginx\"\n"
+                                                  + "                    tag: \"latest\"\n"
+                                                  + "                type: \"DockerRegistry\"\n")
+                                              .build();
+    assertThatThrownBy(() -> ServiceElementMapper.toServiceEntity("ACCOUNT_ID", serviceRequestDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Cannot create service ng with Identifier : IDENTIFIER service config due to");
   }
 
   @Test

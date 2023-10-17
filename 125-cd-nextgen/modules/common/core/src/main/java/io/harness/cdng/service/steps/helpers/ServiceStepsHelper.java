@@ -20,6 +20,8 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.common.beans.StepDelegateInfo;
 import io.harness.cdng.common.beans.StepDetailsDelegateInfo;
+import io.harness.cdng.execution.InfraExecutionSummaryDetails;
+import io.harness.cdng.execution.InfraExecutionSummaryDetails.InfraExecutionSummaryDetailsBuilder;
 import io.harness.cdng.execution.ServiceExecutionSummaryDetails;
 import io.harness.cdng.execution.StageExecutionInfoUpdateDTO;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
@@ -30,7 +32,6 @@ import io.harness.cdng.service.steps.constants.ServiceSectionStepConstants;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
-import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.EntityDetail;
@@ -40,8 +41,6 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.data.StepOutcomeRef;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
-import io.harness.pms.contracts.steps.StepCategory;
-import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.pms.rbac.PipelineRbacHelper;
@@ -53,6 +52,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.rbac.CDNGRbacPermissions;
 import io.harness.steps.EntityReferenceExtractorUtils;
+import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.core.variables.NGVariable;
@@ -156,31 +156,23 @@ public class ServiceStepsHelper {
   }
 
   public NGLogCallback getServiceLogCallback(Ambiance ambiance, boolean shouldOpenStream) {
-    return getServiceLogCallback(prepareServiceOrCustomStageEnvAmbiance(ambiance), shouldOpenStream, null);
+    return getServiceLogCallback(prepareServiceAmbiance(ambiance), shouldOpenStream, null);
   }
-
   public NGLogCallback getServiceLogCallback(Ambiance ambiance, boolean shouldOpenStream, String commandUnit) {
     return new NGLogCallback(
-        logStreamingStepClientFactory, prepareServiceOrCustomStageEnvAmbiance(ambiance), commandUnit, shouldOpenStream);
+        logStreamingStepClientFactory, prepareServiceAmbiance(ambiance), commandUnit, shouldOpenStream);
   }
-  private Ambiance prepareServiceOrCustomStageEnvAmbiance(Ambiance ambiance) {
+  private Ambiance prepareServiceAmbiance(Ambiance ambiance) {
     List<Level> levels = ambiance.getLevelsList();
-    StepType customStageEnvStep = StepType.newBuilder()
-                                      .setType(ExecutionNodeType.CUSTOM_STAGE_ENVIRONMENT.getName())
-                                      .setStepCategory(StepCategory.STEP)
-                                      .build();
-
     for (int i = levels.size() - 1; i >= 0; i--) {
       Level level = levels.get(i);
       if (ServiceConfigStepConstants.STEP_TYPE.equals(level.getStepType())
           || ServiceSectionStepConstants.STEP_TYPE.equals(level.getStepType())
-          || ServiceStepV3Constants.STEP_TYPE.equals(level.getStepType())
-          || customStageEnvStep.equals(level.getStepType())) {
+          || ServiceStepV3Constants.STEP_TYPE.equals(level.getStepType())) {
         return AmbianceUtils.clone(ambiance, i + 1);
       }
     }
-    throw new UnsupportedOperationException(
-        "Not inside deployment stage service step or custom stage environment step or one of their children");
+    throw new UnsupportedOperationException("Not inside service step or one of it's children");
   }
 
   public List<Outcome> getChildrenOutcomes(Map<String, ResponseData> responseDataMap) {
@@ -206,8 +198,13 @@ public class ServiceStepsHelper {
   }
 
   public void saveServiceExecutionDataToStageInfo(Ambiance ambiance, StepResponse stepResponse) {
-    stageExecutionInfoService.updateStageExecutionInfo(ambiance,
+    stageExecutionInfoService.upsertStageExecutionInfo(ambiance,
         StageExecutionInfoUpdateDTO.builder().serviceInfo(createServiceInfoFromResponse(stepResponse)).build());
+  }
+
+  public void saveEnvironmentExecutionDataToStageInfo(Ambiance ambiance, StepResponse stepResponse) {
+    stageExecutionInfoService.upsertStageExecutionInfo(ambiance,
+        StageExecutionInfoUpdateDTO.builder().infraExecutionSummary(createEnvInfoFromResponse(stepResponse)).build());
   }
 
   private ServiceExecutionSummaryDetails createServiceInfoFromResponse(StepResponse stepResponse) {
@@ -227,10 +224,30 @@ public class ServiceStepsHelper {
     return ServiceExecutionSummaryDetails.builder().build();
   }
 
+  private InfraExecutionSummaryDetails createEnvInfoFromResponse(StepResponse stepResponse) {
+    if (stepResponse.getStepOutcomes() != null) {
+      for (StepResponse.StepOutcome stepOutcome : stepResponse.getStepOutcomes()) {
+        if (stepOutcome.getOutcome() instanceof EnvironmentOutcome) {
+          EnvironmentOutcome environmentOutcome = (EnvironmentOutcome) stepOutcome.getOutcome();
+          InfraExecutionSummaryDetailsBuilder infraExecutionSummaryDetailsBuilder =
+              InfraExecutionSummaryDetails.builder();
+          if (environmentOutcome != null) {
+            infraExecutionSummaryDetailsBuilder.identifier(environmentOutcome.getIdentifier())
+                .name(environmentOutcome.getName());
+            if (environmentOutcome.getType() != null)
+              infraExecutionSummaryDetailsBuilder.type(environmentOutcome.getType().name());
+          }
+          return infraExecutionSummaryDetailsBuilder.build();
+        }
+      }
+    }
+    return InfraExecutionSummaryDetails.builder().build();
+  }
+
   public void publishTaskIdsStepDetailsForServiceStep(
       Ambiance ambiance, List<StepDelegateInfo> stepDelegateInfos, String name) {
     if (isNotEmpty(stepDelegateInfos)) {
-      sdkGraphVisualizationDataService.publishStepDetailInformation(prepareServiceOrCustomStageEnvAmbiance(ambiance),
+      sdkGraphVisualizationDataService.publishStepDetailInformation(prepareServiceAmbiance(ambiance),
           StepDetailsDelegateInfo.builder().stepDelegateInfos(stepDelegateInfos).build(), name);
     }
   }

@@ -43,7 +43,7 @@ public class EntityFetchHelper {
     Optional<ServiceEntity> serviceEntity =
         serviceEntityService.get(serviceIdentifierRef.getAccountIdentifier(), serviceIdentifierRef.getOrgIdentifier(),
             serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getIdentifier(), false);
-    if (!serviceEntity.isPresent()) {
+    if (serviceEntity.isEmpty()) {
       throw new InvalidRequestException(String.format(
           "Service with identifier [%s] in project [%s], org [%s] not found", serviceIdentifierRef.getIdentifier(),
           serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getOrgIdentifier()));

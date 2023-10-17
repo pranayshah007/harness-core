@@ -8,13 +8,19 @@
 package io.harness.polling.service.intfc;
 
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.VINICIUS;
 
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -22,9 +28,12 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.dto.PollingResponseDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.polling.bean.ArtifactPolledResponse;
 import io.harness.polling.bean.HelmChartManifestInfo;
 import io.harness.polling.bean.ManifestInfo;
+import io.harness.polling.bean.ManifestPolledResponse;
 import io.harness.polling.bean.PollingDocument;
 import io.harness.polling.bean.PollingInfo;
 import io.harness.polling.bean.PollingType;
@@ -36,7 +45,9 @@ import io.harness.repositories.polling.PollingRepository;
 import io.harness.rule.Owner;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -83,11 +94,124 @@ public class PollingServiceTest extends CategoryTest {
     PollingDocument savedPollingDocument = getArtifactPollingDocument("id1");
     when(pollingRepository.save(pollingDocument)).thenReturn(savedPollingDocument);
 
-    String id = pollingService.subscribe(pollingItem);
+    String id = pollingService.subscribe(pollingItem).getPollingDocId();
     assertThat(id).isEqualTo("id1");
     verify(pollingDocumentMapper).toPollingDocument(pollingItem);
     verify(pollingRepository).save(pollingDocument);
     verify(pollingRepository, never()).findByUuidAndAccountIdAndSignature(anyString(), anyString(), any());
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testSubscribe() throws InvalidRequestException {
+    // Create a sample PollingItem and a corresponding PollingDocument
+    PollingItem pollingItem = PollingItem.newBuilder().build();
+    PollingDocument pollingDocument = PollingDocument.builder()
+                                          .uuid("id")
+                                          .accountId("account")
+                                          .signatures(Collections.singletonList("signature"))
+                                          .build();
+
+    // Mock the behavior of pollingDocumentMapper and pollingRepository
+    when(pollingDocumentMapper.toPollingDocument(pollingItem)).thenReturn(pollingDocument);
+    when(pollingRepository.findByUuidAndAccountIdAndSignature(any(), any(), any())).thenReturn(null);
+    when(pollingRepository.save(any())).thenReturn(pollingDocument);
+
+    // Call the method you want to test
+    PollingResponseDTO response = pollingService.subscribe(pollingItem);
+
+    // Assert the result and verify interactions
+    assertNotNull(response);
+    assertEquals(pollingDocument.getUuid(), response.getPollingDocId());
+    assertFalse(response.getIsExistingPollingDoc());
+    // Add more assertions based on the method's logic
+
+    // Verify that the expected methods were called
+    verify(pollingDocumentMapper, times(1)).toPollingDocument(pollingItem);
+    verify(pollingRepository, times(1)).findByUuidAndAccountIdAndSignature(any(), any(), any());
+    verify(pollingRepository, times(1)).save(any());
+
+    Set<String> allPolledKeys = new HashSet<>();
+    allPolledKeys.add("key");
+    pollingDocument = PollingDocument.builder()
+                          .uuid("id")
+                          .accountId("account")
+                          .pollingType(PollingType.ARTIFACT)
+                          .signatures(Collections.singletonList("signature"))
+                          .lastModifiedAt(10L)
+                          .lastModifiedPolledResponseTime(20L)
+                          .polledResponse(ArtifactPolledResponse.builder().allPolledKeys(allPolledKeys).build())
+                          .pollingInfo(DockerHubArtifactInfo.builder().build())
+                          .build();
+
+    // Mock the behavior of pollingDocumentMapper and pollingRepository
+    when(pollingDocumentMapper.toPollingDocument(pollingItem)).thenReturn(pollingDocument);
+    when(pollingRepository.findByUuidAndAccountIdAndSignature(any(), any(), any())).thenReturn(pollingDocument);
+    response = pollingService.subscribe(pollingItem);
+    assertNotNull(response);
+    assertEquals(pollingDocument.getUuid(), response.getPollingDocId());
+    assertThat(response.getLastPollingUpdate()).isEqualTo(20L);
+    assertThat(response.getLastPolled().get(0)).isEqualTo("key");
+    assertTrue(response.getIsExistingPollingDoc());
+
+    allPolledKeys = new HashSet<>();
+    allPolledKeys.add("1");
+    allPolledKeys.add("2");
+    allPolledKeys.add("3");
+    allPolledKeys.add("4");
+    allPolledKeys.add("5");
+    allPolledKeys.add("6");
+    allPolledKeys.add("7");
+    allPolledKeys.add("8");
+    allPolledKeys.add("9");
+    allPolledKeys.add("10");
+    allPolledKeys.add("11");
+    allPolledKeys.add("12");
+
+    pollingDocument = PollingDocument.builder()
+                          .uuid("id")
+                          .accountId("account")
+                          .pollingType(PollingType.ARTIFACT)
+                          .signatures(Collections.singletonList("signature"))
+                          .lastModifiedAt(10L)
+                          .lastModifiedPolledResponseTime(20L)
+                          .polledResponse(ArtifactPolledResponse.builder().allPolledKeys(allPolledKeys).build())
+                          .pollingInfo(DockerHubArtifactInfo.builder().build())
+                          .build();
+
+    // Mock the behavior of pollingDocumentMapper and pollingRepository
+    when(pollingDocumentMapper.toPollingDocument(pollingItem)).thenReturn(pollingDocument);
+    when(pollingRepository.findByUuidAndAccountIdAndSignature(any(), any(), any())).thenReturn(pollingDocument);
+    response = pollingService.subscribe(pollingItem);
+    assertNotNull(response);
+    assertEquals(pollingDocument.getUuid(), response.getPollingDocId());
+    assertThat(response.getLastPollingUpdate()).isEqualTo(20L);
+    assertThat(response.getLastPolled().size()).isEqualTo(10);
+    assertTrue(response.getIsExistingPollingDoc());
+
+    allPolledKeys = new HashSet<>();
+    allPolledKeys.add("key");
+    pollingDocument = PollingDocument.builder()
+                          .uuid("id")
+                          .accountId("account")
+                          .pollingType(PollingType.MANIFEST)
+                          .signatures(Collections.singletonList("signature"))
+                          .lastModifiedAt(10L)
+                          .lastModifiedPolledResponseTime(20L)
+                          .polledResponse(ManifestPolledResponse.builder().allPolledKeys(allPolledKeys).build())
+                          .pollingInfo(HelmChartManifestInfo.builder().build())
+                          .build();
+
+    // Mock the behavior of pollingDocumentMapper and pollingRepository
+    when(pollingDocumentMapper.toPollingDocument(pollingItem)).thenReturn(pollingDocument);
+    when(pollingRepository.findByUuidAndAccountIdAndSignature(any(), any(), any())).thenReturn(pollingDocument);
+    response = pollingService.subscribe(pollingItem);
+    assertNotNull(response);
+    assertEquals(pollingDocument.getUuid(), response.getPollingDocId());
+    assertThat(response.getLastPollingUpdate()).isEqualTo(20L);
+    assertThat(response.getLastPolled().get(0)).isEqualTo("key");
+    assertTrue(response.getIsExistingPollingDoc());
   }
 
   @Test
@@ -102,7 +226,7 @@ public class PollingServiceTest extends CategoryTest {
         .thenReturn(pollingDocument);
     when(pollingRepository.save(pollingDocument)).thenReturn(pollingDocument);
 
-    assertThat(pollingService.subscribe(pollingItem)).isEqualTo("id1");
+    assertThat(pollingService.subscribe(pollingItem).getPollingDocId()).isEqualTo("id1");
     verify(pollingDocumentMapper).toPollingDocument(pollingItem);
     verify(pollingRepository, never()).save(pollingDocument);
     verify(pollingRepository).findByUuidAndAccountIdAndSignature(anyString(), anyString(), any());
@@ -123,7 +247,7 @@ public class PollingServiceTest extends CategoryTest {
     PollingDocument artifactPollingDocument2 = getArtifactPollingDocument("id1");
     when(pollingRepository.save(any())).thenReturn(artifactPollingDocument2);
 
-    assertThat(pollingService.subscribe(pollingItem)).isEqualTo("id1");
+    assertThat(pollingService.subscribe(pollingItem).getPollingDocId()).isEqualTo("id1");
     verify(pollingDocumentMapper).toPollingDocument(pollingItem);
     verify(pollingRepository).findByUuidAndAccountIdAndSignature(anyString(), anyString(), any());
     verify(pollingRepository).removeDocumentIfOnlySubscriber(anyString(), anyString(), any());

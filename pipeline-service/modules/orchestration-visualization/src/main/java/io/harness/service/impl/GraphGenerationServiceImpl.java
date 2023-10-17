@@ -9,8 +9,11 @@ package io.harness.service.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.EphemeralOrchestrationGraph;
 import io.harness.beans.GraphVertex;
 import io.harness.beans.OrchestrationEventLog;
@@ -27,6 +30,7 @@ import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.event.GraphStatusUpdateHelper;
 import io.harness.event.OrchestrationLogPublisher;
+import io.harness.event.PlanExecutionModuleInfoUpdateEventHandler;
 import io.harness.event.PlanExecutionStatusUpdateEventHandler;
 import io.harness.event.StepDetailsUpdateEventHandler;
 import io.harness.exception.InvalidRequestException;
@@ -64,6 +68,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.CloseableIterator;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 @Slf4j
@@ -71,6 +76,7 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
   public static final int THRESHOLD_LOG = 1000;
 
   private static final String GRAPH_LOCK = "GRAPH_LOCK_";
+  private static final int MAX_EXPECTED_GRAPH_UPDATE_TIME = 1000;
 
   @Inject private PlanExecutionService planExecutionService;
   @Inject private NodeExecutionService nodeExecutionService;
@@ -85,6 +91,7 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
   @Inject private PersistentLocker persistentLocker;
   @Inject private OrchestrationLogPublisher orchestrationLogPublisher;
   @Inject private PmsFeatureFlagService pmsFeatureFlagService;
+  @Inject private PlanExecutionModuleInfoUpdateEventHandler planExecutionModuleInfoUpdateEventHandler;
 
   @Override
   public boolean updateGraph(String planExecutionId) {
@@ -192,6 +199,15 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
               stepDetailsUpdateEventHandler.handleStepInputEvent(planExecutionId, nodeExecutionId, orchestrationGraph);
           updateRequired = true;
           break;
+        case PIPELINE_INFO_UPDATE:
+          planExecutionModuleInfoUpdateEventHandler.handlePipelineInfoUpdate(planExecutionId, executionSummaryUpdate);
+          updateRequired = true;
+          break;
+        case STAGE_INFO_UPDATE:
+          planExecutionModuleInfoUpdateEventHandler.handleStageInfoUpdate(
+              planExecutionId, nodeExecutionId, executionSummaryUpdate);
+          updateRequired = true;
+          break;
         default:
           if (nodeExecutionIds.contains(nodeExecutionId)) {
             continue;
@@ -212,8 +228,11 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
       executionSummaryUpdate.set(PlanExecutionSummaryKeys.lastUpdatedAt, lastUpdatedAt);
       pmsExecutionSummaryService.update(planExecutionId, executionSummaryUpdate);
     }
-    log.info("[PMS_GRAPH] Processing of [{}] orchestration event logs completed in [{}ms]", unprocessedEventLogs.size(),
-        System.currentTimeMillis() - startTs);
+    long diff = System.currentTimeMillis() - startTs;
+    if (diff > MAX_EXPECTED_GRAPH_UPDATE_TIME) {
+      log.warn("[PMS_GRAPH] Processing of [{}] orchestration event logs completed in [{}ms]",
+          unprocessedEventLogs.size(), diff);
+    }
     return shouldAck;
   }
 

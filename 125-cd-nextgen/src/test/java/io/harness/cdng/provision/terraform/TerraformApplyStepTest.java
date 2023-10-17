@@ -44,6 +44,8 @@ import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.terraform.TFTaskType;
 import io.harness.delegate.task.terraform.TerraformTaskNGParameters;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
+import io.harness.delegate.task.terraform.provider.TerraformAwsProviderCredentialDelegateInfo;
+import io.harness.delegate.task.terraform.provider.TerraformProviderType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.logging.CommandExecutionStatus;
@@ -468,8 +470,17 @@ public class TerraformApplyStepTest extends CategoryTest {
                                                .backendConfigurationFileConfig(backendConfigFileConfig)
                                                .workspace("w1")
                                                .planName("plan")
+                                               .providerCredentialConfig(TerraformAwsProviderCredentialConfig.builder()
+                                                                             .type(TerraformProviderType.AWS)
+                                                                             .connectorRef("connectorRef")
+                                                                             .region("region")
+                                                                             .roleArn("roleArn")
+                                                                             .build())
                                                .build();
     doReturn(inheritOutput).when(terraformStepHelper).getSavedInheritOutput(any(), any(), any());
+    doReturn(TerraformAwsProviderCredentialDelegateInfo.builder().region("region").roleArn("roleArn").build())
+        .when(terraformStepHelper)
+        .getProviderCredentialDelegateInfo(any(), any());
     TaskRequest taskRequest = terraformApplyStep.obtainTaskAfterRbac(ambiance, stepElementParameters, stepInputPackage);
     assertThat(taskRequest).isNotNull();
     PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
@@ -480,6 +491,12 @@ public class TerraformApplyStepTest extends CategoryTest {
         (TerraformTaskNGParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
     assertThat(taskParameters.getTaskType()).isEqualTo(TFTaskType.APPLY);
     assertThat(taskParameters.getTerraformCommandFlags().get("APPLY")).isEqualTo("-lock-timeout=0s");
+    assertThat(taskParameters.getProviderCredentialDelegateInfo()).isNotNull();
+    assertThat(taskParameters.getProviderCredentialDelegateInfo().getType()).isEqualTo(TerraformProviderType.AWS);
+    TerraformAwsProviderCredentialDelegateInfo awsCredentialDelegateInfo =
+        (TerraformAwsProviderCredentialDelegateInfo) taskParameters.getProviderCredentialDelegateInfo();
+    assertThat(awsCredentialDelegateInfo.getRoleArn()).isEqualTo("roleArn");
+    assertThat(awsCredentialDelegateInfo.getRegion()).isEqualTo("region");
   }
 
   @Test

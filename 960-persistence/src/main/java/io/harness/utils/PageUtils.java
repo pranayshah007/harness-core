@@ -129,6 +129,23 @@ public class PageUtils {
         .build();
   }
 
+  public static <T> PageResponse<T> offsetAndLimit(List<T> input, long count, int offset, int pageSize) {
+    if (count < (long) offset * pageSize) {
+      throw new InvalidRequestException(
+          String.format("for a list of size %s the offset %s and pagesize %s is invalid", count, offset, pageSize));
+    }
+
+    long totalPages = (count / pageSize) + (count % pageSize == 0 ? 0 : 1);
+    return PageResponse.<T>builder()
+        .pageSize(pageSize)
+        .pageIndex(offset)
+        .totalPages(totalPages)
+        .totalItems(count)
+        .pageItemCount(input.size())
+        .content(input)
+        .build();
+  }
+
   public static <T> Page<T> getPage(List<T> input, int offset, int pageSize) {
     if (offset < 0) {
       throw new IllegalArgumentException("Page index must not be less than zero!");

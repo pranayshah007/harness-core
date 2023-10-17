@@ -322,10 +322,11 @@ public class CDDashboardOverviewResource {
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startTime,
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endTime,
-      @Parameter(description = "Specifies the sorting criteria of the list") @QueryParam("sort") List<String> sort)
-      throws Exception {
+      @Parameter(description = "Specifies the sorting criteria of the list") @QueryParam("sort") List<String> sort,
+      @Parameter(description = "Specifies the repo name of the entity", hidden = true) @QueryParam(
+          "repoName") String repoName) throws Exception {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getServiceDetailsListV2(
-        accountIdentifier, orgIdentifier, projectIdentifier, startTime, endTime, sort));
+        accountIdentifier, orgIdentifier, projectIdentifier, startTime, endTime, sort, repoName));
   }
 
   @GET

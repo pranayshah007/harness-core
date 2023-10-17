@@ -71,6 +71,7 @@ import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.ng.core.utils.GitXUtils;
 import io.harness.ng.core.utils.ServiceOverrideV2ValidationHelper;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
@@ -1206,7 +1207,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
     checkArgument(isNotEmpty(serviceIdentifier), "service identifier must be present");
 
-    Optional<ServiceEntity> optionalService = get(accountId, orgId, projectId, serviceIdentifier, false);
+    Optional<ServiceEntity> optionalService = get(accountId, orgId, projectId, serviceIdentifier, false,
+        GitXUtils.parseLoadFromCacheHeaderParam(loadFromCache), false);
 
     if (optionalService.isPresent()) {
       String yaml = optionalService.get().fetchNonEmptyYaml();

@@ -6,12 +6,18 @@
  */
 
 package io.harness.secretusage;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.IdentifierRef;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityUsageDetailProto;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.walktree.visitor.entityreference.beans.VisitedSecretReference;
 
+import java.util.Set;
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 public interface SecretRuntimeUsageService {
   /**
    * Produce Secret runtime usage event
@@ -37,4 +43,14 @@ public interface SecretRuntimeUsageService {
    */
   void createSecretRuntimeUsage(String accountIdentifier, SecretDTOV2 secretDTOV2,
       EntityDetailProtoDTO referredByEntity, EntityUsageDetailProto usageDetail);
+
+  /**
+   * Produce Secret runtime usage event
+   *
+   * @param secretReferences a set of secrets being referenced
+   * @param usageDetail usage details. It consists of -
+   *                    usageType - usage type which belongs to EntityUsageTypes
+   *                    usageData - This is an abstract class that can be extended to capture usage specific data
+   */
+  void createSecretRuntimeUsage(Set<VisitedSecretReference> secretReferences, EntityUsageDetailProto usageDetail);
 }

@@ -241,12 +241,20 @@ public class ChangeEventServiceImpl implements ChangeEventService {
       List<ChangeSourceType> changeSourceTypes, Instant startTime, Instant endTime, PageRequest pageRequest,
       boolean isMonitoredServiceIdentifierScoped) {
     Query<Activity> query = createQuery(startTime, endTime, projectParams, monitoredServiceIdentifiers,
-        changeCategories, changeSourceTypes, isMonitoredServiceIdentifierScoped);
+        changeCategories, changeSourceTypes, isMonitoredServiceIdentifierScoped)
+                                .order(Sort.descending(ActivityKeys.eventTime));
+    List<Activity> activities;
     if (featureFlagService.isFeatureFlagEnabled(
             projectParams.getAccountIdentifier(), FeatureName.SRM_OPTIMISE_CHANGE_EVENTS_API_RESPONSE.name())) {
-      query = setProjectionsToFetchNecessaryFields(query);
+      long count = query.count();
+      query = setProjectionsToFetchNecessaryFields(query)
+                  .offset(pageRequest.getPageIndex() * pageRequest.getPageSize())
+                  .limit(pageRequest.getPageSize());
+      activities = query.asList();
+      return PageUtils.offsetAndLimit(activities.stream().map(transformer::getDto).collect(Collectors.toList()), count,
+          pageRequest.getPageIndex(), pageRequest.getPageSize());
     }
-    List<Activity> activities = query.order(Sort.descending(ActivityKeys.eventTime)).asList();
+    activities = query.asList();
     return PageUtils.offsetAndLimit(activities.stream().map(transformer::getDto).collect(Collectors.toList()),
         pageRequest.getPageIndex(), pageRequest.getPageSize());
   }

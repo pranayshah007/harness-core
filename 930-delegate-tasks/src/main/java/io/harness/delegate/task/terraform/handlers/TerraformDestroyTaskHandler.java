@@ -45,6 +45,7 @@ import io.harness.terraform.TerraformHelperUtils;
 import io.harness.terraform.TerraformStepResponse;
 import io.harness.terraform.request.TerraformExecuteStepRequest;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.io.File;
 import java.io.IOException;
@@ -164,6 +165,9 @@ public class TerraformDestroyTaskHandler extends TerraformAbstractTaskHandler {
           scriptDirectory, logCallback, taskParameters.getAccountId(), tfBackendConfigDirectory,
           commitIdToFetchedFilesMap, keyVersionMap);
     }
+
+    ImmutableMap<String, String> environmentVars = terraformBaseHelper.getEnvironmentVariables(taskParameters);
+
     try (PlanJsonLogOutputStream planJsonLogOutputStream = new PlanJsonLogOutputStream();
          PlanLogOutputStream planLogOutputStream = new PlanLogOutputStream()) {
       TerraformExecuteStepRequest terraformExecuteStepRequest =
@@ -176,7 +180,7 @@ public class TerraformDestroyTaskHandler extends TerraformAbstractTaskHandler {
               .scriptDirectory(scriptDirectory)
               .encryptedTfPlan(taskParameters.getEncryptedTfPlan())
               .encryptionConfig(taskParameters.getEncryptionConfig())
-              .envVars(taskParameters.getEnvironmentVariables())
+              .envVars(environmentVars)
               .isSaveTerraformJson(taskParameters.isSaveTerraformStateJson())
               .logCallback(logCallback)
               .isSaveTerraformHumanReadablePlan(taskParameters.isSaveTerraformHumanReadablePlan())

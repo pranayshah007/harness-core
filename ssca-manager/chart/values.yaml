@@ -214,6 +214,4 @@ s3SecretAccessKey:
   name: minio
   key: root-password
 
-
-secrets:
-  JWT_IDENTITY_SERVICE_SECRET: ""
+java17flags: ""

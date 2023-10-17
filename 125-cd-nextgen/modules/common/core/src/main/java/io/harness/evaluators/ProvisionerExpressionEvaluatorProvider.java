@@ -6,11 +6,13 @@
  */
 
 package io.harness.evaluators;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.provision.ProvisionerOutputHelper;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.validation.InputSetValidatorFactory;
@@ -21,6 +23,8 @@ import com.google.inject.Singleton;
 import java.util.Collections;
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(CDP)
 @Singleton
 public class ProvisionerExpressionEvaluatorProvider {

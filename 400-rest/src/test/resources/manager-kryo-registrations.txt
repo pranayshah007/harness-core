@@ -1901,7 +1901,7 @@
 25002:io.harness.delegate.beans.ci.DockerInfraInfo
 25003:io.harness.delegate.beans.ci.VmInfraInfo
 25004:io.harness.delegate.beans.ci.DliteVmInfraInfo
-25005:io.harness.delegate.InitializeExecutionInfraResponse
+25005:io.harness.delegate.beans.scheduler.InitializeExecutionInfraResponse
 26001:io.harness.connector.ConnectorDTO
 26002:io.harness.connector.ConnectorInfoDTO
 29112:io.harness.delegate.beans.connector.jenkins.JenkinsAuthCredentialsDTO
@@ -3327,3 +3327,4 @@
 20000619:io.harness.delegate.task.helm.response.HelmChartManifest
 20001000:io.harness.delegate.beans.connector.scm.github.GithubAppDTO
 20001001:io.harness.delegate.beans.connector.gcpconnector.GcpOidcDetailsDTO
+20001002:io.harness.delegate.task.k8s.ReleaseMetadata

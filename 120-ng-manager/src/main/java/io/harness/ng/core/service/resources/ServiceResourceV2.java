@@ -890,8 +890,8 @@ public class ServiceResourceV2 {
           hidden = true) @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @Parameter(description = "Specifies whether to load the entity from cache", hidden = true) @HeaderParam(
           "Load-From-Cache") @DefaultValue("false") String loadFromCache) {
-    Optional<ServiceEntity> serviceEntity =
-        serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, false);
+    Optional<ServiceEntity> serviceEntity = serviceEntityService.get(accountId, orgIdentifier, projectIdentifier,
+        serviceIdentifier, false, GitXUtils.parseLoadFromCacheHeaderParam(loadFromCache), false);
 
     if (serviceEntity.isPresent()) {
       if (EmptyPredicate.isEmpty(serviceEntity.get().getYaml())) {
@@ -1010,7 +1010,9 @@ public class ServiceResourceV2 {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @QueryParam(NGCommonEntityConstants.IDENTIFIER_KEY) String serviceIdentifier,
-      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache) {
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
+      @Parameter(description = "This contains details of Git Entity like Git Branch info",
+          hidden = true) @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     return ResponseDTO.newResponse(
         serviceEntityService.validateTemplateInputs(accountId, orgId, projectId, serviceIdentifier, loadFromCache));
   }

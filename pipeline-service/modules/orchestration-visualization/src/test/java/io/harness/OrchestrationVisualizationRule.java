@@ -169,13 +169,6 @@ public class OrchestrationVisualizationRule implements MethodRule, InjectorRuleM
 
       @Provides
       @Singleton
-      @Named("useNewNodeEntityConfiguration")
-      public Boolean getUseNewNodeEntityConfiguration() {
-        return true;
-      }
-
-      @Provides
-      @Singleton
       @Named("publishAdviserEventForCustomAdvisers")
       public Boolean getPublishAdviserEventForCustomAdvisers() {
         return true;

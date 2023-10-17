@@ -8,12 +8,15 @@
 package io.harness.delegate.task.citasks.cik8handler.helper;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.impl.scm.ScmGitProviderMapper.DESTINATION_CA_PATH;
+import static io.harness.impl.scm.ScmGitProviderMapper.SHARED_CA_CERTS_PATH;
 
 import io.harness.utils.system.SystemWrapper;
 
 import com.google.inject.Singleton;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,15 +29,45 @@ public class SecretVolumesHelper {
 
   // Reads the list of volumes to be mounted on the build containers and returns
   // a mapping from source paths to a list of destination paths.
-  // This is a comma separated list of <src-path>:<dest-path> mappings. All these volumes would be available in the
-  // build containers.
-  // Example value of this setting on the delegate:
-  // CI_MOUNT_VOLUMES = /src/path/a.crt:/dest/path/b.crt,/src/path/a.crt:/dest/path/c.crt,/src/path/d.crt:/dest/d.crt
+  // SHARED_CA_CERTS_PATH- This is internal directory path contains all relevant certs bundle
+  // DESTINATION_CA_PATH-This is list of all paths is set by user which is the list of all destination paths in build
+  // pods
+  // Add all certs files mapping present in SHARED_CA_CERTS_PATH to DESTINATION_CA_PATH(list) if it is set. else add all
+  // the certs from CI_MOUNT_VOLUMES to maintain backward compatibility(remove this later) This is a comma separated
+  // list of <src-path>:<dest-path> mappings. All these volumes would be available in the build containers. Example
+  // value of this setting on the delegate: CI_MOUNT_VOLUMES =
+  // /src/path/a.crt:/dest/path/b.crt,/src/path/a.crt:/dest/path/c.crt,/src/path/d.crt:/dest/d.crt
   public Map<String, List<String>> getSecretVolumeMappings() {
     Map<String, List<String>> secretVolumeMappings = new HashMap<>();
+    // Check if SHARED_CA_CERTS_PATH and DESTINATION_CA_PATH is set, then create the secretVolumeMappings from these
+    // if not then add from CI_MOUNT_VOLUMES
+    if (checkSecretVolumesConfiguredV2()) {
+      String sourceDirPath = SystemWrapper.getenv(SHARED_CA_CERTS_PATH);
+      String sourceCertPathConcatenated = sourceDirPath + "/single-cert-path/all-certs.pem";
+
+      String destinationPaths = SystemWrapper.getenv(DESTINATION_CA_PATH);
+
+      log.info("{} is set with value: {}", DESTINATION_CA_PATH, destinationPaths);
+      log.info("{} is set with value: {}", SHARED_CA_CERTS_PATH, sourceDirPath);
+
+      List<String> destinationList = Arrays.asList(destinationPaths.split(","));
+
+      if (fileExists(sourceCertPathConcatenated)) {
+        log.info("Adding cert from source path {} ", sourceCertPathConcatenated);
+        secretVolumeMappings.put(sourceCertPathConcatenated, destinationList);
+        return secretVolumeMappings;
+      } else {
+        log.warn("Could not add certs from {} as source file {} does not exist", SHARED_CA_CERTS_PATH,
+            sourceCertPathConcatenated);
+      }
+    }
+
+    // Add all certs from CI_MOUNT_VOLUMES if it is set else return empty map
     if (!checkSecretVolumesConfigured()) {
+      log.warn("cannot find valid certs set with CI_MOUNT_VOLUMES");
       return secretVolumeMappings;
     }
+    log.warn("cannot find valid certs or destination not set. Moving on to use certs specified with CI_MOUNT_VOLUMES");
 
     String mountVolumes = SystemWrapper.getenv(CI_MOUNT_VOLUMES);
     String mountVolumesList[] = mountVolumes.split(",");
@@ -66,6 +99,7 @@ public class SecretVolumesHelper {
       map.put(destPath, true);
       secretVolumeMappings.computeIfAbsent(srcPath, k -> new ArrayList<>()).add(destPath);
     }
+
     return secretVolumeMappings;
   }
 
@@ -77,6 +111,21 @@ public class SecretVolumesHelper {
       }
     } catch (SecurityException e) {
       log.error("Don't have sufficient permission to query CI_MOUNT_VOLUMES", e);
+      return false;
+    }
+    return true;
+  }
+
+  public boolean checkSecretVolumesConfiguredV2() {
+    try {
+      String srcPath = SystemWrapper.getenv(SHARED_CA_CERTS_PATH);
+      String destPath = SystemWrapper.getenv(DESTINATION_CA_PATH);
+
+      if (isEmpty(srcPath) || isEmpty(destPath)) {
+        return false;
+      }
+    } catch (SecurityException e) {
+      log.error("Don't have sufficient permission to query SHARED_CA_CERTS_PATH or DESTINATION_CA_PATH", e);
       return false;
     }
     return true;
@@ -111,5 +160,23 @@ public class SecretVolumesHelper {
     List<String> secretKeys = new ArrayList<>();
     secretVolumeMappings.forEach((k, v) -> secretKeys.add(getSecretKey(prefix, k)));
     return secretKeys;
+  }
+
+  private static List<String> listFilesInDir(String directoryPath) {
+    File directory = new File(directoryPath);
+    List<String> filePaths = new ArrayList<>();
+
+    if (directory.exists() && directory.isDirectory()) {
+      File[] files = directory.listFiles();
+
+      if (files != null) {
+        for (File file : files) {
+          if (file.isFile()) {
+            filePaths.add(file.getAbsolutePath());
+          }
+        }
+      }
+    }
+    return filePaths;
   }
 }

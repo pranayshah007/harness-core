@@ -39,6 +39,7 @@ public final class EventsFrameworkConstants {
   public static final String WEBHOOK_PUSH_EVENT = "WebhookPushEvent";
   public static final String WEBHOOK_BRANCH_HOOK_EVENT = "WebhookBranchHookEvent";
   public static final String WEBHOOK_EVENT = "WebhookEvent";
+  public static final String GITX_WEBHOOK_EVENT = "GitXWebhookEvent";
   public static final String GIT_BRANCH_HOOK_EVENT_STREAM = "git_branch_hook_event_stream";
   public static final String USERMEMBERSHIP = "usermembership";
   public static final String MODULE_LICENSE = "modulelicense";
@@ -117,6 +118,8 @@ public final class EventsFrameworkConstants {
   public static final String PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER =
       "PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER";
   public static final String MODULE_LICENSES_REDIS_EVENT_CONSUMER = "MODULE_LICENSES_REDIS_EVENT_CONSUMER";
+
+  public static final String INSTANCE_NG_SSCA_REDIS_EVENT_CONSUMER = "INSTANCE_NG_SSCA_REDIS_EVENT_CONSUMER";
   public static final String PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER_CD =
       "PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER_CD";
   public static final String PIPELINE_EXECUTION_SUMMARY_SNAPSHOT_REDIS_EVENT_CONSUMER =

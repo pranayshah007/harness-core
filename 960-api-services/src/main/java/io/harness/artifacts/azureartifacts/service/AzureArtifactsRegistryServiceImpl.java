@@ -6,6 +6,7 @@
  */
 
 package io.harness.artifacts.azureartifacts.service;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.azure.utility.AzureUtils.executeRestCall;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
@@ -91,11 +92,32 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
         getAzureArtifactsRestClient(azureArtifactsInternalConfig.getAzureArtifactsRegistryUrl(), project);
 
     String authHeader = getAuthHeader(azureArtifactsInternalConfig);
-
-    List<AzureArtifactsFeed> feeds = listFeeds(azureArtifactsInternalConfig, project);
-
     String feedId = null;
+    String packageId = null;
 
+    List<AzureArtifactsFeed> feeds = null;
+    try {
+      feeds = listFeeds(azureArtifactsInternalConfig, project);
+    } catch (HintException e) {
+      String message = String.format(
+          "Failed to get version for feed [%s], package [%s]: %s", feed, packageName, ExceptionUtils.getMessage(e));
+      if (EmptyPredicate.isNotEmpty(project)) {
+        message = String.format("Failed to get version for project [%s],feed [%s],package [%s]: %s", project, feed,
+            packageName, ExceptionUtils.getMessage(e));
+      }
+      log.warn(message);
+      throw new HintException("Failed to get versions. Could not fetch feeds");
+    }
+    if (EmptyPredicate.isEmpty(feeds)) {
+      String message =
+          String.format("Failed to get version for feed [%s], package [%s]. Feed not found", feed, packageName);
+      if (EmptyPredicate.isNotEmpty(project)) {
+        message = String.format("Failed to get version for project [%s],feed [%s],package [%s]. Feed not found",
+            project, feed, packageName);
+      }
+      log.warn(message);
+      throw new HintException("Failed to get versions. Feeds not found");
+    }
     for (AzureArtifactsFeed azureArtifactsFeed : feeds) {
       if (azureArtifactsFeed.getName().equals(feed)) {
         feedId = azureArtifactsFeed.getId();
@@ -103,17 +125,58 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
         break;
       }
     }
+    if (feedId == null) {
+      String message =
+          String.format("Failed to get version for package [%s]. Feed [%s] not found in feeds", packageName, feed);
+      if (EmptyPredicate.isNotEmpty(project)) {
+        message = String.format("Failed to get versions for project [%s], package [%s], Feed [%s] not found in feeds",
+            project, packageName, feed);
+      }
+      log.warn(message);
+      throw new HintException(String.format("Failed to get versions. Feed [%s] not found in feeds", feed));
+    }
 
-    List<AzureArtifactsPackage> packages = listPackages(azureArtifactsInternalConfig, project, feed, packageType);
+    List<AzureArtifactsPackage> packages = null;
 
-    String packageId = null;
-
+    try {
+      packages = listPackages(azureArtifactsInternalConfig, project, feed, packageType);
+    } catch (HintException e) {
+      String message = String.format(
+          "Failed to get version for feed [%s], package [%s]: %s", feed, packageName, ExceptionUtils.getMessage(e));
+      if (EmptyPredicate.isNotEmpty(project)) {
+        message = String.format("Failed to get version for project [%s], feed [%s], package [%s]: %s", project, feed,
+            packageName, ExceptionUtils.getMessage(e));
+      }
+      log.warn(message);
+      throw new HintException("Failed to get versions. Could not fetch packages");
+    }
+    if (EmptyPredicate.isEmpty(packages)) {
+      String message =
+          String.format("Failed to get version for feed [%s], package [%s]. Package not found", feed, packageName);
+      if (EmptyPredicate.isNotEmpty(project)) {
+        message = String.format("Failed to get version for project [%s],feed [%s], package [%s]. Package not found",
+            project, feed, packageName);
+      }
+      log.warn(message);
+      throw new HintException("Failed to get versions. Packages not found");
+    }
     for (AzureArtifactsPackage azureArtifactsPackage : packages) {
       if (azureArtifactsPackage.getName().equals(packageName)) {
         packageId = azureArtifactsPackage.getId();
 
         break;
       }
+    }
+    if (packageId == null) {
+      String message =
+          String.format("Failed to get version for feed [%s]. Package [%s] not found in packages", feed, packageName);
+      if (EmptyPredicate.isNotEmpty(project)) {
+        message =
+            String.format("Failed to get versions for project [%s], feed [%s]. Package [%s] not found in packages",
+                project, feed, packageName);
+      }
+      log.warn(message);
+      throw new HintException(String.format("Failed to get versions. Package [%s] not found in Packages", packageName));
     }
 
     AzureArtifactsPackageVersions packageVersions =

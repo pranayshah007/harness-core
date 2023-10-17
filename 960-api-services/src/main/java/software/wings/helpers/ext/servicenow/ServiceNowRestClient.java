@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.Map;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
@@ -25,6 +26,7 @@ import retrofit2.http.POST;
 import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
+import retrofit2.http.QueryMap;
 
 @OwnedBy(CDC)
 @CodePulse(
@@ -38,6 +40,11 @@ public interface ServiceNowRestClient {
   Call<JsonNode> createTicket(@Header("Authorization") String authorization, @Path("ticket-type") String ticketType,
       @Query("sysparm_display_value") String displayValue, @Query("sysparm_fields") String returnFields,
       @Body Object jsonBody);
+
+  @Headers("Content-Type: application/json")
+  @POST("api/sn_chg_rest/change/standard/{sys_id}?")
+  Call<JsonNode> createTicketUsingStandardTemplate(@Header("Authorization") String authorization,
+      @Path("sys_id") String sys_id, @QueryMap Map<String, String> queryParams);
 
   @Headers("Content-Type: application/json")
   @POST("api/now/import/{staging-table-name}")

@@ -6,12 +6,14 @@
  */
 
 package io.harness.rule;
-
 import static java.lang.String.format;
 
 import io.harness.NoopStatement;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.exception.CategoryConfigException;
 import io.harness.rule.UserInfo.UserInfoBuilder;
 import io.harness.scm.ScmSecret;
@@ -33,6 +35,9 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_FIRST_GEN, HarnessModuleComponent.CDS_APPROVALS,
+        HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(HarnessTeam.DX)
 public class OwnerRule implements TestRule {

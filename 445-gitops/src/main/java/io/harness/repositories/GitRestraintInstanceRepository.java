@@ -6,11 +6,13 @@
  */
 
 package io.harness.repositories;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.HarnessRepo;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.distribution.constraint.Consumer;
 import io.harness.gitopsprovider.entity.GitRestraintInstance;
 
@@ -19,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.repository.CrudRepository;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @OwnedBy(CDC)
 @HarnessRepo
 public interface GitRestraintInstanceRepository extends CrudRepository<GitRestraintInstance, String> {

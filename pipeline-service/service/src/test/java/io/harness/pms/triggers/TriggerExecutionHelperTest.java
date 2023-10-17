@@ -16,6 +16,8 @@ import static io.harness.ngtriggers.Constants.GIT_USER;
 import static io.harness.ngtriggers.Constants.SOURCE_EVENT_ID;
 import static io.harness.ngtriggers.Constants.SOURCE_EVENT_LINK;
 import static io.harness.ngtriggers.Constants.TRIGGER_REF;
+import static io.harness.pms.contracts.plan.TriggerType.SCHEDULER_CRON;
+import static io.harness.pms.plan.execution.PlanExecutionInterruptType.ABORTALL;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.MEET;
@@ -40,6 +42,7 @@ import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.beans.FeatureName;
 import io.harness.beans.HeaderConfig;
 import io.harness.category.element.UnitTests;
+import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.retry.RetryExecutionParameters;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.TriggerException;
@@ -93,6 +96,8 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.ExecutionHelper;
 import io.harness.pms.plan.execution.beans.ExecArgs;
+import io.harness.pms.plan.execution.beans.dto.InterruptDTO;
+import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.product.ci.scm.proto.Commit;
 import io.harness.product.ci.scm.proto.PullRequest;
@@ -116,8 +121,10 @@ import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -161,6 +168,8 @@ public class TriggerExecutionHelperTest extends CategoryTest {
   @Mock ExecutionHelper executionHelper;
   @Mock WebhookEventPayloadParser webhookEventPayloadParser;
   @Mock PmsFeatureFlagHelper pmsFeatureFlagHelper;
+  @Mock PlanExecutionService planExecutionService;
+  @Mock PMSExecutionService pmsExecutionService;
   @Before
   public void setUp() {
     triggerWebhookEvent =
@@ -201,6 +210,43 @@ public class TriggerExecutionHelperTest extends CategoryTest {
     } catch (IOException e) {
       throw new InvalidRequestException("Could not read resource file: " + filename);
     }
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testRequestPipelineExecutionAbortForSameExecTagIfNeeded() {
+    TriggerDetails triggerDetails =
+        TriggerDetails.builder()
+            .ngTriggerEntity(NGTriggerEntity.builder()
+                                 .accountId(accountId)
+                                 .orgIdentifier(orgId)
+                                 .projectIdentifier(projectId)
+                                 .identifier("id")
+                                 .build())
+            .ngTriggerConfigV2(
+                NGTriggerConfigV2.builder()
+                    .source(
+                        NGTriggerSourceV2.builder()
+                            .spec(WebhookTriggerConfigV2.builder()
+                                      .spec(GithubSpec.builder()
+                                                .spec(GithubPRSpec.builder().autoAbortPreviousExecutions(true).build())
+                                                .build())
+                                      .build())
+                            .build())
+                    .build())
+            .build();
+    List<PlanExecution> executionsToAbort = new ArrayList<>();
+    PlanExecution planExecution = PlanExecution.builder().uuid("uuid").build();
+    executionsToAbort.add(planExecution);
+    String executionTag = "executionTag";
+    when(planExecutionService.findPrevUnTerminatedPlanExecutionsByExecutionTag(planExecution, executionTag))
+        .thenReturn(executionsToAbort);
+    when(pmsExecutionService.registerInterrupt(any(), any(), any(), any()))
+        .thenReturn(InterruptDTO.builder().type(ABORTALL).planExecutionId(planExecution.getUuid()).build());
+    triggerExecutionHelper.requestPipelineExecutionAbortForSameExecTagIfNeeded(
+        triggerDetails, planExecution, executionTag);
+    verify(pmsExecutionService, times(1)).registerInterrupt(any(), any(), any(), any());
   }
 
   @Test
@@ -531,6 +577,10 @@ public class TriggerExecutionHelperTest extends CategoryTest {
     buildinfo = triggerExecutionHelper.getBuildInfoForArtifacts(triggerDetails, type, payload);
     assertThat(buildinfo.getBuild().equals(payload.getArtifactData().getBuild()));
     assertThat(buildinfo.getImagePath().equals(""));
+
+    payload = TriggerPayload.newBuilder().setType(Type.SCHEDULED).build();
+    TriggerType type1 = triggerExecutionHelper.findTriggerType(payload);
+    assertThat(type1).isEqualTo(SCHEDULER_CRON);
   }
 
   @Test

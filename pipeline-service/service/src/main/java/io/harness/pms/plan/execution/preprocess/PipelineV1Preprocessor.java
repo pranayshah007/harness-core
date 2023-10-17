@@ -6,9 +6,11 @@
  */
 
 package io.harness.pms.plan.execution.preprocess;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.merger.helpers.FQNHelper;
 import io.harness.pms.utils.IdentifierGeneratorUtils;
@@ -26,6 +28,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_PIPELINE, HarnessModuleComponent.CDS_TEMPLATE_LIBRARY})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelineV1Preprocessor implements PipelinePreprocessor {
   protected PipelineV1Preprocessor() {}

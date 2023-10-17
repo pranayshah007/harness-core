@@ -8,7 +8,6 @@
 package io.harness.ci.states.codebase;
 
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
-import static io.harness.rule.OwnerRule.DEV_MITTAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -44,6 +43,7 @@ public class CodeBaseStepTest extends CategoryTest {
   @InjectMocks private CodeBaseStep codeBaseStep;
   private Ambiance ambiance;
   private StepInputPackage stepInputPackage;
+
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
@@ -117,22 +117,5 @@ public class CodeBaseStepTest extends CategoryTest {
     ChildExecutableResponse childExecutableResponse =
         codeBaseStep.obtainChild(ambiance, codeBaseStepParameters, stepInputPackage);
     assertThat(childExecutableResponse.getChildNodeId()).isEqualTo("syncTaskId");
-  }
-
-  @Test
-  @Owner(developers = DEV_MITTAL)
-  @Category(UnitTests.class)
-  public void testGetSCMBaseUrl() {
-    String baseUrl = "https://stress.harness.io/ng/#";
-    String scmUrl = connectorUtils.getSCMBaseUrl(baseUrl);
-    assertThat(scmUrl).isEqualTo("https://stress.harness.io/code/git");
-
-    baseUrl = "https://qa.harness.io/ng";
-    scmUrl = connectorUtils.getSCMBaseUrl(baseUrl);
-    assertThat(scmUrl).isEqualTo("https://qa.harness.io/code/git");
-
-    baseUrl = "https://app.harness.io/#";
-    scmUrl = connectorUtils.getSCMBaseUrl(baseUrl);
-    assertThat(scmUrl).isEqualTo("https://app.harness.io/code/git");
   }
 }

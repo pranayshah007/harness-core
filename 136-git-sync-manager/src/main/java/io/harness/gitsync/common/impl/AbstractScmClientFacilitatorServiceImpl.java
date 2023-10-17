@@ -22,20 +22,31 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.impl.ConnectorErrorMessagesHelper;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
+import io.harness.gitsync.common.dtos.AzureRepoSCMDTO;
+import io.harness.gitsync.common.dtos.BitbucketSCMDTO;
 import io.harness.gitsync.common.dtos.CreateGitFileRequestDTO;
 import io.harness.gitsync.common.dtos.GitFileContent;
+import io.harness.gitsync.common.dtos.GithubSCMDTO;
+import io.harness.gitsync.common.dtos.GitlabSCMDTO;
 import io.harness.gitsync.common.dtos.UpdateGitFileRequestDTO;
 import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
-import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
+import io.harness.gitsync.common.dtos.UserSourceCodeManagerDTO;
 import io.harness.gitsync.common.helper.UserProfileHelper;
+import io.harness.gitsync.common.helper.UserSourceCodeManagerHelper;
+import io.harness.gitsync.common.service.GitSyncConnectorService;
 import io.harness.gitsync.common.service.ScmClientFacilitatorService;
 import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.gitsync.helpers.ScmUserHelper;
 import io.harness.gitsync.interceptor.GitSyncConstants;
 import io.harness.gitsync.scm.ScmGitUtils;
+import io.harness.gitsync.utils.GitProviderUtils;
 import io.harness.impl.ScmResponseStatusUtils;
 import io.harness.ng.userprofile.commons.SCMType;
 import io.harness.product.ci.scm.proto.FileContent;
@@ -56,17 +67,20 @@ public abstract class AbstractScmClientFacilitatorServiceImpl implements ScmClie
   private ConnectorErrorMessagesHelper connectorErrorMessagesHelper;
   private YamlGitConfigService yamlGitConfigService;
   private UserProfileHelper userProfileHelper;
-  private GitSyncConnectorHelper gitSyncConnectorHelper;
+  private GitSyncConnectorService gitSyncConnectorService;
+  private UserSourceCodeManagerHelper userSourceCodeManagerHelper;
 
   @Inject
   protected AbstractScmClientFacilitatorServiceImpl(ConnectorService connectorService,
       ConnectorErrorMessagesHelper connectorErrorMessagesHelper, YamlGitConfigService yamlGitConfigService,
-      UserProfileHelper userProfileHelper, GitSyncConnectorHelper gitSyncConnectorHelper) {
+      UserProfileHelper userProfileHelper, GitSyncConnectorService gitSyncConnectorService,
+      UserSourceCodeManagerHelper userSourceCodeManagerHelper) {
     this.connectorService = connectorService;
     this.connectorErrorMessagesHelper = connectorErrorMessagesHelper;
     this.yamlGitConfigService = yamlGitConfigService;
     this.userProfileHelper = userProfileHelper;
-    this.gitSyncConnectorHelper = gitSyncConnectorHelper;
+    this.gitSyncConnectorService = gitSyncConnectorService;
+    this.userSourceCodeManagerHelper = userSourceCodeManagerHelper;
   }
 
   @Override
@@ -98,7 +112,7 @@ public abstract class AbstractScmClientFacilitatorServiceImpl implements ScmClie
   ScmConnector getSCMConnectorUsedInGitSyncConfig(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String connectorIdentifierRef, String repoWhereConnectorIsStored,
       String connectorBranch) {
-    return gitSyncConnectorHelper.getScmConnector(accountIdentifier, orgIdentifier, projectIdentifier,
+    return gitSyncConnectorService.getScmConnector(accountIdentifier, orgIdentifier, projectIdentifier,
         connectorIdentifierRef, repoWhereConnectorIsStored, connectorBranch);
   }
 
@@ -141,7 +155,7 @@ public abstract class AbstractScmClientFacilitatorServiceImpl implements ScmClie
     IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(
         connectorRef, accountId, gitSyncConfigDTO.getOrganizationIdentifier(), gitSyncConfigDTO.getProjectIdentifier());
     Optional<ConnectorResponseDTO> connectorDTO =
-        gitSyncConnectorHelper.getConnectorFromDefaultBranchElseFromGitBranch(accountId,
+        gitSyncConnectorService.getConnectorFromDefaultBranchElseFromGitBranch(accountId,
             identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(), identifierRef.getIdentifier(),
             gitSyncConfigDTO.getGitConnectorsRepo(), gitSyncConfigDTO.getGitConnectorsBranch());
     return connectorDTO.orElseThrow(
@@ -232,5 +246,46 @@ public abstract class AbstractScmClientFacilitatorServiceImpl implements ScmClie
         .userEmail(email)
         .userName(userName)
         .build();
+  }
+
+  protected Optional<UserDetailsResponseDTO> getUserDetails(String accountIdentifier, ScmConnector connectorDTO) {
+    return userSourceCodeManagerHelper.getUserDetails(accountIdentifier, connectorDTO);
+  }
+
+  protected void setUserGitCredsInConnectorIfPresent(String accountIdentifier, ScmConnector connectorDTO) {
+    try {
+      Optional<UserSourceCodeManagerDTO> userSourceCodeManagerDTO =
+          userSourceCodeManagerHelper.fetchUserSourceCodeManagerDTO(accountIdentifier, connectorDTO);
+      if (userSourceCodeManagerDTO.isPresent()) {
+        switch (connectorDTO.getConnectorType()) {
+          case GITHUB:
+            GithubSCMDTO githubSCMDTO = (GithubSCMDTO) userSourceCodeManagerDTO.get();
+            GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) connectorDTO;
+            githubConnectorDTO.setApiAccess(githubSCMDTO.getApiAccess());
+            break;
+          case GITLAB:
+            GitlabSCMDTO gitlabSCMDTO = (GitlabSCMDTO) userSourceCodeManagerDTO.get();
+            GitlabConnectorDTO gitlabConnectorDTO = (GitlabConnectorDTO) connectorDTO;
+            gitlabConnectorDTO.setApiAccess(gitlabSCMDTO.getApiAccess());
+            break;
+          case AZURE_REPO:
+            AzureRepoSCMDTO azureRepoSCMDTO = (AzureRepoSCMDTO) userSourceCodeManagerDTO.get();
+            AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) connectorDTO;
+            azureRepoConnectorDTO.setApiAccess(azureRepoSCMDTO.getApiAccess());
+            break;
+          case BITBUCKET:
+            if (GitProviderUtils.isBitbucketSaas(connectorDTO)) {
+              BitbucketSCMDTO bitbucketSCMDTO = (BitbucketSCMDTO) userSourceCodeManagerDTO.get();
+              BitbucketConnectorDTO bitbucketConnectorDTO = (BitbucketConnectorDTO) connectorDTO;
+              bitbucketConnectorDTO.setApiAccess(bitbucketSCMDTO.getApiAccess());
+            }
+            break;
+          default:
+            log.info("OAUTH not supported for connector type: {}", connectorDTO.getConnectorType());
+        }
+      }
+    } catch (Exception ex) {
+      log.error("Invalid type of connector: {}", connectorDTO.getConnectorType(), ex);
+    }
   }
 }

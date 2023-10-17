@@ -28,6 +28,7 @@ import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
+import io.harness.execution.PlanExecution.PlanExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.StagesExecutionMetadata;
 import io.harness.gitaware.helper.GitAwareContextHelper;
@@ -59,6 +60,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -208,7 +210,11 @@ public class PipelineExecutor {
       PipelineStageInfo parentStageInfo, String notes) {
     String executionId = generateUuid();
     ExecutionTriggerInfo triggerInfo = executionHelper.buildTriggerInfo(null);
-    ExecutionMetadata originalExecutionMetadata = planExecutionService.get(originalExecutionId).getMetadata();
+    PlanExecution originalPlanExecution = planExecutionService.getWithFieldsIncluded(
+        originalExecutionId, Set.of(PlanExecutionKeys.createdAt, PlanExecutionKeys.metadata));
+    ExecutionMetadata originalExecutionMetadata = originalPlanExecution.getMetadata();
+    rollbackModeExecutionHelper.checkAndThrowExceptionIfExecutionOlderThanOneMonthForPostProdRollback(
+        originalPlanExecution.getCreatedAt(), executionMode);
     ExecutionMetadata executionMetadata = rollbackModeExecutionHelper.transformExecutionMetadata(
         originalExecutionMetadata, executionId, triggerInfo, executionMode, parentStageInfo, stageNodeExecutionIds);
 

@@ -92,7 +92,7 @@ public class PmsEventSender {
     if (serviceName.equals("cf")) {
       serviceName = ModuleType.PMS.name().toLowerCase();
     }
-    log.info("Sending {} event for {} to the producer", eventCategory, serviceName);
+    long startTs = System.currentTimeMillis();
     ImmutableMap.Builder<String, String> metadataBuilder = ImmutableMap.<String, String>builder()
                                                                .put(SERVICE_NAME, serviceName)
                                                                .putAll(AmbianceUtils.logContextMap(ambiance));
@@ -103,17 +103,19 @@ public class PmsEventSender {
 
     String messageId =
         producer.send(Message.newBuilder().putAllMetadata(metadataBuilder.build()).setData(eventData).build());
-    log.info("Successfully Sent {} event for {} to the producer. MessageId {}", eventCategory, serviceName, messageId);
+    log.info("Successfully Sent {} event for {} to the producer. MessageId {} in [{}ms]", eventCategory, serviceName,
+        messageId, System.currentTimeMillis() - startTs);
     return messageId;
   }
 
   public String sendEvent(
       ByteString eventData, Map<String, String> metadataMap, PmsEventCategory eventCategory, String serviceName) {
-    log.info("Sending {} event for {} to the producer", eventCategory, serviceName);
+    long startTs = System.currentTimeMillis();
     Producer producer = obtainProducer(eventCategory, serviceName);
     metadataMap.put(SERVICE_NAME, serviceName);
     String messageId = producer.send(Message.newBuilder().putAllMetadata(metadataMap).setData(eventData).build());
-    log.info("Successfully Sent {} event for {} to the producer. MessageId {}", eventCategory, serviceName, messageId);
+    log.info("Successfully Sent {} event for {} to the producer. MessageId {} in [{}ms]", eventCategory, serviceName,
+        messageId, System.currentTimeMillis() - startTs);
     return messageId;
   }
 

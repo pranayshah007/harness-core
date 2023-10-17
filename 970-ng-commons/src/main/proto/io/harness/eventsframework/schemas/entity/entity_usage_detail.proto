@@ -7,6 +7,7 @@ syntax = "proto3";
 package io.harness.eventsframework.schemas.entity;
 
 import "970-ng-commons/src/main/proto/io/harness/eventsframework/schemas/entity/entity_usage_data.proto";
+import "970-ng-commons/src/main/proto/io/harness/eventsframework/schemas/entity/pipeline_execution_usage_data.proto";
 
 option java_multiple_files = true;
 option go_package = "970_ng_commons";
@@ -15,5 +16,6 @@ message EntityUsageDetailProto {
   string usageType = 1;
   oneof usageData {
     io.harness.eventsframework.schemas.entity.EntityUsageDataProto baseUsageData = 2;
+    io.harness.eventsframework.schemas.entity.PipelineExecutionUsageDataProto pipelineExecutionUsageData = 3;
   }
 }

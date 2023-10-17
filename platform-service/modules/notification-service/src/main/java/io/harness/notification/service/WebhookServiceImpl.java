@@ -129,6 +129,8 @@ public class WebhookServiceImpl implements ChannelService {
     String template = templateOpt.get();
     StrSubstitutor strSubstitutor = new StrSubstitutor(templateData);
     String message = strSubstitutor.replace(template);
+    List<String> webhookDomainAllowlist = notificationSettingsHelper.getTargetAllowlistFromSettings(
+        SettingIdentifiers.WEBHOOK_NOTIFICATION_ENDPOINTS_ALLOWLIST, accountId);
     NotificationProcessingResponse processingResponse = null;
     if (notificationSettingsService.checkIfWebhookIsSecret(webhookUrls)
         || notificationSettingsService.checkIfHeadersHasAnySecretValue(headers)) {
@@ -140,7 +142,7 @@ public class WebhookServiceImpl implements ChannelService {
                                                                         .message(message)
                                                                         .webhookUrls(webhookUrls)
                                                                         .headers(headers)
-                                                                        .accountId(accountId)
+                                                                        .webhookDomainAllowlist(webhookDomainAllowlist)
                                                                         .build())
                                                     .taskSetupAbstractions(abstractionMap)
                                                     .expressionFunctorToken(expressionFunctorToken)
@@ -150,7 +152,7 @@ public class WebhookServiceImpl implements ChannelService {
       log.info("Async delegate task created with taskID {}", taskId);
       processingResponse = NotificationProcessingResponse.allSent(webhookUrls.size());
     } else {
-      processingResponse = webhookSender.send(webhookUrls, message, notificationId, headers, accountId);
+      processingResponse = webhookSender.send(webhookUrls, message, notificationId, headers, webhookDomainAllowlist);
     }
     log.info(NotificationProcessingResponse.isNotificationRequestFailed(processingResponse)
             ? "Failed to send notification for request {}"

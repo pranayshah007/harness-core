@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.ReleaseMetadata;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResourceId;
@@ -50,6 +51,15 @@ public class K8sLegacyReleaseHandlerImpl implements K8sReleaseHandler {
   @Override
   public IK8sRelease createRelease(String name, int number) {
     return K8sLegacyRelease.builder().number(number).status(IK8sRelease.Status.InProgress).build();
+  }
+
+  @Override
+  public IK8sRelease createRelease(String name, int number, ReleaseMetadata releaseMetadata) {
+    return K8sLegacyRelease.builder()
+        .number(number)
+        .status(IK8sRelease.Status.InProgress)
+        .harnessMeta(releaseMetadata)
+        .build();
   }
 
   @Override

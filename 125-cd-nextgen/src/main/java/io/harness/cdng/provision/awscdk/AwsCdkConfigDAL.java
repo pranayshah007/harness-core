@@ -6,9 +6,11 @@
  */
 
 package io.harness.cdng.provision.awscdk;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.provision.awscdk.beans.AwsCdkConfig;
 import io.harness.cdng.provision.awscdk.beans.AwsCdkConfig.AwsCdkConfigKeys;
@@ -24,6 +26,8 @@ import dev.morphia.query.Sort;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Slf4j
 @Singleton
 @OwnedBy(HarnessTeam.CDP)

@@ -154,8 +154,6 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
             createPlanForDependencies(ctx, finalResponse, dependencies, finalResponse.getServiceAffinityMap());
         PlanCreatorServiceHelper.removeInitialDependencies(dependencies, initialDependencies);
       }
-      log.info("[PMS_PlanCreatorService_Time] RecursiveDependencies total time took {}ms for dependencies size {}",
-          System.currentTimeMillis() - start, initialDependencies.getDependenciesMap().size());
       if (finalResponse.getDependencies() != null
           && EmptyPredicate.isNotEmpty(finalResponse.getDependencies().getDependenciesMap())) {
         finalResponse.setDependencies(
@@ -199,9 +197,6 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
           planCreationResponses, finalResponse, currentYaml, dependencies, dependenciesList);
     } catch (Exception ex) {
       throw new UnexpectedException(format("Unexpected plan creation error: %s", ex.getMessage()), ex);
-    } finally {
-      log.info("[PMS_PlanCreatorService_Time] Dependencies list time took {}ms for dependencies size {}",
-          System.currentTimeMillis() - start, dependenciesList.size());
     }
   }
 

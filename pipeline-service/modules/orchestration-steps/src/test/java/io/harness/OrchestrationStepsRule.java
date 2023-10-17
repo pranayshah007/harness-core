@@ -200,13 +200,6 @@ public class OrchestrationStepsRule implements MethodRule, InjectorRuleMixin, Mo
 
       @Provides
       @Singleton
-      @Named("useNewNodeEntityConfiguration")
-      public Boolean getUseNewNodeEntityConfiguration() {
-        return true;
-      }
-
-      @Provides
-      @Singleton
       @Named("publishAdviserEventForCustomAdvisers")
       public Boolean getPublishAdviserEventForCustomAdvisers() {
         return true;

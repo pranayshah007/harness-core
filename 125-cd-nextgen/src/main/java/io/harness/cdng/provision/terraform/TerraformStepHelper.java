@@ -13,6 +13,7 @@ import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 import static io.harness.validation.Validator.notEmptyCheck;
 
@@ -195,6 +196,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -338,8 +340,8 @@ public class TerraformStepHelper {
     } else {
       paths.addAll(getParameterFieldValue(gitStoreConfig.getPaths()));
     }
-    ScmConnector scmConnector = cdStepHelper.getScmConnector(
-        (ScmConnector) connectorDTO.getConnectorConfig(), basicNGAccessObject.getAccountIdentifier(), gitConfigDTO);
+    ScmConnector scmConnector = cdStepHelper.getScmConnector((ScmConnector) connectorDTO.getConnectorConfig(),
+        basicNGAccessObject.getAccountIdentifier(), gitConfigDTO, repoName);
     List<EncryptedDataDetail> encryptedDataDetails =
         gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(scmConnector, sshKeySpecDTO, basicNGAccessObject);
     GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder()
@@ -378,8 +380,28 @@ public class TerraformStepHelper {
     return null;
   }
 
+  public TerraformProviderCredential toTerraformProviderCredential(
+      @NonNull TerraformProviderCredentialConfig credentialConfig) {
+    if (!TerraformProviderType.AWS.equals(credentialConfig.getType())) {
+      throw new InvalidRequestException(
+          String.format("Provider Type [%s] is not supported", credentialConfig.getType()));
+    }
+
+    TerraformAwsProviderCredentialConfig awsCredentialConfig = (TerraformAwsProviderCredentialConfig) credentialConfig;
+
+    return TerraformProviderCredential.builder()
+        .uuid(generateUuid())
+        .type(awsCredentialConfig.getType())
+        .spec(AWSIAMRoleCredentialSpec.builder()
+                  .connectorRef(ParameterField.createValueField(awsCredentialConfig.getConnectorRef()))
+                  .region(ParameterField.createValueField(awsCredentialConfig.getRegion()))
+                  .roleArn(ParameterField.createValueField(awsCredentialConfig.getRoleArn()))
+                  .build())
+        .build();
+  }
+
   @Nullable
-  public TerraformProviderCredentialDelegateInfo getProviderCredentialInfo(
+  public TerraformProviderCredentialDelegateInfo getProviderCredentialDelegateInfo(
       TerraformProviderCredential providerCredential, Ambiance ambiance) {
     if (providerCredential == null || providerCredential.getSpec() == null) {
       return null;
@@ -544,6 +566,10 @@ public class TerraformStepHelper {
       builder.varFileConfigs(toTerraformVarFileConfigWithPTD(configuration.getVarFiles(), terraformPassThroughData));
     } else {
       builder.varFileConfigs(toTerraformVarFileConfig(configuration.getVarFiles(), terraformTaskNGResponse));
+    }
+
+    if (configuration.getProviderCredential() != null) {
+      builder.providerCredentialConfig(toTerraformProviderCredentialConfig(configuration.getProviderCredential()));
     }
 
     builder.backendConfig(getBackendConfig(configuration.getBackendConfig()))
@@ -927,6 +953,7 @@ public class TerraformStepHelper {
             .environmentVariables(inheritOutput.getEnvironmentVariables())
             .workspace(inheritOutput.getWorkspace())
             .targets(inheritOutput.getTargets())
+            .providerCredentialConfig(inheritOutput.getProviderCredentialConfig())
             .build();
 
     terraformConfigDAL.saveTerraformConfig(terraformConfig);
@@ -1263,7 +1290,7 @@ public class TerraformStepHelper {
   }
 
   public TerraformProviderCredentialConfig toTerraformProviderCredentialConfig(
-      TerraformProviderCredential providerCredential) {
+      @NonNull TerraformProviderCredential providerCredential) {
     if (TerraformProviderType.AWS.equals(providerCredential.getType())) {
       AWSIAMRoleCredentialSpec awsIamRoleCredentialSpec = (AWSIAMRoleCredentialSpec) providerCredential.getSpec();
       return TerraformAwsProviderCredentialConfig.builder()

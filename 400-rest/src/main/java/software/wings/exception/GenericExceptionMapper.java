@@ -6,10 +6,12 @@
  */
 
 package software.wings.exception;
-
 import static io.harness.eraro.ErrorCode.DEFAULT_ERROR_CODE;
 
 import io.harness.annotations.ExposeInternalException;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ErrorCodeName;
 import io.harness.eraro.Level;
@@ -32,6 +34,8 @@ import lombok.extern.slf4j.Slf4j;
  *
  * @param <T> the generic type
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Slf4j
 public class GenericExceptionMapper<T> implements ExceptionMapper<Throwable> {
   @Context private ResourceInfo resourceInfo;

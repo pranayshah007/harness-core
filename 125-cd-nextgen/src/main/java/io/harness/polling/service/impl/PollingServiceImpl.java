@@ -6,6 +6,8 @@
  */
 
 package io.harness.polling.service.impl;
+import static io.harness.polling.bean.PollingType.ARTIFACT;
+import static io.harness.polling.bean.PollingType.MANIFEST;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 
 import io.harness.annotations.dev.CodePulse;
@@ -16,6 +18,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.dto.PollingInfoForTriggers;
+import io.harness.dto.PollingResponseDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.PollingTriggerStatusUpdateDTO;
 import io.harness.observer.Subject;
@@ -36,6 +39,8 @@ import io.harness.repositories.polling.PollingRepository;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.client.result.UpdateResult;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
@@ -137,8 +142,13 @@ public class PollingServiceImpl implements PollingService {
   }
 
   @Override
-  public String subscribe(PollingItem pollingItem) throws InvalidRequestException {
+  public PollingResponseDTO subscribe(PollingItem pollingItem) throws InvalidRequestException {
     PollingDocument pollingDocument = pollingDocumentMapper.toPollingDocument(pollingItem);
+    String pollingDocId = null;
+    boolean isExistingPollingDoc = false;
+    List<String> lastPolled = new ArrayList<>();
+    Long lastPollingUpdate = null;
+
     PollingDocument existingPollingDoc = null;
     if (pollingDocument.getUuid() != null) {
       existingPollingDoc = pollingRepository.findByUuidAndAccountIdAndSignature(
@@ -147,18 +157,61 @@ public class PollingServiceImpl implements PollingService {
 
     // Determine if update request
     if (existingPollingDoc == null) {
-      return save(pollingDocument);
+      pollingDocId = save(pollingDocument);
+      return PollingResponseDTO.builder().isExistingPollingDoc(false).pollingDocId(pollingDocId).build();
     }
 
     if (existingPollingDoc.getPollingInfo().equals(pollingDocument.getPollingInfo())) {
-      return existingPollingDoc.getUuid();
+      pollingDocId = existingPollingDoc.getUuid();
+      isExistingPollingDoc = true;
+      lastPollingUpdate = existingPollingDoc.getLastModifiedPolledResponseTime() == null
+          ? existingPollingDoc.getLastModifiedAt()
+          : existingPollingDoc.getLastModifiedPolledResponseTime();
+      lastPolled = getPolledKeys(existingPollingDoc);
     } else {
       delete(pollingDocument);
       // Note: This is intentional. The pollingDocId sent to us is stale, we need to set it to null so that the save
       // call creates a new pollingDoc
       pollingDocument.setUuid(null);
-      return save(pollingDocument);
+      pollingDocId = save(pollingDocument);
     }
+    return PollingResponseDTO.builder()
+        .pollingDocId(pollingDocId)
+        .isExistingPollingDoc(isExistingPollingDoc)
+        .lastPollingUpdate(lastPollingUpdate)
+        .lastPolled(lastPolled)
+        .build();
+  }
+
+  private List<String> getPolledKeys(PollingDocument pollingDocument) {
+    if (pollingDocument.getPolledResponse() == null) {
+      return Collections.emptyList();
+    }
+    if (ARTIFACT.equals(pollingDocument.getPollingType())) {
+      if (((ArtifactPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys() == null) {
+        return Collections.emptyList();
+      }
+      if (((ArtifactPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys().size()
+          > MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS) {
+        return new ArrayList<>(((ArtifactPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys())
+            .subList(0, MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS);
+      } else {
+        return new ArrayList<>(((ArtifactPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys());
+      }
+    }
+    if (MANIFEST.equals(pollingDocument.getPollingType())) {
+      if (((ManifestPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys() == null) {
+        return Collections.emptyList();
+      }
+      if (((ManifestPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys().size()
+          > MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS) {
+        return new ArrayList<>(((ManifestPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys())
+            .subList(0, MAX_COLLECTED_VERSIONS_FOR_TRIGGER_STATUS);
+      } else {
+        return new ArrayList<>(((ManifestPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys());
+      }
+    }
+    return Collections.emptyList();
   }
 
   @Override
@@ -224,7 +277,7 @@ public class PollingServiceImpl implements PollingService {
   public PollingInfoForTriggers getPollingInfoForTriggers(String accountId, String pollingDocId) {
     PollingDocument pollingDocument = get(accountId, pollingDocId);
     io.harness.dto.PolledResponse polledResponse = io.harness.dto.PolledResponse.builder().build();
-    if (pollingDocument.getPollingType().equals(PollingType.ARTIFACT)) {
+    if (pollingDocument.getPollingType().equals(ARTIFACT)) {
       if (pollingDocument.getPolledResponse() != null) {
         polledResponse.setAllPolledKeys(
             ((ArtifactPolledResponse) pollingDocument.getPolledResponse()).getAllPolledKeys());
@@ -241,6 +294,7 @@ public class PollingServiceImpl implements PollingService {
       }
     }
     return PollingInfoForTriggers.builder()
+        .pollingDocId(pollingDocId)
         .polledResponse(polledResponse)
         .perpetualTaskId(pollingDocument.getPerpetualTaskId())
         .build();

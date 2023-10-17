@@ -73,6 +73,7 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import dev.morphia.converters.TypeConverter;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
@@ -149,6 +150,13 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
       @Singleton
       List<YamlSchemaRootClass> yamlSchemaRootClass() {
         return ImmutableList.<YamlSchemaRootClass>builder().addAll(CiBeansRegistrars.yamlSchemaRegistrars).build();
+      }
+
+      @Provides
+      @Singleton
+      @Named("harnessCodeGitBaseUrl")
+      String getHarnessCodeGitBaseUrl() {
+        return "http://localhost:3000/git";
       }
     });
 

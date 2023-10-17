@@ -51,21 +51,14 @@ public class HarnessProxyThroughDsl implements DataSourceLocation {
     String requestBody = apiRequestDetails.getRequestBody();
 
     matchAndReplaceHeaders(apiRequestDetails.getHeaders(), replaceableHeaders);
-    log.info("RequestBodyPlaceholder - {}",
-        prepareRequestBodyReplaceablePairs(dataPointsAndInputValues, backstageCatalogEntity));
     requestBody = replaceRequestBodyPlaceholdersIfAny(
         prepareRequestBodyReplaceablePairs(dataPointsAndInputValues, backstageCatalogEntity), requestBody);
     apiUrl = replaceUrlsPlaceholdersIfAny(apiUrl, possibleReplaceableUrlPairs);
-
-    log.info("HarnessProxyDsl, Replaced API - {} Replaced Body - {} ", apiUrl, requestBody);
 
     apiRequestDetails.setRequestBody(requestBody);
     apiRequestDetails.setUrl(apiUrl);
     DslClient dslClient = dslClientFactory.getClient(accountIdentifier, null);
     Response response = getResponse(apiRequestDetails, dslClient, accountIdentifier);
-
-    log.info("Response Status", response.getStatus());
-    log.info("Response Entity", response.getEntity().toString());
 
     return GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class);
   }

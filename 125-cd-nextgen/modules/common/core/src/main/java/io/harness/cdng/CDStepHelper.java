@@ -8,6 +8,7 @@
 package io.harness.cdng;
 
 import static io.harness.beans.FeatureName.CDS_GITHUB_APP_AUTHENTICATION;
+import static io.harness.beans.FeatureName.CDS_NG_K8S_PASS_RELEASE_METADATA;
 import static io.harness.beans.FeatureName.OPTIMIZED_GIT_FETCH_FILES;
 import static io.harness.cdng.ReleaseNameAutoCorrector.isDnsCompliant;
 import static io.harness.cdng.ReleaseNameAutoCorrector.makeDnsCompliant;
@@ -327,6 +328,10 @@ public class CDStepHelper {
             || (isBitbucketTokenAuth((ScmConnector) connectorDTO.getConnectorConfig())));
   }
 
+  public boolean shouldPassReleaseMetadata(String accountId) {
+    return cdFeatureFlagHelper.isEnabled(accountId, CDS_NG_K8S_PASS_RELEASE_METADATA);
+  }
+
   public void addApiAuthIfRequired(ScmConnector scmConnector) {
     if (scmConnector instanceof GithubConnectorDTO && ((GithubConnectorDTO) scmConnector).getApiAccess() == null) {
       GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) scmConnector;
@@ -438,6 +443,10 @@ public class CDStepHelper {
 
   public void convertToRepoGitConfig(GitStoreConfig gitstoreConfig, ScmConnector scmConnector) {
     String repoName = gitstoreConfig.getRepoName() != null ? gitstoreConfig.getRepoName().getValue() : null;
+    convertToRepoGitConfig(gitstoreConfig, scmConnector, repoName);
+  }
+
+  public void convertToRepoGitConfig(GitStoreConfig gitstoreConfig, ScmConnector scmConnector, String repoName) {
     if (scmConnector instanceof GitConfigDTO) {
       GitConfigDTO gitConfigDTO = (GitConfigDTO) scmConnector;
       if (gitConfigDTO.getGitConnectionType() == GitConnectionType.ACCOUNT
@@ -709,14 +718,18 @@ public class CDStepHelper {
   }
 
   private Optional<String> getReleaseNameFromService(Ambiance ambiance) {
-    ServiceStepOutcome serviceStepOutcome = (ServiceStepOutcome) outcomeService.resolve(
-        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
+    ServiceStepOutcome serviceStepOutcome = getServiceStepOutcome(ambiance);
     if (serviceStepOutcome != null && serviceStepOutcome.getRelease() != null
         && serviceStepOutcome.getRelease().getName() != null) {
       String rawReleaseName = serviceStepOutcome.getRelease().getName();
       return Optional.ofNullable(resolveReleaseName(ambiance, rawReleaseName));
     }
     return Optional.empty();
+  }
+
+  public ServiceStepOutcome getServiceStepOutcome(Ambiance ambiance) {
+    return (ServiceStepOutcome) outcomeService.resolve(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
   }
 
   public String getFileContentAsBase64(Ambiance ambiance, String scopedFilePath, long allowedBytesFileSize) {
@@ -1252,9 +1265,11 @@ public class CDStepHelper {
                                                .collect(Collectors.toList()));
   }
 
-  public ScmConnector getScmConnector(ScmConnector scmConnector, String accountIdentifier, GitConfigDTO gitConfigDTO) {
+  public ScmConnector getScmConnector(
+      ScmConnector scmConnector, String accountIdentifier, GitConfigDTO gitConfigDTO, String repoName) {
     if (scmConnector instanceof GithubConnectorDTO && isGithubAppAuth((GithubConnectorDTO) scmConnector)
         && cdFeatureFlagHelper.isEnabled(accountIdentifier, CDS_GITHUB_APP_AUTHENTICATION)) {
+      convertToRepoGitConfig(null, scmConnector, repoName);
       return scmConnector;
     } else {
       return gitConfigDTO;

@@ -6,13 +6,16 @@
  */
 
 package io.harness.delegate.task.ecs;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @OwnedBy(CDP)
 public enum EcsResizeStrategy {
   @JsonProperty(EcsConstants.RESIZE_NEW_FIRST) RESIZE_NEW_FIRST(EcsConstants.RESIZE_NEW_FIRST),

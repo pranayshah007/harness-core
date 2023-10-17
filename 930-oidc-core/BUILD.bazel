@@ -1,0 +1,17 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("//:tools/bazel/harness.bzl", "java_library")
+
+java_library(
+    name = "module",
+    visibility = ["//visibility:public"],
+    exports = [
+        "//930-oidc-core/src/main/java/io/harness/oidc/entities:module",
+        "//930-oidc-core/src/main/java/io/harness/oidc/gcp:module",
+        "//930-oidc-core/src/main/java/io/harness/oidc/jwks:module",
+        "//930-oidc-core/src/main/java/io/harness/oidc/rsa:module",
+    ],
+)
