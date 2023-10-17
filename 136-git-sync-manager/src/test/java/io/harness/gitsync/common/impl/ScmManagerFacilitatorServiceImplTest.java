@@ -46,7 +46,8 @@ import io.harness.gitsync.common.dtos.CreateGitFileRequestDTO;
 import io.harness.gitsync.common.dtos.GetLatestCommitOnFileRequestDTO;
 import io.harness.gitsync.common.dtos.GitFileContent;
 import io.harness.gitsync.common.dtos.UpdateGitFileRequestDTO;
-import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
+import io.harness.gitsync.common.helper.UserSourceCodeManagerHelper;
+import io.harness.gitsync.common.service.GitSyncConnectorService;
 import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.ng.beans.PageRequest;
 import io.harness.product.ci.scm.proto.Commit;
@@ -87,7 +88,8 @@ public class ScmManagerFacilitatorServiceImplTest extends GitSyncTestBase {
   @Mock ConnectorService connectorService;
   @Mock AbstractScmClientFacilitatorServiceImpl abstractScmClientFacilitatorService;
   @Mock YamlGitConfigService yamlGitConfigService;
-  @Mock GitSyncConnectorHelper gitSyncConnectorHelper;
+  @Mock GitSyncConnectorService gitSyncConnectorService;
+  @Mock UserSourceCodeManagerHelper userSourceCodeManagerHelper;
   @Spy @InjectMocks ScmManagerFacilitatorServiceImpl scmManagerFacilitatorService;
   String accountIdentifier = "accountIdentifier";
   String projectIdentifier = "projectIdentifier";
@@ -122,15 +124,15 @@ public class ScmManagerFacilitatorServiceImplTest extends GitSyncTestBase {
     doReturn(Optional.of(ConnectorResponseDTO.builder().connector(connectorInfo).build()))
         .when(connectorService)
         .get(anyString(), anyString(), anyString(), anyString());
-    doReturn(githubConnector).when(gitSyncConnectorHelper).getDecryptedConnector(any(), any());
+    doReturn(githubConnector).when(gitSyncConnectorService).getDecryptedConnector(any(), any());
     doReturn(githubConnector)
-        .when(gitSyncConnectorHelper)
+        .when(gitSyncConnectorService)
         .getDecryptedConnector(anyString(), anyString(), anyString(), anyString());
     doReturn(githubConnector)
-        .when(gitSyncConnectorHelper)
+        .when(gitSyncConnectorService)
         .getDecryptedConnectorByRef(anyString(), anyString(), anyString(), anyString());
     doReturn(githubConnector)
-        .when(gitSyncConnectorHelper)
+        .when(gitSyncConnectorService)
         .getDecryptedConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), anyString());
     when(abstractScmClientFacilitatorService.getYamlGitConfigDTO(
              accountIdentifier, orgIdentifier, projectIdentifier, yamlGitConfigIdentifier))

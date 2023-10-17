@@ -20,6 +20,7 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.polling.PollingDelegateResponse;
 import io.harness.dto.PollingInfoForTriggers;
+import io.harness.dto.PollingResponseDTO;
 import io.harness.ng.webhook.polling.PollingResponseHandler;
 import io.harness.ng.webhook.resources.PollingResource;
 import io.harness.polling.contracts.PollingItem;
@@ -62,7 +63,7 @@ public class PollingResourceTest extends CategoryTest {
   @Owner(developers = MEET)
   @Category(UnitTests.class)
   public void testSubscribe() {
-    when(pollingService.subscribe(any())).thenReturn("pollingDocId");
+    when(pollingService.subscribe(any())).thenReturn(PollingResponseDTO.builder().pollingDocId("pollingDocId").build());
     PollingItem pollingItem = PollingItem.newBuilder().build();
     when(kryoSerializer.asObject((byte[]) any())).thenReturn(pollingItem);
     when(kryoSerializer.asBytes(any())).thenReturn(bytes);

@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.ReleaseMetadataFactory;
 import io.harness.cdng.executables.CdTaskChainExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.helm.ReleaseHelmChartOutcome;
@@ -44,6 +45,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.k8s.model.K8sPod;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -65,6 +67,7 @@ import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
@@ -82,6 +85,7 @@ public class K8sCanaryStep extends CdTaskChainExecutable implements K8sStepExecu
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private InstanceInfoService instanceInfoService;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
+  @Inject private ReleaseMetadataFactory releaseMetadataFactory;
 
   @Override
   public void validateResources(Ambiance ambiance, StepBaseParameters stepParameters) {
@@ -150,6 +154,9 @@ public class K8sCanaryStep extends CdTaskChainExecutable implements K8sStepExecu
     if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
       canaryRequestBuilder.serviceHooks(k8sStepHelper.getServiceHooks(ambiance));
     }
+    if (cdStepHelper.shouldPassReleaseMetadata(accountId)) {
+      canaryRequestBuilder.releaseMetadata(releaseMetadataFactory.createReleaseMetadata(infrastructure, ambiance));
+    }
     Map<String, String> k8sCommandFlag =
         k8sStepHelper.getDelegateK8sCommandFlag(canaryStepParameters.getCommandFlags(), ambiance);
     canaryRequestBuilder.k8sCommandFlags(k8sCommandFlag);
@@ -213,14 +220,20 @@ public class K8sCanaryStep extends CdTaskChainExecutable implements K8sStepExecu
     K8sCanaryDeployResponse k8sCanaryDeployResponse =
         (K8sCanaryDeployResponse) k8sTaskExecutionResponse.getK8sNGTaskResponse();
 
-    K8sCanaryOutcome k8sCanaryOutcome = K8sCanaryOutcome.builder()
-                                            .releaseName(cdStepHelper.getReleaseName(ambiance, infrastructure))
-                                            .releaseNumber(k8sCanaryDeployResponse.getReleaseNumber())
-                                            .targetInstances(k8sCanaryDeployResponse.getCurrentInstances())
-                                            .canaryWorkload(k8sCanaryDeployResponse.getCanaryWorkload())
-                                            .canaryWorkloadDeployed(k8sCanaryDeployResponse.isCanaryWorkloadDeployed())
-                                            .manifest(executionPassThroughData.getK8sGitFetchInfo())
-                                            .build();
+    K8sCanaryOutcome k8sCanaryOutcome =
+        K8sCanaryOutcome.builder()
+            .releaseName(cdStepHelper.getReleaseName(ambiance, infrastructure))
+            .releaseNumber(k8sCanaryDeployResponse.getReleaseNumber())
+            .targetInstances(k8sCanaryDeployResponse.getCurrentInstances())
+            .canaryWorkload(k8sCanaryDeployResponse.getCanaryWorkload())
+            .canaryWorkloadDeployed(k8sCanaryDeployResponse.isCanaryWorkloadDeployed())
+            .manifest(executionPassThroughData.getK8sGitFetchInfo())
+            .podIps(k8sCanaryDeployResponse.getK8sPodList() != null ? k8sCanaryDeployResponse.getK8sPodList()
+                                                                          .stream()
+                                                                          .map(K8sPod::getPodIP)
+                                                                          .collect(Collectors.toList())
+                                                                    : null)
+            .build();
 
     executionSweepingOutputService.consume(
         ambiance, OutcomeExpressionConstants.K8S_CANARY_OUTCOME, k8sCanaryOutcome, StepOutcomeGroup.STEP.name());

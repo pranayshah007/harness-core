@@ -6,10 +6,13 @@
  */
 
 package io.harness.ngmigration.expressions.step;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.ngmigration.beans.ScriptProvisionerOutput;
 import io.harness.ngmigration.beans.StepOutput;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class ShellScriptProvisionerStepFunctor extends StepExpressionFunctor {
   private StepOutput stepOutput;
 

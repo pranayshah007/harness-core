@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAHIL;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -25,6 +26,8 @@ import io.harness.pms.merger.YamlConfig;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.serializer.JsonUtils;
+import io.harness.yaml.core.variables.v1.NGVariableV1Wrapper;
+import io.harness.yaml.core.variables.v1.StringNGVariableV1;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -953,5 +956,18 @@ public class YamlUtilsTest extends CategoryTest {
     assertThat(YamlUtils.writeYamlString(Map.of("k", new TextNode("_12321")))).isEqualTo("k: _12321\n");
     assertThat(YamlUtils.writeYamlString(Map.of("k", new TextNode("123_321_")))).isEqualTo("k: \"123_321_\"\n");
     assertThat(YamlUtils.writeYamlString(Map.of("k", new TextNode("12321_")))).isEqualTo("k: \"12321_\"\n");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.SHALINI)
+  @Category(UnitTests.class)
+  public void testConvert() throws IOException {
+    NGVariableV1Wrapper ngVariableV1Wrapper =
+        YamlUtils.convert(new LinkedHashMap<>(Map.of(YamlNode.UUID_FIELD_NAME, "abc", "var1",
+                              new LinkedHashMap<>(Map.of("type", "string", "value", "abc")))),
+            NGVariableV1Wrapper.class);
+    assertEquals(ngVariableV1Wrapper.getMap().size(), 1);
+    StringNGVariableV1 stringNGVariableV1 = (StringNGVariableV1) ngVariableV1Wrapper.getMap().get("var1");
+    assertEquals(stringNGVariableV1.getValue().getValue(), "abc");
   }
 }

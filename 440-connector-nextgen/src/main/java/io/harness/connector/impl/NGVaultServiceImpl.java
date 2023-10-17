@@ -651,6 +651,7 @@ public class NGVaultServiceImpl implements NGVaultService {
     Optional.ofNullable(specDTO.getUseManagedIdentity()).ifPresent(azureVaultConfig::setUseManagedIdentity);
     Optional.ofNullable(specDTO.getManagedClientId()).ifPresent(azureVaultConfig::setManagedClientId);
     Optional.ofNullable(specDTO.getAzureManagedIdentityType()).ifPresent(azureVaultConfig::setAzureManagedIdentityType);
+    Optional.ofNullable(specDTO.getEnablePurge()).ifPresent(azureVaultConfig::setEnablePurge);
     List<String> vaultNames;
     try {
       vaultNames = listVaultsInternal(accountIdentifier, azureVaultConfig);
@@ -682,6 +683,7 @@ public class NGVaultServiceImpl implements NGVaultService {
             .useManagedIdentity(azureVaultConfig.getUseManagedIdentity())
             .azureManagedIdentityType(azureVaultConfig.getAzureManagedIdentityType())
             .managedClientId(azureVaultConfig.getManagedClientId())
+            .enablePurge(azureVaultConfig.getEnablePurge())
             .build();
     int failedAttempts = 0;
     while (true) {

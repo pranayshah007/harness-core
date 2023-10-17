@@ -13,9 +13,7 @@ import static io.harness.delegate.task.k8s.ManifestType.HELM_CHART;
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
-import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.gcp.GcpCapabilityHelper;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -79,15 +77,14 @@ public class HelmFetchChartVersionRequestNG implements TaskParameters, Execution
           case OCI_HELM:
             OciHelmStoreDelegateConfig ociHelmStoreConfig =
                 (OciHelmStoreDelegateConfig) helmChartManifestDelegateConfig.getStoreDelegateConfig();
-            ConnectorConfigDTO connectorConfigDTO = ociHelmStoreConfig.getConnectorConfigDTO();
             String criteria = null;
-            if (connectorConfigDTO instanceof AwsConnectorDTO) {
+            if (ociHelmStoreConfig.getAwsConnectorDTO() != null) {
               criteria = ociHelmStoreConfig.getRepoName() + ":" + ociHelmStoreConfig.getRegion();
-              capabilities.addAll(
-                  AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorConfigDTO, maskingEvaluator));
-            } else if (connectorConfigDTO instanceof OciHelmConnectorDTO) {
+              capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
+                  ociHelmStoreConfig.getAwsConnectorDTO(), maskingEvaluator));
+            } else if (ociHelmStoreConfig.getOciHelmConnector() != null) {
               criteria = ociHelmStoreConfig.getRepoUrl();
-              OciHelmConnectorDTO ociHelmConnector = (OciHelmConnectorDTO) connectorConfigDTO;
+              OciHelmConnectorDTO ociHelmConnector = ociHelmStoreConfig.getOciHelmConnector();
               populateDelegateSelectorCapability(capabilities, ociHelmConnector.getDelegateSelectors());
             }
             if (isNotEmpty(criteria)) {

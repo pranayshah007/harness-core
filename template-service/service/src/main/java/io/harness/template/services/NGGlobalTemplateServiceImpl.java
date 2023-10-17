@@ -307,6 +307,11 @@ public class NGGlobalTemplateServiceImpl implements NGGlobalTemplateService {
         versionLabel, !deleted, getMetadataOnly, loadFromCache, loadFromFallbackBranch);
   }
 
+  public Page<GlobalTemplateEntity> getAllGlobalTemplate(
+      boolean notDeleted, boolean getMetadataOnly, Pageable pageable) {
+    return ngGlobalTemplateRepository.findAllGlobalTemplateAndDeletedNot(notDeleted, getMetadataOnly, pageable);
+  }
+
   /*
   Read the list contains newly added filePath
   Get the Git content and call create method.
@@ -586,9 +591,10 @@ public class NGGlobalTemplateServiceImpl implements NGGlobalTemplateService {
 
   private void applyTemplatesToYamlAndValidateSchema(GlobalTemplateEntity templateEntity) {
     TemplateMergeResponseDTO templateMergeResponseDTO = null;
+    String yamlVersion = templateEntity.getHarnessVersion();
     templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(templateEntity.getAccountId(),
         templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(),
-        YamlUtils.readAsJsonNode(templateEntity.getYaml()), false, false, false);
+        YamlUtils.readAsJsonNode(templateEntity.getYaml()), false, false, false, yamlVersion);
     populateLinkedTemplatesModules(templateEntity, templateMergeResponseDTO);
     checkLinkedTemplateAccess(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
         templateEntity.getProjectIdentifier(), templateMergeResponseDTO);

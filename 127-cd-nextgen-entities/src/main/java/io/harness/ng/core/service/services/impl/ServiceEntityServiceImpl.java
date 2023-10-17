@@ -36,12 +36,15 @@ import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.eventsframework.producer.Message;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.exception.YamlException;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitx.GitXTransientBranchGuard;
 import io.harness.ng.DuplicateKeyExceptionParser;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.dto.RepoListResponseDTO;
@@ -68,6 +71,7 @@ import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.ng.core.utils.GitXUtils;
 import io.harness.ng.core.utils.ServiceOverrideV2ValidationHelper;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
@@ -90,6 +94,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -105,6 +110,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutorService;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
@@ -147,12 +155,14 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Inject private ServiceEntityValidatorFactory serviceEntityValidatorFactory;
   @Inject private TemplateResourceClient templateResourceClient;
   @Inject private ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
+  @Inject @Named("service-gitx-executor") private ExecutorService executorService;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
       "Service [%s] under Project[%s], Organization [%s] in Account [%s] already exists";
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_ORG =
       "Service [%s] under Organization [%s] in Account [%s] already exists";
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_ACCOUNT = "Service [%s] in Account [%s] already exists";
+  private static final int REMOTE_SERVICE_BATCH_SIZE = 20;
 
   @Inject
   public ServiceEntityServiceImpl(ServiceRepository serviceRepository, EntitySetupUsageService entitySetupUsageService,
@@ -392,6 +402,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
                                    .accountIdentifier(requestService.getAccountId())
                                    .orgIdentifier(requestService.getOrgIdentifier())
                                    .projectIdentifier(requestService.getProjectIdentifier())
+                                   .oldService(serviceEntityOptional.orElse(null))
                                    .service(requestService)
                                    .build());
           }
@@ -619,12 +630,88 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   }
 
   @Override
-  public List<ServiceEntity> getServices(
+  public List<ServiceEntity> getMetadata(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> serviceRefs) {
     if (isEmpty(serviceRefs)) {
       return emptyList();
     }
     return getScopedServiceEntities(accountIdentifier, orgIdentifier, projectIdentifier, serviceRefs);
+  }
+
+  @Override
+  public List<ServiceEntity> getServices(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      List<String> serviceRefs, Map<String, String> servicesMetadataWithGitInfo, boolean loadFromCache) {
+    if (isEmpty(serviceRefs)) {
+      return emptyList();
+    }
+
+    List<ServiceEntity> serviceEntities = null;
+
+    try {
+      serviceEntities = getServicesInternal(
+          accountIdentifier, orgIdentifier, projectIdentifier, serviceRefs, servicesMetadataWithGitInfo, loadFromCache);
+    } catch (CompletionException ex) {
+      // internal method always wraps the CompletionException, so we will have a cause
+      log.error(String.format("Error while getting services: %s", serviceRefs), ex);
+      Throwables.throwIfUnchecked(ex.getCause());
+    } catch (Exception ex) {
+      log.error(String.format("Unexpected error occurred while getting services: %s", serviceRefs), ex);
+      throw new InternalServerErrorException(
+          String.format("Unexpected error occurred while getting services: %s: [%s]", serviceRefs, ex.getMessage()),
+          ex);
+    }
+
+    return serviceEntities;
+  }
+
+  private List<ServiceEntity> getServicesInternal(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, List<String> serviceRefs, Map<String, String> servicesMetadataWithGitInfo,
+      boolean loadFromCache) {
+    // get services without YAML
+    List<ServiceEntity> serviceEntities =
+        getScopedServiceEntities(accountIdentifier, orgIdentifier, projectIdentifier, serviceRefs);
+
+    List<ServiceEntity> remoteServiceEntities = serviceEntities.stream()
+                                                    .filter(entity -> StoreType.REMOTE.equals(entity.getStoreType()))
+                                                    .collect(Collectors.toList());
+
+    long remoteServicesCount = remoteServiceEntities.size();
+
+    if (remoteServicesCount == 0) {
+      return serviceEntities;
+    }
+
+    // Process remote service entities in batches of 20
+    for (int i = 0; i < remoteServiceEntities.size(); i += REMOTE_SERVICE_BATCH_SIZE) {
+      List<ServiceEntity> batch = getBatch(remoteServiceEntities, i);
+
+      List<CompletableFuture<ServiceEntity>> batchFutures = new ArrayList<>();
+
+      for (ServiceEntity serviceEntity : batch) {
+        CompletableFuture<ServiceEntity> future = CompletableFuture.supplyAsync(() -> {
+          String serviceRef = IdentifierRefHelper.getRefFromIdentifierOrRef(serviceEntity.getAccountId(),
+              serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier());
+
+          try (GitXTransientBranchGuard ignore =
+                   new GitXTransientBranchGuard(servicesMetadataWithGitInfo.get(serviceRef))) {
+            // updating YAML for the retrieved entity using git info
+            return serviceRepository.getRemoteServiceWithYaml(serviceEntity, loadFromCache, false);
+          }
+        }, executorService);
+        batchFutures.add(future);
+      }
+
+      // Wait for this batch to complete
+      CompletableFuture<Void> batchAllOf = CompletableFuture.allOf(batchFutures.toArray(new CompletableFuture[0]));
+      batchAllOf.join();
+    }
+
+    return serviceEntities;
+  }
+
+  private static List<ServiceEntity> getBatch(List<ServiceEntity> remoteServiceEntities, int i) {
+    int endIndex = Math.min(i + REMOTE_SERVICE_BATCH_SIZE, remoteServiceEntities.size());
+    return remoteServiceEntities.subList(i, endIndex);
   }
 
   private List<ServiceEntity> getScopedServiceEntities(
@@ -1120,7 +1207,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     checkArgument(isNotEmpty(accountId), ACCOUNT_ID_MUST_BE_PRESENT_ERR_MSG);
     checkArgument(isNotEmpty(serviceIdentifier), "service identifier must be present");
 
-    Optional<ServiceEntity> optionalService = get(accountId, orgId, projectId, serviceIdentifier, false);
+    Optional<ServiceEntity> optionalService = get(accountId, orgId, projectId, serviceIdentifier, false,
+        GitXUtils.parseLoadFromCacheHeaderParam(loadFromCache), false);
 
     if (optionalService.isPresent()) {
       String yaml = optionalService.get().fetchNonEmptyYaml();

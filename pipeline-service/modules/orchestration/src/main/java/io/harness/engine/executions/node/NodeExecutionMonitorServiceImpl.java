@@ -6,57 +6,55 @@
  */
 
 package io.harness.engine.executions.node;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.engine.executions.plan.PipelineExecutionMetric;
-import io.harness.execution.NodeExecution;
-import io.harness.execution.NodeExecution.NodeExecutionKeys;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.metrics.service.api.MetricService;
+import io.harness.monitoring.ExecutionCountWithAccountResult;
 import io.harness.pms.events.PmsEventMonitoringConstants;
 import io.harness.pms.events.base.PmsMetricContextGuard;
-import io.harness.pms.execution.utils.StatusUtils;
-import io.harness.pms.plan.execution.SetupAbstractionKeys;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import java.util.HashMap;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.Map;
-import java.util.Set;
-import org.springframework.data.util.CloseableIterator;
+import javax.cache.Cache;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
+@Singleton
 public class NodeExecutionMonitorServiceImpl implements NodeExecutionMonitorService {
   private static final String NODE_EXECUTION_ACTIVE_EXECUTION_COUNT_METRIC_NAME = "node_execution_active_count";
+  private final NodeExecutionService nodeExecutionService;
+  private final MetricService metricService;
+  private final Cache<String, Integer> metricsCache;
 
-  @Inject private NodeExecutionService nodeExecutionService;
-  @Inject private MetricService metricService;
+  @Inject
+  public NodeExecutionMonitorServiceImpl(NodeExecutionService nodeExecutionService, MetricService metricService,
+      @Named("pmsMetricsCache") Cache<String, Integer> metricsCache) {
+    this.nodeExecutionService = nodeExecutionService;
+    this.metricService = metricService;
+    this.metricsCache = metricsCache;
+  }
 
   @Override
   public void registerActiveExecutionMetrics() {
-    Map<PipelineExecutionMetric, Integer> metricMap = new HashMap<>();
-    try (CloseableIterator<NodeExecution> iterator =
-             nodeExecutionService.fetchAllNodeExecutionsByStatusIteratorFromAnalytics(
-                 StatusUtils.activeStatuses(), Set.of(NodeExecutionKeys.accountId))) {
-      while (iterator.hasNext()) {
-        NodeExecution nodeExecution = iterator.next();
-        PipelineExecutionMetric pipelineExecutionMetric =
-            PipelineExecutionMetric.builder()
-                .accountId(nodeExecution.getAmbiance().getSetupAbstractionsMap().get(SetupAbstractionKeys.accountId))
-                .build();
-
-        metricMap.put(pipelineExecutionMetric, metricMap.getOrDefault(pipelineExecutionMetric, 0) + 1);
-      }
+    boolean alreadyMetricPublished = !metricsCache.putIfAbsent(NODE_EXECUTION_ACTIVE_EXECUTION_COUNT_METRIC_NAME, 1);
+    if (alreadyMetricPublished) {
+      return;
     }
 
-    for (Map.Entry<PipelineExecutionMetric, Integer> entry : metricMap.entrySet()) {
+    for (ExecutionCountWithAccountResult accountResult : nodeExecutionService.aggregateRunningNodesCountPerAccount()) {
       Map<String, String> metricContextMap =
           ImmutableMap.<String, String>builder()
-              .put(PmsEventMonitoringConstants.ACCOUNT_ID, entry.getKey().getAccountId())
+              .put(PmsEventMonitoringConstants.ACCOUNT_ID, accountResult.getAccountId())
               .build();
 
       try (PmsMetricContextGuard pmsMetricContextGuard = new PmsMetricContextGuard(metricContextMap)) {
-        metricService.recordMetric(NODE_EXECUTION_ACTIVE_EXECUTION_COUNT_METRIC_NAME, entry.getValue());
+        metricService.recordMetric(NODE_EXECUTION_ACTIVE_EXECUTION_COUNT_METRIC_NAME, accountResult.getCount());
       }
     }
   }

@@ -30,6 +30,7 @@ public enum ServiceNowActionNG {
   GET_IMPORT_SET_STAGING_TABLES("Get Import Set Staging Tables"),
   GET_TICKET_TYPES("Get Ticket Types"),
   GET_STANDARD_TEMPLATES_READONLY_FIELDS("Get read only fields for standard templates"),
+  CREATE_TICKET_USING_STANDARD_TEMPLATE("Create ticket using standard template"),
   GET_METADATA_V2("Get Metadata V2");
 
   private final String displayName;

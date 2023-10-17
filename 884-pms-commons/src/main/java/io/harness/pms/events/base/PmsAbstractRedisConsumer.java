@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import javax.cache.Cache;
 import lombok.extern.slf4j.Slf4j;
 
@@ -76,13 +77,14 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
     try {
       preThreadHandler();
       do {
-        while (getMaintenanceFlag()) {
-          log.info("We are under maintenance, will try again after {} seconds", SLEEP_SECONDS);
-          sleep(ofSeconds(SLEEP_SECONDS));
+        if (getMaintenanceFlag()) {
+          log.info("We are currently under maintenance");
+          while (getMaintenanceFlag()) {
+            sleep(ofSeconds(SLEEP_SECONDS));
+          }
+          log.info("Maintenance is finished. We are in working state again");
         }
         if (queueController.isNotPrimary()) {
-          log.info(this.getClass().getSimpleName()
-              + " is not running on primary deployment, will try again after some time...");
           TimeUnit.SECONDS.sleep(30);
           continue;
         }
@@ -114,12 +116,24 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
     String messageId;
     boolean messageProcessed;
     messages = redisConsumer.read(Duration.ofSeconds(WAIT_TIME_IN_SECONDS));
-    for (Message message : messages) {
+    List<Message> processableMessages =
+        messages.stream().filter(messageListener::isProcessable).collect(Collectors.toList());
+    List<String> processableMessageIds = processableMessages.stream().map(Message::getId).collect(Collectors.toList());
+    if (processableMessages.size() > 0) {
+      log.info("Read message with messages with ids [{}] from redis", processableMessageIds);
+    }
+    for (Message message : processableMessages) {
       messageId = message.getId();
       messageProcessed = handleMessage(message);
       if (messageProcessed) {
         redisConsumer.acknowledge(messageId);
       }
+    }
+    List<Message> notProcessableMessages = messages.stream()
+                                               .filter(message -> !processableMessageIds.contains(message.getId()))
+                                               .collect(Collectors.toList());
+    for (Message message : notProcessableMessages) {
+      redisConsumer.acknowledge(message.getId());
     }
     if (messages.size() < this.redisConsumer.getBatchSize()) {
       // Adding thread sleep when the events read are less than the batch-size. This way when the load is high, consumer
@@ -137,8 +151,7 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
   @Override
   protected boolean processMessage(Message message) {
     AtomicBoolean success = new AtomicBoolean(true);
-    if (messageListener.isProcessable(message) && !isAlreadyProcessed(message)) {
-      log.info("Read message with message id {} from redis", message.getId());
+    if (!isAlreadyProcessed(message)) {
       long readTs = System.currentTimeMillis();
       executorService.submit(() -> {
         try (AutoLogContext ignore = new MessageLogContext(message)) {

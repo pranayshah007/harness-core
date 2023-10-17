@@ -6,15 +6,17 @@
  */
 
 package io.harness.ngmigration.service.artifactstream;
-
 import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
 import static io.harness.ngtriggers.beans.source.artifact.ArtifactoryRegistrySpec.ArtifactoryRegistrySpecBuilder;
 
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 import static software.wings.utils.RepositoryType.docker;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.connector.ConnectorDTO;
@@ -41,6 +43,7 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public class ArtifactoryArtifactStreamMapper implements ArtifactStreamMapper {
   @Override

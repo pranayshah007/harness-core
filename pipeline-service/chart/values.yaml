@@ -11,6 +11,7 @@ global:
   commonLabels: {}
   loadbalancerURL: ""
   stackDriverLoggingEnabled: false
+  disableFreezeNotifyTemplate: true
   database:
     postgres:
       ## - installed = true if installed within cluster

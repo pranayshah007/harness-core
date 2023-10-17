@@ -138,7 +138,7 @@ public class BudgetResource {
     properties.put(MODULE, MODULE_NAME);
     properties.put(BUDGET_PERIOD, budget.getPeriod());
     properties.put(BUDGET_TYPE, budget.getType());
-    properties.put(ALERTS_COUNT, budget.getAlertThresholds().length);
+    properties.put(ALERTS_COUNT, budget.getAlertThresholds() == null ? 0 : budget.getAlertThresholds().length);
     String createCall = budgetService.create(budget);
     telemetryReporter.sendTrackEvent(
         BUDGET_CREATED, null, accountId, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);

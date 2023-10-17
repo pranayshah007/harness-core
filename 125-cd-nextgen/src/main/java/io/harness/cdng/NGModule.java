@@ -60,6 +60,8 @@ import io.harness.cdng.execution.service.StageExecutionInfoServiceImpl;
 import io.harness.cdng.execution.service.StageExecutionInstanceInfoService;
 import io.harness.cdng.execution.service.StageExecutionInstanceInfoServiceImpl;
 import io.harness.cdng.gitops.ClusterServiceImpl;
+import io.harness.cdng.gitops.gitrestraint.services.GitRestraintInstanceService;
+import io.harness.cdng.gitops.gitrestraint.services.GitRestraintInstanceServiceImpl;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.instance.info.InstanceInfoServiceImpl;
@@ -119,11 +121,14 @@ import io.harness.cdng.usage.impl.CDLicenseUsageImpl;
 import io.harness.cdng.usage.impl.CDLicenseUsageReportServiceImpl;
 import io.harness.cdng.yaml.CdYamlSchemaService;
 import io.harness.cdng.yaml.CdYamlSchemaServiceImpl;
+import io.harness.delay.AbstractOrchestrationDelayModule;
 import io.harness.filter.FilterType;
 import io.harness.filter.impl.FilterServiceImpl;
 import io.harness.filter.mapper.FilterPropertiesMapper;
 import io.harness.filter.service.FilterService;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
+import io.harness.metrics.impl.DelegateMetricsServiceImpl;
+import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.migration.NGMigrationSdkModule;
 import io.harness.ng.core.NGCoreModule;
 import io.harness.ng.core.environment.services.EnvironmentService;
@@ -175,6 +180,12 @@ public class NGModule extends AbstractModule {
     install(NGCoreModule.getInstance());
     install(WalkTreeModule.getInstance());
     install(NGMigrationSdkModule.getInstance());
+    install(new AbstractOrchestrationDelayModule() {
+      @Override
+      public boolean forNG() {
+        return true;
+      }
+    });
 
     bind(ArtifactSourceService.class).to(ArtifactSourceServiceImpl.class);
     bind(DockerResourceService.class).to(DockerResourceServiceImpl.class);
@@ -202,6 +213,7 @@ public class NGModule extends AbstractModule {
     bind(TasResourceService.class).to(TasResourceServiceImpl.class);
     bind(JenkinsResourceService.class).to(JenkinsResourceServiceImpl.class);
     bind(GithubPackagesResourceService.class).to(GithubPackagesResourceServiceImpl.class);
+    bind(DelegateMetricsService.class).to(DelegateMetricsServiceImpl.class);
     bind(AzureArtifactsResourceService.class).to(AzureArtifactsResourceServiceImpl.class);
     bind(AMIResourceService.class).to(AMIResourceServiceImpl.class);
     bind(FilterService.class).to(FilterServiceImpl.class);
@@ -235,6 +247,7 @@ public class NGModule extends AbstractModule {
     bind(ServiceOverrideV2SettingsUpdateService.class).to(ServiceOverrideV2SettingsUpdateServiceImpl.class);
     bind(CDLicenseUsageReportService.class).to(CDLicenseUsageReportServiceImpl.class);
     bind(ManifestTaskService.class).to(ManifestTaskServiceImpl.class);
+    bind(GitRestraintInstanceService.class).to(GitRestraintInstanceServiceImpl.class);
     bind(SecretRuntimeUsageService.class).to(SecretRuntimeUsageServiceImpl.class);
 
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =

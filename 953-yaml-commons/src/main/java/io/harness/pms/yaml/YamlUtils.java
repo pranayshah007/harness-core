@@ -112,6 +112,10 @@ public class YamlUtils {
     return mapper.readValue(yaml, cls);
   }
 
+  public <T> T convert(Object object, Class<T> cls) throws IOException {
+    return mapper.convertValue(object, cls);
+  }
+
   public <T> T readWithDefaultObjectMapper(String yaml, Class<T> cls) throws IOException {
     return NG_DEFAULT_OBJECT_MAPPER.readValue(yaml, cls);
   }

@@ -6,13 +6,16 @@
  */
 
 package io.harness.ngmigration.template;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 
 import software.wings.beans.template.Template;
 import software.wings.beans.template.TemplateType;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public class TemplateFactory {
   private static final HttpTemplateService httpTemplateService = new HttpTemplateService();

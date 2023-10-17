@@ -67,12 +67,24 @@ if [ -z "$SHARED_CA_CERTS_PATH" ]; then
      mkdir -p $SHARED_CA_CERTS_PATH
 fi
 
+# Add a variable to store the path of the concatenated .pem file
+CONCATENATED_PEM_PATH="$SHARED_CA_CERTS_PATH/single-cert-path/all-certs.pem"
+# Create the directory if it doesn't exist
+mkdir -p "$SHARED_CA_CERTS_PATH/single-cert-path"
+# Initialize the concatenated .pem file with an empty string
+cat /dev/null > "$CONCATENATED_PEM_PATH"
+
 for FILE in $CA_CERTS_DIR/*; do
   NUM_PEM_BLOCKS=$(grep 'END CERTIFICATE' $FILE | wc -l)
   # if NUM_PEM_BLOCKS greater than 0, we think it's a PEM file
   if [ $NUM_PEM_BLOCKS -gt 0 ]; then
     echo "Importing PEM $FILE to java truststore..."
     import_pem_file "$FILE" $NUM_PEM_BLOCKS
+
+    # Append the current certificate to the concatenated .pem file
+    cat "$FILE" >> "$CONCATENATED_PEM_PATH"
+    # Add a delimiter (e.g., a blank line) between certificates
+    echo -e "\n" >> "$CONCATENATED_PEM_PATH"
   else
     # if it's not pem file, best effort to import cert
     echo "Importing $FILE to java truststore..."

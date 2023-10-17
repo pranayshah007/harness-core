@@ -169,6 +169,7 @@ io.harness.cdng.ssh.CommandStepInfo
 io.harness.cdng.aws.asg.AsgCanaryDeployStepParameters
 io.harness.cdng.infra.InfrastructureDef
 io.harness.cdng.tas.outcome.TasAppResizeDataOutcome
+io.harness.cdng.tas.outcome.TanzuCommandOutcome
 io.harness.cdng.infra.yaml.AwsSamInfrastructure
 io.harness.cdng.gitops.MergePROutcome
 io.harness.cdng.provision.terraform.TerraformRollbackStepNode
@@ -1243,6 +1244,9 @@ io.harness.delegate.task.aws.asg.AutoScalingGroupInstance
 io.harness.delegate.beans.azure.appservicesettings.AzureAppServiceApplicationSettingDTO
 io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO
 io.harness.cdng.provision.terraform.TerraformInlineVarFileConfig
+io.harness.cdng.provision.terraform.AWSIAMRoleCredentialSpec
+io.harness.cdng.provision.terraform.TerraformProviderCredential
+io.harness.cdng.provision.terraform.TerraformAwsProviderCredentialConfig
 io.harness.delegate.beans.connector.customsecretmanager.TemplateLinkConfigForCustomSecretManager
 io.harness.cdng.azure.webapp.beans.AzureWebAppSwapSlotsDataOutput
 io.harness.cdng.ecs.beans.EcsManifestsContent
@@ -1294,3 +1298,12 @@ io.harness.cdng.ecs.EcsBasicRollbackStepParameters
 io.harness.cdng.ecs.EcsUpgradeContainerStepNode
 io.harness.cdng.ecs.EcsServiceSetupStepNode
 io.harness.cdng.ecs.EcsBasicRollbackStepNode
+io.harness.beans.yaml.extended.cache.CachePolicy
+io.harness.beans.steps.stepinfo.GARStepInfo
+io.harness.cdng.provision.awscdk.beans.AwsCdkOutcome
+io.harness.cdng.ecs.EcsBasicPrepareDeployDataOutcome
+io.harness.cdng.ecs.beans.EcsUpgradeContainerOutcome
+io.harness.cdng.ecs.EcsBasicPrepareRollbackDataOutcome
+io.harness.cdng.ecs.beans.EcsServiceSetupOutcome
+io.harness.cdng.ecs.beans.EcsBasicRollbackOutcome
+io.harness.cdng.manifest.yaml.ManifestSourceWrapper

@@ -6,13 +6,16 @@
  */
 
 package io.harness.cdng.creator.plan.stage;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.CUSTOM;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
+import io.harness.cdng.creator.plan.service.ServiceAllInOnePlanCreatorUtils;
 import io.harness.cdng.environment.helper.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.environment.helper.beans.CustomStageEnvironmentStepParameters;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
@@ -62,6 +65,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT, HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.CDC)
 public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStageNode> {
   @Inject private KryoSerializer kryoSerializer;
@@ -202,13 +207,26 @@ public class CustomStagePlanCreator extends AbstractStagePlanCreator<CustomStage
     } else if (ParameterField.isNotNull(finalEnvironmentYamlV2.getInfrastructureDefinition())) {
       infraRef = finalEnvironmentYamlV2.getInfrastructureDefinition().getValue().getIdentifier();
     }
+    List<String> childrenNodeIds = new ArrayList<>();
+
+    // Add manifests node
+    PlanNode manifestsNode = ServiceAllInOnePlanCreatorUtils.getManifestsNode();
+    planCreationResponseMap.put(
+        manifestsNode.getUuid(), PlanCreationResponse.builder().planNode(manifestsNode).build());
+    childrenNodeIds.add(manifestsNode.getUuid());
+
+    // Add configFiles node
+    PlanNode configFilesNode = ServiceAllInOnePlanCreatorUtils.getConfigFilesNode();
+    planCreationResponseMap.put(
+        configFilesNode.getUuid(), PlanCreationResponse.builder().planNode(configFilesNode).build());
+    childrenNodeIds.add(configFilesNode.getUuid());
 
     final CustomStageEnvironmentStepParameters stepParameters =
         CustomStageEnvironmentStepParameters.builder()
             .envRef(finalEnvironmentYamlV2.getEnvironmentRef())
             .envInputs(finalEnvironmentYamlV2.getEnvironmentInputs())
             .infraId(infraRef)
-            .childrenNodeIds(new ArrayList<>())
+            .childrenNodeIds(childrenNodeIds)
             .build();
 
     final PlanNode envNode =

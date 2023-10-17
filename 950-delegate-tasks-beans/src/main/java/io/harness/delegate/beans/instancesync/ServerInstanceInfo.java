@@ -6,9 +6,11 @@
  */
 
 package io.harness.delegate.beans.instancesync;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.beans.instancesync.info.AsgServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AwsLambdaServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.AwsSamServerInstanceInfo;
@@ -33,6 +35,8 @@ import javax.annotation.Nullable;
  * Extend this class and create deployment specific server instance structs that will
  * contain details with respect to the logical instance entity on the server
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
   @JsonSubTypes.Type(value = K8sServerInstanceInfo.class, name = "K8sServerInstanceInfo")

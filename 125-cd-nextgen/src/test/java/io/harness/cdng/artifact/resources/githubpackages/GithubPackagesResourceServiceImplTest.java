@@ -26,6 +26,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.resources.githubpackages.dtos.GithubPackagesResponseDTO;
 import io.harness.cdng.artifact.resources.githubpackages.service.GithubPackagesResourceServiceImpl;
+import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -106,6 +107,7 @@ public class GithubPackagesResourceServiceImplTest extends CategoryTest {
   @Mock SecretManagerClientService secretManagerClientService;
 
   @Mock DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Mock ArtifactStepHelper artifactStepHelper;
 
   @Spy @InjectMocks GithubPackagesResourceServiceImpl githubPackagesResourceService;
 
@@ -424,7 +426,7 @@ public class GithubPackagesResourceServiceImplTest extends CategoryTest {
 
     when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(connectorResponse));
 
-    when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(encryptionDetails);
+    when(artifactStepHelper.getGithubEncryptedDetails(any(), any())).thenReturn(encryptionDetails);
 
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
 
@@ -525,7 +527,7 @@ public class GithubPackagesResourceServiceImplTest extends CategoryTest {
 
     when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(connectorResponse));
 
-    when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(encryptionDetails);
+    when(artifactStepHelper.getGithubEncryptedDetails(any(), any())).thenReturn(encryptionDetails);
 
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
 

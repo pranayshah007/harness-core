@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.ABHINAV_MITTAL;
 import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.TATHAGAT;
+import static io.harness.rule.OwnerRule.VINIT_KUMAR;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -65,6 +66,7 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import junitparams.JUnitParamsRunner;
@@ -95,6 +97,7 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
                                                   .orgIdentifier("orgId")
                                                   .projectIdentifier("projectId")
                                                   .name("my-service")
+                                                  .type(KUBERNETES)
                                                   .yaml("service:\n"
                                                       + "    name: my-service\n"
                                                       + "    identifier: service-id\n"
@@ -138,11 +141,12 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
 
     doReturn(Optional.of(serviceEntity))
         .when(serviceEntityService)
-        .get("accountId", "orgId", "projectId", "service-id", false);
+        .getMetadata("accountId", "orgId", "projectId", "service-id", false);
     doReturn(List.of(serviceEntity))
         .when(serviceEntityService)
-        .getServices("accountId", "orgId", "projectId", List.of("service-id"));
+        .getMetadata("accountId", "orgId", "projectId", List.of("service-id"));
     doReturn(Optional.of(envEntity)).when(environmentService).get("accountId", "orgId", "projectId", "env-id", false);
+
     doReturn(Optional.of(infra)).when(infraService).get("accountId", "orgId", "projectId", "env-id", "infra-id");
     doReturn(Lists.newArrayList(infra))
         .when(infraService)
@@ -384,6 +388,38 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
     assertThatExceptionOfType(InvalidYamlRuntimeException.class).isThrownBy(() -> filterCreator.getFilter(ctx, node));
   }
 
+  @Test
+  @Owner(developers = VINIT_KUMAR)
+  @Category(UnitTests.class)
+  public void testValidateMultiServices() throws IOException {
+    final DeploymentStageNode node = new DeploymentStageNode();
+    node.setDeploymentStageConfig(
+        DeploymentStageConfig.builder()
+            .services(ServicesYaml.builder().values(ParameterField.createValueField(Collections.emptyList())).build())
+            .environment(EnvironmentYamlV2.builder()
+                             .environmentRef(ParameterField.<String>builder().value(envEntity.getIdentifier()).build())
+                             .deployToAll(ParameterField.createValueField(false))
+                             .infrastructureDefinition(ParameterField.createValueField(
+                                 InfraStructureDefinitionYaml.builder()
+                                     .identifier(ParameterField.createValueField(infra.getIdentifier()))
+                                     .build()))
+                             .build())
+            .deploymentType(KUBERNETES)
+            .build());
+    YamlField fullYamlField = new YamlField(YamlNode.fromYamlPath(getYaml("validateMultiServices.yaml"), ""));
+    YamlField currentField = fullYamlField.fromYamlPath("spec");
+    FilterCreationContext ctx = FilterCreationContext.builder()
+                                    .setupMetadata(SetupMetadata.newBuilder()
+                                                       .setAccountId("accountId")
+                                                       .setOrgId("orgId")
+                                                       .setProjectId("projectId")
+                                                       .build())
+                                    .currentField(currentField)
+                                    .build();
+    assertThatExceptionOfType(InvalidYamlRuntimeException.class)
+        .isThrownBy(() -> filterCreator.getFilter(ctx, node))
+        .withMessage("Atleast one service is required, Please select a service and try again");
+  }
   @Test
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)

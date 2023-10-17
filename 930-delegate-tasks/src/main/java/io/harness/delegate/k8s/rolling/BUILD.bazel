@@ -13,6 +13,7 @@ java_library(
     deps = [
         "//:lombok",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/k8s/request:module",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/k8s/utils:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/k8s/client:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/k8s/containerdeployment:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/k8s/istio:module",

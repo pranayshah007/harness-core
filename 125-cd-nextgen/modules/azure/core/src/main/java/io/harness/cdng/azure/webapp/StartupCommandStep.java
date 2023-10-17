@@ -56,6 +56,7 @@ public class StartupCommandStep implements SyncExecutable<StartupCommandParamete
     logCallback.saveExecutionLog("Processing startup command...");
     StoreConfigWrapper storeConfig = stepParameters.getStartupCommand().getStore();
     azureHelperService.validateSettingsStoreReferences(storeConfig, ambiance, ENTITY_TYPE);
+    azureHelperService.publishSecretRuntimeUsage(ambiance, storeConfig);
     logCallback.saveExecutionLog("Processed startup command");
     return StepResponse.builder()
         .status(Status.SUCCEEDED)

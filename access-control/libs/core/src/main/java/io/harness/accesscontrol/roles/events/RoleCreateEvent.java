@@ -46,6 +46,9 @@ public class RoleCreateEvent implements Event {
   @JsonIgnore
   @Override
   public ResourceScope getResourceScope() {
+    if (scope == null) {
+      return null;
+    }
     if (isEmpty(scope.getOrgIdentifier())) {
       return new AccountScope(accountIdentifier);
     } else if (isEmpty(scope.getProjectIdentifier())) {

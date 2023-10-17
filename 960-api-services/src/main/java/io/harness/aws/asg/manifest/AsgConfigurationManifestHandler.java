@@ -119,13 +119,15 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
 
     if (autoScalingGroup == null) {
       asgSdkManager.info("Creating Asg %s", asgName);
-      asgSdkManager.createASG(asgName, chainState.getLaunchTemplateVersion(), createAutoScalingGroupRequest);
+      asgSdkManager.createASG(asgName, chainState.getLaunchTemplateName(), chainState.getLaunchTemplateVersion(),
+          createAutoScalingGroupRequest);
       asgSdkManager.info("Waiting for Asg %s to reach steady state", asgName);
       asgSdkManager.waitReadyState(asgName, asgSdkManager::checkAllInstancesInReadyState, operationName);
       asgSdkManager.infoBold("Created Asg %s successfully", asgName);
     } else {
       asgSdkManager.info("Updating Asg %s", asgName);
-      asgSdkManager.updateASG(asgName, chainState.getLaunchTemplateVersion(), createAutoScalingGroupRequest);
+      asgSdkManager.updateASG(asgName, chainState.getLaunchTemplateName(), chainState.getLaunchTemplateVersion(),
+          createAutoScalingGroupRequest);
       asgSdkManager.info("Waiting for Asg %s to reach steady state", asgName);
       if (Integer.valueOf(0).equals(createAutoScalingGroupRequest.getDesiredCapacity())) {
         asgSdkManager.waitReadyState(asgName, asgSdkManager::checkAsgDownsizedToZero, operationName);

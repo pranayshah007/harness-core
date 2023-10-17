@@ -1226,7 +1226,8 @@ public class TasStepHelper {
     } else {
       commandUnits.add(CfCommandUnitConstants.FetchCommandScript);
     }
-    commandUnits.addAll(Arrays.asList(CfCommandUnitConstants.Pcfplugin, CfCommandUnitConstants.Wrapup));
+    commandUnits.addAll(Arrays.asList(CfCommandUnitConstants.ResolveInputOutputVariables,
+        CfCommandUnitConstants.Pcfplugin, CfCommandUnitConstants.Wrapup));
     return commandUnits;
   }
 

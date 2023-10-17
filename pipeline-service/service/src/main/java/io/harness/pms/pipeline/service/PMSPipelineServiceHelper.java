@@ -264,6 +264,10 @@ public class PMSPipelineServiceHelper {
     }
   }
 
+  public PipelineEntity updatePipelineFilters(PipelineEntity pipelineToUpdate, String uuid, Integer yamlHash) {
+    return pmsPipelineRepository.updatePipelineFilters(pipelineToUpdate, uuid, yamlHash);
+  }
+
   @VisibleForTesting
   static void checkAndThrowMismatchInImportedPipelineMetadataInternal(String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, String importedPipeline) {

@@ -45,26 +45,23 @@ public class AWSOrganizationHelperServiceImpl implements AWSOrganizationHelperSe
     CrossAccountAccessDTO crossAccountAccess = ceAwsConnectorDTO.getCrossAccountAccess();
     List<Account> accountList =
         listAwsAccounts(crossAccountAccess, awsAccessKey, awsSecretKey, ceProxyConfig, ceAwsServiceEndpointConfig);
-    String masterAwsAccountId = getMasterAccountIdFromArn(crossAccountAccess.getCrossAccountRoleArn());
     accountList.forEach(account -> {
       String awsAccountId = getAccountIdFromArn(account.getArn());
-      if (!awsAccountId.equals(masterAwsAccountId)) {
-        CECloudAccount cloudAccount =
-            CECloudAccount.builder()
-                .accountId(accountId)
-                .accountArn(account.getArn())
-                .accountStatus(CECloudAccount.AccountStatus.NOT_VERIFIED)
-                .accountName(account.getName())
-                .infraAccountId(awsAccountId)
-                .infraMasterAccountId(ceAwsConnectorDTO.getAwsAccountId())
-                .masterAccountSettingId(connectorId)
-                .awsCrossAccountAttributes(AwsCrossAccountAttributes.builder()
-                                               .crossAccountRoleArn(crossAccountAccess.getCrossAccountRoleArn())
-                                               .externalId(crossAccountAccess.getExternalId())
-                                               .build())
-                .build();
-        ceCloudAccounts.add(cloudAccount);
-      }
+      CECloudAccount cloudAccount =
+          CECloudAccount.builder()
+              .accountId(accountId)
+              .accountArn(account.getArn())
+              .accountStatus(CECloudAccount.AccountStatus.NOT_VERIFIED)
+              .accountName(account.getName())
+              .infraAccountId(awsAccountId)
+              .infraMasterAccountId(ceAwsConnectorDTO.getAwsAccountId())
+              .masterAccountSettingId(connectorId)
+              .awsCrossAccountAttributes(AwsCrossAccountAttributes.builder()
+                                             .crossAccountRoleArn(crossAccountAccess.getCrossAccountRoleArn())
+                                             .externalId(crossAccountAccess.getExternalId())
+                                             .build())
+              .build();
+      ceCloudAccounts.add(cloudAccount);
     });
     log.info("CE cloud account {}", ceCloudAccounts);
     return ceCloudAccounts;
@@ -80,10 +77,6 @@ public class AWSOrganizationHelperServiceImpl implements AWSOrganizationHelperSe
 
   public static String getAccountIdFromArn(String arn) {
     return StringUtils.substringAfterLast(arn, "/");
-  }
-
-  public static String getMasterAccountIdFromArn(String arn) {
-    return StringUtils.substringBefore(StringUtils.substringAfterLast(arn, "iam::"), ":");
   }
 
   public List<Account> listAwsAccounts(AWSOrganizationsClient awsOrganizationsClient) {

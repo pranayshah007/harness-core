@@ -8,6 +8,7 @@
 package io.harness.cdng;
 
 import static io.harness.beans.FeatureName.CDS_GITHUB_APP_AUTHENTICATION;
+import static io.harness.beans.FeatureName.CDS_NG_K8S_PASS_RELEASE_METADATA;
 import static io.harness.beans.FeatureName.OPTIMIZED_GIT_FETCH_FILES;
 import static io.harness.cdng.ReleaseNameAutoCorrector.isDnsCompliant;
 import static io.harness.cdng.ReleaseNameAutoCorrector.makeDnsCompliant;
@@ -28,6 +29,7 @@ import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AZ
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_GCP;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_RANCHER;
+import static io.harness.utils.SecretUtils.containsSecret;
 import static io.harness.validation.Validator.notEmptyCheck;
 
 import static software.wings.beans.LogHelper.color;
@@ -86,6 +88,7 @@ import io.harness.connector.helper.GithubAppDTOToGithubAppSpecDTOMapper;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.task.git.GitAuthenticationDecryptionHelper;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
+import io.harness.data.encoding.EncodingUtils;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.SubmitTaskRequest;
 import io.harness.delegate.TaskSelector;
@@ -325,6 +328,10 @@ public class CDStepHelper {
             || (isBitbucketTokenAuth((ScmConnector) connectorDTO.getConnectorConfig())));
   }
 
+  public boolean shouldPassReleaseMetadata(String accountId) {
+    return cdFeatureFlagHelper.isEnabled(accountId, CDS_NG_K8S_PASS_RELEASE_METADATA);
+  }
+
   public void addApiAuthIfRequired(ScmConnector scmConnector) {
     if (scmConnector instanceof GithubConnectorDTO && ((GithubConnectorDTO) scmConnector).getApiAccess() == null) {
       GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) scmConnector;
@@ -436,6 +443,10 @@ public class CDStepHelper {
 
   public void convertToRepoGitConfig(GitStoreConfig gitstoreConfig, ScmConnector scmConnector) {
     String repoName = gitstoreConfig.getRepoName() != null ? gitstoreConfig.getRepoName().getValue() : null;
+    convertToRepoGitConfig(gitstoreConfig, scmConnector, repoName);
+  }
+
+  public void convertToRepoGitConfig(GitStoreConfig gitstoreConfig, ScmConnector scmConnector, String repoName) {
     if (scmConnector instanceof GitConfigDTO) {
       GitConfigDTO gitConfigDTO = (GitConfigDTO) scmConnector;
       if (gitConfigDTO.getGitConnectionType() == GitConnectionType.ACCOUNT
@@ -707,8 +718,7 @@ public class CDStepHelper {
   }
 
   private Optional<String> getReleaseNameFromService(Ambiance ambiance) {
-    ServiceStepOutcome serviceStepOutcome = (ServiceStepOutcome) outcomeService.resolve(
-        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
+    ServiceStepOutcome serviceStepOutcome = getServiceStepOutcome(ambiance);
     if (serviceStepOutcome != null && serviceStepOutcome.getRelease() != null
         && serviceStepOutcome.getRelease().getName() != null) {
       String rawReleaseName = serviceStepOutcome.getRelease().getName();
@@ -717,8 +727,30 @@ public class CDStepHelper {
     return Optional.empty();
   }
 
+  public ServiceStepOutcome getServiceStepOutcome(Ambiance ambiance) {
+    return (ServiceStepOutcome) outcomeService.resolve(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
+  }
+
   public String getFileContentAsBase64(Ambiance ambiance, String scopedFilePath, long allowedBytesFileSize) {
     String content = getFileContentAsString(ambiance, scopedFilePath, allowedBytesFileSize);
+    if (isEmpty(content)) {
+      return null;
+    }
+
+    boolean fileContentContainSecret = containsSecret(content);
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    if (fileContentContainSecret) {
+      log.warn("File content to be encoded as base64 contains secret, accountId: {}, scopedFilePath: {}", accountId,
+          scopedFilePath);
+    }
+
+    if (notSupportSecretsInBase64Expressions(accountId)) {
+      // We still need to support "${ngBase64Manager.encode(\"" + content + "\")}" because of backward compatibility.
+      return fileContentContainSecret ? "${ngBase64Manager.encode(\"" + content + "\")}"
+                                      : EncodingUtils.encodeBase64(content);
+    }
+
     return "${ngBase64Manager.encode(\"" + content + "\")}";
   }
 
@@ -897,6 +929,10 @@ public class CDStepHelper {
 
   public boolean isStoreReleaseHash(String accountId) {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_SUPPORT_SKIPPING_BG_DEPLOYMENT_NG);
+  }
+
+  public boolean notSupportSecretsInBase64Expressions(String accountId) {
+    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_NOT_SUPPORT_SECRETS_BASE64_EXPRESSION);
   }
 
   public LogCallback getLogCallback(String commandUnitName, Ambiance ambiance, boolean shouldOpenStream) {
@@ -1229,9 +1265,11 @@ public class CDStepHelper {
                                                .collect(Collectors.toList()));
   }
 
-  public ScmConnector getScmConnector(ScmConnector scmConnector, String accountIdentifier, GitConfigDTO gitConfigDTO) {
+  public ScmConnector getScmConnector(
+      ScmConnector scmConnector, String accountIdentifier, GitConfigDTO gitConfigDTO, String repoName) {
     if (scmConnector instanceof GithubConnectorDTO && isGithubAppAuth((GithubConnectorDTO) scmConnector)
         && cdFeatureFlagHelper.isEnabled(accountIdentifier, CDS_GITHUB_APP_AUTHENTICATION)) {
+      convertToRepoGitConfig(null, scmConnector, repoName);
       return scmConnector;
     } else {
       return gitConfigDTO;

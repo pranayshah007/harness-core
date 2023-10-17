@@ -29,7 +29,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
-import io.harness.cdng.configfile.ConfigFilesOutcome;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
@@ -42,7 +41,6 @@ import io.harness.cdng.gitops.steps.GitOpsEnvOutCome;
 import io.harness.cdng.helpers.NgExpressionHelper;
 import io.harness.cdng.hooks.steps.ServiceHooksOutcome;
 import io.harness.cdng.k8s.HarnessRelease;
-import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.service.ServiceSpec;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.NativeHelmServiceSpec;
@@ -65,6 +63,7 @@ import io.harness.freeze.helpers.FreezeRBACHelper;
 import io.harness.freeze.notifications.NotificationHelper;
 import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.freeze.service.FrozenExecutionService;
+import io.harness.gitx.GitXTransientBranchGuard;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.logging.UnitProgress;
@@ -104,6 +103,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.ChildrenExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.security.PmsSecurityContextEventGuard;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rbac.CDNGRbacUtility;
@@ -181,7 +181,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   public ChildrenExecutableResponse obtainChildren(
       Ambiance ambiance, ServiceStepV3Parameters stepParameters, StepInputPackage inputPackage) {
     validate(stepParameters);
-    try {
+
+    try (PmsSecurityContextEventGuard securityContextEventGuard = new PmsSecurityContextEventGuard(ambiance)) {
       final NGLogCallback serviceStepLogCallback =
           serviceStepsHelper.getServiceLogCallback(ambiance, true, SERVICE_STEP_COMMAND_UNIT);
       final NGLogCallback overrideLogCallback =
@@ -653,15 +654,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
                          .group(StepCategory.STAGE.name())
                          .build());
 
-    final OptionalSweepingOutput manifestsOutput = sweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.MANIFESTS));
-    if (manifestsOutput.isFound()) {
-      stepOutcomes.add(StepResponse.StepOutcome.builder()
-                           .name(OutcomeExpressionConstants.MANIFESTS)
-                           .outcome((ManifestsOutcome) manifestsOutput.getOutput())
-                           .group(StepCategory.STAGE.name())
-                           .build());
-    }
+    serviceStepV3Helper.addManifestsOutputToStepOutcome(ambiance, stepOutcomes);
 
     final OptionalSweepingOutput artifactsOutput = sweepingOutputService.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.ARTIFACTS));
@@ -673,15 +666,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
                            .build());
     }
 
-    final OptionalSweepingOutput configFilesOutput = sweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.CONFIG_FILES));
-    if (configFilesOutput.isFound()) {
-      stepOutcomes.add(StepResponse.StepOutcome.builder()
-                           .name(OutcomeExpressionConstants.CONFIG_FILES)
-                           .outcome((ConfigFilesOutcome) configFilesOutput.getOutput())
-                           .group(StepCategory.STAGE.name())
-                           .build());
-    }
+    serviceStepV3Helper.addConfigFilesOutputToStepOutcome(ambiance, stepOutcomes);
 
     final OptionalSweepingOutput serviceHooksOutput = sweepingOutputService.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.SERVICE_HOOKS));
@@ -735,9 +720,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
   private ServicePartResponse executeServicePart(
       Ambiance ambiance, ServiceStepV3Parameters stepParameters, Map<FreezeEntityType, List<String>> entityMap) {
-    final Optional<ServiceEntity> serviceOpt =
-        serviceEntityService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
-            AmbianceUtils.getProjectIdentifier(ambiance), stepParameters.getServiceRef().getValue(), false);
+    final Optional<ServiceEntity> serviceOpt = getServiceEntityWithYaml(ambiance, stepParameters);
 
     if (serviceOpt.isEmpty()) {
       throw new InvalidRequestException(
@@ -791,6 +774,14 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     sweepingOutputService.consume(ambiance, OutcomeExpressionConstants.SERVICE, outcome, StepCategory.STAGE.name());
 
     return ServicePartResponse.builder().ngServiceConfig(ngServiceConfig).build();
+  }
+
+  private Optional<ServiceEntity> getServiceEntityWithYaml(Ambiance ambiance, ServiceStepV3Parameters stepParameters) {
+    String gitBranch = stepParameters.getGitBranch() != null ? stepParameters.getGitBranch() : null;
+    try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(gitBranch)) {
+      return serviceEntityService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+          AmbianceUtils.getProjectIdentifier(ambiance), stepParameters.getServiceRef().getValue(), false);
+    }
   }
 
   private NGServiceConfig getNgServiceConfig(

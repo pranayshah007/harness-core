@@ -364,6 +364,7 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
             .put("g", "def")
             .put("h", "v2")
             .put("i", "v")
+            .put("pipeline.name", "testPipeline")
             .put("company", "harness")
             .put("nested1", "<+nested2>")
             .put("nested2", "<+nested3>")
@@ -382,6 +383,7 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
                     .put("v7", "<+secret1>")
                     .put("v8", "<+company>/archit-<+f>")
                     .put("v9", "<+company>/archit-<+f1>")
+                    .put("v10", "<+f>")
                     .build())
             .put("var1", "'archit' + <+company>")
             .put("var2", "'archit<+f>' + <+company>")
@@ -393,6 +395,15 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
             .put("var8", "[{\"lmn\":\"pqr\"},{\"stu\":\"<+f>\"},{\"u\":{\"vw\":\"<+g>\"}}]")
             .put(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY, Arrays.asList("PIE_EXPRESSION_CONCATENATION"))
             .build());
+    assertThat(evaluator.evaluateExpression("<+pipeline.name> <+variables.v5.replace('-','')>"))
+        .isEqualTo("testPipeline architharness");
+    assertThat(evaluator.evaluateExpression("<+pipeline.name> <+<+variables.v5>.replace('-','')>"))
+        .isEqualTo("testPipeline architharness");
+    assertThat(evaluator.evaluateExpression("<+variables.v5> <+a.toString()>")).isEqualTo("archit-harness 5");
+    assertThat(evaluator.evaluateExpression("<+variables.v5> <+<+a>.toString()>")).isEqualTo("archit-harness 5");
+    assertThat(evaluator.evaluateExpression("<+variables.v5> <+<+variables.v10>.toUpperCase()>"))
+        .isEqualTo("archit-harness ABC");
+
     // concat expressions
     assertThat(evaluator.resolve("archit-<+company>", true)).isEqualTo("archit-harness");
     assertThat(evaluator.evaluateExpression("archit-<+company>")).isEqualTo("archit-harness");
@@ -461,6 +472,12 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     // !~ operator
     assertThat(evaluator.evaluateExpression("<+c2.status> !~ \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
         .isEqualTo(false);
+    assertThat(evaluator.evaluateExpression(
+                   "<+c2.status> == \"RUNNING\" || <+c2.status> == \"END2\" && (<+c21.anotherStatus> == \"END-1\"\n"
+                   + "||\n"
+                   + "<+c21.anotherStatus> == \"IGNORE_FAILED\")"))
+        .isEqualTo(true);
+
     // size operator
     assertThat(evaluator.resolve("<+size(<+variables.v8>)>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
         .isEqualTo("18");
@@ -729,6 +746,12 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
     // !~ operator
     assertThat(evaluator.evaluateExpression("<+c2.status> !~ \"RUNNING\" and <+c2.anotherStatus> != \"IGNORE_FAILED\""))
         .isEqualTo(false);
+    assertThat(evaluator.evaluateExpression(
+                   "<+c2.status> == \"RUNNING\" || <+c2.status> == \"END2\" && (<+c21.anotherStatus> == \"END-1\"\n"
+                   + "||\n"
+                   + "<+c21.anotherStatus> == \"IGNORE_FAILED\")"))
+        .isEqualTo(true);
+
     // size operator
     assertThat(evaluator.resolve("<+size(<+variables.v8>)>", ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED))
         .isEqualTo("18");

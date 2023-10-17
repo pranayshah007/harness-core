@@ -106,6 +106,14 @@ public class OrchestrationLogPublisher implements PlanStatusUpdateObserver, Step
         nodeStartInfo.getNodeExecution().getUuid(), OrchestrationEventType.NODE_EXECUTION_START);
   }
 
+  public void onPipelineInfoUpdate(String planExecutionId) {
+    createAndHandleEventLog(planExecutionId, null, OrchestrationEventType.PIPELINE_INFO_UPDATE);
+  }
+
+  public void onStageInfoUpdate(String planExecutionId, String nodeExecutionId) {
+    createAndHandleEventLog(planExecutionId, nodeExecutionId, OrchestrationEventType.STAGE_INFO_UPDATE);
+  }
+
   @Override
   public void onStepDetailsUpdate(StepDetailsUpdateInfo stepDetailsUpdateInfo) {
     createAndHandleEventLog(stepDetailsUpdateInfo.getPlanExecutionId(), stepDetailsUpdateInfo.getNodeExecutionId(),

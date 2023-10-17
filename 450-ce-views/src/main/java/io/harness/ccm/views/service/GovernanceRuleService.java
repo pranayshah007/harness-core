@@ -31,7 +31,7 @@ public interface GovernanceRuleService {
   void check(String accountId, List<String> policiesIdentifier);
   void customRuleLimit(String accountId);
   void custodianValidate(Rule rule);
-  void validateAWSSchema(Rule rule);
+  void validateSchema(Rule rule);
   Set<ConnectorInfoDTO> getConnectorResponse(
       String accountId, Set<String> targets, RuleCloudProviderType cloudProvider);
   List<ConnectorResponseDTO> getAWSConnectorWithTargetAccounts(List<String> accounts, String accountId);

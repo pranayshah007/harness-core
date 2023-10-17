@@ -8,6 +8,7 @@
 package io.harness.ng.core.entityusageactivity;
 
 import io.harness.eventsframework.schemas.entity.EntityUsageDetailProto;
+import io.harness.eventsframework.schemas.entity.PipelineExecutionUsageDataProto;
 
 public class EntityUsageEventDetailProtoTORestMapper {
   public EntityUsageDetail getEventDetail(EntityUsageDetailProto detail) {
@@ -17,6 +18,16 @@ public class EntityUsageEventDetailProtoTORestMapper {
 
   private EntityUsageData getUsageData(EntityUsageDetailProto detail) {
     // populate for specific event types (Eg- Pipeline execution)
+    if (detail.getUsageType().equals(EntityUsageTypes.PIPELINE_EXECUTION)) {
+      return createPipelineExecutionUsageData(detail.getPipelineExecutionUsageData());
+    }
     return null;
+  }
+
+  private EntityUsageData createPipelineExecutionUsageData(PipelineExecutionUsageDataProto pipelineExecutionUsageData) {
+    return PipelineExecutionUsageData.builder()
+        .planExecutionId(pipelineExecutionUsageData.getPlanExecutionId())
+        .stageExecutionId(pipelineExecutionUsageData.getStageExecutionId())
+        .build();
   }
 }

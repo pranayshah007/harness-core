@@ -6,6 +6,7 @@
  */
 
 package io.harness.plancreator.stages.stage;
+
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.onlyRuntimeInputAllowed;
@@ -28,6 +29,7 @@ import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.when.beans.StageWhenCondition;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
+import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.core.variables.NGVariable;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -87,6 +89,10 @@ public abstract class AbstractStageNode {
   @VariableExpression(skipVariableExpression = true)
   @JsonProperty("strategy")
   ParameterField<StrategyConfig> strategy;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @Pattern(regexp = NGRegexValidatorConstants.TIMEOUT_PATTERN_WITHOUT_EXECUTION_INPUT)
+  @VariableExpression(skipInnerObjectTraversal = true)
+  ParameterField<Timeout> timeout;
 
   @JsonIgnore public abstract String getType();
   @JsonIgnore public abstract StageInfoConfig getStageInfoConfig();

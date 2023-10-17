@@ -6,10 +6,14 @@
  */
 
 package io.harness.pms.sdk.core.steps.io;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
 import java.util.LinkedList;
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 public interface PipelineViewObject {
   String DEFAULT = "default";
 

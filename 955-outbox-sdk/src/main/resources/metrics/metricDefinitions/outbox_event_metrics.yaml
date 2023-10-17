@@ -8,3 +8,8 @@ metrics:
     type: Duration
     distribution: [ 0m, 15s, 30s, 1m, 2m, 4m, 8m, 16m, 32m ]
     unit: "ms"
+  - metricName: outbox_event_waiting_time
+    metricDefinition: Outbox event waiting time
+    type: Duration
+    distribution: [ 0m, 15s, 30s, 1m, 2m, 4m, 8m, 16m, 32m ]
+    unit: "ms"

@@ -88,6 +88,7 @@ public interface EntityTypeConstants {
   String SAVE_CACHE_GCS = "SaveCacheGCS";
   String SAVE_CACHE_S3 = "SaveCacheS3";
   String SECURITY = "Security";
+  String ANCHORE = "Anchore";
   String AQUA_TRIVY = "AquaTrivy";
   String AWS_ECR = "AWSECR";
   String AWS_SECURITY_HUB = "AWSSecurityHub";
@@ -137,6 +138,9 @@ public interface EntityTypeConstants {
   String S3_UPLOAD = "S3Upload";
 
   String BUILD_AND_PUSH_GCR = "BuildAndPushGCR";
+
+  String BUILD_AND_PUSH_GAR = "BuildAndPushGAR";
+
   String BUILD_AND_PUSH_ECR = "BuildAndPushECR";
   String BUILD_AND_PUSH_ACR = "BuildAndPushACR";
   String BUILD_AND_PUSH_DOCKER_REGISTRY = "BuildAndPushDockerRegistry";
@@ -198,6 +202,7 @@ public interface EntityTypeConstants {
   String SHELL_SCRIPT_PROVISION_STEP = "ShellScriptProvision";
   String FREEZE = "Freeze";
   String CHAOS_STEP = "Chaos";
+  String CHAOS_INFRASTRUCTURE = "ChaosInfrastructure";
   String ELASTIGROUP_DEPLOY_STEP = "ElastigroupDeploy";
   String ELASTIGROUP_ROLLBACK_STEP = "ElastigroupRollback";
   String IACM_STAGE = "IACMStage";

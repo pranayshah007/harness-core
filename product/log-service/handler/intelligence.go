@@ -461,6 +461,8 @@ func getStepTypeContext(stepType, infra string) string {
 		return "while building and pushing the image to Google Container Registry in Harness CI"
 	case "BuildAndPushDockerRegistry":
 		return "while building and pushing the image to docker registry in Harness CI"
+	case "BuildAndPushGAR":
+		return "while building and pushing the image to Google Artifact Registry in Harness CI"
 	case "GCSUpload":
 		return "while uploading the files to GCS in Harness CI"
 	case "S3Upload":

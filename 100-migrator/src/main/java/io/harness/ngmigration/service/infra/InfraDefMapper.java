@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.service.infra;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.elastigroup.ElastigroupConfiguration;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
@@ -20,6 +22,7 @@ import software.wings.infra.InfrastructureDefinition;
 import java.util.Collections;
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @OwnedBy(HarnessTeam.CDC)
 public interface InfraDefMapper {
   ServiceDefinitionType getServiceDefinition(InfrastructureDefinition infrastructureDefinition);

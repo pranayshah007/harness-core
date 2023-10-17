@@ -67,7 +67,8 @@ public class RuleEnforcementDAO {
     RuleEnforcement existingRuleEnforcement =
         fetchById(ruleEnforcement.getAccountId(), ruleEnforcement.getUuid(), false);
     if (ruleEnforcement.getName() != null) {
-      if (fetchByName(ruleEnforcement.getAccountId(), ruleEnforcement.getName(), true) != null) {
+      if (!checkRuleEnforcementNameIsUnique(
+              ruleEnforcement.getUuid(), ruleEnforcement.getAccountId(), ruleEnforcement.getName())) {
         throw new InvalidRequestException("Rule Enforcement with the given name already exits");
       }
       existingRuleEnforcement.setName(ruleEnforcement.getName());
@@ -119,6 +120,23 @@ public class RuleEnforcementDAO {
       }
       throw new InvalidRequestException("No such rule pack exists");
     }
+  }
+
+  public boolean checkRuleEnforcementNameIsUnique(String ruleEnforcementId, String accountId, String name) {
+    List<RuleEnforcement> ruleEnforcements = hPersistence.createQuery(RuleEnforcement.class)
+                                                 .field(RuleEnforcementId.accountId)
+                                                 .equal(accountId)
+                                                 .field(RuleEnforcementId.name)
+                                                 .equal(name)
+                                                 .asList();
+    if (ruleEnforcements == null) {
+      return true;
+    }
+    if (ruleEnforcements.size() == 1) {
+      RuleEnforcement ruleEnforcement = ruleEnforcements.get(0);
+      return ruleEnforcement.getUuid().equals(ruleEnforcementId);
+    }
+    return false;
   }
 
   public RuleEnforcement fetchById(String accountId, String uuid, boolean create) {

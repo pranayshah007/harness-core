@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// Store defines the log stoage interface.
+// Store defines the log storage interface.
 type Store interface {
 	// Download downloads the blob from the datastore.
 	Download(ctx context.Context, key string) (io.ReadCloser, error)

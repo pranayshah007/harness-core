@@ -15,6 +15,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.MongoConfig;
+import io.harness.ng.persistence.listener.UniqueIdAwareEntityEventListener;
 import io.harness.persistence.store.Store;
 import io.harness.reflection.HarnessReflections;
 
@@ -123,5 +124,10 @@ public class SpringPersistenceConfig extends AbstractMongoClientConfiguration {
   @Override
   protected boolean autoIndexCreation() {
     return false;
+  }
+
+  @Bean
+  public UniqueIdAwareEntityEventListener uniqueIdAwareEntityEventListener() {
+    return new UniqueIdAwareEntityEventListener();
   }
 }

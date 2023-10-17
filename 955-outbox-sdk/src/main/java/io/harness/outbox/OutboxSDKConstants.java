@@ -47,5 +47,7 @@ public class OutboxSDKConstants {
 
   public static final String OUTBOX_EVENT_PROCESSING_TIME_METRIC_NAME = "outbox_event_processing_time";
 
+  public static final String OUTBOX_EVENT_WAITING_TIME_METRIC_NAME = "outbox_event_waiting_time";
+
   public static final String ALL_EVENT_TYPES = "AllEventTypes";
 }

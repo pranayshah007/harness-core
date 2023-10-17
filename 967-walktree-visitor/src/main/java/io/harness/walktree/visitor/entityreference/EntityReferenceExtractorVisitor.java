@@ -17,6 +17,7 @@ import io.harness.walktree.visitor.utilities.VisitorParentPathUtils;
 import com.google.inject.Injector;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang3.NotImplementedException;
 
@@ -25,6 +26,7 @@ public class EntityReferenceExtractorVisitor extends SimpleVisitor<DummyVisitabl
   String accountIdentifier;
   String orgIdentifier;
   String projectIdentifier;
+  public static final String SETUP_METADATA_KEY = "SETUP_METADATA_KEY";
 
   public Set<EntityDetailProtoDTO> getEntityReferenceSet() {
     return entityReferenceSet;
@@ -40,6 +42,19 @@ public class EntityReferenceExtractorVisitor extends SimpleVisitor<DummyVisitabl
     if (fqnList != null) {
       fqnList.forEach(levelNode -> VisitorParentPathUtils.addToParentList(this.getContextMap(), levelNode));
     }
+  }
+
+  public EntityReferenceExtractorVisitor(Injector injector, String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, List<String> fqnList, Map<String, Object> additionalContext) {
+    super(injector);
+    entityReferenceSet = new HashSet<>();
+    this.accountIdentifier = accountIdentifier;
+    this.orgIdentifier = orgIdentifier;
+    this.projectIdentifier = projectIdentifier;
+    if (fqnList != null) {
+      fqnList.forEach(levelNode -> VisitorParentPathUtils.addToParentList(this.getContextMap(), levelNode));
+    }
+    this.getContextMap().putAll(additionalContext);
   }
 
   @Override

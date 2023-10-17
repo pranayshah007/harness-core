@@ -1351,6 +1351,7 @@ public class CDStepHelperTest extends CategoryTest {
         GithubConnectorDTO.builder()
             .connectionType(GitConnectionType.ACCOUNT)
             .url("http://localhost")
+            .validationRepo("repo")
             .authentication(
                 GithubAuthenticationDTO.builder()
                     .authType(GitAuthType.HTTP)
@@ -1367,7 +1368,7 @@ public class CDStepHelperTest extends CategoryTest {
 
     doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
 
-    ScmConnector scmConnector = cdStepHelper.getScmConnector(githubConnectorDTO, "accountId", null);
+    ScmConnector scmConnector = cdStepHelper.getScmConnector(githubConnectorDTO, "accountId", null, "repo");
 
     assertThat(scmConnector).isInstanceOf(GithubConnectorDTO.class);
   }

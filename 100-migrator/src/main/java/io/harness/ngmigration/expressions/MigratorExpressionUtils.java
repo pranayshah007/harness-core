@@ -234,9 +234,9 @@ public class MigratorExpressionUtils {
     context.put("BACKUP_PATH", "<+variable.backupPath>");
     context.put("RUNTIME_PATH", "<+variable.runtimePath>");
     context.put("STAGING_PATH", "<+variable.stagingPath>");
-    context.put("WINGS_BACKUP_PATH", "<+variable.wingsBackupPath>");
-    context.put("WINGS_RUNTIME_PATH", "<+variable.wingsRuntimePath>");
-    context.put("WINGS_STAGING_PATH", "<+variable.wingsStagingPath>");
+    context.put("WINGS_BACKUP_PATH", "<+variable.backupPath>");
+    context.put("WINGS_RUNTIME_PATH", "<+variable.runtimePath>");
+    context.put("WINGS_STAGING_PATH", "<+variable.stagingPath>");
 
     if (overrides != null && EmptyPredicate.isNotEmpty(overrides.getCustomExpressions())) {
       context.putAll(overrides.getCustomExpressions());

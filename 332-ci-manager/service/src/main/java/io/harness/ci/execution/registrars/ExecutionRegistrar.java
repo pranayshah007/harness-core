@@ -9,6 +9,7 @@ package io.harness.ci.registrars;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.steps.stepinfo.GARStepInfo;
 import io.harness.ci.execution.states.ACRStep;
 import io.harness.ci.execution.states.ActionStep;
 import io.harness.ci.execution.states.BackgroundStep;
@@ -17,6 +18,7 @@ import io.harness.ci.execution.states.CISpecStep;
 import io.harness.ci.execution.states.CleanupStep;
 import io.harness.ci.execution.states.DockerStep;
 import io.harness.ci.execution.states.ECRStep;
+import io.harness.ci.execution.states.GARStep;
 import io.harness.ci.execution.states.GCRStep;
 import io.harness.ci.execution.states.GitCloneStep;
 import io.harness.ci.execution.states.InitializeTaskStep;
@@ -63,6 +65,7 @@ public class ExecutionRegistrar {
     engineSteps.putAll(STOStepType.addSTOEngineSteps(SecurityStep.class));
     engineSteps.put(ECRStep.STEP_TYPE, ECRStep.class);
     engineSteps.put(GCRStep.STEP_TYPE, GCRStep.class);
+    engineSteps.put(GARStepInfo.STEP_TYPE, GARStep.class);
     engineSteps.put(ACRStep.STEP_TYPE, ACRStep.class);
     engineSteps.put(DockerStep.STEP_TYPE, DockerStep.class);
     engineSteps.put(UploadToS3Step.STEP_TYPE, UploadToS3Step.class);

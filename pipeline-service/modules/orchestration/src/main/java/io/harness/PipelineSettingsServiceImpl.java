@@ -74,20 +74,23 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
       switch (edition) {
         case FREE:
           if (orchestrationRestrictionConfiguration.isUseRestrictionForFree()) {
-            return shouldQueueInternal(accountId, pipelineIdentifier,
-                orchestrationRestrictionConfiguration.getPlanExecutionRestriction().getFree());
+            return shouldQueueInternal(orchestrationRestrictionConfiguration.getPlanExecutionRestriction().getFree(),
+                planExecutionService.countRunningExecutionsForGivenPipelineInAccount(accountId, pipelineIdentifier));
           }
           break;
         case ENTERPRISE:
           if (orchestrationRestrictionConfiguration.isUseRestrictionForEnterprise()) {
-            return shouldQueueInternal(accountId, pipelineIdentifier,
-                orchestrationRestrictionConfiguration.getPlanExecutionRestriction().getEnterprise());
+            return shouldQueueInternal(
+                orchestrationRestrictionConfiguration.getPlanExecutionRestriction().getEnterprise(),
+                planExecutionService.countRunningExecutionsForGivenPipelineInAccountExcludingWaitingStatuses(
+                    accountId, pipelineIdentifier));
           }
           break;
         case TEAM:
           if (orchestrationRestrictionConfiguration.isUseRestrictionForTeam()) {
-            return shouldQueueInternal(accountId, pipelineIdentifier,
-                orchestrationRestrictionConfiguration.getPlanExecutionRestriction().getTeam());
+            return shouldQueueInternal(orchestrationRestrictionConfiguration.getPlanExecutionRestriction().getTeam(),
+                planExecutionService.countRunningExecutionsForGivenPipelineInAccountExcludingWaitingStatuses(
+                    accountId, pipelineIdentifier));
           }
           break;
         default:
@@ -172,10 +175,7 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
     }
   }
   @VisibleForTesting
-  protected PlanExecutionSettingResponse shouldQueueInternal(
-      String accountId, String pipelineIdentifier, long maxCount) {
-    long runningExecutionsForGivenPipeline =
-        planExecutionService.countRunningExecutionsForGivenPipelineInAccount(accountId, pipelineIdentifier);
+  protected PlanExecutionSettingResponse shouldQueueInternal(long maxCount, long runningExecutionsForGivenPipeline) {
     if (runningExecutionsForGivenPipeline >= maxCount) {
       return PlanExecutionSettingResponse.builder().shouldQueue(true).useNewFlow(true).build();
     }

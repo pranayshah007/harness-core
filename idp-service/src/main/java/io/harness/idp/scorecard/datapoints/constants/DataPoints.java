@@ -15,10 +15,14 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(HarnessTeam.IDP)
 public class DataPoints {
-  // Github, Bitbucket
+  // Github, Bitbucket, Gitlab
   public static final String PULL_REQUEST_MEAN_TIME_TO_MERGE = "meanTimeToMerge";
   public static final String IS_BRANCH_PROTECTED = "isBranchProtected";
   public static final String IS_FILE_EXISTS = "isFileExists";
+  public static final String WORKFLOWS_COUNT = "workflowsCount";
+  public static final String WORKFLOW_SUCCESS_RATE = "workflowSuccessRate";
+  public static final String MEAN_TIME_TO_COMPLETE_WORKFLOW_RUNS = "meanTimeToCompleteWorkflowRuns";
+  public static final String MEAN_TIME_TO_COMPLETE_SUCCESS_WORKFLOW_RUNS = "meanTimeToCompleteSuccessWorkflowRuns";
 
   // Catalog
   public static final String CATALOG_TECH_DOCS = "techDocsAnnotationExists";

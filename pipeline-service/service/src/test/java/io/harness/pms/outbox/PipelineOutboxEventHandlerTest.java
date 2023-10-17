@@ -51,6 +51,7 @@ import io.harness.rule.Owner;
 import io.harness.security.SourcePrincipalContextData;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.UserPrincipal;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -70,6 +71,7 @@ public class PipelineOutboxEventHandlerTest extends CategoryTest {
   private ObjectMapper objectMapper;
   private AuditClientService auditClientService;
   private PipelineOutboxEventHandler eventHandler;
+  private PmsFeatureFlagService featureFlagService;
   String newYaml;
   String oldYaml;
 
@@ -77,7 +79,8 @@ public class PipelineOutboxEventHandlerTest extends CategoryTest {
   public void setup() throws IOException {
     objectMapper = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
     auditClientService = mock(AuditClientService.class);
-    eventHandler = spy(new PipelineOutboxEventHandler(auditClientService, null));
+    featureFlagService = mock(PmsFeatureFlagService.class);
+    eventHandler = spy(new PipelineOutboxEventHandler(auditClientService, null, featureFlagService));
     newYaml = Resources.toString(this.getClass().getClassLoader().getResource("pipeline.yml"), Charsets.UTF_8);
     oldYaml =
         Resources.toString(this.getClass().getClassLoader().getResource("pipeline-extensive.yml"), Charsets.UTF_8);

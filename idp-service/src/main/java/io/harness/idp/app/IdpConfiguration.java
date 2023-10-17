@@ -101,11 +101,14 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("notificationConfigs") private HashMap<String, String> notificationConfigs;
   @JsonProperty("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceConfiguration;
   @JsonProperty("pipelineServiceSecret") private String pipelineServiceSecret;
+  @JsonProperty("jwtExternalServiceSecret") private String jwtExternalServiceSecret;
   @JsonProperty("tiServiceConfig") private TIServiceConfig tiServiceConfig;
   @JsonProperty("scorecardScoreComputationIteratorConfig")
   private IteratorConfig scorecardScoreComputationIteratorConfig;
   @JsonProperty("cpu") private String cpu;
   @JsonProperty("scoreComputerThreadsPerCore") private String scoreComputerThreadsPerCore;
+  @JsonProperty("auditClientConfig") private ServiceHttpClientConfig auditClientConfig;
+  @JsonProperty("enableAudit") private boolean enableAudit;
   private String managerTarget;
   private String managerAuthority;
   @JsonProperty("streamPerServiceConfiguration") private boolean streamPerServiceConfiguration;

@@ -27,7 +27,7 @@ import io.harness.exception.HintException;
 import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.ScmException;
 import io.harness.gitsync.common.helper.GitRepoHelper;
-import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
+import io.harness.gitsync.common.service.GitSyncConnectorService;
 import io.harness.gitsync.gitxwebhooks.dtos.CreateGitXWebhookRequestDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.CreateGitXWebhookResponseDTO;
 import io.harness.gitsync.gitxwebhooks.dtos.DeleteGitXWebhookRequestDTO;
@@ -66,7 +66,7 @@ import org.springframework.data.mongodb.core.query.Update;
 public class GitXWebhookServiceImpl implements GitXWebhookService {
   @Inject GitXWebhookRepository gitXWebhookRepository;
   @Inject GitRepoHelper gitRepoHelper;
-  @Inject GitSyncConnectorHelper gitSyncConnectorHelper;
+  @Inject GitSyncConnectorService gitSyncConnectorService;
   @Inject WebhookEventService webhookEventService;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
@@ -339,7 +339,7 @@ public class GitXWebhookServiceImpl implements GitXWebhookService {
 
   private UpsertWebhookRequestDTO buildUpsertWebhookRequestDTO(
       String accountIdentifier, String repoName, String connectorRef) {
-    ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnector(accountIdentifier, "", "", connectorRef);
+    ScmConnector scmConnector = gitSyncConnectorService.getScmConnector(accountIdentifier, "", "", connectorRef);
     String repoUrl = gitRepoHelper.getRepoUrl(scmConnector, repoName);
     return UpsertWebhookRequestDTO.builder()
         .accountIdentifier(accountIdentifier)

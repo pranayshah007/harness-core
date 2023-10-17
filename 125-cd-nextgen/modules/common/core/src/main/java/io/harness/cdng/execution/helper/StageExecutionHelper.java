@@ -383,6 +383,7 @@ public class StageExecutionHelper {
                              .artifactId(artifactOutcome.getIdentifier())
                              .tag(artifactOutcome.getTag())
                              .displayName(artifactOutcome.getArtifactSummary().getDisplayName())
+                             .artifactIdentity(artifactOutcome.getArtifactSummary().getArtifactIdentity())
                              .build());
     }
   }

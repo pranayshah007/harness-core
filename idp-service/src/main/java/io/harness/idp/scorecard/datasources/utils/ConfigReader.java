@@ -71,8 +71,10 @@ public class ConfigReader {
         backstageEnvVariableService.findByEnvNameAndAccountIdentifier(envName, accountIdentifier);
     if (envVariableOpt.isPresent() && envVariableOpt.get().getType().equals(BackstageEnvVariable.TypeEnum.SECRET)) {
       BackstageEnvSecretVariable secret = (BackstageEnvSecretVariable) envVariableOpt.get();
-      String decryptedValue = backstageEnvVariableService.getDecryptedValue(
-          envName, secret.getHarnessSecretIdentifier(), accountIdentifier);
+      String decryptedValue =
+          backstageEnvVariableService
+              .getDecryptedValueAndLastModifiedTime(envName, secret.getHarnessSecretIdentifier(), accountIdentifier)
+              .getFirst();
       if (decryptedValue.isEmpty()) {
         throw new UnexpectedException(format("Could not get the decrypted value for secret: %s, used "
                 + "by env: %s, in account: %s",
