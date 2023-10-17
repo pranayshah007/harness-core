@@ -2,6 +2,24 @@ global:
   database:
     minio:
       installed: true
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              MINIO_USER: ""
+              MINIO_PASSWORD: ""
+        secretManagement: 
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                MINIO_USER:
+                  name: ""
+                  property: ""
+                MINIO_PASSWORD:
+                  name: ""
+                  property: ""
     mongo:
       installed: true
       secrets:
@@ -28,12 +46,48 @@ global:
                   property: ""
     postgres:
       installed: true
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              POSTGRES_USER: ""
+              POSTGRES_PASSWORD: ""
+        secretManagement: 
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                POSTGRES_USER:
+                  name: ""
+                  property: ""
+                POSTGRES_PASSWORD:
+                  name: ""
+                  property: ""
     timescaledb:
       installed: true
     redis:
       installed: true
     clickhouse:
       enabled: false
+      secrets:
+        kubernetesSecrets:
+          - secretName: ""
+            keys:
+              CLICKHOUSE_USER: ""
+              CLICKHOUSE_PASSWORD: ""
+        secretManagement: 
+          externalSecretsOperator:
+            - secretStore:
+                name: ""
+                kind: ""
+              remoteKeys:
+                CLICKHOUSE_USER:
+                  name: ""
+                  property: ""
+                CLICKHOUSE_PASSWORD:
+                  name: ""
+                  property: ""
 minio:
   fullnameOverride: "minio"
   mode: standalone
@@ -43,7 +97,7 @@ minio:
   persistence:
     size: 200Gi
   auth:
-    existingSecret: "minio"
+    existingSecret: '{{ include "harnesscommon.secrets.InstalledDBSecret" (dict "ctx" $ "dbKey" "minio" "defaultSecret" "minio") }}'
 # -- configurations for mongodb
 mongodb:
   architecture: replicaset
@@ -82,7 +136,7 @@ postgresql:
     # Additional init can be added using a configmap
     # primary.initdb.scriptsConfigMap
     database: overops
-    existingSecret: "postgres"
+    existingSecret: '{{ include "harnesscommon.secrets.InstalledDBSecret" (dict "ctx" $ "dbKey" "postgres" "defaultSecret" "postgres") }}'
   commonLabels:
     app: postgres
   primary:
@@ -98,7 +152,7 @@ postgresql:
 clickhouse:
   fullnameOverride: "clickhouse"
   auth:
-    existingSecret: "clickhouse"
+    existingSecret: '{{ include "harnesscommon.secrets.InstalledDBSecret" (dict "ctx" $ "dbKey" "clickhouse" "defaultSecret" "clickhouse") }}'
     existingSecretKey: "admin-password"
   image:
     tag: 23.3.13-debian-11-r0
