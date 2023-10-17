@@ -90,7 +90,7 @@ public class K8SLiteRunner implements Runner {
       // Step 0 - unpack infra definition. Each runner knows the infra spec it expects
       final var k8sInfra = K8SInfra.parseFrom(infra.getBinaryData());
 
-      // TODO: @Anupam, add image pull secrets support
+      // TODO: add image pull secrets support
       // Step 1 - decrypt image pull secrets and create secret resources.
       // pullSecrets need to be decrypted by component which is configured during startup (e.g. runner or core),
       // otherwise we will have chicken & egg problem. E.g. delegate creates pod/container to decrypt secret, but image
