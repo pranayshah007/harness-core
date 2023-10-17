@@ -1,0 +1,42 @@
+name: OOTBPolicies
+version: 1
+policies:
+  - name: delete-unattached-volumes
+    markedForMigration: false
+    action: NOOP
+  - name: ebs-unattached-list
+    markedForMigration: false
+    action: NOOP
+  - name: ebs-unencrypted-ebs-list
+    markedForMigration: false
+    action: NOOP
+  - name: migrate-gp2-to-gp3-ebs-volumes
+    markedForMigration: false
+    action: NOOP
+  - name: ec2-attributes
+    markedForMigration: false
+    action: NOOP
+  - name: ec2-old-instances-list
+    markedForMigration: false
+    action: NOOP
+  - name: ec2-old-instances-stop-age7Days
+    markedForMigration: false
+    action: NOOP
+  - name: ec2-power-on
+    markedForMigration: false
+    action: NOOP
+  - name: ec2-start-after-hours
+    markedForMigration: false
+    action: NOOP
+  - name: ec2-tag-filter
+    markedForMigration: false
+    action: NOOP
+  - name: ec2-underutilized-list
+    markedForMigration: false
+    action: NOOP
+  - name: ec2-unoptimized-ebs
+    markedForMigration: false
+    action: NOOP
+  - name: stop-after-hours
+    markedForMigration: false
+    action: NOOP
