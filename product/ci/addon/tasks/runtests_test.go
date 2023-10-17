@@ -1956,7 +1956,7 @@ func Test_CollectRunTestData(t *testing.T) {
 			collectTestReportsFn = func(ctx context.Context, reports []*pb.Report, stepID string, log *zap.SugaredLogger, start time.Time) error {
 				return tc.crErr
 			}
-			err := r.collectRunTestData(ctx, cgDirPath, time.Now())
+			err := r.collectRunTestData(ctx, cgDirPath, time.Now(), true)
 			assert.Equal(t, tc.collectionErr, err)
 		})
 	}

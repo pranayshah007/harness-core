@@ -159,7 +159,14 @@ func (r *runTestsTask) Run(ctx context.Context) (map[string]string, int32, error
 	testSt := time.Now()
 
 	stepOutput, err := r.execute(ctx)
-	collectionErr := r.collectRunTestData(ctx, cgDirPath, testSt)
+
+	shouldCollectCg := true
+	if isPushTriggerFn() {
+		if err !=nil {
+			shouldCollectCg = false
+		}
+	}
+	collectionErr := r.collectRunTestData(ctx, cgDirPath, testSt, shouldCollectCg)
 	if err == nil {
 		// Fail the step if run was successful but error during collection
 		err = collectionErr
@@ -167,11 +174,15 @@ func (r *runTestsTask) Run(ctx context.Context) (map[string]string, int32, error
 	return stepOutput, r.numRetries, err
 }
 
-func (r *runTestsTask) collectRunTestData(ctx context.Context, cgDirPath string, testSt time.Time) error {
-	cgStart := time.Now()
-	errCg := collectCgFn(ctx, r.id, cgDirPath, time.Since(testSt).Milliseconds(), r.log, cgStart)
-	if errCg != nil {
-		r.log.Errorw(fmt.Sprintf("Unable to collect callgraph. Time taken: %s", time.Since(cgStart)), zap.Error(errCg))
+func (r *runTestsTask) collectRunTestData(ctx context.Context, cgDirPath string, testSt time.Time, shouldCollectCg bool) error {
+
+	var errCg error = nil
+	if shouldCollectCg {
+		cgStart := time.Now()
+		errCg = collectCgFn(ctx, r.id, cgDirPath, time.Since(testSt).Milliseconds(), r.log, cgStart)
+		if errCg != nil {
+			r.log.Errorw(fmt.Sprintf("Unable to collect callgraph. Time taken: %s", time.Since(cgStart)), zap.Error(errCg))
+		}
 	}
 
 	crStart := time.Now()
