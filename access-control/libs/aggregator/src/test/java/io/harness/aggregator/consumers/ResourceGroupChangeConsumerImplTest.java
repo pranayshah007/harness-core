@@ -143,7 +143,7 @@ public class ResourceGroupChangeConsumerImplTest extends AggregatorTestBase {
   @Test
   @Owner(developers = KARAN)
   @Category(UnitTests.class)
-  public void testResourceGroupUpdate() {
+  public void testResourceGroupUpdateForUser() {
     List<RoleAssignmentDBO> roleAssignmentDBOs = getRoleAssignments(resourceGroupDBO, PrincipalType.USER);
 
     preResourceGroupUpdate(resourceGroupDBO, roleAssignmentDBOs);
@@ -151,13 +151,13 @@ public class ResourceGroupChangeConsumerImplTest extends AggregatorTestBase {
     resourceGroupChangeConsumer.consumeUpdateEvent(id, resourceGroupDBO);
 
     assertConsumeUpdateEventBaseInvocations(id, 0);
-    assertRoleAssignmentDBOs(resourceGroupDBO, roleAssignmentDBOs, 0, randomCount, 1, 1);
+    assertRoleAssignmentDBOs(resourceGroupDBO, roleAssignmentDBOs, 1, randomCount, 1, 1);
   }
 
   @Test
   @Owner(developers = KARAN)
   @Category(UnitTests.class)
-  public void testResourceGroupUpdateUserGroup() {
+  public void testResourceGroupUpdateForUserGroup() {
     List<RoleAssignmentDBO> roleAssignmentDBOs = getRoleAssignments(resourceGroupDBO, PrincipalType.USER_GROUP);
 
     preResourceGroupUpdate(resourceGroupDBO, roleAssignmentDBOs);
@@ -172,7 +172,7 @@ public class ResourceGroupChangeConsumerImplTest extends AggregatorTestBase {
     resourceGroupChangeConsumer.consumeUpdateEvent(id, resourceGroupDBO);
 
     assertConsumeUpdateEventBaseInvocations(id, 0);
-    assertRoleAssignmentDBOs(resourceGroupDBO, roleAssignmentDBOs, 0, randomCount, randomCount, 1);
+    assertRoleAssignmentDBOs(resourceGroupDBO, roleAssignmentDBOs, 1, randomCount, randomCount, 1);
   }
 
   @Test
@@ -198,7 +198,7 @@ public class ResourceGroupChangeConsumerImplTest extends AggregatorTestBase {
     resourceGroupChangeConsumer.consumeUpdateEvent(id, resourceGroupDBO);
 
     assertConsumeUpdateEventBaseInvocations(id, -1);
-    assertRoleAssignmentDBOs(resourceGroupDBO, roleAssignmentDBOs, -1, 0, 0, 0);
+    assertRoleAssignmentDBOs(resourceGroupDBO, roleAssignmentDBOs, 0, 0, 0, 0);
   }
 
   @Test
@@ -231,12 +231,12 @@ public class ResourceGroupChangeConsumerImplTest extends AggregatorTestBase {
     resourceGroupChangeConsumer.consumeUpdateEvent(id, oldResourceGroupDBO);
 
     assertConsumeUpdateEventBaseInvocations(id, -1);
-    assertRoleAssignmentDBOs(oldResourceGroupDBO, roleAssignmentDBOs, -1, 0, 0, 0);
+    assertRoleAssignmentDBOs(oldResourceGroupDBO, roleAssignmentDBOs, 0, 0, 0, 0);
 
     preResourceGroupUpdate(resourceGroupDBO, roleAssignmentDBOs);
     resourceGroupChangeConsumer.consumeUpdateEvent(id, resourceGroupDBO);
     assertConsumeUpdateEventBaseInvocations(id, 0);
-    assertRoleAssignmentDBOs(resourceGroupDBO, roleAssignmentDBOs, 0, randomCount, 1, 1);
+    assertRoleAssignmentDBOs(resourceGroupDBO, roleAssignmentDBOs, 1, randomCount, 1, 1);
   }
 
   private void preResourceGroupUpdate(
@@ -268,13 +268,13 @@ public class ResourceGroupChangeConsumerImplTest extends AggregatorTestBase {
       List<RoleAssignmentDBO> roleAssignmentDBOs, int previousInvocationsCount, int distinctPermissions,
       int distinctPrincipals, int distinctResourceSelectors) {
     roleAssignmentDBOs.forEach(roleAssignmentDBO -> {
-      verify(roleService, times(previousInvocationsCount + 1))
+      verify(roleService, times(previousInvocationsCount))
           .get(roleAssignmentDBO.getRoleIdentifier(), roleAssignmentDBO.getScopeIdentifier(), ManagedFilter.NO_FILTER);
-      verify(resourceGroupService, times((previousInvocationsCount + 1) * randomCount))
+      verify(resourceGroupService, times(0))
           .get(updatedResourceGroupDBO.getIdentifier(), updatedResourceGroupDBO.getScopeIdentifier(),
               ManagedFilter.NO_FILTER);
       if (PrincipalType.USER_GROUP.equals(roleAssignmentDBO.getPrincipalType())) {
-        verify(userGroupService, times(previousInvocationsCount + 1))
+        verify(userGroupService, times(previousInvocationsCount))
             .get(roleAssignmentDBO.getPrincipalIdentifier(), roleAssignmentDBO.getScopeIdentifier());
       }
       assertACLs(roleAssignmentDBO, distinctPermissions, distinctPrincipals, distinctResourceSelectors);

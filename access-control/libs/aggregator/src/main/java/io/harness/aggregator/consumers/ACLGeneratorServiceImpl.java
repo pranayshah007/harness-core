@@ -96,6 +96,14 @@ public class ACLGeneratorServiceImpl implements ACLGeneratorService {
   }
 
   @Override
+  public long createACLsFromResourceSelectors(
+      RoleAssignmentDBO roleAssignmentDBO, Set<ResourceSelector> resourceSelectors) {
+    Set<String> principals = getPrincipalsFromRoleAssignment(roleAssignmentDBO);
+    Set<String> permissions = getPermissionsFromRole(roleAssignmentDBO);
+    return createACLs(roleAssignmentDBO, principals, permissions, resourceSelectors);
+  }
+
+  @Override
   public long createImplicitACLsForRoleAssignment(
       RoleAssignmentDBO roleAssignment, Set<String> addedUsers, Set<String> addedPermissions) {
     List<ACL> acls = getImplicitACLsForRoleAssignment(roleAssignment);
