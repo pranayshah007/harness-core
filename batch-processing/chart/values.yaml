@@ -73,34 +73,28 @@ global:
     stsEndPointUrl: https://sts.us-east-2.amazonaws.com
     ecsEndPointUrl: https://ecs.us-east-2.amazonaws.com
     cloudwatchEndPointUrl: https://monitoring.us-east-2.amazonaws.com
-
 replicaCount: 1
-
 isolatedReplica: 0
-
 java:
   memory: "7168"
-
 image:
-  registry: docker.io
-  repository: harness/batch-processing-signed
+  registry: us.gcr.io
+  repository: platform-205701/batch-processing
   pullPolicy: Always
-# Overrides the image tag whose default is the chart appVersion.
-  tag: "80807-000"
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "0.10.0"
   digest: ""
-# image pull secrets to use for batch-processing image
+  # image pull secrets to use for batch-processing image
   imagePullSecrets: []
-
 imageClickhouseEnabled:
   registry: docker.io
   repository: harness/batch-processing-signed
   pullPolicy: Always
-# Overrides the image tag whose default is the chart appVersion.
+  # Overrides the image tag whose default is the chart appVersion.
   tag: "80807-000"
   digest: ""
-# image pull secrets to use for batch-processing image
+  # image pull secrets to use for batch-processing image
   imagePullSecrets: []
-
 waitForInitContainer:
   image:
     registry: docker.io
@@ -108,7 +102,6 @@ waitForInitContainer:
     pullPolicy: IfNotPresent
     tag: "latest"
     digest: ""
-
 mongoSecrets:
   userName:
     name: harness-secrets
@@ -116,78 +109,57 @@ mongoSecrets:
   password:
     name: mongodb-replicaset-chart
     key: mongodb-root-password
-
 timescaleSecret:
   password:
     name: harness-secrets
     key: timescaledbPostgresPassword
-
 smtp:
   host: ""
   password: ""
   user: ""
-
 ceBatchGCPCredentials: ""
-
 ceGCPHomeProjectCreds: ""
-
 storageObjectAdmin: ""
-
 awsSecret:
   S3_SYNC_CONFIG_ACCESSKEY: ""
   S3_SYNC_CONFIG_SECRETKEY: ""
-
 nameOverride: ""
 fullnameOverride: ""
-
 serviceAccount:
   create: false
   annotations: {}
   name: "harness-default"
-
 podAnnotations: {}
-
 podSecurityContext: {}
-
 securityContext: {}
-
 service:
   annotations: {}
   type: ClusterIP
   port: 6340
-
 autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 100
   targetCPU: ""
   targetMemory: ""
-
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
-
 cloudProviderConfig:
   DATA_PIPELINE_CONFIG_GCS_BASE_PATH: "gs://awscustomerbillingdata-onprem"
   CLUSTER_DATA_GCS_BUCKET: "clusterdata-onprem"
   CLUSTER_DATA_GCS_BACKUP_BUCKET: "clusterdata-onprem-backup"
   S3_SYNC_CONFIG_BUCKET_NAME: "ccm-service-data-bucket"
   S3_SYNC_CONFIG_REGION: "us-east-1"
-
 awsAccountTagsCollectionJobConfig:
   enabled: true
-
 clickhouse:
   username: "default"
   password:
     name: clickhouse
     key: admin-password
-
 workloadIdentity:
   enabled: false
-
 cliProxy:
   enabled: false
   host: localhost
@@ -195,31 +167,25 @@ cliProxy:
   username: ""
   password: ""
   protocol: http
-
 resources:
   limits:
     memory: "10Gi"
   requests:
     cpu: "1024m"
     memory: "10Gi"
-
 additionalConfigs: {}
 java17flags: ""
-
 # extraVolumes:
 #   - name: volume-test
 #     configMap:
 #       name: test-config
 #       # readOnly: true
 extraVolumes: []
-
 # extraVolumeMounts:
 #   - name: volume-test
 #     mountPath: /opt/harness/config
 extraVolumeMounts: []
-
 CF_CLIENT_API_KEY: "BATCH_PROCESSING_ON_PREM"
-
 lifecycleHooks: {}
 # lifecycleHooks:
 #   postStart:
