@@ -69,6 +69,7 @@ public class OwnerRule implements TestRule {
   public static final String CET = "CET";
   public static final String CI = "CI";
   public static final String CIT = "CIT";
+  public static final String CF = "CF";
   public static final String CV = "CV";
   public static final String DEL = "DEL";
   public static final String DX = "DX";
@@ -339,6 +340,8 @@ public class OwnerRule implements TestRule {
 
   public static final String EOIN_MCAFEE = "eoin.mcafee";
 
+  public static final String DMACK = "daniel.mack";
+
   @Deprecated public static final String UNKNOWN = "unknown";
 
   private static UserInfoBuilder defaultUserInfo(String user) {
@@ -487,6 +490,7 @@ public class OwnerRule implements TestRule {
           .put(VOJIN, defaultUserInfo(VOJIN).slack("U015TFFL83G").team(PL).build())
           .put(VISTAAR, defaultUserInfo(VISTAAR).slack("U0138Q1JEHM").team(CI).build())
           .put(EOIN_MCAFEE, defaultUserInfo(EOIN_MCAFEE).slack("U020990GT0R").team(CI).build())
+          .put(DMACK, defaultUserInfo(DMACK).slack("U03UPSVNG48").team(CF).build())
           .put(VUK, defaultUserInfo(VUK).slack("U0115RT3EQL").team(DEL).build())
           .put(XIN, defaultUserInfo(XIN).slack("U01R3KSP3M1").team(DEL).build())
           .put(YOGESH, defaultUserInfo(YOGESH).slack("UJVLUUXAT").team(CDP).build())

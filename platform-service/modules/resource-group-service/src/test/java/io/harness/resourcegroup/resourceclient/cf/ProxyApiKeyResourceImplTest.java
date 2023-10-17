@@ -5,12 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.resourcegroup.resourceclient.proxyApiKey;
+package io.harness.resourcegroup.resourceclient.proxyapikey;
 
 import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_IDENTIFIER;
 import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_TYPE;
 import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES;
-import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.DMACK;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
@@ -18,9 +18,10 @@ import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.beans.Scope;
+import java.util.ArrayList;
 import io.harness.beans.ScopeLevel;
 import io.harness.category.element.UnitTests;
-import io.harness.envgroup.remote.ProxyApiKeyResourceClient;
+import io.harness.proxyapikey.ProxyApiKeyClient;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -41,7 +42,7 @@ import retrofit2.Response;
 
 public class ProxyApiKeyResourceImplTest {
     @Inject @InjectMocks ProxyApiKeyResourceImplTest proxyApiKeyResource;
-    @Mock ProxyApiKeyResourceClient proxyApiKeyResourceClient;
+    @Inject @InjectMocks ProxyApiKeyResourceImpl proxyApiKeyResourceImpl;
 
     private static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
     private static final String ORG_IDENTIFIER = "orgIdentifier";
@@ -56,7 +57,7 @@ public class ProxyApiKeyResourceImplTest {
     @Owner(developers = DMACK)
     @Category(UnitTests.class)
     public void getType() {
-        assertThat(fileResource.getType()).isEqualTo("FF_PROXYAPIKEY");
+        assertThat(proxyApiKeyResourceImpl.getType()).isEqualTo("FF_PROXYAPIKEY");
     }
 
 
@@ -64,7 +65,7 @@ public class ProxyApiKeyResourceImplTest {
     @Owner(developers = DMACK)
     @Category(UnitTests.class)
     public void getValidScopeLevels() {
-        assertThat(fileResource.getValidScopeLevels())
+        assertThat(proxyApiKeyResourceImpl.getValidScopeLevels())
                 .containsExactlyInAnyOrder(ScopeLevel.PROJECT, ScopeLevel.ORGANIZATION, ScopeLevel.ACCOUNT);
     }
 
@@ -72,7 +73,7 @@ public class ProxyApiKeyResourceImplTest {
     @Owner(developers = DMACK)
     @Category(UnitTests.class)
     public void getEventFrameworkEntityType() {
-        assertThat(fileResource.getEventFrameworkEntityType().get())
+        assertThat(proxyApiKeyResourceImpl.getEventFrameworkEntityType().get())
                 .isEqualTo("FF_PROXYAPIKEY");
     }
 
@@ -81,7 +82,7 @@ public class ProxyApiKeyResourceImplTest {
     @Category(UnitTests.class)
     public void testValidateEmptyResourceList() {
         assertThat(
-                fileResource.validate(new ArrayList<>(), Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER)))
+                proxyApiKeyResourceImpl.validate(new ArrayList<>(), Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER)))
                 .isEmpty();
     }
 }
