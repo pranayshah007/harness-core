@@ -41,48 +41,46 @@ import retrofit2.Call;
 import retrofit2.Response;
 
 public class ProxyApiKeyResourceImplTest {
-    @Inject @InjectMocks ProxyApiKeyResourceImplTest proxyApiKeyResource;
-    @Inject @InjectMocks ProxyApiKeyResourceImpl proxyApiKeyResourceImpl;
+  @Inject @InjectMocks ProxyApiKeyResourceImplTest proxyApiKeyResource;
+  @Inject @InjectMocks ProxyApiKeyResourceImpl proxyApiKeyResourceImpl;
 
-    private static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
-    private static final String ORG_IDENTIFIER = "orgIdentifier";
-    private static final String PROJECT_IDENTIFIER = "projectIdentifier";
+  private static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
+  private static final String ORG_IDENTIFIER = "orgIdentifier";
+  private static final String PROJECT_IDENTIFIER = "projectIdentifier";
 
-    @Before
-    public void setup() {
-        initMocks(this);
-    }
+  @Before
+  public void setup() {
+    initMocks(this);
+  }
 
-    @Test
-    @Owner(developers = DMACK)
-    @Category(UnitTests.class)
-    public void getType() {
-        assertThat(proxyApiKeyResourceImpl.getType()).isEqualTo("FF_PROXYAPIKEY");
-    }
+  @Test
+  @Owner(developers = DMACK)
+  @Category(UnitTests.class)
+  public void getType() {
+    assertThat(proxyApiKeyResourceImpl.getType()).isEqualTo("FF_PROXYAPIKEY");
+  }
 
+  @Test
+  @Owner(developers = DMACK)
+  @Category(UnitTests.class)
+  public void getValidScopeLevels() {
+    assertThat(proxyApiKeyResourceImpl.getValidScopeLevels())
+        .containsExactlyInAnyOrder(ScopeLevel.PROJECT, ScopeLevel.ORGANIZATION, ScopeLevel.ACCOUNT);
+  }
 
-    @Test
-    @Owner(developers = DMACK)
-    @Category(UnitTests.class)
-    public void getValidScopeLevels() {
-        assertThat(proxyApiKeyResourceImpl.getValidScopeLevels())
-                .containsExactlyInAnyOrder(ScopeLevel.PROJECT, ScopeLevel.ORGANIZATION, ScopeLevel.ACCOUNT);
-    }
+  @Test
+  @Owner(developers = DMACK)
+  @Category(UnitTests.class)
+  public void getEventFrameworkEntityType() {
+    assertThat(proxyApiKeyResourceImpl.getEventFrameworkEntityType().get()).isEqualTo("FF_PROXYAPIKEY");
+  }
 
-    @Test
-    @Owner(developers = DMACK)
-    @Category(UnitTests.class)
-    public void getEventFrameworkEntityType() {
-        assertThat(proxyApiKeyResourceImpl.getEventFrameworkEntityType().get())
-                .isEqualTo("FF_PROXYAPIKEY");
-    }
-
-    @Test
-    @Owner(developers = DMACK)
-    @Category(UnitTests.class)
-    public void testValidateEmptyResourceList() {
-        assertThat(
-                proxyApiKeyResourceImpl.validate(new ArrayList<>(), Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER)))
-                .isEmpty();
-    }
+  @Test
+  @Owner(developers = DMACK)
+  @Category(UnitTests.class)
+  public void testValidateEmptyResourceList() {
+    assertThat(proxyApiKeyResourceImpl.validate(
+                   new ArrayList<>(), Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER)))
+        .isEmpty();
+  }
 }
