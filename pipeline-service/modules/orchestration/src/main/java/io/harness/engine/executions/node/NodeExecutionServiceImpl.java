@@ -821,8 +821,11 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
 
   @VisibleForTesting
   void emitEvent(NodeExecution nodeExecution, OrchestrationEventType orchestrationEventType) {
+    if (nodeExecution == null) {
+      return;
+    }
     TriggerPayload triggerPayload = TriggerPayload.newBuilder().build();
-    if (nodeExecution != null && nodeExecution.getAmbiance() != null) {
+    if (nodeExecution.getAmbiance() != null) {
       PlanExecutionMetadata metadata =
           planExecutionMetadataService.findByPlanExecutionId(nodeExecution.getAmbiance().getPlanExecutionId())
               .orElseThrow(()
