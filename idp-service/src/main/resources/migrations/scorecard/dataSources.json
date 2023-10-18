@@ -47,5 +47,12 @@
     "identifier": "jira",
     "name": "Jira",
     "description": "Jira"
+  },
+  {
+    "id": "651bf7a398eade55f63cc00c",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "gitlab",
+    "name": "GitLab",
+    "description": "GitLab"
   }
 ]

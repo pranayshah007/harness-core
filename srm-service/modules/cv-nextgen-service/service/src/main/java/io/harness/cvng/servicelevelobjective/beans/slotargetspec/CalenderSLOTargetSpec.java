@@ -8,6 +8,7 @@
 package io.harness.cvng.servicelevelobjective.beans.slotargetspec;
 
 import io.harness.cvng.servicelevelobjective.beans.DayOfWeek;
+import io.harness.cvng.servicelevelobjective.beans.QuarterStart;
 import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 
@@ -77,9 +78,18 @@ public class CalenderSLOTargetSpec extends SLOTargetSpec {
   @NoArgsConstructor
   @JsonIgnoreProperties(ignoreUnknown = true)
   public static class QuarterlyCalenderSpec extends CalenderSpec {
+    private QuarterStart quarterStart;
     @Override
     public SLOCalenderType getType() {
       return SLOCalenderType.QUARTERLY;
+    }
+
+    public QuarterStart getQuarterStart() {
+      if (quarterStart == null) {
+        return QuarterStart.JAN_APR_JUL_OCT;
+      } else {
+        return quarterStart;
+      }
     }
   }
 

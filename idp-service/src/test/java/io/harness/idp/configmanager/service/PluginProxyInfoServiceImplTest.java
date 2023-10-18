@@ -23,10 +23,12 @@ import io.harness.idp.configmanager.beans.entity.PluginsProxyInfoEntity;
 import io.harness.idp.configmanager.repositories.PluginsProxyInfoRepository;
 import io.harness.idp.configmanager.utils.ConfigType;
 import io.harness.idp.proxy.envvariable.ProxyEnvVariableServiceWrapper;
+import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.ProxyHostDetail;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.json.JSONObject;
@@ -37,6 +39,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(HarnessTeam.IDP)
 public class PluginProxyInfoServiceImplTest extends CategoryTest {
@@ -46,6 +51,10 @@ public class PluginProxyInfoServiceImplTest extends CategoryTest {
   @Mock ProxyEnvVariableServiceWrapper proxyEnvVariableServiceWrapper;
 
   @Spy @InjectMocks PluginsProxyInfoServiceImpl pluginsProxyInfoServiceImpl;
+
+  @Mock private TransactionTemplate transactionTemplate;
+
+  @Mock private OutboxService outboxService;
 
   @Before
   public void setUp() {
@@ -77,6 +86,12 @@ public class PluginProxyInfoServiceImplTest extends CategoryTest {
   public void testInsertProxyHostDetailsForPlugin() {
     PluginsProxyInfoEntity pluginsProxyInfoEntity = getTestPluginProxyInfoEntity();
     AppConfig appConfig = getTestAppConfig();
+
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+
     when(pluginsProxyInfoServiceImpl.getPluginProxyInfoEntities(appConfig, TEST_ACCOUNT_IDENTIFIER))
         .thenReturn(Collections.emptyList());
     when(pluginsProxyInfoRepository.findAllByAccountIdentifierAndPluginId(any(), any()))
@@ -122,8 +137,18 @@ public class PluginProxyInfoServiceImplTest extends CategoryTest {
   public void testUpdateProxyHostDetailsForPlugin() {
     PluginsProxyInfoEntity pluginsProxyInfoEntity = getTestPluginProxyInfoEntity();
     AppConfig appConfig = getTestAppConfig();
+
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+
+    List<PluginsProxyInfoEntity> returnedValueForMongoQuery = new ArrayList<>();
+    returnedValueForMongoQuery.add(getTestPluginProxyInfoEntity());
+
     when(pluginsProxyInfoRepository.findAllByAccountIdentifierAndPluginId(any(), any()))
-        .thenReturn(Collections.singletonList(getTestPluginProxyInfoEntity()));
+        .thenReturn(returnedValueForMongoQuery);
+    when(pluginsProxyInfoRepository.updatePluginProxyInfo(any(), any())).thenReturn(returnedValueForMongoQuery.get(0));
     doNothing().when(delegateSelectorsCache).remove(any(), any());
     doNothing().when(proxyEnvVariableServiceWrapper).removeFromHostProxyEnvVariable(any(), any());
     doNothing().when(pluginsProxyInfoRepository).deleteAllByAccountIdentifierAndPluginId(any(), any());

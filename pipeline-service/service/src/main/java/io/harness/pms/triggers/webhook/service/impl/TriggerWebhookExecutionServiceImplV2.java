@@ -8,6 +8,7 @@
 package io.harness.pms.triggers.webhook.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.util.stream.Collectors.toList;
@@ -37,6 +38,8 @@ import io.harness.product.ci.scm.proto.Action;
 import io.harness.product.ci.scm.proto.ParseWebhookResponse;
 import io.harness.product.ci.scm.proto.PullRequestHook;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.ServicePrincipal;
 import io.harness.serializer.JsonUtils;
 
 import com.google.inject.Inject;
@@ -59,6 +62,7 @@ public class TriggerWebhookExecutionServiceImplV2 implements TriggerWebhookExecu
 
   @Override
   public void processEvent(WebhookDTO webhookDTO) {
+    SecurityContextBuilder.setContext(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
     try {
       WebhookEventProcessingResult result;
 

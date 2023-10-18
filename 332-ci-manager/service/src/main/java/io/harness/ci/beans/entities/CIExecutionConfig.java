@@ -49,6 +49,7 @@ public class CIExecutionConfig implements PersistentEntity, UuidAware, CreatedAt
   @NotBlank String buildAndPushECRImage;
   @NotBlank String buildAndPushACRImage;
   @NotBlank String buildAndPushGCRImage;
+  @NotBlank String buildAndPushGARImage;
   @NotBlank String gcsUploadImage;
   @NotBlank String s3UploadImage;
   @NotBlank String artifactoryUploadTag;

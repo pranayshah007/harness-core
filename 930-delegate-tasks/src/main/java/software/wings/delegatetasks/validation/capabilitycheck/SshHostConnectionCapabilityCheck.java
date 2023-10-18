@@ -6,7 +6,6 @@
  */
 
 package software.wings.delegatetasks.validation.capabilitycheck;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.task.utils.PhysicalDataCenterUtils.extractHostnameFromHost;
 import static io.harness.exception.WingsException.USER_SRE;
@@ -14,8 +13,11 @@ import static io.harness.shell.SshSessionConfig.Builder.aSshSessionConfig;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.cdng.secrets.tasks.SshSessionConfigHelper;
 import io.harness.delegate.beans.executioncapability.CapabilityResponse;
@@ -33,14 +35,14 @@ import io.harness.secretmanagerclient.SSHAuthScheme;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.SshSessionConfig;
-import io.harness.shell.SshSessionFactory;
 import io.harness.shell.ssh.SshClientManager;
+import io.harness.shell.ssh.exception.SshClientException;
 
 import com.google.inject.Inject;
-import com.jcraft.jsch.Session;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_AMI_ASG})
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
@@ -85,13 +87,8 @@ public class SshHostConnectionCapabilityCheck implements CapabilityCheck {
     return capabilityResponseBuilder.build();
   }
 
-  void connect(SshSessionConfig config) throws Exception {
-    if (config.isUseSshClient() || config.isVaultSSH()) {
-      SshClientManager.test(config);
-    } else {
-      Session session = SshSessionFactory.getSSHSession(config);
-      session.disconnect();
-    }
+  void connect(SshSessionConfig config) throws SshClientException {
+    SshClientManager.test(config);
   }
 
   private SshSessionConfig generateSshSessionConfigForKerberos(SSHAuthDTO authDTO, String host,

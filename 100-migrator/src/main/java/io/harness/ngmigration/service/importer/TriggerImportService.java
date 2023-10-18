@@ -9,6 +9,8 @@ package io.harness.ngmigration.service.importer;
 
 import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
 
+import static software.wings.ngmigration.NGMigrationEntityType.ARTIFACT_STREAM;
+import static software.wings.ngmigration.NGMigrationEntityType.SERVICE;
 import static software.wings.ngmigration.NGMigrationEntityType.TRIGGER;
 
 import io.harness.annotations.dev.CodePulse;
@@ -19,6 +21,7 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.WorkflowType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.utils.NGYamlUtils;
 import io.harness.ngmigration.beans.DiscoverEntityInput;
 import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
@@ -31,7 +34,7 @@ import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.dto.SaveSummaryDTO;
 import io.harness.ngmigration.dto.TriggerFilter;
 import io.harness.ngmigration.service.DiscoveryService;
-import io.harness.ngmigration.service.MigrationTemplateUtils;
+import io.harness.ngmigration.service.MigrationHelperService;
 import io.harness.ngmigration.service.artifactstream.ArtifactStreamFactory;
 import io.harness.ngmigration.service.artifactstream.ArtifactStreamMapper;
 import io.harness.ngmigration.utils.MigratorUtility;
@@ -55,6 +58,7 @@ import io.harness.remote.client.ServiceHttpClientConfig;
 
 import software.wings.beans.Base;
 import software.wings.beans.Environment;
+import software.wings.beans.Service;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamType;
 import software.wings.beans.trigger.ArtifactSelection;
@@ -100,7 +104,7 @@ public class TriggerImportService implements ImportService {
   @Inject private InfrastructureDefinitionService infrastructureDefinitionService;
   @Inject DiscoveryService discoveryService;
   @Inject HPersistence hPersistence;
-  @Inject private MigrationTemplateUtils migrationTemplateUtils;
+  @Inject private MigrationHelperService migrationHelperService;
   @Inject @Named("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceClientConfig;
   @Inject WorkflowImportService workflowImportService;
 
@@ -206,7 +210,7 @@ public class TriggerImportService implements ImportService {
                   RequestBody.create(MediaType.parse("application/yaml"), yaml))
               .execute();
       log.info("Trigger creation Response details {} {}", resp.code(), resp.message());
-      log.info("Trigger yaml is \n - {}", yaml);
+      log.info("Trigger yaml is \n - {}", NGYamlUtils.getYamlString(triggerConfigSchemaWrapper));
       return MigratorUtility.handleEntityMigrationResp(ngYamlFile, resp);
     } catch (Exception e) {
       log.error("Error creating the trigger", e);
@@ -215,6 +219,16 @@ public class TriggerImportService implements ImportService {
               ImportError.builder().message(e.getMessage()).entity(ngYamlFile.getCgBasicInfo()).build()))
           .build();
     }
+  }
+
+  private Service getServiceFromArtifactStream(Map<CgEntityId, CgEntityNode> entities, String artifactStreamId) {
+    CgEntityId cgEntityId = CgEntityId.builder().id(artifactStreamId).type(ARTIFACT_STREAM).build();
+    ArtifactStream artifactStream = (ArtifactStream) entities.get(cgEntityId).getEntity();
+    if (artifactStream != null) {
+      CgEntityId serviceCgEntityId = CgEntityId.builder().id(artifactStream.getServiceId()).type(SERVICE).build();
+      return (Service) entities.get(serviceCgEntityId).getEntity();
+    }
+    return null;
   }
 
   private NGYamlFile generateTriggerPayload(MigrationInputDTO inputDTO, DiscoveryResult discoveryResult,
@@ -234,67 +248,15 @@ public class TriggerImportService implements ImportService {
 
     Map<String, Object> inputDetails = new HashMap<>();
     JsonNode inputNode = getInputDetails(inputDTO, pipelineDetail, inputDetails);
-    ArrayNode stagesNode = (ArrayNode) inputDetails.get("stages");
+    Object jsonStagesNode = inputDetails.get("stages");
 
-    if (stagesNode != null) {
+    if (jsonStagesNode instanceof ArrayNode) {
+      ArrayNode stagesNode = (ArrayNode) jsonStagesNode;
       for (int i = 0; i < stagesNode.size(); i++) {
         JsonNode stageNode = stagesNode.get(i);
-        Optional<ArtifactSelection> firstArtifactSelection = trigger.getArtifactSelections().stream().findFirst();
-
-        if (firstArtifactSelection.isPresent()) {
-          ArtifactSelection artifactSelection = firstArtifactSelection.get();
-          String triggerServiceRef = artifactSelection.getServiceName();
-          String serviceNGId =
-              MigratorUtility.generateIdentifier(triggerServiceRef, inputDTO.getIdentifierCaseFormat());
-          String serviceRef = stageNode.at("/stage/template/templateInputs/spec/service/serviceRef").asText();
-          if (RUNTIME_INPUT.equals(serviceRef) && !RUNTIME_INPUT.equals(triggerServiceRef)) {
-            ObjectNode serviceNode = (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/service");
-            serviceNode.put("serviceRef", serviceNGId);
-          }
-
-          Map<String, String> workflowVariables = trigger.getWorkflowVariables();
-          if (workflowVariables != null) {
-            String envCGId = workflowVariables.get("Environment");
-            if (envCGId != null) {
-              Environment env = environmentService.get(trigger.getAppId(), envCGId);
-              String envNGId = MigratorUtility.generateIdentifier(env.getName(), inputDTO.getIdentifierCaseFormat());
-
-              String envRef = stageNode.at("/stage/template/templateInputs/spec/environment/environmentRef").asText();
-              if (RUNTIME_INPUT.equals(envRef) && envNGId != null) {
-                ObjectNode envNode = (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/environment");
-                envNode.put("environmentRef", envNGId);
-              }
-            }
-
-            String pattern = ".*InfraDefinition.*";
-            Pattern regexPattern = Pattern.compile(pattern);
-            String infraCGId = null;
-            for (Map.Entry<String, String> entry : workflowVariables.entrySet()) {
-              String key = entry.getKey();
-              String value = entry.getValue();
-              Matcher matcher = regexPattern.matcher(key);
-              if (matcher.matches()) {
-                infraCGId = value;
-              }
-            }
-            if (infraCGId != null) {
-              InfrastructureDefinition infra = infrastructureDefinitionService.get(trigger.getAppId(), infraCGId);
-              if (infra != null) {
-                String infraNGId =
-                    MigratorUtility.generateIdentifier(infra.getName(), inputDTO.getIdentifierCaseFormat());
-                String infraRef =
-                    stageNode.at("/stage/template/templateInputs/spec/environment/infrastructureDefinitions").asText();
-                if (RUNTIME_INPUT.equals(infraRef) && infraNGId != null) {
-                  ObjectNode infraNodeObj =
-                      (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/environment");
-                  JsonNode infraNode = objectMapper.createObjectNode().put("identifier", infraNGId);
-                  ArrayNode infraArrayNode = objectMapper.createArrayNode().add(infraNode);
-                  infraNodeObj.set("infrastructureDefinitions", infraArrayNode);
-                }
-              }
-            }
-          }
-        }
+        resolveServiceDetails(stageNode, trigger, inputDTO, discoveryResult, yamlFileMap);
+        resolveEnvDetails(stageNode, trigger, inputDTO);
+        resolveInfraDetails(stageNode, trigger, inputDTO);
       }
     }
 
@@ -323,6 +285,84 @@ public class TriggerImportService implements ImportService {
                             .build())
         .cgBasicInfo(trigger.getCgBasicInfo())
         .build();
+  }
+
+  private void resolveServiceDetails(JsonNode stageNode, Trigger trigger, MigrationInputDTO inputDTO,
+      DiscoveryResult discoveryResult, Map<CgEntityId, NGYamlFile> yamlFileMap) {
+    Optional<ArtifactSelection> firstArtifactSelection = trigger.getArtifactSelections().stream().findFirst();
+    String artifactStreamId = null;
+    if (trigger.getCondition() instanceof ArtifactTriggerCondition) {
+      artifactStreamId = ((ArtifactTriggerCondition) trigger.getCondition()).getArtifactStreamId();
+    }
+
+    if (firstArtifactSelection.isPresent()) {
+      ArtifactSelection artifactSelection = firstArtifactSelection.get();
+      String triggerServiceRef = artifactSelection.getServiceName();
+      String serviceNGId = MigratorUtility.generateIdentifier(triggerServiceRef, inputDTO.getIdentifierCaseFormat());
+      String serviceRef = stageNode.at("/stage/template/templateInputs/spec/service/serviceRef").asText();
+      if (RUNTIME_INPUT.equals(serviceRef) && !RUNTIME_INPUT.equals(triggerServiceRef)) {
+        ObjectNode serviceNode = (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/service");
+        serviceNode.put("serviceRef", serviceNGId);
+      }
+    } else if (artifactStreamId != null) {
+      Service service = getServiceFromArtifactStream(discoveryResult.getEntities(), artifactStreamId);
+      if (service != null) {
+        String serviceNGId = MigratorUtility.generateIdentifier(service.getName(), inputDTO.getIdentifierCaseFormat());
+        String serviceRef = stageNode.at("/stage/template/templateInputs/spec/service/serviceRef").asText();
+        if (RUNTIME_INPUT.equals(serviceRef)) {
+          ObjectNode serviceNode = (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/service");
+          serviceNode.put("serviceRef", serviceNGId);
+        }
+      }
+    }
+  }
+
+  private void resolveEnvDetails(JsonNode stageNode, Trigger trigger, MigrationInputDTO inputDTO) {
+    Map<String, String> workflowVariables = trigger.getWorkflowVariables();
+    if (workflowVariables != null) {
+      String envCGId = workflowVariables.get("Environment");
+      if (envCGId != null) {
+        Environment env = environmentService.get(trigger.getAppId(), envCGId);
+        String envNGId = MigratorUtility.generateIdentifier(env.getName(), inputDTO.getIdentifierCaseFormat());
+
+        String envRef = stageNode.at("/stage/template/templateInputs/spec/environment/environmentRef").asText();
+        if (RUNTIME_INPUT.equals(envRef) && envNGId != null) {
+          ObjectNode envNode = (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/environment");
+          envNode.put("environmentRef", envNGId);
+        }
+      }
+    }
+  }
+
+  private void resolveInfraDetails(JsonNode stageNode, Trigger trigger, MigrationInputDTO inputDTO) {
+    Map<String, String> workflowVariables = trigger.getWorkflowVariables();
+    if (workflowVariables != null) {
+      String pattern = ".*InfraDefinition.*";
+      Pattern regexPattern = Pattern.compile(pattern);
+      String infraCGId = null;
+      for (Map.Entry<String, String> entry : workflowVariables.entrySet()) {
+        String key = entry.getKey();
+        String value = entry.getValue();
+        Matcher matcher = regexPattern.matcher(key);
+        if (matcher.matches()) {
+          infraCGId = value;
+        }
+      }
+      if (infraCGId != null) {
+        InfrastructureDefinition infra = infrastructureDefinitionService.get(trigger.getAppId(), infraCGId);
+        if (infra != null) {
+          String infraNGId = MigratorUtility.generateIdentifier(infra.getName(), inputDTO.getIdentifierCaseFormat());
+          String infraRef =
+              stageNode.at("/stage/template/templateInputs/spec/environment/infrastructureDefinitions").asText();
+          if (RUNTIME_INPUT.equals(infraRef) && infraNGId != null) {
+            ObjectNode infraNodeObj = (ObjectNode) stageNode.at("/stage/template/templateInputs/spec/environment");
+            JsonNode infraNode = objectMapper.createObjectNode().put("identifier", infraNGId);
+            ArrayNode infraArrayNode = objectMapper.createArrayNode().add(infraNode);
+            infraNodeObj.set("infrastructureDefinitions", infraArrayNode);
+          }
+        }
+      }
+    }
   }
 
   private NgEntityDetail getPipelineIdentifier(Trigger trigger, Map<CgEntityId, NGYamlFile> yamlFileMap) {
@@ -400,7 +440,7 @@ public class TriggerImportService implements ImportService {
   private JsonNode getInputDetails(
       MigrationInputDTO inputDTO, NgEntityDetail pipelineDetail, Map<String, Object> inputDetails) {
     String inputYaml =
-        migrationTemplateUtils.getPipelineInput(inputDTO, pipelineDetail, inputDTO.getDestinationAccountIdentifier());
+        migrationHelperService.getPipelineInput(inputDTO, pipelineDetail, inputDTO.getDestinationAccountIdentifier());
 
     JsonNode inputNode;
     if (StringUtils.isBlank(inputYaml)) {

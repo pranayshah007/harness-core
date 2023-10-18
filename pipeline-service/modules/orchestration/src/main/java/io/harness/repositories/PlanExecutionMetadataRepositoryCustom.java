@@ -6,15 +6,18 @@
  */
 
 package io.harness.repositories;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.execution.PlanExecutionMetadata;
 
 import java.util.Set;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PlanExecutionMetadataRepositoryCustom {
   PlanExecutionMetadata updatePlanExecution(Criteria criteria, Update update);

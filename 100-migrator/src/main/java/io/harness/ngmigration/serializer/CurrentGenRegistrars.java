@@ -6,10 +6,12 @@
  */
 
 package io.harness.ngmigration.serializer;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.AccessControlClientRegistrars;
 import io.harness.serializer.KryoRegistrar;
@@ -21,6 +23,7 @@ import dev.morphia.converters.TypeConverter;
 import lombok.experimental.UtilityClass;
 import org.springframework.core.convert.converter.Converter;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 @UtilityClass
 @OwnedBy(CDC)
 public class CurrentGenRegistrars {

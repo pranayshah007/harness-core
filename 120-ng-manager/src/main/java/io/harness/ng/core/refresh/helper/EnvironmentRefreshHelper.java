@@ -191,6 +191,7 @@ public class EnvironmentRefreshHelper {
         serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF).getNode().getCurrJsonNode();
     JsonNode envRefInResolvedTemplatesYaml =
         envNodeInResolvedTemplatesYaml.getField(YamlTypes.ENVIRONMENT_REF).getNode().getCurrJsonNode();
+
     validateServiceOverrideInputs(context, errorNodeSummary, mapper, serviceOverrideInputs,
         serviceRefInResolvedTemplatesYaml, envRefInResolvedTemplatesYaml);
   }
@@ -202,6 +203,12 @@ public class EnvironmentRefreshHelper {
       log.warn("Service ref or env ref in yaml is null. Exiting.");
       return;
     }
+
+    if (NGExpressionUtils.isExpressionField(envRefInResolvedTemplatesYaml.asText())
+        || NGExpressionUtils.isExpressionField(serviceRefInResolvedTemplatesYaml.asText())) {
+      return;
+    }
+
     if (isNodeNotNullAndValueRuntime(serviceRefInResolvedTemplatesYaml)
         || isNodeNotNullAndValueRuntime(envRefInResolvedTemplatesYaml)) {
       if (isNodeNotNullAndNotHaveRuntimeValue(serviceOverrideInputs)) {

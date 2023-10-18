@@ -46,9 +46,7 @@ import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.service.entity.ServiceEntity;
-import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.services.ServiceEntityService;
-import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
@@ -138,6 +136,11 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
 
   private void validateMultiServices(
       FilterCreationContext filterCreationContext, DeploymentStageConfig deploymentStageConfig) {
+    if (ParameterField.isNotNull(deploymentStageConfig.getServices().getValues())
+        && !deploymentStageConfig.getServices().getValues().isExpression()
+        && isEmpty(deploymentStageConfig.getServices().getValues().getValue())) {
+      throw new InvalidYamlRuntimeException("Atleast one service is required, Please select a service and try again");
+    }
     if (usesServicesFromAnotherStage(deploymentStageConfig)) {
       if (hasNoSiblingStages(filterCreationContext.getCurrentField())) {
         throw new InvalidYamlRuntimeException(
@@ -452,26 +455,26 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     }
 
     if (!serviceRefs.isEmpty()) {
-      List<ServiceEntity> serviceEntities = serviceEntityService.getServices(
+      List<ServiceEntity> serviceEntities = serviceEntityService.getMetadata(
           filterCreationContext.getSetupMetadata().getAccountId(), filterCreationContext.getSetupMetadata().getOrgId(),
           filterCreationContext.getSetupMetadata().getProjectId(), serviceRefs);
       for (ServiceEntity se : serviceEntities) {
-        NGServiceV2InfoConfig config = NGServiceEntityMapper.toNGServiceConfig(se).getNgServiceV2InfoConfig();
         String scopedIdentifier = IdentifierRefHelper
                                       .getIdentifierRefWithScope(se.getAccountId(), se.getOrgIdentifier(),
                                           se.getProjectIdentifier(), se.getIdentifier())
                                       .buildScopedIdentifier();
         filterBuilder.serviceName(scopedIdentifier);
-        if (config.getServiceDefinition() == null) {
-          throw new InvalidYamlRuntimeException(format(
+        if (se.getType() == null) {
+          log.error(format(
               "ServiceDefinition should be present in service [%s]. Please add it and try again", scopedIdentifier));
+          return;
         }
-        if (config.getServiceDefinition().getType() != deploymentType) {
+        if (deploymentType != se.getType()) {
           throw new InvalidYamlRuntimeException(
               format("deploymentType should be the same as in service [%s]. Please correct it and try again",
                   scopedIdentifier));
         }
-        filterBuilder.deploymentType(config.getServiceDefinition().getType().getYamlName());
+        filterBuilder.deploymentType(se.getType().getYamlName());
       }
     }
   }
@@ -501,23 +504,22 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     }
 
     if (!serviceEntityRef.isExpression()) {
-      Optional<ServiceEntity> serviceEntityOptional = serviceEntityService.get(
+      Optional<ServiceEntity> serviceEntityOptional = serviceEntityService.getMetadata(
           filterCreationContext.getSetupMetadata().getAccountId(), filterCreationContext.getSetupMetadata().getOrgId(),
           filterCreationContext.getSetupMetadata().getProjectId(), serviceEntityRef.getValue(), false);
       serviceEntityOptional.ifPresent(se -> {
-        NGServiceV2InfoConfig config = NGServiceEntityMapper.toNGServiceConfig(se).getNgServiceV2InfoConfig();
         filterBuilder.serviceName(serviceEntityRef.getValue());
-        if (config.getServiceDefinition() == null) {
-          throw new InvalidYamlRuntimeException(
-              format("ServiceDefinition should be present in service [%s]. Please add it and try again",
-                  serviceEntityRef.getValue()));
+        if (se.getType() == null) {
+          log.error(format("ServiceDefinition should be present in service [%s]. Please add it and try again",
+              serviceEntityRef.getValue()));
+          return;
         }
-        if (config.getServiceDefinition().getType() != deploymentType) {
+        if (deploymentType != se.getType()) {
           throw new InvalidYamlRuntimeException(
               format("deploymentType should be the same as in service [%s]. Please correct it and try again",
                   serviceEntityRef.getValue()));
         }
-        filterBuilder.deploymentType(config.getServiceDefinition().getType().getYamlName());
+        filterBuilder.deploymentType(se.getType().getYamlName());
       });
     }
   }
@@ -538,7 +540,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
 
     ParameterField<String> serviceRef = serviceConfig.getServiceRef();
     if (serviceRef != null && !serviceRef.isExpression() && isNotEmpty(serviceRef.getValue())) {
-      Optional<ServiceEntity> serviceEntityOptional = serviceEntityService.get(
+      Optional<ServiceEntity> serviceEntityOptional = serviceEntityService.getMetadata(
           filterCreationContext.getSetupMetadata().getAccountId(), filterCreationContext.getSetupMetadata().getOrgId(),
           filterCreationContext.getSetupMetadata().getProjectId(), serviceRef.getValue(), false);
       serviceEntityOptional.ifPresent(serviceEntity -> cdFilter.serviceName(serviceRef.getValue()));

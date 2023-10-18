@@ -80,6 +80,29 @@ public class AwsCdkConfigDALTest extends CategoryTest {
     verify(cdExpressionResolver).updateExpressions(any(), eq(awsCdkConfig));
   }
 
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testDeleteAwsCdkConfig() {
+    String provisionerIdentifier = "provisionerIdentifier";
+    Query mockQuery = mock(Query.class);
+    doReturn(mockQuery).when(persistence).createQuery(any());
+    doReturn(mockQuery).when(mockQuery).filter(any(), any());
+    doReturn(true).when(persistence).delete(eq(mockQuery));
+
+    awsCdkConfigDAL.deleteAwsCdkConfig(getAmbiance(), provisionerIdentifier);
+    verify(persistence, times(1)).createQuery(AwsCdkConfig.class);
+    verify(persistence, times(1)).delete(mockQuery);
+
+    verify(mockQuery, times(1)).filter(eq(AwsCdkConfigKeys.accountId), eq("account"));
+    verify(mockQuery, times(1)).filter(eq(AwsCdkConfigKeys.orgId), eq("org"));
+    verify(mockQuery, times(1)).filter(eq(AwsCdkConfigKeys.projectId), eq("project"));
+    verify(mockQuery, times(1)).filter(eq(AwsCdkConfigKeys.provisionerIdentifier), eq(provisionerIdentifier));
+    verify(mockQuery, times(1)).filter(eq(AwsCdkConfigKeys.stageExecutionId), eq("stageExecutionId"));
+    verify(persistence, times(1)).createQuery(AwsCdkConfig.class);
+    verify(persistence, times(1)).delete(mockQuery);
+  }
+
   private Ambiance getAmbiance() {
     Map<String, String> setupAbstractions = new HashMap<>();
     setupAbstractions.put(SetupAbstractionKeys.accountId, "account");

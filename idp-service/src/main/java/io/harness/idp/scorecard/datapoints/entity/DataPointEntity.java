@@ -54,6 +54,7 @@ public class DataPointEntity implements PersistentEntity {
   private String name;
   private Type type;
   private String description;
+  private String detailedDescription;
   private boolean isConditional;
   private String conditionalInputValueDescription;
   private String dataSourceLocationIdentifier;

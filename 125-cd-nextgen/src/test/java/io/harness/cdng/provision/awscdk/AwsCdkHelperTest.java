@@ -79,15 +79,15 @@ public class AwsCdkHelperTest extends CategoryTest {
   public void testProcessOutput() {
     StepMapOutput stepMapOutput = StepMapOutput.builder()
                                       .output(GIT_COMMIT_ID, "dGVzdHZhbHVlZQ--")
-                                      .output("CDK_OUTPUT", "dGVzdHZhbHVlZQ--")
+                                      .output("CDK_OUTPUT", "eyJvdXRwdXQiOiJvdXRwdXRWYWx1ZSJ9")
                                       .output("key", "notEncodedValue")
                                       .build();
 
-    Map<String, String> processOutput = awsCdkHelper.processOutput(stepMapOutput);
+    Map<String, Object> processOutput = awsCdkHelper.processOutput(stepMapOutput);
 
-    assertThat(processOutput.get(GIT_COMMIT_ID)).isEqualTo("testvaluee");
-    assertThat(processOutput.get("CDK_OUTPUT")).isEqualTo("testvaluee");
-    assertThat(processOutput.get("key")).isEqualTo("notEncodedValue");
+    assertThat(stepMapOutput.getMap().get(GIT_COMMIT_ID)).isEqualTo("testvaluee");
+    assertThat(stepMapOutput.getMap().get("key")).isEqualTo("notEncodedValue");
+    assertThat((String) processOutput.get("output")).isEqualTo("outputValue");
   }
 
   @Test

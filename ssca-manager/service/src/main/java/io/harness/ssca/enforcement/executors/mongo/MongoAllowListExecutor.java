@@ -21,7 +21,6 @@ import io.harness.ssca.services.EnforcementResultService;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
@@ -70,9 +69,9 @@ public class MongoAllowListExecutor implements IRuleExecutor<AllowList> {
     for (NormalizedSBOMComponentEntity component : violatedComponents) {
       String violationDetails =
           enforcementResultService.getViolationDetails(component, allowList.getAllowListItem(), type);
-      result.addAll(enforcementResultService.getEnforcementResults(Collections.singletonList(component),
-          ViolationType.ALLOWLIST_VIOLATION.getViolation(), violationDetails, engine.getArtifact(),
-          engine.getEnforcementId()));
+      result.add(
+          enforcementResultService.getEnforcementResults(component, ViolationType.ALLOWLIST_VIOLATION.getViolation(),
+              violationDetails, engine.getArtifact(), engine.getEnforcementId()));
     }
     return result;
   }

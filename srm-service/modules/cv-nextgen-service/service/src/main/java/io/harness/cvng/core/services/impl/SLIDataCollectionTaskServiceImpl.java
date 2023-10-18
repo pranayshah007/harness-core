@@ -100,6 +100,7 @@ public class SLIDataCollectionTaskServiceImpl implements DataCollectionTaskManag
     cvConfigList.forEach(cvConfig -> dataCollectionTaskService.populateMetricPack(cvConfig));
     Instant nextTaskStartTime = prevSLITask.getEndTime();
     Instant currentTime = clock.instant();
+    Instant nextTaskEndTime = roundUpTo5MinBoundary(currentTime);
     if (nextTaskStartTime.isBefore(prevSLITask.getDataCollectionPastTimeCutoff(currentTime))) {
       nextTaskStartTime = prevSLITask.getDataCollectionPastTimeCutoff(currentTime);
       serviceLevelIndicatorService.enqueueDataCollectionFailureInstanceAndTriggerAnalysis(
@@ -107,11 +108,11 @@ public class SLIDataCollectionTaskServiceImpl implements DataCollectionTaskManag
       log.info("Restarting Data collection startTime for task {} : {}", prevSLITask.getVerificationTaskId(),
           nextTaskStartTime);
     }
-    DataCollectionTask dataCollectionTask = getDataCollectionTaskForSLI(
-        cvConfigList, serviceLevelIndicator, false, nextTaskStartTime, roundUpTo5MinBoundary(currentTime));
+    DataCollectionTask dataCollectionTask =
+        getDataCollectionTaskForSLI(cvConfigList, serviceLevelIndicator, false, nextTaskStartTime, nextTaskEndTime);
     if (dataCollectionTask != null) {
       if (prevSLITask.getStatus() != DataCollectionExecutionStatus.SUCCESS) {
-        dataCollectionTask.setValidAfter(dataCollectionTask.getNextValidAfter(clock.instant()));
+        dataCollectionTask.setValidAfter(dataCollectionTask.getNextValidAfter(nextTaskEndTime));
       }
       dataCollectionTaskService.validateIfAlreadyExists(dataCollectionTask);
       dataCollectionTaskService.save(dataCollectionTask);

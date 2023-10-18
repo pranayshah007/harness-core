@@ -10,25 +10,72 @@ package io.harness.delegate.task.executioncapability;
 import io.harness.capability.CapabilityParameters;
 import io.harness.capability.CapabilitySubjectPermission;
 import io.harness.capability.CapabilitySubjectPermission.CapabilitySubjectPermissionBuilder;
+import io.harness.delegate.beans.ci.pod.ConnectorDetails;
+import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthCredentialDTO;
+import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
+import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterDetailsDTO;
+import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialSpecDTO;
+import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
 import io.harness.delegate.beans.executioncapability.CapabilityResponse;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.LiteEngineConnectionCapability;
+import io.harness.delegate.task.k8s.K8sYamlToDelegateDTOMapper;
+import io.harness.k8s.apiclient.ApiClientFactory;
+import io.harness.k8s.model.KubernetesConfig;
 import io.harness.product.ci.engine.proto.LiteEngineGrpc;
 import io.harness.product.ci.engine.proto.PingRequest;
+import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.security.encryption.SecretDecryptionService;
 
+import com.google.inject.Inject;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.internal.GrpcUtil;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.util.generic.GenericKubernetesApi;
+import io.kubernetes.client.util.generic.KubernetesApiResponse;
+import io.kubernetes.client.util.generic.options.DeleteOptions;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class LiteEngineConnectionCapabilityCheck implements CapabilityCheck, ProtoCapabilityCheck {
+  @Inject private SecretDecryptionService secretDecryptionService;
+  @Inject private K8sYamlToDelegateDTOMapper k8sYamlToDelegateDTOMapper;
+  @Inject private ApiClientFactory apiClientFactory;
   @Override
   public CapabilityResponse performCapabilityCheck(ExecutionCapability delegateCapability) {
     LiteEngineConnectionCapability liteEngineConnectionCapability = (LiteEngineConnectionCapability) delegateCapability;
     boolean valid = isConnectibleLiteEngine(liteEngineConnectionCapability.getIp(),
         liteEngineConnectionCapability.getPort(), liteEngineConnectionCapability.isLocal());
+    try {
+      if (liteEngineConnectionCapability.getPodName() != null && valid) {
+        ConnectorDetails k8sConnectorDetails = liteEngineConnectionCapability.getK8sConnectorDetails();
+        KubernetesConfig kubernetesConfig =
+            getKubernetesConfig((KubernetesClusterConfigDTO) k8sConnectorDetails.getConnectorConfig(),
+                k8sConnectorDetails.getEncryptedDataDetails());
+
+        ApiClient apiClient = apiClientFactory.getClient(kubernetesConfig);
+        CoreV1Api coreV1Api = new CoreV1Api(apiClient);
+        GenericKubernetesApi<V1Pod, V1PodList> podClient =
+            new GenericKubernetesApi(V1Pod.class, V1PodList.class, "", "v1", "pods", coreV1Api.getApiClient());
+        DeleteOptions deleteOptions = new DeleteOptions();
+        deleteOptions.setGracePeriodSeconds(0l);
+        deleteOptions.setDryRun(Arrays.asList("All"));
+        KubernetesApiResponse kubernetesApiResponse = podClient.delete(
+            liteEngineConnectionCapability.getNamespace(), liteEngineConnectionCapability.getPodName(), deleteOptions);
+        if (!kubernetesApiResponse.isSuccess()) {
+          valid = false;
+        }
+      }
+    } catch (Exception ex) {
+      log.error("Failed to validate deletion dry run", ex);
+    }
     return CapabilityResponse.builder().delegateCapability(liteEngineConnectionCapability).validated(valid).build();
   }
 
@@ -71,5 +118,17 @@ public class LiteEngineConnectionCapabilityCheck implements CapabilityCheck, Pro
       log.error("Failed to connect to lite engine target {} with err: {}", target, e);
     }
     return false;
+  }
+
+  private KubernetesConfig getKubernetesConfig(
+      KubernetesClusterConfigDTO clusterConfigDTO, List<EncryptedDataDetail> encryptedDataDetails) {
+    KubernetesCredentialSpecDTO credentialSpecDTO = clusterConfigDTO.getCredential().getConfig();
+    KubernetesCredentialType kubernetesCredentialType = clusterConfigDTO.getCredential().getKubernetesCredentialType();
+    if (kubernetesCredentialType == KubernetesCredentialType.MANUAL_CREDENTIALS) {
+      KubernetesAuthCredentialDTO kubernetesCredentialAuth =
+          ((KubernetesClusterDetailsDTO) credentialSpecDTO).getAuth().getCredentials();
+      secretDecryptionService.decrypt(kubernetesCredentialAuth, encryptedDataDetails);
+    }
+    return k8sYamlToDelegateDTOMapper.createKubernetesConfigFromClusterConfig(clusterConfigDTO);
   }
 }

@@ -111,6 +111,12 @@ public class VmPluginStepSerializer {
         }
       }
     }
+
+    if (!isEmpty(settings) && settings.containsKey(GIT_CLONE_DEPTH_ATTRIBUTE)
+        && settings.get(GIT_CLONE_DEPTH_ATTRIBUTE).asText().equals("0")) {
+      settings.remove(GIT_CLONE_DEPTH_ATTRIBUTE);
+    }
+
     if (!isEmpty(settings)) {
       for (Map.Entry<String, JsonNode> entry : settings.entrySet()) {
         String key = PLUGIN_ENV_PREFIX + entry.getKey().toUpperCase();

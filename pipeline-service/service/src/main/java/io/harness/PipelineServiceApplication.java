@@ -59,6 +59,7 @@ import io.harness.event.OrchestrationStartEventHandler;
 import io.harness.event.PipelineExecutionSummaryDeleteObserver;
 import io.harness.event.PipelineResourceRestraintInstanceDeleteObserver;
 import io.harness.event.PlanExecutionMetadataDeleteObserver;
+import io.harness.event.handlers.SpawnChildrenRequestProcessor;
 import io.harness.exception.GeneralException;
 import io.harness.execution.consumers.InitiateNodeEventRedisConsumer;
 import io.harness.execution.consumers.SdkResponseEventRedisConsumer;
@@ -109,10 +110,10 @@ import io.harness.plancreator.strategy.StrategyMaxConcurrencyRestrictionUsageImp
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.annotations.PipelineServiceAuthIfHasApiKey;
 import io.harness.pms.approval.ApprovalInstanceExpirationJob;
-import io.harness.pms.approval.ApprovalInstanceHandler;
 import io.harness.pms.async.plan.PlanNotifyEventPublisher;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
 import io.harness.pms.event.PMSEventConsumerService;
+import io.harness.pms.event.filter.AsyncFilterCreationStreamConsumer;
 import io.harness.pms.event.handlers.OrchestrationExecutionPmsEventHandlerRegistrar;
 import io.harness.pms.event.overviewLandingPage.PipelineExecutionSummaryRedisEventConsumer;
 import io.harness.pms.event.overviewLandingPage.PipelineExecutionSummaryRedisEventConsumerSnapshot;
@@ -189,6 +190,7 @@ import io.harness.steps.approval.step.custom.IrregularApprovalInstanceHandler;
 import io.harness.steps.barriers.BarrierInitializer;
 import io.harness.steps.barriers.event.BarrierDropper;
 import io.harness.steps.barriers.event.BarrierPositionHelperEventHandler;
+import io.harness.steps.barriers.event.BarrierWithinStrategyExpander;
 import io.harness.steps.barriers.service.BarrierServiceImpl;
 import io.harness.steps.common.NodeExecutionMetadataDeleteObserver;
 import io.harness.steps.resourcerestraint.ResourceRestraintInitializer;
@@ -444,7 +446,6 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     }
 
     injector.getInstance(BarrierServiceImpl.class).registerIterators(iteratorsConfig.getBarrierConfig());
-    injector.getInstance(ApprovalInstanceHandler.class).registerIterators();
     injector.getInstance(IrregularApprovalInstanceHandler.class)
         .registerIterators(iteratorsConfig.getApprovalInstanceConfig());
     injector.getInstance(ResourceRestraintPersistenceMonitor.class)
@@ -623,6 +624,11 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         injector.getInstance(Key.get(ResourceRestraintObserver.class)));
     planExecutionStrategy.getOrchestrationEndSubject().register(
         injector.getInstance(Key.get(PipelineExecutionMetricsObserver.class)));
+
+    SpawnChildrenRequestProcessor spawnChildrenRequestProcessor =
+        injector.getInstance(Key.get(SpawnChildrenRequestProcessor.class));
+    spawnChildrenRequestProcessor.getBarrierWithinStrategyExpander().register(
+        injector.getInstance(Key.get(BarrierWithinStrategyExpander.class)));
 
     HMongoTemplate mongoTemplate = (HMongoTemplate) injector.getInstance(MongoTemplate.class);
     mongoTemplate.getTracerSubject().register(injector.getInstance(MongoRedisTracer.class));
@@ -854,6 +860,8 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         pipelineServiceConsumersConfig.getPollingEvent().getThreads());
     pipelineEventConsumerController.register(injector.getInstance(TriggerExecutionEventStreamConsumer.class),
         pipelineServiceConsumersConfig.getTriggerExecutionEvent().getThreads());
+    pipelineEventConsumerController.register(injector.getInstance(AsyncFilterCreationStreamConsumer.class),
+        pipelineServiceConsumersConfig.getAsyncFilterCreationEvent().getThreads());
   }
 
   /**-----------------------------Git sync --------------------------------------*/

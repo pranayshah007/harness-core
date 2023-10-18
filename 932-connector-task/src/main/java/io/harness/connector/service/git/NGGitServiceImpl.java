@@ -6,10 +6,10 @@
  */
 
 package io.harness.connector.service.git;
+
 import static io.harness.encryption.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
 import static io.harness.git.Constants.DEFAULT_FETCH_IDENTIFIER;
 import static io.harness.git.model.GitRepositoryType.YAML;
-import static io.harness.shell.SshSessionFactory.getSSHSession;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -38,6 +38,7 @@ import io.harness.git.model.RevertAndPushResult;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.ssh.SshFactory;
 import io.harness.shell.ssh.client.jsch.JschConnection;
+import io.harness.shell.ssh.exception.SshClientException;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -47,9 +48,9 @@ import com.jcraft.jsch.Session;
 import java.io.IOException;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
-import org.eclipse.jgit.transport.JschConfigSessionFactory;
-import org.eclipse.jgit.transport.OpenSshConfig;
 import org.eclipse.jgit.transport.SshSessionFactory;
+import org.eclipse.jgit.transport.ssh.jsch.JschConfigSessionFactory;
+import org.eclipse.jgit.transport.ssh.jsch.OpenSshConfig;
 import org.eclipse.jgit.util.FS;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
@@ -117,10 +118,11 @@ public class NGGitServiceImpl implements NGGitService {
           throws JSchException {
         sshSessionConfig.setPort(port); // use port from repo URL
         sshSessionConfig.setHost(host);
-        if (sshSessionConfig.isUseSshClient() || sshSessionConfig.isVaultSSH()) {
+
+        try {
           return ((JschConnection) SshFactory.getSshClient(sshSessionConfig).getConnection()).getSession();
-        } else {
-          return getSSHSession(sshSessionConfig);
+        } catch (SshClientException sshClientException) {
+          throw new JSchException(sshClientException.getMessage());
         }
       }
 

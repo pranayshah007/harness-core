@@ -36,6 +36,7 @@ import io.harness.pms.contracts.triggers.ParsedPayload;
 import io.harness.pms.contracts.triggers.SourceType;
 import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.plan.creation.validator.PlanCreationValidator;
+import io.harness.pms.plan.utils.PlanExecutionContextMapper;
 import io.harness.pms.sdk.PmsSdkHelper;
 import io.harness.pms.yaml.HarnessYamlVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -74,7 +75,6 @@ import org.mockito.Spy;
 @OwnedBy(PIPELINE)
 public class PlanCreatorMergeServiceTest extends CategoryTest {
   private KryoSerializer kryoSerializer;
-  private final PmsFeatureFlagService pmsFeatureFlagService = new NoOpPmsFeatureFlagService();
   @Mock private PmsFeatureFlagService pmsFeatureFlagServiceMock;
   @Mock private PmsEventSender pmsEventSender;
   @Mock private WaitNotifyEngine waitNotifyEngine;
@@ -127,8 +127,8 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testCreateInitialPlanCreationContext() {
-    PlanCreatorMergeService planCreatorMergeService = new PlanCreatorMergeService(
-        null, null, null, null, Executors.newSingleThreadExecutor(), 20, pmsFeatureFlagService, null);
+    PlanCreatorMergeService planCreatorMergeService =
+        new PlanCreatorMergeService(null, null, null, null, Executors.newSingleThreadExecutor(), 20, null);
     Map<String, PlanCreationContextValue> initialPlanCreationContext =
         planCreatorMergeService.createInitialPlanCreationContext(accountId, orgId, projId, executionMetadata, null);
     assertThat(initialPlanCreationContext).hasSize(1);
@@ -138,7 +138,8 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
     assertTrue(planCreationContextValue.getIsExecutionInputEnabled());
     assertThat(planCreationContextValue.getOrgIdentifier()).isEqualTo(orgId);
     assertThat(planCreationContextValue.getProjectIdentifier()).isEqualTo(projId);
-    assertThat(planCreationContextValue.getMetadata()).isEqualTo(executionMetadata);
+    assertThat(planCreationContextValue.getExecutionContext())
+        .isEqualTo(PlanExecutionContextMapper.toExecutionContext(executionMetadata));
     assertThat(planCreationContextValue.getTriggerPayload()).isEqualTo(TriggerPayload.newBuilder().build());
 
     TriggerPayload triggerPayload = TriggerPayload.newBuilder()
@@ -155,7 +156,8 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
     assertThat(planCreationContextValue.getAccountIdentifier()).isEqualTo(accountId);
     assertThat(planCreationContextValue.getOrgIdentifier()).isEqualTo(orgId);
     assertThat(planCreationContextValue.getProjectIdentifier()).isEqualTo(projId);
-    assertThat(planCreationContextValue.getMetadata()).isEqualTo(executionMetadata);
+    assertThat(planCreationContextValue.getExecutionContext())
+        .isEqualTo(PlanExecutionContextMapper.toExecutionContext(executionMetadata));
     assertThat(planCreationContextValue.getTriggerPayload()).isEqualTo(triggerPayload);
     assertThat(planCreationContextValue.getIsExecutionInputEnabled()).isTrue();
   }
@@ -167,8 +169,8 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
     ExecutionMetadata executionMetadataLocal =
         executionMetadata.toBuilder().setHarnessVersion(HarnessYamlVersion.V1).build();
     PlanExecutionMetadata planExecutionMetadata = PlanExecutionMetadata.builder().processedYaml(pipelineYamlV1).build();
-    PlanCreatorMergeService planCreatorMergeService = new PlanCreatorMergeService(
-        null, null, null, null, Executors.newSingleThreadExecutor(), 20, pmsFeatureFlagService, kryoSerializer);
+    PlanCreatorMergeService planCreatorMergeService =
+        new PlanCreatorMergeService(null, null, null, null, Executors.newSingleThreadExecutor(), 20, kryoSerializer);
     Map<String, PlanCreationContextValue> initialPlanCreationContext =
         planCreatorMergeService.createInitialPlanCreationContext(
             accountId, orgId, projId, executionMetadataLocal, planExecutionMetadata);
@@ -176,6 +178,8 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
     PlanCreationContextValue planCreationContextValue = initialPlanCreationContext.get("metadata");
     assertThat(planCreationContextValue.getGlobalDependency()).isNotNull();
     assertThat(planCreationContextValue.getIsExecutionInputEnabled()).isTrue();
+    assertThat(planCreationContextValue.getExecutionContext())
+        .isEqualTo(PlanExecutionContextMapper.toExecutionContext(executionMetadataLocal));
     Dependency globalDependency = planCreationContextValue.getGlobalDependency();
     assertThat(globalDependency.getMetadataMap()).containsKey(YAMLFieldNameConstants.OPTIONS);
     byte[] bytes = globalDependency.getMetadataMap().get(YAMLFieldNameConstants.OPTIONS).toByteArray();
@@ -215,8 +219,8 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
         executionMetadata.toBuilder().setHarnessVersion(HarnessYamlVersion.V1).build();
     String pipelineYaml = readFile("pipeline-v1-with-static-reference.yaml");
     PlanExecutionMetadata planExecutionMetadata = PlanExecutionMetadata.builder().processedYaml(pipelineYaml).build();
-    PlanCreatorMergeService planCreatorMergeService = new PlanCreatorMergeService(
-        null, null, null, null, Executors.newSingleThreadExecutor(), 20, pmsFeatureFlagService, kryoSerializer);
+    PlanCreatorMergeService planCreatorMergeService =
+        new PlanCreatorMergeService(null, null, null, null, Executors.newSingleThreadExecutor(), 20, kryoSerializer);
     Map<String, PlanCreationContextValue> initialPlanCreationContext =
         planCreatorMergeService.createInitialPlanCreationContext(
             accountId, orgId, projId, executionMetadataLocal, planExecutionMetadata);
@@ -224,6 +228,8 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
     PlanCreationContextValue planCreationContextValue = initialPlanCreationContext.get("metadata");
     assertThat(planCreationContextValue.getGlobalDependency()).isNotNull();
     assertThat(planCreationContextValue.getIsExecutionInputEnabled()).isTrue();
+    assertThat(planCreationContextValue.getExecutionContext())
+        .isEqualTo(PlanExecutionContextMapper.toExecutionContext(executionMetadataLocal));
     Dependency globalDependency = planCreationContextValue.getGlobalDependency();
     assertThat(globalDependency.getMetadataMap()).containsKey(YAMLFieldNameConstants.OPTIONS);
     byte[] bytes = globalDependency.getMetadataMap().get(YAMLFieldNameConstants.OPTIONS).toByteArray();
@@ -313,17 +319,5 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
                                HarnessYamlVersion.V1, executionMetadata, planExecutionMetadata))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Following yaml paths could not be parsed: ");
-  }
-
-  private class NoOpPmsFeatureFlagService implements PmsFeatureFlagService {
-    @Override
-    public boolean isEnabled(String accountId, FeatureName featureName) {
-      return true;
-    }
-
-    @Override
-    public boolean isEnabled(String accountId, String featureName) {
-      return false;
-    }
   }
 }

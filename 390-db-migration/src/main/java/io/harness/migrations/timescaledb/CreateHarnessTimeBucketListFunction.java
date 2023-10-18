@@ -6,7 +6,11 @@
  */
 
 package io.harness.migrations.timescaledb;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 public class CreateHarnessTimeBucketListFunction extends AbstractTimeScaleDBMigration {
   @Override
   public String getFileName() {

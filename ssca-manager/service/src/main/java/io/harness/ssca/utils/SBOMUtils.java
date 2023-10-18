@@ -26,6 +26,7 @@ public class SBOMUtils {
   public static char PACKAGE_VERSION_DELIM = '.';
   public static String PACKAGE_VERSION_EPOCH_DELIM = ":";
   public static String LICENSE_REF_DELIM = "LicenseRef-";
+  public static List<String> NO_ASSERTION_LIST = List.of("NO_ASSERTION", "NOASSERTION");
 
   public static List<Integer> getVersionInfo(String packageVersion) {
     String[] splitVersion = Strings.split(packageVersion, PACKAGE_VERSION_DELIM);

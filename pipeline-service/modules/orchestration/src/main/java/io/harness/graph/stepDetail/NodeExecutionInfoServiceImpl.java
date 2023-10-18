@@ -6,7 +6,6 @@
  */
 
 package io.harness.graph.stepDetail;
-
 import static io.harness.plancreator.strategy.StrategyConstants.ITEM;
 import static io.harness.plancreator.strategy.StrategyConstants.ITERATION;
 import static io.harness.plancreator.strategy.StrategyConstants.ITERATIONS;
@@ -16,8 +15,11 @@ import static io.harness.plancreator.strategy.StrategyConstants.REPEAT;
 import static io.harness.plancreator.strategy.StrategyConstants.TOTAL_ITERATIONS;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.stepDetail.NodeExecutionDetailsInfo;
 import io.harness.beans.stepDetail.NodeExecutionsInfo;
 import io.harness.beans.stepDetail.NodeExecutionsInfo.NodeExecutionsInfoBuilder;
@@ -30,6 +32,7 @@ import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.observer.Subject;
 import io.harness.plancreator.strategy.IterationVariables;
 import io.harness.plancreator.strategy.StrategyUtils;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.StrategyMetadata;
@@ -62,6 +65,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
 @Slf4j
@@ -226,7 +230,7 @@ public class NodeExecutionInfoServiceImpl implements NodeExecutionInfoService {
   @Override
   public Map<String, Object> fetchStrategyObjectMap(Level level, boolean useMatrixFieldName) {
     Map<String, Object> strategyObjectMap = new HashMap<>();
-    if (level.hasStrategyMetadata()) {
+    if (AmbianceUtils.hasStrategyMetadata(level)) {
       return fetchStrategyObjectMap(Lists.newArrayList(level), useMatrixFieldName);
     }
     strategyObjectMap.put(ITERATION, 0);
@@ -308,5 +312,19 @@ public class NodeExecutionInfoServiceImpl implements NodeExecutionInfoService {
     }
     return nodeExecutionsInfo.stream().collect(
         Collectors.toMap(NodeExecutionsInfo::getNodeExecutionId, NodeExecutionsInfo::getStrategyMetadata));
+  }
+
+  @Override
+  public StrategyMetadata getStrategyMetadata(Ambiance ambiance) {
+    return getStrategyMetadata(AmbianceUtils.obtainCurrentLevel(ambiance));
+  }
+
+  @Override
+  public StrategyMetadata getStrategyMetadata(Level level) {
+    Map<String, StrategyMetadata> strategyMetadataMap = fetchStrategyMetadata(Lists.newArrayList(level.getRuntimeId()));
+    if (strategyMetadataMap.isEmpty()) {
+      return level.getStrategyMetadata();
+    }
+    return strategyMetadataMap.get(level.getRuntimeId());
   }
 }

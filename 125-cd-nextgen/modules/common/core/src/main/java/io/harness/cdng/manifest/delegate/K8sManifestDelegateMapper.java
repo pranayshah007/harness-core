@@ -346,7 +346,9 @@ public class K8sManifestDelegateMapper {
         .ociHelmConnector(ociConnectorDTO.getConnectorConfig() instanceof OciHelmConnectorDTO
                 ? (OciHelmConnectorDTO) ociConnectorDTO.getConnectorConfig()
                 : null)
-        .connectorConfigDTO(ociConnectorDTO.getConnectorConfig())
+        .awsConnectorDTO(ociConnectorDTO.getConnectorConfig() instanceof AwsConnectorDTO
+                ? (AwsConnectorDTO) ociConnectorDTO.getConnectorConfig()
+                : null)
         .encryptedDataDetails(
             k8sEntityHelper.getEncryptionDataDetails(ociConnectorDTO, AmbianceUtils.getNgAccess(ambiance)))
         .helmOciEnabled(true)

@@ -107,8 +107,6 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
         continue;
       }
       if (graphLayoutNode.get(nodeExecution.getNodeId()) == null) {
-        log.error("layout node is null for key [{}] in GraphLayoutNodeMap for planExecutionId: [{}]",
-            nodeExecution.getNodeId(), planExecutionId);
         continue;
       }
 

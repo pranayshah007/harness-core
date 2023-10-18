@@ -6,11 +6,13 @@
  */
 
 package io.harness.evaluators;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.expression.common.ExpressionMode;
@@ -23,6 +25,8 @@ import java.util.HashMap;
 import java.util.Map;
 import lombok.Getter;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_SERVICE_ENVIRONMENT})
 @OwnedBy(CDC)
 @Getter
 public class ProvisionerExpressionEvaluator extends EngineExpressionEvaluator {

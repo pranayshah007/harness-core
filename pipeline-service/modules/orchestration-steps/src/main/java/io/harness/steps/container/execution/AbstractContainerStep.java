@@ -7,13 +7,15 @@
  */
 
 package io.harness.steps.container.execution;
-
 import static io.harness.plancreator.NGCommonUtilPlanCreationConstants.STEP_GROUP;
 
 import static java.util.Collections.singletonList;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.TaskSelector;
@@ -56,6 +58,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(
+    module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_COMMON_STEPS})
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<StepElementParameters> {
@@ -107,7 +111,7 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
     String parkedTaskId = taskExecutor.queueParkedDelegateTask(ambiance, timeout, accountId, delegateSelectors);
     TaskData runStepTaskData = containerRunStepHelper.getRunStepTask(ambiance, containerStepInfo,
         AmbianceUtils.getAccountId(ambiance), getLogPrefix(ambiance), timeout, parkedTaskId);
-    String liteEngineTaskId = taskExecutor.queueTask(ambiance, runStepTaskData, accountId);
+    String liteEngineTaskId = taskExecutor.queueTask(ambiance, runStepTaskData, accountId, delegateSelectors);
     log.info("Created parked task {} and lite engine task {} for  step {}", parkedTaskId, liteEngineTaskId,
         containerStepInfo.getIdentifier());
 
@@ -121,12 +125,6 @@ public abstract class AbstractContainerStep implements AsyncExecutableWithRbac<S
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return StepElementParameters.class;
-  }
-
-  @Override
-  public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {
-    // Do Nothing
   }
 
   @Override

@@ -15,11 +15,11 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.contracts.plan.PlanCreationBlobResponse;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.PlanNodeProto;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.pipeline.service.PipelineEnforcementService;
-import io.harness.pms.plan.creation.PlanCreatorUtils;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
+import io.harness.pms.sdk.core.plan.creation.creators.PlanCreatorServiceHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -33,9 +33,8 @@ public class PlanCreationValidator implements CreationValidator<PlanCreationBlob
 
   @Override
   public void validate(String accountId, PlanCreationBlobResponse finalResponse) {
-    PlanCreationContextValue metadata = finalResponse.getContextMap().get("metadata");
-    try (AutoLogContext ignore = PlanCreatorUtils.autoLogContext(metadata.getMetadata(),
-             metadata.getAccountIdentifier(), metadata.getOrgIdentifier(), metadata.getProjectIdentifier())) {
+    PlanCreationContext ctx = PlanCreationContext.builder().globalContext(finalResponse.getContextMap()).build();
+    try (AutoLogContext ignore = PlanCreatorServiceHelper.autoLogContext(ctx)) {
       if (EmptyPredicate.isNotEmpty(finalResponse.getDeps().getDependenciesMap())) {
         throw new InvalidRequestException(
             format("Unable to interpret nodes: %s", finalResponse.getDeps().getDependenciesMap().keySet().toString()));

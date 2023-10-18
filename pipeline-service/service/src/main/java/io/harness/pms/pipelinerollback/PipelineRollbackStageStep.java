@@ -94,8 +94,8 @@ public class PipelineRollbackStageStep implements AsyncExecutableWithRbac<EmptyS
   }
 
   @Override
-  public void handleAbort(
-      Ambiance ambiance, EmptyStepParameters stepParameters, AsyncExecutableResponse executableResponse) {
+  public void handleAbort(Ambiance ambiance, EmptyStepParameters stepParameters,
+      AsyncExecutableResponse executableResponse, boolean userMarked) {
     Principal principal = PmsSecurityContextGuardUtils.getPrincipalFromAmbiance(ambiance);
     SourcePrincipalContextBuilder.setSourcePrincipal(principal);
     SecurityContextBuilder.setContext(principal);

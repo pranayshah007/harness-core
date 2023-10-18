@@ -18,6 +18,7 @@ import io.harness.network.NoopHostnameVerifier;
 import io.harness.security.X509KeyManagerBuilder;
 import io.harness.security.X509SslContextBuilder;
 import io.harness.security.X509TrustManagerBuilder;
+import io.harness.security.delegate.DelegateAuthInterceptor;
 import io.harness.serializer.kryo.DelegateKryoConverterFactory;
 import io.harness.version.VersionInfoManager;
 

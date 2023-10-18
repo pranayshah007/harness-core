@@ -8,6 +8,7 @@
 package io.harness.delegate.task.mixin;
 
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,6 +23,7 @@ import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
+import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitHTTPAuthenticationDTO;
@@ -29,9 +31,11 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.GitConnectionNGCapability;
 import io.harness.delegate.beans.executioncapability.HelmInstallationCapability;
 import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability;
+import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.expression.ExpressionEvaluator;
@@ -39,6 +43,7 @@ import io.harness.k8s.model.HelmVersion;
 import io.harness.rule.Owner;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
@@ -150,5 +155,55 @@ public class HelmChartCapabilityGeneratorTest extends CategoryTest {
     assertThat(capabilityList).hasSize(2);
     assertThat(capabilityList.stream().map(Object::getClass))
         .containsExactlyInAnyOrder(HttpConnectionExecutionCapability.class, HelmInstallationCapability.class);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void generateCapabilitiesOciHelmGeneric() {
+    HelmChartManifestDelegateConfig manifestDelegateConfig =
+        HelmChartManifestDelegateConfig.builder()
+            .helmVersion(HelmVersion.V380)
+            .storeDelegateConfig(OciHelmStoreDelegateConfig.builder()
+                                     .ociHelmConnector(OciHelmConnectorDTO.builder()
+                                                           .helmRepoUrl("helm/repo/url")
+                                                           .delegateSelectors(Collections.singleton("delegate1"))
+                                                           .build())
+                                     .build())
+            .ignoreResponseCode(true)
+            .build();
+
+    List<ExecutionCapability> capabilityList =
+        HelmChartCapabilityGenerator.generateCapabilities(manifestDelegateConfig, expressionEvaluator);
+    assertThat(capabilityList).hasSize(2);
+    assertThat(capabilityList.stream().map(Object::getClass))
+        .containsExactlyInAnyOrder(SelectorCapability.class, HelmInstallationCapability.class);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void generateCapabilitiesOciHelmEcrConfig() {
+    HelmChartManifestDelegateConfig manifestDelegateConfig =
+        HelmChartManifestDelegateConfig.builder()
+            .helmVersion(HelmVersion.V380)
+            .storeDelegateConfig(
+                OciHelmStoreDelegateConfig.builder()
+                    .awsConnectorDTO(AwsConnectorDTO.builder()
+                                         .credential(AwsCredentialDTO.builder()
+                                                         .awsCredentialType(AwsCredentialType.MANUAL_CREDENTIALS)
+                                                         .build())
+                                         .delegateSelectors(Collections.singleton("delegate1"))
+                                         .build())
+                    .build())
+            .ignoreResponseCode(true)
+            .build();
+
+    List<ExecutionCapability> capabilityList =
+        HelmChartCapabilityGenerator.generateCapabilities(manifestDelegateConfig, expressionEvaluator);
+    assertThat(capabilityList).hasSize(4);
+    assertThat(capabilityList.stream().map(Object::getClass))
+        .containsExactlyInAnyOrder(HelmInstallationCapability.class, HttpConnectionExecutionCapability.class,
+            SelectorCapability.class, HelmInstallationCapability.class);
   }
 }

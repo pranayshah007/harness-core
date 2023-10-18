@@ -10,6 +10,7 @@ package io.harness.steps.barriers.event;
 import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.RETURNS_MOCKS;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
@@ -29,7 +30,6 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.rule.Owner;
 import io.harness.steps.barriers.beans.BarrierPositionInfo.BarrierPosition.BarrierPositionType;
 import io.harness.steps.barriers.service.BarrierService;
-import io.harness.utils.PmsFeatureFlagService;
 
 import java.util.List;
 import java.util.Optional;
@@ -42,7 +42,6 @@ import org.mockito.MockedStatic;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class BarrierPositionHelperEventHandlerTest extends OrchestrationStepsTestBase {
   @Mock BarrierService barrierService;
-  @Mock PmsFeatureFlagService featureFlagService;
   @InjectMocks BarrierPositionHelperEventHandler barrierPositionHelperEventHandler;
 
   @Test
@@ -59,8 +58,6 @@ public class BarrierPositionHelperEventHandlerTest extends OrchestrationStepsTes
                                .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionId).build())
                                .build())
             .build();
-    when(featureFlagService.isEnabled(accountId, FeatureName.CDS_NG_BARRIER_STEPS_WITHIN_LOOPING_STRATEGIES))
-        .thenReturn(true);
     when(barrierService.updatePosition(
              planExecutionId, BarrierPositionType.STEP, "setupId", executionId, "stageId", "stepGroupId", true))
         .thenReturn(List.of());
@@ -72,6 +69,9 @@ public class BarrierPositionHelperEventHandlerTest extends OrchestrationStepsTes
           .thenReturn(Optional.of(Level.newBuilder().setRuntimeId("stageId").build()));
       when(AmbianceUtils.getStepGroupLevelFromAmbiance(any()))
           .thenReturn(Optional.of(Level.newBuilder().setRuntimeId("stepGroupId").build()));
+      when(AmbianceUtils.checkIfFeatureFlagEnabled(
+               any(), eq(FeatureName.CDS_NG_BARRIER_STEPS_WITHIN_LOOPING_STRATEGIES.name())))
+          .thenReturn(true);
       barrierPositionHelperEventHandler.onNodeStatusUpdate(nodeUpdateInfo);
       verify(barrierService, times(1))
           .updatePosition(
@@ -93,8 +93,6 @@ public class BarrierPositionHelperEventHandlerTest extends OrchestrationStepsTes
                                .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionId).build())
                                .build())
             .build();
-    when(featureFlagService.isEnabled(accountId, FeatureName.CDS_NG_BARRIER_STEPS_WITHIN_LOOPING_STRATEGIES))
-        .thenReturn(false);
     when(barrierService.updatePosition(
              planExecutionId, BarrierPositionType.STEP, "setupId", executionId, null, null, false))
         .thenReturn(List.of());
@@ -102,6 +100,9 @@ public class BarrierPositionHelperEventHandlerTest extends OrchestrationStepsTes
       when(AmbianceUtils.getAccountId(any())).thenReturn(accountId);
       when(AmbianceUtils.obtainCurrentLevel(any()))
           .thenReturn(Level.newBuilder().setGroup(BarrierPositionType.STEP.name()).setSetupId("setupId").build());
+      when(AmbianceUtils.checkIfFeatureFlagEnabled(
+               any(), eq(FeatureName.CDS_NG_BARRIER_STEPS_WITHIN_LOOPING_STRATEGIES.name())))
+          .thenReturn(false);
       barrierPositionHelperEventHandler.onNodeStatusUpdate(nodeUpdateInfo);
       verify(barrierService, times(1))
           .updatePosition(planExecutionId, BarrierPositionType.STEP, "setupId", executionId, null, null, false);

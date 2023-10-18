@@ -16,8 +16,6 @@ import static io.harness.rule.OwnerRule.MOHIT_GARG;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -57,7 +55,8 @@ import io.harness.gitsync.common.dtos.CreateGitFileRequestDTO;
 import io.harness.gitsync.common.dtos.GetLatestCommitOnFileRequestDTO;
 import io.harness.gitsync.common.dtos.GitFileContent;
 import io.harness.gitsync.common.dtos.UpdateGitFileRequestDTO;
-import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
+import io.harness.gitsync.common.helper.UserSourceCodeManagerHelper;
+import io.harness.gitsync.common.service.GitSyncConnectorService;
 import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.ng.beans.PageRequest;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
@@ -95,7 +94,8 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
   @Mock ConnectorService connectorService;
   @Mock DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Mock YamlGitConfigService yamlGitConfigService;
-  @Mock GitSyncConnectorHelper gitSyncConnectorHelper;
+  @Mock GitSyncConnectorService gitSyncConnectorService;
+  @Mock UserSourceCodeManagerHelper userSourceCodeManagerHelper;
   ScmDelegateFacilitatorServiceImpl scmDelegateFacilitatorService;
   FileContent fileContent = FileContent.newBuilder().build();
   String accountIdentifier = "accountIdentifier";
@@ -124,8 +124,9 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
   @Before
   public void setup() throws Exception {
     MockitoAnnotations.initMocks(this);
-    scmDelegateFacilitatorService = new ScmDelegateFacilitatorServiceImpl(connectorService, null, yamlGitConfigService,
-        secretManagerClientService, delegateGrpcClientWrapper, null, gitSyncConnectorHelper);
+    scmDelegateFacilitatorService =
+        new ScmDelegateFacilitatorServiceImpl(connectorService, null, yamlGitConfigService, secretManagerClientService,
+            delegateGrpcClientWrapper, null, gitSyncConnectorService, userSourceCodeManagerHelper);
     when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(Collections.emptyList());
     githubConnector = GithubConnectorDTO.builder().apiAccess(GithubApiAccessDTO.builder().build()).build();
     connectorInfo = ConnectorInfoDTO.builder().connectorConfig(githubConnector).build();
@@ -134,9 +135,9 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
         .when(connectorService)
         .get(any(), any(), any(), any());
     doReturn((ScmConnector) connectorInfo.getConnectorConfig())
-        .when(gitSyncConnectorHelper)
+        .when(gitSyncConnectorService)
         .getScmConnector(any(), any(), any(), any());
-    doNothing().when(gitSyncConnectorHelper).setUserGitCredsInConnectorIfPresent(anyString(), any());
+    //    doNothing().when(gitSyncConnectorService).setUserGitCredsInConnectorIfPresent(anyString(), any());
     when(yamlGitConfigService.get(any(), any(), any(), any()))
         .thenReturn(YamlGitConfigDTO.builder()
                         .accountIdentifier(accountIdentifier)
@@ -144,10 +145,10 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
                         .organizationIdentifier(orgIdentifier)
                         .gitConnectorRef(connectorIdentifierRef)
                         .build());
-    when(gitSyncConnectorHelper.getScmConnector(any(), any(), any(), any(), any(), any()))
+    when(gitSyncConnectorService.getScmConnector(any(), any(), any(), any(), any(), any()))
         .thenReturn((ScmConnector) connectorInfo.getConnectorConfig());
     doReturn(githubConnector)
-        .when(gitSyncConnectorHelper)
+        .when(gitSyncConnectorService)
         .getScmConnectorForGivenRepo(any(), any(), any(), any(), any());
   }
 

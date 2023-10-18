@@ -8,6 +8,7 @@
 package io.harness.service.deploymentsummary;
 
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.times;
@@ -74,16 +75,24 @@ public class DeploymentSummaryServiceImplTest extends InstancesTestBase {
   }
 
   @Test
-  @Owner(developers = PIYUSH_BHUWALKA)
+  @Owner(developers = {PIYUSH_BHUWALKA, PRATYUSH})
   @Category(UnitTests.class)
   public void getNthDeploymentSummaryFromNowTest() {
+    int N = 2;
     InfrastructureMappingDTO infrastructureMappingDTO = mockInfraMappingDTO();
+    fetchNthRecordFromNowTest(N, infrastructureMappingDTO, null);
+    fetchNthRecordFromNowTest(N, infrastructureMappingDTO, false);
+  }
+
+  private void fetchNthRecordFromNowTest(
+      int N, InfrastructureMappingDTO infrastructureMappingDTO, Boolean isRollbackDeployment) {
     DeploymentInfoDTO deploymentInfoDTO = K8sDeploymentInfoDTO.builder().build();
     DeploymentInfo deploymentInfo = K8sDeploymentInfo.builder().build();
     DeploymentSummary deploymentSummary = DeploymentSummary.builder().deploymentInfo(deploymentInfo).build();
-    when(deploymentSummaryRepository.fetchNthRecordFromNow(2, INSTANCE_SYNC_KEY, infrastructureMappingDTO))
+    when(deploymentSummaryRepository.fetchNthRecordFromNow(
+             N, INSTANCE_SYNC_KEY, infrastructureMappingDTO, isRollbackDeployment))
         .thenReturn(Optional.of(deploymentSummary));
-    assertThat(deploymentSummaryService.getNthDeploymentSummaryFromNow(2, INSTANCE_SYNC_KEY, infrastructureMappingDTO)
+    assertThat(deploymentSummaryService.getNthDeploymentSummaryFromNow(N, INSTANCE_SYNC_KEY, infrastructureMappingDTO)
                    .get()
                    .getDeploymentInfoDTO())
         .isEqualTo(deploymentInfoDTO);
@@ -96,10 +105,11 @@ public class DeploymentSummaryServiceImplTest extends InstancesTestBase {
     InfrastructureMappingDTO infrastructureMappingDTO = mockInfraMappingDTO();
     DeploymentInfo deploymentInfo = K8sDeploymentInfo.builder().build();
     DeploymentSummary deploymentSummary = DeploymentSummary.builder().deploymentInfo(deploymentInfo).build();
-    when(deploymentSummaryRepository.fetchNthRecordFromNow(1, INSTANCE_SYNC_KEY, infrastructureMappingDTO))
+    when(deploymentSummaryRepository.fetchNthRecordFromNow(1, INSTANCE_SYNC_KEY, infrastructureMappingDTO, null))
         .thenReturn(Optional.of(deploymentSummary));
     deploymentSummaryService.getLatestByInstanceKey(INSTANCE_SYNC_KEY, infrastructureMappingDTO);
-    verify(deploymentSummaryRepository, times(1)).fetchNthRecordFromNow(1, INSTANCE_SYNC_KEY, infrastructureMappingDTO);
+    verify(deploymentSummaryRepository, times(1))
+        .fetchNthRecordFromNow(1, INSTANCE_SYNC_KEY, infrastructureMappingDTO, null);
   }
 
   private InfrastructureMappingDTO mockInfraMappingDTO() {

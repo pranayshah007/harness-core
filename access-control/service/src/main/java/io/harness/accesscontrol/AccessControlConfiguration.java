@@ -125,6 +125,7 @@ public class AccessControlConfiguration extends Configuration {
   @JsonProperty("enableParallelProcessingOfUserGroupUpdates")
   private boolean enableParallelProcessingOfUserGroupUpdates;
   @JsonProperty("enableAclProcessingThroughOutbox") private boolean enableAclProcessingThroughOutbox;
+  @JsonProperty("batchSizeForACLCreation") private int batchSizeForACLCreation;
 
   public static final Collection<Class<?>> ALL_ACCESS_CONTROL_RESOURCES = getResourceClasses();
 

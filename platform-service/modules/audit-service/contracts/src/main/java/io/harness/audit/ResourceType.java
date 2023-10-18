@@ -74,7 +74,15 @@ public enum ResourceType {
   SEI_CONFIGURATION_SETTINGS(ResourceTypeConstants.SEI_CONFIGURATION_SETTINGS),
   SEI_COLLECTIONS(ResourceTypeConstants.SEI_COLLECTIONS),
   SEI_INSIGHTS(ResourceTypeConstants.SEI_INSIGHTS),
-  CET_SAVED_FILTER(ResourceTypeConstants.CET_SAVED_FILTER);
+  CET_SAVED_FILTER(ResourceTypeConstants.CET_SAVED_FILTER),
+  GITOPS_AGENT(ResourceTypeConstants.GITOPS_AGENT),
+  GITOPS_REPOSITORY(ResourceTypeConstants.GITOPS_REPOSITORY),
+  GITOPS_CLUSTER(ResourceTypeConstants.GITOPS_CLUSTER),
+  GITOPS_CREDENTIAL_TEMPLATE(ResourceTypeConstants.GITOPS_CREDENTIAL_TEMPLATE),
+  GITOPS_REPOSITORY_CERTIFICATE(ResourceTypeConstants.GITOPS_REPOSITORY_CERTIFICATE),
+  GITOPS_GNUPG_KEY(ResourceTypeConstants.GITOPS_GNUPG_KEY),
+  GITOPS_PROJECT_MAPPING(ResourceTypeConstants.GITOPS_PROJECT_MAPPING),
+  GITOPS_APPLICATION(ResourceTypeConstants.GITOPS_APPLICATION);
 
   ResourceType(String resourceType) {
     if (!this.name().equals(resourceType)) {

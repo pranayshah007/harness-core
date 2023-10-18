@@ -6,13 +6,15 @@
  */
 
 package software.wings.resources;
-
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
 import static software.wings.security.PermissionAttribute.PermissionType.USER_PERMISSION_MANAGEMENT;
 import static software.wings.security.PermissionAttribute.PermissionType.USER_PERMISSION_READ;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageRequest.PageRequestBuilder;
 import io.harness.beans.PageResponse;
@@ -69,6 +71,8 @@ import org.hibernate.validator.constraints.NotEmpty;
  *
  * @author Rishi
  */
+
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Api("userGroups")
 @Path("/userGroups")
 @Consumes(MediaType.APPLICATION_JSON)

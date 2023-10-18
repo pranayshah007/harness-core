@@ -73,14 +73,7 @@ public class NGGlobalTemplateRepositoryCustomImpl implements NGGlobalTemplateRep
   }
 
   @Override
-  public Optional<GlobalTemplateEntity> findGlobalTemplateByIdentifierAndVersionLabelAndDeletedNot(
-      String templateIdentifier, String versionLabel, boolean notDeleted, boolean getMetadataOnly) {
-    Criteria criteria = buildCriteria("", "", "", templateIdentifier, versionLabel, notDeleted);
-    return get(criteria);
-  }
-
-  @Override
-  public Page<GlobalTemplateEntity> findALLGlobalTemplateAndDeletedNot(
+  public Page<GlobalTemplateEntity> findAllGlobalTemplateAndDeletedNot(
       boolean notDeleted, boolean getMetadataOnly, Pageable pageable) {
     Criteria criteria = buildCriteria("", "", "", "", "", notDeleted);
     return getAllGlobalTemplateEntity(criteria, getMetadataOnly, pageable);

@@ -224,7 +224,8 @@ public class K8sCanaryStepTest extends AbstractK8sStepExecutorTestBase {
                                    .k8sPodList(List.of(K8sPod.builder().name("pod1").newPod(true).build()))
                                    .previousK8sPodList(Collections.emptyList())
                                    .helmChartInfo(helmChartInfo)
-                                   .k8sPodList(new ArrayList<>())
+                                   .k8sPodList(List.of(K8sPod.builder().podIP("ip1").build(),
+                                       K8sPod.builder().podIP("ip2").build(), K8sPod.builder().podIP("ip3").build()))
                                    .build())
             .commandUnitsProgress(UnitProgressData.builder().build())
             .commandExecutionStatus(SUCCESS)
@@ -243,6 +244,9 @@ public class K8sCanaryStepTest extends AbstractK8sStepExecutorTestBase {
     assertThat(outcome.getOutcome()).isInstanceOf(K8sCanaryOutcome.class);
     assertThat(outcome.getName()).isEqualTo(OutcomeExpressionConstants.OUTPUT);
     assertThat(outcome.getGroup()).isNull();
+    ((K8sCanaryOutcome) outcome.getOutcome())
+        .getPodIps()
+        .forEach(ip -> assertThat(List.of("ip1", "ip2", "ip3").contains(ip)).isTrue());
 
     StepOutcome helmChartOutcome = new ArrayList<>(response.getStepOutcomes()).get(1);
     assertThat(helmChartOutcome.getOutcome()).isInstanceOf(ReleaseHelmChartOutcome.class);

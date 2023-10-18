@@ -84,4 +84,17 @@ public class ResourceTypeConstants {
   public static final String SEI_CONFIGURATION_SETTINGS = "SEI_CONFIGURATION_SETTINGS";
   public static final String SEI_COLLECTIONS = "SEI_COLLECTIONS";
   public static final String SEI_INSIGHTS = "SEI_INSIGHTS";
+  public static final String IDP_APP_CONFIGS = "IDP_APP_CONFIGS";
+  public static final String IDP_CONFIG_ENV_VARIABLES = "IDP_CONFIG_ENV_VARIABLES";
+  public static final String IDP_PROXY_HOST = "IDP_PROXY_HOST";
+
+  public static final String IDP_CATALOG_CONNECTOR = "IDP_CATALOG_CONNECTOR";
+  public static final String GITOPS_REPOSITORY = "GITOPS_REPOSITORY";
+  public static final String GITOPS_CLUSTER = "GITOPS_CLUSTER";
+  public static final String GITOPS_CREDENTIAL_TEMPLATE = "GITOPS_CREDENTIAL_TEMPLATE";
+  public static final String GITOPS_REPOSITORY_CERTIFICATE = "GITOPS_REPOSITORY_CERTIFICATE";
+  public static final String GITOPS_GNUPG_KEY = "GITOPS_GNUPG_KEY";
+  public static final String GITOPS_AGENT = "GITOPS_AGENT";
+  public static final String GITOPS_PROJECT_MAPPING = "GITOPS_PROJECT_MAPPING";
+  public static final String GITOPS_APPLICATION = "GITOPS_APPLICATION";
 }

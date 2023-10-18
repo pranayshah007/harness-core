@@ -6,11 +6,13 @@
  */
 
 package io.harness.steps.servicenow;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.sdk.core.data.Outcome;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -22,6 +24,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_APPROVALS})
 @Data
 @Builder
 @NoArgsConstructor
@@ -42,4 +45,6 @@ public class ServiceNowTicketOutcome implements Outcome {
 
   Map<String, String> fields;
   List<MultipleOutcome> multipleOutcomeList;
+
+  String message;
 }

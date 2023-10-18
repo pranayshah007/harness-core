@@ -6,9 +6,11 @@
  */
 
 package io.harness.engine.executions.plan;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.monitoring.ExecutionCountWithAccountResult;
 import io.harness.pms.events.PmsEventMonitoringConstants;
@@ -16,11 +18,14 @@ import io.harness.pms.events.base.PmsMetricContextGuard;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.Map;
 import javax.cache.Cache;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
+@Singleton
 public class PlanExecutionMonitorServiceImpl implements PlanExecutionMonitorService {
   private static final String PIPELINE_EXECUTION_ACTIVE_COUNT = "pipeline_execution_active_count";
   private final PlanExecutionService planExecutionService;

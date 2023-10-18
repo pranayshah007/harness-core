@@ -522,7 +522,7 @@ public class ShellScriptHelperServiceImpl implements ShellScriptHelperService {
           OutputAliasSweepingOutput.builder().outputVariables(shellScriptOutcome.getOutputVariables()).build(),
           shellScriptStepParameters.getOutputAlias().getScope().toStepOutcomeGroup());
     } catch (Exception ex) {
-      if (OutputAliasUtils.isDuplicateKeyException(ex)) {
+      if (OutputAliasUtils.isDuplicateKeyException(ex, uuid)) {
         log.warn("Error while publishing outputAlias due to the output already saved for the key [{}:{}] for scope {}",
             userAlias, uuid, shellScriptStepParameters.getOutputAlias().getScope(), ex);
         throw new InvalidRequestException(String.format(

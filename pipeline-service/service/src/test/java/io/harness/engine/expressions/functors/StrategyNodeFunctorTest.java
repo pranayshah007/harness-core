@@ -13,10 +13,11 @@ import static io.harness.rule.OwnerRule.BRIJESH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
 
-import io.harness.CategoryTest;
+import io.harness.PipelineServiceTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.expressions.NodeExecutionsCache;
 import io.harness.engine.expressions.OrchestrationConstants;
+import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.MatrixMetadata;
@@ -27,6 +28,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,7 +40,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-public class StrategyNodeFunctorTest extends CategoryTest {
+public class StrategyNodeFunctorTest extends PipelineServiceTestBase {
   private static final String ACCOUNT_ID = generateUuid();
   private static final String ORG_ID = generateUuid();
   private static final String PROJECT_ID = generateUuid();
@@ -64,6 +66,7 @@ public class StrategyNodeFunctorTest extends CategoryTest {
   private static final String STEP_SETUP_ID = generateUuid();
 
   @Mock NodeExecutionsCache nodeExecutionsCache;
+  @Inject NodeExecutionInfoService nodeExecutionInfoService;
 
   @Before
   public void setUp() {
@@ -74,8 +77,11 @@ public class StrategyNodeFunctorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGet() {
     Ambiance ambiance = buildAmbiance();
-    StrategyNodeFunctor strategyNodeFunctor =
-        StrategyNodeFunctor.builder().nodeExecutionsCache(nodeExecutionsCache).ambiance(ambiance).build();
+    StrategyNodeFunctor strategyNodeFunctor = StrategyNodeFunctor.builder()
+                                                  .nodeExecutionsCache(nodeExecutionsCache)
+                                                  .nodeExecutionInfoService(nodeExecutionInfoService)
+                                                  .ambiance(ambiance)
+                                                  .build();
     doReturn(Collections.singletonList(Status.SUCCEEDED))
         .when(nodeExecutionsCache)
         .findAllTerminalChildrenStatusOnly("STRATEGY_RUNTIME_ID", true);
@@ -103,8 +109,11 @@ public class StrategyNodeFunctorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetForMultiStrategyLevels() {
     Ambiance ambiance = buildMultiLevelStrategyAmbiance();
-    StrategyNodeFunctor strategyNodeFunctor =
-        StrategyNodeFunctor.builder().nodeExecutionsCache(nodeExecutionsCache).ambiance(ambiance).build();
+    StrategyNodeFunctor strategyNodeFunctor = StrategyNodeFunctor.builder()
+                                                  .nodeExecutionsCache(nodeExecutionsCache)
+                                                  .nodeExecutionInfoService(nodeExecutionInfoService)
+                                                  .ambiance(ambiance)
+                                                  .build();
     Map<String, Object> strategyDataMap = (Map<String, Object>) strategyNodeFunctor.get("strategyNodeId_4");
 
     assertThat(strategyDataMap).isNotNull();

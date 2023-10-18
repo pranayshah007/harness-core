@@ -46,6 +46,7 @@ public class VmIACMApprovalStepSerializer {
     Map<String, String> envVars = stepInfo.getEnvVariables().getValue();
     envVars.put("PLUGIN_ENDPOINT_VARIABLES",
         iacmStepsUtils.populatePipelineIds(ambiance, envVars.get("PLUGIN_ENDPOINT_VARIABLES")));
+    envVars.put("PLUGIN_AUTO_APPROVE", stepInfo.getAutoApprove().getValue().toString());
 
     Map<String, String> statusEnvVars = serializerUtils.getStepStatusEnvVars(ambiance);
     envVars.putAll(statusEnvVars);

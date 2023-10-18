@@ -1,0 +1,118 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ssca-manager-apis
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- if .Values.global.commonLabels }}
+      {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  annotations:
+    {{- if .Values.ingress.annotations }}
+      {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.ingress.annotations "context" $) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.global.commonAnnotations }}
+      {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.global.ingress.objects.annotations }}
+      {{- include "harnesscommon.tplvalues.render" (dict "value" .Values.global.ingress.objects.annotations "context" $) | nindent 4 }}
+    {{- end }}
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: {{ .Values.global.ingress.className | quote }}
+  rules:
+    - http:
+        paths:
+          - path: /ssca-manager(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: ssca-manager
+                port:
+                  name: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ssca-manager-v1-apis
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "900"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "900"
+    nginx.ingress.kubernetes.io/proxy-body-size: 1024m
+    nginx.ingress.kubernetes.io/client-max-body-size: 1024m
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    {{- if .Values.global.ingress.serviceUpstream }}
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/upstream-vhost: ssca-manager.{{ .Release.Namespace }}.svc.cluster.local
+    {{- end }}
+spec:
+  ingressClassName: {{ .Values.global.ingress.className | quote }}
+  tls:
+  rules:
+    - http:
+        paths:
+          - path: /(v1/org/.+/project/.+/sbom/process)
+            pathType: Prefix
+            backend:
+              service:
+                name: ssca-manager
+                port:
+                  name: http
+          - path: /(v1/org/.+/project/.+/sbom/enforcement)
+            pathType: Prefix
+            backend:
+              service:
+                name: ssca-manager
+                port:
+                  name: http
+          - path: /(v1/org/.+/project/.+/orchestration/.+/sbom-download)
+            pathType: Prefix
+            backend:
+              service:
+                name: ssca-manager
+                port:
+                  name: http
+          - path: /(v1/org/.+/project/.+/orchestration/.+/summary)
+            pathType: Prefix
+            backend:
+              service:
+                name: ssca-manager
+                port:
+                  name: http
+          - path: /(v1/org/.+/project/.+/enforcement/.+/summary)
+            pathType: Prefix
+            backend:
+              service:
+                name: ssca-manager
+                port:
+                  name: http
+          - path: /(v1/org/.+/project/.+/enforcement/.+/policy-violations)
+            pathType: Prefix
+            backend:
+              service:
+                name: ssca-manager
+                port:
+                  name: http
+          - path: /(v1/org/.+/project/.+/enforcement-result)
+            pathType: Prefix
+            backend:
+              service:
+                name: ssca-manager
+                port:
+                  name: http
+          - path: /(v1/org/.+/project/.+/enforcement-summary)
+            pathType: Prefix
+            backend:
+              service:
+                name: ssca-manager
+                port:
+                  name: http
+          - path: /(v1/org/.+/project/.+/normalised-sbom-component)
+            pathType: Prefix
+            backend:
+              service:
+                name: ssca-manager
+                port:
+                  name: http

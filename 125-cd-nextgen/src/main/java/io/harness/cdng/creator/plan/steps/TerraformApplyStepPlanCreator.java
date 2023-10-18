@@ -6,11 +6,15 @@
  */
 
 package io.harness.cdng.creator.plan.steps;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.provision.terraform.TerraformApplyStep;
 import io.harness.cdng.provision.terraform.TerraformApplyStepNode;
 import io.harness.cdng.provision.terraform.TerraformApplyStepV2;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -23,6 +27,8 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(CDP)
 public class TerraformApplyStepPlanCreator extends CDPMSStepPlanCreatorV2<TerraformApplyStepNode> {
   @Inject private CDFeatureFlagHelper featureFlagService;
@@ -44,11 +50,21 @@ public class TerraformApplyStepPlanCreator extends CDPMSStepPlanCreatorV2<Terraf
 
   @Override
   public StepType getStepSpecType(PlanCreationContext ctx, TerraformApplyStepNode stepElement) {
-    return TerraformApplyStepV2.STEP_TYPE;
+    if (featureFlagService.isEnabled(ctx.getMetadata().getAccountIdentifier(),
+            FeatureName.CDS_SUPPORT_EXPRESSION_REMOTE_TERRAFORM_VAR_FILES_NG)) {
+      return TerraformApplyStepV2.STEP_TYPE;
+    } else {
+      return TerraformApplyStep.STEP_TYPE;
+    }
   }
 
   @Override
   public String getFacilitatorType(PlanCreationContext ctx, TerraformApplyStepNode stepElement) {
-    return OrchestrationFacilitatorType.TASK_CHAIN;
+    if (featureFlagService.isEnabled(ctx.getMetadata().getAccountIdentifier(),
+            FeatureName.CDS_SUPPORT_EXPRESSION_REMOTE_TERRAFORM_VAR_FILES_NG)) {
+      return OrchestrationFacilitatorType.TASK_CHAIN;
+    } else {
+      return OrchestrationFacilitatorType.TASK;
+    }
   }
 }

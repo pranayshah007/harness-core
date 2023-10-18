@@ -6,7 +6,6 @@
  */
 
 package io.harness.terragrunt.v2;
-
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LogLevel.INFO;
@@ -26,7 +25,10 @@ import static software.wings.beans.LogHelper.color;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.version.Version;
 import io.harness.cli.CliCommandRequest;
 import io.harness.cli.CliHelper;
@@ -67,6 +69,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.zeroturnaround.exec.stream.LogOutputStream;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @Builder
 @AllArgsConstructor(onConstructor = @__({ @Nonnull }))
 @Slf4j

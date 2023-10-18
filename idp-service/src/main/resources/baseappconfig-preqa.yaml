@@ -5,3 +5,10 @@ proxy:
       '/api/proxy/harness/stress/?': '/'
     allowedHeaders:
       - authorization
+  '/harness/scorecard':
+    target: 'https://stress.harness.io/'
+    pathRewrite:
+      '/api/proxy/harness/scorecard/?': '/'
+    allowedHeaders:
+      - authorization
+      - Harness-Account

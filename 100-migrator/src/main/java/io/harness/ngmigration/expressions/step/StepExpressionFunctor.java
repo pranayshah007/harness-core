@@ -6,12 +6,15 @@
  */
 
 package io.harness.ngmigration.expressions.step;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.expression.LateBindingMap;
 import io.harness.ngmigration.beans.StepOutput;
 
 import org.apache.commons.lang3.StringUtils;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public abstract class StepExpressionFunctor extends LateBindingMap {
   private String currentStageIdentifier;
   private StepOutput stepOutput;

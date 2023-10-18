@@ -31,6 +31,9 @@ spec:
       {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .Values.global.commonAnnotations }}
+        {{- include "harnesscommon.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 8 }}
+      {{- end }}
       labels:
         {{- include "platform-service.selectorLabels" . | nindent 8 }}
         {{- if .Values.global.commonLabels }}

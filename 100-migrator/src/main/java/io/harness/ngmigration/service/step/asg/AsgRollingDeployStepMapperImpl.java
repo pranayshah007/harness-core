@@ -6,9 +6,11 @@
  */
 
 package io.harness.ngmigration.service.step.asg;
-
 import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_FIELD;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.aws.asg.AsgBlueGreenDeployStepInfo;
 import io.harness.cdng.aws.asg.AsgBlueGreenDeployStepNode;
 import io.harness.cdng.aws.asg.AsgRollingDeployStepInfo;
@@ -29,6 +31,7 @@ import software.wings.sm.states.AwsAmiServiceSetup;
 
 import java.util.Map;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class AsgRollingDeployStepMapperImpl extends AsgBaseStepMapper {
   @Override
   public ParameterField<Timeout> getTimeout(State state) {

@@ -152,7 +152,7 @@ public class CloudformationStepHelperTest extends CDNGTestBase {
     Reflect.on(cloudformationStepHelper).set("cdExpressionResolver", cdExpressionResolver);
     Reflect.on(cdExpressionResolver).set("ngFeatureFlagHelperService", ngFeatureFlagHelperService);
     doReturn(false).when(ngFeatureFlagHelperService).isEnabled(any(), any());
-    doReturn(GitConfigDTO.builder().build()).when(cdStepHelper).getScmConnector(any(), any(), any());
+    doReturn(GitConfigDTO.builder().build()).when(cdStepHelper).getScmConnector(any(), any(), any(), any());
   }
 
   @Test
@@ -1182,7 +1182,7 @@ public class CloudformationStepHelperTest extends CDNGTestBase {
     doReturn(awsConnectorDTO).doReturn(gitConnectorInfoDTO).when(cdStepHelper).getConnector(any(), any());
     SSHKeySpecDTO sshKeySpecDTO = SSHKeySpecDTO.builder().build();
 
-    doReturn(githubConnectorDTO).when(cdStepHelper).getScmConnector(any(), any(), any());
+    doReturn(githubConnectorDTO).when(cdStepHelper).getScmConnector(any(), any(), any(), any());
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
     List<EncryptedDataDetail> apiEncryptedDataDetails = new ArrayList<>();
     doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());

@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.refresh.helper;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.template.resources.beans.NGTemplateConstants.GIT_BRANCH;
 
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
@@ -17,6 +18,7 @@ import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitx.GitXTransientBranchGuard;
 import io.harness.ng.core.refresh.bean.EntityRefreshContext;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
@@ -164,8 +166,14 @@ public class CDInputsValidationHelper {
       return;
     }
 
-    ServiceEntity serviceEntity = entityFetchHelper.getService(
-        context.getAccountId(), context.getOrgId(), context.getProjectId(), serviceRef, context.getCacheMap());
+    String gitBranch = serviceNode.get(GIT_BRANCH) != null ? serviceNode.get(GIT_BRANCH).asText() : null;
+
+    // fetch without cache since we're explicitly validating service YAML
+    ServiceEntity serviceEntity;
+    try (GitXTransientBranchGuard ignore = new GitXTransientBranchGuard(gitBranch)) {
+      serviceEntity = entityFetchHelper.getService(
+          context.getAccountId(), context.getOrgId(), context.getProjectId(), serviceRef, context.getCacheMap());
+    }
 
     String serviceYaml = serviceEntity.fetchNonEmptyYaml();
 

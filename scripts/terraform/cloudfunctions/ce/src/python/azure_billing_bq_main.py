@@ -7,10 +7,10 @@
 CF2 for Azure data pipeline
 """
 import json
-import base64
 import os
 import sys
 import re
+import uuid
 from google.cloud import bigquery
 from google.cloud import storage
 from google.cloud import pubsub_v1
@@ -49,20 +49,19 @@ AZURE_COST_CF_TOPIC_NAME = os.environ.get('AZURECOSTCFTOPIC', 'nikunjtesttopic')
 AZURE_COST_CF_TOPIC_PATH = publisher.topic_path(PROJECTID, AZURE_COST_CF_TOPIC_NAME)
 COSTCATEGORIESUPDATETOPIC = os.environ.get('COSTCATEGORIESUPDATETOPIC', 'ccm-bigquery-batch-update')
 
-def main(event, context):
-    """Triggered from a message on a Cloud Pub/Sub topic.
-    Args:
-         event (dict): Event payload.
-         context (google.cloud.functions.Context): Metadata for the event.
+def main(request):
     """
-    print(event)
-    data = base64.b64decode(event['data']).decode('utf-8')
-    event_json = json.loads(data)
-    jsonData = event_json.get("data", {}).get("message", {})
-    print(jsonData)
+    Triggered from an HTTP Request.
+    """
+    print(request)
+    jsonData = request.get_json(force=True)
 
-    # Set the accountId for GCP logging
+    # Set the accountId and executionId for GCP logging
     util.ACCOUNTID_LOG = jsonData.get("accountId")
+    util.CF_EXECUTION_ID = uuid.uuid4()
+    print_(request)
+    print_(jsonData)
+
     jsonData["cloudProvider"] = "AZURE"
     # path is folder name in this format vZYBQdFRSlesqo3CMB90Ag/myqO-niJS46aVm3b646SKA/cereportnikunj/20210201-20210228/
     # or in  vZYBQdFRSlesqo3CMB90Ag/myqO-niJS46aVm3b646SKA/<tenantid>/cereportnikunj/20210201-20210228/
@@ -144,7 +143,7 @@ def main(event, context):
     print_("%s table exists. Starting to write data from gcs into it..." % jsonData["tableName"])
 
     if not ingest_data_from_csv(jsonData):
-        return
+        return "CF completed execution."
     azure_column_mapping = setAvailableColumns(jsonData)
 
     get_preferred_currency(jsonData)
@@ -181,6 +180,7 @@ def main(event, context):
         }
     })
     print_("Completed")
+    return "CF executed successfully."
 
 
 def trigger_historical_cost_update_in_preferred_currency(jsonData):
@@ -877,6 +877,8 @@ def setAvailableColumns(jsonData):
         azure_column_mapping["azureInstanceId"] = "resourceid"
     elif "instanceid" in columns:
         azure_column_mapping["azureInstanceId"] = "instanceid"
+    elif "instancename" in columns:
+        azure_column_mapping["azureInstanceId"] = "instancename"
     else:
         raise Exception("No mapping found for azureInstanceId column")
 

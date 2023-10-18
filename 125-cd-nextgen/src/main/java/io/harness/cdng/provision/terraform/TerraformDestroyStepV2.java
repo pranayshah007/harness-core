@@ -316,6 +316,11 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
 
     builder.skipTerraformRefresh(skipRefreshCommand);
 
+    if (spec.getProviderCredential() != null) {
+      builder.providerCredentialDelegateInfo(
+          helper.getProviderCredentialDelegateInfo(spec.getProviderCredential(), ambiance));
+    }
+
     return builder.currentStateFileId(helper.getLatestFileId(entityId))
         .taskType(TFTaskType.DESTROY)
         .terraformCommand(TerraformCommand.DESTROY)
@@ -361,6 +366,12 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
     TerraformInheritOutput inheritOutput =
         helper.getSavedInheritOutput(provisionerIdentifier, DESTROY.name(), ambiance);
 
+    if (inheritOutput.getProviderCredentialConfig() != null) {
+      TerraformProviderCredential providerCredential =
+          helper.toTerraformProviderCredential(inheritOutput.getProviderCredentialConfig());
+      builder.providerCredentialDelegateInfo(helper.getProviderCredentialDelegateInfo(providerCredential, ambiance));
+    }
+
     return builder.workspace(inheritOutput.getWorkspace())
         .configFile(helper.getGitFetchFilesConfig(
             inheritOutput.getConfigFiles(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
@@ -404,6 +415,12 @@ public class TerraformDestroyStepV2 extends CdTaskChainExecutable {
     builder.terraformCommandFlags(helper.getTerraformCliFlags(stepParameters.getConfiguration().getCliOptions()));
 
     TerraformConfig terraformConfig = helper.getLastSuccessfulApplyConfig(stepParameters, ambiance);
+
+    if (terraformConfig.getProviderCredentialConfig() != null) {
+      TerraformProviderCredential providerCredential =
+          helper.toTerraformProviderCredential(terraformConfig.getProviderCredentialConfig());
+      builder.providerCredentialDelegateInfo(helper.getProviderCredentialDelegateInfo(providerCredential, ambiance));
+    }
 
     builder.workspace(terraformConfig.getWorkspace())
         .varFileInfos(helper.prepareTerraformVarFileInfo(terraformConfig.getVarFileConfigs(), ambiance, true))

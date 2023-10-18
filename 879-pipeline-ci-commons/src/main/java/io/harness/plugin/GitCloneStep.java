@@ -124,8 +124,4 @@ public class GitCloneStep extends CommonAbstractStepExecutable {
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
     // we need to check if rbac check is req or not.
   }
-
-  @Override
-  public void handleAbort(
-      Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {}
 }

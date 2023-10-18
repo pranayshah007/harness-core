@@ -86,7 +86,7 @@ public class ServiceEntityVisitorHelperV2Test extends CategoryTest {
 
     doReturn(Optional.of(serviceEntity))
         .when(serviceEntityService)
-        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "serviceRef", false);
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "serviceRef", false, true, false);
 
     EntityDetailProtoDTO entityDetailProtoDTOPrimaryArtifact =
         EntityDetailProtoDTO.newBuilder()

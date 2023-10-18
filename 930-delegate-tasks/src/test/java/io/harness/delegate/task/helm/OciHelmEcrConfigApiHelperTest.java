@@ -10,9 +10,6 @@ package io.harness.delegate.task.helm;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.PRATYUSH;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -24,8 +21,8 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.AwsClient;
-import io.harness.aws.AwsConfig;
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.aws.beans.EcrImageDetailConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
@@ -36,50 +33,38 @@ import io.harness.exception.OciHelmDockerApiException;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.SecretDecryptionService;
 
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.amazonaws.services.ecr.model.ImageDetail;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 
 @OwnedBy(CDP)
 public class OciHelmEcrConfigApiHelperTest extends CategoryTest {
   @InjectMocks private OciHelmEcrConfigApiHelper ociHelmEcrConfigApiHelper = spy(OciHelmEcrConfigApiHelper.class);
-  @Spy @InjectMocks private OciHelmApiHelperUtils ociHelmApiHelperUtils;
   @Mock private SecretDecryptionService decryptionService;
   @Mock private AwsClient awsClient;
   @Mock private AwsNgConfigMapper awsNgConfigMapper;
-
-  @Rule
-  public WireMockRule wireMockRule =
-      new WireMockRule(WireMockConfiguration.wireMockConfig()
-                           .usingFilesUnderClasspath("930-delegate-tasks/src/test/resources")
-                           .disableRequestJournal()
-                           .port(0));
-
-  String url;
-  String accountId = "accId";
+  @Mock private OciHelmApiHelperUtils ociHelmApiHelperUtils;
   String chartName = "test/chart";
+  int pageSize = 100000;
 
   @Before
   public void setup() throws IOException {
     initMocks(this);
-    url = String.format("http://localhost:%d", wireMockRule.port());
   }
 
   @Test
   @Owner(developers = PRATYUSH)
   @Category(UnitTests.class)
   public void testGetChartVersionsECRConfigType() {
-    String lastTag = null;
-    int pageSize = 3;
     String region = "us-west-1";
 
     AwsCredentialDTO awsCredentialDTO =
@@ -90,36 +75,29 @@ public class OciHelmEcrConfigApiHelperTest extends CategoryTest {
 
     EcrHelmApiListTagsTaskParams ecrHelmApiListTagsTaskParams = EcrHelmApiListTagsTaskParams.builder()
                                                                     .chartName(chartName)
-                                                                    .lastTag(lastTag)
                                                                     .awsConnectorDTO(awsConnectorDTO)
                                                                     .region(region)
                                                                     .build();
     AwsInternalConfig awsInternalConfig = AwsInternalConfig.builder().build();
-    AwsConfig awsConfig = AwsConfig.builder().build();
+    ImageDetail imageDetail = new ImageDetail();
+    imageDetail.setImageTags(Arrays.asList("0.1.0", "0.1.1", "0.1.2"));
+    EcrImageDetailConfig ecrImageDetailConfig =
+        EcrImageDetailConfig.builder().imageDetails(Collections.singletonList(imageDetail)).nextToken(null).build();
 
     doReturn(null).when(decryptionService).decrypt(any(), any());
     doReturn(awsInternalConfig).when(awsNgConfigMapper).createAwsInternalConfig(eq(awsConnectorDTO));
-    doReturn(url).when(awsClient).getEcrImageUrl(eq(awsInternalConfig), eq(null), eq(region), eq(chartName));
-    doReturn(awsConfig)
-        .when(awsNgConfigMapper)
-        .mapAwsConfigWithDecryption(eq(awsCredentialDTO), eq(AwsCredentialType.INHERIT_FROM_DELEGATE), any());
-    doReturn("dGVzdDp0ZXN0").when(awsClient).getAmazonEcrAuthToken(eq(awsConfig), any(), eq(region));
+    doReturn(ecrImageDetailConfig)
+        .when(awsClient)
+        .listEcrImageTags(eq(awsInternalConfig), eq(null), eq(region), eq(chartName), eq(pageSize), eq(null));
 
-    wireMockRule.stubFor(get(urlEqualTo(String.format("/v2/%s/tags/list?n=%d", chartName, pageSize)))
-                             .willReturn(aResponse()
-                                             .withStatus(200)
-                                             .withBody("{\n"
-                                                 + "    \"name\": \"" + chartName + "\",\n"
-                                                 + "    \"tags\": [\n"
-                                                 + "        \"0.1.0\",\n"
-                                                 + "        \"0.1.1\",\n"
-                                                 + "        \"0.1.2\"\n"
-                                                 + "    ]\n"
-                                                 + "}")
-                                             .withHeader("Content-Type", "application/json")));
-
-    List<String> versions = ociHelmEcrConfigApiHelper.getChartVersions(accountId, ecrHelmApiListTagsTaskParams, 3);
-    assertThat(versions).contains("0.1.0", "0.1.1", "0.1.2");
+    EcrImageDetailConfig ecrImageDetailConfig2 =
+        ociHelmEcrConfigApiHelper.getEcrImageDetailConfig(ecrHelmApiListTagsTaskParams, pageSize);
+    assertThat(ecrImageDetailConfig2.getImageDetails()
+                   .stream()
+                   .map(ImageDetail::getImageTags)
+                   .flatMap(List::stream)
+                   .collect(Collectors.toList()))
+        .contains("0.1.0", "0.1.1", "0.1.2");
   }
 
   @Test
@@ -135,7 +113,22 @@ public class OciHelmEcrConfigApiHelperTest extends CategoryTest {
     EcrHelmApiListTagsTaskParams ecrHelmApiListTagsTaskParams =
         EcrHelmApiListTagsTaskParams.builder().chartName("").lastTag(null).awsConnectorDTO(awsConnectorDTO).build();
 
-    assertThatThrownBy(() -> ociHelmEcrConfigApiHelper.getChartVersions(accountId, ecrHelmApiListTagsTaskParams, 3))
+    assertThatThrownBy(() -> ociHelmEcrConfigApiHelper.getEcrImageDetailConfig(ecrHelmApiListTagsTaskParams, pageSize))
         .isInstanceOf(OciHelmDockerApiException.class);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testGetChartVersionsFromImageDetails() {
+    ImageDetail imageDetail1 = new ImageDetail();
+    imageDetail1.setImageTags(Arrays.asList("0.1.0", "0.1.1", "0.1.2"));
+    ImageDetail imageDetail2 = new ImageDetail();
+    imageDetail2.setImageTags(Arrays.asList("1.1.0", "1.1.1", "1.1.2"));
+    EcrImageDetailConfig ecrImageDetailConfig =
+        EcrImageDetailConfig.builder().imageDetails(Arrays.asList(imageDetail1, imageDetail2)).nextToken(null).build();
+    List<String> chartVersions = ociHelmEcrConfigApiHelper.getChartVersionsFromImageDetails(ecrImageDetailConfig);
+    assertThat(chartVersions.size()).isEqualTo(6);
+    assertThat(chartVersions).isEqualTo(Arrays.asList("0.1.0", "0.1.1", "0.1.2", "1.1.0", "1.1.1", "1.1.2"));
   }
 }

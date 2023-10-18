@@ -1,0 +1,168 @@
+{
+  "pipeline": {
+    "identifier": "cipipelinegquT4n2o9Y",
+    "description": "fd",
+    "name": "pipeline with image push to GAR",
+    "stages": [
+      {
+        "stage": {
+          "identifier": "gcpBuildPush",
+          "name": "gcp build push",
+          "type": "CI",
+          "variables": [
+            {
+              "name": "GCP_SECRET_KEY",
+              "type": "Secret",
+              "value": "account.testCISecretmDJzyNtUNe",
+              "__uuid": "2-Bja1vwRV-MOMra66vTCg"
+            }
+          ],
+          "spec": {
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "identifier": "createDockerFile",
+                    "name": "step one",
+                    "type": "Run",
+                    "spec": {
+                      "retry": 1,
+                      "command": "touch harnessDockerfile\necho \"FROM alpine:latest\" >> harnessDockerfile\ncat harnessDockerfile\n",
+                      "connectorRef": "account.CItestDockerConnectorLsGyi79hax",
+                      "image": "alpine:latest",
+                      "__uuid": "CFk2CBJYQbCsB3PbZfPqFw"
+                    },
+                    "__uuid": "tdtclpNJToG6mApeyqC4dw"
+                  },
+                  "__uuid": "H2hqRK8PQ5KGzARSPoGWHQ"
+                },
+                {
+                  "step": {
+                    "identifier": "deleteImageIfExists",
+                    "name": "step two",
+                    "type": "Run",
+                    "spec": {
+                      "retry": 1,
+                      "command": "mkdir -p /tmp\necho $GCP_SECRET_KEY > /tmp/secret.json\ncat /tmp/secret.json\ngcloud auth -q activate-service-account --key-file=/tmp/secret.json\ngcloud container images delete us.docker.pkg.dev/ci-play/harnesscie-testing-gar-basic-push:1.0 --force-delete-tags --quiet || true\n",
+                      "connectorRef": "account.CItestDockerConnectorLsGyi79hax",
+                      "image": "google/cloud-sdk:alpine",
+                      "__uuid": "kjUD_jD_Th64uTskD40Ahw"
+                    },
+                    "__uuid": "XhtWPZf3RXueiEGeq26A_w"
+                  },
+                  "__uuid": "B_fZ38kjSZKLAdzCqqIMGQ"
+                },
+                {
+                  "step": {
+                    "identifier": "pushGAR",
+                    "name": "push GAR",
+                    "type": "BuildAndPushGAR",
+                    "spec": {
+                      "host": "us.docker.pkg.dev",
+                      "projectID": "ci-play",
+                      "imageName": "harnesscie-testing-gar-basic-push",
+                      "tags": [
+                        "1.0"
+                      ],
+                      "context": ".",
+                      "dockerfile": "harnessDockerfile",
+                      "connectorRef": "account.testGCPConnectorLmJEOVaTj7",
+                      "__uuid": "OAfuJ4mHScmKLiYSthd1Og"
+                    },
+                    "__uuid": "Qlb9E9WeT1ySsK9DHw8K7w"
+                  },
+                  "__uuid": "5fleSfl0RWytSYyrQucBsw"
+                }
+              ],
+              "__uuid": "mYRt58hVTump7YOMGYGSxA"
+            },
+            "infrastructure": {
+              "type": "KubernetesDirect",
+              "spec": {
+                "connectorRef": "account.CItestK8sConnectorCMs0vdKHun",
+                "namespace": "harness-qa-delegate",
+                "__uuid": "wAPYkhd5QwOCjTokh2_Lug"
+              },
+              "__uuid": "wDCXv4uhThS0WZy-Wduztg"
+            },
+            "cloneCodebase": false,
+            "__uuid": "01sUb8IAQFCHeHKG6B15hw"
+          },
+          "__uuid": "kMkqVr_GQ4C0nKcCMUxEaw"
+        },
+        "__uuid": "xbPcEsGsQq2ik4POHJmfpg"
+      },
+      {
+        "stage": {
+          "identifier": "test_gar_uploaded_image",
+          "name": "stage 2",
+          "type": "CI",
+          "variables": [
+            {
+              "name": "GCP_SECRET_KEY",
+              "type": "Secret",
+              "value": "account.testCISecretmDJzyNtUNe",
+              "__uuid": "2c90FOU-RZWMDnJtC78RRg"
+            }
+          ],
+          "spec": {
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "identifier": "runUploadedImageContainer",
+                    "name": "run",
+                    "type": "Run",
+                    "spec": {
+                      "retry": 1,
+                      "command": "ls\n",
+                      "connectorRef": "account.testGCPConnectorLmJEOVaTj7",
+                      "image": "us.docker.pkg.dev/ci-play/harnesscie-testing-gar-basic-push:1.0",
+                      "__uuid": "45NVTDHrQ2CvstbJgklDlw"
+                    },
+                    "__uuid": "btnbl9ErT1-Ml8iG_7635g"
+                  },
+                  "__uuid": "QF0NiywzTVq8Wrc8Esucvw"
+                },
+                {
+                  "step": {
+                    "identifier": "deleteImage",
+                    "name": "delete image",
+                    "type": "Run",
+                    "spec": {
+                      "retry": 1,
+                      "command": "mkdir -p /tmp\necho $GCP_SECRET_KEY > /tmp/secret.json\ncat /tmp/secret.json\ngcloud auth -q activate-service-account --key-file=/tmp/secret.json\ngcloud container images delete us.docker.pkg.dev/ci-play/harnesscie-testing-gar-basic-push:1.0 --force-delete-tags --quiet\n",
+                      "connectorRef": "account.CItestDockerConnectorLsGyi79hax",
+                      "image": "google/cloud-sdk:alpine",
+                      "__uuid": "kLzvF0YoSbWGun2KlBkaRg"
+                    },
+                    "__uuid": "tRui-ISgRGKlWxhpHIDStw"
+                  },
+                  "__uuid": "ijfq85r3R_-8T8BXLHvF0A"
+                }
+              ],
+              "__uuid": "zcAxKrVQTtywG_AH46YzEA"
+            },
+            "infrastructure": {
+              "type": "KubernetesDirect",
+              "spec": {
+                "connectorRef": "account.CItestK8sConnectorCMs0vdKHun",
+                "namespace": "harness-qa-delegate",
+                "__uuid": "2BwjfaYQSIuppRw0aGm57g"
+              },
+              "__uuid": "DByi1xUTTru18wlSRXtt4w"
+            },
+            "cloneCodebase": false,
+            "__uuid": "UmWXcAjpR-WTjpjx2xBj0Q"
+          },
+          "__uuid": "4hizIIPBSL-EOamszFpjzA"
+        },
+        "__uuid": "NP_J9FGlTam8nWL9rNrqtg"
+      }
+    ],
+    "projectIdentifier": "CITestDemoProP1PcmJEzZ5",
+    "orgIdentifier": "CITestDemoOrgUNtoIHwBY8",
+    "__uuid": "Yv1mI75YTqOM-FCSOCiJLQ"
+  },
+  "__uuid": "__WhBRZ_RD2qWWQJjwnDCg"
+}

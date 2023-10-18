@@ -45,6 +45,7 @@ import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.interrupts.InterruptEffect;
+import io.harness.monitoring.ExecutionCountWithAccountResult;
 import io.harness.observer.Subject;
 import io.harness.plan.Node;
 import io.harness.plan.NodeType;
@@ -820,8 +821,11 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
 
   @VisibleForTesting
   void emitEvent(NodeExecution nodeExecution, OrchestrationEventType orchestrationEventType) {
+    if (nodeExecution == null) {
+      return;
+    }
     TriggerPayload triggerPayload = TriggerPayload.newBuilder().build();
-    if (nodeExecution != null && nodeExecution.getAmbiance() != null) {
+    if (nodeExecution.getAmbiance() != null) {
       PlanExecutionMetadata metadata =
           planExecutionMetadataService.findByPlanExecutionId(nodeExecution.getAmbiance().getPlanExecutionId())
               .orElseThrow(()
@@ -905,7 +909,6 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   public List<NodeExecution> fetchStageExecutionsWithProjection(
       String planExecutionId, Set<String> fieldsToBeIncluded) {
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
-                      .addCriteria(where(NodeExecutionKeys.status).ne(Status.SKIPPED))
                       .addCriteria(where(NodeExecutionKeys.stepCategory).in(StepCategory.STAGE, StepCategory.STRATEGY));
     for (String field : fieldsToBeIncluded) {
       query.fields().include(field);
@@ -1123,5 +1126,10 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       query.fields().include(field);
     }
     return nodeExecutionReadHelper.fetchNodeExecutionsFromAnalytics(query);
+  }
+
+  @Override
+  public List<ExecutionCountWithAccountResult> aggregateRunningNodesCountPerAccount() {
+    return nodeExecutionReadHelper.aggregateRunningExecutionCountPerAccount();
   }
 }

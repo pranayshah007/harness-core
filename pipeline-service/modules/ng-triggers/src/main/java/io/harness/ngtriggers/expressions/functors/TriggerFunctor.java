@@ -22,7 +22,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
-import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.expression.LateBindingValue;
 import io.harness.ngtriggers.helpers.TriggerHelper;
@@ -72,7 +71,7 @@ public class TriggerFunctor implements LateBindingValue {
         try {
           jsonObject.put(PAYLOAD, JsonPipelineUtils.read(metadata.getTriggerJsonPayload(), List.class));
         } catch (IOException toListEx) {
-          throw new InvalidRequestException("Event payload could not be converted to a hashmap or list");
+          jsonObject.put(PAYLOAD, metadata.getTriggerPayload());
         }
       }
     }

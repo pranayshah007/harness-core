@@ -7,6 +7,7 @@
 
 package io.harness.pms.sdk.core.execution;
 
+import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAHIL;
 
@@ -117,6 +118,28 @@ public class SdkNodeExecutionServiceImplTest extends PmsSdkCoreTestBase {
     sdkNodeExecutionService.resumeNodeExecution(ambiance, new HashMap<>(), false);
     ResumeNodeExecutionRequest resumeNodeExecutionRequest =
         ResumeNodeExecutionRequest.newBuilder().putAllResponse(new HashMap<>()).setAsyncError(false).build();
+    Mockito.verify(sdkResponseEventPublisher)
+        .publishEvent(SdkResponseEventProto.newBuilder()
+                          .setSdkResponseEventType(SdkResponseEventType.RESUME_NODE_EXECUTION)
+                          .setResumeNodeExecutionRequest(resumeNodeExecutionRequest)
+                          .setAmbiance(ambiance)
+                          .build());
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testResumeNodeExecutionWithExecutableResponse() {
+    Mockito.when(responseDataMapper.toResponseDataProto(any())).thenReturn(new HashMap<>());
+    Ambiance ambiance = AmbianceTestUtils.buildAmbiance();
+    sdkNodeExecutionService.resumeNodeExecution(
+        ambiance, new HashMap<>(), false, ExecutableResponse.newBuilder().build());
+    ResumeNodeExecutionRequest resumeNodeExecutionRequest =
+        ResumeNodeExecutionRequest.newBuilder()
+            .putAllResponse(new HashMap<>())
+            .setAsyncError(false)
+            .setExecutableResponse(ExecutableResponse.newBuilder().build())
+            .build();
     Mockito.verify(sdkResponseEventPublisher)
         .publishEvent(SdkResponseEventProto.newBuilder()
                           .setSdkResponseEventType(SdkResponseEventType.RESUME_NODE_EXECUTION)

@@ -6,7 +6,9 @@
  */
 
 package io.harness.ngmigration.expressions;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.expression.ExpressionResolveFunctor;
 
@@ -14,6 +16,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_MIGRATOR})
 public class MigratorResolveFunctor implements ExpressionResolveFunctor {
   private final Map<String, Object> context;
 

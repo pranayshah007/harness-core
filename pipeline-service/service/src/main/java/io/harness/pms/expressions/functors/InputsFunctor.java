@@ -6,10 +6,12 @@
  */
 
 package io.harness.pms.expressions.functors;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.expression.LateBindingValue;
 import io.harness.pms.yaml.HarnessYamlVersion;
@@ -30,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  */
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(PIPELINE)
 @Slf4j
 public class InputsFunctor implements LateBindingValue {
