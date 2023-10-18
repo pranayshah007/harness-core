@@ -121,6 +121,8 @@ public class PrometheusServiceImpl implements PrometheusService {
     Instant endtime = DateTimeUtils.roundDownTo1MinBoundary(Instant.now());
     Instant starttime = endtime.minus(Duration.of(2, ChronoUnit.HOURS));
     DataSourceType dataSourceType = confirmDataSourceType(prometheusConnectionParams.getDataSourceType());
+    Preconditions.checkState(query.contains("{") && query.contains("}"),
+        "Query must contain filters. Please add blank curly braces({}) in case of absence of filters");
     DataCollectionRequest request;
     switch (dataSourceType) {
       case AWS_PROMETHEUS:
