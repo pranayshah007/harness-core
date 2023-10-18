@@ -100,9 +100,6 @@ public enum FeatureName {
   CDS_AWS_CDK("Enable AWS CDK integration", HarnessTeam.CDP),
   CDS_AZURE_WEBAPP_NG_LISTING_APP_NAMES_AND_SLOTS(
       "Support for listing Azure Web App names and slots on Slot Deployment and Swap Slot steps", HarnessTeam.CDP),
-  CDS_BG_STAGE_SCALE_DOWN_STEP_NG(
-      "Enables Blue Green Scale Down Stage Scale Down Step. This will help bring down the stage environment in Blue Green Deployment. Epic: https://harness.atlassian.net/browse/CDS-55822",
-      HarnessTeam.CDP),
   CDS_CONTAINER_STEP_GROUP("Support for container step group in CD", HarnessTeam.CDP),
   CDS_DEBEZIUM_ENABLED_CG("This flag is enable sync using debezium in cg", HarnessTeam.CDC, Scope.GLOBAL),
   CDS_DISABLE_FABRIC8_CG(
