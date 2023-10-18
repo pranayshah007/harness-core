@@ -38,6 +38,7 @@ import io.harness.beans.steps.stepinfo.security.VeracodeStepInfo;
 import io.harness.beans.steps.stepinfo.security.ZapStepInfo;
 import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlAdvancedSettings;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlAnchoreToolData;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlArgs;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlAuth;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlBlackduckToolData;
@@ -357,6 +358,13 @@ public final class STOSettingsUtils {
 
     map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
     map.putAll(processSTOImageFields(stepInfo.getImage(), stepType, identifier));
+
+    STOYamlAnchoreToolData toolData = stepInfo.getTool();
+
+    if (toolData != null) {
+      map.put(getSTOKey(PRODUCT_IMAGE_NAME),
+              resolveStringParameter(TOOL_IMAGE_NAME, stepType, identifier, toolData.getImageName(), false));
+    }
 
     return map;
   }
