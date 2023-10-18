@@ -6,6 +6,7 @@
  */
 
 package io.harness.reflection;
+
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
 
@@ -104,15 +105,7 @@ public class ReflectionUtils {
             Object object = f.get(o);
             if (object != null) {
               if (object instanceof List) {
-                List objectList = (List) object;
-                for (int i = 0; i < objectList.size(); i++) {
-                  Object o1 = objectList.get(i);
-                  if (o1 instanceof ExpressionReflectionUtils.NestedAnnotationResolver) {
-                    updateAnnotatedField(cls, o1, functor);
-                  } else if (o1 instanceof String) {
-                    objectList.set(i, functor.update(annotation, (String) o1));
-                  }
-                }
+                updateList(cls, functor, (List) object, annotation);
               } else if (object instanceof Map) {
                 Map objectMap = (Map) object;
                 objectMap.replaceAll((k, v) -> {
@@ -121,6 +114,9 @@ public class ReflectionUtils {
                     return v;
                   } else if (v instanceof String) {
                     return functor.update(annotation, (String) v);
+                  } else if (v instanceof List) {
+                    updateList(cls, functor, (List) v, annotation);
+                    return v;
                   }
                   return v;
                 });
@@ -138,6 +134,19 @@ public class ReflectionUtils {
         }
       }
       c = c.getSuperclass();
+    }
+  }
+
+  private static <T extends Annotation> void updateList(Class<T> cls, Functor<T> functor, List list, T annotation) {
+    if (isNotEmpty(list)) {
+      for (int i = 0; i < list.size(); i++) {
+        Object o1 = list.get(i);
+        if (o1 instanceof ExpressionReflectionUtils.NestedAnnotationResolver) {
+          updateAnnotatedField(cls, o1, functor);
+        } else if (o1 instanceof String) {
+          list.set(i, functor.update(annotation, (String) o1));
+        }
+      }
     }
   }
 
