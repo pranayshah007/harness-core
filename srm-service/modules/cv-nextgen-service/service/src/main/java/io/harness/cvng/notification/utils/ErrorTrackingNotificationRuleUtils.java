@@ -330,26 +330,6 @@ public class ErrorTrackingNotificationRuleUtils {
     }
   }
 
-  public static ErrorTrackingEventType toErrorTrackingEventType(CriticalEventType eventType) {
-    switch (eventType) {
-      //TODO: not quite sure what to do with ANY here, handle!!!
-      case ANY:
-      case CAUGHT_EXCEPTION:
-      case UNCAUGHT_EXCEPTION:
-      case SWALLOWED_EXCEPTION:
-        return ErrorTrackingEventType.EXCEPTION;
-      case CUSTOM_ERROR:
-        return ErrorTrackingEventType.CUSTOM;
-      case HTTP_ERROR:
-        return ErrorTrackingEventType.HTTP;
-      case LOGGED_ERROR:
-      case LOGGED_WARNING:
-        return ErrorTrackingEventType.LOG;
-      default:
-        throw new IllegalArgumentException("Unsupported EventType: " + eventType);
-    }
-  }
-
   @Builder
   @Slf4j
   public static class StackTraceEvent {
@@ -407,8 +387,7 @@ public class ErrorTrackingNotificationRuleUtils {
       changeEventTypeString = errorTrackingNotificationData.getFilter()
                                   .getEventTypes()
                                   .stream()
-                                  .map(ErrorTrackingNotificationRuleUtils::toErrorTrackingEventType)
-                                  .map(ErrorTrackingEventType::getDisplayName)
+                                  .map(CriticalEventType::getDisplayName)
                                   .collect(Collectors.joining(", "))
           + SEARCH_TERM + errorTrackingNotificationData.getFilter().getSearchTerm() + ")";
       } else {
