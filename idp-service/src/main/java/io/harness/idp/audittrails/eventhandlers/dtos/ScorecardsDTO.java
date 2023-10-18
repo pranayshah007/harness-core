@@ -9,9 +9,10 @@ package io.harness.idp.audittrails.eventhandlers.dtos;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.beans.YamlDTO;
+import io.harness.spec.server.idp.v1.model.ScorecardDetailsResponse;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.List;
+import javax.validation.Valid;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -22,8 +23,6 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 @OwnedBy(HarnessTeam.IDP)
-public class ProxyHostDTO implements YamlDTO {
-  String pluginId;
-  String host;
-  List<String> delegateSelectors;
+public class ScorecardsDTO implements YamlDTO {
+  @Valid ScorecardDetailsResponse scorecardDetailsResponse;
 }

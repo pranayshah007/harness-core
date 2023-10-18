@@ -4,7 +4,7 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
-package io.harness.idp.audittrials.eventhandlers;
+package io.harness.idp.audittrails.eventhandlers;
 
 import static io.harness.idp.gitintegration.events.catalogconnector.CatalogConnectorCreateEvent.CATALOG_CONNECTOR_CREATED;
 import static io.harness.idp.gitintegration.events.catalogconnector.CatalogConnectorUpdateEvent.CATALOG_CONNECTOR_UPDATED;
@@ -19,7 +19,7 @@ import io.harness.audit.beans.ResourceScopeDTO;
 import io.harness.audit.client.api.AuditClientService;
 import io.harness.context.GlobalContext;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.idp.audittrials.eventhandlers.dtos.CatalogConnectorDTO;
+import io.harness.idp.audittrails.eventhandlers.dtos.CatalogConnectorDTO;
 import io.harness.idp.gitintegration.entities.CatalogConnectorEntity;
 import io.harness.idp.gitintegration.events.catalogconnector.CatalogConnectorCreateEvent;
 import io.harness.idp.gitintegration.events.catalogconnector.CatalogConnectorUpdateEvent;
