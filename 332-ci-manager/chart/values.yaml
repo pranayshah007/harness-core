@@ -70,7 +70,7 @@ global:
       secretName: ''
     # -- add annotations to ingress objects
     objects:
-      annotations: { }
+      annotations: {}
   istio:
     # -- create virtualServices objects
     enabled: false
@@ -86,11 +86,11 @@ replicaCount: 1
 maxSurge: 1
 maxUnavailable: 0
 image:
-  registry: docker.io
-  repository: harness/ci-manager-signed
+  registry: us.gcr.io
+  repository: platform-205701/ci-manager
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "5302"
+  tag: "1.19.0"
   digest: ""
   imagePullSecrets: []
 securityImage:
@@ -255,7 +255,6 @@ tolerations: []
 affinity: {}
 additionalConfigs: {}
 java17flags: ""
-
 virtualService:
   annotations: {}
 ingress:
