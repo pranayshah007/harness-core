@@ -112,6 +112,7 @@ public class ElastigroupBGStageSetupStep
             .spotInstConfig(passThroughData.getSpotInstConfig())
             .elastigroupConfiguration(passThroughData.getElastigroupConfiguration())
             .startupScript(passThroughData.getBase64EncodedStartupScript())
+            .decodedStartupScript(passThroughData.getBase64DecodedStartupScript())
             .commandName(ELASTIGROUP_BG_STAGE_SETUP_COMMAND_NAME)
             .image(passThroughData.getImage())
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))

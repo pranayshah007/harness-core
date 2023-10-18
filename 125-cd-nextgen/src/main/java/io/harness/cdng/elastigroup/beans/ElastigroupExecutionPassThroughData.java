@@ -33,7 +33,8 @@ public class ElastigroupExecutionPassThroughData implements PassThroughData {
   private boolean blueGreen;
 
   // Available in Startup Script
-  private String base64EncodedStartupScript;
+  @Deprecated private String base64EncodedStartupScript;
+  private String base64DecodedStartupScript;
   private InfrastructureOutcome infrastructure;
 
   // Available in Elastigroup configuration
