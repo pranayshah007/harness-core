@@ -53,7 +53,7 @@ global:
     timescaledb:
       installed: true
       protocol: "jdbc:postgresql"
-      sslEnabled: true
+      sslEnabled: false
       # --  provide default values if mongo.installed is set to false
       hosts:
         - timescaledb-single-chart:5432
