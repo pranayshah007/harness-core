@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.eraro.ErrorCode.TIMEOUT_ENGINE_EXCEPTION;
 import static io.harness.logging.UnitStatus.EXPIRED;
 import static io.harness.pms.contracts.interrupts.InterruptType.MARK_EXPIRED;
+import static io.harness.springdata.SpringDataMongoUtils.setUnset;
 
 import io.harness.OrchestrationPublisherName;
 import io.harness.annotations.dev.CodePulse;
@@ -56,6 +57,8 @@ import lombok.extern.slf4j.Slf4j;
 public class ExpiryHelper {
   protected static final String EXPIRE_ERROR_MESSAGE =
       "Please Check the timeout configuration on the step to extend the duration of the step";
+  protected static final String EXPIRE_ERROR_MESSAGE_STAGE =
+      "Please Check the timeout configuration on the stage to extend the duration of the stage";
 
   @Inject private OrchestrationEngine engine;
   @Inject private InterruptHelper interruptHelper;
@@ -141,16 +144,17 @@ public class ExpiryHelper {
         nodeExecutionService.updateStatusWithOps(nodeExecution.getUuid(), Status.EXPIRED, ops -> {
           ops.set(NodeExecutionKeys.endTs, System.currentTimeMillis());
           ops.set(NodeExecutionKeys.unitProgresses, unitProgresses);
-          ops.set(NodeExecutionKeys.failureInfo,
+          setUnset(ops, NodeExecutionKeys.failureInfo,
               FailureInfo.newBuilder()
-                  .setErrorMessage(EXPIRE_ERROR_MESSAGE)
+                  .setErrorMessage(EXPIRE_ERROR_MESSAGE_STAGE)
                   .addFailureTypes(FailureType.TIMEOUT_FAILURE)
                   .addFailureData(FailureData.newBuilder()
                                       .addFailureTypes(FailureType.TIMEOUT_FAILURE)
                                       .setLevel(Level.ERROR.name())
                                       .setCode(TIMEOUT_ENGINE_EXCEPTION.name())
-                                      .setMessage(EXPIRE_ERROR_MESSAGE)
-                                      .build()));
+                                      .setMessage(EXPIRE_ERROR_MESSAGE_STAGE)
+                                      .build())
+                  .build());
           ops.addToSet(NodeExecutionKeys.interruptHistories,
               InterruptEffect.builder()
                   .interruptId(interruptId)
