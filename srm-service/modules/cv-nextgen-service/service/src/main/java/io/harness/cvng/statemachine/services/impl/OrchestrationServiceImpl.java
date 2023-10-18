@@ -43,7 +43,9 @@ import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -68,6 +70,8 @@ public class OrchestrationServiceImpl implements OrchestrationService {
   @Inject private Map<VerificationTask.TaskType, AnalysisStateMachineService> taskTypeAnalysisStateMachineServiceMap;
 
   @Inject private Clock clock;
+
+  private static final int CUT_OFF_TIME_FOR_ORCHESTRATOR_QUEUE_SIZE_METRIC_IN_HOURS = 3;
 
   @Override
   public void queueAnalysis(AnalysisInput analysisInput) {
@@ -193,8 +197,14 @@ public class OrchestrationServiceImpl implements OrchestrationService {
       log.info("For verification task ID {}, orchestrator has more than 5 tasks waiting."
               + " Please check if there is a growing backlog.",
           orchestrator.getVerificationTaskId());
-      try (AutoMetricContext ignore = metricContextBuilder.getContext(orchestrator, AnalysisOrchestrator.class)) {
-        metricService.incCounter(CVNGMetricsUtils.ORCHESTRATOR_STATE_MACHINE_QUEUE_COUNT_ABOVE_FIVE);
+      if (orchestrator.getLastQueueSizeMetricIteration() == null
+          || Instant.ofEpochMilli(orchestrator.getLastQueueSizeMetricIteration())
+                 .isBefore(clock.instant().minus(
+                     CUT_OFF_TIME_FOR_ORCHESTRATOR_QUEUE_SIZE_METRIC_IN_HOURS, ChronoUnit.HOURS))) {
+        try (AutoMetricContext ignore = metricContextBuilder.getContext(orchestrator, AnalysisOrchestrator.class)) {
+          metricService.incCounter(CVNGMetricsUtils.ORCHESTRATOR_STATE_MACHINE_QUEUE_COUNT_ABOVE_FIVE);
+        }
+        orchestrator.setLastQueueSizeMetricIteration(clock.millis());
       }
     }
 
@@ -247,11 +257,11 @@ public class OrchestrationServiceImpl implements OrchestrationService {
       }
       if ((AnalysisStatus.SUCCESS == stateMachineStatus || AnalysisStatus.COMPLETED == stateMachineStatus)
           && !AnalysisOrchestratorStatus.getFinalStates().contains(orchestrator.getStatus())) {
-        //        try (AnalysisStateMachineContext stateMachineContext =
-        //                 new AnalysisStateMachineContext(currentlyExecutingStateMachine)) {
-        //          metricService.recordDuration(CVNGMetricsUtils.STATE_MACHINE_EVALUATION_TIME,
-        //              Duration.between(currentlyExecutingStateMachine.getAnalysisStartTime(), clock.instant()));
-        //        }
+        try (AnalysisStateMachineContext stateMachineContext =
+                 new AnalysisStateMachineContext(currentlyExecutingStateMachine)) {
+          metricService.recordDuration(CVNGMetricsUtils.STATE_MACHINE_EVALUATION_TIME,
+              Duration.between(currentlyExecutingStateMachine.getAnalysisStartTime(), clock.instant()));
+        }
         orchestrateNewAnalysisStateMachine(
             orchestrator.getVerificationTaskId(), currentlyExecutingStateMachine.getTotalRetryCountToBePropagated());
       }
