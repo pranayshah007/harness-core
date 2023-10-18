@@ -220,11 +220,18 @@ public class StringReplacer {
   }
 
   private boolean checkIfValueHasMethodInvocation(StringBuffer buf, int expressionEndPos) {
+    boolean isMatch;
     // Right substring
     CharSequence charSequence = buf.subSequence(expressionEndPos, buf.length());
-    Pattern pattern = Pattern.compile("^\\.\\w+\\(");
+    Pattern pattern = Pattern.compile("\\.\\w+\\(");
     Matcher matcher = pattern.matcher(charSequence);
-    return matcher.find();
+    isMatch = matcher.find();
+    Pattern pattern2 = Pattern.compile("^\\.\\w+\\(");
+    Matcher matcher2 = pattern2.matcher(charSequence);
+    if (isMatch != matcher2.find()) {
+      log.info("[Expression Method Invocation]: charSequence: {}, buf: {}", charSequence, buf);
+    }
+    return isMatch;
   }
 
   private boolean checkBooleanOperators(StringBuffer s, int currentPos, boolean leftSubString) {
