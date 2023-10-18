@@ -23,6 +23,10 @@ public class DataPoints {
   public static final String WORKFLOW_SUCCESS_RATE = "workflowSuccessRate";
   public static final String MEAN_TIME_TO_COMPLETE_WORKFLOW_RUNS = "meanTimeToCompleteWorkflowRuns";
   public static final String MEAN_TIME_TO_COMPLETE_SUCCESS_WORKFLOW_RUNS = "meanTimeToCompleteSuccessWorkflowRuns";
+  public static final String OPEN_DEPENDABOT_ALERTS = "openDependabotAlerts";
+  public static final String OPEN_CODE_SCANNING_ALERTS = "openCodeScanningAlerts";
+  public static final String OPEN_SECRET_SCANNING_ALERTS = "openSecretScanningAlerts";
+  public static final String OPEN_PULL_REQUESTS_BY_AUTHOR = "openPullRequestsByAuthor";
 
   // Catalog
   public static final String CATALOG_TECH_DOCS = "techDocsAnnotationExists";

@@ -26,6 +26,10 @@ public class DataSourceLocations {
   public static final String GITHUB_MEAN_TIME_TO_COMPLETE_WORKFLOW_RUNS = "github_mean_time_to_complete_workflow_runs";
   public static final String GITHUB_MEAN_TIME_TO_COMPLETE_SUCCESS_WORKFLOW_RUNS =
       "github_mean_time_to_complete_success_workflow_runs";
+  public static final String GITHUB_OPEN_DEPENDABOT_ALERTS = "github_open_dependabot_alerts";
+  public static final String GITHUB_OPEN_CODE_SCANNING_ALERTS = "github_open_code_scanning_alerts";
+  public static final String GITHUB_OPEN_SECRET_SCANNING_ALERTS = "github_open_secret_scanning_alerts";
+  public static final String GITHUB_OPEN_PULL_REQUESTS_BY_AUTHOR = "github_open_pull_requests_by_author";
 
   // Bitbucket
   public static final String BITBUCKET_MEAN_TIME_TO_MERGE_PR = "bitbucket_mean_time_to_merge_pr";
