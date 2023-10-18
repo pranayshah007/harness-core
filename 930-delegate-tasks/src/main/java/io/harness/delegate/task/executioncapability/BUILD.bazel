@@ -14,6 +14,7 @@ java_library(
         "//:lombok",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/citasks/vm/helper:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/common:module",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/k8s/yaml:module",
         "//932-connector-task:module",
         "//950-delegate-tasks-beans:module",
         "//954-connector-beans:module",
