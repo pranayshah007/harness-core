@@ -100,6 +100,8 @@ public class NodeExecutionsCache {
     }
 
     NodeExecution parentNodeExecution = map.get(parentId);
+    // If parent node is of type identity and the mode of execution is rollback then we should add
+    // all the children from original execution as well.
     if (parentNodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE
         && ExecutionModeUtils.isRollbackMode(ambiance.getMetadata().getExecutionMode())) {
       String originalNodeExecutionId = parentNodeExecution.getOriginalNodeExecutionId();
@@ -111,6 +113,8 @@ public class NodeExecutionsCache {
                rollbackExecutionId, originalNodeExecutionId, NodeProjectionUtils.fieldsForExpressionEngine)) {
         while (iterator.hasNext()) {
           NodeExecution nodeExecution = iterator.next();
+          // Since there can be same identifiers in older execution as well. We should have the new identifier having
+          // high priority than the older one.
           if (!childIdentifiers.contains(nodeExecution.getIdentifier())) {
             childExecutions.add(nodeExecution);
           }
