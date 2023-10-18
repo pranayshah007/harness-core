@@ -177,6 +177,9 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
           .gte(gitXEventsListRequestDTO.getEventStartTime())
           .lte(gitXEventsListRequestDTO.getEventEndTime());
     }
+    if (isNotEmpty(gitXEventsListRequestDTO.getRepoName())) {
+      criteria.and(GitXWebhookEventKeys.repo).is(gitXEventsListRequestDTO.getRepoName());
+    }
     return criteria;
   }
 
@@ -208,6 +211,7 @@ public class GitXWebhookEventServiceImpl implements GitXWebhookEventService {
         .afterCommitId(webhookDTO.getParsedResponse().getPush().getAfter())
         .beforeCommitId(webhookDTO.getParsedResponse().getPush().getBefore())
         .branch(getBranch(webhookDTO))
+        .repo(webhookDTO.getParsedResponse().getPush().getRepo().getName())
         .build();
   }
 
