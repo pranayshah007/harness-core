@@ -157,7 +157,6 @@ import software.wings.beans.TaskType;
 import software.wings.beans.dto.SettingAttribute;
 import software.wings.common.AuditHelper;
 import software.wings.core.managerConfiguration.ConfigurationController;
-import software.wings.delegatetasks.cv.RateLimitExceededException;
 import software.wings.delegatetasks.delegatecapability.CapabilityHelper;
 import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 import software.wings.expression.EncryptedDataDetails;
@@ -372,18 +371,16 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         maxTaskCount = getTaskLimit(accountId, DelegateTaskRank.OPTIONAL);
 
         if (currentTaskCount >= maxTaskCount) {
-          throw new RateLimitExceededException(
-              format("Rate limit reached for tasks with rank OPTIONAL. Current task count %s and max limit %s ",
-                  currentTaskCount, maxTaskCount));
+          log.error("Rate limit reached for tasks with rank OPTIONAL. Current task count {} and max limit {} ",
+              currentTaskCount, maxTaskCount);
         }
         break;
       case IMPORTANT:
         currentTaskCount = delegateCache.getTasksCount(accountId, DelegateTaskRank.IMPORTANT);
         maxTaskCount = getTaskLimit(accountId, DelegateTaskRank.IMPORTANT);
         if (currentTaskCount >= maxTaskCount) {
-          throw new RateLimitExceededException(
-              format("Rate limit reached for tasks with rank IMPORTANT. Current task count %s and max limit %s ",
-                  currentTaskCount, maxTaskCount));
+          log.error("Rate limit reached for tasks with rank IMPORTANT. Current task count {} and max limit {} ",
+              currentTaskCount, maxTaskCount);
         }
         break;
       default:
