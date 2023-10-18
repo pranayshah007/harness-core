@@ -81,7 +81,7 @@ public class NodeProjectionUtils {
       NodeExecutionKeys.mode, NodeExecutionKeys.startTs, NodeExecutionKeys.endTs, NodeExecutionKeys.parentId,
       NodeExecutionKeys.resolvedParams, NodeExecutionKeys.oldRetry, NodeExecutionKeys.nodeId,
       NodeExecutionKeys.retryIds, NodeExecutionKeys.skipExpressionChain, NodeExecutionKeys.identifier,
-      NodeExecutionKeys.group, NodeExecutionKeys.ambiance);
+      NodeExecutionKeys.group, NodeExecutionKeys.levelRuntimeIdx);
 
   public static final Set<String> forFacilitation = Sets.newHashSet(NodeExecutionKeys.ambiance,
       NodeExecutionKeys.originalNodeExecutionId, NodeExecutionKeys.module, NodeExecutionKeys.resolvedParams);
