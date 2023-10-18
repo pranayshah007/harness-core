@@ -79,7 +79,7 @@ image:
   repository: harness/event-service-signed
   pullPolicy: Always
 # Overrides the image tag whose default is the chart appVersion.
-  tag: "79404-000"
+  tag: "80908-000"
   digest: ""
 # image pull secrets to use for event-service image
   imagePullSecrets: []
