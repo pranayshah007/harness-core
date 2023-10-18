@@ -31,7 +31,7 @@ public class AsgRollingDeployRequest implements AsgCommandRequest, NestedAnnotat
   @NonFinal @Expression(ALLOW_SECRETS) AsgInfraConfig asgInfraConfig;
   CommandUnitsProgress commandUnitsProgress;
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
-  Map<String, List<String>> asgStoreManifestsContent;
+  @NonFinal @Expression(ALLOW_SECRETS) Map<String, List<String>> asgStoreManifestsContent;
   @NonFinal @Expression(ALLOW_SECRETS) boolean skipMatching;
   @NonFinal @Expression(ALLOW_SECRETS) boolean useAlreadyRunningInstances;
   @NonFinal @Expression(ALLOW_SECRETS) Integer instanceWarmup;

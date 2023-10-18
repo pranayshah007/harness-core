@@ -74,7 +74,7 @@ public class ElastigroupSetupStepTest extends CDNGTestBase {
   @Test
   @Owner(developers = {PIYUSH_BHUWALKA})
   @Category(UnitTests.class)
-  public void executeElastigroupTaskTest() {
+  public void executeElastigroupTaskTest() throws Exception {
     Ambiance ambiance = anAmbiance();
     String elastigroupJson = "elastigroupJson";
     ElastigroupFixedInstances elastigroupFixedInstances =
@@ -107,6 +107,8 @@ public class ElastigroupSetupStepTest extends CDNGTestBase {
         ElastigroupExecutionPassThroughData.builder()
             .infrastructure(elastigroupInfrastructureOutcome)
             .elastigroupConfiguration(elastigroupJson)
+            .base64DecodedStartupScript("DECODED")
+            .base64EncodedStartupScript(startupScript)
             .build();
     SpotInstConfig spotInstConfig = SpotInstConfig.builder().build();
     doReturn(spotInstConfig)
@@ -116,6 +118,7 @@ public class ElastigroupSetupStepTest extends CDNGTestBase {
         ElastiGroup.builder().capacity(ElastiGroupCapacity.builder().maximum(1).minimum(1).target(1).build()).build();
     doReturn(elastiGroup).when(elastigroupStepCommonHelper).generateConfigFromJson(elastigroupJson);
     doReturn(startupScript).when(elastigroupStepCommonHelper).getBase64EncodedStartupScript(ambiance, startupScript);
+    doReturn("DECODED").when(elastigroupStepCommonHelper).getBase64DecodedStartupScript(ambiance, startupScript);
     ElastigroupSetupCommandRequest elastigroupSetupCommandRequest =
         ElastigroupSetupCommandRequest.builder()
             .blueGreen(false)
@@ -124,11 +127,12 @@ public class ElastigroupSetupStepTest extends CDNGTestBase {
             .spotInstConfig(spotInstConfig)
             .elastigroupConfiguration(elastigroupStepExecutorParams.getElastigroupConfiguration())
             .startupScript(startupScript)
+            .decodedStartupScript("DECODED")
             .commandName(ELASTIGROUP_SETUP_COMMAND_NAME)
             .image(elastigroupStepExecutorParams.getImage())
             .commandUnitsProgress(null)
             .timeoutIntervalInMin(10)
-            .maxInstanceCount(1)
+            .maxInstanceCount(0)
             .useCurrentRunningInstanceCount(false)
             .generatedElastigroupConfig(elastiGroup)
             .build();
@@ -143,10 +147,9 @@ public class ElastigroupSetupStepTest extends CDNGTestBase {
             elastigroupExecutionPassThroughData, true, TaskType.ELASTIGROUP_SETUP_COMMAND_TASK_NG);
     elastigroupSetupStep.executeElastigroupTask(
         ambiance, stepElementParameters, elastigroupExecutionPassThroughData, null);
-    //    verify(elastigroupStepCommonHelper)
-    //            .queueElastigroupTask(
-    //                    stepElementParameters, elastigroupSetupCommandRequest, ambiance,
-    //                    elastigroupExecutionPassThroughData, true, TaskType.ELASTIGROUP_SETUP_COMMAND_TASK_NG);
+    verify(elastigroupStepCommonHelper)
+        .queueElastigroupTask(stepElementParameters, elastigroupSetupCommandRequest, ambiance,
+            elastigroupExecutionPassThroughData, true, TaskType.ELASTIGROUP_SETUP_COMMAND_TASK_NG);
   }
 
   @Test

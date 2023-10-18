@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.expression.Expression;
+import io.harness.reflection.ExpressionReflectionUtils;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
@@ -23,7 +24,7 @@ import lombok.experimental.NonFinal;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
-public class AsgInfraConfig {
+public class AsgInfraConfig implements ExpressionReflectionUtils.NestedAnnotationResolver {
   AwsConnectorDTO awsConnectorDTO;
   List<EncryptedDataDetail> encryptionDataDetails;
   @NonFinal @Expression(ALLOW_SECRETS) String region;
