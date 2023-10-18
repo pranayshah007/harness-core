@@ -7,6 +7,9 @@
 
 package io.harness.idp.scorecard.datapoints.parser;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.common.CommonUtils;
@@ -32,6 +35,10 @@ public class PagerDutyAvgResolvedTimeForLastTenResolvedIncidents implements Data
     log.info(
         "Parser for AvgResolvedTimeForLastTenResolvedIncidentsInHours is invoked data - {}, data point - {}, input values - {}",
         data, dataPoint, inputValues);
+    String errorMessage = (String) data.get(ERROR_MESSAGE_KEY);
+    if (!isEmpty(errorMessage)) {
+      return constructDataPointInfoWithoutInputValue(null, errorMessage);
+    }
 
     List<LinkedTreeMap> incidents = new ArrayList<>();
 

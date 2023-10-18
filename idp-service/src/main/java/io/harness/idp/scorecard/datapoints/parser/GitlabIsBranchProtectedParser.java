@@ -7,7 +7,9 @@
 
 package io.harness.idp.scorecard.datapoints.parser;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.idp.common.Constants.DEFAULT_BRANCH_KEY_ESCAPED;
+import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.INVALID_BRANCH_NAME_ERROR;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -27,11 +29,13 @@ public class GitlabIsBranchProtectedParser implements DataPointParser {
     Map<String, Object> dataPointData = new HashMap<>();
 
     for (String inputValue : inputValues) {
-      if (!data.containsKey(inputValue)) {
-        dataPointData.putAll(constructDataPointInfo(inputValue, false, INVALID_BRANCH_NAME_ERROR));
+      Map<String, Object> inputValueData = (Map<String, Object>) data.get(inputValue);
+      if (isEmpty(inputValueData) || !isEmpty((String) inputValueData.get(ERROR_MESSAGE_KEY))) {
+        String errorMessage = (String) inputValueData.get(ERROR_MESSAGE_KEY);
+        dataPointData.putAll(constructDataPointInfo(
+            inputValue, false, !isEmpty(errorMessage) ? errorMessage : INVALID_BRANCH_NAME_ERROR));
         continue;
       }
-      Map<String, Object> inputValueData = (Map<String, Object>) data.get(inputValue);
       if (CommonUtils.findObjectByName(inputValueData, "branchRules") == null) {
         dataPointData.putAll(constructDataPointInfo(inputValue, false, INVALID_BRANCH_NAME_ERROR));
         continue;

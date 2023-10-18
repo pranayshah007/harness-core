@@ -53,6 +53,7 @@ public class DataPoints {
       "Invalid or missing jira/project-key annotation in the catalog info YAML";
   public static final String NO_PULL_REQUESTS_FOUND = "No pull requests found for branch: %s";
   public static final String INVALID_FILE_NAME_ERROR = "Invalid file name provided";
+  public static final String INVALID_CONDITIONAL_INPUT = "Invalid conditional input";
   public static final String GITHUB_ADMIN_PERMISSION_ERROR = "Github Connector does not have Admin permission";
 
   // Kubernetes
