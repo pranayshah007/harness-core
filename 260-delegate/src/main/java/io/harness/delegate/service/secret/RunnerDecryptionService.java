@@ -7,8 +7,9 @@
 
 package io.harness.delegate.service.secret;
 
-import io.harness.delegate.core.beans.EncryptedDataRecord;
+import io.harness.delegate.core.beans.EncryptedRecordForDelegateDecryption;
 import io.harness.delegate.core.beans.Secret;
+import io.harness.eraro.ErrorCode;
 import io.harness.security.encryption.DelegateDecryptionService;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
@@ -30,17 +31,6 @@ public class RunnerDecryptionService {
   private final DelegateDecryptionService decryptionService;
   @Named("referenceFalseKryoSerializer") private final KryoSerializer kryoSerializer; // TODO: remove named
 
-  @Deprecated
-  public Map<String, char[]> decrypt(final Secret secret) {
-    final EncryptionConfig secretConfig =
-        (EncryptionConfig) kryoSerializer.asInflatedObject(secret.getConfig().getBinaryData().toByteArray());
-    final List<EncryptedRecord> kryoSecrets = (List<EncryptedRecord>) kryoSerializer.asInflatedObject(
-        secret.getEncryptedRecord().getBinaryData().toByteArray());
-    final var decrypt = decryptionService.decrypt(Map.of(secretConfig, kryoSecrets));
-    log.info("Decrypted secrets are: {}", decrypt);
-    return decrypt;
-  }
-
   /**
    * Decrypts a secret described by Secret object.
    * @param secret A protobuf definition of Secret to be decrypted. Refer to
@@ -49,20 +39,21 @@ public class RunnerDecryptionService {
    * @throws InvalidProtocolBufferException
    */
   public char[] decryptProtoBytes(final Secret secret) throws InvalidProtocolBufferException {
-    final EncryptedDataRecord encryptedDataRecord =
-        EncryptedDataRecord.parseFrom(secret.getEncryptedRecord().getBinaryData().toByteArray());
+    final EncryptedRecordForDelegateDecryption encryptedDataRecord =
+            EncryptedRecordForDelegateDecryption.parseFrom(secret.getEncryptedRecord().getBinaryData().toByteArray());
     EncryptedRecordData mappedRecordData = EncryptedDataRecordProtoPojoMapper.map(encryptedDataRecord);
     final io.harness.delegate.core.beans.EncryptionConfig encryptionConfig =
         io.harness.delegate.core.beans.EncryptionConfig.parseFrom(secret.getConfig().getBinaryData().toByteArray());
     EncryptionConfig mappedEncryptionConfig = EncryptionConfigProtoPojoMapper.map(encryptionConfig);
     List<EncryptedRecord> encryptedRecordList = new ArrayList<>();
     encryptedRecordList.add(mappedRecordData);
-    assert mappedEncryptionConfig != null;
     // DelegateDecryptionService doesn't use cache
     final var decrypt = decryptionService.decrypt(Map.of(mappedEncryptionConfig, encryptedRecordList));
     if (!decrypt.containsKey(mappedRecordData.getUuid())) {
-      log.error("After decryption, cannot find decrypted secret for encryption record {}", mappedRecordData.getUuid());
-      return null;
+      String msg = String.format("After decryption, cannot find decrypted secret for encryption record %s",
+              mappedRecordData.getUuid());
+      log.error(msg);
+      throw new DelegateDecryptionException(msg, ErrorCode.UNEXPECTED);
     } else {
       return decrypt.get(mappedRecordData.getUuid());
     }

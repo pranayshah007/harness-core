@@ -74,6 +74,7 @@ public class HandlerMappingServer {
                 taskPayload.getProjectId(), null),
             decrypted);
       } catch (Exception ex) {
+        // TODO: send task failed response
         log.error("exception occurred when decrypting the secret", ex);
       }
     }

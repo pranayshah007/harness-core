@@ -10,7 +10,7 @@ package io.harness.delegate.service.secret;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.core.beans.EncryptedDataRecord;
+import io.harness.delegate.core.beans.EncryptedRecordForDelegateDecryption;
 import io.harness.security.encryption.AdditionalMetadata;
 import io.harness.security.encryption.EncryptedDataParams;
 import io.harness.security.encryption.EncryptedRecordData;
@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PL)
 @Slf4j
 public class EncryptedDataRecordProtoPojoMapper {
-  public static EncryptedRecordData map(final EncryptedDataRecord data) {
+  public static EncryptedRecordData map(final EncryptedRecordForDelegateDecryption data) {
     return EncryptedRecordData.builder()
         .uuid(data.getUuid())
         .name(data.getName())

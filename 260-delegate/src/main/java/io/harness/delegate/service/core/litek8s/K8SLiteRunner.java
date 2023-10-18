@@ -83,7 +83,7 @@ public class K8SLiteRunner implements Runner {
   //  private final K8EventHandler k8EventHandler;
 
   @Override
-  public void init(final String infraId, final InputData infra, DecryptedSecrets decrypted, final Context context) {
+  public void init(final String infraId, final InputData infra, final DecryptedSecrets decrypted, final Context context) {
     log.info("Setting up pod spec");
 
     try {
@@ -104,7 +104,6 @@ public class K8SLiteRunner implements Runner {
       //         .collect(toList());
 
       // Step 1a - Should we decrypt other step secrets here and create resources?
-      var k8Secrets = flatMapping(task -> createTaskSecrets(infraId, k8sInfra.getStepsList().get(0), decrypted, context), toList());
       final var taskSecrets = k8sInfra.getStepsList().stream().collect(groupingBy(
           K8SStep::getId, flatMapping(task -> createTaskSecrets(infraId, task, decrypted, context), toList())));
 
@@ -147,7 +146,7 @@ public class K8SLiteRunner implements Runner {
     } catch (ApiException e) {
       log.error("Failed to create the task {}. {}", infraId, ApiExceptionLogger.format(e), e);
     } catch (InvalidProtocolBufferException e) {
-      log.error("Failed to parse protobuf data {}", taskGroupId, e);
+      log.error("Failed to parse protobuf data {}", infraId, e);
     } catch (Exception e) {
       log.error("Failed to create the task {}", infraId, e);
       throw e;

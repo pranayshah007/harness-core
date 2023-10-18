@@ -34,7 +34,7 @@ message K8SStep {
   ExecutionType execution_type = 4;  // Type of the step
   StepRuntime runtime = 5;           // Environment in which the task should run
   repeated SecretRef input_secrets =
-      6;  // Task specific secrets. One instance can contain multiple secrets from same provider
+      6;  // Task specific secrets' identifiers. One instance can contain multiple secrets from same provider
 }
 
 /*
