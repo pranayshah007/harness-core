@@ -56,13 +56,15 @@ public class HelmValuesFetchRequest implements TaskParameters, ExecutionCapabili
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     HelmVersion helmVersion = helmChartManifestDelegateConfig.getHelmVersion();
     StoreDelegateConfig storeDelegateConfig = helmChartManifestDelegateConfig.getStoreDelegateConfig();
+    String chartName = helmChartManifestDelegateConfig.getChartName();
 
-    return getHelmExecutionCapabilities(
-        helmVersion, storeDelegateConfig, maskingEvaluator, helmChartManifestDelegateConfig.isIgnoreResponseCode());
+    return getHelmExecutionCapabilities(helmVersion, storeDelegateConfig, maskingEvaluator,
+        helmChartManifestDelegateConfig.isIgnoreResponseCode(), chartName);
   }
 
   public static List<ExecutionCapability> getHelmExecutionCapabilities(HelmVersion helmVersion,
-      StoreDelegateConfig storeDelegateConfig, ExpressionEvaluator maskingEvaluator, boolean ignoreResponseCode) {
+      StoreDelegateConfig storeDelegateConfig, ExpressionEvaluator maskingEvaluator, boolean ignoreResponseCode,
+      String chartName) {
     List<ExecutionCapability> capabilities = new ArrayList<>();
     if (helmVersion != null) {
       capabilities.add(HelmInstallationCapability.builder()
@@ -94,7 +96,7 @@ public class HelmValuesFetchRequest implements TaskParameters, ExecutionCapabili
         OciHelmStoreDelegateConfig ociHelmStoreConfig = (OciHelmStoreDelegateConfig) storeDelegateConfig;
         String criteria = null;
         if (ociHelmStoreConfig.getAwsConnectorDTO() != null) {
-          criteria = ociHelmStoreConfig.getRepoName() + ":" + ociHelmStoreConfig.getRegion();
+          criteria = chartName + ":" + ociHelmStoreConfig.getRegion();
           capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
               ociHelmStoreConfig.getAwsConnectorDTO(), maskingEvaluator));
         } else if (ociHelmStoreConfig.getOciHelmConnector() != null) {

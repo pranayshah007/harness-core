@@ -525,7 +525,7 @@ public class HelmChartServiceImpl implements HelmChartService {
             .pageSize(PAGE_SIZE)
             .lastTag(lastTag)
             .build();
-    String taskTypeName = TaskType.ECR_HELM_API_LIST_TAGS_TASK.name();
+    String taskTypeName = TaskType.ECR_HELM_API_LIST_TAGS_TASK_V2.name();
     return DelegateTaskRequest.builder()
         .accountId(ngAccess.getAccountIdentifier())
         .taskType(taskTypeName)

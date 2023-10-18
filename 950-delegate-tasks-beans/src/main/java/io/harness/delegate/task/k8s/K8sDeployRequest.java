@@ -115,7 +115,7 @@ public interface K8sDeployRequest extends TaskParameters, ExecutionCapabilityDem
                 (OciHelmStoreDelegateConfig) helManifestConfig.getStoreDelegateConfig();
             String criteria = null;
             if (ociHelmStoreConfig.getAwsConnectorDTO() != null) {
-              criteria = ociHelmStoreConfig.getRepoName() + ":" + ociHelmStoreConfig.getRegion();
+              criteria = helManifestConfig.getChartName() + ":" + ociHelmStoreConfig.getRegion();
               capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
                   ociHelmStoreConfig.getAwsConnectorDTO(), maskingEvaluator));
             } else if (ociHelmStoreConfig.getOciHelmConnector() != null) {
