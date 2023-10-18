@@ -9,7 +9,7 @@ package io.harness.cvng.core.services.impl.monitoredService;
 import static io.harness.cvng.core.services.impl.monitoredService.MonitoredServiceServiceImpl.buildMonitoredServiceParams;
 import static io.harness.cvng.core.utils.FeatureFlagNames.SRM_CODE_ERROR_NOTIFICATIONS;
 import static io.harness.cvng.notification.beans.NotificationRuleConditionType.CODE_ERRORS;
-import static io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator.*;
+import static io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator.NotificationData;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.ENVIRONMENT_NAME;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_NAME;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_URL;
@@ -75,6 +75,7 @@ public class ErrorTrackingNotificationServiceImpl implements ErrorTrackingNotifi
     boolean errorTrackingNotificationsEnabled =
         featureFlagService.isFeatureFlagEnabled(monitoredService.getAccountId(), SRM_CODE_ERROR_NOTIFICATIONS);
     if (errorTrackingNotificationsEnabled) {
+      log.info("Error tracking notifications FF enabled.");
       ProjectParams projectParams = ProjectParams.builder()
                                         .accountIdentifier(monitoredService.getAccountId())
                                         .orgIdentifier(monitoredService.getOrgIdentifier())
@@ -87,27 +88,38 @@ public class ErrorTrackingNotificationServiceImpl implements ErrorTrackingNotifi
       Set<String> notificationRuleRefsWithChange = new HashSet<>();
 
       for (NotificationRuleRef notificationRuleRef : monitoredService.getNotificationRuleRefs()) {
+        log.info("NotificationRuleRef = " + notificationRuleRef.toString());
         if (notificationRuleRef.isEnabled()) {
+          log.info("NotificationRuleRef is enabled");
           MonitoredServiceNotificationRule notificationRule =
               (MonitoredServiceNotificationRule) notificationRuleService.getEntity(
                   projectParams, notificationRuleRef.getNotificationRuleRef());
+          log.info("NotificationRule = " + notificationRule.toString());
           for (MonitoredServiceNotificationRuleCondition condition : notificationRule.getConditions()) {
+            log.info("Condition = " + condition);
             if (CODE_ERRORS == condition.getType()) {
+              log.info("CODE_ERRORS == condition.getType()");
               MonitoredServiceCodeErrorCondition codeErrorCondition = (MonitoredServiceCodeErrorCondition) condition;
+              log.info("CodeErrorCondition = " + codeErrorCondition);
               if (codeErrorCondition.getAggregated()) {
+                log.info("Aggregated == true");
                 final Integer thresholdMinutes = codeErrorCondition.getVolumeThresholdMinutes();
+                log.info("ThresholdMinute = " + thresholdMinutes);
                 // check and send the message if there are no threshold minutes
                 // OR check the eligibility against a defined threshold minutes
                 if (thresholdMinutes == null
                     || notificationRuleRef.isEligible(clock.instant(), Duration.ofMinutes(thresholdMinutes))) {
+                  log.info("NoThresholdMinutes OR thresholdMinutes eligible ");
                   NotificationData notification =
                       getAggregatedNotificationData(monitoredService, codeErrorCondition, notificationRule);
+                  log.info("NotificationData = " + notification.toString());
                   sendNotification(notification, monitoredService, notificationRule,
                       notificationRuleTemplateDataGenerator, projectParams, codeErrorCondition,
                       notificationRuleRefsWithChange);
 
                   // when we don't send notification, and we had an eligible threshold minutes
                   if (!notification.shouldSendNotification() && thresholdMinutes != null) {
+                    log.info("we didn't send a notification, and we had an eligible threshold minutes - add to ruleRefsChangeList");
                     // add it to the refs with change list which will update the lastSuccessfullNotificationTime, even
                     // though we don't send the notification, we want to update this time to delay the next check to not
                     // check again until the threshold duration has been met against the last time we checked.
@@ -115,9 +127,12 @@ public class ErrorTrackingNotificationServiceImpl implements ErrorTrackingNotifi
                   }
                 }
               } else {
+                log.info("Aggregated == false");
                 List<NotificationData> notifications;
                 notifications = getStackTraceNotificationsData(monitoredService, notificationRule);
+                log.info("Loop through non aggregated notifications");
                 for (NotificationData notification : notifications) {
+                  log.info("NotificationData = " + notification.toString());
                   sendNotification(notification, monitoredService, notificationRule,
                       notificationRuleTemplateDataGenerator, projectParams, codeErrorCondition,
                       notificationRuleRefsWithChange);
@@ -136,6 +151,7 @@ public class ErrorTrackingNotificationServiceImpl implements ErrorTrackingNotifi
       NotificationRule notificationRule, NotificationRuleTemplateDataGenerator notificationRuleTemplateDataGenerator,
       ProjectParams projectParams, MonitoredServiceCodeErrorCondition codeErrorCondition,
       Set<String> notificationRuleRefsWithChange) {
+    log.info("Should send notification = " + notification.shouldSendNotification());
     if (notification.shouldSendNotification()) {
       Map<String, Object> entityDetails = Map.of(ENTITY_NAME, monitoredService.getName(), ENTITY_IDENTIFIER,
           monitoredService.getIdentifier(), SERVICE_IDENTIFIER, monitoredService.getServiceIdentifier());
@@ -147,6 +163,14 @@ public class ErrorTrackingNotificationServiceImpl implements ErrorTrackingNotifi
 
       String templateId = notificationRuleTemplateDataGenerator.getTemplateId(
           notificationRule.getType(), notificationChannel.getType());
+
+      log.info("Begin TemplateDataMapSplitOut");
+      for(Map.Entry<String, String> entry : templateData.entrySet()){
+        log.info("key = " + entry.getKey());
+        log.info("value = " + entry.getValue());
+      }
+      log.info("End TemplateDataMapSplitOut");
+
       try {
         NotificationResult notificationResult =
             notificationClient.sendNotificationAsync(notificationChannel.toNotificationChannel(
@@ -166,8 +190,7 @@ public class ErrorTrackingNotificationServiceImpl implements ErrorTrackingNotifi
   private NotificationData getAggregatedNotificationData(MonitoredService monitoredService,
       MonitoredServiceCodeErrorCondition codeErrorCondition, NotificationRule notificationRule) {
     MonitoredServiceParams monitoredServiceParams = buildMonitoredServiceParams(monitoredService);
-    Map<String, String> templateDataMap = new HashMap<>();
-
+    log.info("Get aggregated notification data");
     final List<String> environmentIdentifierList = monitoredService.getEnvironmentIdentifierList();
     boolean oneEnvironmentId = environmentIdentifierList != null && environmentIdentifierList.size() == 1;
 
@@ -176,12 +199,14 @@ public class ErrorTrackingNotificationServiceImpl implements ErrorTrackingNotifi
       ErrorTrackingNotificationData notificationData = null;
       try {
         if (codeErrorCondition.getSavedFilterId() == null) {
+          log.info("Saved FilterId is null");
           notificationData = errorTrackingService.getNotificationData(monitoredService.getOrgIdentifier(),
               monitoredService.getAccountId(), monitoredService.getProjectIdentifier(),
               monitoredService.getServiceIdentifier(), environmentId, codeErrorCondition.getErrorTrackingEventStatus(),
               codeErrorCondition.getErrorTrackingEventTypes(), notificationRule.getUuid(),
               codeErrorCondition.getVolumeThresholdCount());
         } else {
+          log.info("Saved FilterId is not null");
           notificationData = errorTrackingService.getNotificationSavedFilterData(monitoredService.getOrgIdentifier(),
               monitoredService.getAccountId(), monitoredService.getProjectIdentifier(),
               monitoredService.getServiceIdentifier(), environmentId, codeErrorCondition.getSavedFilterId(),
@@ -190,20 +215,31 @@ public class ErrorTrackingNotificationServiceImpl implements ErrorTrackingNotifi
       } catch (Exception e) {
         log.error("Error connecting to the ErrorTracking Event Summary API.", e);
       }
-      if (notificationData != null && !notificationData.getScorecards().isEmpty()) {
-        final String baseLinkUrl =
-            ((ErrorTrackingTemplateDataGenerator) notificationRuleConditionTypeTemplateDataGeneratorMap.get(
-                 CODE_ERRORS))
-                .getBaseLinkUrl(monitoredService.getAccountId());
-        templateDataMap.putAll(getCodeErrorTemplateData(codeErrorCondition, notificationData, baseLinkUrl));
-        templateDataMap.putAll(getConditionTemplateVariables(codeErrorCondition, notificationData));
-        templateDataMap.put(
-            NOTIFICATION_URL, buildMonitoredServiceConfigurationTabUrl(baseLinkUrl, monitoredServiceParams));
-        templateDataMap.put(NOTIFICATION_NAME, notificationRule.getName());
-        templateDataMap.put(ENVIRONMENT_NAME, environmentId);
-        return NotificationData.builder().shouldSendNotification(true).templateDataMap(templateDataMap).build();
+      log.info("notificationData = " + notificationData);
+      try {
+        if (notificationData != null && !notificationData.getScorecards().isEmpty()) {
+          log.info("scorecards are not empty");
+          final String baseLinkUrl =
+                  ((ErrorTrackingTemplateDataGenerator) notificationRuleConditionTypeTemplateDataGeneratorMap.get(
+                          CODE_ERRORS))
+                          .getBaseLinkUrl(monitoredService.getAccountId());
+          Map<String, String> templateDataMap = new HashMap<>();
+          templateDataMap.putAll(getCodeErrorTemplateData(codeErrorCondition, notificationData, baseLinkUrl));
+          templateDataMap.putAll(getConditionTemplateVariables(codeErrorCondition, notificationData));
+          templateDataMap.put(
+                  NOTIFICATION_URL, buildMonitoredServiceConfigurationTabUrl(baseLinkUrl, monitoredServiceParams));
+          templateDataMap.put(NOTIFICATION_NAME, notificationRule.getName());
+          templateDataMap.put(ENVIRONMENT_NAME, environmentId);
+
+          return NotificationData.builder().shouldSendNotification(true).templateDataMap(templateDataMap).build();
+        } else {
+          log.info("scorecards are empty");
+        }
+      } catch (Exception e) {
+        log.error("Catching possible uncaught exception.", e);
       }
     }
+    log.info("Set should send notification to false");
     return NotificationData.builder().shouldSendNotification(false).build();
   }
 
@@ -225,6 +261,7 @@ public class ErrorTrackingNotificationServiceImpl implements ErrorTrackingNotifi
       } catch (Exception e) {
         log.error("Error connecting to the ErrorTracking Event Summary API.", e);
       }
+      log.info("hitSummaries = " + hitSummaries);
       if (hitSummaries != null) {
         final String baseLinkUrl =
             ((ErrorTrackingTemplateDataGenerator) notificationRuleConditionTypeTemplateDataGeneratorMap.get(
@@ -239,6 +276,8 @@ public class ErrorTrackingNotificationServiceImpl implements ErrorTrackingNotifi
 
           templateDataMap.put(NOTIFICATION_NAME, notificationRule.getName());
           templateDataMap.put(ENVIRONMENT_NAME, environmentId);
+          //TODO: templateDataMap might need to be at this smaller scope
+          log.info("templateDataMap = " + templateDataMap);
 
           notifications.add(
               NotificationData.builder().shouldSendNotification(true).templateDataMap(templateDataMap).build());

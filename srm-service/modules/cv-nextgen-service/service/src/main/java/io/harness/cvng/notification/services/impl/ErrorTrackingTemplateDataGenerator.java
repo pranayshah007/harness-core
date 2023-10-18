@@ -41,7 +41,7 @@ public class ErrorTrackingTemplateDataGenerator
 
   public static final String EMAIL_SAVED_SEARCH_FILTER_SECTION = "EMAIL_SAVED_SEARCH_FILTER_SECTION";
 
-  public static final String EMAIL_SAVED_SEARCH_FILTER_SECTION_VALUE = "<div style=\"margin-bottom: 8.5px\">\n<span style=\"color: #6b6d85\">Saved Search Filter </span>\n<span>${EMAIL_SAVED_SEARCH_FILTER_HYPERLINK}</span>\n</div>";
+  public static final String EMAIL_SAVED_SEARCH_FILTER_SECTION_VALUE = "<div style=\"margin-bottom: 8.5px\">\n<span style=\"color: #6b6d85\">Saved Search Filter </span>\n<span>${SAVED_SEARCH_FILTER_NAME}</span>\n</div>";
 
   // Slack template variables
   public static final String SLACK_FORMATTED_VERSION_LIST = "SLACK_FORMATTED_VERSION_LIST";
@@ -54,7 +54,7 @@ public class ErrorTrackingTemplateDataGenerator
 
   public static final String SLACK_SAVED_SEARCH_FILTER_SECTION = "SLACK_SAVED_SEARCH_FILTER_SECTION";
 
-  public static final String SLACK_SAVED_SEARCH_FILTER_SECTION_VALUE = "{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"Saved Search Filter <${SAVED_SEARCH_FILTER_URL}|${SAVED_SEARCH_FILTER_NAME}>\"}},";
+  public static final String SLACK_SAVED_SEARCH_FILTER_SECTION_VALUE = "{\"type\": \"section\",\"text\": {\"type\": \"mrkdwn\",\"text\": \"Saved Search Filter ${SAVED_SEARCH_FILTER_NAME}\"}},";
 
   public static final String SLACK_EVENT_DETAILS_BUTTON = "SLACK_EVENT_DETAILS_BUTTON";
 
@@ -75,18 +75,21 @@ public class ErrorTrackingTemplateDataGenerator
     final Map<String, String> templateData =
         super.getTemplateData(projectParams, entityDetails, condition, notificationDataMap);
 
-    templateData.put(ENVIRONMENT_NAME, notificationDataMap.get(ENVIRONMENT_NAME));
+    templateData.put(ENVIRONMENT_NAME, replaceNullWithBlank(notificationDataMap.get(ENVIRONMENT_NAME)));
 
     // Slack variables
-    templateData.put(MONITORED_SERVICE_URL, templateData.get(URL));
-    templateData.put(SLACK_FORMATTED_VERSION_LIST, notificationDataMap.get(SLACK_FORMATTED_VERSION_LIST));
-    templateData.put(NOTIFICATION_URL, notificationDataMap.get(NOTIFICATION_URL));
-    templateData.put(NOTIFICATION_NAME, notificationDataMap.get(NOTIFICATION_NAME));
-    templateData.put(SAVED_SEARCH_FILTER_URL, notificationDataMap.get(SAVED_SEARCH_FILTER_URL));
-    templateData.put(SAVED_SEARCH_FILTER_NAME, notificationDataMap.get(SAVED_SEARCH_FILTER_NAME));
-    templateData.put(ARC_SCREEN_URL, notificationDataMap.get(ARC_SCREEN_URL));
-    templateData.put(SLACK_SAVED_SEARCH_FILTER_SECTION, notificationDataMap.get(SLACK_SAVED_SEARCH_FILTER_SECTION));
-    templateData.put(SLACK_EVENT_DETAILS_BUTTON, notificationDataMap.get(SLACK_EVENT_DETAILS_BUTTON));
+    templateData.put(EVENT_STATUS, replaceNullWithBlank(notificationDataMap.get(EVENT_STATUS)));
+    templateData.put(NOTIFICATION_EVENT_TRIGGER_LIST, replaceNullWithBlank(notificationDataMap.get(NOTIFICATION_EVENT_TRIGGER_LIST)));
+    templateData.put(MONITORED_SERVICE_URL, replaceNullWithBlank(templateData.get(URL)));
+    templateData.put(
+        SLACK_FORMATTED_VERSION_LIST, replaceNullWithBlank(notificationDataMap.get(SLACK_FORMATTED_VERSION_LIST)));
+    templateData.put(NOTIFICATION_URL, replaceNullWithBlank(notificationDataMap.get(NOTIFICATION_URL)));
+    templateData.put(NOTIFICATION_NAME, replaceNullWithBlank(notificationDataMap.get(NOTIFICATION_NAME)));
+    templateData.put(ARC_SCREEN_URL, replaceNullWithBlank(notificationDataMap.get(ARC_SCREEN_URL)));
+    templateData.put(SLACK_SAVED_SEARCH_FILTER_SECTION,
+        replaceNullWithBlank(notificationDataMap.get(SLACK_SAVED_SEARCH_FILTER_SECTION)));
+    templateData.put(
+        SLACK_EVENT_DETAILS_BUTTON, replaceNullWithBlank(notificationDataMap.get(SLACK_EVENT_DETAILS_BUTTON)));
 
     // Email variables
     String emailMonitoredServiceLink = EMAIL_LINK_BEGIN + templateData.get(MONITORED_SERVICE_URL) + EMAIL_LINK_MIDDLE
@@ -96,11 +99,14 @@ public class ErrorTrackingTemplateDataGenerator
         + templateData.get(NOTIFICATION_NAME) + EMAIL_LINK_END;
     templateData.put(EMAIL_NOTIFICATION_NAME_HYPERLINK, emailNotificationLink);
     String emailSavedSearchFilterLink = EMAIL_LINK_BEGIN + templateData.get(SAVED_SEARCH_FILTER_URL) + EMAIL_LINK_MIDDLE
-            + templateData.get(SAVED_SEARCH_FILTER_NAME) + EMAIL_LINK_END;
+        + templateData.get(SAVED_SEARCH_FILTER_NAME) + EMAIL_LINK_END;
     templateData.put(EMAIL_SAVED_SEARCH_FILTER_NAME_HYPERLINK, emailSavedSearchFilterLink);
-    templateData.put(EMAIL_FORMATTED_VERSION_LIST, notificationDataMap.get(EMAIL_FORMATTED_VERSION_LIST));
-    templateData.put(EMAIL_SAVED_SEARCH_FILTER_SECTION, notificationDataMap.get(EMAIL_SAVED_SEARCH_FILTER_SECTION));
-    templateData.put(EMAIL_EVENT_DETAILS_BUTTON, notificationDataMap.get(EMAIL_EVENT_DETAILS_BUTTON));
+    templateData.put(
+        EMAIL_FORMATTED_VERSION_LIST, replaceNullWithBlank(notificationDataMap.get(EMAIL_FORMATTED_VERSION_LIST)));
+    templateData.put(EMAIL_SAVED_SEARCH_FILTER_SECTION,
+        replaceNullWithBlank(notificationDataMap.get(EMAIL_SAVED_SEARCH_FILTER_SECTION)));
+    templateData.put(
+        EMAIL_EVENT_DETAILS_BUTTON, replaceNullWithBlank(notificationDataMap.get(EMAIL_EVENT_DETAILS_BUTTON)));
 
     return templateData;
   }
@@ -136,5 +142,16 @@ public class ErrorTrackingTemplateDataGenerator
   protected String getAnomalousMetrics(
       ProjectParams projectParams, String identifier, long startTime, MonitoredServiceCodeErrorCondition condition) {
     return NO_METRIC_ASSIGNED_TO_MONITORED_SERVICE;
+  }
+
+  @Override
+  public String getEntityName() {
+    return MONITORED_SERVICE_NAME;
+  }
+  private String replaceNullWithBlank(String value) {
+    if(value == null) {
+      return "";
+    }
+    return value;
   }
 }

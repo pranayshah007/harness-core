@@ -19,8 +19,6 @@ import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDa
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.ET_MONITORED_SERVICE_URL_FORMAT;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.EVENT_STATUS;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_EVENT_TRIGGER_LIST;
-import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.SAVED_SEARCH_FILTER_NAME;
-import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.SAVED_SEARCH_FILTER_URL;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.SLACK_EVENT_DETAILS_BUTTON;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.SLACK_EVENT_DETAILS_BUTTON_BLOCK_VALUE;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.SLACK_FORMATTED_VERSION_LIST;
@@ -28,10 +26,10 @@ import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDa
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.SLACK_SAVED_SEARCH_FILTER_SECTION_VALUE;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.CET_MODULE_NAME;
 
+import io.harness.cvng.beans.errortracking.CriticalEventType;
 import io.harness.cvng.beans.errortracking.ErrorTrackingHitSummary;
 import io.harness.cvng.beans.errortracking.ErrorTrackingNotificationData;
 import io.harness.cvng.beans.errortracking.EventStatus;
-import io.harness.cvng.beans.errortracking.EventType;
 import io.harness.cvng.beans.errortracking.SavedFilter;
 import io.harness.cvng.beans.errortracking.Scorecard;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
@@ -49,6 +47,7 @@ import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class ErrorTrackingNotificationRuleUtils {
   public static final String EVENT_VERSION_LABEL = "Events appeared on the deployment version ";
   public static final String NEW_EVENT_LABEL = "New Events ";
@@ -128,11 +127,10 @@ public class ErrorTrackingNotificationRuleUtils {
       notificationDataMap.put(EMAIL_FORMATTED_VERSION_LIST, emailVersionList);
     }
 
-    notificationDataMap.put(EMAIL_SAVED_SEARCH_FILTER_SECTION, EMAIL_SAVED_SEARCH_FILTER_SECTION_VALUE);
-    notificationDataMap.put(SLACK_SAVED_SEARCH_FILTER_SECTION, SLACK_SAVED_SEARCH_FILTER_SECTION_VALUE);
-
-    notificationDataMap.put(SAVED_SEARCH_FILTER_URL, "filterURL.com");
-    notificationDataMap.put(SAVED_SEARCH_FILTER_NAME, errorTrackingNotificationData.getSavedFilter().getFilterName());
+    if(errorTrackingNotificationData.getSavedFilter() != null) {
+      notificationDataMap.put(EMAIL_SAVED_SEARCH_FILTER_SECTION, EMAIL_SAVED_SEARCH_FILTER_SECTION_VALUE.replace("${SAVED_SEARCH_FILTER_NAME}", errorTrackingNotificationData.getSavedFilter().getFilterName()));
+      notificationDataMap.put(SLACK_SAVED_SEARCH_FILTER_SECTION, SLACK_SAVED_SEARCH_FILTER_SECTION_VALUE.replace("${SAVED_SEARCH_FILTER_NAME}", errorTrackingNotificationData.getSavedFilter().getFilterName()));
+    }
     return notificationDataMap;
   }
 
@@ -332,18 +330,21 @@ public class ErrorTrackingNotificationRuleUtils {
     }
   }
 
-  public static ErrorTrackingEventType toErrorTrackingEventType(EventType eventType) {
+  public static ErrorTrackingEventType toErrorTrackingEventType(CriticalEventType eventType) {
     switch (eventType) {
-      case EXCEPTION:
+      //TODO: not quite sure what to do with ANY here, handle!!!
+      case ANY:
+      case CAUGHT_EXCEPTION:
+      case UNCAUGHT_EXCEPTION:
+      case SWALLOWED_EXCEPTION:
         return ErrorTrackingEventType.EXCEPTION;
-      case LOG:
-        return ErrorTrackingEventType.LOG;
-      case HTTP:
-        return ErrorTrackingEventType.HTTP;
-      case CUSTOM:
+      case CUSTOM_ERROR:
         return ErrorTrackingEventType.CUSTOM;
-      case TIMER:
-        return ErrorTrackingEventType.TIMER;
+      case HTTP_ERROR:
+        return ErrorTrackingEventType.HTTP;
+      case LOGGED_ERROR:
+      case LOGGED_WARNING:
+        return ErrorTrackingEventType.LOG;
       default:
         throw new IllegalArgumentException("Unsupported EventType: " + eventType);
     }
@@ -380,9 +381,9 @@ public class ErrorTrackingNotificationRuleUtils {
       MonitoredServiceCodeErrorCondition condition, ErrorTrackingNotificationData errorTrackingNotificationData) {
 
     // Event status example is "New Events" or "Critical Events"
-    String changeEventStatusString;
+    String changeEventStatusString = "";
     // Event type example is "Exception", "Log Errors", etc
-    String changeEventTypeString;
+    String changeEventTypeString = "";
 
     if (condition.getSavedFilterId() == null) {
       changeEventStatusString = condition.getErrorTrackingEventStatus()
@@ -395,6 +396,7 @@ public class ErrorTrackingNotificationRuleUtils {
                                   .map(ErrorTrackingEventType::getDisplayName)
                                   .collect(Collectors.joining(", "));
     } else {
+      if(errorTrackingNotificationData.getSavedFilter() != null) {
       changeEventStatusString = errorTrackingNotificationData.getSavedFilter()
                                     .getStatuses()
                                     .stream()
@@ -409,6 +411,9 @@ public class ErrorTrackingNotificationRuleUtils {
                                   .map(ErrorTrackingEventType::getDisplayName)
                                   .collect(Collectors.joining(", "))
           + SEARCH_TERM + errorTrackingNotificationData.getSavedFilter().getSearchTerm() + ")";
+      } else {
+        log.info("errorTrackingNotificationData.getSavedFilter() is null");
+      }
     }
 
     return Map.of(EVENT_STATUS, changeEventStatusString, NOTIFICATION_EVENT_TRIGGER_LIST, changeEventTypeString);

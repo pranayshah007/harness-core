@@ -19,6 +19,7 @@ public class SavedFilter {
   private String filterDescription;
   private long harnessProjectId;
   private List<EventStatus> statuses;
-  private List<EventType> eventTypes;
+  private List<CriticalEventType> eventTypes;
   private String searchTerm;
+  private String notificationId;
 }
