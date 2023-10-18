@@ -113,7 +113,7 @@ public class ErrorTrackingNotificationRuleUtils {
     final List<Scorecard> scorecards = errorTrackingNotificationData.getScorecards();
     if (scorecards != null) {
       List<AggregatedEvents> aggregatedEvents = getErrorTrackingEventsRecursive(
-          codeErrorCondition, scorecards, errorTrackingNotificationData.getSavedFilter(), baseLinkUrl, from, to);
+          codeErrorCondition, scorecards, errorTrackingNotificationData.getFilter(), baseLinkUrl, from, to);
 
       notificationDataMap.put(EMAIL_EVENT_DETAILS_BUTTON, "");
       notificationDataMap.put(SLACK_EVENT_DETAILS_BUTTON, "");
@@ -127,9 +127,9 @@ public class ErrorTrackingNotificationRuleUtils {
       notificationDataMap.put(EMAIL_FORMATTED_VERSION_LIST, emailVersionList);
     }
 
-    if(errorTrackingNotificationData.getSavedFilter() != null) {
-      notificationDataMap.put(EMAIL_SAVED_SEARCH_FILTER_SECTION, EMAIL_SAVED_SEARCH_FILTER_SECTION_VALUE.replace("${SAVED_SEARCH_FILTER_NAME}", errorTrackingNotificationData.getSavedFilter().getFilterName()));
-      notificationDataMap.put(SLACK_SAVED_SEARCH_FILTER_SECTION, SLACK_SAVED_SEARCH_FILTER_SECTION_VALUE.replace("${SAVED_SEARCH_FILTER_NAME}", errorTrackingNotificationData.getSavedFilter().getFilterName()));
+    if(errorTrackingNotificationData.getFilter() != null) {
+      notificationDataMap.put(EMAIL_SAVED_SEARCH_FILTER_SECTION, EMAIL_SAVED_SEARCH_FILTER_SECTION_VALUE.replace("${SAVED_SEARCH_FILTER_NAME}", errorTrackingNotificationData.getFilter().getFilterName()));
+      notificationDataMap.put(SLACK_SAVED_SEARCH_FILTER_SECTION, SLACK_SAVED_SEARCH_FILTER_SECTION_VALUE.replace("${SAVED_SEARCH_FILTER_NAME}", errorTrackingNotificationData.getFilter().getFilterName()));
     }
     return notificationDataMap;
   }
@@ -396,21 +396,21 @@ public class ErrorTrackingNotificationRuleUtils {
                                   .map(ErrorTrackingEventType::getDisplayName)
                                   .collect(Collectors.joining(", "));
     } else {
-      if(errorTrackingNotificationData.getSavedFilter() != null) {
-      changeEventStatusString = errorTrackingNotificationData.getSavedFilter()
+      if(errorTrackingNotificationData.getFilter() != null) {
+      changeEventStatusString = errorTrackingNotificationData.getFilter()
                                     .getStatuses()
                                     .stream()
                                     .map(ErrorTrackingNotificationRuleUtils::toErrorTrackingEventStatus)
                                     .map(ErrorTrackingEventStatus::getDisplayName)
                                     .collect(Collectors.joining(", "));
 
-      changeEventTypeString = errorTrackingNotificationData.getSavedFilter()
+      changeEventTypeString = errorTrackingNotificationData.getFilter()
                                   .getEventTypes()
                                   .stream()
                                   .map(ErrorTrackingNotificationRuleUtils::toErrorTrackingEventType)
                                   .map(ErrorTrackingEventType::getDisplayName)
                                   .collect(Collectors.joining(", "))
-          + SEARCH_TERM + errorTrackingNotificationData.getSavedFilter().getSearchTerm() + ")";
+          + SEARCH_TERM + errorTrackingNotificationData.getFilter().getSearchTerm() + ")";
       } else {
         log.info("errorTrackingNotificationData.getSavedFilter() is null");
       }
