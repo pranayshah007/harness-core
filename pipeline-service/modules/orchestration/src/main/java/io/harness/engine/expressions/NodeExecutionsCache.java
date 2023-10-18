@@ -15,10 +15,12 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.execution.NodeExecution;
 import io.harness.plan.Node;
+import io.harness.plan.NodeType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
+import io.harness.utils.ExecutionModeUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,6 +28,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Value;
@@ -95,6 +98,26 @@ public class NodeExecutionsCache {
         childExecutions.add(iterator.next());
       }
     }
+
+    NodeExecution parentNodeExecution = map.get(parentId);
+    if (parentNodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE
+        && ExecutionModeUtils.isRollbackMode(ambiance.getMetadata().getExecutionMode())) {
+      String originalNodeExecutionId = parentNodeExecution.getOriginalNodeExecutionId();
+      String rollbackExecutionId = ambiance.getMetadata().getOriginalPlanExecutionIdForRollbackMode();
+      Set<String> childIdentifiers =
+          childExecutions.stream().map(NodeExecution::getIdentifier).collect(Collectors.toSet());
+
+      try (CloseableIterator<NodeExecution> iterator = nodeExecutionService.fetchChildrenNodeExecutionsIterator(
+               rollbackExecutionId, originalNodeExecutionId, NodeProjectionUtils.fieldsForExpressionEngine)) {
+        while (iterator.hasNext()) {
+          NodeExecution nodeExecution = iterator.next();
+          if (!childIdentifiers.contains(nodeExecution.getIdentifier())) {
+            childExecutions.add(nodeExecution);
+          }
+        }
+      }
+    }
+
     if (EmptyPredicate.isEmpty(childExecutions)) {
       childrenMap.put(parentId, Collections.emptyList());
       return Collections.emptyList();
