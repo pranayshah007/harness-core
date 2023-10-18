@@ -79,8 +79,11 @@ func collectCg(ctx context.Context, stepID, cgDir string, timeMs int64, log *zap
 	if err != nil {
 		return errors.Wrap(err, "failed to upload cg to ti server")
 	}
-
 	log.Infow(resp.CgMsg)
+	if resp.EmptyCg {
+		log.Infow("Skipping call graph upload since no call graph was generated")
+		return nil
+	}
 	log.Infow(fmt.Sprintf("Successfully uploaded callgraph in %s time", time.Since(start)))
 	return nil
 }
