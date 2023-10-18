@@ -69,7 +69,7 @@ podCleanUpThreadPoolConfig:
   timeUnit: ${{POD_CLEANUP_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 mongo:
-  uri: mongodb://localhost:27018,127.0.0.1:27019,127.0.0.1:27017/pms-harness?replicaSet=rs0
+  uri: mongodb://localhost:27017/pms-harness
   connectTimeout: 30000
   serverSelectionTimeout: 90000
   socketTimeout: 360000
@@ -328,13 +328,11 @@ orchestrationStepConfig:
     defaultCPULimit: 400
     defaultInternalImageConnector: 'account.harnessImage'
     pvcDefaultStorageSize: 25600
-    #delegateServiceEndpointVariableValue: "delegate-service:8080"
-    delegateServiceEndpointVariableValue: "0.tcp.in.ngrok.io:11984"
+    delegateServiceEndpointVariableValue: "delegate-service:8080"
     addonImage: harness/ci-addon:1.16.20
     liteEngineImage: harness/ci-lite-engine:1.16.20
-    #isLocal: false
-    isLocal: true
-    logStreamingContainerStepBaseUrl: ${LOG_STREAMING_CONTAINER_STEP_BASE_URL:-https://qa.harness.io/log-service/}
+    isLocal: false
+    logStreamingContainerStepBaseUrl: ${LOG_STREAMING_CONTAINER_STEP_BASE_URL:-http://localhost:8079}
     pluginConfig:
       sscaOrchestrationConfig:
         image: ${SSCA_ORCHESTRATION_IMAGE:-harness/ssca-plugin:0.11.0}
