@@ -147,6 +147,20 @@ global:
   license:
     cg: ''
     ng: ''
+    secrets:
+      kubernetesSecrets:
+        - secretName: ""
+          keys:
+            NG_LICENSE: ""
+      secretManagement: 
+        externalSecretsOperator:
+          - secretStore:
+              name: ""
+              kind: ""
+            remoteKeys:
+              NG_LICENSE:
+                name: ""
+                property: ""
   ccm:
     enabled: false
   opa:
