@@ -37,6 +37,7 @@ import io.harness.ci.enforcement.BuildsPerDayRestrictionUsageImpl;
 import io.harness.ci.enforcement.BuildsPerMonthRestrictionUsageImpl;
 import io.harness.ci.enforcement.TotalBuildsRestrictionUsageImpl;
 import io.harness.ci.event.CIDataDeleteJob;
+import io.harness.ci.event.CIInfraCleanupService;
 import io.harness.ci.execution.AccountEventConsumer;
 import io.harness.ci.execution.execution.CINotifyEventConsumerRedis;
 import io.harness.ci.execution.execution.CINotifyEventPublisher;
@@ -510,6 +511,12 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
         .scheduleWithFixedDelay(injector.getInstance(DelegateProgressServiceImpl.class), 0L, 5L, TimeUnit.SECONDS);
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
         .scheduleWithFixedDelay(injector.getInstance(ProgressUpdateService.class), 0L, 5L, TimeUnit.SECONDS);
+
+    if (config.isEnableAsyncResourceCleanup()) {
+      // every 10 sec
+      injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("resourceCleanupExecutor")))
+          .scheduleWithFixedDelay(injector.getInstance(CIInfraCleanupService.class), 0L, 10L, TimeUnit.SECONDS);
+    }
   }
 
   private void registerManagedBeans(Environment environment, Injector injector, CIManagerConfiguration config) {

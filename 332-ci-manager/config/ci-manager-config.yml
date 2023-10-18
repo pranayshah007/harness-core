@@ -525,3 +525,8 @@ featureFlagConfig:
 enableQueue: ${ENABLE_QUEUE:-false}
 
 streamPerServiceConfiguration: ${PIE_STREAM_PER_SERVICE:- false}
+
+asyncResourceCleanupPool:
+  corePoolSize: ${ASYNC_RESOURCE_CLEANUP_THREAD_COUNT:-2}
+
+enableAsyncResourceCleanup: ${ENABLE_ASYNC_RESOURCE_CLEANUP:-false}

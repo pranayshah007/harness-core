@@ -470,8 +470,7 @@ public class CIK8JavaClientHandler {
             .getStatus()
             .equals("Success");
       } catch (ApiException ex) {
-        ignoreResourceNotFound(ex, serviceName);
-        return false;
+        return ignoreResourceNotFound(ex, serviceName);
       }
     });
   }
@@ -487,15 +486,15 @@ public class CIK8JavaClientHandler {
             .getStatus()
             .equals("Success");
       } catch (ApiException ex) {
-        ignoreResourceNotFound(ex, secretName);
-        return false;
+        return ignoreResourceNotFound(ex, secretName);
       }
     });
   }
 
-  private void ignoreResourceNotFound(ApiException ex, String resourceName) throws ApiException {
+  private Boolean ignoreResourceNotFound(ApiException ex, String resourceName) throws ApiException {
     if (ex.getCode() == 404) {
       log.warn("K8 resource {}  not found ", resourceName);
+      return true;
     } else {
       throw ex;
     }
