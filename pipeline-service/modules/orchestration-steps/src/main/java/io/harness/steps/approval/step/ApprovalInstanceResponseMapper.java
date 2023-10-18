@@ -15,6 +15,7 @@ import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.jira.JiraIssueKeyNG;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.servicenow.ServiceNowTicketKeyNG;
 import io.harness.steps.approval.ApprovalUtils;
 import io.harness.steps.approval.step.beans.ApprovalInstanceDetailsDTO;
@@ -32,6 +33,7 @@ import io.harness.steps.approval.step.jira.entities.JiraApprovalInstance;
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalHelperService;
 import io.harness.steps.approval.step.servicenow.beans.ServiceNowApprovalInstanceDetailsDTO;
 import io.harness.steps.approval.step.servicenow.entities.ServiceNowApprovalInstance;
+import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -39,6 +41,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.Nullable;
 
 @OwnedBy(CDC)
 @Singleton
@@ -147,6 +150,7 @@ public class ApprovalInstanceResponseMapper {
             .issue(new JiraIssueKeyNG(connectorDTO.getJiraUrl(), instance.getIssueKey(), instance.getTicketFields()))
             .approvalCriteria(instance.getApprovalCriteria())
             .rejectionCriteria(instance.getRejectionCriteria())
+            .retryInterval(checkForRetryIntervalNullOrReturnValue(instance.getRetryInterval()))
             .build();
 
     if (shouldAddDelegateMetadata) {
@@ -177,6 +181,7 @@ public class ApprovalInstanceResponseMapper {
                 connectorDTO.getServiceNowUrl(), instance.getTicketNumber(), instance.getTicketType(), fields))
             .approvalCriteria(instance.getApprovalCriteria())
             .rejectionCriteria(instance.getRejectionCriteria())
+            .retryInterval(checkForRetryIntervalNullOrReturnValue(instance.getRetryInterval()))
             .changeWindowSpec(instance.getChangeWindow())
             .build();
 
@@ -193,6 +198,7 @@ public class ApprovalInstanceResponseMapper {
         CustomApprovalInstanceDetailsDTO.builder()
             .approvalCriteria(instance.getApprovalCriteria())
             .rejectionCriteria(instance.getRejectionCriteria())
+            .retryInterval(checkForRetryIntervalNullOrReturnValue(instance.getRetryInterval()))
             .build();
 
     if (shouldAddDelegateMetadata) {
@@ -200,5 +206,10 @@ public class ApprovalInstanceResponseMapper {
       customApprovalInstanceDetailsDTO.setDelegateTaskName(ApprovalUtils.getDelegateTaskName(instance));
     }
     return customApprovalInstanceDetailsDTO;
+  }
+
+  @Nullable
+  private Timeout checkForRetryIntervalNullOrReturnValue(ParameterField<Timeout> instance) {
+    return instance != null ? instance.getValue() : null;
   }
 }
