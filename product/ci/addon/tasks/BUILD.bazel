@@ -50,6 +50,7 @@ go_library(
 go_test(
     name = "tasks_test",
     srcs = [
+        "common_test.go",
         "plugin_test.go",
         "run_test.go",
         "runtests_test.go",

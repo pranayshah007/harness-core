@@ -9,6 +9,7 @@ import (
 	"bufio"
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -143,6 +144,9 @@ func fetchOutputVariables(outputFile string, fs filesystem.FileSystem, log *zap.
 	}
 	if err := s.Err(); err != nil {
 		log.Errorw("Failed to create scanner from output file", zap.Error(err))
+		if errors.Is(err, bufio.ErrTooLong) {
+			err = fmt.Errorf("output variable length is more than %d bytes", bufio.MaxScanTokenSize)
+		}
 		return nil, err
 	}
 	return envVarMap, nil
