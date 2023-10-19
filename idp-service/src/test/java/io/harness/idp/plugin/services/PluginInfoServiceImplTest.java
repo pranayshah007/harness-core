@@ -145,7 +145,7 @@ public class PluginInfoServiceImplTest {
     when(FileUtils.readFile(any(), any(), any())).thenReturn(schema);
     when(pluginInfoRepository.saveOrUpdate(any(PluginInfoEntity.class))).thenReturn(pluginInfoEntity);
     pluginInfoServiceImpl.saveAllPluginInfo();
-    verify(pluginInfoRepository, times(16)).saveOrUpdate(any(PluginInfoEntity.class));
+    verify(pluginInfoRepository, times(17)).saveOrUpdate(any(PluginInfoEntity.class));
   }
 
   @Test

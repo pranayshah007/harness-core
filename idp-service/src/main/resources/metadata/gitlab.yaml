@@ -71,6 +71,16 @@ exports:
             sm: 12
             md: 3
             lg: 3
+    - type: CARD
+      name: EntityGitlabReadmeCard
+      addByDefault: true
+      layoutSchemaSpecs:
+        component: EntityGitlabReadmeCard
+        specs:
+          gridProps:
+            sm: 12
+            md: 3
+            lg: 3
     - type: TAB_CONTENT
       name: EntityGitlabContent
       addByDefault: true
