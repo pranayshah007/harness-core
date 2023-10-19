@@ -232,36 +232,6 @@ func HandleZipLinkPrefix(q queue.Queue, s store.Store, c cache.Cache, cfg config
 				WriteNotFound(w, err)
 				return
 			}
-			// link, err = gcsClient.SignURL(cfg.S3.Bucket, zipPrefix, cfg.S3.CustomHost)
-			// if err != nil {
-			// 	logger.FromRequest(r).
-			// 		WithError(err).
-			// 		WithField(usePrefixParam, prefix).
-			// 		Errorln("api: cannot Sign the download url")
-			// 	WriteNotFound(w, err)
-			// 	return
-			// }
-			// lstring := strings.Split(link, "harness-download")
-
-			// if len(lstring) < 2 {
-			// 	logger.FromRequest(r).
-			// 		WithError(err).
-			// 		WithField(usePrefixParam, prefix).
-			// 		WithField("url", lstring).
-			// 		Errorln("api: cannot parse Unescaped Signed url")
-			// 	WriteNotFound(w, fmt.Errorf("cannot parse Unescaped Signed url"))
-			// 	return
-			// }
-			// link, err = url.PathUnescape(lstring[0])
-			// link = link + "harness-download" + lstring[1]
-			// if err != nil {
-			// 	logger.FromRequest(r).
-			// 		WithError(err).
-			// 		WithField(usePrefixParam, prefix).
-			// 		Errorln("api: cannot Unescape the  Signed url")
-			// 	WriteNotFound(w, err)
-			// 	return
-			// }
 		}
 
 		out, err := s.ListBlobPrefix(ctx, CreateAccountSeparatedKey(accountID, prefix), cfg.Zip.LIMIT_FILES)
@@ -348,6 +318,7 @@ func GetSignedURL(link, zipPrefix string, cfg config.Config, gcsClient gcputils.
 	if err != nil {
 		return "", err
 	}
+	//parse and unescape only the link before harness-download otherwise it will corrupt the signed link
 	lstring := strings.Split(link, harnessDownload)
 
 	if len(lstring) < 2 {
