@@ -201,6 +201,9 @@ public class ManifestMigrationService extends NgMigrationService {
 
   private void validateAndFixTemplateManifests(List<ManifestFile> manifestFiles) {
     for (ManifestFile manifestFile : manifestFiles) {
+      if (manifestFile.getFileContent() == null) {
+        continue;
+      }
       String[] lines = manifestFile.getFileContent().split("\n");
       boolean inAnnotations = false;
 
