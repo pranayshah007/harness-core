@@ -116,12 +116,20 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
   private final PmsFeatureFlagService pmsFeatureFlagService;
   private final AccessControlClient accessControlClient;
 
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<InputSetResponseDTOPMS> getInputSet(String inputSetIdentifier,
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String pipelineIdentifier,
       String pipelineBranch, String pipelineRepoId, boolean loadFromFallbackBranch,
       GitEntityFindInfoDTO gitEntityBasicInfo, String loadFromCache) {
+    if (pmsFeatureFlagService.isEnabled(accountId, FeatureName.PIE_INPUTSET_RBAC_PERMISSIONS)) {
+      String inputSetWithPipelineIdentifier = pipelineIdentifier + "-" + inputSetIdentifier;
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+          Resource.of("INPUT_SET", inputSetWithPipelineIdentifier), InputSetRbacPermissions.INPUTSET_VIEW);
+    } else {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+          Resource.of("PIPELINE", pipelineIdentifier), PipelineRbacPermissions.PIPELINE_VIEW);
+    }
+
     log.info(String.format("Retrieving input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
     Optional<InputSetEntity> optionalInputSetEntity = pmsInputSetService.get(accountId, orgIdentifier,
@@ -138,12 +146,20 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
     return ResponseDTO.newResponse(inputSetEntity.getVersion().toString(), inputSet);
   }
 
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<OverlayInputSetResponseDTOPMS> getOverlayInputSet(String inputSetIdentifier,
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier, @NotNull @ResourceIdentifier String pipelineIdentifier,
       String pipelineBranch, String pipelineRepoId, boolean loadFromFallbackBranch,
       GitEntityFindInfoDTO gitEntityBasicInfo, String loadFromCache) {
+    if (pmsFeatureFlagService.isEnabled(accountId, FeatureName.PIE_INPUTSET_RBAC_PERMISSIONS)) {
+      String inputSetWithPipelineIdentifier = pipelineIdentifier + "-" + inputSetIdentifier;
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+          Resource.of("INPUT_SET", inputSetWithPipelineIdentifier), InputSetRbacPermissions.INPUTSET_VIEW);
+    } else {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+          Resource.of("PIPELINE", pipelineIdentifier), PipelineRbacPermissions.PIPELINE_VIEW);
+    }
+
     log.info(String.format(
         "Retrieving overlay input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSetIdentifier, pipelineIdentifier, projectIdentifier, orgIdentifier, accountId));
@@ -421,11 +437,19 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
                                        .build());
   }
 
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   public ResponseDTO<InputSetSanitiseResponseDTO> sanitiseInputSet(@NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier String pipelineIdentifier, String inputSetIdentifier, String pipelineBranch,
       String pipelineRepoID, GitEntityUpdateInfoDTO gitEntityInfo, @NotNull String invalidInputSetYaml) {
+    if (pmsFeatureFlagService.isEnabled(accountId, FeatureName.PIE_INPUTSET_RBAC_PERMISSIONS)) {
+      String inputSetWithPipelineIdentifier = pipelineIdentifier + "-" + inputSetIdentifier;
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+          Resource.of("INPUT_SET", inputSetWithPipelineIdentifier), InputSetRbacPermissions.INPUTSET_CREATE_AND_EDIT);
+    } else {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+          Resource.of("PIPELINE", pipelineIdentifier), PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
+    }
+
     String pipelineYaml = validateAndMergeHelper
                               .getPipelineEntity(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
                                   pipelineBranch, pipelineRepoID, false, false)
@@ -450,21 +474,37 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
   }
 
   // Pipeline Branch is mandatory for this Api
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<InputSetYamlDiffDTO> getInputSetYAMLDiff(@NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier String pipelineIdentifier, String inputSetIdentifier, String pipelineBranch,
       String pipelineRepoID, GitEntityUpdateInfoDTO gitEntityInfo) {
+    if (pmsFeatureFlagService.isEnabled(accountId, FeatureName.PIE_INPUTSET_RBAC_PERMISSIONS)) {
+      String inputSetWithPipelineIdentifier = pipelineIdentifier + "-" + inputSetIdentifier;
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+          Resource.of("INPUT_SET", inputSetWithPipelineIdentifier), InputSetRbacPermissions.INPUTSET_VIEW);
+    } else {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+          Resource.of("PIPELINE", pipelineIdentifier), PipelineRbacPermissions.PIPELINE_VIEW);
+    }
+
     return ResponseDTO.newResponse(InputSetValidationHelper.getYAMLDiff(gitSyncSdkService, pmsInputSetService,
         pipelineService, validateAndMergeHelper, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         inputSetIdentifier, pipelineBranch, pipelineRepoID, inputSetsApiUtils));
   }
 
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   public ResponseDTO<InputSetImportResponseDTO> importInputSetFromGit(@NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier String pipelineIdentifier, String inputSetIdentifier,
       GitImportInfoDTO gitImportInfoDTO, InputSetImportRequestDTO inputSetImportRequestDTO) {
+    if (pmsFeatureFlagService.isEnabled(accountId, FeatureName.PIE_INPUTSET_RBAC_PERMISSIONS)) {
+      String inputSetWithPipelineIdentifier = pipelineIdentifier + "-" + inputSetIdentifier;
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+          Resource.of("INPUT_SET", inputSetWithPipelineIdentifier), InputSetRbacPermissions.INPUTSET_CREATE_AND_EDIT);
+    } else {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+          Resource.of("PIPELINE", pipelineIdentifier), PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT);
+    }
+
     InputSetEntity inputSetEntity =
         pmsInputSetService.importInputSetFromRemote(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
             inputSetIdentifier, inputSetImportRequestDTO, gitImportInfoDTO.getIsForceImport());

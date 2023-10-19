@@ -15,4 +15,5 @@ import io.harness.annotations.dev.OwnedBy;
 public interface InputSetRbacPermissions {
   String INPUTSET_CREATE_AND_EDIT = "core_inputset_edit";
   String INPUTSET_DELETE = "core_inputset_delete";
+  String INPUTSET_VIEW = "core_inputset_view";
 }
