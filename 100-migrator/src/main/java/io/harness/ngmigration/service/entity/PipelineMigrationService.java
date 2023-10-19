@@ -879,16 +879,18 @@ public class PipelineMigrationService extends NgMigrationService {
       ArrayNode stepsArray = (ArrayNode) stepGroupNode.get("stepGroup").get("steps");
 
       stepsArray.elements().forEachRemaining(stepNode -> {
-        String type = stepNode.get("step").get("type").asText();
+        Optional<String> optionalStepType =
+            Optional.ofNullable(stepNode.get("step")).map(step -> step.get("type")).map(JsonNode::asText);
+        if (optionalStepType.isPresent()) {
+          if ("Barrier".equals(optionalStepType.get())) {
+            ObjectNode specNode = (ObjectNode) stepNode.get("step").get("spec");
+            if (specNode != null && specNode.has("barrierRef")) {
+              String barrierRef = specNode.get("barrierRef").asText();
+              if (barrierRef.contains("<+input>.default")) {
+                String contentInsideDefault = barrierRef.replace("<+input>.default('", "").replace("')", "");
 
-        if ("Barrier".equals(type)) {
-          ObjectNode specNode = (ObjectNode) stepNode.get("step").get("spec");
-          if (specNode != null && specNode.has("barrierRef")) {
-            String barrierRef = specNode.get("barrierRef").asText();
-            if (barrierRef.contains("<+input>.default")) {
-              String contentInsideDefault = barrierRef.replace("<+input>.default('", "").replace("')", "");
-
-              specNode.put("barrierRef", contentInsideDefault);
+                specNode.put("barrierRef", contentInsideDefault);
+              }
             }
           }
         }
