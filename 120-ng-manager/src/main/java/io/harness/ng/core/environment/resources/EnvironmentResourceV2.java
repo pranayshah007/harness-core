@@ -70,6 +70,7 @@ import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.beans.EnvironmentAndServiceOverridesMetadataInput;
 import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -875,6 +876,28 @@ public class EnvironmentResourceV2 {
             isServiceOverrideV2Enabled);
 
     return ResponseDTO.newResponse(environmentInputsetYamlandServiceOverridesMetadataDTO);
+  }
+
+  @POST
+  @Path("v2/env-service-override-metadata")
+  @ApiOperation(value = "This api returns environments runtime input YAML and serviceOverrides Yaml",
+      nickname = "getEnvironmentsInputYamlAndServiceOverridesV2")
+  @Hidden
+  public ResponseDTO<EnvironmentInputSetYamlAndServiceOverridesMetadataDTO>
+  getEnvironmentsInputYamlAndServiceOverridesV2(
+      @Parameter(description = ENVIRONMENT_YAML_METADATA_INPUT_PARAM_MESSAGE) @Valid
+      @NotNull EnvironmentAndServiceOverridesMetadataInput environmentYamlMetadata,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = "This contains details of Git Entity like Git Branch info for the Base entity")
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @Parameter(description = "Specifies whether to load the entity from cache") @HeaderParam(
+          "Load-From-Cache") @DefaultValue("false") String loadFromCache) {
+    return ResponseDTO.newResponse(EnvironmentInputSetYamlAndServiceOverridesMetadataDTO.builder().build());
   }
 
   private void validateServiceOverrides(NGServiceOverridesEntity serviceOverridesEntity) {

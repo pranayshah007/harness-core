@@ -11,9 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.List;
-import javax.validation.constraints.Size;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -23,6 +21,7 @@ import lombok.experimental.FieldDefaults;
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ServicesYamlMetadataApiInputV2 {
-  @Schema(hidden = true) @Size(max = 1000) List<EntityWithGitInfo> entityWithGitInfoList;
+public class EntityWithGitInfo {
+  @NotNull String ref;
+  String branch;
 }

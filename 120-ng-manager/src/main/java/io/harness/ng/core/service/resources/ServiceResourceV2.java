@@ -63,9 +63,9 @@ import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.artifact.ArtifactSourceYamlRequestDTO;
 import io.harness.ng.core.beans.DocumentationConstants;
+import io.harness.ng.core.beans.EntityWithGitInfo;
 import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
 import io.harness.ng.core.beans.ServiceV2YamlMetadata;
-import io.harness.ng.core.beans.ServiceWithGitInfo;
 import io.harness.ng.core.beans.ServicesV2YamlMetadataDTO;
 import io.harness.ng.core.beans.ServicesYamlMetadataApiInput;
 import io.harness.ng.core.beans.ServicesYamlMetadataApiInputV2;
@@ -795,7 +795,7 @@ public class ServiceResourceV2 {
           "Load-From-Cache") @DefaultValue("false") String loadFromCache) {
     // get service ref-> branch map
     Map<String, String> serviceRefBranchMap = getServiceBranchMap(
-        accountId, orgIdentifier, projectIdentifier, servicesYamlMetadataApiInput.getServiceWithGitInfoList());
+        accountId, orgIdentifier, projectIdentifier, servicesYamlMetadataApiInput.getEntityWithGitInfoList());
 
     // scoped service refs
     List<String> serviceRefs = new ArrayList<>(serviceRefBranchMap.keySet());
@@ -809,14 +809,14 @@ public class ServiceResourceV2 {
   }
 
   private Map<String, String> getServiceBranchMap(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, List<ServiceWithGitInfo> serviceWithGitInfo) {
+      String projectIdentifier, List<EntityWithGitInfo> entityWithGitInfo) {
     Map<String, String> resultMap = new HashMap<>();
 
-    if (isEmpty(serviceWithGitInfo)) {
+    if (isEmpty(entityWithGitInfo)) {
       return resultMap;
     }
 
-    for (ServiceWithGitInfo input : serviceWithGitInfo) {
+    for (EntityWithGitInfo input : entityWithGitInfo) {
       String scopedRef = IdentifierRefHelper.getRefFromIdentifierOrRef(
           accountIdentifier, orgIdentifier, projectIdentifier, input.getRef());
       resultMap.put(scopedRef, input.getBranch());

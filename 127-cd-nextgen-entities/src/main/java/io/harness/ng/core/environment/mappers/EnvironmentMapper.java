@@ -153,6 +153,7 @@ public class EnvironmentMapper {
         .storeType(environment.getStoreType())
         .connectorRef(environment.getConnectorRef())
         .cacheResponseMetadataDTO(getCacheResponse(environment))
+        .fallbackBranch(environment.getFallBackBranch())
         .build();
   }
 

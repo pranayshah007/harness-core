@@ -11,7 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -21,7 +24,8 @@ import lombok.experimental.FieldDefaults;
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ServiceWithGitInfo {
-  @NotNull String ref;
-  String branch;
+public class EnvironmentAndServiceOverridesMetadataInput {
+  @NotNull List<String> serviceIdentifiers;
+  String envGroupIdentifier;
+  @Schema(hidden = true) @Size(max = 1000) List<EntityWithGitInfo> entityWithGitInfoList;
 }
