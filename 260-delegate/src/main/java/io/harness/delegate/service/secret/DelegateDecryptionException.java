@@ -12,11 +12,11 @@ import io.harness.eraro.Level;
 import io.harness.exception.WingsException;
 
 public class DelegateDecryptionException extends WingsException {
-    public DelegateDecryptionException(String message, ErrorCode code) {
-        super(message, null, code, Level.ERROR, null, null);
-    }
+  public DelegateDecryptionException(String message, ErrorCode code) {
+    super(message, null, code, Level.ERROR, null, null);
+  }
 
-    public DelegateDecryptionException(String message, Throwable e, ErrorCode code) {
-        super(message, e, code, Level.ERROR, null, null);
-    }
+  public DelegateDecryptionException(String message, Throwable e, ErrorCode code) {
+    super(message, e, code, Level.ERROR, null, null);
+  }
 }

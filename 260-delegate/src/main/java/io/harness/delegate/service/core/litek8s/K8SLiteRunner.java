@@ -83,7 +83,8 @@ public class K8SLiteRunner implements Runner {
   //  private final K8EventHandler k8EventHandler;
 
   @Override
-  public void init(final String infraId, final InputData infra, final DecryptedSecrets decrypted, final Context context) {
+  public void init(
+      final String infraId, final InputData infra, final DecryptedSecrets decrypted, final Context context) {
     log.info("Setting up pod spec");
 
     try {

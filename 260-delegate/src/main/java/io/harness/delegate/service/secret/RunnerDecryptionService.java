@@ -40,7 +40,7 @@ public class RunnerDecryptionService {
    */
   public char[] decryptProtoBytes(final Secret secret) throws InvalidProtocolBufferException {
     final EncryptedRecordForDelegateDecryption encryptedDataRecord =
-            EncryptedRecordForDelegateDecryption.parseFrom(secret.getEncryptedRecord().getBinaryData().toByteArray());
+        EncryptedRecordForDelegateDecryption.parseFrom(secret.getEncryptedRecord().getBinaryData().toByteArray());
     EncryptedRecordData mappedRecordData = EncryptedDataRecordProtoPojoMapper.map(encryptedDataRecord);
     final io.harness.delegate.core.beans.EncryptionConfig encryptionConfig =
         io.harness.delegate.core.beans.EncryptionConfig.parseFrom(secret.getConfig().getBinaryData().toByteArray());
@@ -50,8 +50,8 @@ public class RunnerDecryptionService {
     // DelegateDecryptionService doesn't use cache
     final var decrypt = decryptionService.decrypt(Map.of(mappedEncryptionConfig, encryptedRecordList));
     if (!decrypt.containsKey(mappedRecordData.getUuid())) {
-      String msg = String.format("After decryption, cannot find decrypted secret for encryption record %s",
-              mappedRecordData.getUuid());
+      String msg = String.format(
+          "After decryption, cannot find decrypted secret for encryption record %s", mappedRecordData.getUuid());
       log.error(msg);
       throw new DelegateDecryptionException(msg, ErrorCode.UNEXPECTED);
     } else {
