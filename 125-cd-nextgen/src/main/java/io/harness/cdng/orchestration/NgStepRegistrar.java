@@ -104,6 +104,7 @@ import io.harness.cdng.k8s.K8sDryRunManifestStep;
 import io.harness.cdng.k8s.K8sRollingRollbackStep;
 import io.harness.cdng.k8s.K8sRollingStep;
 import io.harness.cdng.k8s.K8sScaleStep;
+import io.harness.cdng.k8s.asyncsteps.K8sBGSwapServicesStepV2;
 import io.harness.cdng.k8s.asyncsteps.K8sBlueGreenStepV2;
 import io.harness.cdng.manifest.steps.ManifestStep;
 import io.harness.cdng.manifest.steps.ManifestsStep;
@@ -370,6 +371,7 @@ public class NgStepRegistrar {
 
     // K8s ASYNC
     engineSteps.put(K8sBlueGreenStepV2.STEP_TYPE, K8sBlueGreenStepV2.class);
+    engineSteps.put(K8sBGSwapServicesStepV2.STEP_TYPE, K8sBGSwapServicesStepV2.class);
 
     return engineSteps;
   }
