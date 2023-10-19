@@ -25,10 +25,10 @@ appVersion: "1.16.0"
 
 dependencies:
   - name: database
-    version: 0.9.x
+    version: 0.10.x
     repository: "file://./database"
   - name: harness-secrets
-    version: 0.9.x
+    version: 0.10.x
     repository: "file://./secrets"
     condition: harness-secrets.enabled
   - name: rbac
