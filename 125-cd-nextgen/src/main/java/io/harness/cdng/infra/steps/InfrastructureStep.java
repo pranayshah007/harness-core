@@ -623,7 +623,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   }
 
   public void saveInfraExecutionDataToStageInfo(Ambiance ambiance, InfrastructureOutcome infrastructureOutcome) {
-    stageExecutionInfoService.updateStageExecutionInfo(ambiance,
+    stageExecutionInfoService.upsertStageExecutionInfo(ambiance,
         StageExecutionInfoUpdateDTO.builder()
             .infraExecutionSummary(createInfraExecutionSummaryDetailsFromInfraOutcome(infrastructureOutcome))
             .build());

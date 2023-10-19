@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: unused-eip-list
+cloudProvider: AWS
+resourceType: network-addr
+description: List any EIP with no instances attached
+rulesYamlPath: ../unused-eip-list.yml

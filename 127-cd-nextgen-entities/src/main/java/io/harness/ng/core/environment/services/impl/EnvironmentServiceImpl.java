@@ -263,9 +263,17 @@ public class EnvironmentServiceImpl implements EnvironmentService {
             requestEnvironment.getProjectIdentifier(), requestEnvironment.getIdentifier(), false);
 
     if (environmentOptional.isPresent()) {
+      Environment environmentToUpdate = environmentOptional.get()
+                                            .withYaml(requestEnvironment.getYaml())
+                                            .withDescription(requestEnvironment.getDescription())
+                                            .withName(requestEnvironment.getName())
+                                            .withTags(requestEnvironment.getTags())
+                                            .withType(requestEnvironment.getType())
+                                            .withColor(requestEnvironment.getColor());
+
       Environment updatedResult =
           Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-            Environment tempResult = environmentRepository.update(criteria, requestEnvironment);
+            Environment tempResult = environmentRepository.update(criteria, environmentToUpdate);
             if (tempResult == null) {
               throw new InvalidRequestException(
                   format("Environment [%s] under Project[%s], Organization [%s] couldn't be updated or doesn't exist.",

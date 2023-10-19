@@ -45,7 +45,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
-import io.harness.cdng.utilities.NGLogCallbackUtility;
+import io.harness.cdng.utilities.ServiceEnvironmentsLogCallbackUtility;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -77,6 +77,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.secretusage.SecretRuntimeUsageService;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.TaskRequestsUtils;
@@ -114,10 +115,11 @@ public class ConfigFilesStepV2Test extends CategoryTest {
   @Mock private CDStepHelper cdStepHelper;
   @Mock EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Mock private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
+  @Mock private SecretRuntimeUsageService secretRuntimeUsageService;
   @Mock private FileStoreService fileStoreService;
   @Mock private PipelineRbacHelper pipelineRbacHelper;
   @Mock private ConfigGitFilesMapper configGitFilesMapper;
-  @Mock private NGLogCallbackUtility ngLogCallbackUtility;
+  @Mock private ServiceEnvironmentsLogCallbackUtility serviceEnvironmentsLogUtility;
   @InjectMocks private final ConfigFilesStepV2 step = new ConfigFilesStepV2();
   private AutoCloseable mocks;
   private static final String ACCOUNT_ID = "accountId";
@@ -135,7 +137,7 @@ public class ConfigFilesStepV2Test extends CategoryTest {
         .get(anyString(), anyString(), anyString(), anyString());
 
     // mock NgLogCallbackUtility
-    doReturn(mockNgLogCallback).when(ngLogCallbackUtility).getLogCallback(Mockito.any(), Mockito.anyBoolean());
+    doReturn(mockNgLogCallback).when(serviceEnvironmentsLogUtility).getLogCallback(Mockito.any(), Mockito.anyBoolean());
 
     doCallRealMethod()
         .when(cdStepHelper)

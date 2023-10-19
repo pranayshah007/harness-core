@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import okhttp3.ConnectionPool;
 import okhttp3.Credentials;
 import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
@@ -51,6 +52,7 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
 
   private static final String READ_TIMEOUT_ENV_VAR = "K8S_API_CLIENT_READ_TIMEOUT";
   private static final String CONNECT_TIMEOUT_ENV_VAR = "K8S_API_CLIENT_CONNECT_TIMEOUT";
+  private static final String ENABLE_TRACE_LOGGING_ENV_VAR = "K8S_API_CLIENT_ENABLE_TRACE_LOGGING";
 
   static {
     connectionPool = new ConnectionPool(32, 5L, TimeUnit.MINUTES);
@@ -137,6 +139,14 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
         String credential = Credentials.basic(user, password);
         return response.request().newBuilder().header("Proxy-Authorization", credential).build();
       });
+    }
+    boolean isTraceLoggingEnabled = K8sApiClientHelper.isEnvVarSet(ENABLE_TRACE_LOGGING_ENV_VAR);
+    if (isTraceLoggingEnabled) {
+      HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
+      loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+      loggingInterceptor.redactHeader("Authorization");
+      loggingInterceptor.redactHeader("Cookie");
+      builder.addNetworkInterceptor(loggingInterceptor);
     }
     apiClient.setHttpClient(builder.build());
     return apiClient;

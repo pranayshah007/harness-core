@@ -299,6 +299,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
 
   private final MetricRegistry metricRegistry = new MetricRegistry();
   private HarnessMetricRegistry harnessMetricRegistry;
+  private final MetricRegistry threadPoolMetricRegistry = new MetricRegistry();
   private HPersistence hPersistence;
 
   public static void main(String[] args) throws Exception {
@@ -469,7 +470,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     modules.add(new CVServiceModule(configuration));
     modules.add(new PersistentLockModule());
     modules.add(new EventsFrameworkModule(configuration.getEventsFrameworkConfiguration()));
-    modules.add(new MetricRegistryModule(metricRegistry));
+    modules.add(new MetricRegistryModule(metricRegistry, threadPoolMetricRegistry));
     modules.add(new VerificationManagerClientModule(configuration.getManagerClientConfig().getBaseUrl()));
     modules.add(new NextGenClientModule(configuration.getNgManagerServiceConfig()));
     modules.add(new ErrorTrackingClientModule(configuration.getErrorTrackingClientConfig()));
@@ -491,7 +492,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
 
     // Pipeline Service Modules
     PmsSdkConfiguration pmsSdkConfiguration = getPmsSdkConfiguration(configuration);
-    modules.add(PmsSdkModule.getInstance(pmsSdkConfiguration));
+    modules.add(PmsSdkModule.getInstance(pmsSdkConfiguration, threadPoolMetricRegistry));
     modules.add(PipelineServiceUtilityModule.getInstance());
     modules.add(NGMigrationSdkModule.getInstance());
     modules.add(new TicketServiceRestClientModule(configuration.getTicketServiceRestClientConfig().getBaseUrl()));

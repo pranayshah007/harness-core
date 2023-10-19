@@ -488,7 +488,7 @@ func TestSanitizeLines(t *testing.T) {
 		Message: "here is a string which should be truncated",
 	}
 	lines := []*stream.Line{l1, l2, l1, l2, l1, l2}
-	lines, cnt := sanitizeLines(lines, 20, 3)
+	lines, cnt := sanitizeLines(lines, 20, 3, "key")
 	fmt.Println("lines is: ", lines)
 	// leftover lines should be l2, l1, l2
 	assert.Equal(t, len(lines), 3)

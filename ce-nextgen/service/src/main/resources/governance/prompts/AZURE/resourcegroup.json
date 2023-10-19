@@ -1,0 +1,12 @@
+{
+  "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId",
+  "name": "ResourceGroupId",
+  "type": "resourceGroups",
+  "properties": {
+    "provisioningState": "Succeeded"
+  },
+  "location": "northeurope",
+  "tags": {
+    "Key": "Value"
+  }
+}

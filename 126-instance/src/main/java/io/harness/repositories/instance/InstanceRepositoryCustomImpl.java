@@ -6,15 +6,17 @@
  */
 
 package io.harness.repositories.instance;
-
 import static io.harness.entities.Instance.InstanceKeysAdditional;
 
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.newAggregation;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceKeys;
@@ -54,6 +56,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_DASHBOARD, HarnessModuleComponent.CDS_FIRST_GEN})
 @Singleton
 @OwnedBy(HarnessTeam.DX)
 public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {

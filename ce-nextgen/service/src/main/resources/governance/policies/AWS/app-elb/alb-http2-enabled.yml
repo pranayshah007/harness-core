@@ -1,0 +1,8 @@
+policies:
+  - name: alb-http2-enabled
+    resource: app-elb
+    filters:
+      - type: attributes
+        key: routing.http2.enabled
+        value: true
+        op: eq

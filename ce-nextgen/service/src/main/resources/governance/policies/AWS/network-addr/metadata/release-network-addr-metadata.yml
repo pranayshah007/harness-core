@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: release-network-addr
+cloudProvider: AWS
+resourceType: network-addr
+description: Release all network-addr even if it is attached given allocation id
+rulesYamlPath: ../release-network-addr.yml

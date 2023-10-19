@@ -76,7 +76,7 @@ public class GitResourceServiceHelper {
     }
     SSHKeySpecDTO sshKeySpecDTO = getSshKeySpecDTO(gitConfigDTO, ngAccess);
     ScmConnector scmConnector = cdStepHelper.getScmConnector(
-        (ScmConnector) connectorDTO.getConnectorConfig(), ngAccess.getAccountIdentifier(), gitConfigDTO);
+        (ScmConnector) connectorDTO.getConnectorConfig(), ngAccess.getAccountIdentifier(), gitConfigDTO, repoName);
     List<EncryptedDataDetail> encryptedDataDetails =
         gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(scmConnector, sshKeySpecDTO, ngAccess);
     return GitStoreDelegateConfig.builder()

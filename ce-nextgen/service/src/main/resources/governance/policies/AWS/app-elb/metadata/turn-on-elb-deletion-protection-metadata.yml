@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: turn-on-elb-deletion-protection.yml
+cloudProvider: AWS
+resourceType: app-elb
+description: Set deletion_protection.enabled to true and also set idle_timeout.timeout_seconds to 120 where deletion_protection.enabled is false
+rulesYamlPath: ../turn-on-elb-deletion-protection.yml

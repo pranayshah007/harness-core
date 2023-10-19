@@ -42,6 +42,7 @@ public class NodeExecutionsCache {
   Map<String, NodeExecution> map;
   Map<String, List<String>> childrenMap;
   Map<String, Node> nodeMap;
+  Map<String, Ambiance> ambianceMap;
 
   @Builder
   public NodeExecutionsCache(NodeExecutionService nodeExecutionService, PlanService planService, Ambiance ambiance) {
@@ -51,6 +52,7 @@ public class NodeExecutionsCache {
     this.nodeMap = new HashMap<>();
     this.map = new HashMap<>();
     this.childrenMap = new HashMap<>();
+    this.ambianceMap = new HashMap<>();
   }
 
   public synchronized NodeExecution fetch(String nodeExecutionId) {
@@ -127,5 +129,18 @@ public class NodeExecutionsCache {
     Node node = planService.fetchNode(ambiance.getPlanId(), nodeId);
     nodeMap.put(nodeId, node);
     return node;
+  }
+
+  public synchronized Ambiance getAmbiance(String nodeExecutionId) {
+    if (nodeExecutionId == null) {
+      return null;
+    }
+    if (ambianceMap.containsKey(nodeExecutionId)) {
+      return ambianceMap.get(nodeExecutionId);
+    }
+    Ambiance ambiance =
+        nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.withAmbiance).getAmbiance();
+    ambianceMap.put(nodeExecutionId, ambiance);
+    return ambiance;
   }
 }

@@ -232,6 +232,7 @@ public class SLIDataCollectionTaskServiceTest extends CvNextGenTestBase {
         .isEqualTo(serviceLevelIndicator.getFirstTimeDataCollectionTimeRange().getEndTime());
     assertThat(savedTask.getStartTime())
         .isEqualTo(serviceLevelIndicator.getFirstTimeDataCollectionTimeRange().getStartTime());
+    assertThat(savedTask.getValidAfter()).isEqualTo(savedTask.getEndTime().plus(2, ChronoUnit.MINUTES));
   }
 
   @Test

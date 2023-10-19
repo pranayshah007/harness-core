@@ -9,6 +9,7 @@ package io.harness.cdng.configfile.steps;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.entityusageactivity.EntityUsageTypes.PIPELINE_EXECUTION;
 
 import static java.lang.String.format;
 
@@ -35,7 +36,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
-import io.harness.cdng.utilities.NGLogCallbackUtility;
+import io.harness.cdng.utilities.ServiceEnvironmentsLogCallbackUtility;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.EmptyPredicate;
@@ -47,6 +48,8 @@ import io.harness.delegate.task.gitcommon.GitFetchFilesResult;
 import io.harness.delegate.task.gitcommon.GitRequestFileConfig;
 import io.harness.delegate.task.gitcommon.GitTaskNGRequest;
 import io.harness.delegate.task.gitcommon.GitTaskNGResponse;
+import io.harness.eventsframework.schemas.entity.EntityUsageDetailProto;
+import io.harness.eventsframework.schemas.entity.PipelineExecutionUsageDataProto;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
@@ -69,12 +72,15 @@ import io.harness.pms.sdk.core.steps.executables.SyncExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.secretusage.SecretRuntimeUsageService;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.tasks.ResponseData;
 import io.harness.validation.JavaxValidator;
+import io.harness.walktree.visitor.entityreference.beans.VisitedSecretReference;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
@@ -122,9 +128,11 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
   @Inject private CDStepHelper cdStepHelper;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject private ConfigGitFilesMapper configGitFilesMapper;
+  @Inject private SecretRuntimeUsageService secretRuntimeUsageService;
+  @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StrategyHelper strategyHelper;
-  @Inject private NGLogCallbackUtility ngLogCallbackUtility;
+  @Inject private ServiceEnvironmentsLogCallbackUtility serviveEnvironmentsLogUtility;
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
     return EmptyStepParameters.class;
@@ -142,7 +150,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
         fetchConfigFilesMetadataFromSweepingOutput(ambiance);
 
     final List<ConfigFileWrapper> configFiles = configFilesSweepingOutput.getFinalSvcConfigFiles();
-    final NGLogCallback logCallback = ngLogCallbackUtility.getLogCallback(ambiance, false);
+    final NGLogCallback logCallback = serviveEnvironmentsLogUtility.getLogCallback(ambiance, false);
     if (EmptyPredicate.isEmpty(configFiles)) {
       logCallback.saveExecutionLog(
           "No config files configured in the service or in overrides. configFiles expressions will not work",
@@ -150,6 +158,8 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
       return StepResponse.builder().status(Status.SKIPPED).build();
     }
     cdExpressionResolver.updateExpressions(ambiance, configFiles);
+
+    publishRuntimeSecretUsage(ambiance, configFiles);
 
     JavaxValidator.validateBeanOrThrow(new ConfigFileValidatorDTO(configFiles));
     checkForAccessOrThrow(ambiance, configFiles);
@@ -178,7 +188,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
 
     final List<ConfigFileWrapper> configFiles = configFilesSweepingOutput.getFinalSvcConfigFiles();
     final Map<String, String> configFileLocation = configFilesSweepingOutput.getConfigFileLocation();
-    final NGLogCallback logCallback = ngLogCallbackUtility.getLogCallback(ambiance, false);
+    final NGLogCallback logCallback = serviveEnvironmentsLogUtility.getLogCallback(ambiance, false);
     if (EmptyPredicate.isEmpty(configFiles)) {
       logCallback.saveExecutionLog(
           "No config files configured in the service or in overrides. configFiles expressions will not work",
@@ -188,6 +198,8 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
     cdExpressionResolver.updateExpressions(ambiance, configFiles);
     JavaxValidator.validateBeanOrThrow(new ConfigFileValidatorDTO(configFiles));
     checkForAccessOrThrow(ambiance, configFiles);
+
+    publishRuntimeSecretUsage(ambiance, configFiles);
 
     List<ConfigFileOutcome> gitConfigFilesOutcome = new ArrayList<>();
     List<ConfigFileOutcome> harnessConfigFilesOutcome = new ArrayList<>();
@@ -252,6 +264,26 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
               "Values for following parameters for config file %s are either empty or not provided: {%s}. This may result in failure of deployment.",
               identifier, invalidParameters.stream().collect(Collectors.joining(","))),
           LogLevel.WARN);
+    }
+  }
+
+  private void publishRuntimeSecretUsage(Ambiance ambiance, List<ConfigFileWrapper> configFiles) {
+    if (EmptyPredicate.isEmpty(configFiles)) {
+      return;
+    }
+
+    for (ConfigFileWrapper configFile : configFiles) {
+      Set<VisitedSecretReference> secretReferences =
+          configFile == null ? Set.of() : entityReferenceExtractorUtils.extractReferredSecrets(ambiance, configFile);
+
+      secretRuntimeUsageService.createSecretRuntimeUsage(secretReferences,
+          EntityUsageDetailProto.newBuilder()
+              .setPipelineExecutionUsageData(PipelineExecutionUsageDataProto.newBuilder()
+                                                 .setPlanExecutionId(ambiance.getPlanExecutionId())
+                                                 .setStageExecutionId(ambiance.getStageExecutionId())
+                                                 .build())
+              .setUsageType(PIPELINE_EXECUTION)
+              .build());
     }
   }
 
@@ -330,7 +362,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
     ConfigFilesStepV2SweepingOutput configFilesStepV2SweepingOutput =
         (ConfigFilesStepV2SweepingOutput) outputOptional.getOutput();
 
-    final NGLogCallback logCallback = ngLogCallbackUtility.getLogCallback(ambiance, false);
+    final NGLogCallback logCallback = serviveEnvironmentsLogUtility.getLogCallback(ambiance, false);
     ConfigFilesOutcome configFilesOutcome = new ConfigFilesOutcome();
     for (String taskId : responseDataMap.keySet()) {
       ConfigFileOutcome configFileOutcome =
@@ -376,7 +408,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
   @Override
   public void handleAbort(Ambiance ambiance, EmptyStepParameters stepParameters,
       AsyncExecutableResponse executableResponse, boolean userMarked) {
-    final NGLogCallback logCallback = ngLogCallbackUtility.getLogCallback(ambiance, false);
+    final NGLogCallback logCallback = serviveEnvironmentsLogUtility.getLogCallback(ambiance, false);
     logCallback.saveExecutionLog(
         "Fetching Config Files Step was aborted", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
   }

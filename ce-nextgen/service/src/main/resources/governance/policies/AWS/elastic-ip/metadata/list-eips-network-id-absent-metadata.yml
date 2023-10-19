@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: list-eips-network-id-absent
+cloudProvider: AWS
+resourceType: elastic-ip
+description: List elastic IPs where network interface id is absent
+rulesYamlPath: ../list-eips-network-id-absent.yml

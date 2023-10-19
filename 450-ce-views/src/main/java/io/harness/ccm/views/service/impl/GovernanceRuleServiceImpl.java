@@ -155,6 +155,7 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
 
   @Override
   public void custodianValidate(Rule rule) {
+    validateSchema(rule);
     try {
       String fileName = String.join("/", "/tmp", String.join("_", rule.getName(), rule.getAccountId() + ".yaml"));
       File file = new File(fileName);
@@ -167,7 +168,6 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
       log.info("rule yaml: \n{}\n", rule.getRulesYaml());
       final ArrayList<String> Validatecmd = Lists.newArrayList("custodian", "validate", fileName);
       String processResult = getProcessExecutor().command(Validatecmd).readOutput(true).execute().outputString();
-      log.info("{}", processResult);
 
       file.delete();
 
@@ -190,7 +190,7 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
   }
 
   @Override
-  public void validateAWSSchema(Rule rule) {
+  public void validateSchema(Rule rule) {
     log.info("yaml: {}", rule.getRulesYaml());
     try {
       YamlUtils.readTree(rule.getRulesYaml());

@@ -16,6 +16,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.expression.Expression;
+import io.harness.reflection.ExpressionReflectionUtils;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.spotinst.model.ElastiGroup;
 
@@ -27,16 +28,18 @@ import lombok.experimental.NonFinal;
 @Data
 @Builder
 @OwnedBy(CDP)
-public class ElastigroupSetupCommandRequest implements ElastigroupCommandRequest {
+public class ElastigroupSetupCommandRequest
+    implements ElastigroupCommandRequest, ExpressionReflectionUtils.NestedAnnotationResolver {
   String accountId;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
-  String elastigroupConfiguration;
-  String elastigroupNamePrefix;
+  @NonFinal @Expression(ALLOW_SECRETS) String elastigroupConfiguration;
+  @NonFinal @Expression(ALLOW_SECRETS) String elastigroupNamePrefix;
   ElastiGroup generatedElastigroupConfig;
   Integer maxInstanceCount;
   boolean useCurrentRunningInstanceCount;
   String startupScript;
+  @NonFinal @Expression(ALLOW_SECRETS) String decodedStartupScript;
   String image;
   boolean blueGreen;
   ResizeStrategy resizeStrategy;

@@ -1298,8 +1298,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:RnGwmapfLPyTIuQ8FfSeWo29v5gyPgMF4DAhWX9RxcY=",
-    version = "v1.32.1",
+    sum = "h1:k13bOwbpSPX+IvswKVOECAi68tqmpyQ1stuXQYR3rZk=",
+    version = "v1.32.3",
 )
 
 go_repository(
@@ -4630,8 +4630,8 @@ go_repository(
 go_repository(
     name = "com_github_harness_ti_client",
     importpath = "github.com/harness/ti-client",
-    sum = "h1:MVFzBU0ScnbCHFxzyMZo5oLzeDwQLwaqibXQtjUzcvw=",
-    version = "v0.0.0-20230919114308-05b6697b67f9",
+    sum = "h1:TVOthul9zrytCGkcC6WS/ZZlV1uxUbWBDG1p4xcAI54=",
+    version = "v0.0.0-20231018000842-d164bcf4f802",
 )
 
 go_rules_dependencies()
@@ -4709,7 +4709,7 @@ plain_artifacts = [
     "ch.qos.logback:logback-classic:1.2.11",
     "ch.qos.logback:logback-core:1.2.11",
     "com.auth0:java-jwt:3.1.0",
-    "com.azure:azure-core:1.29.1",
+    "com.azure:azure-core:1.36.0",
     "com.azure:azure-identity:1.5.0",
     "com.azure:azure-core-http-netty:1.11.9",
     "com.azure:azure-core-http-okhttp:1.10.1",
@@ -4878,7 +4878,7 @@ plain_artifacts = [
     "com.nimbusds:oauth2-oidc-sdk:7.4",
     "org.asynchttpclient:async-http-client:2.12.3",
     "com.novemberain:quartz-mongodb:2.2.0-rc2",
-    "com.offbytwo.jenkins:jenkins-client:0.3.10",
+    "com.offbytwo.jenkins:jenkins-client:0.3.11",
     "com.openpojo:openpojo:0.8.3",
     "com.palominolabs.metrics:metrics-guice:3.2.0",
     "com.papertrail:profiler:1.0.2",
@@ -5018,7 +5018,7 @@ plain_artifacts = [
     "io.grpc:grpc-netty-shaded:1.48.0",
     "io.grpc:grpc-netty:1.48.0",
     "io.grpc:grpc-protobuf-lite:1.50.1",
-    "io.grpc:grpc-protobuf:1.50.1",
+    "io.grpc:grpc-protobuf:1.58.0",
     "io.grpc:grpc-services:1.50.1",
     "io.grpc:grpc-stub:1.50.1",
     "io.gsonfire:gson-fire:1.8.3",
@@ -5085,6 +5085,7 @@ plain_artifacts = [
     "javax.xml.bind:jaxb-api:2.3.0",
     "javax.xml.soap:javax.xml.soap-api:1.4.0",
     "javax.xml.ws:jaxws-api:2.3.1",
+    "javax.xml.stream:stax-api:1.0-2",
     "jaxen:jaxen:1.1.6",
     "javax:javaee-api:8.0",
     "joda-time:joda-time:2.10.6",
@@ -5170,7 +5171,6 @@ plain_artifacts = [
     "org.apache.maven.plugin-tools:maven-plugin-annotations:3.4",
     "org.apache.maven:maven-plugin-api:3.6.3",
     "org.apache.maven:maven-plugin-api:3.6.3",
-    "org.apache.neethi:neethi:3.1.1",
     "org.apache.santuario:xmlsec:2.2.4",
     "org.apache.sshd:sshd-core:2.10.0",
     "org.apache.sshd:sshd-common:2.10.0",
@@ -5215,7 +5215,7 @@ plain_artifacts = [
     "org.eclipse.jetty:jetty-alpn-server:9.4.51.v20230217",
     "org.eclipse.jetty:jetty-client:9.4.51.v20230217",
     "org.eclipse.jetty:jetty-continuation:9.4.51.v20230217",
-    "org.eclipse.jetty:jetty-http:9.4.51.v20230217",
+    "org.eclipse.jetty:jetty-http:9.4.53.v20231009",
     "org.eclipse.jetty:jetty-io:9.4.51.v20230217",
     "org.eclipse.jetty:jetty-security:9.4.51.v20230217",
     "org.eclipse.jetty:jetty-server:9.4.51.v20230217",

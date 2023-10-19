@@ -234,7 +234,7 @@ public class BuilderFactory {
         .packageDescription("packageDescription")
         .packageLicense(List.of("license1", "license2"))
         .packageSourceInfo("packageSourceInfo")
-        .packageVersion("packageSupplierName")
+        .packageVersion("packageVersion")
         .packageSupplierName("packageSupplierName")
         .packageOriginatorName("packageOriginatorName")
         .originatorType("originatorType")

@@ -14,9 +14,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
-import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.gcp.GcpCapabilityHelper;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -58,13 +56,15 @@ public class HelmValuesFetchRequest implements TaskParameters, ExecutionCapabili
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     HelmVersion helmVersion = helmChartManifestDelegateConfig.getHelmVersion();
     StoreDelegateConfig storeDelegateConfig = helmChartManifestDelegateConfig.getStoreDelegateConfig();
+    String chartName = helmChartManifestDelegateConfig.getChartName();
 
-    return getHelmExecutionCapabilities(
-        helmVersion, storeDelegateConfig, maskingEvaluator, helmChartManifestDelegateConfig.isIgnoreResponseCode());
+    return getHelmExecutionCapabilities(helmVersion, storeDelegateConfig, maskingEvaluator,
+        helmChartManifestDelegateConfig.isIgnoreResponseCode(), chartName);
   }
 
   public static List<ExecutionCapability> getHelmExecutionCapabilities(HelmVersion helmVersion,
-      StoreDelegateConfig storeDelegateConfig, ExpressionEvaluator maskingEvaluator, boolean ignoreResponseCode) {
+      StoreDelegateConfig storeDelegateConfig, ExpressionEvaluator maskingEvaluator, boolean ignoreResponseCode,
+      String chartName) {
     List<ExecutionCapability> capabilities = new ArrayList<>();
     if (helmVersion != null) {
       capabilities.add(HelmInstallationCapability.builder()
@@ -94,14 +94,12 @@ public class HelmValuesFetchRequest implements TaskParameters, ExecutionCapabili
 
       case OCI_HELM:
         OciHelmStoreDelegateConfig ociHelmStoreConfig = (OciHelmStoreDelegateConfig) storeDelegateConfig;
-        ConnectorConfigDTO connectorConfigDTO = ociHelmStoreConfig.getConnectorConfigDTO();
         String criteria = null;
-        if (connectorConfigDTO instanceof AwsConnectorDTO) {
-          criteria = ociHelmStoreConfig.getRepoName() + ":" + ociHelmStoreConfig.getRegion();
-          capabilities.addAll(
-              AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorConfigDTO, maskingEvaluator));
-        } else if (connectorConfigDTO instanceof OciHelmConnectorDTO
-            || ociHelmStoreConfig.getOciHelmConnector() != null) {
+        if (ociHelmStoreConfig.getAwsConnectorDTO() != null) {
+          criteria = chartName + ":" + ociHelmStoreConfig.getRegion();
+          capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
+              ociHelmStoreConfig.getAwsConnectorDTO(), maskingEvaluator));
+        } else if (ociHelmStoreConfig.getOciHelmConnector() != null) {
           criteria = ociHelmStoreConfig.getRepoUrl();
           OciHelmConnectorDTO ociHelmConnector = ociHelmStoreConfig.getOciHelmConnector();
           populateDelegateSelectorCapability(capabilities, ociHelmConnector.getDelegateSelectors());

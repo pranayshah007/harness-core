@@ -6,9 +6,11 @@
  */
 
 package io.harness.yaml.core.variables.v1;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.yaml.core.variables.NGVariableV1;
@@ -19,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.Value;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Value
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NGVariableV1Wrapper {

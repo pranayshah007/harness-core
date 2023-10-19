@@ -82,63 +82,6 @@ Create the name of the delegate upgrader image to use
 {{ include "common.images.image" (dict "imageRoot" .Values.upgrader_docker_image.image "global" .Values.global) }}
 {{- end }}
 
-
-## Generate ffString based of feature flag values and globally enabled features
-{{- define "migrator.ffString" -}}
-{{- $flags := .Values.featureFlags.Base }}
-{{- if .Values.global.gitops.enabled }}
-{{- $flags = printf "%s,%s" $flags $.Values.featureFlags.GitOps }}
-{{- end }}
-{{- if .Values.global.opa.enabled }}
-{{- $flags = printf "%s,%s" $flags $.Values.featureFlags.OPA }}
-{{- end }}
-{{- if not .Values.global.ngGitSync.enabled }}
-{{- $flags = printf "%s,%s" $flags $.Values.featureFlags.OLDGITSYNC }}
-{{- end }}
-{{- if .Values.global.cd.enabled }}
-{{- $flags = printf "%s,%s" $flags .Values.featureFlags.CD }}
-{{- end }}
-{{- if .Values.global.ci.enabled }}
-{{- $flags = printf "%s,%s" $flags .Values.featureFlags.CI }}
-{{- end }}
-{{- if .Values.global.sto.enabled }}
-{{- $flags = printf "%s,%s" $flags .Values.featureFlags.STO }}
-{{- end }}
-{{- if .Values.global.srm.enabled }}
-{{- $flags = printf "%s,%s" $flags .Values.featureFlags.SRM }}
-{{- end }}
-{{- if .Values.global.ngcustomdashboard.enabled }}
-{{- $flags = printf "%s,%s" $flags .Values.featureFlags.CDB }}
-{{- end }}
-{{- if .Values.global.ff.enabled }}
-{{- $flags = printf "%s,%s" $flags .Values.featureFlags.FF }}
-{{- end }}
-{{- if .Values.global.ccm.enabled }}
-{{- $flags = printf "%s,%s" $flags .Values.featureFlags.CCM }}
-{{- end }}
-{{- if .Values.global.saml.autoaccept }}
-{{- $flags = printf "%s,%s" $flags .Values.featureFlags.SAMLAutoAccept }}
-{{- end }}
-{{- $length := len .Values.global.license.ng }}
-{{- if gt $length 0}}
-{{- $flags = printf "%s,%s" $flags .Values.featureFlags.LICENSE }}
-{{- end }}
-{{- if .Values.global.ng.enabled }}
-{{- $flags = printf "%s,%s" $flags .Values.featureFlags.NG }}
-{{- end }}
-{{- if .Values.global.chaos.enabled }}
-{{- $flags = printf "%s,%s" $flags .Values.featureFlags.CHAOS }}
-{{- end }}
-{{- if .Values.global.cet.enabled }}
-{{- $flags = printf "%s,%s" $flags .Values.featureFlags.CET }}
-{{- end }}
-{{- $length2 := len .Values.featureFlags.ADDITIONAL }}
-{{- if gt $length2 0}}
-{{- $flags = printf "%s,%s" $flags .Values.featureFlags.ADDITIONAL }}
-{{- end }}
-{{- printf "%s" $flags }}
-{{- end }}
-
 {{/*
 Randomly Creates Secret for access-control unless overwritten.
 */}}

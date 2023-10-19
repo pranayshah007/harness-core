@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: rds-low-util-list
+cloudProvider: AWS
+resourceType: rds
+description: List all underutilized RDS instances
+rulesYamlPath: ../rds-low-util-list.yml

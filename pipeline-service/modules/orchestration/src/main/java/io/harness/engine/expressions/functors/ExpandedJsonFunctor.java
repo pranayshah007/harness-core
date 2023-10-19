@@ -6,9 +6,11 @@
  */
 
 package io.harness.engine.expressions.functors;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.graph.stepDetail.service.NodeExecutionInfoService;
@@ -21,6 +23,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.Builder;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Builder
 public class ExpandedJsonFunctor {
@@ -47,7 +50,7 @@ public class ExpandedJsonFunctor {
     } else {
       response.put("strategy",
           nodeExecutionInfoService.fetchStrategyObjectMap(
-              AmbianceUtils.obtainCurrentLevel(ambiance), useMatrixFieldName));
+              AmbianceUtils.obtainCurrentLevel(ambiance).getRuntimeId(), useMatrixFieldName));
     }
     return response;
   }

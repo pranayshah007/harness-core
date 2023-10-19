@@ -6,10 +6,12 @@
  */
 
 package io.harness.serializer.morphia;
-
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.OrchestrationEventLog;
 import io.harness.engine.expressions.usages.beans.ExpressionUsagesEntity;
 import io.harness.engine.interrupts.AbortInterruptCallback;
@@ -23,6 +25,7 @@ import io.harness.morphia.MorphiaRegistrarHelperPut;
 
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(CDC)
 public class OrchestrationMorphiaRegistrar implements MorphiaRegistrar {
   @Override

@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: iam-no-used-allow-all-policy
+cloudProvider: AWS
+resourceType: iam-policy
+description: List all used and allow all iam policies
+rulesYamlPath: ../iam-no-used-allow-all-policy.yml

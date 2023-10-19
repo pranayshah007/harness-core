@@ -1,0 +1,6 @@
+policies:
+  - name: sql-database-no-tde
+    resource: azure.sql-database
+    filters:
+      - type: transparent-data-encryption
+        enabled: false

@@ -6,15 +6,17 @@
  */
 
 package io.harness.cdng.plugininfoproviders;
-
 import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.DIFF;
 import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_ACTION;
 import static io.harness.cdng.provision.awscdk.AwsCdkEnvironmentVariables.PLUGIN_AWS_CDK_STACK_NAMES;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.provision.awscdk.AwsCdkDiffStepInfo;
 import io.harness.cdng.provision.awscdk.AwsCdkHelper;
@@ -34,6 +36,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
 @OwnedBy(HarnessTeam.CDP)
 public class AwsCdkDiffPluginInfoProvider extends AbstractPluginInfoProvider {
   @Inject private AwsCdkHelper awsCdkStepHelper;

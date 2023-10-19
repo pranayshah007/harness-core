@@ -46,16 +46,10 @@ public class ProxyThroughDsl implements DataSourceLocation {
     requestBody = replaceRequestBodyPlaceholdersIfAny(possibleReplaceableRequestBodyPairs, requestBody);
     apiUrl = replaceUrlsPlaceholdersIfAny(apiUrl, possibleReplaceableUrlPairs);
 
-    log.info("ProxyThroughDsl, Replaced API - {} Replaced Body - {} Replaced headers - {}", apiUrl, requestBody,
-        apiRequestDetails.getHeaders());
-
     apiRequestDetails.setRequestBody(requestBody);
     apiRequestDetails.setUrl(apiUrl);
     DslClient dslClient = dslClientFactory.getClient(accountIdentifier, null);
     Response response = getResponse(apiRequestDetails, dslClient, accountIdentifier);
-
-    log.info("Response Status", response.getStatus());
-    log.info("Response Entity", response.getEntity().toString());
 
     return GsonUtils.convertJsonStringToObject(response.getEntity().toString(), Map.class);
   }

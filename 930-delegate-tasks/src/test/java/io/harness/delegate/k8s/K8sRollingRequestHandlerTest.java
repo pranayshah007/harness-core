@@ -119,7 +119,7 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
 
     doReturn(releaseHandler).when(taskHelperBase).getReleaseHandler(anyBoolean());
     doReturn(releaseHistory).when(releaseHandler).getReleaseHistory(any(), any());
-    doReturn(release).when(releaseHandler).createRelease(anyString(), anyInt());
+    doReturn(release).when(releaseHandler).createRelease(anyString(), anyInt(), any());
     doReturn(release).when(release).setReleaseData(anyList(), anyBoolean());
   }
 
@@ -212,7 +212,7 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
     K8SLegacyReleaseHistory releaseHistory = mock(K8SLegacyReleaseHistory.class);
     ReleaseHistory releaseHistoryContent = mock(ReleaseHistory.class);
     K8sLegacyRelease currentRelease = mock(K8sLegacyRelease.class);
-    doReturn(currentRelease).when(releaseHandler).createRelease(anyString(), anyInt());
+    doReturn(currentRelease).when(releaseHandler).createRelease(anyString(), anyInt(), any());
     doReturn(currentRelease).when(currentRelease).setReleaseData(anyList(), anyBoolean());
     doReturn(releaseHistoryContent).when(releaseHistory).getReleaseHistory();
     doReturn(null).when(releaseHistoryContent).addReleaseToReleaseHistory(any());

@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.refresh.helper;
 
+import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.rule.OwnerRule.INDER;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,6 +25,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.customdeployment.helper.CustomDeploymentEntitySetupHelper;
 import io.harness.cdng.gitops.service.ClusterService;
+import io.harness.connector.services.ConnectorService;
 import io.harness.eventsframework.api.Producer;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -52,6 +54,7 @@ import io.harness.setupusage.InfrastructureEntitySetupUsageHelper;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.io.Resources;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -98,11 +101,14 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
   @Mock ServiceOverrideV2ValidationHelper overrideV2ValidationHelper;
   @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
   @Mock private Call<RestResponse<Boolean>> restRequest;
+  @Mock io.harness.utils.NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  @Mock @Named(DEFAULT_CONNECTOR_SERVICE) private ConnectorService connectorService;
 
   @Before
   public void setup() throws IOException {
     serviceEntityService = spy(new ServiceEntityServiceImpl(serviceRepository, entitySetupUsageService, eventProducer,
-        outboxService, transactionTemplate, serviceOverrideService, serviceOverridesServiceV2, entitySetupUsageHelper));
+        outboxService, transactionTemplate, serviceOverrideService, serviceOverridesServiceV2, entitySetupUsageHelper,
+        ngFeatureFlagHelperService, connectorService));
     infrastructureEntityService = spy(new InfrastructureEntityServiceImpl(infrastructureRepository, transactionTemplate,
         outboxService, customDeploymentEntitySetupHelper, infrastructureEntitySetupUsageHelper, hPersistence,
         serviceOverridesServiceV2, overrideV2ValidationHelper));

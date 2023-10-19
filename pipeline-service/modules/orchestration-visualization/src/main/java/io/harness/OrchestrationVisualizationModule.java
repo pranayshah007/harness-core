@@ -26,7 +26,7 @@ import io.harness.skip.service.impl.VertexSkipperServiceImpl;
 import io.harness.threading.ThreadPool;
 import io.harness.threading.ThreadPoolConfig;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.codahale.metrics.MetricRegistry;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -40,7 +40,7 @@ public class OrchestrationVisualizationModule extends AbstractModule {
   private static OrchestrationVisualizationModule instance;
   private final EventsFrameworkConfiguration eventsFrameworkConfiguration;
   private final ThreadPoolConfig visualizationThreadPoolConfig;
-
+  private final MetricRegistry threadPoolMetricRegistry;
   private final Integer graphConsumerSleepMs;
 
   public static OrchestrationVisualizationModule getInstance(EventsFrameworkConfiguration eventsFrameworkConfiguration,
@@ -52,11 +52,31 @@ public class OrchestrationVisualizationModule extends AbstractModule {
     return instance;
   }
 
+  public static OrchestrationVisualizationModule getInstance(EventsFrameworkConfiguration eventsFrameworkConfiguration,
+      ThreadPoolConfig visualizationThreadPoolConfig, Integer graphConsumerSleepMs,
+      MetricRegistry threadPoolMetricRegistry) {
+    if (instance == null) {
+      instance = new OrchestrationVisualizationModule(
+          eventsFrameworkConfiguration, visualizationThreadPoolConfig, graphConsumerSleepMs, threadPoolMetricRegistry);
+    }
+    return instance;
+  }
+
   OrchestrationVisualizationModule(EventsFrameworkConfiguration eventsFrameworkConfiguration,
       ThreadPoolConfig visualizationThreadPoolConfig, Integer graphConsumerSleepMs) {
     this.eventsFrameworkConfiguration = eventsFrameworkConfiguration;
     this.visualizationThreadPoolConfig = visualizationThreadPoolConfig;
     this.graphConsumerSleepMs = graphConsumerSleepMs == null ? 0 : graphConsumerSleepMs;
+    this.threadPoolMetricRegistry = new MetricRegistry();
+  }
+
+  OrchestrationVisualizationModule(EventsFrameworkConfiguration eventsFrameworkConfiguration,
+      ThreadPoolConfig visualizationThreadPoolConfig, Integer graphConsumerSleepMs,
+      MetricRegistry threadPoolMetricRegistry) {
+    this.eventsFrameworkConfiguration = eventsFrameworkConfiguration;
+    this.visualizationThreadPoolConfig = visualizationThreadPoolConfig;
+    this.graphConsumerSleepMs = graphConsumerSleepMs == null ? 0 : graphConsumerSleepMs;
+    this.threadPoolMetricRegistry = threadPoolMetricRegistry;
   }
 
   @Override
@@ -83,10 +103,8 @@ public class OrchestrationVisualizationModule extends AbstractModule {
   @Singleton
   @Named("OrchestrationVisualizationExecutorService")
   public ExecutorService orchestrationVisualizationExecutorService() {
-    return ThreadPool.create(visualizationThreadPoolConfig.getCorePoolSize(),
-        visualizationThreadPoolConfig.getMaxPoolSize(), visualizationThreadPoolConfig.getIdleTime(),
-        visualizationThreadPoolConfig.getTimeUnit(),
-        new ThreadFactoryBuilder().setNameFormat("OrchestrationVisualizationExecutorService-%d").build());
+    return ThreadPool.getInstrumentedExecutorService(
+        visualizationThreadPoolConfig, "OrchestrationVisualizationExecutorService", threadPoolMetricRegistry);
   }
 
   @Provides

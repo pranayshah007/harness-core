@@ -6,10 +6,12 @@
  */
 
 package io.harness.ngtriggers.expressions.functors;
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.execution.PlanExecutionMetadata;
@@ -21,6 +23,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
+    components = {HarnessModuleComponent.CDS_EXPRESSION_ENGINE})
 @OwnedBy(PIPELINE)
 public class EventPayloadFunctor implements LateBindingValue {
   private final Ambiance ambiance;

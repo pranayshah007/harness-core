@@ -1,0 +1,13 @@
+policies:
+  - name: tag-loadbalancer-with-ipv6-frontend
+    resource: azure.loadbalancer
+    filters:
+      - type: frontend-public-ip
+        key: properties.publicIPAddressVersion
+        op: in
+        value_type: normalize
+        value: "ipv6"
+    actions:
+      - type: tag
+        tag: IPv6
+        value: True

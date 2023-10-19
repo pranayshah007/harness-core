@@ -17,7 +17,7 @@ import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.exception.ScmInternalServerErrorException;
 import io.harness.exception.UnexpectedException;
 import io.harness.gitsync.common.dtos.GitSyncSettingsDTO;
-import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
+import io.harness.gitsync.common.service.GitSyncConnectorService;
 import io.harness.gitsync.common.service.GitSyncSettingsService;
 import io.harness.gitsync.common.service.ScmClientFacilitatorService;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
@@ -37,17 +37,17 @@ public class ScmOrchestratorServiceImpl implements ScmOrchestratorService {
   GitSyncSettingsService gitSyncSettingsService;
   ScmClientFacilitatorService scmClientManagerService;
   ScmClientFacilitatorService scmClientDelegateService;
-  GitSyncConnectorHelper gitSyncConnectorHelper;
+  GitSyncConnectorService gitSyncConnectorService;
 
   @Inject
   public ScmOrchestratorServiceImpl(GitSyncSettingsService gitSyncSettingsService,
       @Named(SCM_ON_MANAGER) ScmClientFacilitatorService scmClientManagerService,
       @Named(SCM_ON_DELEGATE) ScmClientFacilitatorService scmClientDelegateService,
-      GitSyncConnectorHelper gitSyncConnectorHelper) {
+      GitSyncConnectorService gitSyncConnectorService) {
     this.gitSyncSettingsService = gitSyncSettingsService;
     this.scmClientManagerService = scmClientManagerService;
     this.scmClientDelegateService = scmClientDelegateService;
-    this.gitSyncConnectorHelper = gitSyncConnectorHelper;
+    this.gitSyncConnectorService = gitSyncConnectorService;
   }
 
   @Override
@@ -87,7 +87,7 @@ public class ScmOrchestratorServiceImpl implements ScmOrchestratorService {
   public <R> R processScmRequestUsingConnectorSettings(Function<ScmClientFacilitatorService, R> scmRequest,
       String projectIdentifier, String orgIdentifier, String accountId, String connectorIdentifierRef,
       String connectorRepo, String connectorBranch) {
-    final ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnector(
+    final ScmConnector scmConnector = gitSyncConnectorService.getScmConnector(
         accountId, orgIdentifier, projectIdentifier, connectorIdentifierRef, connectorRepo, connectorBranch);
     if (scmConnector instanceof ManagerExecutable) {
       final Boolean executeOnDelegate = ((ManagerExecutable) scmConnector).getExecuteOnDelegate();
@@ -102,7 +102,7 @@ public class ScmOrchestratorServiceImpl implements ScmOrchestratorService {
   public <R> R processScmRequestUsingConnectorSettings(Function<ScmClientFacilitatorService, R> scmRequest,
       String projectIdentifier, String orgIdentifier, String accountId, String connectorIdentifierRef) {
     final ScmConnector scmConnector =
-        gitSyncConnectorHelper.getScmConnector(accountId, orgIdentifier, projectIdentifier, connectorIdentifierRef);
+        gitSyncConnectorService.getScmConnector(accountId, orgIdentifier, projectIdentifier, connectorIdentifierRef);
     return processScmRequestUsingConnectorSettings(scmRequest, scmConnector);
   }
 

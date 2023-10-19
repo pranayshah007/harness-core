@@ -6,9 +6,11 @@
  */
 
 package io.harness;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.DelegateHeartbeatResponse;
 import io.harness.beans.DelegateTaskEventsResponse;
 import io.harness.connector.ConnectivityStatus;
@@ -59,6 +61,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.Path;
 import org.reflections.Reflections;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_GITOPS})
 @OwnedBy(HarnessTeam.CDP)
 class MicroserviceInterfaceTool {
   static void log(String message) {

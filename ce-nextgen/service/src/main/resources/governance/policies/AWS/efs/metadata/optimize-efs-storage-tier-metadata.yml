@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: optimize-efs-storage-tier
+cloudProvider: AWS
+resourceType: efs
+description: Configure lifecycle policy for efs optimisation where ThroughputMode is bursting
+rulesYamlPath: ../optimize-efs-storage-tier.yml

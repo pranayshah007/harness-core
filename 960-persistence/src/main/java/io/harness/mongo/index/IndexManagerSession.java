@@ -6,7 +6,6 @@
  */
 
 package io.harness.mongo;
-
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.ListUtils.OneAndOnlyOne.MANY;
@@ -30,8 +29,11 @@ import io.harness.annotation.IgnoreUnusedIndex;
 import io.harness.annotations.SecondaryStoreIn;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.StoreInMultiple;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.ListUtils.OneAndOnlyOne;
 import io.harness.govern.Switch;
 import io.harness.logging.AutoLogContext;
@@ -86,6 +88,7 @@ import lombok.SneakyThrows;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 @OwnedBy(HarnessTeam.PL)
 public class IndexManagerSession {
@@ -605,6 +608,7 @@ public class IndexManagerSession {
         "timeSeriesAnomaliesRecords", "timeSeriesCumulativeSums",
         // telemetry
         "ciTelemetrySentStatus", "ciAccountExecutionMetadata", "pluginMetadataConfig", "pluginMetadataStatus",
+        "ciResourceCleanup",
         // cd-telemetry
         "cdTelemetrySentStatus", "cdAccountExecutionMetadata");
 

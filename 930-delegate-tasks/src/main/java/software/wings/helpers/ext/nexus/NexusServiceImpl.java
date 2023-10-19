@@ -111,7 +111,7 @@ public class NexusServiceImpl implements NexusService {
     } catch (WingsException e) {
       throw e;
     } catch (Exception e) {
-      log.error(
+      log.warn(
           "Failed to fetch images/groups from Nexus server " + nexusConfig.getNexusUrl() + " under repo " + repoId, e);
       if (e.getCause() instanceof XMLStreamException) {
         throw new InvalidArtifactServerException("Nexus may not be running", e);
@@ -136,7 +136,7 @@ public class NexusServiceImpl implements NexusService {
     try {
       return nexusTwoService.getArtifactPaths(nexusConfig, repoId);
     } catch (final IOException e) {
-      log.error("Error occurred while retrieving repository contents from Nexus Server " + nexusConfig.getNexusUrl()
+      log.warn("Error occurred while retrieving repository contents from Nexus Server " + nexusConfig.getNexusUrl()
               + " for repository " + repoId,
           e);
       handleException(e);
@@ -149,7 +149,7 @@ public class NexusServiceImpl implements NexusService {
     try {
       return nexusTwoService.getArtifactPaths(nexusConfig, repoId, name);
     } catch (final IOException e) {
-      log.error("Error occurred while retrieving Artifact paths from Nexus server " + nexusConfig.getNexusUrl()
+      log.warn("Error occurred while retrieving Artifact paths from Nexus server " + nexusConfig.getNexusUrl()
               + " for Repository " + repoId,
           e);
       handleException(e);
@@ -171,7 +171,7 @@ public class NexusServiceImpl implements NexusService {
             nexusConfig, artifactStreamAttributes, artifactMetadata, delegateId, taskId, accountId, notifyResponseData);
       }
     } catch (IOException e) {
-      log.error("Error occurred while downloading the artifact", e);
+      log.warn("Error occurred while downloading the artifact", e);
       throw new ArtifactServerException(ExceptionUtils.getMessage(e), USER);
     }
   }
@@ -181,7 +181,7 @@ public class NexusServiceImpl implements NexusService {
     try {
       return nexusTwoService.getArtifactNames(nexusConfig, repoId, path);
     } catch (final IOException e) {
-      log.error(
+      log.warn(
           format("Error occurred while retrieving artifact names from Nexus server %s for Repository %s under path %s",
               nexusConfig.getNexusUrl(), repoId, path),
           e);
@@ -197,7 +197,7 @@ public class NexusServiceImpl implements NexusService {
         return nexusThreeService.getArtifactNames(nexusConfig, repoId, path);
       }
     } catch (final IOException e) {
-      log.error(
+      log.warn(
           format("Error occurred while retrieving artifact names from Nexus server %s for Repository %s under path %s",
               nexusConfig.getNexusUrl(), repoId, path),
           e);
@@ -214,7 +214,7 @@ public class NexusServiceImpl implements NexusService {
         return nexusThreeService.getPackageNamesBuildDetails(nexusConfig, repoId, packageName);
       }
     } catch (final IOException e) {
-      log.error(
+      log.warn(
           format(
               "Error occurred while retrieving package names from Nexus server %s for Repository %s and package name %s",
               nexusConfig.getNexusUrl(), repoId, packageName),
@@ -235,7 +235,7 @@ public class NexusServiceImpl implements NexusService {
         return nexusThreeService.getVersions(nexusConfig, repoId, groupId, artifactName, extension, classifier);
       }
     } catch (final IOException e) {
-      log.error(
+      log.warn(
           format(
               "Error occurred while retrieving versions from Nexus server %s for Repository %s under group id %s and artifact name %s",
               nexusConfig.getNexusUrl(), repoId, groupId, artifactName),
@@ -259,7 +259,7 @@ public class NexusServiceImpl implements NexusService {
         return nexusThreeService.existsVersion(nexusConfig, repoId, groupId, artifactName, extension, classifier);
       }
     } catch (final IOException e) {
-      log.error(
+      log.warn(
           format(
               "Error occurred while retrieving versions from Nexus server %s for Repository %s under group id %s and artifact name %s",
               nexusConfig.getNexusUrl(), repoId, groupId, artifactName),
@@ -280,7 +280,7 @@ public class NexusServiceImpl implements NexusService {
         return nexusThreeService.getPackageVersions(nexusConfig, repoId, packageName);
       }
     } catch (final IOException e) {
-      log.error(
+      log.warn(
           format("Error occurred while retrieving versions from Nexus server %s for Repository %s under package %s",
               nexusConfig.getNexusUrl(), repoId, packageName),
           e);
@@ -298,7 +298,7 @@ public class NexusServiceImpl implements NexusService {
       try {
         return nexusTwoService.getVersion(nexusConfig, repoId, groupId, artifactName, extension, classifier, buildNo);
       } catch (final IOException e) {
-        log.error(
+        log.warn(
             format(
                 "Error occurred while retrieving versions from Nexus server %s for Repository %s under group id %s and artifact name %s",
                 nexusConfig.getNexusUrl(), repoId, groupId, artifactName),
@@ -321,7 +321,7 @@ public class NexusServiceImpl implements NexusService {
         return Collections.singletonList(
             nexusTwoService.getVersion(repositoryFormat, nexusConfig, repoId, packageName, buildNo));
       } catch (final IOException e) {
-        log.error(
+        log.warn(
             format("Error occurred while retrieving version %s from Nexus server %s for Repository %s under package %s",
                 buildNo, nexusConfig.getNexusUrl(), repoId, packageName),
             e);
@@ -350,7 +350,7 @@ public class NexusServiceImpl implements NexusService {
         return nexusThreeService.getDockerTags(nexusConfig, artifactStreamAttributes);
       }
     } catch (IOException e) {
-      log.error("Error occurred while retrieving tags from Nexus server {} for repository {} under image {}",
+      log.warn("Error occurred while retrieving tags from Nexus server {} for repository {} under image {}",
           nexusConfig.getNexusUrl(), artifactStreamAttributes.getJobName(), artifactStreamAttributes.getImageName(), e);
       handleException(e);
     }

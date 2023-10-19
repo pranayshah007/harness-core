@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: ec2-unoptimized-ebs
+cloudProvider: AWS
+resourceType: ec2
+description: List all EC2s where ebs ebsOptimized is false
+rulesYamlPath: ../ec2-unoptimized-ebs.yml

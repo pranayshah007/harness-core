@@ -7,9 +7,6 @@
 
 package io.harness.idp.scorecard.datasources.providers;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.idp.common.Constants.DATA_POINT_VALUE_KEY;
-import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 import static io.harness.idp.common.Constants.LOCAL_ENV;
 import static io.harness.idp.common.Constants.LOCAL_HOST;
 import static io.harness.idp.common.Constants.PRE_QA_ENV;
@@ -21,7 +18,6 @@ import static io.harness.idp.common.Constants.QA_HOST;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.backstagebeans.BackstageCatalogEntity;
-import io.harness.idp.common.CommonUtils;
 import io.harness.idp.scorecard.datapoints.entity.DataPointEntity;
 import io.harness.idp.scorecard.datapoints.parser.DataPointParser;
 import io.harness.idp.scorecard.datapoints.parser.DataPointParserFactory;
@@ -118,17 +114,9 @@ public abstract class DataSourceProvider {
       DataPointEntity dataPointEntity = entry.getKey();
 
       Object values;
-      String errorMessage = (String) CommonUtils.findObjectByName(response, ERROR_MESSAGE_KEY);
-      if (!isEmpty(errorMessage)) {
-        Map<String, Object> dataPoint = new HashMap<>();
-        dataPoint.put(DATA_POINT_VALUE_KEY, null);
-        dataPoint.put(ERROR_MESSAGE_KEY, errorMessage);
-        values = dataPoint;
-      } else {
-        Set<String> inputValues = entry.getValue();
-        DataPointParser dataPointParser = dataPointParserFactory.getParser(dataPointEntity.getIdentifier());
-        values = dataPointParser.parseDataPoint(response, dataPointEntity, inputValues);
-      }
+      Set<String> inputValues = entry.getValue();
+      DataPointParser dataPointParser = dataPointParserFactory.getParser(dataPointEntity.getIdentifier());
+      values = dataPointParser.parseDataPoint(response, dataPointEntity, inputValues);
       if (values != null) {
         dataPointValues.put(dataPointEntity.getIdentifier(), values);
       }

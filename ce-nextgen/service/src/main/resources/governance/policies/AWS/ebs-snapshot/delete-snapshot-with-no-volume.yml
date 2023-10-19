@@ -1,0 +1,10 @@
+policies:
+  - name: snapshot-with-no-volume
+    description: Find any snapshots that do not have a corresponding volume
+    resource: aws.ebs-snapshot
+    filters:
+      - type: volume
+        key: VolumeId
+        value: absent
+    actions:
+      - delete

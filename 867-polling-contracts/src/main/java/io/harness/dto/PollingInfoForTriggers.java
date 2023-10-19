@@ -15,4 +15,5 @@ import lombok.Data;
 public class PollingInfoForTriggers {
   String perpetualTaskId;
   PolledResponse polledResponse;
+  String pollingDocId;
 }

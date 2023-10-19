@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: cosmos-firewall-clear
+cloudProvider: AZURE
+resourceType: azure.cosmosdb
+description: Clear the IP firewall rules for Azure Cosmos DB if the IP range filter is not empty
+rulesYamlPath: ../cosmos-firewall-clear.yml

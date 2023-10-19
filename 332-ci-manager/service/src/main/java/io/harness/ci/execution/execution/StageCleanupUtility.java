@@ -10,10 +10,15 @@ package io.harness.ci.execution.execution;
 import static io.harness.beans.sweepingoutputs.PodCleanupDetails.CLEANUP_DETAILS;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.LITE_ENGINE_PORT;
+import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
+import static io.harness.steps.StepUtils.buildAbstractions;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.app.beans.dto.CITaskDetails;
+import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
+import io.harness.beans.outcomes.VmDetailsOutcome;
 import io.harness.beans.sweepingoutputs.ContextElement;
 import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
@@ -27,14 +32,17 @@ import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.execution.buildstate.ConnectorUtils;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.ci.CICleanupTaskParams;
+import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.k8s.CIK8CleanupTaskParams;
 import io.harness.delegate.beans.ci.pod.CICommonConstants;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.CIVmCleanupTaskParams;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmCleanupTaskParams;
+import io.harness.encryption.Scope;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.NGAccess;
+import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
@@ -42,11 +50,23 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.repositories.CITaskDetailsRepository;
+import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.waiter.WaitNotifyEngine;
 
+import software.wings.beans.SerializationFormat;
+import software.wings.beans.TaskType;
+
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.fabric8.utils.Strings;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -58,11 +78,24 @@ public class StageCleanupUtility {
   @Inject private ConnectorUtils connectorUtils;
   @Inject private OutcomeService outcomeService;
   @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
+  @Inject private CITaskDetailsRepository ciTaskDetailsRepository;
+  @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Inject private WaitNotifyEngine waitNotifyEngine;
+  @Inject private HPersistence persistence;
+  private final int WAIT_TIME_IN_SECOND = 30;
 
-  public List<TaskSelector> fetchDelegateSelector(Ambiance ambiance) {
-    return connectorUtils.fetchDelegateSelector(ambiance, executionSweepingOutputResolver);
+  public void submitCleanupRequest(Ambiance ambiance, String stageIdentifier) throws InterruptedException {
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    Pair<CICleanupTaskParams, StageInfraDetails> cleanupParams = buildAndfetchCleanUpParameters(ambiance);
+    DelegateTaskRequest delegateTaskRequest = getDelegateCleanupTaskRequest(ambiance, accountId, cleanupParams);
+    String taskId = delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
+    waitNotifyEngine.waitForAllOn(NG_ORCHESTRATION,
+        CICleanupTaskNotifyCallback.builder().stageExecutionID(ambiance.getStageExecutionId()).build(), taskId);
+    log.info("Submitted cleanup request with taskId {} for planExecutionId {}, stage {}", taskId,
+        ambiance.getPlanExecutionId(), stageIdentifier);
   }
 
+  @VisibleForTesting
   public Pair<CICleanupTaskParams, StageInfraDetails> buildAndfetchCleanUpParameters(Ambiance ambiance) {
     StageInfraDetails stageInfraDetails;
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
@@ -103,7 +136,7 @@ public class StageCleanupUtility {
     return Pair.of(ciCleanupTaskParams, stageInfraDetails);
   }
 
-  public CIK8CleanupTaskParams buildK8CleanupParameters(K8StageInfraDetails k8StageInfraDetails, Ambiance ambiance) {
+  private CIK8CleanupTaskParams buildK8CleanupParameters(K8StageInfraDetails k8StageInfraDetails, Ambiance ambiance) {
     Infrastructure infrastructure = k8StageInfraDetails.getInfrastructure();
 
     if (infrastructure == null) {
@@ -151,7 +184,7 @@ public class StageCleanupUtility {
         .build();
   }
 
-  public CIVmCleanupTaskParams buildVmCleanupParameters(Ambiance ambiance, VmStageInfraDetails vmStageInfraDetails) {
+  private CIVmCleanupTaskParams buildVmCleanupParameters(Ambiance ambiance, VmStageInfraDetails vmStageInfraDetails) {
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
     if (!optionalSweepingOutput.isFound()) {
@@ -167,7 +200,7 @@ public class StageCleanupUtility {
         .build();
   }
 
-  public DliteVmCleanupTaskParams buildHostedVmCleanupParameters(
+  private DliteVmCleanupTaskParams buildHostedVmCleanupParameters(
       Ambiance ambiance, DliteVmStageInfraDetails stageInfraDetails) {
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
@@ -192,5 +225,109 @@ public class StageCleanupUtility {
                      .runSequence(ambiance.getMetadata().getRunSequence())
                      .build())
         .build();
+  }
+
+  private DelegateTaskRequest getDelegateCleanupTaskRequest(Ambiance ambiance, String accountId,
+      Pair<CICleanupTaskParams, StageInfraDetails> cleanupParams) throws InterruptedException {
+    List<TaskSelector> taskSelectors = fetchDelegateSelector(ambiance);
+
+    Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
+    String taskType = "CI_CLEANUP";
+    SerializationFormat serializationFormat = SerializationFormat.KRYO;
+    boolean executeOnHarnessHostedDelegates = false;
+    String stageId = ambiance.getStageExecutionId();
+    List<String> eligibleToExecuteDelegateIds = new ArrayList<>();
+
+    CICleanupTaskParams ciCleanupTaskParams = cleanupParams.getLeft();
+    StageInfraDetails stageInfraDetails = cleanupParams.getRight();
+    CICleanupTaskParams.Type type = ciCleanupTaskParams.getType();
+    if (type == CICleanupTaskParams.Type.DLITE_VM) {
+      DliteVmStageInfraDetails dliteVmStageInfraDetails = (DliteVmStageInfraDetails) stageInfraDetails;
+      DliteVmCleanupTaskParams dliteVmCleanupTaskParams = (DliteVmCleanupTaskParams) ciCleanupTaskParams;
+      taskType = TaskType.DLITE_CI_VM_CLEANUP_TASK.getDisplayName();
+      executeOnHarnessHostedDelegates = true;
+      serializationFormat = SerializationFormat.JSON;
+
+      if (dliteVmStageInfraDetails.isDistributed()) {
+        taskType = TaskType.DLITE_CI_VM_CLEANUP_TASK_V2.getDisplayName();
+        dliteVmCleanupTaskParams.setDistributed(true);
+      } else {
+        String delegateId = fetchDelegateId(ambiance);
+        if (Strings.isNotBlank(delegateId)) {
+          eligibleToExecuteDelegateIds.add(delegateId);
+          ciTaskDetailsRepository.deleteFirstByStageExecutionId(stageId);
+        } else {
+          log.warn("Unable to locate delegate ID for stage ID: {}. Cleanup task may be routed to the wrong delegate",
+              stageId);
+        }
+      }
+    }
+    // Since we use a same class to handle both VM and DOCKER cases due to they share a lot of similarities in
+    // processing logic, and we use a CICleanupTaskParams type name `VM` to represent them. Only docker scenario
+    // needs additional step to add matching docker delegate id into the eligible to execute delegate id list.
+    else if (type == CICleanupTaskParams.Type.VM) {
+      if (((CIVmCleanupTaskParams) ciCleanupTaskParams).getInfraInfo() == CIInitializeTaskParams.Type.DOCKER) {
+        // TODO: Start using fetchDelegateId once we start emitting & processing the event for Docker as well
+        OptionalOutcome optionalOutput = outcomeService.resolveOptional(
+            ambiance, RefObjectUtils.getOutcomeRefObject(VmDetailsOutcome.VM_DETAILS_OUTCOME));
+        VmDetailsOutcome vmDetailsOutcome = (VmDetailsOutcome) optionalOutput.getOutcome();
+        if (vmDetailsOutcome != null && Strings.isNotBlank(vmDetailsOutcome.getDelegateId())) {
+          eligibleToExecuteDelegateIds.add(vmDetailsOutcome.getDelegateId());
+        }
+      }
+    }
+
+    return DelegateTaskRequest.builder()
+        .accountId(accountId)
+        .executeOnHarnessHostedDelegates(executeOnHarnessHostedDelegates)
+        .stageId(stageId)
+        .eligibleToExecuteDelegateIds(eligibleToExecuteDelegateIds)
+        .taskSelectors(taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()))
+        .selectors(taskSelectors)
+        .taskSetupAbstractions(abstractions)
+        .executionTimeout(java.time.Duration.ofSeconds(900))
+        .taskType(taskType)
+        .serializationFormat(serializationFormat)
+        .taskParameters(ciCleanupTaskParams)
+        .taskDescription("CI cleanup pod task")
+        .build();
+  }
+
+  private String fetchDelegateId(Ambiance ambiance) throws InterruptedException {
+    OptionalOutcome optionalOutput = outcomeService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(VmDetailsOutcome.VM_DETAILS_OUTCOME));
+    VmDetailsOutcome vmDetailsOutcome = (VmDetailsOutcome) optionalOutput.getOutcome();
+
+    if (vmDetailsOutcome != null && Strings.isNotBlank(vmDetailsOutcome.getDelegateId())) {
+      return vmDetailsOutcome.getDelegateId();
+    } else {
+      String stageId = ambiance.getStageExecutionId();
+      log.info("Could not process the delegate ID for stage ID: {} from the init response. Trying to look in the DB",
+          stageId);
+
+      long currentTime = System.currentTimeMillis();
+      long waitTill = currentTime + WAIT_TIME_IN_SECOND * 1000;
+
+      while (System.currentTimeMillis() < waitTill) {
+        Optional<CITaskDetails> taskDetailsOptional = ciTaskDetailsRepository.findFirstByStageExecutionId(stageId);
+
+        if (taskDetailsOptional.isPresent()) {
+          CITaskDetails taskDetails = taskDetailsOptional.get();
+          if (Strings.isNotBlank(taskDetails.getDelegateId())) {
+            log.info("Successfully found delegate ID: {} corresponding to stage ID: {}", taskDetails.getDelegateId(),
+                stageId);
+            return taskDetails.getDelegateId();
+          }
+          break;
+        } else {
+          Thread.sleep(1000);
+        }
+      }
+    }
+    return null;
+  }
+
+  private List<TaskSelector> fetchDelegateSelector(Ambiance ambiance) {
+    return connectorUtils.fetchDelegateSelector(ambiance, executionSweepingOutputResolver);
   }
 }

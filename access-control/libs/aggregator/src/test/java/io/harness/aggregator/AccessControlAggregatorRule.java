@@ -16,11 +16,16 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static org.mockito.Mockito.mock;
 
 import io.harness.accesscontrol.AccessControlCoreModule;
+import io.harness.accesscontrol.acl.persistence.ACL;
+import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
+import io.harness.accesscontrol.permissions.persistence.repositories.InMemoryPermissionRepository;
 import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.principals.PrincipalValidator;
+import io.harness.accesscontrol.principals.usergroups.UserGroupService;
+import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupService;
+import io.harness.accesscontrol.roles.RoleService;
 import io.harness.accesscontrol.scopes.core.ScopeLevel;
-import io.harness.aggregator.consumers.ACLGeneratorService;
-import io.harness.aggregator.consumers.ACLGeneratorServiceImpl;
+import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
@@ -56,6 +61,7 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
+import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import dev.morphia.converters.TypeConverter;
 import io.serializer.HObjectMapper;
@@ -64,6 +70,7 @@ import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -121,7 +128,6 @@ public class AccessControlAggregatorRule implements MethodRule, InjectorRuleMixi
             .toInstance(Sets.newHashSet("test_permission_1", "test_permission_2"));
         implicitPermissionsByScope.addBinding(Pair.of(TEST_SCOPE, false))
             .toInstance(Collections.singleton("test_permission_1"));
-        bind(ACLGeneratorService.class).to(ACLGeneratorServiceImpl.class);
         bind(Integer.class).annotatedWith(Names.named("batchSizeForACLCreation")).toInstance(50000);
       }
     });
@@ -169,6 +175,18 @@ public class AccessControlAggregatorRule implements MethodRule, InjectorRuleMixi
       }
     });
     return modules;
+  }
+
+  @Provides
+  @Singleton
+  private ACLGeneratorServiceFactory primaryACLGenearatorFactory(RoleService roleService,
+      UserGroupService userGroupService, ResourceGroupService resourceGroupService, ScopeService scopeService,
+      Map<Pair<ScopeLevel, Boolean>, Set<String>> implicitPermissionsByScope,
+      @Named(ACL.PRIMARY_COLLECTION) ACLRepository aclRepository,
+      InMemoryPermissionRepository inMemoryPermissionRepository,
+      @Named("batchSizeForACLCreation") int batchSizeForACLCreation) {
+    return new ACLGeneratorServiceFactory(roleService, userGroupService, resourceGroupService, scopeService,
+        implicitPermissionsByScope, aclRepository, inMemoryPermissionRepository, batchSizeForACLCreation);
   }
 
   @Override

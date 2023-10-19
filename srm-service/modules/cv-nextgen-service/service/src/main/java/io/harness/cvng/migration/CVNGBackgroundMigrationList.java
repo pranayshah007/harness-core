@@ -24,6 +24,7 @@ import io.harness.cvng.migration.list.AddMonitoredServiceToHeatMapMigration;
 import io.harness.cvng.migration.list.AddMonitoredServiceToWebhookMigration;
 import io.harness.cvng.migration.list.AddMonitoringSourcesToVerificationJobMigration;
 import io.harness.cvng.migration.list.AddSLIEvaluationTypeToSLOMigration;
+import io.harness.cvng.migration.list.AddStartQuarterToQuarterlySLOMigration;
 import io.harness.cvng.migration.list.AddStartedAtToServiceLevelObjectiveV2;
 import io.harness.cvng.migration.list.AddTaskInfoToVerificationTask;
 import io.harness.cvng.migration.list.AddTypeToServiceLevelObjectivesV2;
@@ -154,6 +155,7 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(69, SLIBucketCleanupMigration.class))
         .add(Pair.of(70, SLIRecordMigration.class))
         .add(Pair.of(71, PopulateVerificationStatusInVerificationJobInstances.class))
+        .add(Pair.of(72, AddStartQuarterToQuarterlySLOMigration.class))
         .build();
   }
 }

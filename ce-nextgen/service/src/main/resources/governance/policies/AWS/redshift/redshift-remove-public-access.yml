@@ -1,0 +1,8 @@
+policies:
+  - name: redshift-remove-public-access
+    resource: redshift
+    filters:
+      - PubliclyAccessible: true
+    actions:
+      - type: set-public-access
+        state: false

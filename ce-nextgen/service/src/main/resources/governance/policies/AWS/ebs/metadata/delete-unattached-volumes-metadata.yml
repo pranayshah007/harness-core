@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: true
+deleted: false
+name: delete-unattached-volumes
+cloudProvider: AWS
+resourceType: ebs
+description: Delete all ebs volumes which are unattached
+rulesYamlPath: ../delete-unattached-volumes.yml

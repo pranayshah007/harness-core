@@ -1,0 +1,12 @@
+policies:
+  - name: rds-low-util-list
+    resource: rds
+    description: |
+      List all underutilized RDS instances
+    filters:
+      - type: metrics
+        name: FreeStorageSpace
+        percent-attr: AllocatedStorage
+        attr-multiplier: 1073741824
+        value: 90
+        op: greater-than

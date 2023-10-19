@@ -6,6 +6,7 @@
  */
 
 package io.harness.delegate.task.terraform.handlers;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.AMAZON_S3;
@@ -62,7 +63,6 @@ import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FilenameUtils;
-import org.jetbrains.annotations.NotNull;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true,
     components = {HarnessModuleComponent.CDS_INFRA_PROVISIONERS})
@@ -173,7 +173,7 @@ public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
           commitIdToFetchedFilesMap, keyVersionMap);
     }
 
-    ImmutableMap<String, String> environmentVars = getEnvironmentVariables(taskParameters);
+    ImmutableMap<String, String> environmentVars = terraformBaseHelper.getEnvironmentVariables(taskParameters);
 
     try (PlanJsonLogOutputStream planJsonLogOutputStream = new PlanJsonLogOutputStream();
          PlanLogOutputStream planLogOutputStream = new PlanLogOutputStream();
@@ -236,19 +236,5 @@ public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
           .stateFileId(stateFileId)
           .build();
     }
-  }
-
-  @NotNull
-  private ImmutableMap<String, String> getEnvironmentVariables(TerraformTaskNGParameters taskParameters) {
-    Map<String, String> awsAuthEnvVariables = terraformBaseHelper.getAwsAuthEnvVariables(taskParameters);
-    ImmutableMap.Builder<String, String> envVars = ImmutableMap.builder();
-    if (isNotEmpty(taskParameters.getEnvironmentVariables())) {
-      envVars.putAll(taskParameters.getEnvironmentVariables());
-    }
-
-    if (isNotEmpty(awsAuthEnvVariables)) {
-      envVars.putAll(awsAuthEnvVariables);
-    }
-    return envVars.build();
   }
 }

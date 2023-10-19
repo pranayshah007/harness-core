@@ -9,8 +9,11 @@ package io.harness.oidc.jwks;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.oidc.entities.OidcJwks;
 import io.harness.oidc.entities.OidcJwks.OidcJwksKeys;
 import io.harness.persistence.HPersistence;
 
@@ -37,15 +40,26 @@ public class OidcJwksUtility {
           });
 
   public io.harness.oidc.entities.OidcJwks getJwksKeys(String accountId) {
-    return jwksCache.getUnchecked(accountId);
+    try {
+      return jwksCache.getUnchecked(accountId);
+    } catch (CacheLoader.InvalidCacheLoadException e) {
+      return null;
+    }
   }
 
-  public io.harness.oidc.entities.OidcJwks getJwksKeysFromDb(String accountId) {
+  public OidcJwks getJwksKeysFromDb(String accountId) {
     if (isNotEmpty(accountId)) {
       return persistence.createQuery(io.harness.oidc.entities.OidcJwks.class)
           .filter(OidcJwksKeys.accountId, accountId)
           .get();
     }
     return null;
+  }
+
+  public void saveOidcJwks(OidcJwks oidcJwks) {
+    if (!isNull(oidcJwks) && isNotEmpty(oidcJwks.getAccountId())) {
+      persistence.save(oidcJwks);
+      jwksCache.put(oidcJwks.getAccountId(), oidcJwks);
+    }
   }
 }

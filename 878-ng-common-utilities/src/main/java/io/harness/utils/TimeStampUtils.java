@@ -9,8 +9,10 @@ package io.harness.utils;
 
 import static java.lang.String.format;
 
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 
+import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -51,8 +53,9 @@ public class TimeStampUtils {
     try {
       ZoneOffset zoneOffset = ZoneId.of(timezone).getRules().getOffset(date);
       return date.toInstant(zoneOffset).toEpochMilli();
-    } catch (DateTimeParseException e) {
-      throw new InvalidRequestException(format("Invalid timezone : %s", e.getMessage()));
+    } catch (DateTimeException e) {
+      throw new InvalidRequestException(
+          format("Invalid timezone provided [%s] : %s", timezone, ExceptionUtils.getMessage(e)));
     }
   }
 }

@@ -88,6 +88,7 @@ public interface EntityTypeConstants {
   String SAVE_CACHE_GCS = "SaveCacheGCS";
   String SAVE_CACHE_S3 = "SaveCacheS3";
   String SECURITY = "Security";
+  String ANCHORE = "Anchore";
   String AQUA_TRIVY = "AquaTrivy";
   String AWS_ECR = "AWSECR";
   String AWS_SECURITY_HUB = "AWSSecurityHub";

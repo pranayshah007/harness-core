@@ -220,11 +220,18 @@ public class StringReplacer {
   }
 
   private boolean checkIfValueHasMethodInvocation(StringBuffer buf, int expressionEndPos) {
+    boolean isMatch;
     // Right substring
     CharSequence charSequence = buf.subSequence(expressionEndPos, buf.length());
     Pattern pattern = Pattern.compile("\\.\\w+\\(");
     Matcher matcher = pattern.matcher(charSequence);
-    return matcher.find();
+    isMatch = matcher.find();
+    Pattern pattern2 = Pattern.compile("^\\.\\w+\\(");
+    Matcher matcher2 = pattern2.matcher(charSequence);
+    if (isMatch != matcher2.find()) {
+      log.info("[Expression Method Invocation]: charSequence: {}, buf: {}", charSequence, buf);
+    }
+    return isMatch;
   }
 
   private boolean checkBooleanOperators(StringBuffer s, int currentPos, boolean leftSubString) {
@@ -238,11 +245,14 @@ public class StringReplacer {
     int minLength = 2;
     int maxLength = 5;
 
+    // checking if any of above keywords separated by space or '\n' is present in the expression
     if (leftSubString) {
       for (int i = minLength; i <= maxLength; i++) {
         if (currentPos - i + 1 >= 0 && currentPos + 1 < s.length()) {
           String substring = s.substring(currentPos - i + 1, currentPos + 1).trim();
-          if (jexlKeywordOperators.contains(substring)) {
+          if (jexlKeywordOperators.contains(substring) && currentPos - i >= 0
+              && (s.charAt(currentPos + 1) == ' ' || s.charAt(currentPos + 1) == '\n')
+              && (s.charAt(currentPos - i) == ' ' || s.charAt(currentPos - i) == '\n')) {
             return true;
           }
         }
@@ -252,7 +262,9 @@ public class StringReplacer {
     for (int i = minLength; i <= maxLength; i++) {
       if (currentPos >= 0 && currentPos + i < s.length()) {
         String substring = s.substring(currentPos, currentPos + i).trim();
-        if (jexlKeywordOperators.contains(substring)) {
+        if (jexlKeywordOperators.contains(substring) && currentPos - 1 >= 0
+            && (s.charAt(currentPos - 1) == ' ' || s.charAt(currentPos - 1) == '\n')
+            && (s.charAt(currentPos + i) == ' ' || s.charAt(currentPos + i) == '\n')) {
           return true;
         }
       }
@@ -299,8 +311,11 @@ public class StringReplacer {
     String expression = buf.substring(expressionStartPos, expressionEndPos);
     if (expressionStartPos > 0 && buf.charAt(expressionStartPos - 1) == '\"' && expressionEndPos < buf.length()
         && buf.charAt(expressionEndPos) == '\"') {
-      log.info("[String Replacer] expression: {}, unescaped expression: {}", expression,
-          StringEscapeUtils.unescapeJson(expression));
+      String unescapedExpression = StringEscapeUtils.unescapeJson(expression);
+      if (!expression.equals(unescapedExpression)) {
+        log.info("[String Replacer] expression: {}, unescaped expression: {}", expression,
+            StringEscapeUtils.unescapeJson(expression));
+      }
     }
     return expression;
   }

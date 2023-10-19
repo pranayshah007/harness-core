@@ -109,8 +109,8 @@ public class MorphiaPersistenceRequiredProvider<T extends PersistentIterable>
   }
 
   @Override
-  public MorphiaIterator<T, T> obtainNextInstances(
-      Class<T> clazz, String fieldName, MorphiaFilterExpander<T> filterExpander, boolean unsorted, int limit) {
+  public MorphiaIterator<T, T> obtainNextInstances(Class<T> clazz, String fieldName,
+      MorphiaFilterExpander<T> filterExpander, boolean unsorted, int limit, boolean isDelegateTaskMigrationEnabled) {
     long now = currentTimeMillis();
     Query<T> query = createQuery(now, clazz, fieldName, filterExpander, unsorted);
 

@@ -1,0 +1,3 @@
+filters: config-compliance, event, finding, json-diff, list-item, marked-for-op, metrics, network-location, offhour, onhour, ops-item, reduce, security-group, subnet, taggable, task-definition, value
+actions: auto-tag-user, copy-related-tag, delete, invoke-lambda, invoke-sfn, mark-for-op, modify, notify, post-finding, post-item, put-metric, remove-tag, resize, tag, webhook
+customPrompt:

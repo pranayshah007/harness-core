@@ -16,9 +16,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
-import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
-import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.gcp.GcpCapabilityHelper;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.scm.GitCapabilityHelper;
@@ -80,14 +78,12 @@ public class HelmChartCapabilityGenerator {
         case OCI_HELM:
           OciHelmStoreDelegateConfig ociHelmStoreConfig =
               (OciHelmStoreDelegateConfig) helManifestConfig.getStoreDelegateConfig();
-          ConnectorConfigDTO connectorConfigDTO = ociHelmStoreConfig.getConnectorConfigDTO();
           String criteria = null;
-          if (connectorConfigDTO instanceof AwsConnectorDTO) {
-            criteria = ociHelmStoreConfig.getRepoName() + ":" + ociHelmStoreConfig.getRegion();
-            capabilities.addAll(
-                AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorConfigDTO, maskingEvaluator));
-          } else if (connectorConfigDTO instanceof OciHelmConnectorDTO
-              || ociHelmStoreConfig.getOciHelmConnector() != null) {
+          if (ociHelmStoreConfig.getAwsConnectorDTO() != null) {
+            criteria = helManifestConfig.getChartName() + ":" + ociHelmStoreConfig.getRegion();
+            capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
+                ociHelmStoreConfig.getAwsConnectorDTO(), maskingEvaluator));
+          } else if (ociHelmStoreConfig.getOciHelmConnector() != null) {
             criteria = ociHelmStoreConfig.getRepoUrl();
             OciHelmConnectorDTO ociHelmConnector = ociHelmStoreConfig.getOciHelmConnector();
             populateDelegateSelectorCapability(capabilities, ociHelmConnector.getDelegateSelectors());

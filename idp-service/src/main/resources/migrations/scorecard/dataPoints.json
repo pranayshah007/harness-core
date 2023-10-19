@@ -35,7 +35,7 @@
     "isConditional": true,
     "conditionalInputValueDescription" : "Branch name",
     "description": "Checks the branch protection rule if it is not allowed to force push and delete.",
-    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the branch protection rules.\n\n**Prerequisites:** Github Connector with Admin access. Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository."
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the branch protection rules.\n\n**Prerequisites:** GitHub Connector with Admin access. Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository."
   },
   {
     "id": "64d5f56280f63a315c9e08b5",
@@ -212,7 +212,7 @@
     "isConditional": true,
     "conditionalInputValueDescription" : "Branch name",
     "description": "Checks the branch protection rule if it is not allowed to merge pull requests without approvals.",
-    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the branch protection rules.\n\n**Prerequisites:** Github Connector with Admin access. Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source Bitbucket repository."
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the branch protection rules.\n\n**Prerequisites:** Bitbucket Connector with Admin access. Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source Bitbucket repository."
   },
   {
     "id": "65143c3d60a49366a99ff670",
@@ -264,7 +264,7 @@
     "isConditional": true,
     "conditionalInputValueDescription": "Branch name",
     "description": "Calculates average time taken to merge pull requests.",
-    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find project details and calculates the average time for the last 100 pull requests.\n\n**Prerequisites:** Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source Gitlab project. Make sure to mention the branch name in the conditional input field."
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find project details and calculates the average time for the last 100 pull requests.\n\n**Prerequisites:** Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitLab project. Make sure to mention the branch name in the conditional input field."
   },
   {
     "id": "651bf825fadf434321ebcc70",
@@ -277,7 +277,7 @@
     "isConditional": true,
     "conditionalInputValueDescription" : "Branch name",
     "description": "Checks the branch protection rule if it is not allowed to force push.",
-    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find project details and calculates the branch protection rules.\n\n**Prerequisites:** Gitlab Connector with Admin access. Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source Gitlab project."
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find project details and calculates the branch protection rules.\n\n**Prerequisites:** GitLab Connector with Admin access. Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitLab project."
   },
   {
     "id": "651bf82aae1e3423b5b14add",
@@ -290,6 +290,107 @@
     "isConditional": true,
     "conditionalInputValueDescription": "File path (e.g. src/index.js)",
     "description": "Checks if the given filename exist or not.",
-    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find project details and find if the file is present or not. Make sure to mention the filename with extension or relative path from the root folder (Eg: README.md or docs/README.md) in the conditional input field.\n\n**Prerequisites:** Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source Gitlab project."
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find project details and find if the file is present or not. Make sure to mention the filename with extension or relative path from the root folder (Eg: README.md or docs/README.md) in the conditional input field.\n\n**Prerequisites:** Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitLab project."
+  },
+  {
+    "id": "6523d49c56e3f9544c9cfbc7",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "workflowsCount",
+    "name": "Workflows count",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "github",
+    "dataSourceLocationIdentifier": "github_workflows_count",
+    "description": "Calculates total number of workflows",
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the total number of workflows.\n\n**Prerequisites:** Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository."
+  },
+  {
+    "id": "6523d7dc378157e1d0db38e0",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "workflowSuccessRate",
+    "name": "Workflow success rate",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "github",
+    "dataSourceLocationIdentifier": "github_workflow_success_rate",
+    "isConditional": true,
+    "conditionalInputValueDescription": "YAML filename with extension (ci-workflow.yml)",
+    "description": "Calculates success rate for the given workflow",
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the success rate for the workflow.\n\n**Prerequisites:** Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository. Make sure to mention the workflow id or filename in the conditional input field."
+  },
+  {
+    "id": "6524005c0872d29391a44f83",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "meanTimeToCompleteWorkflowRuns",
+    "name": "Average time to complete workflow runs (in minutes)",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "github",
+    "dataSourceLocationIdentifier": "github_mean_time_to_complete_workflow_runs",
+    "isConditional": true,
+    "conditionalInputValueDescription": "YAML filename with extension (ci-workflow.yml)",
+    "description": "Calculates average time taken to complete workflow runs",
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the average time for the last 100 workflow runs to complete.\n\n**Prerequisites:** Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository. Make sure to mention the workflow id or filename in the conditional input field."
+  },
+  {
+    "id": "652651a5a9cd2b428a58f20b",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "meanTimeToCompleteSuccessWorkflowRuns",
+    "name": "Average time to complete successful workflow runs (in minutes)",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "github",
+    "dataSourceLocationIdentifier": "github_mean_time_to_complete_success_workflow_runs",
+    "isConditional": true,
+    "conditionalInputValueDescription": "YAML filename with extension (ci-workflow.yml)",
+    "description": "Calculates average time taken to complete successful workflow runs",
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the average time for the last 100 successful workflow runs to complete.\n\n**Prerequisites:** Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository. Make sure to mention the workflow id or filename in the conditional input field."
+  },
+  {
+    "id": "652d12fb8da0cf2139e25da6",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "openDependabotAlerts",
+    "name": "Open Dependabot alerts",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "github",
+    "dataSourceLocationIdentifier": "github_open_dependabot_alerts",
+    "isConditional": true,
+    "conditionalInputValueDescription": "Severity type (critical or high)",
+    "description": "Calculates the total number of open alerts reported by Dependabot for the given severity",
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the total number of open alerts reported by Dependabot.\n\n**Prerequisites:** Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository. Make sure to mention the severity type in the conditional input field."
+  },
+  {
+    "id": "652d130036b16547e9de4673",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "openCodeScanningAlerts",
+    "name": "Open code scanning alerts",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "github",
+    "dataSourceLocationIdentifier": "github_open_code_scanning_alerts",
+    "isConditional": true,
+    "conditionalInputValueDescription": "Severity type (critical or high)",
+    "description": "Calculates the total number of open alerts reported in code scanning for the given severity",
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the total number of open alerts reported in code scanning.\n\n**Prerequisites:** GitHub Connector with read access for code scanning alerts. Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository. Make sure to mention the severity type in the conditional input field."
+  },
+  {
+    "id": "652d1303fdd854b29ed62c06",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "openSecretScanningAlerts",
+    "name": "Open secret scanning alerts",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "github",
+    "dataSourceLocationIdentifier": "github_open_secret_scanning_alerts",
+    "isConditional": false,
+    "description": "Calculates the total number of open alerts reported in secret scanning",
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the total number of open alerts reported in secret scanning.\n\n**Prerequisites:** GitHub Connector with read access for secret scanning alerts. Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository."
+  },
+  {
+    "id": "652d149b55368da81ac6804e",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "openPullRequestsByAccount",
+    "name": "Open pull requests by account",
+    "type": "NUMBER",
+    "dataSourceIdentifier": "github",
+    "dataSourceLocationIdentifier": "github_open_pull_requests_by_account",
+    "isConditional": true,
+    "conditionalInputValueDescription": "Account name (e.g: app/dependabot)",
+    "description": "Calculates the total number of open pull requests raised by the given account",
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the total number of open pull requests raised by account.\n\n**Prerequisites:** Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository. Make sure to mention the username in the conditional input field."
   }
 ]

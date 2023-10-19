@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: rds-unencrypted-public-list
+cloudProvider: AWS
+resourceType: rds
+description: List all unencrypted or publicly available RDS
+rulesYamlPath: ../rds-unencrypted-public-list.yml

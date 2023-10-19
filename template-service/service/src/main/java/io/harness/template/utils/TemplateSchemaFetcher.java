@@ -6,10 +6,13 @@
  */
 
 package io.harness.template.utils;
-
 import io.harness.TemplateServiceConfiguration;
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
+import io.harness.exception.InvalidRequestException;
 import io.harness.serializer.JsonUtils;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
@@ -23,15 +26,20 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 @Singleton
 public class TemplateSchemaFetcher {
-  private JsonNode templateStaticSchemaJsonNode = null;
-  private final String TEMPLATE_JSON_PATH = "static-schema/template.json";
+  private JsonNode templateStaticSchemaJsonNodeV0 = null;
+  private JsonNode templateStaticSchemaJsonNodeV1 = null;
+  private final String TEMPLATE_JSON_PATH_V0 = "static-schema/v0/template.json";
+  private final String TEMPLATE_JSON_PATH_V1 = "static-schema/v1/template.json";
   @Inject TemplateServiceConfiguration templateServiceConfiguration;
 
   private final String PRE_QA = "stress";
+  private final String TEMPLATE_VO = "v0";
+  private final String TEMPLATE_V1 = "v1";
   private final String TEMPLATE_JSON = "template.json";
 
   public JsonNode getStaticYamlSchema(String version) {
@@ -48,31 +56,43 @@ public class TemplateSchemaFetcher {
       }
     }
     log.info("Fetching static schema from resource file");
-    return getStaticYamlSchemaFromResource();
+    return getStaticYamlSchemaFromResource(version);
   }
 
-  private JsonNode getStaticYamlSchemaFromResource() {
+  private JsonNode getStaticYamlSchemaFromResource(String version) {
     try {
       /*
         if templateStaticSchemaJsonNode is null then we fetch schema from template.json and set it to
         templateStaticSchemaJsonNode else directly return templateStaticSchemaJsonNode
       */
-      return fetchFile(TEMPLATE_JSON_PATH);
+      switch (version) {
+        case TEMPLATE_VO:
+          if (null == templateStaticSchemaJsonNodeV0) {
+            templateStaticSchemaJsonNodeV0 = fetchFile(TEMPLATE_JSON_PATH_V0);
+          }
+          return templateStaticSchemaJsonNodeV0;
+        case TEMPLATE_V1:
+          if (null == templateStaticSchemaJsonNodeV1) {
+            templateStaticSchemaJsonNodeV1 = fetchFile(TEMPLATE_JSON_PATH_V1);
+          }
+          return templateStaticSchemaJsonNodeV1;
+        default:
+          throw new InvalidRequestException(
+              String.format("Incorrect version [%s] of Template Schema passed, Valid values are [v0, v1]", version));
+      }
     } catch (IOException ex) {
-      log.error("Not able to read json from {} path", TEMPLATE_JSON_PATH);
+      log.error(String.format("Not able to read json from %s path",
+          version.equals(TEMPLATE_VO) ? TEMPLATE_JSON_PATH_V0 : TEMPLATE_JSON_PATH_V1));
     }
     // returning null will call the traditional getYamlSchema method in the parent function.
     return null;
   }
 
   private JsonNode fetchFile(String filePath) throws IOException {
-    if (null == templateStaticSchemaJsonNode) {
-      ClassLoader classLoader = this.getClass().getClassLoader();
-      String staticJson =
-          Resources.toString(Objects.requireNonNull(classLoader.getResource(filePath)), StandardCharsets.UTF_8);
-      templateStaticSchemaJsonNode = JsonUtils.asObject(staticJson, JsonNode.class);
-    }
-    return templateStaticSchemaJsonNode;
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    String staticJson =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource(filePath)), StandardCharsets.UTF_8);
+    return JsonUtils.asObject(staticJson, JsonNode.class);
   }
 
   private String calculateFileURL(String version) {

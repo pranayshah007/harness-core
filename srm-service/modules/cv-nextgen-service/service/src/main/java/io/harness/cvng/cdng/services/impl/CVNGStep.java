@@ -458,9 +458,11 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
       ErrorCode errorCode = null;
       switch (cvngResponseData.getActivityStatusDTO().getStatus()) {
         case VERIFICATION_PASSED:
+        case ABORTED_AS_SUCCESS:
           status = Status.SUCCEEDED;
           break;
         case VERIFICATION_FAILED:
+        case ABORTED_AS_FAILURE:
           status = Status.FAILED;
           errorCode = ErrorCode.DEFAULT_ERROR_CODE;
           failureType = FailureType.VERIFICATION_FAILURE;

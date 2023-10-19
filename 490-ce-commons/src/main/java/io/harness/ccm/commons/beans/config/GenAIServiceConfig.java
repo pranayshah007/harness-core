@@ -18,6 +18,7 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.CE)
 public class GenAIServiceConfig {
+  @JsonProperty(value = "provider") private String provider;
   @JsonProperty(value = "model") private String model;
   @JsonProperty(value = "temperature") private Float temperature;
   @JsonProperty(value = "maxDecodeSteps") private Integer maxDecodeSteps;

@@ -317,6 +317,135 @@
       },
       "requestBody": "{\"query\":\"{\\n  project(fullPath: \\\"{PROJECT_PATH}\\\") {\\n    repository {\\n      tree(ref: \\\"HEAD\\\", path: \\\"{FILE_PATH_REPLACER}\\\") {\\n        blobs {\\n          nodes {\\n            name\\n            path\\n          }\\n        }\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
     }
+  },
+  {
+    "id": "6523d9755284ab11055761ea",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "github_workflows_count",
+    "dataSourceIdentifier": "github",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "{API_BASE_URL}/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/actions/workflows",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "{BEARER_AUTH}"
+      }
+    }
+  },
+  {
+    "id": "6523d97ada3444298db8964a",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "github_workflow_success_rate",
+    "dataSourceIdentifier": "github",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "{API_BASE_URL}/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/actions/workflows/{WORKFLOW_ID}/runs?status=completed&per_page=100",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "{BEARER_AUTH}"
+      }
+    }
+  },
+  {
+    "id": "6524098b0e61b22bb32ec25c",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "github_mean_time_to_complete_workflow_runs",
+    "dataSourceIdentifier": "github",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "{API_BASE_URL}/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/actions/workflows/{WORKFLOW_ID}/runs?status=completed&per_page=100",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "{BEARER_AUTH}"
+      }
+    }
+  },
+  {
+    "id": "6524089b1f61b22bb32fc34d",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "github_mean_time_to_complete_success_workflow_runs",
+    "dataSourceIdentifier": "github",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "{API_BASE_URL}/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/actions/workflows/{WORKFLOW_ID}/runs?status=success&per_page=100",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "{BEARER_AUTH}"
+      }
+    }
+  },
+  {
+    "id": "652d0aff299e6ea7ffe52784",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "github_open_dependabot_alerts",
+    "dataSourceIdentifier": "github",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "{API_BASE_URL}/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/dependabot/alerts?state=open&severity={SEVERITY_REPLACER}&per_page=100",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "{BEARER_AUTH}"
+      }
+    }
+  },
+  {
+    "id": "652d12d8bec122fa440c56e5",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "github_open_code_scanning_alerts",
+    "dataSourceIdentifier": "github",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "{API_BASE_URL}/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/code-scanning/alerts?state=open&severity={SEVERITY_REPLACER}&per_page=100",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "{BEARER_AUTH}"
+      }
+    }
+  },
+  {
+    "id": "652d12dda3188184f6e0e553",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "github_open_secret_scanning_alerts",
+    "dataSourceIdentifier": "github",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "GET",
+      "url": "{API_BASE_URL}/repos/{REPOSITORY_OWNER}/{REPOSITORY_NAME}/secret-scanning/alerts?state=open&per_page=100",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "{BEARER_AUTH}"
+      }
+    }
+  },
+  {
+    "id": "652d155ea0d3cf3d54903551",
+    "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
+    "identifier": "github_open_pull_requests_by_account",
+    "dataSourceIdentifier": "github",
+    "type": "DirectHttp",
+    "apiRequestDetails": {
+      "method": "POST",
+      "url": "{API_BASE_URL}/graphql",
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "{BEARER_AUTH}"
+      },
+      "requestBody": "{\"query\":\"{\\n  search(query: \\\"repo:{REPOSITORY_OWNER}/{REPOSITORY_NAME} is:pr is:open author:{AUTHOR_NAME}\\\", type: ISSUE, last: 100) {\\n    edges {\\n      node {\\n        ... on PullRequest {\\n          url\\n          title\\n          createdAt\\n        }\\n      }\\n    }\\n  }\\n}\",\"variables\":{}}"
+    }
   }
 ]
 

@@ -6,7 +6,6 @@
  */
 
 package io.harness.yaml.schema.inputs;
-
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.yaml.YamlSchemaFieldConstants.DEPENDS_ON;
 import static io.harness.pms.yaml.YamlSchemaFieldConstants.INPUT_PROPERTIES;
@@ -14,8 +13,11 @@ import static io.harness.pms.yaml.YamlSchemaFieldConstants.INTERNAL_TYPE;
 import static io.harness.pms.yaml.YamlSchemaFieldConstants.METADATA;
 import static io.harness.pms.yaml.YamlSchemaFieldConstants.TYPE;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.yaml.individualschema.InputFieldMetadata;
@@ -37,6 +39,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public class InputsSchemaServiceImpl implements InputsSchemaService {

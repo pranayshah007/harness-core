@@ -36,7 +36,6 @@ public class ProjectInstrumentationHelper extends InstrumentationHelper {
   String PROJECT_VERSION = "project_version";
   String ACCOUNT_ID = "account_id";
   String PROJECT_COLOR = "project_color";
-
   public CompletableFuture sendProjectCreateEvent(Project project, String accountId) {
     try {
       if (EmptyPredicate.isNotEmpty(accountId) || !accountId.equals(GLOBAL_ACCOUNT_ID)) {

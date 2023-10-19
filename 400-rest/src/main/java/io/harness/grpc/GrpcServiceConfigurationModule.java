@@ -94,13 +94,15 @@ public class GrpcServiceConfigurationModule extends AbstractModule {
         Multibinder.newSetBinder(binder(), GrpcExceptionMapper.class);
     expectionMapperMultibinder.addBinding().to(WingsExceptionGrpcMapper.class);
 
-    Provider<Set<GrpcExceptionMapper>> grpcExceptionMappersProvider = getProvider(Key.get(new TypeLiteral<>() {}));
+    Provider<Set<GrpcExceptionMapper>> grpcExceptionMappersProvider =
+        getProvider(Key.get(new TypeLiteral<Set<GrpcExceptionMapper>>() {}));
 
     serverInterceptorMultibinder.addBinding().toProvider(
         () -> new GrpcServerExceptionHandler(grpcExceptionMappersProvider));
 
-    install(new GrpcServerModule(grpcServerConfig.getConnectors(), getProvider(Key.get(new TypeLiteral<>() {})),
-        getProvider(Key.get(new TypeLiteral<>() {}))));
+    install(new GrpcServerModule(grpcServerConfig.getConnectors(),
+        getProvider(Key.get(new TypeLiteral<Set<BindableService>>() {})),
+        getProvider(Key.get(new TypeLiteral<Set<ServerInterceptor>>() {}))));
   }
 
   @Provides

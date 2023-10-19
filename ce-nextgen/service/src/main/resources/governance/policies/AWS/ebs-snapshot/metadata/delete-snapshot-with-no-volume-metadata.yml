@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: true
+deleted: false
+name: delete-snapshot-with-no-volume
+cloudProvider: AWS
+resourceType: ebs-snapshot
+description: Find any snapshots that do not have a corresponding volume
+rulesYamlPath: ../delete-snapshot-with-no-volume.yml

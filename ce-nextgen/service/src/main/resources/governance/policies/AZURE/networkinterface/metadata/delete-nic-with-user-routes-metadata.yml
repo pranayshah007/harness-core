@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: delete-nic-with-user-routes
+cloudProvider: AZURE
+resourceType: azure.networkinterface
+description: Delete all Network Interfaces that have User added routes
+rulesYamlPath: ../delete-nic-with-user-routes.yml

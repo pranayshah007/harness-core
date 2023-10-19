@@ -6,9 +6,13 @@
  */
 
 package io.harness.plancreator.steps.barrier;
-
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.beans.FeatureName;
+import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.steps.internal.PMSStepPlanCreatorV2;
+import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.plan.creation.PlanCreatorConstants;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
@@ -22,6 +26,7 @@ import com.google.inject.Inject;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_PIPELINE})
 @Slf4j
 public class BarrierStepPlanCreator extends PMSStepPlanCreatorV2<BarrierStepNode> {
   @Inject private BarrierService barrierService;
@@ -41,6 +46,9 @@ public class BarrierStepPlanCreator extends PMSStepPlanCreatorV2<BarrierStepNode
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, BarrierStepNode field) {
     if (featureFlagService.isEnabled(
             ctx.getAccountIdentifier(), FeatureName.CDS_NG_BARRIER_STEPS_WITHIN_LOOPING_STRATEGIES)) {
+      if (StrategyUtils.isWrappedUnderStrategy(ctx.getCurrentField())) {
+        throw new InvalidRequestException("Barrier step cannot be configured with looping strategy.");
+      }
       String planExecutionId = ctx.getExecutionUuid();
       String parentInfoStrategyNodeType =
           PlanCreatorUtilsCommon.getFromParentInfo(PlanCreatorConstants.STRATEGY_NODE_TYPE, ctx).getStringValue();

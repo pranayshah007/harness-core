@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.beans.InputSetValidatorType.REGEX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
@@ -38,6 +40,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -55,6 +58,7 @@ public class MergeHelper {
   public final Set<String> acceptAllChildrenKeys = new HashSet<>(
       Arrays.asList("service", "environment", "template", "services", "environments", "environmentGroup"));
   public static final String PATH_SEP = "/";
+  public static final Pattern nonAsciiCharactersPattern = Pattern.compile("[^\\x00-\\x7F]");
 
   public String mergeInputSetFormatYamlToOriginYaml(String originYaml, String inputSetFormatYaml) {
     return mergeRuntimeInputValuesIntoOriginalYaml(originYaml, inputSetFormatYaml, false);
@@ -69,21 +73,15 @@ public class MergeHelper {
   }
 
   public JsonNode mergeRuntimeInputValuesIntoOriginalJsonNode(
-      JsonNode originalJsonNode, JsonNode inputSetPipelineCompJsonNode, boolean appendInputSetValidator) {
+      JsonNode originalJsonNode, List<JsonNode> inputSetPipelineCompJsonNodes, boolean appendInputSetValidator) {
     return mergeRuntimeInputValuesIntoOriginalYamlInternal(
-        originalJsonNode, inputSetPipelineCompJsonNode, appendInputSetValidator, false, false);
+        originalJsonNode, inputSetPipelineCompJsonNodes, appendInputSetValidator, false, false);
   }
 
   public JsonNode mergeRuntimeInputValuesIntoOriginalJsonNode(JsonNode originalJsonNode,
       JsonNode inputSetPipelineCompJsonNode, boolean appendInputSetValidator, boolean checkIfPipelineValueIsRuntime) {
     return mergeRuntimeInputValuesIntoOriginalYamlInternal(
         originalJsonNode, inputSetPipelineCompJsonNode, appendInputSetValidator, false, checkIfPipelineValueIsRuntime);
-  }
-
-  public YamlConfig mergeRuntimeInputValuesIntoOriginalYaml(
-      YamlConfig originalYamlConfig, YamlConfig inputSetConfig, boolean appendInputSetValidator) {
-    return mergeRuntimeInputValuesIntoOriginalYamlInternal(
-        originalYamlConfig, inputSetConfig, appendInputSetValidator, false);
   }
 
   public String mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(String baseYaml, String runtimeInputYaml,
@@ -95,12 +93,7 @@ public class MergeHelper {
         .getYaml();
   }
 
-  public YamlConfig mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(YamlConfig originalYamlConfig,
-      YamlConfig inputSetConfig, boolean appendInputSetValidator, boolean checkIfPipelineValueIsRuntime) {
-    return mergeRuntimeInputValuesIntoOriginalYamlInternal(
-        originalYamlConfig, inputSetConfig, appendInputSetValidator, false, checkIfPipelineValueIsRuntime);
-  }
-
+  // Merge the executionInput values in the originalJsonNode when called by the execution-input flow during execution.
   public JsonNode mergeExecutionInputIntoOriginalJsonNode(
       JsonNode originalJsonNode, JsonNode inputSetPipelineCompJsonNode, boolean appendInputSetValidator) {
     return mergeRuntimeInputValuesIntoOriginalYamlInternal(
@@ -140,60 +133,94 @@ public class MergeHelper {
   private JsonNode mergeRuntimeInputValuesIntoOriginalYamlInternal(JsonNode originalYamlJsonNode,
       JsonNode inputSetJsonNode, boolean appendInputSetValidator, boolean isAtExecutionTime,
       boolean checkIfPipelineValueIsRuntime) {
-    Map<FQN, Object> inputSetFQNMap = FQNMapGenerator.generateFQNMap(inputSetJsonNode);
+    return mergeRuntimeInputValuesIntoOriginalYamlInternal(originalYamlJsonNode,
+        Collections.singletonList(inputSetJsonNode), appendInputSetValidator, isAtExecutionTime,
+        checkIfPipelineValueIsRuntime);
+  }
 
+  // First element has more precedence than the later elements in the inputSetJsonNodes list.
+  private JsonNode mergeRuntimeInputValuesIntoOriginalYamlInternal(JsonNode originalYamlJsonNode,
+      List<JsonNode> inputSetJsonNodes, boolean appendInputSetValidator, boolean isAtExecutionTime,
+      boolean checkIfPipelineValueIsRuntime) {
+    if (EmptyPredicate.isEmpty(inputSetJsonNodes)) {
+      return originalYamlJsonNode;
+    }
+    Map<FQN, Object> mergedInputSetFqnMap = new HashMap<>();
+    List<Map<FQN, Object>> inputSetFqnMapList = new ArrayList<>();
+
+    // Populating the inputSetFqnMaps for all inputSet JsonNodes.
+    for (JsonNode inputSetJsonNode : inputSetJsonNodes) {
+      Map<FQN, Object> inputSetFQNMap = FQNMapGenerator.generateFQNMap(inputSetJsonNode);
+      inputSetFqnMapList.add(inputSetFQNMap);
+    }
+    // Merging the inputSetFqnMapList into one mergedInputSetFqnMap such that fqnMap coming first in the list will
+    // override the later fqnMap values for same fqn.
+    for (int index = inputSetFqnMapList.size() - 1; index >= 0; index--) {
+      mergedInputSetFqnMap.putAll(inputSetFqnMapList.get(index));
+    }
     Map<FQN, Object> pipelineYamlFQNMap = FQNMapGenerator.generateFQNMap(originalYamlJsonNode);
     Map<FQN, Object> mergedYamlFQNMap = new LinkedHashMap<>(pipelineYamlFQNMap);
     pipelineYamlFQNMap.keySet().forEach(key -> {
-      if (inputSetFQNMap.containsKey(key)) {
-        Object valueFromRuntimeInputYaml = inputSetFQNMap.get(key);
-        Object valueFromPipelineYaml = pipelineYamlFQNMap.get(key);
-        if (checkIfPipelineValueIsRuntime
-            && (!(valueFromPipelineYaml instanceof TextNode)
-                || !NGExpressionUtils.matchesInputSetPattern(((TextNode) valueFromPipelineYaml).asText()))) {
-          // if the value from the pipeline YAML is fixed, then we need to ignore the value from the runtime input yaml.
-          // The above if condition is true if the value from the pipeline YAML is fixed
-          return;
-        }
-        // input sets can now have <+input> in them as we will not remove those fields anymore. So if the first input
-        // set provides some value and the second does not, then the first value should and not be overriden by the
-        // <+input> in the second input set
-        if (valueFromRuntimeInputYaml instanceof TextNode
-            && NGExpressionUtils.matchesInputSetPattern(((TextNode) valueFromRuntimeInputYaml).asText())
-            && !NGExpressionUtils.matchesExecutionInputPattern(((TextNode) valueFromRuntimeInputYaml).asText())) {
-          return;
-        }
-        if (key.isType() || key.isIdentifierOrVariableName()) {
-          if (!valueFromRuntimeInputYaml.toString().equals(valueFromPipelineYaml.toString())) {
-            return;
+      for (int index = 0; index < inputSetJsonNodes.size(); index++) {
+        JsonNode inputSetJsonNode = inputSetJsonNodes.get(index);
+        Map<FQN, Object> inputSetFQNMap = inputSetFqnMapList.get(index);
+        if (inputSetFQNMap.containsKey(key)) {
+          Object valueFromRuntimeInputYaml = inputSetFQNMap.get(key);
+          Object valueFromPipelineYaml = pipelineYamlFQNMap.get(key);
+          if (checkIfPipelineValueIsRuntime
+              && (!(valueFromPipelineYaml instanceof TextNode)
+                  || !NGExpressionUtils.matchesInputSetPattern(((TextNode) valueFromPipelineYaml).asText()))) {
+            // if the value from the pipeline YAML is fixed, then we need to ignore the value from the runtime input
+            // yaml. The above if condition is true if the value from the pipeline YAML is fixed
+            break;
+            // break because the field to be ignored for all inputSets.
           }
-        }
-        if (isAtExecutionTime) {
-          String templateValueText = ((JsonNode) valueFromPipelineYaml).asText();
-          if (NGExpressionUtils.matchesExecutionInputPattern(templateValueText)) {
-            ParameterField<?> inputSetParameterField =
-                RuntimeInputValuesValidator.getInputSetParameterField(((JsonNode) valueFromRuntimeInputYaml).asText());
-            if (inputSetParameterField != null && inputSetParameterField.getValue() != null) {
-              valueFromRuntimeInputYaml = inputSetParameterField.getValue();
+          // input sets can now have <+input> in them as we will not remove those fields anymore. So if the first input
+          // set provides some value and the second does not, then the first value should and not be overriden by the
+          // <+input> in the second input set
+          if (valueFromRuntimeInputYaml instanceof TextNode
+              && NGExpressionUtils.matchesInputSetPattern(((TextNode) valueFromRuntimeInputYaml).asText())
+              && !NGExpressionUtils.matchesExecutionInputPattern(((TextNode) valueFromRuntimeInputYaml).asText())) {
+            // Continue because any next inputSet might have the input value that should be applied.
+            continue;
+          }
+          if (key.isType() || key.isIdentifierOrVariableName()) {
+            if (!valueFromRuntimeInputYaml.toString().equals(valueFromPipelineYaml.toString())) {
+              continue;
             }
           }
-        }
-        if (appendInputSetValidator) {
-          valueFromRuntimeInputYaml = checkForRuntimeInputExpressions(
-              valueFromRuntimeInputYaml, pipelineYamlFQNMap.get(key), key.getExpressionFqn());
-        }
-        mergedYamlFQNMap.put(key, valueFromRuntimeInputYaml);
-      } else {
-        Map<FQN, Object> subMap = YamlSubMapExtractor.getFQNToObjectSubMap(inputSetFQNMap, key);
-        if (!subMap.isEmpty()) {
-          mergedYamlFQNMap.put(key, YamlSubMapExtractor.getNodeForFQN(inputSetJsonNode, key));
+          if (isAtExecutionTime) {
+            String templateValueText = ((JsonNode) valueFromPipelineYaml).asText();
+            if (NGExpressionUtils.matchesExecutionInputPattern(templateValueText)) {
+              ParameterField<?> inputSetParameterField = RuntimeInputValuesValidator.getInputSetParameterField(
+                  ((JsonNode) valueFromRuntimeInputYaml).asText());
+              if (inputSetParameterField != null && inputSetParameterField.getValue() != null) {
+                valueFromRuntimeInputYaml = inputSetParameterField.getValue();
+              }
+            }
+          }
+          if (appendInputSetValidator) {
+            valueFromRuntimeInputYaml = checkForRuntimeInputExpressions(
+                valueFromRuntimeInputYaml, pipelineYamlFQNMap.get(key), key.getExpressionFqn());
+          }
+          mergedYamlFQNMap.put(key, valueFromRuntimeInputYaml);
+          break;
+        } else {
+          Map<FQN, Object> subMap = YamlSubMapExtractor.getFQNToObjectSubMap(inputSetFQNMap, key);
+          if (!subMap.isEmpty()) {
+            mergedYamlFQNMap.put(key, YamlSubMapExtractor.getNodeForFQN(inputSetJsonNode, key));
+            break;
+          }
         }
       }
     });
-    Map<FQN, Object> nonIgnorableKeys = getNonIgnorableKeys(pipelineYamlFQNMap, inputSetFQNMap, mergedYamlFQNMap);
+    Map<FQN, Object> nonIgnorableKeys = getNonIgnorableKeys(pipelineYamlFQNMap, mergedInputSetFqnMap, mergedYamlFQNMap);
     mergedYamlFQNMap.putAll(nonIgnorableKeys);
-    JsonNode modifiedOriginalMap =
-        addNonIgnorableBaseKeys(originalYamlJsonNode, mergedYamlFQNMap, nonIgnorableKeys, inputSetJsonNode);
+    JsonNode modifiedOriginalMap = null;
+    for (JsonNode inputSetJsonNode : inputSetJsonNodes) {
+      modifiedOriginalMap =
+          addNonIgnorableBaseKeys(originalYamlJsonNode, mergedYamlFQNMap, nonIgnorableKeys, inputSetJsonNode);
+    }
     // merging mergedYamlFQNMap into modifiedOriginalMap to get merged yaml map
     return YamlMapGenerator.generateYamlMap(mergedYamlFQNMap, modifiedOriginalMap, false);
   }
@@ -363,7 +390,7 @@ public class MergeHelper {
 
   // Yaml Object Mapper can't handle emojis and non ascii characters
   public String removeNonASCII(String content) {
-    return content.replaceAll("[^\\x00-\\x7F]", "");
+    return nonAsciiCharactersPattern.matcher(content).replaceAll(EMPTY);
   }
 
   public String removeFQNs(String json, List<String> toBeRemovedFQNs) {

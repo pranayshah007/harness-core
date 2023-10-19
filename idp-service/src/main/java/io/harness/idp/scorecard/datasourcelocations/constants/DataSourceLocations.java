@@ -21,6 +21,15 @@ public class DataSourceLocations {
   public static final String GITHUB_MEAN_TIME_TO_MERGE_PR = "github_mean_time_to_merge_pr";
   public static final String GITHUB_IS_BRANCH_PROTECTION_SET = "github_is_branch_protection_set";
   public static final String GITHUB_FILE_EXISTS = "github_is_file_exists";
+  public static final String GITHUB_WORKFLOWS_COUNT = "github_workflows_count";
+  public static final String GITHUB_WORKFLOW_SUCCESS_RATE = "github_workflow_success_rate";
+  public static final String GITHUB_MEAN_TIME_TO_COMPLETE_WORKFLOW_RUNS = "github_mean_time_to_complete_workflow_runs";
+  public static final String GITHUB_MEAN_TIME_TO_COMPLETE_SUCCESS_WORKFLOW_RUNS =
+      "github_mean_time_to_complete_success_workflow_runs";
+  public static final String GITHUB_OPEN_DEPENDABOT_ALERTS = "github_open_dependabot_alerts";
+  public static final String GITHUB_OPEN_CODE_SCANNING_ALERTS = "github_open_code_scanning_alerts";
+  public static final String GITHUB_OPEN_SECRET_SCANNING_ALERTS = "github_open_secret_scanning_alerts";
+  public static final String GITHUB_OPEN_PULL_REQUESTS_BY_ACCOUNT = "github_open_pull_requests_by_account";
 
   // Bitbucket
   public static final String BITBUCKET_MEAN_TIME_TO_MERGE_PR = "bitbucket_mean_time_to_merge_pr";

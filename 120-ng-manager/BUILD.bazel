@@ -457,7 +457,6 @@ shared_dependencies = [
     "@maven//:org_apache_lucene_lucene_suggest",
     "@maven//:org_apache_maven_maven_artifact",
     "@maven//:org_apache_maven_maven_model",
-    "@maven//:org_apache_neethi_neethi",
     "@maven//:org_apache_santuario_xmlsec",
     "@maven//:org_apache_sshd_sshd_core",
     "@maven//:org_apache_sshd_sshd_common",

@@ -1,0 +1,8 @@
+policies:
+  - name: elasticache-cluster-list
+    resource: cache-cluster
+    filters:
+      - type: value
+        key: CacheClusterStatus
+        op: not-in
+        value: ["deleted","deleting","creating"]

@@ -139,6 +139,8 @@ import io.harness.gitsync.GitSyncConfigClientModule;
 import io.harness.gitsync.GitSyncModule;
 import io.harness.gitsync.common.events.FullSyncMessageListener;
 import io.harness.gitsync.common.events.GitSyncProjectCleanup;
+import io.harness.gitsync.common.impl.GitSyncConnectorServiceImpl;
+import io.harness.gitsync.common.service.GitSyncConnectorService;
 import io.harness.gitsync.core.webhook.createbranchevent.GitBranchHookEventStreamListener;
 import io.harness.gitsync.core.webhook.pushevent.GitPushEventStreamListener;
 import io.harness.gitsync.gitxwebhooks.listener.GitXWebhookPushEventListener;
@@ -454,6 +456,17 @@ public class NextGenModule extends AbstractModule {
 
   @Provides
   @Singleton
+  @Named("DashboardExecutorService")
+  public ExecutorService DashboardExecutorServiceThreadPool() {
+    return ThreadPool.create(appConfig.getDashboardExecutorServiceConfig().getCorePoolSize(),
+        appConfig.getDashboardExecutorServiceConfig().getMaxPoolSize(),
+        appConfig.getDashboardExecutorServiceConfig().getIdleTime(),
+        appConfig.getDashboardExecutorServiceConfig().getTimeUnit(),
+        new ThreadFactoryBuilder().setNameFormat("DashboardExecutorService-%d").build());
+  }
+
+  @Provides
+  @Singleton
   CiDefaultEntityConfiguration getCiDefaultConfiguration() {
     return appConfig.getCiDefaultEntityConfiguration();
   }
@@ -666,6 +679,13 @@ public class NextGenModule extends AbstractModule {
 
   @Provides
   @Singleton
+  @Named("gitXWebhookEventQueueConfig")
+  public HsqsDequeueConfig getGitXWebhookEventQueueConfig() {
+    return appConfig.getGitXWebhookEventQueueConfig();
+  }
+
+  @Provides
+  @Singleton
   @Named("webhookPushEventHsqsDequeueConfig")
   public HsqsDequeueConfig getWebhookPushEventHsqsDequeueConfig() {
     return appConfig.getWebhookPushEventHsqsDequeueConfig();
@@ -705,6 +725,7 @@ public class NextGenModule extends AbstractModule {
     bind(CDOverviewDashboardService.class).to(CDOverviewDashboardServiceImpl.class);
     bind(CDLandingDashboardService.class).to(CDLandingDashboardServiceImpl.class);
     bind(CDLandingPageService.class).to(CDLandingPageServiceImpl.class);
+    bind(GitSyncConnectorService.class).to(GitSyncConnectorServiceImpl.class);
 
     try {
       bind(TimeScaleDBService.class)

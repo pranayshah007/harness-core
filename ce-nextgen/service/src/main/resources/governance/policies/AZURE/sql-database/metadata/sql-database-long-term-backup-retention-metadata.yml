@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: sql-database-long-term-backup-retention
+cloudProvider: AZURE
+resourceType: azure.sql-database
+description: List SQL databases with weekly backup retentions longer than 1 month
+rulesYamlPath: ../sql-database-long-term-backup-retention.yml

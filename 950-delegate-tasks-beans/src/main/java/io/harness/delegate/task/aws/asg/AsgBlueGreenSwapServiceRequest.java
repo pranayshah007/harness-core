@@ -34,7 +34,7 @@ public class AsgBlueGreenSwapServiceRequest implements AsgCommandRequest, Nested
   String prodAsgName;
   String stageAsgName;
   boolean downsizeOldAsg;
-  List<AsgLoadBalancerConfig> loadBalancers;
+  @NonFinal @Expression(ALLOW_SECRETS) List<AsgLoadBalancerConfig> loadBalancers;
 
   @Override
   public String getAsgName() {

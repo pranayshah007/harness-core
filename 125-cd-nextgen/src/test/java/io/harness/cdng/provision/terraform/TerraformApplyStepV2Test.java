@@ -49,6 +49,8 @@ import io.harness.delegate.task.terraform.TFTaskType;
 import io.harness.delegate.task.terraform.TerraformTaskNGParameters;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.delegate.task.terraform.TerraformVarFileInfo;
+import io.harness.delegate.task.terraform.provider.TerraformAwsProviderCredentialDelegateInfo;
+import io.harness.delegate.task.terraform.provider.TerraformProviderType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.logging.CommandExecutionStatus;
@@ -217,7 +219,8 @@ public class TerraformApplyStepV2Test extends CategoryTest {
             .build();
 
     TerraformApplyStepParameters applyStepParameters =
-        TerraformStepDataGenerator.generateApplyStepPlanWithInlineVarFiles(StoreConfigType.GITHUB, gitStoreConfigFiles);
+        TerraformStepDataGenerator.generateApplyStepPlanWithInlineVarFiles(
+            StoreConfigType.GITHUB, gitStoreConfigFiles, false);
 
     applyStepParameters.getConfiguration().getIsSkipTerraformRefresh().setValue(true);
     applyStepParameters.getConfiguration().setCliOptions(
@@ -263,6 +266,10 @@ public class TerraformApplyStepV2Test extends CategoryTest {
         .when(terraformStepHelper)
         .executeTerraformTask(any(), any(), any(), any(), any(), any());
 
+    doReturn(TerraformAwsProviderCredentialDelegateInfo.builder().roleArn("roleArn").build())
+        .when(terraformStepHelper)
+        .getProviderCredentialDelegateInfo(any(), any());
+
     ArgumentCaptor<TerraformTaskNGParameters> tfTaskNGParametersArgumentCaptor =
         ArgumentCaptor.forClass(TerraformTaskNGParameters.class);
     ArgumentCaptor<TerraformPassThroughData> tfPassThroughDataArgumentCaptor =
@@ -287,6 +294,12 @@ public class TerraformApplyStepV2Test extends CategoryTest {
     assertThat(terraformPassThroughData.hasS3Files).isFalse();
     assertThat(terraformPassThroughData.getUnitProgresses()).isEmpty();
     verify(terraformStepHelper, times(0)).fetchRemoteVarFiles(any(), any(), any(), any(), any(), any());
+
+    assertThat(taskParameters.getProviderCredentialDelegateInfo()).isNotNull();
+    assertThat(taskParameters.getProviderCredentialDelegateInfo().getType()).isEqualTo(TerraformProviderType.AWS);
+    TerraformAwsProviderCredentialDelegateInfo awsCredentialDelegateInfo =
+        (TerraformAwsProviderCredentialDelegateInfo) taskParameters.getProviderCredentialDelegateInfo();
+    assertThat(awsCredentialDelegateInfo.getRoleArn()).isEqualTo("roleArn");
   }
 
   @Test
@@ -552,7 +565,8 @@ public class TerraformApplyStepV2Test extends CategoryTest {
             .build();
 
     TerraformApplyStepParameters applyStepParameters =
-        TerraformStepDataGenerator.generateApplyStepPlanWithInlineVarFiles(StoreConfigType.GITHUB, gitStoreConfigFiles);
+        TerraformStepDataGenerator.generateApplyStepPlanWithInlineVarFiles(
+            StoreConfigType.GITHUB, gitStoreConfigFiles, false);
     applyStepParameters.getConfiguration().getSpec().getIsTerraformCloudCli().setValue(true);
 
     applyStepParameters.getConfiguration().getIsSkipTerraformRefresh().setValue(true);
@@ -641,7 +655,7 @@ public class TerraformApplyStepV2Test extends CategoryTest {
 
     TerraformApplyStepParameters applyStepParameters =
         TerraformStepDataGenerator.generateApplyStepPlanWithInlineVarFiles(
-            StoreConfigType.ARTIFACTORY, artifactoryStoreConfigFiles);
+            StoreConfigType.ARTIFACTORY, artifactoryStoreConfigFiles, false);
 
     ArtifactoryStoreDelegateConfig artifactoryStoreDelegateConfig =
         TerraformStepDataGenerator.createStoreDelegateConfig();

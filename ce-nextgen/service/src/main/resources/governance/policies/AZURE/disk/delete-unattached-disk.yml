@@ -1,0 +1,9 @@
+policies:
+  - name: delete-unattached-disk
+    resource: azure.disk
+    filters:
+      - type: value
+        key: properties.diskState
+        value: Unattached
+    actions:
+      - type: delete

@@ -62,6 +62,7 @@ import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.services.impl.EnvironmentServiceImpl;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.service.entity.ServiceSequence;
 import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.service.services.ServiceEntityService;
@@ -149,6 +150,7 @@ import io.harness.template.resources.beans.TemplateFilterPropertiesDTO;
 import io.harness.timescaledb.DBUtils;
 import io.harness.timescaledb.TimeScaleDBService;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.PageUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
@@ -175,7 +177,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -216,6 +220,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   private static final String SERVICE_STARTTS = "service_startts";
   private static final String ACCOUNT_IDENTIFIER = "account.";
   private static final String ORG_IDENTIFIER = "org.";
+  private static final Integer QUERY_PAGE_SIZE = 1000;
 
   public String executionStatusCdTimeScaleColumns() {
     return "id,"
@@ -1290,15 +1295,43 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   }
   @Override
   public ServiceDetailsInfoDTOV2 getServiceDetailsListV2(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, long startTime, long endTime, List<String> sort) throws Exception {
+      String projectIdentifier, long startTime, long endTime, List<String> sort, String repoName) throws Exception {
     long numberOfDays = getNumberOfDays(startTime, endTime);
     if (numberOfDays < 0) {
       throw new Exception("start date should be less than or equal to end date");
     }
     long previousStartTime = getStartTimeOfPreviousInterval(startTime, numberOfDays);
 
-    List<ServiceEntity> services =
-        serviceEntityServiceImpl.getAllNonDeletedServices(accountIdentifier, orgIdentifier, projectIdentifier, sort);
+    List<ServiceEntity> services = new ArrayList<>();
+
+    Criteria criteria = Criteria.where(ServiceEntityKeys.accountId)
+                            .is(accountIdentifier)
+                            .and(ServiceEntityKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(ServiceEntityKeys.projectIdentifier)
+                            .is(projectIdentifier);
+
+    if (isNotEmpty(repoName)) {
+      criteria.and(ServiceEntityKeys.repo).is(repoName);
+    }
+
+    int pageNum = 0;
+    // Query in batches of 1k
+    while (true) {
+      Pageable pageRequest;
+      if (isEmpty(sort)) {
+        pageRequest =
+            PageRequest.of(pageNum, QUERY_PAGE_SIZE, Sort.by(Sort.Direction.DESC, ServiceEntityKeys.createdAt));
+      } else {
+        pageRequest = PageUtils.getPageRequest(pageNum, QUERY_PAGE_SIZE, sort);
+      }
+      Page<ServiceEntity> pageResponse = serviceEntityService.list(criteria, pageRequest);
+      services.addAll(pageResponse.getContent());
+      if (pageResponse.isEmpty() || pageResponse.getNumberOfElements() < QUERY_PAGE_SIZE) {
+        break;
+      }
+      pageNum += 1;
+    }
 
     List<WorkloadDeploymentInfoV2> workloadDeploymentInfoList = getDashboardWorkloadDeploymentV2(
         accountIdentifier, orgIdentifier, projectIdentifier, startTime, endTime, previousStartTime, null)
