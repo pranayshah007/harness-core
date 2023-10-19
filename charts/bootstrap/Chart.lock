@@ -4,12 +4,12 @@ dependencies:
   version: 0.9.1
 - name: harness-secrets
   repository: file://./secrets
-  version: 0.9.0
+  version: 0.9.1
 - name: rbac
   repository: file://./rbac
   version: 0.9.0
 - name: networking
   repository: file://./networking
   version: 0.9.0
-digest: sha256:b6ebc350797fead76ceac4fec99254ed1021fe325d80f6e4b4acd1779ff5caef
-generated: "2023-09-13T21:57:24.669355-07:00"
+digest: sha256:8fc7d2138b95f23b09b09f440e67a4f22763641b9cadd32c89e95a09f7a90549
+generated: "2023-10-20T02:36:27.876922+05:30"
