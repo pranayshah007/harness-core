@@ -202,6 +202,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
   public static final Store HARNESSCI_STORE = Store.builder().name(DbAliases.CIMANAGER).build();
   private static final String APP_NAME = "CI Manager Service Application";
   private final MetricRegistry metricRegistry = new MetricRegistry();
+  private final MetricRegistry threadPoolMetricRegistry = new MetricRegistry();
 
   public static void main(String[] args) throws Exception {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -333,7 +334,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
 
     PmsSdkConfiguration ciPmsSdkConfiguration = getPmsSdkConfiguration(
         configuration, ModuleType.CI, ExecutionRegistrar.getEngineSteps(), CIPipelineServiceInfoProvider.class);
-    modules.add(PmsSdkModule.getInstance(ciPmsSdkConfiguration));
+    modules.add(PmsSdkModule.getInstance(ciPmsSdkConfiguration, threadPoolMetricRegistry));
 
     modules.add(PipelineServiceUtilityModule.getInstance());
     modules.add(new AbstractModule() {
@@ -342,7 +343,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
         bind(MetricRegistry.class).toInstance(metricRegistry);
       }
     });
-    modules.add(new MetricRegistryModule(metricRegistry));
+    modules.add(new MetricRegistryModule(metricRegistry, threadPoolMetricRegistry));
 
     Injector injector = Guice.createInjector(modules);
     registerPMSSDK(configuration, injector);

@@ -319,6 +319,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
   private static final String APPLICATION_NAME = "CD NextGen Application";
 
   private final MetricRegistry metricRegistry = new MetricRegistry();
+  private final MetricRegistry threadPoolMetricRegistry = new MetricRegistry();
 
   public static void main(String[] args) throws Exception {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -397,7 +398,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         return appConfig.getDbAliases();
       }
     });
-    modules.add(new MetricRegistryModule(metricRegistry));
+    modules.add(new MetricRegistryModule(metricRegistry, threadPoolMetricRegistry));
     modules.add(NGMigrationSdkModule.getInstance());
     modules.add(new LogStreamingModule(appConfig.getLogStreamingServiceConfig().getBaseUrl()));
     modules.add(new AbstractCfModule() {
@@ -452,7 +453,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     });
     // Pipeline Service Modules
     PmsSdkConfiguration pmsSdkConfiguration = getPmsSdkConfiguration(appConfig);
-    modules.add(PmsSdkModule.getInstance(pmsSdkConfiguration));
+    modules.add(PmsSdkModule.getInstance(pmsSdkConfiguration, threadPoolMetricRegistry));
     modules.add(PipelineServiceUtilityModule.getInstance());
     CacheModule cacheModule = new CacheModule(appConfig.getCacheConfig());
     modules.add(cacheModule);
