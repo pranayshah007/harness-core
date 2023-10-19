@@ -584,6 +584,16 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
 
     MockedStatic<CGRestUtils> mockRestUtils = mockStatic(CGRestUtils.class);
     mockRestUtils.when(() -> CGRestUtils.getResponse(any())).thenReturn(true);
+    DecryptedSecretValue decryptedSecretValue = DecryptedSecretValue.builder().build();
+    decryptedSecretValue.setDecryptedValue(TEST_DECRYPTED_VALUE);
+    when(ngSecretService.getDecryptedSecretValue(TEST_ACCOUNT_IDENTIFIER, null, null, TEST_SECRET_IDENTIFIER))
+        .thenReturn(decryptedSecretValue);
+    SecretResponseWrapper secretResponseWrapper =
+        SecretResponseWrapper.builder()
+            .secret(SecretDTOV2.builder().type(SecretType.SecretFile).identifier(TEST_SECRET_IDENTIFIER).build())
+            .build();
+    when(ngSecretService.getSecret(TEST_ACCOUNT_IDENTIFIER, null, null, TEST_SECRET_IDENTIFIER))
+        .thenReturn(secretResponseWrapper);
 
     backstageEnvVariableService.sync(Collections.singletonList(secret), TEST_ACCOUNT_IDENTIFIER);
     verify(k8sClient).updateSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), secretDataCaptor.capture());
