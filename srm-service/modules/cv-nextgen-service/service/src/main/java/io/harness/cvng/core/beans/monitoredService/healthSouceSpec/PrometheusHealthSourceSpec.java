@@ -105,14 +105,17 @@ public class PrometheusHealthSourceSpec extends MetricHealthSourceSpec {
 
   @Override
   public void validate() {
-    getMetricDefinitions().forEach(metricDefinition
-        -> Preconditions.checkArgument(
-            !(Objects.nonNull(metricDefinition.getAnalysis())
-                && Objects.nonNull(metricDefinition.getAnalysis().getDeploymentVerification())
-                && Objects.nonNull(metricDefinition.getAnalysis().getDeploymentVerification().getEnabled())
-                && metricDefinition.getAnalysis().getDeploymentVerification().getEnabled()
-                && StringUtils.isEmpty(metricDefinition.getServiceInstanceFieldName())),
-            "Service instance field shouldn't be empty for Deployment verification"));
+    getMetricDefinitions().forEach(metricDefinition -> {
+      Preconditions.checkArgument(
+          !(Objects.nonNull(metricDefinition.getAnalysis())
+              && Objects.nonNull(metricDefinition.getAnalysis().getDeploymentVerification())
+              && Objects.nonNull(metricDefinition.getAnalysis().getDeploymentVerification().getEnabled())
+              && metricDefinition.getAnalysis().getDeploymentVerification().getEnabled()
+              && StringUtils.isEmpty(metricDefinition.getServiceInstanceFieldName())),
+          "Service instance field shouldn't be empty for Deployment verification");
+      Preconditions.checkState(metricDefinition.getQuery().contains("{") && metricDefinition.getQuery().contains("}"),
+          "Prometheus Query must contain filters. Please add blank curly braces({}) in case of absence of filters");
+    });
   }
 
   private List<PrometheusCVConfig> toCVConfigs(String accountId, String orgIdentifier, String projectIdentifier,
