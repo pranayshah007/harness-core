@@ -1,0 +1,9 @@
+policies:
+  - name: migrate-gp2-to-gp3-ebs-volumes
+    resource: ebs
+    filters:
+      - VolumeType: gp2
+      - modifyable
+    actions:
+      - type: modify
+        volume-type: gp3

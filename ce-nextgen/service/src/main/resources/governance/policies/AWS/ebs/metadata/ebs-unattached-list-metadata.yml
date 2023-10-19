@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: ebs-unattached-list
+cloudProvider: AWS
+resourceType: ebs
+description: List any unattached EBS volumes
+rulesYamlPath: ../ebs-unattached-list.yml

@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: ec2-tag-filter
+cloudProvider: AWS
+resourceType: ec2
+description: List EC2 not having either of cecid or cisco:operations:purpose tags
+rulesYamlPath: ../ec2-tag-filter.yml
