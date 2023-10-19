@@ -72,8 +72,9 @@ public class ManifestPerpetualTaskHelperNg {
       HelmChartManifestOutcome helmChartManifestOutcome = (HelmChartManifestOutcome) manifestInfo.toManifestOutcome();
       HelmChartManifestDelegateConfig helmManifest =
           (HelmChartManifestDelegateConfig) k8sStepHelper.getManifestDelegateConfig(helmChartManifestOutcome, ambiance);
-      executionCapabilities = getHelmExecutionCapabilities(helmManifest.getHelmVersion(),
-          helmManifest.getStoreDelegateConfig(), null, helmManifest.isIgnoreResponseCode());
+      executionCapabilities =
+          getHelmExecutionCapabilities(helmManifest.getHelmVersion(), helmManifest.getStoreDelegateConfig(), null,
+              helmManifest.isIgnoreResponseCode(), helmManifest.getChartName());
       ManifestCollectionTaskParamsNg manifestCollectionTaskParamsNg =
           ManifestCollectionTaskParamsNg.newBuilder()
               .setAccountId(accountId)

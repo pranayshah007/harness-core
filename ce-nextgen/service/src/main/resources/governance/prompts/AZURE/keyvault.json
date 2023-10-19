@@ -1,0 +1,54 @@
+[
+  {
+    "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.KeyVault/vaults/Name",
+    "name": "Name",
+    "type": "Microsoft.KeyVault/vaults",
+    "location": "westeurope",
+    "tags": {
+      "SecretsExpired": "False",
+      "SecretsNearlyExpired": "False",
+      "KeysNearlyExpired": "False",
+      "SecretExpirationDateDefined": "True",
+      "KeyExpirationDateDefined": "True",
+      "KeysExpired": "False",
+      "TagVendor": "TagVendor"
+    },
+    "properties": {
+      "tenantId": "TenantId",
+      "sku": {
+        "family": "A",
+        "name": "standard"
+      },
+      "accessPolicies": [
+        {
+          "tenantId": "TenantId",
+          "objectId": "ObjectId",
+          "permissions": {
+            "keys": [
+              "all"
+            ],
+            "secrets": [
+              "all"
+            ],
+            "certificates": [],
+            "storage": []
+          }
+        }
+      ],
+      "vaultUri": "https://Name.vault.azure.net/",
+      "enabledForDeployment": false,
+      "enabledForDiskEncryption": false,
+      "enabledForTemplateDeployment": true,
+      "enableSoftDelete": true,
+      "softDeleteRetentionInDays": 90,
+      "enablePurgeProtection": true,
+      "networkAcls": {
+        "bypass": "AzureServices",
+        "defaultAction": "Deny",
+        "ipRules": [],
+        "virtualNetworkRules": []
+      }
+    },
+    "resourceGroup": "ResourceGroupId"
+  }
+]

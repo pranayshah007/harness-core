@@ -1,0 +1,9 @@
+policies:
+  - name: ec2-old-instances-list
+    resource: ec2
+    description: |
+      List all EC2s where instance age is more than 60 days
+    filters:
+      - 'State.Name': running
+      - type: instance-age
+        days: 60

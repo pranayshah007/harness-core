@@ -1,0 +1,13 @@
+{
+  "PolicyName": "PolicyName",
+  "PolicyId": "PolicyId",
+  "Arn": "arn:aws:iam::AccountId:policy/PolicyName",
+  "Path": "/",
+  "DefaultVersionId": "v7",
+  "AttachmentCount": 0,
+  "PermissionsBoundaryUsageCount": 0,
+  "IsAttachable": true,
+  "CreateDate": "2018-02-13T00:10:53+00:00",
+  "UpdateDate": "2018-08-04T00:33:40+00:00",
+  "Tags": []
+}

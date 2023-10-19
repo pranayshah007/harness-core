@@ -23,7 +23,7 @@ import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceL
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_MEAN_TIME_TO_MERGE_PR;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_OPEN_CODE_SCANNING_ALERTS;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_OPEN_DEPENDABOT_ALERTS;
-import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_OPEN_PULL_REQUESTS_BY_AUTHOR;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_OPEN_PULL_REQUESTS_BY_ACCOUNT;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_OPEN_SECRET_SCANNING_ALERTS;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_WORKFLOWS_COUNT;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_WORKFLOW_SUCCESS_RATE;
@@ -54,7 +54,7 @@ public class DataSourceLocationFactory {
   private GithubOpenDependabotAlertsDsl githubOpenDependabotAlertsDsl;
   private GithubOpenCodeScanningAlertsDsl githubOpenCodeScanningAlertsDsl;
   private GithubOpenSecretScanningAlertsDsl githubOpenSecretScanningAlertsDsl;
-  private GithubOpenPullRequestsByAuthorDsl githubOpenPullRequestsByAuthorDsl;
+  private GithubOpenPullRequestsByAccountDsl githubOpenPullRequestsByAccountDsl;
   private BitbucketMeanTimeToMergePRDsl bitbucketMeanTimeToMergePRDsl;
   private BitbucketIsBranchProtectionSetDsl bitbucketIsBranchProtectionSetDsl;
   private GitlabMeanTimeToMergePRDsl gitlabMeanTimeToMergePRDsl;
@@ -92,8 +92,8 @@ public class DataSourceLocationFactory {
         return githubOpenCodeScanningAlertsDsl;
       case GITHUB_OPEN_SECRET_SCANNING_ALERTS:
         return githubOpenSecretScanningAlertsDsl;
-      case GITHUB_OPEN_PULL_REQUESTS_BY_AUTHOR:
-        return githubOpenPullRequestsByAuthorDsl;
+      case GITHUB_OPEN_PULL_REQUESTS_BY_ACCOUNT:
+        return githubOpenPullRequestsByAccountDsl;
 
       // Bitbucket
       case BITBUCKET_MEAN_TIME_TO_MERGE_PR:

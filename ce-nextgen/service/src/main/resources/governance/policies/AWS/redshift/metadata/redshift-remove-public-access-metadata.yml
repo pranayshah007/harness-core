@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: redshift-remove-public-access
+cloudProvider: AWS
+resourceType: redshift
+description: Remove or revoke public access for all redshift cluster
+rulesYamlPath: ../redshift-remove-public-access.yml

@@ -4830,7 +4830,7 @@ public class K8sStepHelperTest extends CDNGTestBase {
             .storeDelegateConfig(
                 OciHelmStoreDelegateConfig.builder().awsConnectorDTO(AwsConnectorDTO.builder().build()).build())
             .build();
-    TaskType expectedTaskType = TaskType.K8S_COMMAND_TASK_NG_OCI_ECR_CONFIG;
+    TaskType expectedTaskType = TaskType.K8S_COMMAND_TASK_NG_OCI_ECR_CONFIG_V2;
     checkTaskType(k8sInfraDelegateConfig, expectedTaskType, manifestDelegateConfig);
   }
 

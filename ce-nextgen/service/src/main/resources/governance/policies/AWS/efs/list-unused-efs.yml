@@ -1,0 +1,8 @@
+policies:
+  - name: list-unused-efs
+    resource: efs
+    filters:
+      - type: metrics
+        name: ClientConnections
+        days: 30
+        value: 0

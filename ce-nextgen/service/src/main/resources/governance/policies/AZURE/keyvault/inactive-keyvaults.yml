@@ -1,0 +1,10 @@
+policies:
+  - name: inactive-keyvaults
+    resource: azure.keyvault
+    filters:
+      - type: metric
+        metric: ServiceApiHit
+        op: ge
+        aggregation: total
+        threshold: 10
+        timeframe: 72

@@ -621,6 +621,7 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
 
     Set<String> nullableFields = Sets.newHashSet();
     nullableFields.add(AnalysisOrchestratorKeys.analysisOrchestrationIteration);
+    nullableFields.add(AnalysisOrchestratorKeys.lastQueueSizeMetricIteration);
 
     List<Field> fields = ReflectionUtils.getAllDeclaredAndInheritedFields(AnalysisOrchestrator.class);
     fields.stream().filter(field -> !nullableFields.contains(field.getName())).forEach(field -> {

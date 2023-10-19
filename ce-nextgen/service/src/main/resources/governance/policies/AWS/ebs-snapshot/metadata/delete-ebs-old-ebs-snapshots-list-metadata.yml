@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: delete-ebs-old-ebs-snapshots-list
+cloudProvider: AWS
+resourceType: ebs-snapshot
+description: List old ebsSnapshots aged more than 30 days
+rulesYamlPath: ../delete-ebs-old-ebs-snapshots-list.yml

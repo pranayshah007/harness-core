@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: rds-snapshot-delete-stale
+cloudProvider: AWS
+resourceType: rds-snapshot
+description: Delete all stale(older than 28 days) RDS snapshot
+rulesYamlPath: ../rds-snapshot-delete-stale.yml

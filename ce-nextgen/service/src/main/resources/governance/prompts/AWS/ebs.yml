@@ -1,0 +1,3 @@
+filters: config-compliance, event, fault-tolerant, finding, health-event, instance, json-diff, kms-alias, list-item, marked-for-op, metrics, modifyable, ops-item, reduce, tag-count, value
+actions: auto-tag-user, copy-instance-tags, copy-related-tag, delete, detach, encrypt-instance-volumes, invoke-lambda, invoke-sfn, mark-for-op, modify, normalize-tag, notify, post-finding, post-item, put-metric, remove-tag, rename-tag, snapshot, tag, tag-trim, webhook
+customPrompt:

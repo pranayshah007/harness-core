@@ -576,8 +576,10 @@ public class IntegrationStageUtils {
       config.setParallel(arrayNode);
     } else if (config.getStepGroup() != null && !config.getStepGroup().isNull()) {
       StepGroupElementConfig stepGroupElementConfig = getStepGroupElementConfig(config);
-      for (ExecutionWrapperConfig step : stepGroupElementConfig.getSteps()) {
-        injectLoopEnvVariables(step);
+      if (isNotEmpty(stepGroupElementConfig.getSteps())) {
+        for (ExecutionWrapperConfig step : stepGroupElementConfig.getSteps()) {
+          injectLoopEnvVariables(step);
+        }
       }
       JsonNode stepGroupNode = JsonPipelineUtils.asTree(stepGroupElementConfig);
       config.setStepGroup(stepGroupNode);
@@ -986,8 +988,10 @@ public class IntegrationStageUtils {
             section -> addStepIdentifier(section, stepIdentifiers, parentId));
       } else if (executionWrapper.getStepGroup() != null && !executionWrapper.getStepGroup().isNull()) {
         StepGroupElementConfig stepGroupElementConfig = getStepGroupElementConfig(executionWrapper);
-        for (ExecutionWrapperConfig wrapper : stepGroupElementConfig.getSteps()) {
-          addStepIdentifier(wrapper, stepIdentifiers, parentId + stepGroupElementConfig.getIdentifier() + "_");
+        if (isNotEmpty(stepGroupElementConfig.getSteps())) {
+          for (ExecutionWrapperConfig wrapper : stepGroupElementConfig.getSteps()) {
+            addStepIdentifier(wrapper, stepIdentifiers, parentId + stepGroupElementConfig.getIdentifier() + "_");
+          }
         }
       } else {
         throw new InvalidRequestException("Only Parallel, StepElement and StepGroup are supported");

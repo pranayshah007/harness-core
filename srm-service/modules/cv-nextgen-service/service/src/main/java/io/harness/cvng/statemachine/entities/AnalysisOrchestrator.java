@@ -65,6 +65,8 @@ public class AnalysisOrchestrator
 
   @FdIndex private Long analysisOrchestrationIteration;
 
+  private Long lastQueueSizeMetricIteration;
+
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {
     if (AnalysisOrchestratorKeys.analysisOrchestrationIteration.equals(fieldName)) {

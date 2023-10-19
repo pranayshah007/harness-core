@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: enable-blob-storage-logging
+cloudProvider: AZURE
+resourceType: azure.storage
+description: Enable write and delete logging and disable read logging on blob storage, and retain logs for 5 days
+rulesYamlPath: ../enable-blob-storage-logging.yml

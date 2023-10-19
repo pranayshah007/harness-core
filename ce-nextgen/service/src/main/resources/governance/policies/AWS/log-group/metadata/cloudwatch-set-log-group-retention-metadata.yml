@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: cloudwatch-set-log-group-retention
+cloudProvider: AWS
+resourceType: log-group
+description: Set the retention period as 200 for all CloudWatch log groups
+rulesYamlPath: ../cloudwatch-set-log-group-retention.yml

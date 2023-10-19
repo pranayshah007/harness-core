@@ -624,13 +624,13 @@
     "rules": [
       {
         "data_source_identifier": "github",
-        "data_point_identifier": "openPullRequestsByAuthor",
+        "data_point_identifier": "openPullRequestsByAccount",
         "conditional_input_value": "\"app/dependabot\"",
         "operator": "<",
         "value": "5"
       }
     ],
-    "expression": "github.openPullRequestsByAuthor.\"app/dependabot\" < 5",
+    "expression": "github.openPullRequestsByAccount.\"app/dependabot\" < 5",
     "tags": ["Software quality"],
     "defaultBehaviour": "FAIL",
     "failMessage": "Number of open pull requests raised by Dependabot is more than 5."

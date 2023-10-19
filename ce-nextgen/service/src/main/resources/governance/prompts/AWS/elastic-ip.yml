@@ -1,0 +1,3 @@
+filters: config-compliance, event, finding, json-diff, list-item, marked-for-op, ops-item, reduce, shield-enabled, tag-count, value
+actions: auto-tag-user, copy-related-tag, invoke-lambda, invoke-sfn, mark-for-op, normalize-tag, notify, post-finding, post-item, put-metric, release, remove-tag, rename-tag, set-shield, tag, tag-trim, webhook
+customPrompt:

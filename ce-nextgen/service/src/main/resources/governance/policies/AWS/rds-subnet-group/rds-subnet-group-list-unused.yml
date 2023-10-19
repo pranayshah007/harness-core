@@ -1,0 +1,5 @@
+policies:
+  - name: rds-subnet-group-list-unused
+    resource: rds-subnet-group
+    filters:
+      - unused

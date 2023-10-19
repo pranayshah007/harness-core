@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: publicip-under-dos-attack
+cloudProvider: AZURE
+resourceType: azure.publicip
+description: List all public IP addresses under DDoS attack over the last 72 hours
+rulesYamlPath: ../publicip-under-dos-attack.yml

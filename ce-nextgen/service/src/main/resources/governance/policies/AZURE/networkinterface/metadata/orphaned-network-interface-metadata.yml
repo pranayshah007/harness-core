@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: true
+deleted: false
+name: orphaned-network-interface
+cloudProvider: AZURE
+resourceType: azure.networkinterface
+description: List orphaned network interfaces
+rulesYamlPath: ../orphaned-network-interface.yml

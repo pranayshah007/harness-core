@@ -383,14 +383,14 @@
   {
     "id": "652d149b55368da81ac6804e",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
-    "identifier": "openPullRequestsByAuthor",
-    "name": "Open pull requests by author",
+    "identifier": "openPullRequestsByAccount",
+    "name": "Open pull requests by account",
     "type": "NUMBER",
     "dataSourceIdentifier": "github",
-    "dataSourceLocationIdentifier": "github_open_pull_requests_by_author",
+    "dataSourceLocationIdentifier": "github_open_pull_requests_by_account",
     "isConditional": true,
-    "conditionalInputValueDescription": "Username (e.g: app/dependabot)",
-    "description": "Calculates the total number of open pull requests raised by the given author",
-    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the total number of open pull requests raised by the author.\n\n**Prerequisites:** Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository. Make sure to mention the username in the conditional input field."
+    "conditionalInputValueDescription": "Account name (e.g: app/dependabot)",
+    "description": "Calculates the total number of open pull requests raised by the given account",
+    "detailedDescription": "**How it's calculated:** Fetches backstage.io/source-location annotation from catalog YAML file to find repository details and calculates the total number of open pull requests raised by account.\n\n**Prerequisites:** Provide suitable backstage.io/source-location annotation if the catalog YAML file is present outside the source GitHub repository. Make sure to mention the username in the conditional input field."
   }
 ]

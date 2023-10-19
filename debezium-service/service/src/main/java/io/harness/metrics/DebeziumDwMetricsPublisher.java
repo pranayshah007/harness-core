@@ -16,6 +16,7 @@ import io.harness.metrics.service.api.MetricService;
 import io.harness.metrics.service.api.MetricsPublisher;
 
 import com.codahale.metrics.Counter;
+import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
@@ -26,9 +27,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import lombok.extern.slf4j.Slf4j;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.DEBEZIUM})
 @OwnedBy(HarnessTeam.PIPELINE)
+@Slf4j
 public class DebeziumDwMetricsPublisher implements MetricsPublisher {
   @Inject private MetricService metricService;
   @Inject private MetricRegistry metricRegistry;
@@ -48,6 +51,8 @@ public class DebeziumDwMetricsPublisher implements MetricsPublisher {
     timerSet.forEach(entry -> recordTimer(sanitizeMetricName(entry.getKey()), entry.getValue()));
     Set<Map.Entry<String, Counter>> counterSet = metricRegistry.getCounters().entrySet();
     counterSet.forEach(entry -> recordCounter(sanitizeMetricName(entry.getKey()), entry.getValue()));
+    Set<Map.Entry<String, Gauge>> gaugeSet = metricRegistry.getGauges().entrySet();
+    gaugeSet.forEach(entry -> recordGauge(sanitizeMetricName(entry.getKey()), entry.getValue()));
   }
 
   private void recordCounter(String metricName, Counter counter) {
@@ -88,6 +93,24 @@ public class DebeziumDwMetricsPublisher implements MetricsPublisher {
 
   private void recordMetric(String name, double value) {
     metricService.recordMetric(name, value);
+  }
+
+  private void recordGauge(String metricName, Gauge gauge) {
+    try (DwMetricContext ignore = new DwMetricContext(NAMESPACE, CONTAINER_NAME, SERVICE_NAME)) {
+      Object obj = gauge.getValue();
+      double value;
+      if (obj instanceof Number) {
+        value = ((Number) obj).doubleValue();
+      } else {
+        if (!(obj instanceof Boolean)) {
+          log.debug(String.format(
+              "Invalid type for Gauge %s: %s", metricName, obj == null ? "null" : obj.getClass().getName()));
+          return;
+        }
+        value = (Boolean) obj ? 1.0D : 0.0D;
+      }
+      recordMetric(metricName, value);
+    }
   }
 
   private static String sanitizeMetricName(String dropwizardName) {

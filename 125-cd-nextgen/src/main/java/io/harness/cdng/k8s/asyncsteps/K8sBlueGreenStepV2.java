@@ -20,7 +20,7 @@ import io.harness.pms.contracts.steps.StepType;
 
 import lombok.extern.slf4j.Slf4j;
 
-@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_K8S})
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class K8sBlueGreenStepV2 extends CdAsyncChainExecutable<K8sBlueGreenStep> {

@@ -1,0 +1,12 @@
+policies:
+  - name: cosmos-firewall-clear
+    resource: azure.cosmosdb
+    filters:
+      - not:
+          - type: value
+            key: properties.ipRangeFilter
+            value: empty
+    actions:
+      - type: set-firewall-rules
+        append: False
+        ip-rules: []

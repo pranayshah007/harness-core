@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: gluejob-enable-metrics
+cloudProvider: AWS
+resourceType: glue-job
+description: Enable metrics for glue job where in default argument enable-metrics is missing
+rulesYamlPath: ../gluejob-enable-metrics.yml

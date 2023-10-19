@@ -1,0 +1,9 @@
+policies:
+  - name: find-glue-jobs-with-old-versions
+    resource: glue-job
+    filters:
+      - or:
+          - "GlueVersion": "empty"
+          - "GlueVersion": "absent"
+          - "GlueVersion": "1.0"
+          - "GlueVersion": "2.0"

@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: storage-container-public
+cloudProvider: AZURE
+resourceType: azure.storage-container
+description: List storage containers with public access enabled
+rulesYamlPath: ../storage-container-public.yml

@@ -1,0 +1,10 @@
+policies:
+  - name: delete-lambda-unused
+    resource: lambda
+    filters:
+      - type: metrics
+        name: Invocations
+        value: 0
+        op: eq
+    actions:
+      - delete

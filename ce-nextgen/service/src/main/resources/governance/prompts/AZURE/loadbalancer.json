@@ -1,0 +1,132 @@
+[
+  {
+    "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Network/loadBalancers/ResourceId",
+    "name": "ResourceId",
+    "type": "Microsoft.Network/loadBalancers",
+    "location": "westeurope",
+    "tags": {
+      "CreatedBy": "Terraform",
+      "Department": "Platform"
+    },
+    "sku": {
+      "name": "Standard",
+      "tier": "Regional"
+    },
+    "etag": "ETag",
+    "properties": {
+      "frontendIPConfigurations": [
+        {
+          "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Network/loadBalancers/ResourceId/frontendIPConfigurations/FrontEndId",
+          "name": "FrontEndId",
+          "etag": "ETag",
+          "type": "Microsoft.Network/loadBalancers/frontendIPConfigurations",
+          "zones": [
+            "3",
+            "1",
+            "2"
+          ],
+          "properties": {
+            "loadBalancingRules": [
+              {
+                "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Network/loadBalancers/ResourceId/loadBalancingRules/FrontEndId-TCP-80"
+              }
+            ],
+            "privateIPAddress": "10.32.1.78",
+            "privateIPAllocationMethod": "Dynamic",
+            "privateIPAddressVersion": "IPv4",
+            "subnet": {
+              "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId2/providers/Microsoft.Network/virtualNetworks/VirtualNetworkId/subnets/SubnetId"
+            },
+            "provisioningState": "Succeeded"
+          }
+        }
+      ],
+      "backendAddressPools": [
+        {
+          "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Network/loadBalancers/ResourceId/backendAddressPools/BackendAddressPool1",
+          "name": "BackendAddressPool1",
+          "etag": "ETag",
+          "type": "Microsoft.Network/loadBalancers/backendAddressPools",
+          "properties": {
+            "loadBalancerBackendAddresses": [
+              {
+                "name": "Address1",
+                "properties": {
+                  "networkInterfaceIPConfiguration": {
+                    "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Compute/virtualMachineScaleSets/VirtualMachineScaleSet1/virtualMachines/4/networkInterfaces/VirtualMachineScaleSet1/ipConfigurations/ipconfig1"
+                  }
+                }
+              }
+            ],
+            "backendIPConfigurations": [
+              {
+                "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Compute/virtualMachineScaleSets/VirtualMachineScaleSet1/virtualMachines/4/networkInterfaces/VirtualMachineScaleSet1/ipConfigurations/ipconfig1"
+              }
+            ],
+            "loadBalancingRules": [
+              {
+                "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Network/loadBalancers/ResourceId/loadBalancingRules/FrontEndId-TCP-80"
+              }
+            ],
+            "provisioningState": "Succeeded"
+          }
+        }
+      ],
+      "loadBalancingRules": [
+        {
+          "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Network/loadBalancers/ResourceId/loadBalancingRules/FrontEndId-TCP-80",
+          "name": "FrontEndId-TCP-80",
+          "etag": "ETag",
+          "type": "Microsoft.Network/loadBalancers/loadBalancingRules",
+          "properties": {
+            "frontendIPConfiguration": {
+              "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Network/loadBalancers/ResourceId/frontendIPConfigurations/FrontEndId"
+            },
+            "backendAddressPool": {
+              "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Network/loadBalancers/ResourceId/backendAddressPools/kubernetes"
+            },
+            "probe": {
+              "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Network/loadBalancers/ResourceId/probes/FrontEndId-TCP-31819"
+            },
+            "protocol": "Tcp",
+            "loadDistribution": "Default",
+            "frontendPort": 80,
+            "backendPort": 80,
+            "idleTimeoutInMinutes": 4,
+            "enableFloatingIP": true,
+            "enableTcpReset": true,
+            "disableOutboundSnat": true,
+            "provisioningState": "Succeeded"
+          }
+        }
+      ],
+      "probes": [
+        {
+          "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Network/loadBalancers/ResourceId/probes/FrontEndId-TCP-31819",
+          "name": "FrontEndId-TCP-31819",
+          "etag": "ETag",
+          "type": "Microsoft.Network/loadBalancers/probes",
+          "properties": {
+            "loadBalancingRules": [
+              {
+                "id": "/subscriptions/SubscriptionId/resourceGroups/ResourceGroupId/providers/Microsoft.Network/loadBalancers/ResourceId/loadBalancingRules/FrontEndId-TCP-80"
+              }
+            ],
+            "protocol": "Http",
+            "port": 31819,
+            "intervalInSeconds": 5,
+            "numberOfProbes": 2,
+            "requestPath": "/healthz",
+            "provisioningState": "Succeeded"
+          }
+        }
+      ],
+      "inboundNatRules": [],
+      "inboundNatPools": [],
+      "outboundRules": [],
+      "resourceGuid": "ResourceGuid",
+      "provisioningState": "Succeeded"
+    },
+    "resourceGroup": "ResourceGroupId"
+  }
+]

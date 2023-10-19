@@ -7,6 +7,9 @@
 
 package io.harness.idp.scorecard.datapoints.parser;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.common.CommonUtils;
@@ -19,6 +22,10 @@ import java.util.Set;
 public class GithubWorkflowsCountParser implements DataPointParser {
   @Override
   public Object parseDataPoint(Map<String, Object> data, DataPointEntity dataPointIdentifier, Set<String> inputValues) {
+    String errorMessage = (String) data.get(ERROR_MESSAGE_KEY);
+    if (!isEmpty(errorMessage)) {
+      return constructDataPointInfoWithoutInputValue(null, errorMessage);
+    }
     double count = (double) CommonUtils.findObjectByName(data, "total_count");
     return constructDataPointInfoWithoutInputValue(count, null);
   }

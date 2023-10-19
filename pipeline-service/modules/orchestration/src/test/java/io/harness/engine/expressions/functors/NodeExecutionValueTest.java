@@ -46,7 +46,6 @@ import io.harness.utils.steps.TestStepParameters;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
-import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -69,7 +68,7 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
   @Mock PmsOutcomeService pmsOutcomeService;
   @Mock PmsSweepingOutputService pmsSweepingOutputService;
 
-  @Inject NodeExecutionInfoService nodeExecutionInfoService;
+  @Mock NodeExecutionInfoService nodeExecutionInfoService;
 
   @Mock PlanService planService;
 
@@ -394,6 +393,8 @@ public class NodeExecutionValueTest extends OrchestrationTestBase {
             .engine(engine)
             .groupAliases(ImmutableMap.of("stage", "STAGE"))
             .build();
+    when(nodeExecutionInfoService.fetchStrategyObjectMap(nodeExecution4.getUuid(), false))
+        .thenReturn(Map.of("matrix", Map.of("os", "test"), "iteration", 2));
     assertThat(engine.getProperty(functor, "stage.matrix.os")).isEqualTo("test");
     assertThat(engine.getProperty(functor, "stage.iteration")).isEqualTo(2);
   }

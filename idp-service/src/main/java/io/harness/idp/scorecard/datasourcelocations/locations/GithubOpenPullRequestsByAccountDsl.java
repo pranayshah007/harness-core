@@ -11,7 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.idp.common.Constants.DSL_RESPONSE;
 import static io.harness.idp.common.Constants.ERROR_MESSAGE_KEY;
 import static io.harness.idp.common.Constants.MESSAGE_KEY;
-import static io.harness.idp.scorecard.datapoints.constants.DataPoints.OPEN_PULL_REQUESTS_BY_AUTHOR;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.OPEN_PULL_REQUESTS_BY_ACCOUNT;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.SOURCE_LOCATION_ANNOTATION_ERROR;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPOSITORY_NAME;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.REPOSITORY_OWNER;
@@ -40,7 +40,7 @@ import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.IDP)
-public class GithubOpenPullRequestsByAuthorDsl implements DataSourceLocation {
+public class GithubOpenPullRequestsByAccountDsl implements DataSourceLocation {
   DslClientFactory dslClientFactory;
   private static final String AUTHOR_NAME = "{AUTHOR_NAME}";
 
@@ -57,7 +57,7 @@ public class GithubOpenPullRequestsByAuthorDsl implements DataSourceLocation {
     Optional<Map.Entry<DataPointEntity, Set<String>>> dataPointAndInputValuesOpt =
         dataPointsAndInputValues.entrySet()
             .stream()
-            .filter(entry -> entry.getKey().getIdentifier().equals(OPEN_PULL_REQUESTS_BY_AUTHOR))
+            .filter(entry -> entry.getKey().getIdentifier().equals(OPEN_PULL_REQUESTS_BY_ACCOUNT))
             .findFirst();
 
     if (dataPointAndInputValuesOpt.isEmpty()) {
@@ -99,8 +99,8 @@ public class GithubOpenPullRequestsByAuthorDsl implements DataSourceLocation {
 
   @Override
   public String replaceInputValuePlaceholdersIfAny(Map<String, String> dataPointIdsAndInputValue, String requestBody) {
-    if (!isEmpty(dataPointIdsAndInputValue.get(OPEN_PULL_REQUESTS_BY_AUTHOR))) {
-      String inputValue = dataPointIdsAndInputValue.get(OPEN_PULL_REQUESTS_BY_AUTHOR);
+    if (!isEmpty(dataPointIdsAndInputValue.get(OPEN_PULL_REQUESTS_BY_ACCOUNT))) {
+      String inputValue = dataPointIdsAndInputValue.get(OPEN_PULL_REQUESTS_BY_ACCOUNT);
       inputValue = inputValue.replace("\"", "");
       requestBody = requestBody.replace(AUTHOR_NAME, inputValue);
     }

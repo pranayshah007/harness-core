@@ -1,0 +1,12 @@
+policies:
+  - name: stop-after-hours
+    resource: ec2
+    filters:
+      - type: offhour
+        tag: CustodianOffHours
+        default_tz: pt
+        offhour: 19
+      - type: instance-age
+        hours: 1
+    actions:
+      - type: stop

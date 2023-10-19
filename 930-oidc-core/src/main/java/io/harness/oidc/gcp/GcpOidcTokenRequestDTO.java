@@ -25,4 +25,8 @@ public class GcpOidcTokenRequestDTO {
   @NotNull @NotEmpty @Schema(description = "This specifies the Workload Pool Id") private String workloadPoolId;
   @NotNull @NotEmpty @Schema(description = "This specifies the OIDC ID Provider") private String providerId;
   @NotNull @NotEmpty @Schema(description = "This specifies the GCP Project Id") private String gcpProjectId;
+  @NotNull
+  @NotEmpty
+  @Schema(description = "This specifies the GCP Service Account Email")
+  private String serviceAccountEmail;
 }
