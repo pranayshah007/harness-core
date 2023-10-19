@@ -41,6 +41,7 @@ import io.harness.cvng.usage.impl.ActiveServiceMonitoredDTO;
 import io.harness.cvng.usage.impl.resources.ActiveServiceDTO;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
+import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
 
 import java.time.Instant;
@@ -97,7 +98,9 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
 
   List<String> listConnectorRefs(MonitoredServiceDTO monitoredServiceDTO);
 
-  List<EnvironmentResponse> listEnvironments(String accountId, String orgIdentifier, String projectIdentifier);
+  List<ServiceResponse> getUniqueServices(String accountId, String orgIdentifier, String projectIdentifier);
+  List<EnvironmentResponse> getUniqueEnvironments(String accountId, String orgIdentifier, String projectIdentifier);
+
   MonitoredServiceResponse createDefault(
       ProjectParams projectParams, String serviceIdentifier, String environmentIdentifier);
   HealthMonitoringFlagResponse setHealthMonitoringFlag(ProjectParams projectParams, String identifier, boolean enable);
