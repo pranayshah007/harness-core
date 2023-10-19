@@ -26,12 +26,12 @@ appVersion: "1.0.0"
 dependencies:
   - name: minio
     condition: global.database.minio.installed
-    version: 11.9.1
-    repository: https://charts.bitnami.com/bitnami
+    version: 12.8.15
+    repository: oci://registry-1.docker.io/bitnamicharts
   - name: mongodb
-    version: 13.1.2
+    version: 14.0.10
     condition: global.database.mongo.installed
-    repository: https://charts.bitnami.com/bitnami
+    repository: oci://registry-1.docker.io/bitnamicharts
   - name: timescaledb
     version: 0.8.x
     condition: global.database.timescaledb.installed
@@ -41,12 +41,12 @@ dependencies:
     condition: global.database.redis.installed
     repository: "file://./redis"
   - name: postgresql
-    version: 12.4.2
+    version: 13.1.5
     condition: global.database.postgres.installed
-    repository: https://charts.bitnami.com/bitnami
+    repository: oci://registry-1.docker.io/bitnamicharts
   - name: clickhouse
     condition: global.database.clickhouse.enabled
-    version: 2.1.0
-    repository: https://charts.bitnami.com/bitnami
+    version: 4.0.9
+    repository: oci://registry-1.docker.io/bitnamicharts
 
 

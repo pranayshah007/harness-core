@@ -30,12 +30,8 @@ mongodb:
   architecture: replicaset
   fullnameOverride: "mongodb-replicaset-chart"
   image:
-    registry: docker.io
-    repository: harness/mongo
-    tag: 4.4.22
+    tag: 5.0.21-debian-11-r20
   replicaCount: 3
-  arbiter:
-    enabled: true
   service:
     nameOverride: "mongodb-replicaset-chart"
   auth:

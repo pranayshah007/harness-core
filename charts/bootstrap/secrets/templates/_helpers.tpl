@@ -60,3 +60,23 @@ root-password: {{ randAlphaNum 10 | quote }}
 {{- define "harnesssecrets.generateClickhouseSecrets" }}
     admin-password: {{ include "harnesscommon.secrets.passwords.manage" (dict "secret" "clickhouse" "key" "admin-password" "providedValues" (list "clickhouse.adminPassword") "length" 10 "context" $) }}
 {{- end }}
+
+{{ include "common.labels.standard" (dict "customLabels" .Values.commonLabels "context" $) -}}
+*/}}
+{{- define "harnesscommon.labels.standard" -}}
+{{- if and (hasKey . "customLabels") (hasKey . "context") -}}
+{{- $default := dict "app.kubernetes.io/name" (include "harnesscommon.names.name" .context) "helm.sh/chart" (include "harnesscommon.names.chart" .context) "app.kubernetes.io/instance" .context.Release.Name "app.kubernetes.io/managed-by" .context.Release.Service -}}
+{{- with .context.Chart.AppVersion -}}
+{{- $_ := set $default "app.kubernetes.io/version" . -}}
+{{- end -}}
+{{ template "common.tplvalues.merge" (dict "values" (list .customLabels $default) "context" .context) }}
+{{- else -}}
+app.kubernetes.io/name: {{ include "harnesscommon.names.name" . }}
+helm.sh/chart: {{ include "harnesscommon.names.chart" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- with .Chart.AppVersion }}
+app.kubernetes.io/version: {{ . | quote }}
+{{- end -}}
+{{- end -}}
+{{- end -}}

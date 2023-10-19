@@ -1,10 +1,10 @@
 dependencies:
 - name: minio
-  repository: https://charts.bitnami.com/bitnami
-  version: 11.9.1
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 12.8.15
 - name: mongodb
-  repository: https://charts.bitnami.com/bitnami
-  version: 13.1.2
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 14.0.10
 - name: timescaledb
   repository: file://./timescaledb
   version: 0.8.0
@@ -12,10 +12,10 @@ dependencies:
   repository: file://./redis
   version: 0.8.0
 - name: postgresql
-  repository: https://charts.bitnami.com/bitnami
-  version: 12.4.2
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 13.1.5
 - name: clickhouse
-  repository: https://charts.bitnami.com/bitnami
-  version: 2.1.0
-digest: sha256:d43e384b235286421c701a0d13be0ab9862120118cba07014c16bfb5d8b37cba
-generated: "2023-09-12T21:28:03.21271+05:30"
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 4.0.9
+digest: sha256:03c9c1efb4a326428dd9f64a4916f09e3ea632cc9c37d8354c41fc7e78b19a40
+generated: "2023-10-19T20:55:33.120531+05:30"
