@@ -599,7 +599,6 @@ public enum FeatureName {
   RANCHER_SUPPORT,
   RATE_LIMITED_TOTP,
   READ_ENCRYPTED_DELEGATE_TOKEN("Read encrypted delegate token value", HarnessTeam.DEL),
-  RECOMMENDATION_EFFICIENCY_VIEW_UI("Enable efficiency view instead cost view in Recommendation", HarnessTeam.CE),
   REDUCE_DELEGATE_MEMORY_SIZE("Reduce CG delegate memory to 4GB", HarnessTeam.DEL),
   REFACTOR_ARTIFACT_SELECTION,
   REFACTOR_STATEMACHINEXECUTOR,
