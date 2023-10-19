@@ -1,0 +1,3 @@
+filters: config-compliance, event, finding, health-event, list-item, marked-for-op, metrics, network-location, ops-item, reduce, security-group, subnet, tag-count, value
+actions: auto-tag-user, copy-related-tag, delete, invoke-lambda, invoke-sfn, mark-for-op, modify-security-groups, notify, post-finding, post-item, put-metric, remove-tag, rename-tag, snapshot, tag, webhook
+customPrompt:
