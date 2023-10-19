@@ -1711,14 +1711,6 @@ permissions:
     includedInAllRoles: false
     allowedScopeLevels:
       - account
-  - identifier: core_inputset_view
-    name: View InputSet
-    status: ACTIVE
-    includeInAllRoles: false
-    allowedScopeLevels:
-      - account
-      - organization
-      - project
   - identifier: core_inputset_edit
     name: Create or Edit InputSet
     status: ACTIVE

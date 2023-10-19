@@ -165,7 +165,6 @@ roles:
         - cet_criticalevent_view
         - cet_criticalevent_create
         - cet_criticalevent_delete
-        - core_inputset_view
         - core_inputset_edit
         - core_inputset_delete
       allowedScopeLevels:
@@ -226,7 +225,6 @@ roles:
         - cet_agents_view
         - cet_token_view
         - cet_criticalevent_view
-        - core_inputset_view
       allowedScopeLevels:
         - project
       managed: true
