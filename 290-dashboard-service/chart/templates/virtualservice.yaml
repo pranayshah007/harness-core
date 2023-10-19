@@ -33,9 +33,9 @@ spec:
   - name: {{ include "ng-dashboard-aggregator.name" . }}
     match:
     - uri:
-        prefix: /ng-dasboard/api/
+        prefix: /ng-dashboard/api/
     - uri:
-        prefix: /ng-dasboard/api
+        prefix: /ng-dashboard/api
     rewrite:
       uri: /
     route:
