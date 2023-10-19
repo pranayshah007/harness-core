@@ -876,10 +876,10 @@ public class InfrastructureStepTest extends CategoryTest {
                     .build())
             .build();
     Ambiance ambiance = Mockito.mock(Ambiance.class);
-    doThrow(InvalidRequestException.class).when(infrastructureStepHelper).validateExpression(any());
+    doThrow(InvalidRequestException.class).when(infrastructureStepHelper).validateExpression(any(ParameterField.class));
     assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, ambiance))
         .isInstanceOf(InvalidRequestException.class);
-    doNothing().when(infrastructureStepHelper).validateExpression(any());
+    doNothing().when(infrastructureStepHelper).validateExpression(any(ParameterField.class));
     assertThatCode(() -> infrastructureStep.validateInfrastructure(infrastructure, ambiance))
         .doesNotThrowAnyException();
   }
