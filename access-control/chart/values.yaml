@@ -183,10 +183,10 @@ pdb:
 # --image.pullPolicy Image pull policy
 # --image.imagePullSecrets Specify docker-registry secret names as an array
 image:
-  registry: us.gcr.io
-  repository: platform-205701/access-control
+  registry: docker.io
+  repository: harness/accesscontrol-service-signed
   pullPolicy: IfNotPresent
-  tag: "1.18.0"
+  tag: "80302"
   digest: ""
   imagePullSecrets: []
 # -- Wait-For-App initContainers details
