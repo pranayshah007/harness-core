@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -49,6 +50,7 @@ import io.harness.delegate.task.terraform.TFTaskType;
 import io.harness.delegate.task.terraform.TerraformBaseHelper;
 import io.harness.delegate.task.terraform.TerraformCommand;
 import io.harness.delegate.task.terraform.TerraformTaskNGParameters;
+import io.harness.delegate.task.terraform.TerraformTaskNGParameters.TerraformTaskNGParametersBuilder;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.encryption.SecretRefData;
 import io.harness.filesystem.FileIo;
@@ -107,7 +109,7 @@ public class TerraformDestroyTaskHandlerTest extends CategoryTest {
     when(secretDecryptionService.decrypt(any(), any())).thenReturn(null);
     when(terraformBaseHelper.getGitBaseRequestForConfigFile(any(), any(), any())).thenReturn(any());
     when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
-             any(), any(), any(), any(), any(), logCallback, any(), any()))
+             any(), any(), any(), any(), logCallback, any(), any(), anyBoolean()))
         .thenReturn("sourceDir");
     doNothing().when(terraformBaseHelper).downloadTfStateFile(null, "accountId", null, "scriptDir");
     when(gitClientHelper.getRepoDirectory(any())).thenReturn("sourceDir");
@@ -122,6 +124,8 @@ public class TerraformDestroyTaskHandlerTest extends CategoryTest {
         getTerraformTaskParameters(), "delegateId", "taskId", logCallback);
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    verify(terraformBaseHelper)
+        .fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), any(), any(), any(), eq(false));
     Files.deleteIfExists(Paths.get(outputFile.getPath()));
     Files.deleteIfExists(Paths.get("sourceDir"));
   }
@@ -129,9 +133,40 @@ public class TerraformDestroyTaskHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
+  public void testDestroySkipStateStorage() throws IOException, TimeoutException, InterruptedException {
+    when(secretDecryptionService.decrypt(any(), any())).thenReturn(null);
+    when(terraformBaseHelper.getGitBaseRequestForConfigFile(any(), any(), any())).thenReturn(any());
+    when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
+             any(), any(), any(), any(), logCallback, any(), any(), anyBoolean()))
+        .thenReturn("sourceDir");
+    doNothing().when(terraformBaseHelper).downloadTfStateFile(null, "accountId", null, "scriptDir");
+    when(gitClientHelper.getRepoDirectory(any())).thenReturn("sourceDir");
+    File outputFile = new File("sourceDir/terraform-output.tfvars");
+    FileUtils.touch(outputFile);
+    when(terraformBaseHelper.executeTerraformDestroyStep(any()))
+        .thenReturn(
+            TerraformStepResponse.builder()
+                .cliResponse(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
+                .build());
+    TerraformTaskNGParameters taskNGParameters = getTerraformTaskParametersBuilder().skipStateStorage(true).build();
+    TerraformTaskNGResponse response =
+        terraformDestroyTaskHandler.executeTaskInternal(taskNGParameters, "delegateId", "taskId", logCallback);
+    assertThat(response).isNotNull();
+    assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    Files.deleteIfExists(Paths.get(outputFile.getPath()));
+    Files.deleteIfExists(Paths.get("sourceDir"));
+    verify(terraformBaseHelper)
+        .fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), any(), any(), any(), eq(true));
+    verify(terraformBaseHelper, times(0)).uploadTfStateFile(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
   public void testApplyWithArtifactoryConfigAndVarFiles() throws IOException, TimeoutException, InterruptedException {
     when(secretDecryptionService.decrypt(any(), any())).thenReturn(null);
-    when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), eq(logCallback), any()))
+    when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
+             any(), any(), any(), any(), eq(logCallback), any(), anyBoolean()))
         .thenReturn("sourceDir");
     doNothing().when(terraformBaseHelper).downloadTfStateFile(null, "accountId", null, "scriptDir");
     FileIo.createDirectoryIfDoesNotExist("sourceDir");
@@ -146,6 +181,7 @@ public class TerraformDestroyTaskHandlerTest extends CategoryTest {
         getTerraformTaskParametersWithArtifactoryConfig(), "delegateId", "taskId", logCallback);
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    verify(terraformBaseHelper).fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), any(), any(), eq(false));
     Files.deleteIfExists(Paths.get(outputFile.getPath()));
     Files.deleteIfExists(Paths.get("sourceDir"));
   }
@@ -153,10 +189,11 @@ public class TerraformDestroyTaskHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = JELENA)
   @Category(UnitTests.class)
-  public void testDestoryWithArtifactoryConfigAndBackendConfig()
+  public void testDestroyWithArtifactoryConfigAndBackendConfig()
       throws IOException, TimeoutException, InterruptedException {
     when(secretDecryptionService.decrypt(any(), any())).thenReturn(null);
-    when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), eq(logCallback), any()))
+    when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
+             any(), any(), any(), any(), eq(logCallback), any(), anyBoolean()))
         .thenReturn("sourceDir");
     doNothing().when(terraformBaseHelper).downloadTfStateFile(null, "accountId", null, "scriptDir");
     FileIo.createDirectoryIfDoesNotExist("sourceDir");
@@ -171,6 +208,7 @@ public class TerraformDestroyTaskHandlerTest extends CategoryTest {
         getTerraformTaskParametersWithArtifactoryConfig(), "delegateId", "taskId", logCallback);
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    verify(terraformBaseHelper).fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), any(), any(), eq(false));
     Files.deleteIfExists(Paths.get(outputFile.getPath()));
     Files.deleteIfExists(Paths.get("sourceDir"));
   }
@@ -180,7 +218,8 @@ public class TerraformDestroyTaskHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testApplyWithS3Config() throws IOException, TimeoutException, InterruptedException {
     when(secretDecryptionService.decrypt(any(), any())).thenReturn(null);
-    when(terraformBaseHelper.fetchS3ConfigFilesAndPrepareScriptDir(any(), any(), any(), any(), eq(logCallback)))
+    when(terraformBaseHelper.fetchS3ConfigFilesAndPrepareScriptDir(
+             any(), any(), any(), any(), eq(logCallback), anyBoolean()))
         .thenReturn("sourceDir");
     doNothing().when(terraformBaseHelper).downloadTfStateFile(null, "accountId", null, "scriptDir");
     FileIo.createDirectoryIfDoesNotExist("sourceDir");
@@ -195,12 +234,17 @@ public class TerraformDestroyTaskHandlerTest extends CategoryTest {
         getTerraformTaskParametersWithS3Config(), "delegateId", "taskId", logCallback);
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
-    verify(terraformBaseHelper, times(1)).fetchS3ConfigFilesAndPrepareScriptDir(any(), any(), any(), any(), any());
+    verify(terraformBaseHelper, times(1))
+        .fetchS3ConfigFilesAndPrepareScriptDir(any(), any(), any(), any(), any(), eq(false));
     Files.deleteIfExists(Paths.get(outputFile.getPath()));
     Files.deleteIfExists(Paths.get("sourceDir"));
   }
 
   private TerraformTaskNGParameters getTerraformTaskParameters() {
+    return getTerraformTaskParametersBuilder().build();
+  }
+
+  private TerraformTaskNGParametersBuilder getTerraformTaskParametersBuilder() {
     return TerraformTaskNGParameters.builder()
         .accountId("accountId")
         .taskType(TFTaskType.APPLY)
@@ -222,8 +266,7 @@ public class TerraformDestroyTaskHandlerTest extends CategoryTest {
                                 .build())
                         .build())
                 .build())
-        .planName("planName")
-        .build();
+        .planName("planName");
   }
 
   private TerraformTaskNGParameters getTerraformTaskParametersWithArtifactoryConfig() {

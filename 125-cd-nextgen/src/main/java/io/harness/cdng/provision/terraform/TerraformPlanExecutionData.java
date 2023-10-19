@@ -66,6 +66,8 @@ public class TerraformPlanExecutionData {
 
   @JsonProperty("providerCredential") TerraformProviderCredential providerCredential;
 
+  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) @YamlSchemaTypes({string}) ParameterField<Boolean> skipStateStorage;
+
   public TerraformPlanExecutionDataParameters toStepParameters() {
     validateParams();
     TerraformPlanExecutionDataParametersBuilder builder =
@@ -79,7 +81,8 @@ public class TerraformPlanExecutionData {
             .secretManagerRef(secretManagerRef)
             .exportTerraformPlanJson(exportTerraformPlanJson)
             .exportTerraformHumanReadablePlan(exportTerraformHumanReadablePlan)
-            .providerCredential(providerCredential);
+            .providerCredential(providerCredential)
+            .skipStateStorage(skipStateStorage);
     LinkedHashMap<String, TerraformVarFile> varFiles = new LinkedHashMap<>();
     if (EmptyPredicate.isNotEmpty(terraformVarFiles)) {
       terraformVarFiles.forEach(terraformVarFile -> {
