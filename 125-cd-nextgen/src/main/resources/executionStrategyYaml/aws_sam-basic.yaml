@@ -33,7 +33,7 @@ spec:
                 identifier: SAM_Build
                 spec:
                   connectorRef: account.harnessImage
-                  image: harnessdev/sam-build:1.82.0-latest
+                  image: harnessdev/sam-build:1.82.0-1.1.0
                   imagePullPolicy: Always
                   buildCommandOptions:
                     - "--use-container"
@@ -46,7 +46,7 @@ spec:
                 identifier: SAM_Deploy
                 spec:
                   connectorRef: account.harnessImage
-                  image: harnessdev/sam-deploy:1.82.0-latest
+                  image: harnessdev/sam-deploy:1.82.0-1.1.0
                   imagePullPolicy: Always
                 when:
                   stageStatus: Success

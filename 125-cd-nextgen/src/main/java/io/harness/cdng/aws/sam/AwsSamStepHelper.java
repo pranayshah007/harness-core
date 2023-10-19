@@ -69,8 +69,8 @@ public class AwsSamStepHelper {
 
   @Inject private ContainerStepExecutionResponseHelper containerStepExecutionResponseHelper;
 
-  private static String SAM_BUILD_DEFAULT_IMAGE = "harnessdev/sam-build:1.82.0-latest";
-  private static String SAM_DEPLOY_DEFAULT_IMAGE = "harnessdev/sam-deploy:1.82.0-latest";
+  private static String SAM_BUILD_DEFAULT_IMAGE = "harnessdev/sam-build:1.82.0-1.1.0";
+  private static String SAM_DEPLOY_DEFAULT_IMAGE = "harnessdev/sam-deploy:1.82.0-1.1.0";
 
   ObjectMapper objectMapper = NG_DEFAULT_OBJECT_MAPPER;
 

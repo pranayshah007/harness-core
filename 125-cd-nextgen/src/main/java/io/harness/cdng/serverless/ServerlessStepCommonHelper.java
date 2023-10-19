@@ -23,11 +23,6 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
-import io.harness.cdng.aws.sam.AwsSamBaseStepInfo;
-import io.harness.cdng.aws.sam.AwsSamBuildStepInfo;
-import io.harness.cdng.aws.sam.AwsSamBuildStepParameters;
-import io.harness.cdng.aws.sam.AwsSamDeployStepInfo;
-import io.harness.cdng.aws.sam.AwsSamDeployStepParameters;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
@@ -158,10 +153,10 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   private static final String SIDECAR_ARTIFACT_FILE_NAME_PREFIX = "harnessArtifact/sidecar-artifact-";
 
   private static String SERVERLESS_PREPARE_ROLLBACK_DEFAULT_IMAGE =
-      "harnessdev/serverless-preparerollback:1.82.0-latest";
-  private static String SERVERLESS_PACKAGE_DEFAULT_IMAGE = "harnessdev/serverless-package:1.82.0-latest";
-  private static String SERVERLESS_DEPLOY_DEFAULT_IMAGE = "harnessdev/serverless-deploy:1.82.0-latest";
-  private static String SERVERLESS_ROLLBACK_DEFAULT_IMAGE = "harnessdev/serverless-rollback:1.82.0-latest";
+      "harnessdev/serverless-preparerollback:3.30.1-1.0.2";
+  private static String SERVERLESS_PACKAGE_DEFAULT_IMAGE = "harnessdev/serverless-package:3.30.1-1.0.2";
+  private static String SERVERLESS_DEPLOY_DEFAULT_IMAGE = "harnessdev/serverless-deploy:3.30.1-1.0.2";
+  private static String SERVERLESS_ROLLBACK_DEFAULT_IMAGE = "harnessdev/serverless-rollback:3.30.1-1.0.2";
 
   public TaskChainResponse startChainLink(
       Ambiance ambiance, StepBaseParameters stepElementParameters, ServerlessStepHelper serverlessStepHelper) {
