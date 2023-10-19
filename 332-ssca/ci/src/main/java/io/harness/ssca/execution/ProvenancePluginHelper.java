@@ -66,10 +66,14 @@ public class ProvenancePluginHelper {
   protected static final String DOCKER_USERNAME = "DOCKER_USERNAME";
   protected static final String DOCKER_PASSW = "DOCKER_PASSWORD";
   protected static final String DOCKER_REGISTRY = "DOCKER_REGISTRY";
+  protected static final String PLUGIN_REGISTRY_TYPE = "PLUGIN_REGISTRY_TYPE";
 
   public Map<String, String> getProvenanceStepEnvVariables(
       ProvenanceStepInfo provenanceStepInfo, String identifier, Ambiance ambiance) {
     Map<String, String> envMap = new HashMap<>();
+    if (provenanceStepInfo.getSource() != null && provenanceStepInfo.getSource().getType() != null) {
+      envMap.put(PLUGIN_REGISTRY_TYPE, provenanceStepInfo.getSource().getType().getRegistryType());
+    }
     if (provenanceStepInfo.getSource() != null
         && provenanceStepInfo.getSource().getType() == ProvenanceSourceType.DOCKER) {
       populateDockerEnvVariables(provenanceStepInfo, identifier, envMap);
@@ -167,6 +171,9 @@ public class ProvenancePluginHelper {
     List<PublishedImageArtifact> imageArtifacts = ciStepArtifactOutcome.getStepArtifacts().getPublishedImageArtifacts();
     ProvenanceArtifact provenanceArtifact = ciStepArtifactOutcome.getStepArtifacts().getProvenanceArtifacts().get(0);
     Map<String, String> envMap = new HashMap<>();
+    if (provenanceStepInfo.getSource() != null && provenanceStepInfo.getSource().getType() != null) {
+      envMap.put(PLUGIN_REGISTRY_TYPE, provenanceStepInfo.getSource().getType().getRegistryType());
+    }
     if (provenanceStepInfo.getSource() != null
         && provenanceStepInfo.getSource().getType() == ProvenanceSourceType.DOCKER) {
       populateDockerEnvVariables(provenanceStepInfo, identifier, envMap);
