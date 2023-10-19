@@ -190,9 +190,6 @@ public class RollbackModeExecutionHelper {
     while (nodeExecutions.hasNext()) {
       NodeExecution nodeExecution = nodeExecutions.next();
       String planNodeIdFromNodeExec = nodeExecution.getNodeId();
-      if (nodeExecution.getStepType().getStepCategory() == StepCategory.STAGE) {
-        continue;
-      }
       if (planNodeIDToUpdatedNodes.containsKey(nodeExecution.getNodeId())) {
         // this means that the current plan node ID was already added, hence this plan node has multiple node executions
         // mapped to it. Hence, the identity node created for the plan node needs to be updated to contain the IDs of
@@ -202,8 +199,14 @@ public class RollbackModeExecutionHelper {
         planNodeIDToUpdatedNodes.put(planNodeIdFromNodeExec, previouslyAddedNode);
       } else {
         Node node = planService.fetchNode(nodeExecution.getPlanId(), nodeExecution.getNodeId());
-        IdentityPlanNode identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNodeWithSkipAsTrue(node.getUuid(),
-            node, nodeExecution.getIdentifier(), nodeExecution.getName(), node.getStepType(), nodeExecution.getUuid());
+        IdentityPlanNode identityPlanNode;
+        if (nodeExecution.getStepType().getStepCategory() == StepCategory.STAGE) {
+          identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNode(node.getUuid(), node,
+              nodeExecution.getIdentifier(), nodeExecution.getName(), node.getStepType(), nodeExecution.getUuid());
+        } else {
+          identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNodeWithSkipAsTrue(node.getUuid(), node,
+              nodeExecution.getIdentifier(), nodeExecution.getName(), node.getStepType(), nodeExecution.getUuid());
+        }
         planNodeIDToUpdatedNodes.put(planNodeIdFromNodeExec, identityPlanNode);
       }
     }
@@ -255,14 +258,13 @@ public class RollbackModeExecutionHelper {
 
   boolean isStageOrAncestorOfSomeStage(Node planNode) {
     StepCategory stepCategory = planNode.getStepCategory();
-    if (Arrays.asList(StepCategory.PIPELINE, StepCategory.STAGES, StepCategory.STAGE).contains(stepCategory)) {
+    if (Arrays.asList(StepCategory.STAGES).contains(stepCategory))
       return true;
-    }
     // todo: once fork and strategy are divided in sub categories of step and stage, add that check as well
     // parallel nodes and strategy nodes need to be plan nodes so that we don't take the advisor response from the
     // previous execution. Previous execution's advisor response would be setting next step as something we dont want in
     // rollback mode. We want the new advisors set in the Plan Node to be used
-    return Arrays.asList(StepCategory.FORK, StepCategory.STRATEGY).contains(stepCategory);
+    return false;
   }
 
   public void checkAndThrowExceptionIfExecutionOlderThanOneMonthForPostProdRollback(

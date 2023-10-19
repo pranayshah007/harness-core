@@ -87,7 +87,7 @@ logging:
       stackdriverLogEnabled: false
 
 mongo:
-  uri: mongodb://localhost:27017/ng-harness
+  uri: mongodb://localhost:27018,127.0.0.1:27019,127.0.0.1:27017/ng-harness?replicaSet=rs0
   connectTimeout: 30000
   serverSelectionTimeout: 90000
   socketTimeout: 360000
@@ -287,7 +287,7 @@ pmsGrpcClientConfig:
   target: localhost:12011
   authority: localhost
 
-shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-false}
+shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-true}
 
 ceAwsSetupConfig:
   accessKey: ce_aws_accessKey_placeholder

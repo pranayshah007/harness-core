@@ -20,6 +20,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.utils.ExecutionModeUtils;
 
 import java.util.Collections;
@@ -102,23 +103,34 @@ public class NodeExecutionsCache {
     }
 
     NodeExecution parentNodeExecution = map.get(parentId);
+
     // If parent node is of type identity and the mode of execution is rollback then we should add
     // all the children from original execution as well.
-    if (parentNodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE
-        && ExecutionModeUtils.isRollbackMode(ambiance.getMetadata().getExecutionMode())) {
-      String originalNodeExecutionId = parentNodeExecution.getOriginalNodeExecutionId();
-      String rollbackExecutionId = ambiance.getMetadata().getOriginalPlanExecutionIdForRollbackMode();
-      Set<String> childIdentifiers =
-          childExecutions.stream().map(NodeExecution::getIdentifier).collect(Collectors.toSet());
+    if (ExecutionModeUtils.isRollbackMode(ambiance.getMetadata().getExecutionMode())) {
+      if (parentNodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE
+          || Objects.equals(parentNodeExecution.getGroup(), StepOutcomeGroup.STAGES.name())) {
+        String rollbackExecutionId = ambiance.getMetadata().getOriginalPlanExecutionIdForRollbackMode();
+        String originalNodeExecutionId;
 
-      try (CloseableIterator<NodeExecution> iterator = nodeExecutionService.fetchChildrenNodeExecutionsIterator(
-               rollbackExecutionId, originalNodeExecutionId, NodeProjectionUtils.fieldsForExpressionEngine)) {
-        while (iterator.hasNext()) {
-          NodeExecution nodeExecution = iterator.next();
-          // Since there can be same identifiers in older execution as well. We should have the new identifier having
-          // high priority than the older one.
-          if (!childIdentifiers.contains(nodeExecution.getIdentifier())) {
-            childExecutions.add(nodeExecution);
+        if (parentNodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE) {
+          originalNodeExecutionId = parentNodeExecution.getOriginalNodeExecutionId();
+        } else {
+          NodeExecution originalNodeExecution =
+              nodeExecutionService.getByPlanNodeUuid(parentNodeExecution.getNodeId(), rollbackExecutionId);
+          originalNodeExecutionId = originalNodeExecution.getUuid();
+        }
+        Set<String> childIdentifiers =
+            childExecutions.stream().map(NodeExecution::getIdentifier).collect(Collectors.toSet());
+
+        try (CloseableIterator<NodeExecution> iterator = nodeExecutionService.fetchChildrenNodeExecutionsIterator(
+                 rollbackExecutionId, originalNodeExecutionId, NodeProjectionUtils.fieldsForExpressionEngine)) {
+          while (iterator.hasNext()) {
+            NodeExecution nodeExecution = iterator.next();
+            // Since there can be same identifiers in older execution as well. We should have the new identifier having
+            // high priority than the older one.
+            if (!childIdentifiers.contains(nodeExecution.getIdentifier())) {
+              childExecutions.add(nodeExecution);
+            }
           }
         }
       }
