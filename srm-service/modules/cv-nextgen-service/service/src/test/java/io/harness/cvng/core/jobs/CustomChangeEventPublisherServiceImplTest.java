@@ -8,6 +8,7 @@
 package io.harness.cvng.core.jobs;
 
 import static io.harness.rule.OwnerRule.ARPITJ;
+import static io.harness.rule.OwnerRule.SHASHWAT_SACHAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -57,6 +58,37 @@ public class CustomChangeEventPublisherServiceImplTest extends CvNextGenTestBase
                                  .setDescription("desc")
                                  .setName("name")
                                  .setWebhookUrl("webhookUrl")
+                                 .build())
+            .setStartTime(customChangeWebhookPayload.getStartTime())
+            .setEndTime(customChangeWebhookPayload.getEndTime())
+            .setUser(customChangeWebhookPayload.getUser());
+    assertThat(message).isEqualTo(
+        Message.newBuilder().setData(customChangeEventDTOBuilder.build().toByteString()).build());
+  }
+
+  @Test
+  @Owner(developers = SHASHWAT_SACHAN)
+  @Category(UnitTests.class)
+  public void testGetCustomChangeEventMessageWithChannelId() {
+    ProjectParams projectParams = builderFactory.getProjectParams();
+    CustomChangeWebhookPayload customChangeWebhookPayload =
+        builderFactory.getCustomChangeWebhookPayloadBuilderWithChannelId().build();
+    Message message = customChangeEventPublisherServiceImpl.getCustomChangeEventMessage(
+        projectParams, "monitoredServiceId", "changeSourceId", customChangeWebhookPayload);
+    CustomChangeEventDTO.Builder customChangeEventDTOBuilder =
+        CustomChangeEventDTO.newBuilder()
+            .setAccountId(projectParams.getAccountIdentifier())
+            .setOrgIdentifier(projectParams.getOrgIdentifier())
+            .setProjectIdentifier(projectParams.getProjectIdentifier())
+            .setMonitoredServiceIdentifier("monitoredServiceId")
+            .setChangeSourceIdentifier("changeSourceId")
+            .setEventDetails(CustomChangeEventDetails.newBuilder()
+                                 .setChangeEventDetailsLink("testLink")
+                                 .setExternalLinkToEntity("externalLink")
+                                 .setDescription("desc")
+                                 .setName("name")
+                                 .setWebhookUrl("webhookUrl")
+                                 .setChannelId("channelId")
                                  .build())
             .setStartTime(customChangeWebhookPayload.getStartTime())
             .setEndTime(customChangeWebhookPayload.getEndTime())

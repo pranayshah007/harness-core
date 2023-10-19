@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DHRUVX;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
+import static io.harness.rule.OwnerRule.SHASHWAT_SACHAN;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -282,7 +283,23 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
         builderFactory.getCustomChangeEventBuilder(ChangeSourceType.CUSTOM_INCIDENT).build();
     ((CustomChangeEventMetadata) changeEventDTO.getMetadata()).getCustomChangeEvent().setWebhookUrl("webhookurl");
     changeEventService.registerWithHealthReport(
-        changeEventDTO, builderFactory.getContext().getMonitoredServiceIdentifier());
+        changeEventDTO, builderFactory.getContext().getMonitoredServiceIdentifier(), null);
+
+    Activity activityFromDb = hPersistence.createQuery(Activity.class).get();
+    assertThat(activityFromDb).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = SHASHWAT_SACHAN)
+  @Category(UnitTests.class)
+  public void testRegisterWithHealthReportWithAuthToken() {
+    ChangeEventDTO changeEventDTO =
+        builderFactory.getCustomChangeEventBuilder(ChangeSourceType.CUSTOM_INCIDENT).build();
+    ((CustomChangeEventMetadata) changeEventDTO.getMetadata()).getCustomChangeEvent().setWebhookUrl("webhookurl");
+    ((CustomChangeEventMetadata) changeEventDTO.getMetadata()).getCustomChangeEvent().setChannelId("channelId");
+
+    changeEventService.registerWithHealthReport(
+        changeEventDTO, builderFactory.getContext().getMonitoredServiceIdentifier(), "TestToken");
 
     Activity activityFromDb = hPersistence.createQuery(Activity.class).get();
     assertThat(activityFromDb).isNotNull();

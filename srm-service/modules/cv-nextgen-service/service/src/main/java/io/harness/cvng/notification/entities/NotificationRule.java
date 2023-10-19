@@ -24,6 +24,7 @@ import io.harness.notification.channeldetails.MSTeamChannel;
 import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.channeldetails.PagerDutyChannel;
 import io.harness.notification.channeldetails.SlackChannel;
+import io.harness.notification.channeldetails.WebhookChannel;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -149,6 +150,41 @@ public abstract class NotificationRule
                   .map(e -> CVNGNotificationChannelUtils.getUserGroups(e, accountId, orgIdentifier, projectIdentifier))
                   .collect(Collectors.toList()))
           .webhookUrls(Lists.newArrayList(webhookUrl))
+          .build();
+    }
+  }
+
+  @Data
+  public static class CVNGWebhookChannel extends CVNGNotificationChannel {
+    public final CVNGNotificationChannelType type = CVNGNotificationChannelType.WEBHOOK;
+    List<String> userGroups;
+    String webhookUrl;
+    String authorizationToken;
+    Map<String, String> headers;
+
+    public CVNGWebhookChannel(List<String> userGroups, String webhookUrl, String authorizationToken) {
+      this.userGroups = userGroups;
+      this.webhookUrl = webhookUrl;
+      this.authorizationToken = authorizationToken;
+    }
+
+    @Override
+    public NotificationChannel toNotificationChannel(String accountId, String orgIdentifier, String projectIdentifier,
+        String templateId, Map<String, String> templateData) {
+      return WebhookChannel.builder()
+          .accountId(accountId)
+          .team(Team.CV)
+          .templateData(templateData)
+          .templateId(templateId)
+          .userGroups(
+              getUserGroupList(userGroups)
+                  .stream()
+                  .map(e -> CVNGNotificationChannelUtils.getUserGroups(e, accountId, orgIdentifier, projectIdentifier))
+                  .collect(Collectors.toList()))
+          .webhookUrls(Lists.newArrayList(webhookUrl))
+          .orgIdentifier(orgIdentifier)
+          .projectIdentifier(projectIdentifier)
+          .headers(Map.of("Authorization", authorizationToken))
           .build();
     }
   }
