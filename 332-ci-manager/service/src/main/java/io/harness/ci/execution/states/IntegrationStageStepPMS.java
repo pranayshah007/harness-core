@@ -14,10 +14,15 @@ import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.STAGE_EXECU
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.UNIQUE_STEP_IDENTIFIERS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.app.beans.entities.CIResourceCleanup;
+import io.harness.app.beans.entities.CIResourceCleanup.CIResourceCleanupResponseKeys;
+import io.harness.app.beans.entities.InfraResourceDetails;
+import io.harness.app.beans.entities.ResourceDetails;
 import io.harness.app.beans.entities.StepExecutionParameters;
 import io.harness.beans.build.BuildStatusUpdateParameter;
 import io.harness.beans.execution.ExecutionSource;
@@ -37,10 +42,12 @@ import io.harness.ci.execution.buildstate.ConnectorUtils;
 import io.harness.ci.execution.integrationstage.IntegrationStageUtils;
 import io.harness.ci.execution.utils.CompletableFutures;
 import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.data.encoding.EncodingUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.ng.core.NGAccess;
+import io.harness.persistence.HPersistence;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
@@ -71,6 +78,7 @@ import io.harness.repositories.StepExecutionParametersRepository;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 import io.harness.security.dto.UserPrincipal;
+import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ResponseData;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.registry.Registry;
@@ -78,7 +86,11 @@ import io.harness.yaml.registry.RegistryCredential;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
+import java.time.OffsetDateTime;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -99,6 +111,8 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
   @Inject ConnectorUtils connectorUtils;
   @Inject private CIFeatureFlagService featureFlagService;
   @Inject private StepExecutionParametersRepository stepExecutionParametersRepository;
+  @Inject private HPersistence persistence;
+  @Inject private KryoSerializer kryoSerializer;
 
   @Override
   public Class<StageElementParameters> getStepParametersClass() {
@@ -109,8 +123,16 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
   public ChildExecutableResponse obtainChild(
       Ambiance ambiance, StageElementParameters stepParameters, StepInputPackage inputPackage) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    log.info("Executing integration stage with params accountId {} projectId {} [{}]", ngAccess.getAccountIdentifier(),
-        ngAccess.getProjectIdentifier(), stepParameters);
+
+    try {
+      String jsonString = RecastOrchestrationUtils.toJson(stepParameters);
+      byte[] jsonByte = EncodingUtils.compressString(jsonString);
+      String base64String = EncodingUtils.encodeBase64(jsonByte);
+      log.info("Executing integration stage with params accountId {} projectId {} [{}]",
+          ngAccess.getAccountIdentifier(), ngAccess.getProjectIdentifier(), base64String);
+    } catch (Exception e) {
+      log.error("Could not serialize class StageElementParameters", e);
+    }
 
     String stageRuntimeId = AmbianceUtils.getStageRuntimeIdAmbiance(ambiance);
 
@@ -160,6 +182,8 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
     executionSweepingOutputResolver.consume(
         ambiance, ContextElement.stageDetails, stageDetails, StepOutcomeGroup.STAGE.name());
 
+    upsertCleanupEntity(ambiance);
+
     final String executionNodeId = integrationStageStepParametersPMS.getChildNodeID();
     return ChildExecutableResponse.newBuilder().setChildNodeId(executionNodeId).build();
   }
@@ -170,6 +194,8 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
     long startTime = AmbianceUtils.getCurrentLevelStartTs(ambiance);
     long currentTime = System.currentTimeMillis();
     saveStageExecutionSweepingOutput(ambiance, currentTime - startTime);
+    updateCleanupEntity(ambiance);
+
     StepResponseNotifyData stepResponseNotifyData = filterStepResponse(responseDataMap);
 
     Status stageStatus = stepResponseNotifyData.getStatus();
@@ -255,6 +281,36 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
         log.error("Error while consuming stage execution sweeping output", e);
       }
     }
+  }
+
+  private void upsertCleanupEntity(Ambiance ambiance) {
+    UpdateOperations<CIResourceCleanup> updateOperations =
+        persistence.createUpdateOperations(CIResourceCleanup.class)
+            .setOnInsert(CIResourceCleanupResponseKeys.accountId, AmbianceUtils.getAccountId(ambiance))
+            .setOnInsert(CIResourceCleanupResponseKeys.planExecutionId, ambiance.getPlanExecutionId())
+            .setOnInsert(CIResourceCleanupResponseKeys.stageExecutionId, ambiance.getStageExecutionId())
+            .setOnInsert(CIResourceCleanupResponseKeys.processAfter, System.currentTimeMillis())
+            .setOnInsert(CIResourceCleanupResponseKeys.shouldStart, false)
+            .setOnInsert(CIResourceCleanupResponseKeys.validUntil, Date.from(OffsetDateTime.now().toInstant()))
+            .setOnInsert(CIResourceCleanupResponseKeys.retryCount, 0)
+            .setOnInsert(CIResourceCleanupResponseKeys.type, ResourceDetails.Type.INFRA.toString())
+            .setOnInsert(CIResourceCleanupResponseKeys.data,
+                kryoSerializer.asBytes(InfraResourceDetails.builder().ambiance(ambiance).build()));
+    Query<CIResourceCleanup> upsertQuery =
+        persistence.createQuery(CIResourceCleanup.class, excludeAuthority)
+            .filter(CIResourceCleanupResponseKeys.stageExecutionId, ambiance.getStageExecutionId());
+    persistence.upsert(upsertQuery, updateOperations);
+  }
+
+  private void updateCleanupEntity(Ambiance ambiance) {
+    UpdateOperations<CIResourceCleanup> updateOperations =
+        persistence.createUpdateOperations(CIResourceCleanup.class)
+            .set(CIResourceCleanupResponseKeys.shouldStart, true)
+            .set(CIResourceCleanupResponseKeys.processAfter, System.currentTimeMillis());
+    Query<CIResourceCleanup> updateQuery =
+        persistence.createQuery(CIResourceCleanup.class, excludeAuthority)
+            .filter(CIResourceCleanupResponseKeys.stageExecutionId, ambiance.getStageExecutionId());
+    persistence.update(updateQuery, updateOperations);
   }
 
   private List<CIRegistry> getRegistries(NGAccess ngAccess, Registry registry) {

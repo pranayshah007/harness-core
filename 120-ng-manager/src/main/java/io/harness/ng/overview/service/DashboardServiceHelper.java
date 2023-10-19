@@ -1046,6 +1046,9 @@ public class DashboardServiceHelper {
               ? ""
               : allArtifactDeploymentDetail.getChartVersion();
 
+          String chartVersionToCompareTo =
+              isEmpty(artifactDeploymentDetail.getChartVersion()) ? "" : artifactDeploymentDetail.getChartVersion();
+
           EnvironmentGroupInstanceDetail environmentGroupInstanceDetail =
               EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail.builder()
                   .name(envName)
@@ -1053,7 +1056,7 @@ public class DashboardServiceHelper {
                   .environmentTypes(envType == null ? null : Collections.singletonList(envType))
                   .artifactDeploymentDetails(Collections.singletonList(artifactDeploymentDetail))
                   .isEnvGroup(false)
-                  .isDrift(!artifactDeploymentDetail.getChartVersion().equals(chartVersion))
+                  .isDrift(!chartVersionToCompareTo.equals(chartVersion))
                   .build();
 
           if (chartVersionToEnvGroupMap.containsKey(chartVersion)) {

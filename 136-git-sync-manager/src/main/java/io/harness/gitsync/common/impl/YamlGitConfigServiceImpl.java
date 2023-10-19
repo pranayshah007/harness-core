@@ -29,6 +29,14 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.encryption.Scope;
 import io.harness.eventsframework.EventsFrameworkConstants;
@@ -49,10 +57,10 @@ import io.harness.gitsync.common.beans.YamlGitConfig.YamlGitConfigKeys;
 import io.harness.gitsync.common.events.GitSyncConfigChangeEventConstants;
 import io.harness.gitsync.common.events.GitSyncConfigChangeEventType;
 import io.harness.gitsync.common.events.GitSyncConfigSwitchType;
-import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
 import io.harness.gitsync.common.helper.UserProfileHelper;
 import io.harness.gitsync.common.remote.YamlGitConfigMapper;
 import io.harness.gitsync.common.service.GitBranchService;
+import io.harness.gitsync.common.service.GitSyncConnectorService;
 import io.harness.gitsync.common.service.GitSyncSettingsService;
 import io.harness.gitsync.common.service.ScmFacilitatorService;
 import io.harness.gitsync.common.service.YamlGitConfigService;
@@ -88,6 +96,7 @@ import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -103,7 +112,7 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
   private final Producer gitSyncConfigEventProducer;
   private final ExecutorService executorService;
   private final GitBranchService gitBranchService;
-  private final GitSyncConnectorHelper gitSyncConnectorHelper;
+  private final GitSyncConnectorService gitSyncConnectorService;
   private final WebhookEventService webhookEventService;
   private final PersistentLocker persistentLocker;
   private final IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
@@ -117,9 +126,9 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
   public YamlGitConfigServiceImpl(YamlGitConfigRepository yamlGitConfigRepository,
       @Named("connectorDecoratorService") ConnectorService connectorService,
       @Named(EventsFrameworkConstants.GIT_CONFIG_STREAM) Producer gitSyncConfigEventProducer,
-      ExecutorService executorService, GitBranchService gitBranchService, GitSyncConnectorHelper gitSyncConnectorHelper,
-      WebhookEventService webhookEventService, PersistentLocker persistentLocker,
-      IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper,
+      ExecutorService executorService, GitBranchService gitBranchService,
+      GitSyncConnectorService gitSyncConnectorService, WebhookEventService webhookEventService,
+      PersistentLocker persistentLocker, IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper,
       @Named(EventsFrameworkConstants.SETUP_USAGE) Producer setupUsageEventProducer,
       GitSyncSettingsService gitSyncSettingsService, UserProfileHelper userProfileHelper,
       ScmFacilitatorService scmFacilitatorService, NGFeatureFlagHelperService ngFeatureFlagHelperService) {
@@ -128,7 +137,7 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
     this.gitSyncConfigEventProducer = gitSyncConfigEventProducer;
     this.executorService = executorService;
     this.gitBranchService = gitBranchService;
-    this.gitSyncConnectorHelper = gitSyncConnectorHelper;
+    this.gitSyncConnectorService = gitSyncConnectorService;
     this.webhookEventService = webhookEventService;
     this.persistentLocker = persistentLocker;
     this.identifierRefProtoDTOHelper = identifierRefProtoDTOHelper;
@@ -407,7 +416,7 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
     if (gitConnectorOptional.isPresent()) {
       ConnectorConfigDTO connectorConfig = gitConnectorOptional.get().getConnectorConfig();
       if (connectorConfig instanceof ScmConnector) {
-        gitSyncConnectorHelper.validateTheAPIAccessPresence((ScmConnector) connectorConfig);
+        validateTheAPIAccessPresence((ScmConnector) connectorConfig);
       } else {
         throw new InvalidRequestException(
             String.format("The connector reference %s is not a git connector", ygs.getGitConnectorRef()));
@@ -684,5 +693,52 @@ public class YamlGitConfigServiceImpl implements YamlGitConfigService {
         .withMaxAttempts(2)
         .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
         .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
+  }
+
+  private void validateTheAPIAccessPresence(ScmConnector scmConnector) {
+    if (scmConnector instanceof GithubConnectorDTO) {
+      checkAPIAccessFieldPresence((GithubConnectorDTO) scmConnector);
+    } else if (scmConnector instanceof GitlabConnectorDTO) {
+      checkAPIAccessFieldPresence((GitlabConnectorDTO) scmConnector);
+    } else if (scmConnector instanceof BitbucketConnectorDTO) {
+      checkAPIAccessFieldPresence((BitbucketConnectorDTO) scmConnector);
+    } else if (scmConnector instanceof AzureRepoConnectorDTO) {
+      checkAPIAccessFieldPresence((AzureRepoConnectorDTO) scmConnector);
+    } else {
+      throw new NotImplementedException(
+          String.format("The scm apis for the provider type %s is not supported", scmConnector.getClass()));
+    }
+  }
+
+  private void checkAPIAccessFieldPresence(GithubConnectorDTO githubConnectorDTO) {
+    GithubApiAccessDTO apiAccess = githubConnectorDTO.getApiAccess();
+    if (apiAccess == null) {
+      throw new InvalidRequestException(
+          "The connector doesn't contain api access field which is required for the git sync ");
+    }
+  }
+
+  private void checkAPIAccessFieldPresence(GitlabConnectorDTO gitlabConnectorDTO) {
+    GitlabApiAccessDTO apiAccess = gitlabConnectorDTO.getApiAccess();
+    if (apiAccess == null) {
+      throw new InvalidRequestException(
+          "The connector doesn't contain api access field which is required for the git sync ");
+    }
+  }
+
+  private void checkAPIAccessFieldPresence(BitbucketConnectorDTO bitbucketConnectorDTO) {
+    BitbucketApiAccessDTO apiAccess = bitbucketConnectorDTO.getApiAccess();
+    if (apiAccess == null) {
+      throw new InvalidRequestException(
+          "The connector doesn't contain api access field which is required for the git sync ");
+    }
+  }
+
+  private void checkAPIAccessFieldPresence(AzureRepoConnectorDTO azureRepoConnectorDTO) {
+    AzureRepoApiAccessDTO apiAccess = azureRepoConnectorDTO.getApiAccess();
+    if (apiAccess == null) {
+      throw new InvalidRequestException(
+          "The connector doesn't contain api access field which is required for the git sync ");
+    }
   }
 }

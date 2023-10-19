@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: iam-mfa-active-key-no-login
+cloudProvider: AWS
+resourceType: iam-user
+description: Disable keys after 90 days and delete them after 180 days of non-use
+rulesYamlPath: ../iam-mfa-active-key-no-login.yml

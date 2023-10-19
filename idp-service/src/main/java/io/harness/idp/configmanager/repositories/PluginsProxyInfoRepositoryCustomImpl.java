@@ -38,10 +38,11 @@ public class PluginsProxyInfoRepositoryCustomImpl implements PluginsProxyInfoRep
   public PluginsProxyInfoEntity updatePluginProxyInfo(ProxyHostDetail proxyHostDetail, String accountIdentifier) {
     Criteria criteria = Criteria.where(PluginsProxyInfoEntity.PluginProxyInfoEntityKeys.accountIdentifier)
                             .is(accountIdentifier)
-                            .and(PluginsProxyInfoEntity.PluginProxyInfoEntityKeys.host)
-                            .is(proxyHostDetail.getHost());
+                            .and(PluginsProxyInfoEntity.PluginProxyInfoEntityKeys.id)
+                            .is(proxyHostDetail.getIdentifier());
     Query query = new Query(criteria);
     Update update = new Update();
+    update.set(PluginsProxyInfoEntity.PluginProxyInfoEntityKeys.host, proxyHostDetail.getHost());
     update.set(PluginsProxyInfoEntity.PluginProxyInfoEntityKeys.proxy, proxyHostDetail.isProxy());
     update.set(PluginsProxyInfoEntity.PluginProxyInfoEntityKeys.delegateSelectors, proxyHostDetail.getSelectors());
     FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true);

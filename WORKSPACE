@@ -1298,8 +1298,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:RnGwmapfLPyTIuQ8FfSeWo29v5gyPgMF4DAhWX9RxcY=",
-    version = "v1.32.1",
+    sum = "h1:k13bOwbpSPX+IvswKVOECAi68tqmpyQ1stuXQYR3rZk=",
+    version = "v1.32.3",
 )
 
 go_repository(
@@ -4630,8 +4630,8 @@ go_repository(
 go_repository(
     name = "com_github_harness_ti_client",
     importpath = "github.com/harness/ti-client",
-    sum = "h1:MVFzBU0ScnbCHFxzyMZo5oLzeDwQLwaqibXQtjUzcvw=",
-    version = "v0.0.0-20230919114308-05b6697b67f9",
+    sum = "h1:TVOthul9zrytCGkcC6WS/ZZlV1uxUbWBDG1p4xcAI54=",
+    version = "v0.0.0-20231018000842-d164bcf4f802",
 )
 
 go_rules_dependencies()
@@ -4878,7 +4878,7 @@ plain_artifacts = [
     "com.nimbusds:oauth2-oidc-sdk:7.4",
     "org.asynchttpclient:async-http-client:2.12.3",
     "com.novemberain:quartz-mongodb:2.2.0-rc2",
-    "com.offbytwo.jenkins:jenkins-client:0.3.10",
+    "com.offbytwo.jenkins:jenkins-client:0.3.11",
     "com.openpojo:openpojo:0.8.3",
     "com.palominolabs.metrics:metrics-guice:3.2.0",
     "com.papertrail:profiler:1.0.2",

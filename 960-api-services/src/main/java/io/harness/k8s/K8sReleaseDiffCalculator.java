@@ -9,6 +9,9 @@ package io.harness.k8s;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotations.dev.CodePulse;
+import io.harness.annotations.dev.HarnessModuleComponent;
+import io.harness.annotations.dev.ProductModule;
 import io.harness.delegate.task.k8s.ReleaseMetadata;
 import io.harness.k8s.releasehistory.IK8sRelease;
 import io.harness.k8s.releasehistory.IK8sReleaseHistory;
@@ -18,12 +21,14 @@ import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 
 @UtilityClass
+@CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_K8S})
 public class K8sReleaseDiffCalculator {
-  static final String DIFF_FORMAT = "Field: [%s] has changed -> Old value: [%s], Current value: [%s] %n";
-  static final String DIFF_KEY_SVC_ID = "Service ID";
-  static final String DIFF_KEY_ENV_ID = "Environment ID";
-  static final String DIFF_KEY_INFRA_ID = "Infrastructure Definition ID";
-  static final String DIFF_KEY_INFRA_KEY = "Infrastructure Definition Key";
+  final String DIFF_FORMAT = "[%s] has changed -> Old value: [%s], New value: [%s] %n";
+  final String DIFF_KEY_SVC_ID = "Service";
+  final String DIFF_KEY_ENV_ID = "Environment";
+  final String DIFF_KEY_INFRA_ID = "Infrastructure Definition";
+  final String ORIGINAL_OWNER_FORMAT = "Original release owners: %s: [%s], %s: [%s], %s: [%s] %n";
+  final String CURRENT_OWNER_FORMAT = "Current release owners: %s: [%s], %s: [%s], %s: [%s] %n";
 
   public boolean releaseConflicts(
       ReleaseMetadata releaseMetadata, IK8sReleaseHistory releaseHistory, boolean inCanaryWorkflow) {
@@ -48,9 +53,10 @@ public class K8sReleaseDiffCalculator {
     if (!current.getInfraId().equals(previous.getInfraId())) {
       sb.append(String.format(DIFF_FORMAT, DIFF_KEY_INFRA_ID, previous.getInfraId(), current.getInfraId()));
     }
-    if (!current.getInfraKey().equals(previous.getInfraKey())) {
-      sb.append(String.format(DIFF_FORMAT, DIFF_KEY_INFRA_KEY, previous.getInfraKey(), current.getInfraKey()));
-    }
+    sb.append(String.format(ORIGINAL_OWNER_FORMAT, DIFF_KEY_SVC_ID, previous.getServiceId(), DIFF_KEY_ENV_ID,
+                  previous.getEnvId(), DIFF_KEY_INFRA_ID, previous.getInfraId()))
+        .append(String.format(CURRENT_OWNER_FORMAT, DIFF_KEY_SVC_ID, current.getServiceId(), DIFF_KEY_ENV_ID,
+            current.getEnvId(), DIFF_KEY_INFRA_ID, current.getInfraId()));
     return sb.toString();
   }
 

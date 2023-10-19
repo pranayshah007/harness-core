@@ -325,7 +325,7 @@ public class ScoreComputerServiceImpl implements ScoreComputerService {
               Collections.singletonList(rule), checkEntity.getRuleStrategy(), DATA_POINT_VALUE_KEY, true);
           Object lhsValue = evaluator.evaluateExpression(lhsExpression, RETURN_NULL_IF_UNRESOLVED);
           reasonBuilder.append(
-              String.format("Expected %s %s. Actual %s", rule.getOperator(), rule.getValue(), lhsValue));
+              String.format("Expected %s %s. Actual %s; ", rule.getOperator(), rule.getValue(), lhsValue));
         }
       } catch (Exception e) {
         log.warn("Reason expression evaluation failed", e);

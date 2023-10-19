@@ -43,6 +43,7 @@ modify_service_name() {
     ["audit-event-streaming"]=1
     ["ce-nextgen"]=1
     ["srm-service"]=1
+    ["ssca-manager"]=1
   )
 
   local modified_service_name="${modified_service_name[$SERVICE_NAME]}"

@@ -179,11 +179,7 @@ func (r *runTestsTask) collectRunTestData(ctx context.Context, cgDirPath string,
 	if errCr != nil {
 		r.log.Errorw(fmt.Sprintf("Unable to collect tests reports. Time taken: %s", time.Since(crStart)), zap.Error(errCr))
 	}
-
-	if errCg != nil {
-		return errCg
-	}
-	return errCr
+	return errCg
 }
 
 // createJavaAgentArg creates the ini file which is required as input to the java agent

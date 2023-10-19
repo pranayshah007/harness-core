@@ -152,7 +152,7 @@ public class RollbackModeYamlTransformer {
     ArrayNode stagesList = (ArrayNode) pipelineInnerNode.get(YAMLFieldNameConstants.STAGES);
     ArrayNode reversedStages = stagesList.deepCopy().removeAll();
     int numStages = stagesList.size();
-    for (int i = numStages - 1; i >= 0; i--) {
+    for (int i = 0; i < numStages; i++) {
       JsonNode currentNode = stagesList.get(i);
       if (currentNode.get(YAMLFieldNameConstants.PARALLEL) == null) {
         handleSerialStage(currentNode, executedStageIds, reversedStages);

@@ -33,6 +33,7 @@ import io.harness.pms.merger.helpers.InputSetYamlHelper;
 import io.harness.pms.ngpipeline.inputset.api.InputSetRequestInfoDTO;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListResponseDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetSummaryResponseDTOPMS;
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
@@ -327,6 +328,17 @@ public class PMSInputSetElementMapper {
     return toInputSetSummaryResponseDTOPMS(entity, null, null);
   }
 
+  public InputSetListResponseDTO toInputSetListResponseDTO(InputSetEntity entity) {
+    return InputSetListResponseDTO.builder()
+        .identifier(entity.getIdentifier())
+        .inputSetIdWithPipelineId(entity.getPipelineIdentifier() + "-" + entity.getIdentifier())
+        .name(entity.getName())
+        .description(entity.getDescription())
+        .pipelineIdentifier(entity.getPipelineIdentifier())
+        .inputSetType(entity.getInputSetEntityType())
+        .build();
+  }
+
   public EntityDetail toEntityDetail(InputSetEntity entity) {
     return EntityDetail.builder()
         .name(entity.getName())
@@ -375,6 +387,7 @@ public class PMSInputSetElementMapper {
             .cacheState(cacheResponse.getCacheState())
             .ttlLeft(cacheResponse.getTtlLeft())
             .lastUpdatedAt(cacheResponse.getLastUpdatedAt())
+            .isSyncEnabled(cacheResponse.isSyncEnabled())
             .build();
       }
     }

@@ -13,6 +13,7 @@ java_library(
     deps = [
         "//:lombok",
         "//960-persistence/src/main/java/io/harness/annotation:module",
+        "//960-persistence/src/main/java/io/harness/mongo/index/annotation:module",
         "//960-persistence/src/main/java/io/harness/ng:module",
         "//960-persistence/src/main/java/io/harness/persistence/api:module",
         "//970-ng-commons/src/main/java/io/harness/rsa:module",

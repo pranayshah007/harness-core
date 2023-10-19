@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.ProductModule;
+import io.harness.ng.core.beans.ServiceV2YamlMetadata;
 import io.harness.ng.core.dto.RepoListResponseDTO;
 import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
@@ -112,8 +113,12 @@ public interface ServiceEntityService {
   List<ServiceEntity> getMetadata(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> serviceIdentifiers);
 
-  List<ServiceEntity> getServices(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      List<String> serviceRefs, Map<String, String> servicesMetadataWithGitInfo, boolean loadFromCache);
+  List<ServiceV2YamlMetadata> getServicesYamlMetadata(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, List<String> serviceRefs, Map<String, String> servicesMetadataWithGitInfo,
+      boolean loadFromCache);
+
+  ServiceEntity updateArtifactoryRegistryUrlIfEmpty(
+      ServiceEntity serviceEntity, String accountId, String orgIdentifier, String projectIdentifier);
 
   boolean isServiceField(String fieldName, JsonNode value);
 

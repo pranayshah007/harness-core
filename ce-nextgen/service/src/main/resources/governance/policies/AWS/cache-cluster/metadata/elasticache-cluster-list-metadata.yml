@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: elasticache-cluster-list
+cloudProvider: AWS
+resourceType: cache-cluster
+description: List all cache cluster where status is not in deleted, deleting, creating
+rulesYamlPath: ../elasticache-cluster-list.yml

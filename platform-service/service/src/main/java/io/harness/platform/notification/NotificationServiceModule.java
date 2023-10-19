@@ -46,6 +46,8 @@ import io.harness.notification.modules.SmtpConfigClientModule;
 import io.harness.notification.service.ChannelServiceImpl;
 import io.harness.notification.service.MSTeamsServiceImpl;
 import io.harness.notification.service.MailServiceImpl;
+import io.harness.notification.service.NotificationChannelManagementServiceImpl;
+import io.harness.notification.service.NotificationRuleManagementServiceImpl;
 import io.harness.notification.service.NotificationServiceImpl;
 import io.harness.notification.service.NotificationSettingsServiceImpl;
 import io.harness.notification.service.NotificationTemplateServiceImpl;
@@ -54,6 +56,8 @@ import io.harness.notification.service.SeedDataPopulaterServiceImpl;
 import io.harness.notification.service.SlackServiceImpl;
 import io.harness.notification.service.WebhookServiceImpl;
 import io.harness.notification.service.api.ChannelService;
+import io.harness.notification.service.api.NotificationChannelManagementService;
+import io.harness.notification.service.api.NotificationRuleManagementService;
 import io.harness.notification.service.api.NotificationService;
 import io.harness.notification.service.api.NotificationSettingsService;
 import io.harness.notification.service.api.NotificationTemplateService;
@@ -227,6 +231,8 @@ public class NotificationServiceModule extends AbstractModule {
     bind(ChannelService.class).annotatedWith(Names.named(MSTEAMSSERVICE)).to(MSTeamsServiceImpl.class);
     bind(ChannelService.class).annotatedWith(Names.named(WEBHOOKSERVICE)).to(WebhookServiceImpl.class);
     bind(NotificationService.class).to(NotificationServiceImpl.class);
+    bind(NotificationRuleManagementService.class).to(NotificationRuleManagementServiceImpl.class);
+    bind(NotificationChannelManagementService.class).to(NotificationChannelManagementServiceImpl.class);
     bind(NotificationTemplateService.class).to(NotificationTemplateServiceImpl.class);
     bindMessageConsumer();
     install(new TokenClientModule(this.appConfig.getRbacServiceConfig(),

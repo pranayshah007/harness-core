@@ -21,6 +21,10 @@ import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceL
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_MEAN_TIME_TO_COMPLETE_SUCCESS_WORKFLOW_RUNS;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_MEAN_TIME_TO_COMPLETE_WORKFLOW_RUNS;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_MEAN_TIME_TO_MERGE_PR;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_OPEN_CODE_SCANNING_ALERTS;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_OPEN_DEPENDABOT_ALERTS;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_OPEN_PULL_REQUESTS_BY_ACCOUNT;
+import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_OPEN_SECRET_SCANNING_ALERTS;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_WORKFLOWS_COUNT;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITHUB_WORKFLOW_SUCCESS_RATE;
 import static io.harness.idp.scorecard.datasourcelocations.constants.DataSourceLocations.GITLAB_FILE_EXISTS;
@@ -47,6 +51,10 @@ public class DataSourceLocationFactory {
   private GithubWorkflowSuccessRateDsl githubWorkflowSuccessRateDsl;
   private GithubMeanTimeToCompleteWorkflowRunsDsl githubMeanTimeToCompleteWorkflowRunsDsl;
   private GithubMeanTimeToCompleteSuccessWorkflowRunsDsl githubMeanTimeToCompleteSuccessWorkflowRunsDsl;
+  private GithubOpenDependabotAlertsDsl githubOpenDependabotAlertsDsl;
+  private GithubOpenCodeScanningAlertsDsl githubOpenCodeScanningAlertsDsl;
+  private GithubOpenSecretScanningAlertsDsl githubOpenSecretScanningAlertsDsl;
+  private GithubOpenPullRequestsByAccountDsl githubOpenPullRequestsByAccountDsl;
   private BitbucketMeanTimeToMergePRDsl bitbucketMeanTimeToMergePRDsl;
   private BitbucketIsBranchProtectionSetDsl bitbucketIsBranchProtectionSetDsl;
   private GitlabMeanTimeToMergePRDsl gitlabMeanTimeToMergePRDsl;
@@ -78,6 +86,14 @@ public class DataSourceLocationFactory {
         return githubMeanTimeToCompleteWorkflowRunsDsl;
       case GITHUB_MEAN_TIME_TO_COMPLETE_SUCCESS_WORKFLOW_RUNS:
         return githubMeanTimeToCompleteSuccessWorkflowRunsDsl;
+      case GITHUB_OPEN_DEPENDABOT_ALERTS:
+        return githubOpenDependabotAlertsDsl;
+      case GITHUB_OPEN_CODE_SCANNING_ALERTS:
+        return githubOpenCodeScanningAlertsDsl;
+      case GITHUB_OPEN_SECRET_SCANNING_ALERTS:
+        return githubOpenSecretScanningAlertsDsl;
+      case GITHUB_OPEN_PULL_REQUESTS_BY_ACCOUNT:
+        return githubOpenPullRequestsByAccountDsl;
 
       // Bitbucket
       case BITBUCKET_MEAN_TIME_TO_MERGE_PR:

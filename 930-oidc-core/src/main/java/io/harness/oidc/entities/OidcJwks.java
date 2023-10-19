@@ -11,6 +11,7 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.mongo.index.FdIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
@@ -19,6 +20,7 @@ import io.harness.rsa.RsaKeyPair;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
@@ -31,6 +33,7 @@ import lombok.experimental.FieldNameConstants;
 @Entity(value = "ngOidcJwksKeys")
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.PL)
+@Builder
 public class OidcJwks implements PersistentEntity, UuidAware {
   @org.springframework.data.annotation.Id @Id String uuid;
   String accountId;

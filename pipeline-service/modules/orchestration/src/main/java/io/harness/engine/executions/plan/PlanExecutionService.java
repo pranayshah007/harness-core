@@ -91,6 +91,9 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
 
   long countRunningExecutionsForGivenPipelineInAccount(String accountId, String pipelineIdentifier);
 
+  long countRunningExecutionsForGivenPipelineInAccountExcludingWaitingStatuses(
+      String accountId, String pipelineIdentifier);
+
   PlanExecution findNextExecutionToRunInAccount(String accountId);
 
   /**

@@ -7,6 +7,7 @@
 
 package io.harness.k8s.kubectl;
 
+import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.TARUN_UBA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -53,5 +54,27 @@ public class CreateCommandTest extends CategoryTest {
     createCommand = client.create(MANIFEST_FOR_HASH);
 
     assertThat(createCommand.command()).isEqualTo("kubectl create -f manifest-hash.yaml -o=yaml --dry-run=client");
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void smokeTestVersionLessOpenshift() {
+    Kubectl client = OcClient.client("oc", "CONFIG_PATH");
+    client.setVersion(Version.parse("3.5"));
+    CreateCommand createCommand = client.create(MANIFEST_FOR_HASH);
+
+    assertThat(createCommand.command())
+        .isEqualTo("oc --kubeconfig=CONFIG_PATH create -f manifest-hash.yaml -o=yaml --dry-run");
+
+    client.setVersion(Version.parse("4.5"));
+    createCommand = client.create(MANIFEST_FOR_HASH);
+    assertThat(createCommand.command())
+        .isEqualTo("oc --kubeconfig=CONFIG_PATH create -f manifest-hash.yaml -o=yaml --dry-run=client");
+
+    client.setVersion(null);
+    createCommand = client.create(MANIFEST_FOR_HASH);
+    assertThat(createCommand.command())
+        .isEqualTo("oc --kubeconfig=CONFIG_PATH create -f manifest-hash.yaml -o=yaml --dry-run");
   }
 }

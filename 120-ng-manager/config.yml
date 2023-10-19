@@ -541,7 +541,7 @@ pluginExecutionConfig:
       - ""
   gitCloneConfig:
     # Use rootless image only for K8 git clone
-    image: harness/drone-git:1.4.1-linux-amd64-rootless
+    image: harness/drone-git:1.4.1-rootless
     entrypoint:
       - /usr/local/bin/clone
   apiUrl: https://localhost:8181/#/
@@ -573,6 +573,8 @@ gitXWebhookEventQueueConfig:
   threadSleepTimeInMillis: ${GITX_WEBHOOK_EVENT_QUEUE_THREAD_SLEEP_TIME_IN_MILLIS:-30}
 
 useQueueServiceForWebhookTriggers: ${USE_QUEUE_SERVICE_FOR_WEBHOOK_TRIGGERS:-false}
+
+useQueueServiceForGitXWebhook: ${USE_QUEUE_SERVICE_FOR_GITX_WEBHOOK:-false}
 
 proxy:
   enabled: false

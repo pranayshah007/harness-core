@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: delete-lambda-unused
+cloudProvider: AWS
+resourceType: lambda
+description: Delete lambda functions which are not used
+rulesYamlPath: ../delete-lambda-unused.yml

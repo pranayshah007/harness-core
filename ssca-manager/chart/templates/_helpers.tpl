@@ -50,10 +50,9 @@ app.kubernetes.io/name: {{ include "ssca-manager.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
-{{- define "ssca-manager.generateSecrets" }}
-    JWT_IDENTITY_SERVICE_SECRET: {{ include "harnesscommon.secrets.passwords.manage" (dict "secret" "ssca-manager" "key" "JWT_IDENTITY_SERVICE_SECRET" "providedValues" (list "secrets.JWT_IDENTITY_SERVICE_SECRET") "length" 10 "context" $) }}
-    JWT_AUTH_SECRET: {{ include "harnesscommon.secrets.passwords.manage" (dict "secret" "ssca-manager" "key" "JWT_AUTH_SECRET" "providedValues" (list "secrets.JWT_AUTH_SECRET") "length" 10 "context" $) }}
-{{- end }}
+{{- define "ssca-manager.pullSecrets" -}}
+{{ include "common.images.pullSecrets" (dict "images" (list .Values.image .Values.waitForInitContainer.image) "global" .Values.global ) }}
+{{- end -}}
 
 {{/*
 Create the name of the service account to use

@@ -325,13 +325,40 @@ func GetLatestCommit(ctx context.Context, request *pb.GetLatestCommitRequest, lo
 				ref = branch.Sha
 			}
 		}
-	case scm.DriverAzure, scm.DriverHarness:
+	case scm.DriverAzure:
 		// Azure doesn't support getting a commit by ref/branch name. So we get the latest commit from the branch using the root folder.
 		// Harness only supports a ref
 		contents, _, err := listContentsWithRetry(ctx, log, client, provider, slug, "", ref, scm.ListOptions{}, serverErrorRetryCount)
 		if err == nil {
 			ref = contents[0].Sha
 		}
+	case scm.DriverHarness:
+		var commits *pb.ListCommitsResponse
+		if request.GetBranch() == "" {
+			commits, err = ListCommits(ctx, &pb.ListCommitsRequest{
+				Type:     &pb.ListCommitsRequest_Ref{Ref: request.GetRef()},
+				Slug:     slug,
+				Provider: request.Provider,
+			}, log)
+		} else {
+			commits, err = ListCommits(ctx, &pb.ListCommitsRequest{
+				Type:     &pb.ListCommitsRequest_Branch{Branch: request.GetBranch()},
+				Slug:     slug,
+				Provider: request.Provider,
+			}, log)
+		}
+
+		if err == nil && (commits == nil || len(commits.GetCommitIds()) < 1) {
+			err = fmt.Errorf("empty repo")
+		}
+		if err != nil {
+			log.Errorw("GetLatestCommit failure", "provider", provider, "slug", slug, "ref", ref, "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+			out = &pb.GetLatestCommitResponse{
+				Error: err.Error(),
+			}
+			return out, nil
+		}
+		ref = commits.GetCommitIds()[0]
 	}
 
 	refResponse, response, err := findCommitWithRetry(ctx, log, client, provider, slug, ref, serverErrorRetryCount)
@@ -354,7 +381,6 @@ func GetLatestCommit(ctx context.Context, request *pb.GetLatestCommitRequest, lo
 		namespace, name := scm.Split(slug)
 		refResponse.Link = fmt.Sprintf("%sprojects/%s/repos/%s/commits/%s", client.BaseURL, namespace, name, refResponse.Sha)
 	}
-
 	commit, err := converter.ConvertCommit(refResponse)
 	if err != nil {
 		log.Errorw("GetLatestCommit convert commit failure", "provider", provider, "slug", slug, "ref", ref, "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))

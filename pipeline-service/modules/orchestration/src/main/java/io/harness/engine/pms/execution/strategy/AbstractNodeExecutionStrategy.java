@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.pms.execution.strategy;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.ProductModule;
@@ -92,7 +93,6 @@ public abstract class AbstractNodeExecutionStrategy<P extends Node, M extends Pm
   @Override
   public void handleSdkResponseEvent(SdkResponseEventProto event) {
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(event.getAmbiance(), event.getSdkResponseEventType())) {
-      log.info("Event for SdkResponseEvent received for eventType {}", event.getSdkResponseEventType());
       SdkResponseProcessor handler = sdkResponseProcessorFactory.getHandler(event.getSdkResponseEventType());
       handler.handleEvent(event);
       log.info("Event for SdkResponseEvent for event type {} completed successfully", event.getSdkResponseEventType());

@@ -10,6 +10,8 @@ package io.harness.idp.app;
 import static io.harness.audit.ResourceTypeConstants.IDP_APP_CONFIGS;
 import static io.harness.audit.ResourceTypeConstants.IDP_CATALOG_CONNECTOR;
 import static io.harness.audit.ResourceTypeConstants.IDP_CONFIG_ENV_VARIABLES;
+import static io.harness.audit.ResourceTypeConstants.IDP_PROXY_HOST;
+import static io.harness.audit.ResourceTypeConstants.IDP_SCORECARDS;
 import static io.harness.authorization.AuthorizationServiceHeader.IDP_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.idp.provision.ProvisionConstants.PROVISION_MODULE_CONFIG;
@@ -44,10 +46,12 @@ import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.idp.allowlist.resources.AllowListApiImpl;
 import io.harness.idp.allowlist.services.AllowListService;
 import io.harness.idp.allowlist.services.AllowListServiceImpl;
-import io.harness.idp.audittrials.eventhandlers.AppConfigEventHandler;
-import io.harness.idp.audittrials.eventhandlers.BackstageSecretEnvEventHandler;
-import io.harness.idp.audittrials.eventhandlers.CatalogConnectorEventHandler;
-import io.harness.idp.audittrials.eventhandlers.IDPNextGenOutboxEventHandler;
+import io.harness.idp.audittrails.eventhandlers.AppConfigEventHandler;
+import io.harness.idp.audittrails.eventhandlers.BackstageSecretEnvEventHandler;
+import io.harness.idp.audittrails.eventhandlers.CatalogConnectorEventHandler;
+import io.harness.idp.audittrails.eventhandlers.IDPNextGenOutboxEventHandler;
+import io.harness.idp.audittrails.eventhandlers.ProxyHostDetailsEventHandler;
+import io.harness.idp.audittrails.eventhandlers.ScorecardEventHandler;
 import io.harness.idp.common.delegateselectors.cache.DelegateSelectorsCache;
 import io.harness.idp.common.delegateselectors.cache.memory.DelegateSelectorsInMemoryCache;
 import io.harness.idp.common.delegateselectors.cache.redis.DelegateSelectorsRedisCache;
@@ -452,7 +456,9 @@ public class IdpModule extends AbstractModule {
         MapBinder.newMapBinder(binder(), String.class, OutboxEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(IDP_APP_CONFIGS).to(AppConfigEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(IDP_CONFIG_ENV_VARIABLES).to(BackstageSecretEnvEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(IDP_PROXY_HOST).to(ProxyHostDetailsEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(IDP_CATALOG_CONNECTOR).to(CatalogConnectorEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(IDP_SCORECARDS).to(ScorecardEventHandler.class);
   }
 
   @Provides

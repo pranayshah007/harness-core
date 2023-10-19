@@ -58,6 +58,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
+import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 
@@ -442,16 +443,31 @@ public class MonitoredServiceResource {
   @Timed
   @ExceptionMetered
   @ResponseMetered
+  @Path("/services")
+  @ApiOperation(value = "get monitored service list services data", nickname = "getMonitoredServiceListServices")
+  @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
+  public ResponseDTO<List<ServiceResponse>> getServices(
+      @NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
+      @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
+      @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier) {
+    return ResponseDTO.newResponse(
+        monitoredServiceService.getUniqueServices(accountId, orgIdentifier, projectIdentifier));
+  }
+
+  @GET
+  @Timed
+  @ExceptionMetered
+  @ResponseMetered
   @Path("/environments")
   @ApiOperation(
-      value = "get monitored service list environments data ", nickname = "getMonitoredServiceListEnvironments")
+      value = "get monitored service list environments data", nickname = "getMonitoredServiceListEnvironments")
   @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
   public ResponseDTO<List<EnvironmentResponse>>
   getEnvironments(@NotNull @QueryParam("accountId") @AccountIdentifier String accountId,
       @NotNull @QueryParam("orgIdentifier") @OrgIdentifier String orgIdentifier,
       @NotNull @QueryParam("projectIdentifier") @ProjectIdentifier String projectIdentifier) {
     return ResponseDTO.newResponse(
-        monitoredServiceService.listEnvironments(accountId, orgIdentifier, projectIdentifier));
+        monitoredServiceService.getUniqueEnvironments(accountId, orgIdentifier, projectIdentifier));
   }
 
   @GET

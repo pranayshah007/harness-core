@@ -11,29 +11,17 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.PmsCommonConstants.AUTO_ABORT_PIPELINE_THROUGH_TRIGGER;
 import static io.harness.pms.contracts.execution.Status.RUNNING;
 import static io.harness.pms.execution.utils.StatusUtils.isFinalStatus;
-import static io.harness.steps.StepUtils.buildAbstractions;
 
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.app.beans.dto.CITaskDetails;
 import io.harness.app.beans.entities.StepExecutionParameters;
-import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.execution.license.CILicenseService;
-import io.harness.beans.outcomes.VmDetailsOutcome;
 import io.harness.beans.steps.CILogKeyMetadata;
-import io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails;
-import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
-import io.harness.delegate.TaskSelector;
-import io.harness.delegate.beans.ci.CICleanupTaskParams;
-import io.harness.delegate.beans.ci.CIInitializeTaskParams;
-import io.harness.delegate.beans.ci.vm.CIVmCleanupTaskParams;
-import io.harness.delegate.beans.ci.vm.dlite.DliteVmCleanupTaskParams;
-import io.harness.encryption.Scope;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.hsqs.client.api.HsqsClientService;
 import io.harness.hsqs.client.model.AckRequest;
@@ -46,51 +34,34 @@ import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
 import io.harness.pms.sdk.core.events.OrchestrationEventHandler;
-import io.harness.pms.sdk.core.resolver.RefObjectUtils;
-import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.repositories.CIAccountExecutionMetadataRepository;
 import io.harness.repositories.CILogKeyRepository;
 import io.harness.repositories.CIStageOutputRepository;
 import io.harness.repositories.CIStepStatusRepository;
-import io.harness.repositories.CITaskDetailsRepository;
 import io.harness.repositories.StepExecutionParametersRepository;
-import io.harness.service.DelegateGrpcClientWrapper;
-
-import software.wings.beans.SerializationFormat;
-import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import io.fabric8.utils.Strings;
-import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CI)
 public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHandler {
-  @Inject private OutcomeService outcomeService;
   @Inject private GitBuildStatusUtility gitBuildStatusUtility;
   @Inject private StageCleanupUtility stageCleanupUtility;
   @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
   @Inject private CILogServiceUtils ciLogServiceUtils;
   @Inject private CILicenseService ciLicenseService;
-  @Inject private CITaskDetailsRepository ciTaskDetailsRepository;
   @Inject private CIAccountExecutionMetadataRepository ciAccountExecutionMetadataRepository;
   @Inject private QueueExecutionUtils queueExecutionUtils;
   @Inject private HsqsClientService hsqsClientService;
@@ -100,10 +71,8 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
 
   private final String SERVICE_NAME_CI = "ci";
   private final int MAX_ATTEMPTS = 3;
-  private final int WAIT_TIME_IN_SECOND = 30;
   @Inject @Named("ciEventHandlerExecutor") private ExecutorService executorService;
   @Inject @Named("ciRatelimitHandlerExecutor") private ExecutorService ciRatelimitHandlerExecutor;
-  @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject CIStageOutputRepository ciStageOutputRepository;
   @Inject protected CIStepStatusRepository ciStepStatusRepository;
 
@@ -189,16 +158,10 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
           deleteCIStageOutputs(ambiance);
           deleteCIStepStatusMetadata(ambiance);
           deleteCIStepParameters(ambiance);
-          Pair<CICleanupTaskParams, StageInfraDetails> cleanupParams =
-              stageCleanupUtility.buildAndfetchCleanUpParameters(ambiance);
 
           log.info("Received event with status {} to clean planExecutionId {}, stage {}", status,
               ambiance.getPlanExecutionId(), level.getIdentifier());
-
-          DelegateTaskRequest delegateTaskRequest = getDelegateCleanupTaskRequest(ambiance, accountId, cleanupParams);
-          String taskId = delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
-          log.info("Submitted cleanup request with taskId {} for planExecutionId {}, stage {}", taskId,
-              ambiance.getPlanExecutionId(), level.getIdentifier());
+          stageCleanupUtility.submitCleanupRequest(ambiance, level.getIdentifier());
 
           String logKey = getLogKey(ambiance);
 
@@ -276,107 +239,6 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
       log.error("Failed to send git status update task for node {}, planExecutionId {}", level.getRuntimeId(),
           ambiance.getPlanExecutionId(), ex);
     }
-  }
-
-  private DelegateTaskRequest getDelegateCleanupTaskRequest(Ambiance ambiance, String accountId,
-      Pair<CICleanupTaskParams, StageInfraDetails> cleanupParams) throws InterruptedException {
-    List<TaskSelector> taskSelectors = stageCleanupUtility.fetchDelegateSelector(ambiance);
-
-    Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
-    String taskType = "CI_CLEANUP";
-    SerializationFormat serializationFormat = SerializationFormat.KRYO;
-    boolean executeOnHarnessHostedDelegates = false;
-    String stageId = ambiance.getStageExecutionId();
-    List<String> eligibleToExecuteDelegateIds = new ArrayList<>();
-
-    CICleanupTaskParams ciCleanupTaskParams = cleanupParams.getLeft();
-    StageInfraDetails stageInfraDetails = cleanupParams.getRight();
-    CICleanupTaskParams.Type type = ciCleanupTaskParams.getType();
-    if (type == CICleanupTaskParams.Type.DLITE_VM) {
-      DliteVmStageInfraDetails dliteVmStageInfraDetails = (DliteVmStageInfraDetails) stageInfraDetails;
-      DliteVmCleanupTaskParams dliteVmCleanupTaskParams = (DliteVmCleanupTaskParams) ciCleanupTaskParams;
-      taskType = TaskType.DLITE_CI_VM_CLEANUP_TASK.getDisplayName();
-      executeOnHarnessHostedDelegates = true;
-      serializationFormat = SerializationFormat.JSON;
-
-      if (dliteVmStageInfraDetails.isDistributed()) {
-        taskType = TaskType.DLITE_CI_VM_CLEANUP_TASK_V2.getDisplayName();
-        dliteVmCleanupTaskParams.setDistributed(true);
-      } else {
-        String delegateId = fetchDelegateId(ambiance);
-        if (Strings.isNotBlank(delegateId)) {
-          eligibleToExecuteDelegateIds.add(delegateId);
-          ciTaskDetailsRepository.deleteFirstByStageExecutionId(stageId);
-        } else {
-          log.warn("Unable to locate delegate ID for stage ID: {}. Cleanup task may be routed to the wrong delegate",
-              stageId);
-        }
-      }
-    }
-    // Since we use a same class to handle both VM and DOCKER cases due to they share a lot of similarities in
-    // processing logic, and we use a CICleanupTaskParams type name `VM` to represent them. Only docker scenario
-    // needs additional step to add matching docker delegate id into the eligible to execute delegate id list.
-    else if (type == CICleanupTaskParams.Type.VM) {
-      if (((CIVmCleanupTaskParams) ciCleanupTaskParams).getInfraInfo() == CIInitializeTaskParams.Type.DOCKER) {
-        // TODO: Start using fetchDelegateId once we start emitting & processing the event for Docker as well
-        OptionalOutcome optionalOutput = outcomeService.resolveOptional(
-            ambiance, RefObjectUtils.getOutcomeRefObject(VmDetailsOutcome.VM_DETAILS_OUTCOME));
-        VmDetailsOutcome vmDetailsOutcome = (VmDetailsOutcome) optionalOutput.getOutcome();
-        if (vmDetailsOutcome != null && Strings.isNotBlank(vmDetailsOutcome.getDelegateId())) {
-          eligibleToExecuteDelegateIds.add(vmDetailsOutcome.getDelegateId());
-        }
-      }
-    }
-
-    return DelegateTaskRequest.builder()
-        .accountId(accountId)
-        .executeOnHarnessHostedDelegates(executeOnHarnessHostedDelegates)
-        .stageId(stageId)
-        .eligibleToExecuteDelegateIds(eligibleToExecuteDelegateIds)
-        .taskSelectors(taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()))
-        .selectors(taskSelectors)
-        .selectionLogsTrackingEnabled(true)
-        .taskSetupAbstractions(abstractions)
-        .executionTimeout(java.time.Duration.ofSeconds(900))
-        .taskType(taskType)
-        .serializationFormat(serializationFormat)
-        .taskParameters(ciCleanupTaskParams)
-        .taskDescription("CI cleanup pod task")
-        .build();
-  }
-
-  private String fetchDelegateId(Ambiance ambiance) throws InterruptedException {
-    OptionalOutcome optionalOutput = outcomeService.resolveOptional(
-        ambiance, RefObjectUtils.getOutcomeRefObject(VmDetailsOutcome.VM_DETAILS_OUTCOME));
-    VmDetailsOutcome vmDetailsOutcome = (VmDetailsOutcome) optionalOutput.getOutcome();
-
-    if (vmDetailsOutcome != null && Strings.isNotBlank(vmDetailsOutcome.getDelegateId())) {
-      return vmDetailsOutcome.getDelegateId();
-    } else {
-      String stageId = ambiance.getStageExecutionId();
-      log.info("Could not process the delegate ID for stage ID: {} from the init response. Trying to look in the DB",
-          stageId);
-
-      long currentTime = System.currentTimeMillis();
-      long waitTill = currentTime + WAIT_TIME_IN_SECOND * 1000;
-
-      while (System.currentTimeMillis() < waitTill) {
-        Optional<CITaskDetails> taskDetailsOptional = ciTaskDetailsRepository.findFirstByStageExecutionId(stageId);
-
-        if (taskDetailsOptional.isPresent()) {
-          CITaskDetails taskDetails = taskDetailsOptional.get();
-          if (Strings.isNotBlank(taskDetails.getDelegateId())) {
-            log.info("Successfully found delegate ID: {} corresponding to stage ID: {}", taskDetails.getDelegateId(),
-                stageId);
-            return taskDetails.getDelegateId();
-          }
-          break;
-        } else {
-          Thread.sleep(1000);
-        }
-      }
-    }
-    return null;
   }
 
   // When trigger has "Auto Abort Prev Executions" ebanled, it will abort prev running execution and start a new one.

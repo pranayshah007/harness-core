@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: true
+deleted: false
+name: low-usage-load-balancers
+cloudProvider: AZURE
+resourceType: azure.loadbalancer
+description: List all the low usage load balancers based on the packet count.
+rulesYamlPath: ../low-usage-load-balancers.yml

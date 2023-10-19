@@ -19,6 +19,7 @@ import static io.harness.validation.Validator.notEmptyCheck;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 import io.harness.EntityType;
@@ -340,8 +341,8 @@ public class TerraformStepHelper {
     } else {
       paths.addAll(getParameterFieldValue(gitStoreConfig.getPaths()));
     }
-    ScmConnector scmConnector = cdStepHelper.getScmConnector(
-        (ScmConnector) connectorDTO.getConnectorConfig(), basicNGAccessObject.getAccountIdentifier(), gitConfigDTO);
+    ScmConnector scmConnector = cdStepHelper.getScmConnector((ScmConnector) connectorDTO.getConnectorConfig(),
+        basicNGAccessObject.getAccountIdentifier(), gitConfigDTO, repoName);
     List<EncryptedDataDetail> encryptedDataDetails =
         gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(scmConnector, sshKeySpecDTO, basicNGAccessObject);
     GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder()
@@ -1750,9 +1751,15 @@ public class TerraformStepHelper {
                                        .fileStoreConfigDTO(fileStorageConfigDTO)
                                        .build());
               } else {
-                GitStoreConfigDTO gitStoreConfigDTO = getStoreConfigAtCommitId(
-                    storeConfig, terraformPassThroughData.getFetchedCommitIdsMap().get(file.getIdentifier()))
-                                                          .toGitStoreConfigDTO();
+                GitStoreConfigDTO gitStoreConfigDTO;
+                String fetchedCommitId = getFetchedCommitId(terraformPassThroughData, file.getIdentifier());
+
+                if (isNotBlank(fetchedCommitId)) {
+                  gitStoreConfigDTO = getStoreConfigAtCommitId(storeConfig, fetchedCommitId).toGitStoreConfigDTO();
+                } else {
+                  GitStoreConfig gitStoreConfig = (GitStoreConfig) storeConfig.cloneInternal();
+                  gitStoreConfigDTO = gitStoreConfig.toGitStoreConfigDTO();
+                }
 
                 varFileConfigs.add(TerraformRemoteVarFileConfig.builder()
                                        .identifier(file.getIdentifier())
@@ -1766,6 +1773,29 @@ public class TerraformStepHelper {
       return varFileConfigs;
     }
     return Collections.emptyList();
+  }
+
+  @VisibleForTesting
+  protected String getFetchedCommitId(TerraformPassThroughData terraformPassThroughData, String fileIdentifier) {
+    String fetchedCommitId = null;
+    if (terraformPassThroughData.getFetchedCommitIdsMap() != null
+        && isNotEmpty(terraformPassThroughData.getFetchedCommitIdsMap()) && isNotBlank(fileIdentifier)) {
+      fetchedCommitId = terraformPassThroughData.getFetchedCommitIdsMap().get(fileIdentifier);
+    }
+
+    if (isNotBlank(fetchedCommitId)) {
+      return fetchedCommitId;
+    }
+
+    if (terraformPassThroughData.getGitVarFilesFromMultipleRepo() != null && isNotBlank(fileIdentifier)
+        && terraformPassThroughData.getGitVarFilesFromMultipleRepo().get(fileIdentifier) != null) {
+      FetchFilesResult gitFetchFilesResult =
+          terraformPassThroughData.getGitVarFilesFromMultipleRepo().get(fileIdentifier);
+      if (gitFetchFilesResult != null && gitFetchFilesResult.getCommitResult() != null) {
+        fetchedCommitId = gitFetchFilesResult.getCommitResult().getCommitId();
+      }
+    }
+    return fetchedCommitId;
   }
 
   public StepResponse handleStepExceptionFailure(StepExceptionPassThroughData stepExceptionPassThroughData) {

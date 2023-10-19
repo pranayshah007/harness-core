@@ -17,14 +17,19 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASKS
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASKS_PAUSED;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASKS_UNASSIGNED;
 import static io.harness.persistence.HQuery.excludeAuthority;
+import static io.harness.secrets.SecretsDao.ID_KEY;
 
+import static dev.morphia.aggregation.Group.grouping;
+import static dev.morphia.aggregation.Projection.projection;
 import static java.time.Duration.ofMinutes;
 
+import io.harness.beans.DelegateTask;
+import io.harness.beans.DelegateTask.DelegateTaskKeys;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
-import io.harness.delegate.beans.DelegateTaskRank;
+import io.harness.lock.AcquiredLock;
+import io.harness.lock.PersistentLocker;
 import io.harness.metrics.beans.DelegateAccountMetricContext;
-import io.harness.metrics.beans.DelegateTaskRankMetricContext;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.metrics.service.api.MetricsPublisher;
 import io.harness.perpetualtask.PerpetualTaskState;
@@ -36,10 +41,15 @@ import io.harness.service.intfc.DelegateCache;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.aggregation.Accumulator;
+import dev.morphia.aggregation.AggregationPipeline;
+import dev.morphia.query.Query;
+import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor_ = @Inject)
@@ -54,6 +64,11 @@ public class DelegateMetricsPublisher implements MetricsPublisher {
 
   private final DelegateCache delegateCache;
 
+  private final PersistentLocker persistentLocker;
+
+  private final String delegateTaskMetrics = System.getenv("PUBLISH_DELEGATE_TASK_METRICS");
+  private final boolean publishDelegateTaskMetrics = StringUtils.contains(delegateTaskMetrics, "true");
+
   @Override
   public void recordMetrics() {
     sendDelegateMetrics();
@@ -66,9 +81,21 @@ public class DelegateMetricsPublisher implements MetricsPublisher {
     }
     long startTime = Instant.now().toEpochMilli();
 
-    recordActiveDelegateMetrics();
-    recordPerpetualTaskMetrics();
-    recordDelegateTasksByRankMetrics();
+    if (publishDelegateTaskMetrics) {
+      // Try to acquire a distributed lock and publish the metrics if lock is available.
+      String lockName = DelegateMetricsPublisher.class.getName() + "-"
+          + "DelegateTaskMetricsPublisherLock";
+      try (AcquiredLock<?> acquiredLock = persistentLocker.tryToAcquireLock(lockName, Duration.ofSeconds(30))) {
+        if (acquiredLock == null) {
+          return;
+        }
+        recordActiveDelegateMetrics();
+        recordPerpetualTaskMetrics();
+        recordDelegateTasks();
+      } catch (Exception ex) {
+        log.debug("Failure while acquiring lock {} ", lockName);
+      }
+    }
 
     if (log.isDebugEnabled()) {
       log.debug("Total time taken to collect metrics for active delegates count: {} (ms)",
@@ -152,30 +179,29 @@ public class DelegateMetricsPublisher implements MetricsPublisher {
     }
   }
 
-  private void recordDelegateTasksByRankMetrics() {
-    try {
-      for (Map.Entry<String, Long> entry :
-          delegateCache.getTasksCountPerAccount(DelegateTaskRank.OPTIONAL).entrySet()) {
-        recordDelegateTaskMetrics(entry.getKey(), DelegateTaskRank.OPTIONAL.name(), entry.getValue());
-      }
-    } catch (Exception e) {
-      log.warn("Exception occurred during publishing optional delegate tasks count metrics.", e);
-    }
+  private void recordDelegateTasks() {
+    Query<DelegateTask> query = persistence.createAnalyticsQuery(DelegateTask.class);
 
-    try {
-      for (Map.Entry<String, Long> entry :
-          delegateCache.getTasksCountPerAccount(DelegateTaskRank.IMPORTANT).entrySet()) {
-        recordDelegateTaskMetrics(entry.getKey(), DelegateTaskRank.IMPORTANT.name(), entry.getValue());
-      }
-    } catch (Exception e) {
-      log.warn("Exception occurred during publishing optional delegate tasks count metrics.", e);
+    AggregationPipeline aggregationPipeline =
+        persistence.getDefaultAnalyticsDatastore(DelegateTask.class)
+            .createAggregation(DelegateTask.class)
+            .match(query)
+            .group(DelegateTaskKeys.accountId, grouping("count", new Accumulator("$sum", 1)))
+            .project(projection(DelegateTaskKeys.accountId, ID_KEY), projection("count"));
+    aggregationPipeline.aggregate(AccountIdVsTask.class)
+        .forEachRemaining(
+            accountIdVsTask -> recordDelegateTaskMetrics(accountIdVsTask.getAccountId(), accountIdVsTask.getCount()));
+  }
+
+  private void recordDelegateTaskMetrics(String accountId, long value) {
+    try (DelegateAccountMetricContext ignore = new DelegateAccountMetricContext(accountId)) {
+      metricService.recordMetric(ACTIVE_DELEGATE_TASK, value);
     }
   }
 
-  private void recordDelegateTaskMetrics(String accountId, String taskRank, long value) {
-    try (DelegateAccountMetricContext ignore = new DelegateAccountMetricContext(accountId);
-         DelegateTaskRankMetricContext ignore1 = new DelegateTaskRankMetricContext(taskRank)) {
-      metricService.recordMetric(ACTIVE_DELEGATE_TASK, value);
-    }
+  @Data
+  private static class AccountIdVsTask {
+    String accountId;
+    int count;
   }
 }

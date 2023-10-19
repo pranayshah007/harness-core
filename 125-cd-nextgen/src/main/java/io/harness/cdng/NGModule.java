@@ -127,6 +127,8 @@ import io.harness.filter.impl.FilterServiceImpl;
 import io.harness.filter.mapper.FilterPropertiesMapper;
 import io.harness.filter.service.FilterService;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
+import io.harness.metrics.impl.DelegateMetricsServiceImpl;
+import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.migration.NGMigrationSdkModule;
 import io.harness.ng.core.NGCoreModule;
 import io.harness.ng.core.environment.services.EnvironmentService;
@@ -211,6 +213,7 @@ public class NGModule extends AbstractModule {
     bind(TasResourceService.class).to(TasResourceServiceImpl.class);
     bind(JenkinsResourceService.class).to(JenkinsResourceServiceImpl.class);
     bind(GithubPackagesResourceService.class).to(GithubPackagesResourceServiceImpl.class);
+    bind(DelegateMetricsService.class).to(DelegateMetricsServiceImpl.class);
     bind(AzureArtifactsResourceService.class).to(AzureArtifactsResourceServiceImpl.class);
     bind(AMIResourceService.class).to(AMIResourceServiceImpl.class);
     bind(FilterService.class).to(FilterServiceImpl.class);

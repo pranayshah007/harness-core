@@ -62,7 +62,6 @@ import io.harness.security.SourcePrincipalContextData;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.dto.Principal;
 import io.harness.utils.IdentifierRefHelper;
-import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -596,7 +595,7 @@ public class ServiceOverridesResource {
     String yamlInternal = serviceOverridesEntity.getYamlInternal();
     if (spec != null && isEmpty(yamlInternal)) {
       try {
-        String yamlInternalFromSpec = JsonPipelineUtils.writeJsonString(spec);
+        String yamlInternalFromSpec = YamlUtils.writeYamlString(spec);
         serviceOverridesEntity.setYamlInternal(yamlInternalFromSpec);
       } catch (Exception ex) {
         log.error("Failed to generate yaml from the service override entity's spec", ex);

@@ -1,0 +1,112 @@
+name: Pipeline Service Thread Metrics
+identifier: PipelineServiceThreadMetrics
+metricGroup: PipelineServiceThreadMetricsGroup
+metrics:
+  - metricName: EngineExecutorService_completed_meanRate
+    metricDefinition: EngineExecutorService ThreadPool completed tasks mean rate
+    type: LastValue
+    unit: count
+  - metricName: EngineExecutorService_completed_fifteenMinuteRate
+    metricDefinition: EngineExecutorService ThreadPool completed tasks fifteenMinuteRate
+    type: LastValue
+    unit: count
+  - metricName: EngineExecutorService_submitted_meanRate
+    metricDefinition: EngineExecutorService ThreadPool submitted tasks mean rate
+    type: LastValue
+    unit: count
+  - metricName: EngineExecutorService_submitted_fifteenMinuteRate
+    metricDefinition: EngineExecutorService ThreadPool submitted tasks fifteenMinuteRate
+    type: LastValue
+    unit: count
+  - metricName: PipelineExecutorService_completed_meanRate
+    metricDefinition: PipelineExecutorService ThreadPool completed tasks mean rate
+    type: LastValue
+    unit: count
+  - metricName: PipelineExecutorService_completed_fifteenMinuteRate
+    metricDefinition: PipelineExecutorService ThreadPool completed tasks fifteenMinuteRate
+    type: LastValue
+    unit: count
+  - metricName: PipelineExecutorService_submitted_meanRate
+    metricDefinition: PipelineExecutorService ThreadPool submitted tasks mean rate
+    type: LastValue
+    unit: count
+  - metricName: PipelineExecutorService_submitted_fifteenMinuteRate
+    metricDefinition: PipelineExecutorService ThreadPool submitted tasks fifteenMinuteRate
+    type: LastValue
+    unit: count
+  - metricName: PipelineMergeCreatorExecutorService_completed_meanRate
+    metricDefinition: PipelineMergeCreatorExecutorService ThreadPool completed tasks mean rate
+    type: LastValue
+    unit: count
+  - metricName: PipelineMergeCreatorExecutorService_completed_fifteenMinuteRate
+    metricDefinition: PipelineMergeCreatorExecutorService ThreadPool completed tasks fifteenMinuteRate
+    type: LastValue
+    unit: count
+  - metricName: PipelineMergeCreatorExecutorService_submitted_meanRate
+    metricDefinition: PipelineMergeCreatorExecutorService ThreadPool submitted tasks mean rate
+    type: LastValue
+    unit: count
+  - metricName: PipelineMergeCreatorExecutorService_submitted_fifteenMinuteRate
+    metricDefinition: PipelineMergeCreatorExecutorService ThreadPool submitted tasks fifteenMinuteRate
+    type: LastValue
+    unit: count
+  - metricName: EngineExecutorService_duration_mean
+    metricDefinition: EngineExecutorService ThreadPool duration of tasks mean rate
+    type: LastValue
+    unit: count
+  - metricName: EngineExecutorService_duration_99thPercentile
+    metricDefinition: EngineExecutorService ThreadPool duration of tasks 99thPercentile
+    type: LastValue
+    unit: count
+  - metricName: EngineExecutorService_idle_mean
+    metricDefinition: EngineExecutorService ThreadPool idle time of tasks mean rate
+    type: LastValue
+    unit: count
+  - metricName: EngineExecutorService_idle_99thPercentile
+    metricDefinition: EngineExecutorService ThreadPool idle time of tasks 99thPercentile
+    type: LastValue
+    unit: count
+  - metricName: PipelineExecutorService_duration_mean
+    metricDefinition: PipelineExecutorService ThreadPool duration of tasks mean rate
+    type: LastValue
+    unit: count
+  - metricName: PipelineExecutorService_duration_99thPercentile
+    metricDefinition: PipelineExecutorService ThreadPool duration of tasks 99thPercentile
+    type: LastValue
+    unit: count
+  - metricName: PipelineExecutorService_idle_mean
+    metricDefinition: PipelineExecutorService ThreadPool idle time of tasks mean rate
+    type: LastValue
+    unit: count
+  - metricName: PipelineExecutorService_idle_99thPercentile
+    metricDefinition: PipelineExecutorService ThreadPool idle time of tasks 99thPercentile
+    type: LastValue
+    unit: count
+  - metricName: PipelineMergeCreatorExecutorService_duration_mean
+    metricDefinition: PipelineMergeCreatorExecutorService ThreadPool duration of tasks mean rate
+    type: LastValue
+    unit: count
+  - metricName: PipelineMergeCreatorExecutorService_duration_99thPercentile
+    metricDefinition: PipelineMergeCreatorExecutorService ThreadPool duration of tasks 99thPercentile
+    type: LastValue
+    unit: count
+  - metricName: PipelineMergeCreatorExecutorService_idle_mean
+    metricDefinition: PipelineMergeCreatorExecutorService ThreadPool idle time of tasks mean rate
+    type: LastValue
+    unit: count
+  - metricName: PipelineMergeCreatorExecutorService_idle_99thPercentile
+    metricDefinition: PipelineMergeCreatorExecutorService ThreadPool idle time of tasks 99thPercentile
+    type: LastValue
+    unit: count
+  - metricName: PipelineExecutorService_running
+    metricDefinition: PipelineExecutorService ThreadPool running tasks count
+    type: LastValue
+    unit: count
+  - metricName: PipelineMergeCreatorExecutorService_running
+    metricDefinition: PipelineMergeCreatorExecutorService ThreadPool running tasks count99thPercentile
+    type: LastValue
+    unit: count
+  - metricName: EngineExecutorService_running
+    metricDefinition: EngineExecutorService ThreadPool running tasks count
+    type: LastValue
+    unit: count  

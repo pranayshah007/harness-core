@@ -70,6 +70,7 @@ data:
   {{- end }}
   ENABLE_AUDIT : 'true'
   AUDIT_SERVICE_BASE_URL: http://platform-service:9005/api/
+  DISABLE_FREEZE_NOTIFY_TEMPLATE: '{{ .Values.global.disableFreezeNotifyTemplate }}'
   LOG_STREAMING_CONTAINER_STEP_BASE_URL: '{{ .Values.global.loadbalancerURL }}/log-service/'
   ALLOWED_ORIGINS: '{{ .Values.allowedOrigins | default .Values.global.loadbalancerURL }}'
   {{ include "harnesscommon.harnessfunctions.java17flags" (dict "context" $) | nindent 2 }}

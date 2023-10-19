@@ -23,6 +23,7 @@ message UploadCgRequest {
 
 message UploadCgResponse {
   string cg_msg = 1;
+  bool empty_cg = 2;
 }
 
 // Definitions to interact with TI service

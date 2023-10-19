@@ -15,19 +15,23 @@ import io.harness.annotations.dev.ProductModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.EmptyPredicate.IsEmpty;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = false, components = {HarnessModuleComponent.CDS_K8S})
 @Data
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 @EqualsAndHashCode
+@NoArgsConstructor
+@AllArgsConstructor
 public class ReleaseMetadata implements IsEmpty {
   String serviceId;
   String infraId;
-  String infraKey;
+  @EqualsAndHashCode.Exclude String infraKey;
   String envId;
 
   public boolean isEmpty() {

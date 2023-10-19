@@ -1,0 +1,9 @@
+policies:
+  - name: iam-mfa-active-key-no-login
+    resource: iam-user
+    actions:
+      - type: remove-keys
+        disable: true
+        age: 90
+      - type: remove-keys
+        age: 180

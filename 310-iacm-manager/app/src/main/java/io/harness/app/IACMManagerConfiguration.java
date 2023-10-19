@@ -117,6 +117,7 @@ public class IACMManagerConfiguration extends Configuration implements AssetsBun
   @JsonProperty("isLocal") boolean isLocal;
   @JsonProperty("hostname") String hostname;
   @JsonProperty("basePathPrefix") String basePathPrefix;
+  @JsonProperty("harnessCodeGitUrl") private String harnessCodeGitUrl;
 
   public SwaggerBundleConfiguration getSwaggerBundleConfiguration() {
     SwaggerBundleConfiguration defaultSwaggerBundleConfiguration = new SwaggerBundleConfiguration();

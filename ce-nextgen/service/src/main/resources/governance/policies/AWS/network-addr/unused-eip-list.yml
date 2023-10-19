@@ -1,0 +1,11 @@
+policies:
+  - name: unused-eip-list
+    resource: network-addr
+    description: 'List any EIP with no instances attached'
+    filters:
+      - type: value
+        key: InstanceId
+        value: absent
+      - type: value
+        key: AssociationId
+        value: absent

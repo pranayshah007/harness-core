@@ -49,6 +49,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -228,14 +229,24 @@ public class NodeExecutionInfoServiceImpl implements NodeExecutionInfoService {
   }
 
   @Override
-  public Map<String, Object> fetchStrategyObjectMap(Level level, boolean useMatrixFieldName) {
+  public Map<String, Object> fetchStrategyObjectMap(String nodeExecutionId, boolean useMatrixFieldName) {
+    Map<String, StrategyMetadata> strategyMetadataMap =
+        fetchStrategyMetadata(Collections.singletonList(nodeExecutionId));
     Map<String, Object> strategyObjectMap = new HashMap<>();
-    if (AmbianceUtils.hasStrategyMetadata(level)) {
-      return fetchStrategyObjectMap(Lists.newArrayList(level), useMatrixFieldName);
+    if (strategyMetadataMap.isEmpty()) {
+      strategyObjectMap.put(ITERATION, 0);
+      strategyObjectMap.put(ITERATIONS, 1);
+      strategyObjectMap.put(TOTAL_ITERATIONS, 1);
+      return strategyObjectMap;
     }
-    strategyObjectMap.put(ITERATION, 0);
-    strategyObjectMap.put(ITERATIONS, 1);
-    strategyObjectMap.put(TOTAL_ITERATIONS, 1);
+    StrategyMetadata strategyMetadata = strategyMetadataMap.get(nodeExecutionId);
+    Map<String, Object> matrixValuesMap = new HashMap<>();
+    Map<String, Object> repeatValuesMap = new HashMap<>();
+    strategyObjectMap = getStrategyMapInternal(
+        strategyMetadata, matrixValuesMap, repeatValuesMap, strategyObjectMap, useMatrixFieldName);
+    strategyObjectMap.put(MATRIX, matrixValuesMap);
+    strategyObjectMap.put(REPEAT, repeatValuesMap);
+
     return strategyObjectMap;
   }
 
@@ -252,38 +263,41 @@ public class NodeExecutionInfoServiceImpl implements NodeExecutionInfoService {
 
     List<IterationVariables> levels = new ArrayList<>();
     for (Level level : levelsWithStrategyMetadata) {
-      StrategyMetadata strategyMetadata;
-      // This is to ensure backward compatibility
-      strategyMetadata = getCorrespondingStrategyMetadata(strategyMetadataMap, level);
-
+      StrategyMetadata strategyMetadata = getCorrespondingStrategyMetadata(strategyMetadataMap, level);
       levels.add(IterationVariables.builder()
                      .currentIteration(strategyMetadata.getCurrentIteration())
                      .totalIterations(strategyMetadata.getTotalIterations())
                      .build());
-
-      if (strategyMetadata.hasMatrixMetadata()) {
-        // MatrixMapLocal can contain either a string as value or a json as value.
-        Map<String, String> matrixMapLocal = strategyMetadata.getMatrixMetadata().getMatrixValuesMap();
-        matrixValuesMap.putAll(StrategyUtils.getMatrixMapFromCombinations(matrixMapLocal));
-      }
-      if (strategyMetadata.hasForMetadata()) {
-        repeatValuesMap.put(ITEM, strategyMetadata.getForMetadata().getValue());
-        repeatValuesMap.put(PARTITION, strategyMetadata.getForMetadata().getPartitionList());
-      }
-
+      strategyObjectMap = getStrategyMapInternal(
+          strategyMetadata, matrixValuesMap, repeatValuesMap, strategyObjectMap, useMatrixFieldName);
       if (LevelUtils.isStepLevel(level)) {
         StrategyUtils.fetchGlobalIterationsVariablesForStrategyObjectMap(strategyObjectMap, levels);
       }
-
-      strategyObjectMap.put(ITERATION, strategyMetadata.getCurrentIteration());
-      strategyObjectMap.put(ITERATIONS, strategyMetadata.getTotalIterations());
-      strategyObjectMap.put(TOTAL_ITERATIONS, strategyMetadata.getTotalIterations());
-      strategyObjectMap.put(
-          "identifierPostFix", AmbianceUtils.getStrategyPostFixUsingMetadata(strategyMetadata, useMatrixFieldName));
     }
     strategyObjectMap.put(MATRIX, matrixValuesMap);
     strategyObjectMap.put(REPEAT, repeatValuesMap);
 
+    return strategyObjectMap;
+  }
+
+  private Map<String, Object> getStrategyMapInternal(StrategyMetadata strategyMetadata,
+      Map<String, Object> matrixValuesMap, Map<String, Object> repeatValuesMap, Map<String, Object> strategyObjectMap,
+      boolean useMatrixFieldName) {
+    if (strategyMetadata.hasMatrixMetadata()) {
+      // MatrixMapLocal can contain either a string as value or a json as value.
+      Map<String, String> matrixMapLocal = strategyMetadata.getMatrixMetadata().getMatrixValuesMap();
+      matrixValuesMap.putAll(StrategyUtils.getMatrixMapFromCombinations(matrixMapLocal));
+    }
+    if (strategyMetadata.hasForMetadata()) {
+      repeatValuesMap.put(ITEM, strategyMetadata.getForMetadata().getValue());
+      repeatValuesMap.put(PARTITION, strategyMetadata.getForMetadata().getPartitionList());
+    }
+
+    strategyObjectMap.put(ITERATION, strategyMetadata.getCurrentIteration());
+    strategyObjectMap.put(ITERATIONS, strategyMetadata.getTotalIterations());
+    strategyObjectMap.put(TOTAL_ITERATIONS, strategyMetadata.getTotalIterations());
+    strategyObjectMap.put(
+        "identifierPostFix", AmbianceUtils.getStrategyPostFixUsingMetadata(strategyMetadata, useMatrixFieldName));
     return strategyObjectMap;
   }
 

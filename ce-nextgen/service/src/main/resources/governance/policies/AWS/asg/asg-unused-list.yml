@@ -1,0 +1,13 @@
+policies:
+  - name: asg-unused-list
+    resource: asg
+    description: List any unused ASG
+    filters:
+      - type: value
+        key: MinSize
+        value: 0
+        op: eq
+      - type: value
+        key: DesiredCapacity
+        value: 0
+        op: eq

@@ -1,0 +1,45 @@
+{
+  "Name": "Name",
+  "Description": "",
+  "Role": "arn:aws:iam::AccountId:role/RoleId",
+  "CreatedOn": "2023-08-28T12:02:32.646000+00:00",
+  "LastModifiedOn": "2023-08-28T12:02:32.646000+00:00",
+  "ExecutionProperty": {
+    "MaxConcurrentRuns": 1
+  },
+  "Command": {
+    "Name": "glueetl",
+    "ScriptLocation": "s3://name-AccountId-us-east-2/scripts/Name.py",
+    "PythonVersion": "3"
+  },
+  "DefaultArguments": {
+    "--enable-metrics": "true",
+    "--enable-spark-ui": "true",
+    "--spark-event-logs-path": "s3://name-AccountId-us-east-2/sparkHistoryLogs/",
+    "--enable-job-insights": "false",
+    "--enable-glue-datacatalog": "true",
+    "--enable-continuous-cloudwatch-log": "true",
+    "--job-bookmark-option": "job-bookmark-disable",
+    "--job-language": "python",
+    "--TempDir": "s3://name-AccountId-us-east-2/temporary/",
+    "--enable-auto-scaling": "true"
+  },
+  "MaxRetries": 0,
+  "AllocatedCapacity": 10,
+  "Timeout": 120,
+  "MaxCapacity": 10.0,
+  "WorkerType": "G.1X",
+  "NumberOfWorkers": 10,
+  "GlueVersion": "4.0",
+  "ExecutionClass": "FLEX",
+  "Tags": [
+    {
+      "Key": "Key1",
+      "Value": "Value1"
+    },
+    {
+      "Key": "Key2",
+      "Value": "Value2"
+    }
+  ]
+}

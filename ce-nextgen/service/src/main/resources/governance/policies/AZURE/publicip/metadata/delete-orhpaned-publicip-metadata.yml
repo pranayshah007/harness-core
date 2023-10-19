@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: delete-orhpaned-publicip
+cloudProvider: AZURE
+resourceType: azure.publicip
+description: Delete all public IP addresses that are not associated with any IP configuration
+rulesYamlPath: ../delete-orhpaned-publicip.yml

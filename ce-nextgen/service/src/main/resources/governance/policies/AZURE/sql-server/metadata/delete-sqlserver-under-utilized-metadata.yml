@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: delete-sqlserver-under-utilized
+cloudProvider: AZURE
+resourceType: azure.sql-server
+description: Delete all SQL servers with average DTU consumption under 10 percent over the last 72 hours
+rulesYamlPath: ../delete-sqlserver-under-utilized.yml

@@ -86,6 +86,9 @@ public class ResourceTypeConstants {
   public static final String SEI_INSIGHTS = "SEI_INSIGHTS";
   public static final String IDP_APP_CONFIGS = "IDP_APP_CONFIGS";
   public static final String IDP_CONFIG_ENV_VARIABLES = "IDP_CONFIG_ENV_VARIABLES";
+  public static final String IDP_PROXY_HOST = "IDP_PROXY_HOST";
+
+  public static final String IDP_SCORECARDS = "IDP_SCORECARDS";
 
   public static final String IDP_CATALOG_CONNECTOR = "IDP_CATALOG_CONNECTOR";
   public static final String GITOPS_REPOSITORY = "GITOPS_REPOSITORY";

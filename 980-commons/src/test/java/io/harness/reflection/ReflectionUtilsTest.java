@@ -26,6 +26,7 @@ import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -46,7 +47,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 public class ReflectionUtilsTest extends CategoryTest {
-  private static class FieldBase { public String baseField; }
+  private static class FieldBase {
+    public String baseField;
+  }
 
   @Builder
   private static class Field extends FieldBase {
@@ -75,6 +78,7 @@ public class ReflectionUtilsTest extends CategoryTest {
     @DummyAnnotation private String annotatedField;
     @DummyAnnotation private List<String> annotatedListField;
     @DummyAnnotation private Map<String, String> annotatedMapField;
+    @DummyAnnotation private Map<String, List<String>> annotatedListMapField;
     @DummyAnnotation private List<Object> annotatedObjectListField;
   }
 
@@ -221,6 +225,10 @@ public class ReflectionUtilsTest extends CategoryTest {
     annotatedNestedField.annotatedMapField.put("key1", "five");
     annotatedNestedField.annotatedMapField.put("key2", "six");
 
+    annotatedNestedField.annotatedListMapField = new HashMap<>();
+    annotatedNestedField.annotatedListMapField.put("key3", Lists.newArrayList("val1", "val2"));
+    annotatedNestedField.annotatedListMapField.put("key4", Lists.newArrayList("val3", "val4"));
+
     dummy.nestedField = NestedAnnotationClass.builder().build();
     NestedAnnotationClass nestedField = dummy.nestedField;
 
@@ -233,6 +241,9 @@ public class ReflectionUtilsTest extends CategoryTest {
     assertThat(annotatedNestedField.annotatedField).isEqualTo("two!");
     assertThat(annotatedNestedField.annotatedListField).isEqualTo(ImmutableList.of("three!", "four!"));
     assertThat(annotatedNestedField.annotatedMapField).isEqualTo(ImmutableMap.of("key1", "five!", "key2", "six!"));
+    assertThat(annotatedNestedField.annotatedListMapField)
+        .isEqualTo(ImmutableMap.of(
+            "key3", Lists.newArrayList("val1!", "val2!"), "key4", Lists.newArrayList("val3!", "val4!")));
     assertThat(nestedField.field).isEqualTo("seven");
     assertThat(nestedField.annotatedField).isEqualTo("eight");
   }

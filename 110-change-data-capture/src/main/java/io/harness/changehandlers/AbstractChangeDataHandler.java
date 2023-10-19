@@ -98,6 +98,10 @@ public abstract class AbstractChangeDataHandler implements ChangeHandler {
     return true;
   }
 
+  public boolean shouldUpdateOnConflict() {
+    return false;
+  }
+
   public boolean changeEventHandled(ChangeType changeType) {
     switch (changeType) {
       case INSERT:
@@ -280,7 +284,12 @@ public abstract class AbstractChangeDataHandler implements ChangeHandler {
     switch (changeEvent.getChangeType()) {
       case INSERT:
         if (columnValueMapping != null) {
-          dbOperation(insertSQL(tableName, columnValueMapping));
+          if (shouldUpdateOnConflict()) {
+            dbOperation(updateSQL(
+                tableName, columnValueMapping, Collections.singletonMap("id", changeEvent.getUuid()), primaryKeys));
+          } else {
+            dbOperation(insertSQL(tableName, columnValueMapping));
+          }
         }
         break;
       case UPDATE:

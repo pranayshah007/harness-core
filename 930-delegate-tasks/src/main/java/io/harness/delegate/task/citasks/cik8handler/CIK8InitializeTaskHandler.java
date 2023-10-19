@@ -175,7 +175,12 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
         V1Pod pod = podSpecBuilder.createSpec(podParams).build();
         updatePodWithDelegateVolumes(coreV1Api, namespace, pod);
 
-        log.info("Creating pod with spec: {}", pod);
+        try {
+          log.info("Creating pod with spec: {}", EncodingUtils.convertToBase64String(pod));
+        } catch (Exception e) {
+          log.error("Could not serialize class V1Pod", e);
+        }
+
         cik8JavaClientHandler.createOrReplacePodWithRetries(coreV1Api, pod, namespace);
         Watch<CoreV1Event> watch =
             k8EventHandler.startAsyncPodEventWatch(kubernetesConfig, namespace, podName, logStreamingTaskClient);

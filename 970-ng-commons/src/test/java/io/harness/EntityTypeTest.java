@@ -269,6 +269,7 @@ public class EntityTypeTest extends CategoryTest {
     entityTypeOrdinalMapping.put(235, "ECS_UPGRADE_CONTAINER_STEP");
     entityTypeOrdinalMapping.put(236, "ECS_BASIC_ROLLBACK_STEP");
     entityTypeOrdinalMapping.put(237, "CHAOS_INFRASTRUCTURE");
+    entityTypeOrdinalMapping.put(238, "ANCHORE");
 
     entityTypeConstantMapping =
         entityTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

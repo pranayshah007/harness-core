@@ -6,6 +6,7 @@
  */
 
 package io.harness.cdng.provision.terraform;
+
 import io.harness.cdng.manifest.yaml.BitbucketStore;
 import io.harness.cdng.manifest.yaml.GitLabStore;
 import io.harness.cdng.manifest.yaml.GitStore;
@@ -281,7 +282,7 @@ public class TerraformStepDataGenerator {
   }
 
   public static TerraformApplyStepParameters generateApplyStepPlanWithInlineVarFiles(
-      StoreConfigType storeType, Object storeConfigFilesParam) {
+      StoreConfigType storeType, Object storeConfigFilesParam, boolean addProviderCreds) {
     StoreConfig storeConfigFiles;
     StoreConfig storeVarFiles;
     TerraformConfigFilesWrapper configFilesWrapper = new TerraformConfigFilesWrapper();
@@ -337,6 +338,13 @@ public class TerraformStepDataGenerator {
                                      .workspace(ParameterField.createValueField("test-workspace"))
                                      .isTerraformCloudCli(ParameterField.createValueField(false))
                                      .varFiles(varFilesMap)
+                                     .providerCredential(addProviderCreds
+                                             ? TerraformProviderCredential.builder()
+                                                   .spec(AWSIAMRoleCredentialSpec.builder()
+                                                             .roleArn(ParameterField.createValueField("roleArn"))
+                                                             .build())
+                                                   .build()
+                                             : null)
                                      .build())
                            .skipTerraformRefresh(ParameterField.createValueField(false))
                            .build())

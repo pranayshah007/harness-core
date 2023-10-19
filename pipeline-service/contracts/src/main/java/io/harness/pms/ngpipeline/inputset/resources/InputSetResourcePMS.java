@@ -38,6 +38,7 @@ import io.harness.pms.inputset.MergeInputSetTemplateRequestDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetGitUpdateResponseDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportRequestDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportResponseDTO;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListResponseDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListTypePMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetMoveConfigRequestDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetMoveConfigResponseDTO;
@@ -665,4 +666,30 @@ public interface InputSetResourcePMS {
       @Parameter(description = PipelineResourceConstants.INPUT_SET_ID_PARAM_MESSAGE, required = true) @PathParam(
           NGCommonEntityConstants.INPUT_SET_IDENTIFIER_KEY) @ResourceIdentifier String inputSetIdentifier,
       @BeanParam GitMetadataUpdateRequestInfoDTO gitMetadataUpdateRequestInfo);
+
+  @GET
+  @Hidden
+  @Path("/list")
+  @ApiOperation(value = "Gets InputSets list for a project", nickname = "getInputSetsListForProject")
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @Operation(operationId = "listInputSetForProject", description = "Lists all Input Sets for a Project",
+      summary = "List Input Sets for a project",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Fetch all the Input Sets for a Project, including Overlay Input Sets.")
+      })
+  ResponseDTO<PageResponse<InputSetListResponseDTO>>
+  listInputSetsForProject(@QueryParam(NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") @Parameter(
+                              description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) int page,
+      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Parameter(
+          description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) int size,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @Parameter(
+          description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) @AccountIdentifier String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @Parameter(
+          description = PipelineResourceConstants.ORG_PARAM_MESSAGE) @OrgIdentifier String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @Parameter(
+          description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = InputSetSchemaConstants.INPUT_SET_TYPE_MESSAGE) @QueryParam("inputSetType")
+      @DefaultValue("ALL") InputSetListTypePMS inputSetListType, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo);
 }

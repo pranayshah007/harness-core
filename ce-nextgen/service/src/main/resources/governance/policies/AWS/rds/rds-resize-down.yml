@@ -1,0 +1,14 @@
+policies:
+  - name: rds-resize-down
+    resource: rds
+    filters:
+      - type: metrics
+        name: FreeStorageSpace
+        percent-attr: AllocatedStorage
+        attr-multiplier: 1073741824
+        value: 90
+        op: greater-than
+      - type: value
+        key: DBInstanceClass
+        value: db.serverless
+        op: not-equal

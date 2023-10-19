@@ -6,6 +6,7 @@
  */
 
 package io.harness.event;
+
 import io.harness.annotations.dev.CodePulse;
 import io.harness.annotations.dev.HarnessModuleComponent;
 import io.harness.annotations.dev.HarnessTeam;
@@ -66,8 +67,6 @@ public class StepDetailsUpdateEventHandler {
         PmsStepParameters stepDetails =
             pmsGraphStepDetailsService.getStepInputsRecasterPruned(planExecutionId, nodeExecutionId);
         orchestrationGraph.getAdjacencyList().getGraphVertexMap().get(nodeExecutionId).setStepParameters(stepDetails);
-      } else {
-        log.error("[GRAPH_ERROR]: Given nodeExecution Id was not found before running Step inputs update event");
       }
     } catch (Exception e) {
       log.error(

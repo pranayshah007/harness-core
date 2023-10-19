@@ -1,0 +1,31 @@
+{
+  "AutoPlacement": "on",
+  "AvailabilityZone": "us-west-2a",
+  "HostId": "HostId",
+  "HostProperties": {
+    "Cores": 6,
+    "InstanceType": "mac1.metal",
+    "Sockets": 1,
+    "TotalVCpus": 12
+  },
+  "Instances": [],
+  "State": "released",
+  "AllocationTime": "2022-07-14T22:43:31+00:00",
+  "ReleaseTime": "2023-06-18T21:46:48+00:00",
+  "Tags": [
+    {
+      "Key": "Key1",
+      "Value": "Value1"
+    },
+    {
+      "Key": "Key2",
+      "Value": "Value2"
+    }
+  ],
+  "HostRecovery": "off",
+  "AllowsMultipleInstanceTypes": "off",
+  "OwnerId": "AccountId",
+  "AvailabilityZoneId": "usw2-az2",
+  "MemberOfServiceLinkedResourceGroup": false,
+  "HostMaintenance": "off"
+}

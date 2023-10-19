@@ -24,5 +24,5 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ServicesYamlMetadataApiInputV2 {
-  @Schema(hidden = true) @Size(max = 1000) List<ServiceWithGitInfo> serviceWithGitInfoList;
+  @Schema(hidden = true) @Size(max = 1000) List<EntityWithGitInfo> entityWithGitInfoList;
 }

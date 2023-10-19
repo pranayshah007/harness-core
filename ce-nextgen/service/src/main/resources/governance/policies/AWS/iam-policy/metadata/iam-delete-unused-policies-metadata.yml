@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: iam-delete-unused-policies
+cloudProvider: AWS
+resourceType: iam-policy
+description: Delete all unused iam policies
+rulesYamlPath: ../iam-delete-unused-policies.yml

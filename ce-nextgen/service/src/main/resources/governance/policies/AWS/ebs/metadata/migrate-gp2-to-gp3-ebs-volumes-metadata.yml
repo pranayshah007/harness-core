@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: true
+deleted: false
+name: migrate-gp2-to-gp3-ebs-volumes
+cloudProvider: AWS
+resourceType: ebs
+description: Upgrades ebs volumes with "gp2" type to "gp3" if they are modifiable
+rulesYamlPath: ../migrate-gp2-to-gp3-ebs-volumes.yml

@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: s3-bucket-not-encrypted-list
+cloudProvider: AWS
+resourceType: s3
+description: List s3 buckets that lack encryption settings or statements
+rulesYamlPath: ../s3-bucket-not-encrypted-list.yml

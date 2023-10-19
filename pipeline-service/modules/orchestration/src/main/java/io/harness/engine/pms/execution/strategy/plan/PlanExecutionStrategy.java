@@ -6,6 +6,7 @@
  */
 
 package io.harness.engine.pms.execution.strategy.plan;
+
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.contracts.execution.Status.ERRORED;
 
@@ -128,6 +129,10 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
       if (!planExecutionSettingResponse.isShouldQueue()) {
         // Start the planExecution if it should not be queued.
         startPlanExecution(plan, ambiance);
+      } else {
+        log.info(
+            "Queuing execution with planExecutionId {} as maximum number of allowed concurrent executions for the account has been reached",
+            planExecution.getUuid());
       }
       return planExecution;
     } finally {

@@ -1,0 +1,6 @@
+policies:
+  - name: sql-database-masking
+    resource: azure.sql-database
+    filters:
+      - type: data-masking-policy
+        enabled: false

@@ -1,0 +1,31 @@
+{
+  "OwnerId": "AccountId",
+  "CreationToken": "CreationToken",
+  "FileSystemId": "FileSystemId",
+  "FileSystemArn": "arn:aws:elasticfilesystem:us-east-2:AccountId:file-system/FileSystemId",
+  "CreationTime": "2023-03-31T02:48:52+00:00",
+  "LifeCycleState": "available",
+  "Name": "Name",
+  "NumberOfMountTargets": 1,
+  "SizeInBytes": {
+    "Value": 6144,
+    "ValueInIA": 0,
+    "ValueInStandard": 6144
+  },
+  "PerformanceMode": "generalPurpose",
+  "Encrypted": true,
+  "KmsKeyId": "arn:aws:kms:us-east-2:AccountId:key/KmsKeyId",
+  "ThroughputMode": "bursting",
+  "AvailabilityZoneName": "us-east-2a",
+  "AvailabilityZoneId": "use2-az1",
+  "Tags": [
+    {
+      "Key": "Key1",
+      "Value": "Value1"
+    },
+    {
+      "Key": "Key2",
+      "Value": "Value2"
+    }
+  ]
+}

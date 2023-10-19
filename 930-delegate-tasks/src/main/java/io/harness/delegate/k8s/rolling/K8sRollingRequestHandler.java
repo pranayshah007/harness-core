@@ -52,6 +52,7 @@ import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sRollingDeployRequest;
 import io.harness.delegate.task.k8s.K8sRollingDeployResponse;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.ReleaseMetadata;
 import io.harness.delegate.task.k8s.client.K8sClient;
 import io.harness.delegate.task.utils.ServiceHookDTO;
 import io.harness.delegate.utils.ServiceHookHandler;
@@ -59,6 +60,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.K8sCliCommandType;
 import io.harness.k8s.K8sCommandFlagsUtils;
+import io.harness.k8s.K8sReleaseWarningLogger;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.KubernetesReleaseDetails;
 import io.harness.k8s.kubectl.Kubectl;
@@ -120,6 +122,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
   private IK8sRelease release;
   private int currentReleaseNumber;
   private K8sRequestHandlerContext k8sRequestHandlerContext = new K8sRequestHandlerContext();
+  private ReleaseMetadata releaseMetadata;
 
   @Override
   protected K8sDeployResponse executeTaskInternal(K8sDeployRequest k8sDeployRequest,
@@ -132,6 +135,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
     K8sRollingDeployRequest k8sRollingDeployRequest = (K8sRollingDeployRequest) k8sDeployRequest;
 
     releaseName = k8sRollingDeployRequest.getReleaseName();
+    releaseMetadata = k8sRollingDeployRequest.getReleaseMetadata();
     manifestFilesDirectory = Paths.get(k8sDelegateTaskParams.getWorkingDirectory(), MANIFEST_FILES_DIR).toString();
     useDeclarativeRollback = k8sRollingDeployRequest.isUseDeclarativeRollback();
     releaseHandler = k8sTaskHelperBase.getReleaseHandler(useDeclarativeRollback);
@@ -328,6 +332,8 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
           k8sTaskHelperBase.getNextReleaseNumberFromOldReleaseHistory(kubernetesConfig, request.getReleaseName());
     }
 
+    K8sReleaseWarningLogger.logWarningIfReleaseConflictExists(
+        request.getReleaseMetadata(), releaseHistory, executionLogCallback, request.isInCanaryWorkflow());
     KubernetesReleaseDetails releaseDetails =
         KubernetesReleaseDetails.builder().releaseNumber(currentReleaseNumber).build();
 
@@ -369,7 +375,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
 
     if (release == null) {
       // either not in canary workflow or release history is empty (null latest release)
-      release = releaseHandler.createRelease(releaseName, currentReleaseNumber);
+      release = releaseHandler.createRelease(releaseName, currentReleaseNumber, releaseMetadata);
     }
 
     executionLogCallback.saveExecutionLog("\nCurrent release number is: " + currentReleaseNumber);
