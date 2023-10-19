@@ -25,8 +25,8 @@ echo $FIX_PLS_VERSION
 
 export FIX_PLS_VERSION
 
-# chmod +x platform-service/release/release-branch-create-pls-versions-v2.sh
-# platform-service/release/release-branch-create-pls-versions-v2.sh
+chmod +x platform-service/release/release-branch-create-pls-versions-v2.sh
+platform-service/release/release-branch-create-pls-versions-v2.sh
 
 # Create JIRA tags
 
@@ -35,21 +35,21 @@ KEYS=$(git log --pretty=oneline --abbrev-commit $PREVIOUS_TAG..$LATEST_TAG |grep
 
 echo $KEYS
 
-# for KEY in ${KEYS}
-#   do
-#     echo "$KEY"
-#     response=$(curl -q -X PUT https://harness.atlassian.net/rest/api/2/issue/${KEY} --write-out '%{http_code}' --user ${JIRA_USERNAME}:${JIRA_PASSWORD} -H "Content-Type: application/json" -d '{
-#     "update": {
-#     "fixVersions": [
-#       {"add":
-#         {"name": "'"$FIX_PLS_VERSION"'" }
-#       }]}}')
-#     if [[ "$response" -eq 204 ]] ; then
-#       echo "$KEY fixVersion set to $FIX_PLS_VERSION"
-#     elif [[ "$response" -eq 400 ]] ; then
-#       echo "Could not set fixVersion on $KEY - field hidden for the issue type"
-#     fi
-#   done
+for KEY in ${KEYS}
+  do
+    echo "$KEY"
+    response=$(curl -q -X PUT https://harness.atlassian.net/rest/api/2/issue/${KEY} --write-out '%{http_code}' --user ${JIRA_USERNAME}:${JIRA_PASSWORD} -H "Content-Type: application/json" -d '{
+    "update": {
+    "fixVersions": [
+      {"add":
+        {"name": "'"$FIX_PLS_VERSION"'" }
+      }]}}')
+    if [[ "$response" -eq 204 ]] ; then
+      echo "$KEY fixVersion set to $FIX_PLS_VERSION"
+    elif [[ "$response" -eq 400 ]] ; then
+      echo "Could not set fixVersion on $KEY - field hidden for the issue type"
+    fi
+  done
 
 
 
