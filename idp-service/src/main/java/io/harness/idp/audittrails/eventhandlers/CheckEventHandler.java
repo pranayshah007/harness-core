@@ -6,8 +6,9 @@
  */
 package io.harness.idp.audittrails.eventhandlers;
 
-import static io.harness.idp.gitintegration.events.catalogconnector.CatalogConnectorCreateEvent.CATALOG_CONNECTOR_CREATED;
-import static io.harness.idp.gitintegration.events.catalogconnector.CatalogConnectorUpdateEvent.CATALOG_CONNECTOR_UPDATED;
+import static io.harness.idp.scorecard.scorecardchecks.events.checks.CheckCreateEvent.CHECK_CREATED;
+import static io.harness.idp.scorecard.scorecardchecks.events.checks.CheckDeleteEvent.CHECK_DELETED;
+import static io.harness.idp.scorecard.scorecardchecks.events.checks.CheckUpdateEvent.CHECK_UPDATED;
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 
@@ -19,10 +20,10 @@ import io.harness.audit.beans.ResourceScopeDTO;
 import io.harness.audit.client.api.AuditClientService;
 import io.harness.context.GlobalContext;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.idp.audittrails.eventhandlers.dtos.CatalogConnectorDTO;
-import io.harness.idp.gitintegration.entities.CatalogConnectorEntity;
-import io.harness.idp.gitintegration.events.catalogconnector.CatalogConnectorCreateEvent;
-import io.harness.idp.gitintegration.events.catalogconnector.CatalogConnectorUpdateEvent;
+import io.harness.idp.audittrails.eventhandlers.dtos.CheckDTO;
+import io.harness.idp.scorecard.scorecardchecks.events.checks.CheckCreateEvent;
+import io.harness.idp.scorecard.scorecardchecks.events.checks.CheckDeleteEvent;
+import io.harness.idp.scorecard.scorecardchecks.events.checks.CheckUpdateEvent;
 import io.harness.ng.core.utils.NGYamlUtils;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;
@@ -33,12 +34,12 @@ import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class CatalogConnectorEventHandler implements OutboxEventHandler {
+public class CheckEventHandler implements OutboxEventHandler {
   private static final ObjectMapper objectMapper = NG_DEFAULT_OBJECT_MAPPER;
   private final AuditClientService auditClientService;
 
   @Inject
-  public CatalogConnectorEventHandler(AuditClientService auditClientService) {
+  public CheckEventHandler(AuditClientService auditClientService) {
     this.auditClientService = auditClientService;
   }
 
@@ -46,10 +47,12 @@ public class CatalogConnectorEventHandler implements OutboxEventHandler {
   public boolean handle(OutboxEvent outboxEvent) {
     try {
       switch (outboxEvent.getEventType()) {
-        case CATALOG_CONNECTOR_CREATED:
-          return handleCatalogConnectorCreateEvent(outboxEvent);
-        case CATALOG_CONNECTOR_UPDATED:
-          return handleCatalogConnectorUpdateEvent(outboxEvent);
+        case CHECK_CREATED:
+          return handleCheckCreateEvent(outboxEvent);
+        case CHECK_UPDATED:
+          return handleCheckUpdateEvent(outboxEvent);
+        case CHECK_DELETED:
+          return handleCheckDeleteEvent(outboxEvent);
         default:
           throw new InvalidArgumentsException(String.format("Not supported event type %s", outboxEvent.getEventType()));
       }
@@ -59,17 +62,17 @@ public class CatalogConnectorEventHandler implements OutboxEventHandler {
     }
   }
 
-  private boolean handleCatalogConnectorCreateEvent(OutboxEvent outboxEvent) throws IOException {
+  private boolean handleCheckCreateEvent(OutboxEvent outboxEvent) throws IOException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
 
-    CatalogConnectorCreateEvent catalogConnectorCreateEvent =
-        objectMapper.readValue(outboxEvent.getEventData(), CatalogConnectorCreateEvent.class);
+    CheckCreateEvent checkCreateEvent = objectMapper.readValue(outboxEvent.getEventData(), CheckCreateEvent.class);
 
     AuditEntry auditEntry =
         AuditEntry.builder()
             .action(Action.CREATE)
             .module(ModuleType.IDP)
-            .newYaml(getYamlStringForCatalogConnector(catalogConnectorCreateEvent.getNewCatalogConnectorEntity()))
+            .newYaml(NGYamlUtils.getYamlString(
+                CheckDTO.builder().checkDetails(checkCreateEvent.getNewCheckDetails()).build(), objectMapper))
             .timestamp(outboxEvent.getCreatedAt())
             .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
             .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
@@ -78,18 +81,19 @@ public class CatalogConnectorEventHandler implements OutboxEventHandler {
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 
-  private boolean handleCatalogConnectorUpdateEvent(OutboxEvent outboxEvent) throws IOException {
+  private boolean handleCheckUpdateEvent(OutboxEvent outboxEvent) throws IOException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
 
-    CatalogConnectorUpdateEvent catalogConnectorUpdateEvent =
-        objectMapper.readValue(outboxEvent.getEventData(), CatalogConnectorUpdateEvent.class);
+    CheckUpdateEvent checkUpdateEvent = objectMapper.readValue(outboxEvent.getEventData(), CheckUpdateEvent.class);
 
     AuditEntry auditEntry =
         AuditEntry.builder()
             .action(Action.UPDATE)
             .module(ModuleType.IDP)
-            .newYaml(getYamlStringForCatalogConnector(catalogConnectorUpdateEvent.getNewCatalogConnectorEntity()))
-            .oldYaml(getYamlStringForCatalogConnector(catalogConnectorUpdateEvent.getOldCatalogConnectorEntity()))
+            .newYaml(NGYamlUtils.getYamlString(
+                CheckDTO.builder().checkDetails(checkUpdateEvent.getNewCheckDetails()).build(), objectMapper))
+            .oldYaml(NGYamlUtils.getYamlString(
+                CheckDTO.builder().checkDetails(checkUpdateEvent.getOldCheckDetails()).build(), objectMapper))
             .timestamp(outboxEvent.getCreatedAt())
             .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
             .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
@@ -98,14 +102,22 @@ public class CatalogConnectorEventHandler implements OutboxEventHandler {
     return auditClientService.publishAudit(auditEntry, globalContext);
   }
 
-  private String getYamlStringForCatalogConnector(CatalogConnectorEntity catalogConnectorEntity) {
-    return NGYamlUtils.getYamlString(CatalogConnectorDTO.builder()
-                                         .accountIdentifier(catalogConnectorEntity.getAccountIdentifier())
-                                         .connectorIdentifier(catalogConnectorEntity.getConnectorIdentifier())
-                                         .connectorProviderType(catalogConnectorEntity.getConnectorProviderType())
-                                         .delegateSelectors(catalogConnectorEntity.getDelegateSelectors())
-                                         .host(catalogConnectorEntity.getHost())
-                                         .build(),
-        objectMapper);
+  private boolean handleCheckDeleteEvent(OutboxEvent outboxEvent) throws IOException {
+    GlobalContext globalContext = outboxEvent.getGlobalContext();
+
+    CheckDeleteEvent checkDeleteEvent = objectMapper.readValue(outboxEvent.getEventData(), CheckDeleteEvent.class);
+
+    AuditEntry auditEntry =
+        AuditEntry.builder()
+            .action(Action.DELETE)
+            .module(ModuleType.IDP)
+            .oldYaml(NGYamlUtils.getYamlString(
+                CheckDTO.builder().checkDetails(checkDeleteEvent.getOldCheckDetails()).build(), objectMapper))
+            .timestamp(outboxEvent.getCreatedAt())
+            .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
+            .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
+            .insertId(outboxEvent.getId())
+            .build();
+    return auditClientService.publishAudit(auditEntry, globalContext);
   }
 }

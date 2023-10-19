@@ -81,7 +81,7 @@ public class BackstageSecretEnvEventHandler implements OutboxEventHandler {
     AuditEntry auditEntry =
         AuditEntry.builder()
             .action(Action.CREATE)
-            .module(ModuleType.CORE)
+            .module(ModuleType.IDP)
             .newYaml(getYamlStringForEnvVariables(backstageEnvSecretCreateEvent.getNewBackstageEnvSecretVariable()))
             .timestamp(outboxEvent.getCreatedAt())
             .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
@@ -100,7 +100,7 @@ public class BackstageSecretEnvEventHandler implements OutboxEventHandler {
     AuditEntry auditEntry =
         AuditEntry.builder()
             .action(Action.UPDATE)
-            .module(ModuleType.CORE)
+            .module(ModuleType.IDP)
             .newYaml(getYamlStringForEnvVariables(backstageEnvSecretUpdateEvent.getNewBackstageEnvSecretVariable()))
             .oldYaml(getYamlStringForEnvVariables(backstageEnvSecretUpdateEvent.getOldBackstageEnvSecretVariable()))
             .timestamp(outboxEvent.getCreatedAt())
@@ -120,7 +120,7 @@ public class BackstageSecretEnvEventHandler implements OutboxEventHandler {
     AuditEntry auditEntry =
         AuditEntry.builder()
             .action(Action.DELETE)
-            .module(ModuleType.CORE)
+            .module(ModuleType.IDP)
             .oldYaml(getYamlStringForEnvVariables(backstageEnvSecretDeleteEvent.getOldBackstageEnvSecretVariable()))
             .timestamp(outboxEvent.getCreatedAt())
             .resource(ResourceDTO.fromResource(outboxEvent.getResource()))

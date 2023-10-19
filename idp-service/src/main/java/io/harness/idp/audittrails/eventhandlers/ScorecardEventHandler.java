@@ -71,7 +71,7 @@ public class ScorecardEventHandler implements OutboxEventHandler {
     AuditEntry auditEntry =
         AuditEntry.builder()
             .action(Action.CREATE)
-            .module(ModuleType.CORE)
+            .module(ModuleType.IDP)
             .newYaml(NGYamlUtils.getYamlString(
                 ScorecardsDTO.builder().scorecardDetailsResponse(scorecardCreateEvent.getNewScorecardDetails()).build(),
                 objectMapper))
@@ -91,7 +91,7 @@ public class ScorecardEventHandler implements OutboxEventHandler {
 
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.UPDATE)
-                                .module(ModuleType.CORE)
+                                .module(ModuleType.IDP)
                                 .newYaml(NGYamlUtils.getYamlString(
                                     ScorecardsDTO.builder()
                                         .scorecardDetailsResponse(scorecardUpdateEvent.getNewScorecardDetailsResponse())
@@ -118,7 +118,7 @@ public class ScorecardEventHandler implements OutboxEventHandler {
 
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.DELETE)
-                                .module(ModuleType.CORE)
+                                .module(ModuleType.IDP)
                                 .oldYaml(NGYamlUtils.getYamlString(
                                     ScorecardsDTO.builder()
                                         .scorecardDetailsResponse(scorecardDeleteEvent.getOldScorecardDetailsResponse())

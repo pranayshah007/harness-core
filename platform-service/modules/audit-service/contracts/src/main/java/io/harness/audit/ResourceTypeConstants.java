@@ -89,6 +89,7 @@ public class ResourceTypeConstants {
   public static final String IDP_PROXY_HOST = "IDP_PROXY_HOST";
 
   public static final String IDP_SCORECARDS = "IDP_SCORECARDS";
+  public static final String IDP_CHECKS = "IDP_CHECKS";
 
   public static final String IDP_CATALOG_CONNECTOR = "IDP_CATALOG_CONNECTOR";
   public static final String GITOPS_REPOSITORY = "GITOPS_REPOSITORY";
