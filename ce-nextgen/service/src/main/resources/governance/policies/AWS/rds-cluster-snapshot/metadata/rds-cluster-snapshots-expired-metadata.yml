@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: rds-cluster-snapshots-expired
+cloudProvider: AWS
+resourceType: rds-cluster-snapshot
+description: List all the rds cluster snapshots older than 30 days
+rulesYamlPath: ../rds-cluster-snapshots-expired.yml

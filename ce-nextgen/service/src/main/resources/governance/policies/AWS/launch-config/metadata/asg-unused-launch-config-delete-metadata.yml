@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: asg-unused-launch-config-delete
+cloudProvider: AWS
+resourceType: launch-config
+description: Delete all unused launch configurations
+rulesYamlPath: ../asg-unused-launch-config-delete.yml

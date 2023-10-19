@@ -1,0 +1,6 @@
+policies:
+  - name: iam-no-used-allow-all-policy
+    resource: iam-policy
+    filters:
+      - type: used
+      - type: has-allow-all

@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: tag-launch-template-with-DeleteOnTermination-as-false
+cloudProvider: AWS
+resourceType: launch-template-version
+description: Add DeleteOnTermination tag with false value to launch templates with ebs DeleteOnTermination set to false
+rulesYamlPath: ../tag-launch-template-with-DeleteOnTermination-as-false.yml

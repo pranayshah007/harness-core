@@ -1,0 +1,7 @@
+policies:
+  - name: iam-delete-unused-policies
+    resource: iam-policy
+    filters:
+      - type: unused
+    actions:
+      - delete

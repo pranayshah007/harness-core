@@ -1,0 +1,6 @@
+policies:
+  - name: cloudwatch-stale-groups
+    resource: log-group
+    filters:
+      - type: last-write
+        days: 60

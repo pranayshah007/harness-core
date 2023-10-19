@@ -1,0 +1,12 @@
+policies:
+  - name: turn-on-elb-deletion-protection
+    resource: app-elb
+    filters:
+      - type: attributes
+        key: "deletion_protection.enabled"
+        value: false
+    actions:
+      - type: modify-attributes
+        attributes:
+          "deletion_protection.enabled": "true"
+          "idle_timeout.timeout_seconds": 120

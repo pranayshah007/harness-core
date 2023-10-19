@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: ec2-host-with-id
+cloudProvider: AWS
+resourceType: ec2-host
+description: Get host with host id as HostId
+rulesYamlPath: ../ec2-host-with-id.yml
