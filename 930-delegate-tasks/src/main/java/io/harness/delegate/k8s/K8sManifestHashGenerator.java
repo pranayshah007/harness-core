@@ -28,6 +28,7 @@ import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.logging.LogCallback;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.security.MessageDigest;
@@ -40,8 +41,9 @@ import org.zeroturnaround.exec.ProcessResult;
 @Slf4j
 @OwnedBy(CDP)
 public class K8sManifestHashGenerator {
+  @VisibleForTesting static final String MANIFEST_FOR_HASH = "manifest-hash.yaml";
+
   @Inject K8sTaskHelperBase k8sTaskHelperBase;
-  private static final String MANIFEST_FOR_HASH = "manifest-hash.yaml";
 
   public String manifestHash(List<KubernetesResource> resources, K8sDelegateTaskParams k8sDelegateTaskParams,
       LogCallback executionLogCallback, Kubectl client) throws Exception {
@@ -49,8 +51,9 @@ public class K8sManifestHashGenerator {
     try {
       FileIo.writeUtf8StringToFile(
           k8sDelegateTaskParams.getWorkingDirectory() + "/" + MANIFEST_FOR_HASH, ManifestHelper.toYaml(resources));
-      final CreateCommand kubectlCreateCommand = client.create(MANIFEST_FOR_HASH);
-      ProcessResponse response = K8sTaskHelperBase.executeCommandSilentlyWithErrorCapture(
+      Kubectl overriddenClient = k8sTaskHelperBase.getOverriddenClient(client, resources, k8sDelegateTaskParams);
+      final CreateCommand kubectlCreateCommand = overriddenClient.create(MANIFEST_FOR_HASH);
+      ProcessResponse response = k8sTaskHelperBase.runK8sExecutableSilentlyWithErrorCapture(
           kubectlCreateCommand, k8sDelegateTaskParams, executionLogCallback, ERROR);
       ProcessResult processResult = response.getProcessResult();
       String output = processResult.hasOutput() ? processResult.outputUTF8() : EMPTY;

@@ -140,7 +140,7 @@ public class K8sScaleRequestHandler extends K8sRequestHandler {
         k8sScaleRequest.getReleaseName(), steadyStateTimeoutInMillis);
 
     K8sScaleResponse k8sScaleResponse =
-        K8sScaleResponse.builder().k8sPodList(k8sTaskHelperBase.tagNewPods(beforePodList, afterPodList)).build();
+        K8sScaleResponse.builder().k8sPodList(k8sTaskHelperBase.tagNewPods(afterPodList, beforePodList)).build();
 
     wrapUpLogCallback.saveExecutionLog("\nDone.", INFO, SUCCESS);
 
