@@ -248,3 +248,5 @@ proxyAllowListConfigServices:
       - /aggregate/acl/usergroups
       - /token/validate
 name: idp-service
+
+internalAccounts: kmpySmUISimoRrJL6NL73w

@@ -254,4 +254,9 @@ public final class EventsFrameworkConstants {
   public static final int CG_GENERAL_EVENT_TOPIC_SIZE = 100000;
   public static final int CG_GENERAL_EVENT_BATCH_SIZE = 50;
   public static final Duration CG_GENERAL_EVENT_MAX_PROCESSING_TIME = Duration.ofMinutes(10);
+
+  public static final String IDP_MODULE_LICENSE_USAGE_CAPTURE_EVENT = "idp_module_license_usage_capture";
+  public static final int IDP_MODULE_LICENSE_USAGE_CAPTURE_EVENT_MAX_TOPIC_SIZE = 100000;
+  public static final Duration IDP_MODULE_LICENSE_USAGE_CAPTURE_EVENT_MAX_PROCESSING_TIME = Duration.ofSeconds(10);
+  public static final int IDP_MODULE_LICENSE_USAGE_CAPTURE_EVENT_BATCH_SIZE = 1;
 }

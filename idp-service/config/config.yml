@@ -236,3 +236,6 @@ auditClientConfig:
   readTimeOutSeconds: 15
 
 enableAudit: false
+
+internalAccounts:
+  - kmpySmUISimoRrJL6NL73w
