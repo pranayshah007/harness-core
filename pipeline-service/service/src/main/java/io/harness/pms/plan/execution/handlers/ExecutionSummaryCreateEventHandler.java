@@ -35,10 +35,12 @@ import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.helpers.LabelsHelper;
+import io.harness.pms.helpers.YamlExpressionResolveHelper;
 import io.harness.pms.merger.helpers.InputSetTemplateHelper;
 import io.harness.pms.notification.NotificationHelper;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.ResolveInputYamlType;
 import io.harness.pms.pipeline.mappers.GraphLayoutDtoMapper;
 import io.harness.pms.pipeline.metadata.RecentExecutionsInfoHelper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
@@ -81,12 +83,14 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
   private final NotificationHelper notificationHelper;
   private final RecentExecutionsInfoHelper recentExecutionsInfoHelper;
   private final PmsExecutionSummaryService pmsExecutionSummaryService;
+  private final YamlExpressionResolveHelper yamlExpressionResolveHelper;
 
   @Inject
   public ExecutionSummaryCreateEventHandler(PMSPipelineService pmsPipelineService, PlanService planService,
       PlanExecutionService planExecutionService, NodeTypeLookupService nodeTypeLookupService,
       PmsGitSyncHelper pmsGitSyncHelper, NotificationHelper notificationHelper,
-      RecentExecutionsInfoHelper recentExecutionsInfoHelper, PmsExecutionSummaryService pmsExecutionSummaryService) {
+      RecentExecutionsInfoHelper recentExecutionsInfoHelper, PmsExecutionSummaryService pmsExecutionSummaryService,
+      YamlExpressionResolveHelper yamlExpressionResolveHelper) {
     this.pmsPipelineService = pmsPipelineService;
     this.planService = planService;
     this.planExecutionService = planExecutionService;
@@ -96,6 +100,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
     this.notificationHelper = notificationHelper;
     this.recentExecutionsInfoHelper = recentExecutionsInfoHelper;
     this.pmsExecutionSummaryService = pmsExecutionSummaryService;
+    this.yamlExpressionResolveHelper = yamlExpressionResolveHelper;
   }
 
   @Override
@@ -195,6 +200,8 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
       layoutNodeDTOMap.put(entry.getKey(), graphLayoutNodeDTO);
       modules.add(moduleName);
     }
+    String resolvedUserInputSetYaml =
+        resolveExpressionsInYaml(planExecutionMetadata.getInputSetYaml(), orchestrationStartInfo.getAmbiance());
 
     PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity =
         PipelineExecutionSummaryEntity.builder()
@@ -204,7 +211,9 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .startingNodeId(startingNodeId)
             .planExecutionId(planExecutionId)
             .name(pipelineEntity.get().getName())
+            // TODO: Remove setting this `inputSetYaml` field by Nov 2023
             .inputSetYaml(planExecutionMetadata.getInputSetYaml())
+            .resolvedUserInputSetYaml(resolvedUserInputSetYaml)
             .pipelineTemplate(getPipelineTemplate(planExecutionMetadata))
             .internalStatus(planExecution.getStatus())
             .status(ExecutionStatus.getExecutionStatus(planExecution.getStatus()))
@@ -281,5 +290,13 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
 
   private void unsetPipelineYamlInPlanExecutionMetadata(PlanExecutionMetadata planExecutionMetadata) {
     planExecutionMetadata.setPipelineYaml(null);
+  }
+
+  private String resolveExpressionsInYaml(String inputSetYaml, Ambiance ambiance) {
+    if (EmptyPredicate.isNotEmpty(inputSetYaml)) {
+      inputSetYaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(
+          inputSetYaml, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS, ambiance);
+    }
+    return inputSetYaml;
   }
 }

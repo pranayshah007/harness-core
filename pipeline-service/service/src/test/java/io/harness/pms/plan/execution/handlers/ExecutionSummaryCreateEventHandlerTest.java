@@ -39,9 +39,11 @@ import io.harness.pms.contracts.plan.GraphLayoutInfo;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
+import io.harness.pms.helpers.YamlExpressionResolveHelper;
 import io.harness.pms.notification.NotificationHelper;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.ResolveInputYamlType;
 import io.harness.pms.pipeline.metadata.RecentExecutionsInfoHelper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.creation.NodeTypeLookupService;
@@ -69,6 +71,7 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
   @Mock private PmsGitSyncHelper pmsGitSyncHelper;
   @Mock private NotificationHelper notificationHelper;
   @Mock private RecentExecutionsInfoHelper recentExecutionsInfoHelper;
+  @Mock private YamlExpressionResolveHelper yamlExpressionResolveHelper;
   @Mock PmsExecutionSummaryService pmsExecutionSummaryService;
 
   private ExecutionSummaryCreateEventHandler executionSummaryCreateEventHandler;
@@ -82,13 +85,15 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
   public void setUp() throws Exception {
     executionSummaryCreateEventHandler = new ExecutionSummaryCreateEventHandler(pmsPipelineService, planService,
         planExecutionService, nodeTypeLookupService, pmsGitSyncHelper, notificationHelper, recentExecutionsInfoHelper,
-        pmsExecutionSummaryService);
+        pmsExecutionSummaryService, yamlExpressionResolveHelper);
   }
 
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
   public void shouldTestOnStart() {
+    String inputSetYaml = "some-yaml";
+    String resolvedInputSetYaml = "resolved-some-yaml";
     String planId = generateUuid();
     String planExecutionId = generateUuid();
     Ambiance ambiance = Ambiance.newBuilder()
@@ -101,7 +106,7 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
     PlanExecutionMetadata planExecutionMetadata =
         PlanExecutionMetadata.builder()
             .planExecutionId(ambiance.getPlanExecutionId())
-            .inputSetYaml("some-yaml")
+            .inputSetYaml(inputSetYaml)
             .yaml("pipeline :\n  identifier: pipelineId")
             .pipelineYaml("pipeline :\n  identifier: pipelineId")
             .stagesExecutionMetadata(StagesExecutionMetadata.builder().isStagesExecution(true).build())
@@ -155,6 +160,10 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
 
     when(nodeTypeLookupService.findNodeTypeServiceName(anyString())).thenReturn("pms");
 
+    when(yamlExpressionResolveHelper.resolveExpressionsInYaml(
+             inputSetYaml, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS, ambiance))
+        .thenReturn(resolvedInputSetYaml);
+
     executionSummaryCreateEventHandler.onStart(
         OrchestrationStartInfo.builder().ambiance(ambiance).planExecutionMetadata(planExecutionMetadata).build());
 
@@ -187,10 +196,14 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
     assertThat(capturedEntity.getConnectorRef()).isNull();
     assertThat(capturedEntity.getExecutionMode()).isEqualTo(ExecutionMode.NORMAL);
     assertThat(capturedEntity.getRollbackModeExecutionId()).isNull();
+    assertThat(capturedEntity.getInputSetYaml()).isEqualTo(inputSetYaml);
+    assertThat(capturedEntity.getResolvedUserInputSetYaml()).isEqualTo(resolvedInputSetYaml);
 
     verify(notificationHelper, times(1)).sendNotification(ambiance, PipelineEventType.PIPELINE_START, null, null);
     verify(pmsPipelineService, times(1))
         .getPipeline(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, PIPELINE_IDENTIFIER, false, true);
+    verify(yamlExpressionResolveHelper, times(1))
+        .resolveExpressionsInYaml(inputSetYaml, ResolveInputYamlType.RESOLVE_ALL_EXPRESSIONS, ambiance);
   }
 
   @Test

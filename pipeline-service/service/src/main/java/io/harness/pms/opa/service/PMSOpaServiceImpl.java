@@ -10,7 +10,12 @@ package io.harness.pms.opa.service;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
+import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
+import io.harness.execution.PlanExecution;
+import io.harness.execution.PlanExecutionMetadata;
+import io.harness.execution.PlanExecutionMetadata.PlanExecutionMetadataKeys;
 import io.harness.opaclient.OpaUtils;
 import io.harness.opaclient.model.PipelineOpaEvaluationContext;
 import io.harness.opaclient.model.PipelineOpaEvaluationContext.PipelineOpaEvaluationContextBuilder;
@@ -20,8 +25,6 @@ import io.harness.pms.helpers.CurrentUserHelper;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
-import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
-import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.security.PrincipalHelper;
 import io.harness.security.dto.Principal;
 
@@ -29,6 +32,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,8 +42,9 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class PMSOpaServiceImpl implements PMSOpaService {
+  private final PlanExecutionMetadataService planExecutionMetadataService;
+  private final PlanExecutionService planExecutionService;
   private final PMSPipelineService pmsPipelineService;
-  private final PMSExecutionService pmsExecutionService;
   private final CurrentUserHelper currentUserHelper;
 
   @Override
@@ -75,9 +80,11 @@ public class PMSOpaServiceImpl implements PMSOpaService {
   public PipelineOpaEvaluationContext getPipelineContextFromExecution(@NotNull String accountId,
       @NotNull String orgIdentifier, @NotNull String projectIdentifier, @NotNull String planExecutionId,
       @NotNull String action) throws IOException {
-    PipelineExecutionSummaryEntity executionSummaryEntity = pmsExecutionService.getPipelineExecutionSummaryEntity(
-        accountId, orgIdentifier, projectIdentifier, planExecutionId, false);
+    PlanExecution planExecution = planExecutionService.getWithFieldsIncluded(
+        planExecutionId, Set.of(PlanExecution.ExecutionMetadataKeys.pipelineIdentifier));
+    PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataService.getWithFieldsIncludedFromSecondary(
+        planExecutionId, Set.of(PlanExecutionMetadataKeys.inputSetYaml));
     return getPipelineContext(accountId, orgIdentifier, projectIdentifier,
-        executionSummaryEntity.getPipelineIdentifier(), executionSummaryEntity.getInputSetYaml(), action);
+        planExecution.getMetadata().getPipelineIdentifier(), planExecutionMetadata.getInputSetYaml(), action);
   }
 }
