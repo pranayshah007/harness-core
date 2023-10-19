@@ -12,15 +12,13 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.executables.CdAsyncExecutable;
 import io.harness.cdng.k8s.K8sRollingRollbackStep;
+import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.executions.steps.ExecutionNodeType;
-import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.sdk.core.steps.io.v1.StepBaseParameters;
 
 @OwnedBy(CDP)
-public class K8sRollingRollbackStepV2 extends CdAsyncExecutable<K8sRollingRollbackStep> {
+public class K8sRollingRollbackStepV2 extends CdAsyncExecutable<K8sDeployResponse, K8sRollingRollbackStep> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.K8S_ROLLBACK_ROLLING_V2.getName())
                                                .setStepCategory(StepCategory.STEP)
