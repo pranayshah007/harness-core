@@ -249,11 +249,11 @@ public class OrchestrationServiceImpl implements OrchestrationService {
           markTerminated(currentlyExecutingStateMachine.getVerificationTaskId());
           break;
         case COMPLETED:
-          log.info("Analysis for the entire duration is done. Time to close down");
+          log.info("Analysis for the entire duration is done. Time to close down {}", orchestrator.getUuid());
           markCompleted(orchestrator.getVerificationTaskId());
           break;
         default:
-          log.info("Unknown analysis status of the state machine under execution");
+          log.info("Unknown analysis status of the state machine under execution {}", orchestrator.getUuid());
       }
       if ((AnalysisStatus.SUCCESS == stateMachineStatus || AnalysisStatus.COMPLETED == stateMachineStatus)
           && !AnalysisOrchestratorStatus.getFinalStates().contains(orchestrator.getStatus())) {
