@@ -82,8 +82,8 @@ public class PMSInputSetFilterHelper {
     return criteria;
   }
 
-  public Criteria listInputSetsForProjectCriteria(
-      String accountId, String orgIdentifier, String projectIdentifier, InputSetListTypePMS type, boolean deleted) {
+  public Criteria listInputSetsForProjectCriteria(String accountId, String orgIdentifier, String projectIdentifier,
+      InputSetListTypePMS type, String searchTerm, boolean deleted) {
     Criteria criteria = new Criteria();
     if (isNotEmpty(accountId)) {
       criteria.and(InputSetEntityKeys.accountId).is(accountId);
@@ -98,6 +98,14 @@ public class PMSInputSetFilterHelper {
 
     if (type != InputSetListTypePMS.ALL) {
       criteria.and(InputSetEntityKeys.inputSetEntityType).is(getInputSetType(type));
+    }
+
+    if (isNotEmpty(searchTerm)) {
+      Criteria searchCriteria = new Criteria().orOperator(
+          where(InputSetEntityKeys.name).regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+          where(InputSetEntityKeys.identifier)
+              .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
+      criteria.andOperator(searchCriteria);
     }
 
     return criteria;

@@ -8,6 +8,7 @@
 package io.harness.resourcegroup.resourceclient.inputset;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_IDENTIFIER;
 import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_TYPE;
 import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES;
@@ -21,6 +22,9 @@ import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.pipeline.remote.PipelineServiceClient;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListResponseDTO;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListTypePMS;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.resourcegroup.beans.ValidatorType;
 import io.harness.resourcegroup.framework.v1.service.Resource;
 import io.harness.resourcegroup.framework.v1.service.ResourceInfo;
@@ -29,13 +33,14 @@ import io.harness.resourcegroup.v2.model.AttributeFilter;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -90,7 +95,19 @@ public class InputSetResourceImpl implements Resource {
 
   @Override
   public List<Boolean> validate(List<String> resourceIds, Scope scope) {
-    return new ArrayList<>();
+    if (isEmpty(resourceIds)) {
+      return Collections.emptyList();
+    }
+    List<InputSetListResponseDTO> inputSetListResponse =
+        NGRestUtils
+            .getResponse(
+                pipelineServiceClient.listInputSetsInProject(0, resourceIds.size(), scope.getAccountIdentifier(),
+                    scope.getOrgIdentifier(), scope.getProjectIdentifier(), InputSetListTypePMS.ALL, null, null))
+            .getContent();
+    Set<String> validResourceIds = inputSetListResponse.stream()
+                                       .map(InputSetListResponseDTO::getInputSetIdWithPipelineId)
+                                       .collect(Collectors.toSet());
+    return resourceIds.stream().map(validResourceIds::contains).collect(Collectors.toList());
   }
 
   @Override

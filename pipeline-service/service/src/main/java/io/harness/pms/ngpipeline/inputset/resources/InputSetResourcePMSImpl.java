@@ -473,12 +473,12 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<PageResponse<InputSetListResponseDTO>> listInputSetsForProject(int page, int size,
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
-      @NotNull @ProjectIdentifier String projectIdentifier, InputSetListTypePMS inputSetListType,
-      GitEntityFindInfoDTO gitEntityBasicInfo) {
+      @NotNull @ProjectIdentifier String projectIdentifier, InputSetListTypePMS inputSetListType, String searchTerm,
+      List<String> sort, GitEntityFindInfoDTO gitEntityBasicInfo) {
     log.info(String.format(
         "Get List of input sets for project %s, org %s, account %s", projectIdentifier, orgIdentifier, accountId));
     Criteria criteria = PMSInputSetFilterHelper.listInputSetsForProjectCriteria(
-        accountId, orgIdentifier, projectIdentifier, inputSetListType, false);
+        accountId, orgIdentifier, projectIdentifier, inputSetListType, searchTerm, false);
     Pageable pageRequest = PageUtils.getPageRequest(
         page, size, new ArrayList<>(), Sort.by(Sort.Direction.DESC, InputSetEntityKeys.lastUpdatedAt));
     Page<InputSetEntity> inputSetEntities =

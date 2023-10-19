@@ -690,6 +690,11 @@ public interface InputSetResourcePMS {
           description = PipelineResourceConstants.ORG_PARAM_MESSAGE) @OrgIdentifier String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @Parameter(
           description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @ProjectIdentifier String projectIdentifier,
-      @Parameter(description = InputSetSchemaConstants.INPUT_SET_TYPE_MESSAGE) @QueryParam("inputSetType")
-      @DefaultValue("ALL") InputSetListTypePMS inputSetListType, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo);
+      @Parameter(description = InputSetSchemaConstants.INPUT_SET_TYPE_MESSAGE) @QueryParam(
+          "inputSetType") @DefaultValue("ALL") InputSetListTypePMS inputSetListType,
+      @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) @Parameter(
+          description = PipelineResourceConstants.INPUT_SET_SEARCH_TERM_PARAM_MESSAGE) String searchTerm,
+      @QueryParam(NGResourceFilterConstants.SORT_KEY) @Parameter(
+          description = NGCommonEntityConstants.SORT_PARAM_MESSAGE) List<String> sort,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo);
 }
