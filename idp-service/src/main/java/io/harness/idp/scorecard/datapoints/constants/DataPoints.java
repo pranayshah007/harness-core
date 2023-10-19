@@ -26,7 +26,7 @@ public class DataPoints {
   public static final String OPEN_DEPENDABOT_ALERTS = "openDependabotAlerts";
   public static final String OPEN_CODE_SCANNING_ALERTS = "openCodeScanningAlerts";
   public static final String OPEN_SECRET_SCANNING_ALERTS = "openSecretScanningAlerts";
-  public static final String OPEN_PULL_REQUESTS_BY_AUTHOR = "openPullRequestsByAuthor";
+  public static final String OPEN_PULL_REQUESTS_BY_ACCOUNT = "openPullRequestsByAccount";
 
   // Catalog
   public static final String CATALOG_TECH_DOCS = "techDocsAnnotationExists";

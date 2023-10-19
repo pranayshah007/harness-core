@@ -433,7 +433,7 @@
   {
     "id": "652d155ea0d3cf3d54903551",
     "accountIdentifier": "__GLOBAL_ACCOUNT_ID__",
-    "identifier": "github_open_pull_requests_by_author",
+    "identifier": "github_open_pull_requests_by_account",
     "dataSourceIdentifier": "github",
     "type": "DirectHttp",
     "apiRequestDetails": {

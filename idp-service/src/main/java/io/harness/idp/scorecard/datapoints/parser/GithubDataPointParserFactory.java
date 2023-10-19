@@ -13,7 +13,7 @@ import static io.harness.idp.scorecard.datapoints.constants.DataPoints.MEAN_TIME
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.MEAN_TIME_TO_COMPLETE_WORKFLOW_RUNS;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.OPEN_CODE_SCANNING_ALERTS;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.OPEN_DEPENDABOT_ALERTS;
-import static io.harness.idp.scorecard.datapoints.constants.DataPoints.OPEN_PULL_REQUESTS_BY_AUTHOR;
+import static io.harness.idp.scorecard.datapoints.constants.DataPoints.OPEN_PULL_REQUESTS_BY_ACCOUNT;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.OPEN_SECRET_SCANNING_ALERTS;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.PULL_REQUEST_MEAN_TIME_TO_MERGE;
 import static io.harness.idp.scorecard.datapoints.constants.DataPoints.WORKFLOWS_COUNT;
@@ -56,7 +56,7 @@ public class GithubDataPointParserFactory implements DataPointParserFactory {
       case OPEN_CODE_SCANNING_ALERTS:
       case OPEN_SECRET_SCANNING_ALERTS:
         return githubAlertsCountParser;
-      case OPEN_PULL_REQUESTS_BY_AUTHOR:
+      case OPEN_PULL_REQUESTS_BY_ACCOUNT:
         return githubPullRequestsCountParser;
       // Add more cases for other parsers
       default:
