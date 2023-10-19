@@ -929,7 +929,8 @@ public enum FeatureName {
   CDS_MERGE_PIPELINE_EXECUTION_SUMMARY_UPDATE_FLOW(
       "Merge the different flows to update pipeline execution summary to avoid write conflicts in mongo", PIPELINE),
   PIE_SECRETS_OBSERVER("Secrets Runtime Usages Observer", PIPELINE),
-  PL_GCP_OIDC_AUTHENTICATION("OIDC Authentication for GCP connector", HarnessTeam.PL);
+  PL_GCP_OIDC_AUTHENTICATION("OIDC Authentication for GCP connector", HarnessTeam.PL),
+  PIE_INPUTSET_RBAC_PERMISSIONS("Rbac Permissions for InputSets CRUD", PIPELINE);
 
   // keep-sorted end
 
