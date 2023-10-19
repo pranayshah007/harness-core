@@ -1,0 +1,11 @@
+policies:
+  - name: set-storage-container-access-private
+    resource: azure.storage-container
+    filters:
+      - type: value
+        key: properties.publicAccess
+        op: not-equal
+        value: None
+    actions:
+      - type: set-public-access
+        value: None

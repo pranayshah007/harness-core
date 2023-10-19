@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: rds-unused-databases-list
+cloudProvider: AWS
+resourceType: rds
+description: Take the average number of connections over 14 days for databases that are greater than 14 days old and list them
+rulesYamlPath: ../rds-unused-databases-list.yml

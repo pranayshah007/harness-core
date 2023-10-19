@@ -1,0 +1,7 @@
+policies:
+  - name: vm-tag-filter
+    resource: azure.vm
+    filters:
+      - type: value
+        key: tags.tag-key
+        value: tag-value

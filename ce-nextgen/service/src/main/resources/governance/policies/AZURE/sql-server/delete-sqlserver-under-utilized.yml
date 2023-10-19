@@ -1,0 +1,14 @@
+policies:
+  - name: delete-sqlserver-under-utilized
+    resource: azure.sqlserver
+    filters:
+      - type: metric
+        metric: dtu_consumption_percent
+        op: lt
+        aggregation: average
+        threshold: 10
+        timeframe: 72
+        filter: "ElasticPoolResourceId eq '*'"
+        no_data_action: include
+    actions:
+      - type: delete

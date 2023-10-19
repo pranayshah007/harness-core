@@ -1,0 +1,8 @@
+isOOTB: false
+forRecommendation: false
+deleted: false
+name: orphaned-disk
+cloudProvider: AZURE
+resourceType: azure.disk
+description: List all data disks that are not being managed by a VM
+rulesYamlPath: ../orphaned-disk.yml

@@ -1,0 +1,12 @@
+policies:
+  - name: elb-low-request-count-list
+    resource: elb
+    description: List ELBs with low request count
+    filters:
+      - type: metrics
+        name: RequestCount
+        statistics: Sum
+        days: 7
+        value: 7
+        missing-value: 0
+        op: less-than

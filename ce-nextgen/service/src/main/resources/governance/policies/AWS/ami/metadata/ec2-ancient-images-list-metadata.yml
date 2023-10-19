@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: ec2-ancient-images-list
+cloudProvider: AWS
+resourceType: ami
+description: Report all AMIs that are 120+ days or older
+rulesYamlPath: ../ec2-ancient-images-list.yml

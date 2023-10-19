@@ -1,0 +1,8 @@
+isOOTB: true
+forRecommendation: false
+deleted: false
+name: set-storage-container-access-private
+cloudProvider: AZURE
+resourceType: azure.storage-container
+description: Set public access to private for storage containers with public access enabled
+rulesYamlPath: ../set-storage-container-access-private.yml
