@@ -3,12 +3,19 @@ echo "Test script"
 export SERVICE_NAME="platform-service"
 MATCHING_TAGS=$SERVICE_NAME
 
-NEWEST_TAG=$(git for-each-ref --sort=-taggerdate --format '%(refname)' refs/tags | grep "$MATCHING_TAGS" | head -n 2 | tail -1)
+# Fetching the latest Tag
+NEWEST_TAG=$(git for-each-ref --sort=-taggerdate --format '%(refname)' refs/tags | grep "$MATCHING_TAGS" | head -n 1 | tail -1)
 LATEST_TAG=${NEWEST_TAG#refs/tags/}
 
 echo "LATEST_TAG is: $LATEST_TAG"
 
-PREVIOUS_TAG_REF=$(git for-each-ref --sort=-taggerdate --format '%(refname)' refs/tags | grep "$MATCHING_TAGS" | head -n 3 | tail -1)
+# Fetching the previous Tag
+PREVIOUS_TAG_REF_TEMP=$(git for-each-ref --sort=-taggerdate --format '%(refname)' refs/tags | grep "$MATCHING_TAGS" | head -n 2 | tail -1)
+PREVIOUS_TAG_TEMP=${PREVIOUS_TAG_REF_TEMP#refs/tags/}
+PREVIOUS_TAG_GREP="${PREVIOUS_TAG_TEMP%.*}"
+
+# Fetching the previous first tag if any hotfixes are there. 
+PREVIOUS_TAG_REF=$(git for-each-ref --sort=-taggerdate --format '%(refname)' refs/tags | grep "$PREVIOUS_TAG_GREP" | tail -1)
 PREVIOUS_TAG=${PREVIOUS_TAG_REF#refs/tags/}
 
 echo "PREVIOUS_TAG is: $PREVIOUS_TAG"
@@ -19,9 +26,9 @@ export VERSION
 
 
 
-FIX_PLS_VERSION=${SERVICE_NAME}_$VERSION
+FIX_PLS_VERSION=${SERVICE_NAME}-$VERSION
 
-echo $FIX_PLS_VERSION
+echo "Fix version is : $FIX_PLS_VERSION"
 
 export FIX_PLS_VERSION
 
