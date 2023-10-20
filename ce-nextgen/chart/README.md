@@ -36,7 +36,6 @@ A Helm chart for Kubernetes
 | cloudProviderConfig.AWS_GOV_CLOUD_TEMPLATE_LINK | string | `"https://continuous-efficiency.s3.us-east-2.amazonaws.com/setup/v1/ng/HarnessAWSTemplate.yaml"` |  |
 | cloudProviderConfig.AZURE_APP_CLIENT_ID | string | `"0211763d-24fb-4d63-865d-92f86f77e908"` |  |
 | cloudProviderConfig.GCP_SERVICE_ACCOUNT_EMAIL | string | `"placeHolder"` |  |
-| deployMode | string | `"KUBERNETES_ONPREM"` |  |
 | distributedLockImplementation | string | `"MONGO"` |  |
 | extraVolumeMounts | list | `[]` |  |
 | extraVolumes | list | `[]` |  |
@@ -80,6 +79,7 @@ A Helm chart for Kubernetes
 | global.database.timescaledb.protocol | string | `"jdbc:postgresql"` |  |
 | global.database.timescaledb.secretName | string | `""` |  |
 | global.database.timescaledb.userKey | string | `""` |  |
+| global.deployMode | string | `"KUBERNETES_ONPREM"` |  |
 | global.imagePullSecrets | list | `[]` |  |
 | global.ingress.className | string | `"harness"` |  |
 | global.ingress.enabled | bool | `false` |  |

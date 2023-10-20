@@ -73,6 +73,7 @@ global:
     stsEndPointUrl: https://sts.us-east-2.amazonaws.com
     ecsEndPointUrl: https://ecs.us-east-2.amazonaws.com
     cloudwatchEndPointUrl: https://monitoring.us-east-2.amazonaws.com
+  deployMode: KUBERNETES_ONPREM
 
 replicaCount: 1
 
@@ -228,5 +229,3 @@ lifecycleHooks: {}
 #   preStop:
 #     exec:
 #       command:
-
-deployMode: KUBERNETES_ONPREM
