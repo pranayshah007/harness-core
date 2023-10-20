@@ -18,7 +18,9 @@ import lombok.Getter;
 @OwnedBy(HarnessTeam.SSCA)
 public enum SlsaVerificationSourceType {
   @JsonProperty(SlsaVerificationSourceConstants.DOCKER)
-  DOCKER(SlsaVerificationSourceConstants.DOCKER, ProvenanceSourceConstants.DOCKER);
+  DOCKER(SlsaVerificationSourceConstants.DOCKER, ProvenanceSourceConstants.DOCKER),
+  @JsonProperty(SlsaVerificationSourceConstants.GCR)
+  GCR(SlsaVerificationSourceConstants.GCR, ProvenanceSourceConstants.GCR);
 
   private final String name;
   @Getter private final String registryType;

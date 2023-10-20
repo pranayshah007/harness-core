@@ -11257,13 +11257,49 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "SlsaGcrSourceSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/SlsaVerificationSourceSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connector",
+            "host",
+            "image_name",
+            "project_id",
+            "tag"
+          ],
+          "properties": {
+            "connector": {
+              "type": "string"
+            },
+            "host": {
+              "type": "string"
+            },
+            "image_name": {
+              "type": "string"
+            },
+            "project_id": {
+              "type": "string"
+            },
+            "tag": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "SlsaVerificationSource": {
       "type": "object",
       "properties": {
         "type": {
           "type": "string",
           "enum": [
-            "Docker"
+            "Docker",
+            "Gcr"
           ]
         }
       },
@@ -11281,6 +11317,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/SlsaDockerSourceSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Gcr"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/SlsaGcrSourceSpec"
               }
             }
           }
