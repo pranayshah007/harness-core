@@ -34,10 +34,15 @@ public abstract class AbstractTimeScaleDBMigration implements TimeScaleDBMigrati
     InputStreamReader inputStreamReader = new InputStreamReader(inputstream, StandardCharsets.UTF_8);
     ScriptRunner scriptRunner = new ScriptRunner(connection);
     scriptRunner.setStopOnError(true);
+    scriptRunner.setSendFullScript(executeFullScript());
     scriptRunner.runScript(inputStreamReader);
   }
 
   public abstract String getFileName();
+
+  public boolean executeFullScript() {
+    return false;
+  }
 
   @Override
   public boolean migrate() {
