@@ -106,20 +106,27 @@ public class AnomalyResource {
     DefaultViewIdDto defaultViewIds = null;
     HashMap<String, CEView> allowedAnomaliesIdAndPerspectives = null;
     if (hasAnomalyAccessOrOOTBPerspectiveView(accountId)) {
+      log.info("hasAnomalyAccessFrrOOTBPerspectiveView");
       anomalyData = anomalyService.listAnomalies(accountId,
           AnomalyQueryHelper.buildAnomalyQueryFromFilterProperties(anomalyFilterPropertiesDTO), Collections.emptyList(),
           Collections.emptySet(), true);
+      log.info("anomalyData1: {}", anomalyData);
       defaultViewIds = ceViewService.getDefaultViewIds(accountId);
+      log.info("defaultViewIds1: {}", defaultViewIds);
     } else {
+      log.info("Does not hasAnomalyAccessFrrOOTBPerspectiveView");
       List<CEView> ceViewsList = ceViewService.getAllViews(accountId);
+      log.info("ceViewsList2: {}", ceViewsList);
       Set<String> allowedFolderIds = rbacHelper.checkFolderIdsGivenPermission(accountId, null, null,
           ceViewsList.stream().map(ceView -> ceView.getFolderId()).collect(Collectors.toSet()), PERSPECTIVE_VIEW);
-
+      log.info("allowedFolderIds2: {}", allowedFolderIds);
       allowedAnomaliesIdAndPerspectives =
           anomalyService.listAllowedAnomaliesIdAndPerspectives(accountId, allowedFolderIds, ceViewsList);
+      log.info("allowedAnomaliesIdAndPerspectives2: {}", allowedAnomaliesIdAndPerspectives);
       anomalyData = anomalyService.listAnomalies(accountId,
           AnomalyQueryHelper.buildAnomalyQueryFromFilterProperties(anomalyFilterPropertiesDTO),
           allowedAnomaliesIdAndPerspectives.keySet());
+      log.info("anomalyData2: {}", anomalyData);
     }
     return ResponseDTO.newResponse(
         anomalyService.addPerspectiveInfo(anomalyData, allowedAnomaliesIdAndPerspectives, defaultViewIds));

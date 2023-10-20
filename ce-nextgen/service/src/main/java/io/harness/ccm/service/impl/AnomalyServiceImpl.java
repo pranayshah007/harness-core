@@ -88,12 +88,17 @@ public class AnomalyServiceImpl implements AnomalyService {
       @NonNull List<CCMFilter> ruleFilters, Set<String> allowedAnomaliesIds, boolean alwaysAllowed) {
     if (anomalyQuery == null) {
       anomalyQuery = getDefaultAnomalyQuery();
+      log.info("DefaultanomalyQuery: {}", anomalyQuery);
     }
+    log.info("anomalyQuery.getFilter(): {}", anomalyQuery.getFilter());
+    log.info("ruleFilters(): {}", ruleFilters);
     Condition condition = anomalyQuery.getFilter() != null
         ? anomalyQueryBuilder.applyAllFilters(anomalyQuery.getFilter(), ruleFilters)
         : DSL.noCondition();
 
+    log.info("condition: {}", condition);
     List<CCMSort> sortBy = anomalyQuery.getOrderBy() != null ? anomalyQuery.getOrderBy() : Collections.emptyList();
+    log.info("sortBy: {}", sortBy);
     List<Anomalies> anomalies = alwaysAllowed
         ? anomalyDao.fetchAnomalies(accountIdentifier, condition, anomalyQueryBuilder.getOrderByFields(sortBy),
             anomalyQuery.getOffset() != null ? anomalyQuery.getOffset() : AnomalyUtils.DEFAULT_OFFSET,
@@ -103,10 +108,13 @@ public class AnomalyServiceImpl implements AnomalyService {
             anomalyQuery.getLimit() != null ? anomalyQuery.getLimit() : AnomalyUtils.DEFAULT_LIMIT,
             allowedAnomaliesIds);
 
+    log.info("anomalies: {}", anomalies);
     List<AnomalyData> anomalyData = new ArrayList<>();
     List<String> awsAccountIds = AnomalyUtils.collectAwsAccountIds(anomalies);
+    log.info("awsAccountIds: {}", awsAccountIds);
     Map<String, String> entityIdToNameMapping =
         entityMetadataService.getAccountNamePerAwsAccountId(awsAccountIds, accountIdentifier);
+    log.info("entityIdToNameMapping: {}", entityIdToNameMapping);
     anomalies.forEach(anomaly -> anomalyData.add(AnomalyUtils.buildAnomalyData(anomaly, entityIdToNameMapping)));
 
     return AnomalyUtils.sortDataByNonTableFields(anomalyData, sortBy);
@@ -138,8 +146,10 @@ public class AnomalyServiceImpl implements AnomalyService {
     }
     // For other cases
     List<CCMFilter> ruleFilters = perspectiveToAnomalyQueryHelper.getConvertedRulesForPerspective(perspective);
+    log.info("ruleFilters for perspective: {}", ruleFilters);
     CCMFilter filters =
         perspectiveToAnomalyQueryHelper.getConvertedFiltersForPerspective(perspective, perspectiveQuery);
+    log.info("filters for perspective: {}", filters);
     List<AnomalyData> anomalyData = listAnomalies(accountIdentifier,
         AnomalyQueryDTO.builder()
             .filter(filters)
@@ -298,6 +308,7 @@ public class AnomalyServiceImpl implements AnomalyService {
 
     for (CEView perspective : allowedPerspectives) {
       List<CCMFilter> ruleFilters = perspectiveToAnomalyQueryHelper.getConvertedRulesForPerspective(perspective);
+      log.info("Inside rbac ruleFilters: {}", ruleFilters);
       List<AnomalyData> anomalyDataForPerspective = listAnomalies(accountIdentifier,
           AnomalyQueryDTO.builder()
               .filter(filters)
@@ -306,6 +317,7 @@ public class AnomalyServiceImpl implements AnomalyService {
               .offset(AnomalyUtils.DEFAULT_OFFSET)
               .build(),
           ruleFilters, Collections.emptySet(), true);
+      log.info("Inside rbac anomalyDataForPerspective: {}", anomalyDataForPerspective);
       for (AnomalyData anomaly : anomalyDataForPerspective) {
         if (!anomalyDataAndPerspective.containsKey(anomaly.getId())) {
           if (perspective.getViewType() != ViewType.DEFAULT
