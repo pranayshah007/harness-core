@@ -930,6 +930,7 @@ public enum FeatureName {
       "Merge the different flows to update pipeline execution summary to avoid write conflicts in mongo", PIPELINE),
   PIE_SECRETS_OBSERVER("Secrets Runtime Usages Observer", PIPELINE),
   PL_GCP_OIDC_AUTHENTICATION("OIDC Authentication for GCP connector", HarnessTeam.PL),
+  SRM_AUTO_DISCOVERY_ENABLE("The flag enables the auto discovery feature in SRM.", HarnessTeam.CV),
   PIE_INPUTSET_RBAC_PERMISSIONS("Rbac Permissions for InputSets CRUD", PIPELINE);
 
   // keep-sorted end

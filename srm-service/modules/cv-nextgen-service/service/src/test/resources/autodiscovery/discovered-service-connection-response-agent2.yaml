@@ -1,0 +1,13 @@
+[{
+  "id": "6513248461f78e9ab49e1d22",
+  "type": "TCP",
+  "sourceID": "65130e1c457bae2f07823c0a",
+  "sourceName": "checkoutservice",
+  "sourceNamespace": "boutique",
+  "sourceIP": "10.36.6.13",
+  "destinationID": "65130e1c457bae2f07823c10",
+  "destinationName": "productcatalogservice",
+  "destinationNamespace": "boutique",
+  "destinationIP": "10.40.14.196",
+  "destinationPort": "3550"
+}]
