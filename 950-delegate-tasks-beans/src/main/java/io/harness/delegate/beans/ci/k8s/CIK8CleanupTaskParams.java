@@ -42,6 +42,16 @@ public class CIK8CleanupTaskParams implements CICleanupTaskParams, ExecutionCapa
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
+    if (isNotEmpty(LiteEngineIP) && podNameList.size() == 1) {
+      return Collections.singletonList(LiteEngineConnectionCapability.builder()
+                                           .k8sConnectorDetails(k8sConnector)
+                                           .namespace(namespace)
+                                           .podName(podNameList.get(0))
+                                           .ip(LiteEngineIP)
+                                           .port(LiteEnginePort)
+                                           .isLocal(isLocal)
+                                           .build());
+    }
     KubernetesClusterConfigDTO kubernetesClusterConfigDTO =
         (KubernetesClusterConfigDTO) k8sConnector.getConnectorConfig();
     return K8sTaskCapabilityHelper.fetchRequiredExecutionCapabilities(kubernetesClusterConfigDTO, maskingEvaluator);
