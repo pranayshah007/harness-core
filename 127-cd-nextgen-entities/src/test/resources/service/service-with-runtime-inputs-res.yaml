@@ -11,4 +11,9 @@ serviceInputs:
       variables:
         - name: variable1
           type: String
+          required: true
+          value: <+input>
+        - name: variable2
+          type: String
+          required: false
           value: <+input>

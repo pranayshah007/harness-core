@@ -231,6 +231,9 @@ public class YamlMapGenerator {
         if (element.has(YAMLFieldNameConstants.TYPE)) {
           newTempMap.put(YAMLFieldNameConstants.TYPE, element.get(YAMLFieldNameConstants.TYPE));
         }
+        if (element.has(YAMLFieldNameConstants.REQUIRED)) {
+          newTempMap.put(YAMLFieldNameConstants.REQUIRED, element.get(YAMLFieldNameConstants.REQUIRED));
+        }
         newTempMap.putAll(tempMap);
         topKeyList.add(newTempMap);
       }
