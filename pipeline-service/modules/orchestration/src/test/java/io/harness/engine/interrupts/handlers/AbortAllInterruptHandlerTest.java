@@ -15,6 +15,8 @@ import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import io.harness.OrchestrationTestBase;
@@ -138,6 +140,7 @@ public class AbortAllInterruptHandlerTest extends OrchestrationTestBase {
     when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
              planExecutionId, StatusUtils.finalizableStatuses()))
         .thenReturn(0L);
+    when(nodeExecutionService.getWithFieldsIncluded(anyString(), any())).thenReturn(NodeExecution.builder().build());
     CloseableIterator<NodeExecution> iterator =
         OrchestrationTestHelper.createCloseableIterator(Collections.emptyListIterator());
     when(nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator(
@@ -164,6 +167,8 @@ public class AbortAllInterruptHandlerTest extends OrchestrationTestBase {
                                                  .planExecutionId(planExecutionId)
                                                  .state(State.REGISTERED)
                                                  .build();
+
+    when(nodeExecutionService.getWithFieldsIncluded(anyString(), any())).thenReturn(NodeExecution.builder().build());
 
     when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
              planExecutionId, StatusUtils.finalizableStatuses()))
