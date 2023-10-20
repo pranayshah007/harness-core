@@ -53,7 +53,7 @@ public class ArtifactApiImpl implements ArtifactApi {
       String harnessAccount, @Min(1L) @Max(1000L) Integer limit, String order, @Min(0L) Integer page, String sort) {
     Pageable pageable = PageResponseUtils.getPageable(page, limit, sort, order);
     Page<ArtifactListingResponse> artifactEntities =
-        artifactService.listArtifacts(harnessAccount, org, project, null, pageable);
+        artifactService.listArtifacts(harnessAccount, org, project, body, pageable);
     return PageResponseUtils.getPagedResponse(artifactEntities);
   }
 

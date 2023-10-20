@@ -14,6 +14,7 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.matc
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.newAggregation;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.skip;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.sort;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.unwind;
 
 import io.harness.network.Http;
 import io.harness.repositories.ArtifactRepository;
@@ -29,12 +30,11 @@ import io.harness.spec.server.ssca.v1.model.ArtifactListingRequestBody;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingResponse;
 import io.harness.spec.server.ssca.v1.model.ArtifactListingResponse.ActivityEnum;
 import io.harness.spec.server.ssca.v1.model.SbomProcessRequestBody;
+import io.harness.ssca.beans.EnforcementSummaryDBO.EnforcementSummaryDBOKeys;
 import io.harness.ssca.beans.EnvType;
 import io.harness.ssca.beans.SbomDTO;
 import io.harness.ssca.entities.ArtifactEntity;
 import io.harness.ssca.entities.ArtifactEntity.ArtifactEntityKeys;
-import io.harness.ssca.entities.CdInstanceSummary;
-import io.harness.ssca.entities.CdInstanceSummary.CdInstanceSummaryKeys;
 import io.harness.ssca.entities.EnforcementSummaryEntity;
 import io.harness.ssca.entities.EnforcementSummaryEntity.EnforcementSummaryEntityKeys;
 import io.harness.ssca.utils.SBOMUtils;
@@ -66,6 +66,7 @@ import org.springframework.data.mongodb.core.aggregation.MatchOperation;
 import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 import org.springframework.data.mongodb.core.aggregation.SkipOperation;
 import org.springframework.data.mongodb.core.aggregation.SortOperation;
+import org.springframework.data.mongodb.core.aggregation.UnwindOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -224,6 +225,8 @@ public class ArtifactServiceImpl implements ArtifactService {
                             .and(ArtifactEntityKeys.invalid)
                             .is(false);
 
+    criteria.andOperator(getPolicyFilterCriteria(body), getDeploymentFilterCriteria(body));
+
     Page<ArtifactEntity> artifactEntities = artifactRepository.findAll(criteria, pageable);
 
     List<ArtifactListingResponse> artifactListingResponses =
@@ -272,7 +275,22 @@ public class ArtifactServiceImpl implements ArtifactService {
                    .attestedStatus(artifact.isAttested() ? AttestedStatusEnum.PASS : AttestedStatusEnum.FAIL)
                    .pipelineId(entity.getLastPipelineExecutionName())
                    .pipelineExecutionId(entity.getLastPipelineExecutionId())
-                   .triggeredBy(entity.getLastDeployedByName()));
+                   .triggeredById(entity.getLastDeployedById())
+                   .triggeredBy(entity.getLastDeployedByName())
+                   .triggeredAt(entity.getLastDeployedAt().toString()));
+  }
+
+  @Override
+  public void updateArtifactEnvCount(ArtifactEntity artifact, EnvType envType, long count) {
+    if (envType == EnvType.Production) {
+      long envCount = Long.max(artifact.getProdEnvCount() + count, 0);
+      artifact.setProdEnvCount(envCount);
+    } else {
+      long envCount = Long.max(artifact.getNonProdEnvCount() + count, 0);
+      artifact.setNonProdEnvCount(envCount);
+    }
+    artifact.setLastUpdatedAt(Instant.now().toEpochMilli());
+    artifactRepository.save(artifact);
   }
 
   private List<ArtifactListingResponse> getArtifactListingResponses(
@@ -294,29 +312,9 @@ public class ArtifactServiceImpl implements ArtifactService {
     Map<String, EnforcementSummaryEntity> enforcementSummaryEntityMap = enforcementSummaryEntities.stream().collect(
         Collectors.toMap(entity -> entity.getOrchestrationId(), Function.identity()));
 
-    List<String> artifactCorrelationIds =
-        artifactEntities.stream().map(ArtifactEntity::getArtifactCorrelationId).collect(Collectors.toList());
-    Criteria artifactDeploymentCriteria = Criteria.where(CdInstanceSummaryKeys.artifactCorrelationId)
-                                              .in(artifactCorrelationIds)
-                                              .and(CdInstanceSummaryKeys.accountIdentifier)
-                                              .is(accountId)
-                                              .and(CdInstanceSummaryKeys.orgIdentifier)
-                                              .is(orgIdentifier)
-                                              .and(CdInstanceSummaryKeys.projectIdentifier)
-                                              .is(projectIdentifier);
-    List<CdInstanceSummary> cdInstanceSummaries = cdInstanceSummaryRepo.findAll(artifactDeploymentCriteria);
-
-    Map<String, List<CdInstanceSummary>> artifactDeploymentMap = cdInstanceSummaries.stream().collect(
-        Collectors.groupingBy(cdInstanceSummary -> cdInstanceSummary.getArtifactCorrelationId()));
-
     List<ArtifactListingResponse> responses = new ArrayList<>();
     for (ArtifactEntity artifact : artifactEntities) {
-      List<CdInstanceSummary> deploymentSummary = new ArrayList<>();
       EnforcementSummaryEntity enforcementSummary = EnforcementSummaryEntity.builder().build();
-
-      if (artifactDeploymentMap.containsKey(artifact.getArtifactCorrelationId())) {
-        deploymentSummary = artifactDeploymentMap.get(artifact.getArtifactCorrelationId());
-      }
 
       if (enforcementSummaryEntityMap.containsKey(artifact.getOrchestrationId())) {
         enforcementSummary = enforcementSummaryEntityMap.get(artifact.getOrchestrationId());
@@ -330,14 +328,12 @@ public class ArtifactServiceImpl implements ArtifactService {
               .componentsCount((int) artifact.getComponentsCount())
               .allowListViolationCount(enforcementSummary.getAllowListViolationCount())
               .denyListViolationCount(enforcementSummary.getDenyListViolationCount())
-              .activity(Objects.isNull(deploymentSummary) ? ActivityEnum.GENERATED : ActivityEnum.DEPLOYED)
+              .enforcementId(enforcementSummary.getEnforcementId())
+              .activity(artifact.getProdEnvCount() + artifact.getNonProdEnvCount() == 0 ? ActivityEnum.GENERATED
+                                                                                        : ActivityEnum.DEPLOYED)
               .updatedAt(String.format("%d", artifact.getLastUpdatedAt()))
-              .prodEnvCount((int) deploymentSummary.stream()
-                                .filter(cdInstanceSummary -> cdInstanceSummary.getEnvType() == EnvType.Production)
-                                .count())
-              .nonProdEnvCount((int) deploymentSummary.stream()
-                                   .filter(cdInstanceSummary -> cdInstanceSummary.getEnvType() == EnvType.PreProduction)
-                                   .count()));
+              .prodEnvCount((int) artifact.getProdEnvCount())
+              .nonProdEnvCount((int) artifact.getNonProdEnvCount()));
     }
     return responses;
   }
@@ -350,5 +346,65 @@ public class ArtifactServiceImpl implements ArtifactService {
       return image + ":" + tag;
     }
     return domainName + "/" + image + ":" + tag;
+  }
+
+  private Criteria getPolicyFilterCriteria(ArtifactListingRequestBody body) {
+    Criteria criteria = new Criteria();
+    if (Objects.isNull(body) || Objects.isNull(body.getPolicyViolation())) {
+      return criteria;
+    }
+    Criteria enforcementCriteria = new Criteria();
+    switch (body.getPolicyViolation()) {
+      case DENY:
+        enforcementCriteria = Criteria
+                                  .where(EnforcementSummaryDBOKeys.document + "."
+                                      + EnforcementSummaryEntityKeys.denyListViolationCount.toLowerCase())
+                                  .ne(0);
+        break;
+      case ALLOW:
+        enforcementCriteria = Criteria
+                                  .where(EnforcementSummaryDBOKeys.document + "."
+                                      + EnforcementSummaryEntityKeys.allowListViolationCount.toLowerCase())
+                                  .ne(0);
+        break;
+      default:
+        log.error("Unknown Policy Violation Type");
+    }
+
+    MatchOperation matchOperation = match(enforcementCriteria);
+    SortOperation sortOperation = sort(Sort.by(Direction.DESC, EnforcementSummaryEntityKeys.createdAt));
+    GroupOperation groupByOrchestrationId =
+        group(EnforcementSummaryEntityKeys.orchestrationId).first("$$ROOT").as(EnforcementSummaryDBOKeys.document);
+    UnwindOperation unwindOperation = unwind(EnforcementSummaryDBOKeys.document);
+    Aggregation aggregation = newAggregation(sortOperation, groupByOrchestrationId, unwindOperation, matchOperation);
+
+    // { "aggregate" : "__collection__", "pipeline" : [{ "$sort" : { "createdAt" : -1}}, { "$group" : { "_id" :
+    // "$orchestrationId", "document" : { "$first" : "$$ROOT"}}}, { "$unwind" : "$document"}, { "$match" : {
+    // "document.denylistviolationcount" : { "$ne" : 0}}}]}
+    List<EnforcementSummaryEntity> enforcementSummaryEntities = enforcementSummaryRepo.findAll(aggregation);
+    criteria.and(ArtifactEntityKeys.orchestrationId)
+        .in(enforcementSummaryEntities.stream()
+                .map(EnforcementSummaryEntity::getOrchestrationId)
+                .collect(Collectors.toSet()));
+    return criteria;
+  }
+
+  private Criteria getDeploymentFilterCriteria(ArtifactListingRequestBody body) {
+    if (Objects.isNull(body) || Objects.isNull(body.getEnvironmentType())) {
+      return new Criteria();
+    }
+    switch (body.getEnvironmentType()) {
+      case NONPROD:
+        return Criteria.where(ArtifactEntityKeys.nonProdEnvCount).gt(0);
+      case PROD:
+        return Criteria.where(ArtifactEntityKeys.prodEnvCount).gt(0);
+      case ALL:
+        return Criteria.where(ArtifactEntityKeys.nonProdEnvCount).gt(0).and(ArtifactEntityKeys.prodEnvCount).gt(0);
+      case NONE:
+        return Criteria.where(ArtifactEntityKeys.nonProdEnvCount).is(0).and(ArtifactEntityKeys.prodEnvCount).is(0);
+      default:
+        log.error("Unknown Policy Environment Type");
+    }
+    return new Criteria();
   }
 }
