@@ -68,6 +68,7 @@ data:
   STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
 
   # The following image variables are just for the reference and do not impact any functionality
+  ANCHORE_IMAGE: harness/anchore-job-runner:latest
   AWS_ECR_IMAGE: harness/aws-ecr-job-runner:latest
   AWS_SECURITY_HUB_IMAGE: harness/aws-security-hub-job-runner:latest
   AQUA_TRIVY_IMAGE: harness/aqua-trivy-job-runner:latest

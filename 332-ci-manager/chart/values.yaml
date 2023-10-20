@@ -97,7 +97,7 @@ securityImage:
   image:
     registry: docker.io
     repository: harness/sto-plugin
-    tag: 1.13.0
+    tag: 1.19.0
     digest: ""
     imagePullSecrets: []
 waitForInitContainer:

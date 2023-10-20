@@ -212,6 +212,8 @@ ciExecutionServiceConfig:
       - "--run-strategy"
       - single-container
     images:
+      - product: anchore_default
+        image: harness/anchore-job-runner
       - product: awsecr_default
         image: harness/aws-ecr-job-runner
       - product: awssecurityhub_default
