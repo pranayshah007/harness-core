@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.Builder;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -122,8 +123,14 @@ public class ErrorTrackingNotificationRuleUtils {
       notificationDataMap.put(EMAIL_EVENT_DETAILS_BUTTON, "");
       notificationDataMap.put(SLACK_EVENT_DETAILS_BUTTON, "");
 
+
+      log.info("Aggregated Events size = " + aggregatedEvents.size());
+      for (AggregatedEvents aggregatedEvent: aggregatedEvents) {
+        log.info("aggregatedEvent = " + aggregatedEvent);
+      }
+
       final String slackVersionList =
-          aggregatedEvents.stream().map(AggregatedEvents::toSlackString).collect(Collectors.joining("\n"));
+              aggregatedEvents.stream().map(AggregatedEvents::toSlackString).collect(Collectors.joining("\n"));
       final String emailVersionList =
           aggregatedEvents.stream().map(AggregatedEvents::toEmailString).collect(Collectors.joining());
 
@@ -190,6 +197,7 @@ public class ErrorTrackingNotificationRuleUtils {
   }
 
   @Builder
+  @ToString
   @Slf4j
   public static class AggregatedEvents {
     private static final String EVENT_STATUS_PARAM = "&eventStatus=";
@@ -342,8 +350,8 @@ public class ErrorTrackingNotificationRuleUtils {
     private String arcScreenUrl;
 
     public String toSlackString() {
-      StringBuilder slack = new StringBuilder(EVENT_VERSION_LABEL + "*" + version + "*\n");
-      slack.append("```").append(stackTrace.replace(",", "\n")).append("```");
+      StringBuilder slack = new StringBuilder(EVENT_VERSION_LABEL + "*" + version + "*\\n");
+      slack.append("```").append(stackTrace.replace(",", "\\n")).append("```");
       return slack.toString();
     }
 
