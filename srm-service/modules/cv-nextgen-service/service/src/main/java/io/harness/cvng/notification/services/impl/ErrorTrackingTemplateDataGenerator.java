@@ -85,7 +85,6 @@ public class ErrorTrackingTemplateDataGenerator
         SLACK_FORMATTED_VERSION_LIST, replaceNullWithBlank(notificationDataMap.get(SLACK_FORMATTED_VERSION_LIST)));
     templateData.put(NOTIFICATION_URL, replaceNullWithBlank(notificationDataMap.get(NOTIFICATION_URL)));
     templateData.put(NOTIFICATION_NAME, replaceNullWithBlank(notificationDataMap.get(NOTIFICATION_NAME)));
-    templateData.put(ARC_SCREEN_URL, replaceNullWithBlank(notificationDataMap.get(ARC_SCREEN_URL)));
     templateData.put(SLACK_SAVED_SEARCH_FILTER_SECTION,
         replaceNullWithBlank(notificationDataMap.get(SLACK_SAVED_SEARCH_FILTER_SECTION)));
     templateData.put(

@@ -76,8 +76,12 @@ public class ErrorTrackingNotificationRuleUtils {
         errorTrackingHitSummary.getVersionId(), String.valueOf(fromTime), String.valueOf(toTime));
 
     notificationDataMap.put(ARC_SCREEN_URL, arcScreenUrl);
-    notificationDataMap.put(EMAIL_EVENT_DETAILS_BUTTON, EMAIL_EVENT_DETAILS_BUTTON_VALUE);
-    notificationDataMap.put(SLACK_EVENT_DETAILS_BUTTON, SLACK_EVENT_DETAILS_BUTTON_BLOCK_VALUE);
+
+    final String emailArcButtonValue = EMAIL_EVENT_DETAILS_BUTTON_VALUE.replace("${ARC_SCREEN_URL}", arcScreenUrl);
+    final String slackArcButtonValue = SLACK_EVENT_DETAILS_BUTTON_BLOCK_VALUE.replace("${ARC_SCREEN_URL}", arcScreenUrl);
+
+    notificationDataMap.put(EMAIL_EVENT_DETAILS_BUTTON, emailArcButtonValue);
+    notificationDataMap.put(SLACK_EVENT_DETAILS_BUTTON, slackArcButtonValue);
 
     StackTraceEvent stackTraceEvent = StackTraceEvent.builder()
                                           .version(errorTrackingHitSummary.getVersionId())

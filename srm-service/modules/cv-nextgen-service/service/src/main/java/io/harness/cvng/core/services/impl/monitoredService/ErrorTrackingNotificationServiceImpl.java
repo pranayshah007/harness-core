@@ -11,6 +11,8 @@ import static io.harness.cvng.core.utils.FeatureFlagNames.SRM_CODE_ERROR_NOTIFIC
 import static io.harness.cvng.notification.beans.NotificationRuleConditionType.CODE_ERRORS;
 import static io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator.NotificationData;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.ENVIRONMENT_NAME;
+import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.EVENT_STATUS;
+import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_EVENT_TRIGGER_LIST;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_NAME;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_URL;
 import static io.harness.cvng.notification.utils.ErrorTrackingNotificationRuleUtils.buildMonitoredServiceConfigurationTabUrl;
@@ -21,6 +23,7 @@ import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTIT
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.ENTITY_NAME;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.SERVICE_IDENTIFIER;
 
+import io.harness.cvng.beans.errortracking.CriticalEventType;
 import io.harness.cvng.beans.errortracking.ErrorTrackingHitSummary;
 import io.harness.cvng.beans.errortracking.ErrorTrackingNotificationData;
 import io.harness.cvng.client.ErrorTrackingService;
@@ -30,6 +33,7 @@ import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.entities.MonitoredService.MonitoredServiceKeys;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.monitoredService.ErrorTrackingNotificationService;
+import io.harness.cvng.notification.beans.ErrorTrackingEventStatus;
 import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleRef;
 import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
@@ -50,6 +54,7 @@ import dev.morphia.query.UpdateOperations;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -247,7 +252,7 @@ public class ErrorTrackingNotificationServiceImpl implements ErrorTrackingNotifi
       MonitoredService monitoredService, NotificationRule notificationRule) {
     List<NotificationData> notifications = new ArrayList<>();
     MonitoredServiceParams monitoredServiceParams = buildMonitoredServiceParams(monitoredService);
-    Map<String, String> templateDataMap = new HashMap<>();
+
     final List<String> environmentIdentifierList = monitoredService.getEnvironmentIdentifierList();
     boolean oneEnvironmentId = environmentIdentifierList != null && environmentIdentifierList.size() == 1;
     if (oneEnvironmentId) {
@@ -267,16 +272,21 @@ public class ErrorTrackingNotificationServiceImpl implements ErrorTrackingNotifi
             ((ErrorTrackingTemplateDataGenerator) notificationRuleConditionTypeTemplateDataGeneratorMap.get(
                  CODE_ERRORS))
                 .getBaseLinkUrl(monitoredService.getAccountId());
-
         for (ErrorTrackingHitSummary hitSummary : hitSummaries) {
+          Map<String, String> templateDataMap = new HashMap<>();
           templateDataMap.putAll(
               getCodeErrorHitSummaryTemplateData(hitSummary, monitoredService, environmentId, baseLinkUrl));
           templateDataMap.put(
               NOTIFICATION_URL, buildMonitoredServiceConfigurationTabUrl(baseLinkUrl, monitoredServiceParams));
+          final String allEventTypes = Arrays.stream(CriticalEventType.values())
+                  .filter(type -> type != CriticalEventType.ANY)
+                  .map(CriticalEventType::getDisplayName)
+                  .collect(Collectors.joining(", "));
 
+          templateDataMap.put(NOTIFICATION_EVENT_TRIGGER_LIST, allEventTypes);
+          templateDataMap.put(EVENT_STATUS, ErrorTrackingEventStatus.NEW_EVENTS.getDisplayName());
           templateDataMap.put(NOTIFICATION_NAME, notificationRule.getName());
           templateDataMap.put(ENVIRONMENT_NAME, environmentId);
-          //TODO: templateDataMap might need to be at this smaller scope
           log.info("templateDataMap = " + templateDataMap);
 
           notifications.add(
