@@ -17,6 +17,7 @@ public class SecretManagerTypeProtoPojoMapper {
     switch (type) {
       case SM_NOT_SET:
       case UNRECOGNIZED:
+      case UNKNOWN_SM:
         return null;
       default:
         return io.harness.security.encryption.SecretManagerType.valueOf(type.name());

@@ -9,9 +9,10 @@ package io.harness.delegate.service.handlermapping.handlers;
 
 import io.harness.delegate.core.beans.TaskPayload;
 import io.harness.delegate.service.handlermapping.context.Context;
-import io.harness.delegate.service.secret.DecryptedSecrets;
+
+import java.util.Map;
 
 @FunctionalInterface
 public interface Handler {
-  void handle(String runnerType, TaskPayload taskPayload, DecryptedSecrets decryptedSecrets, Context context);
+  void handle(String runnerType, TaskPayload taskPayload, Map<String, char[]> decryptedSecrets, Context context);
 }

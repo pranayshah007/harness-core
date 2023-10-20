@@ -21,6 +21,7 @@ public class EncryptionTypeProtoPojoMapper {
         return io.harness.security.encryption.EncryptionType.VAULT;
       case NOT_SET:
       case UNRECOGNIZED:
+      case UNKNOWN:
         return null;
       default:
         return io.harness.security.encryption.EncryptionType.valueOf(type.name());

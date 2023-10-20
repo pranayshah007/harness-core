@@ -7,20 +7,20 @@
 
 package io.harness.delegate.service.handlermapping;
 
+import com.google.common.collect.ImmutableMap;
 import io.harness.delegate.core.beans.AcquireTasksResponse;
 import io.harness.delegate.core.beans.Secret;
 import io.harness.delegate.core.beans.TaskPayload;
 import io.harness.delegate.service.common.AcquireTaskHelper;
 import io.harness.delegate.service.handlermapping.context.Context;
 import io.harness.delegate.service.handlermapping.handlers.Handler;
-import io.harness.delegate.service.secret.DecryptedSecrets;
 import io.harness.delegate.service.secret.RunnerDecryptionService;
-import io.harness.encryption.Scope;
-import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -64,22 +64,18 @@ public class HandlerMappingServer {
     // TODO: add decrypted secrets here
     // secret decryption start
     List<Secret> binarySecretsList = taskPayload.getSecretsList();
-    DecryptedSecrets decryptedSecrets = new DecryptedSecrets();
+    Map<String, char[]> decryptedMap = new HashMap<>();
     for (Secret secret : binarySecretsList) {
       try {
         var decrypted = decryptionService.decryptProtoBytes(secret);
-        decryptedSecrets.addDecryptedSecret(
-            IdentifierRefHelper.getIdentifierRef(Scope.fromString(secret.getSecretRef().getScope().name()),
-                secret.getSecretRef().getSecretId(), taskPayload.getAccountId(), taskPayload.getOrgId(),
-                taskPayload.getProjectId(), null),
-            decrypted);
+        decryptedMap.put(secret.getSecretRef().getFullyQualifiedSecretId(), decrypted);
       } catch (Exception ex) {
         // TODO: send task failed response
         log.error("exception occurred when decrypting the secret", ex);
       }
     }
 
-    handler.handle(taskPayload.getRunnerType(), taskPayload, decryptedSecrets, handlerContext);
+    handler.handle(taskPayload.getRunnerType(), taskPayload, ImmutableMap.copyOf(decryptedMap), handlerContext);
     log.info("Finished executing handler {}", taskPayload.getEventType());
   }
 }

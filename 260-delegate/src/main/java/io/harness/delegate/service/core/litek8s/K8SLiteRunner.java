@@ -30,14 +30,11 @@ import io.harness.delegate.service.core.util.ApiExceptionLogger;
 import io.harness.delegate.service.core.util.K8SResourceHelper;
 import io.harness.delegate.service.handlermapping.context.Context;
 import io.harness.delegate.service.runners.itfc.Runner;
-import io.harness.delegate.service.secret.DecryptedSecrets;
-import io.harness.encryption.Scope;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.product.ci.engine.proto.ExecuteStep;
 import io.harness.product.ci.engine.proto.ExecuteStepRequest;
 import io.harness.product.ci.engine.proto.LiteEngineGrpc;
 import io.harness.product.ci.engine.proto.UnitStep;
-import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.TokenUtils;
 
 import com.google.inject.Inject;
@@ -84,7 +81,7 @@ public class K8SLiteRunner implements Runner {
 
   @Override
   public void init(
-      final String infraId, final InputData infra, final DecryptedSecrets decrypted, final Context context) {
+      final String infraId, final InputData infra, final Map<String, char[]> decrypted, final Context context) {
     log.info("Setting up pod spec");
 
     try {
@@ -156,7 +153,7 @@ public class K8SLiteRunner implements Runner {
 
   @Override
   public void execute(
-      final String taskGroupId, final InputData tasks, DecryptedSecrets decrypted, final Context context) {
+      final String taskGroupId, final InputData tasks, Map<String, char[]> decrypted, final Context context) {
     ExecuteStep executeStep = ExecuteStep.newBuilder()
                                   .setTaskParameters(tasks.getBinaryData())
                                   .addAllExecuteCommand(List.of("./start.sh"))
@@ -246,12 +243,9 @@ public class K8SLiteRunner implements Runner {
 
   @NonNull
   private Stream<V1Secret> createTaskSecrets(
-      final String infraId, final K8SStep task, final DecryptedSecrets decrypted, final Context context) {
+      final String infraId, final K8SStep task, final Map<String, char[]> decrypted, final Context context) {
     return task.getInputSecretsList().stream().map(secret -> {
-      IdentifierRef ref =
-          IdentifierRefHelper.getIdentifierRef(Scope.fromString(secret.getScope().name()), secret.getSecretId(),
-              context.get(Context.ACCOUNT_ID), context.get(Context.ORG_ID), context.get(Context.PROJECT_ID), null);
-      return secretsBuilder.createSecret(infraId, task.getId(), ref, decrypted.getDecryptedValue(ref));
+      return secretsBuilder.createSecret(infraId, task.getId(), secret.getFullyQualifiedSecretId(), decrypted.get(secret.getFullyQualifiedSecretId()));
     });
   }
 
