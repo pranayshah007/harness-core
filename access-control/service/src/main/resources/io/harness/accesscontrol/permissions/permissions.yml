@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 61
+version: 62
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -1735,10 +1735,10 @@ permissions:
       - organization
       - project
   - identifier: core_inputset_view
-      name: View InputSet
-      status: ACTIVE
-      includeInAllRoles: false
-      allowedScopeLevels:
-        - account
-        - organization
-        - project
+    name: View InputSet
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project

@@ -65,7 +65,7 @@ public class InputSetResourceImpl implements Resource {
 
   @Override
   public Optional<String> getEventFrameworkEntityType() {
-    return Optional.of(EventsFrameworkMetadataConstants.PIPELINE_ENTITY);
+    return Optional.of(EventsFrameworkMetadataConstants.INPUTSET_ENTITY);
   }
 
   @Override
