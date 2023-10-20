@@ -41,8 +41,8 @@ import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
+import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
 import io.harness.pms.pipeline.service.PipelineCRUDResult;
-import io.harness.pms.pipeline.service.PipelineGetResult;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.pipeline.validation.async.beans.Action;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
@@ -150,18 +150,24 @@ public class PipelinesApiImpl implements PipelinesApi {
         GitEntityInfo.builder().branch(branch).connectorRef(connectorRef).repoName(repoName).build());
     log.info(String.format(
         "Retrieving Pipeline with identifier %s in project %s, org %s, account %s", pipeline, project, org, account));
-    Optional<PipelineEntity> pipelineEntity;
+    Optional<PipelineEntity> optionalPipelineEntity;
     PipelineGetResponseBody pipelineGetResponseBody = new PipelineGetResponseBody();
     // if validateAsync is true, then this ID wil be of the event started for the async validation process, which can be
     // queried on using another API to get the result of the async validation. If validateAsync is false, then this ID
     // is not needed and will be null
     String validationUUID;
     try {
-      PipelineGetResult pipelineGetResult = pmsPipelineService.getAndValidatePipeline(account, org, project, pipeline,
-          false, false, Boolean.TRUE.equals(loadFromFallbackBranch),
-          GitXCacheMapper.parseLoadFromCacheHeaderParam(loadFromCache), validateAsync);
-      pipelineEntity = pipelineGetResult.getPipelineEntity();
-      validationUUID = pipelineGetResult.getAsyncValidationUUID();
+      optionalPipelineEntity = pmsPipelineService.getPipeline(account, org, project, pipeline, false, false,
+          Boolean.TRUE.equals(loadFromFallbackBranch), GitXCacheMapper.parseLoadFromCacheHeaderParam(loadFromCache));
+      if (optionalPipelineEntity.isEmpty()) {
+        throw new EntityNotFoundException(
+            PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(org, project, pipeline));
+      }
+      PipelineEntity pipelineEntity = optionalPipelineEntity.get();
+      pipelineGetResponseBody = PipelinesApiUtils.getGetResponseBody(pipelineEntity);
+      validationUUID = pmsPipelineService.validatePipeline(account, org, project, pipeline,
+          Boolean.TRUE.equals(loadFromFallbackBranch), GitXCacheMapper.parseLoadFromCacheHeaderParam(loadFromCache),
+          validateAsync, pipelineEntity);
     } catch (PolicyEvaluationFailureException pe) {
       pipelineGetResponseBody.setPipelineYaml(pe.getYaml());
       pipelineGetResponseBody.setGitDetails(
@@ -178,16 +184,11 @@ public class PipelinesApiImpl implements PipelinesApi {
       pipelineGetResponseBody.setValid(false);
       return Response.status(200).entity(pipelineGetResponseBody).build();
     }
-
-    pipelineGetResponseBody = PipelinesApiUtils.getGetResponseBody(pipelineEntity.orElseThrow(
-        ()
-            -> new EntityNotFoundException(
-                String.format("Pipeline with the given ID: %s does not exist or has been deleted.", pipeline))));
     if (Boolean.TRUE.equals(templatesApplied)) {
       try {
         String templateResolvedPipelineYaml = "";
         TemplateMergeResponseDTO templateMergeResponseDTO =
-            pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.get(), BOOLEAN_FALSE_VALUE);
+            pipelineTemplateHelper.resolveTemplateRefsInPipeline(optionalPipelineEntity.get(), BOOLEAN_FALSE_VALUE);
         templateResolvedPipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
         pipelineGetResponseBody.setTemplateAppliedPipelineYaml(templateResolvedPipelineYaml);
       } catch (Exception e) {
