@@ -65,7 +65,7 @@ public class SecretsBuilder {
   }
 
   public V1Secret createSecret(
-          final String infraId, final String taskId, String fullyQualifiedSecretId, final char[] value) {
+      final String infraId, final String taskId, String fullyQualifiedSecretId, final char[] value) {
     final var secretName = K8SResourceHelper.getSecretName(taskId);
     try {
       // TODO: create secret file
