@@ -152,7 +152,7 @@ public class ErrorTrackingNotificationRuleUtils {
               scorecard.getEnvironmentIdentifier(), scorecard.getServiceIdentifier(), scorecard.getVersionIdentifier(),
               from, to);
           List<ErrorTrackingEventStatus> eventStatus = codeErrorCondition.getErrorTrackingEventStatus();
-          if (codeErrorCondition.getSavedFilterId() != null) {
+          if (savedFilter != null) {
             eventStatus = savedFilter.getStatuses()
                               .stream()
                               .map(ErrorTrackingNotificationRuleUtils::toErrorTrackingEventStatus)
