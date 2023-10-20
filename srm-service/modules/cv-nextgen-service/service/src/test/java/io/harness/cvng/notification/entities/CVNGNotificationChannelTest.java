@@ -8,20 +8,24 @@
 package io.harness.cvng.notification.entities;
 
 import static io.harness.rule.OwnerRule.KAPIL;
+import static io.harness.rule.OwnerRule.SHASHWAT_SACHAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.notification.entities.NotificationRule.CVNGEmailChannel;
 import io.harness.cvng.notification.entities.NotificationRule.CVNGMSTeamsChannel;
 import io.harness.cvng.notification.entities.NotificationRule.CVNGPagerDutyChannel;
 import io.harness.cvng.notification.entities.NotificationRule.CVNGSlackChannel;
+import io.harness.cvng.notification.entities.NotificationRule.CVNGWebhookChannel;
 import io.harness.notification.Team;
 import io.harness.notification.channeldetails.EmailChannel;
 import io.harness.notification.channeldetails.MSTeamChannel;
 import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.channeldetails.PagerDutyChannel;
 import io.harness.notification.channeldetails.SlackChannel;
+import io.harness.notification.channeldetails.WebhookChannel;
 import io.harness.rule.Owner;
 
 import java.util.ArrayList;
@@ -66,6 +70,27 @@ public class CVNGNotificationChannelTest {
 
     cvngSlackChannel.setUserGroups(null);
     notificationChannel = cvngSlackChannel.toNotificationChannel(
+        accountIdentifier, orgIdentifier, projectIdentifier, templateId, new HashMap<>());
+    assertThat(notificationChannel.getUserGroups()).isEqualTo(Collections.emptyList());
+  }
+
+  @Test
+  @Owner(developers = SHASHWAT_SACHAN)
+  @Category(UnitTests.class)
+  public void testToNotificationChannel_forWebhook() {
+    CVNGWebhookChannel cvngWebhookChannel = new CVNGWebhookChannel(userGroups, "testURL", "testToken");
+    NotificationChannel notificationChannel = cvngWebhookChannel.toNotificationChannel(
+        accountIdentifier, orgIdentifier, projectIdentifier, templateId, new HashMap<>());
+
+    assertThat(notificationChannel.getAccountId()).isEqualTo(accountIdentifier);
+    assertThat(notificationChannel.getTeam()).isEqualTo(Team.CV);
+    assertThat(notificationChannel.getTemplateId()).isEqualTo(templateId);
+    assertThat(notificationChannel.getUserGroups()).isNotEqualTo(null);
+    assertThat(((WebhookChannel) notificationChannel).getWebhookUrls()).isEqualTo(Arrays.asList("testURL"));
+    assertThat(((WebhookChannel) notificationChannel).getHeaders()).isNotEmpty();
+    assertThat(((WebhookChannel) notificationChannel).getHeaders()).contains(entry("Authorization", "testToken"));
+    cvngWebhookChannel.setUserGroups(null);
+    notificationChannel = cvngWebhookChannel.toNotificationChannel(
         accountIdentifier, orgIdentifier, projectIdentifier, templateId, new HashMap<>());
     assertThat(notificationChannel.getUserGroups()).isEqualTo(Collections.emptyList());
   }

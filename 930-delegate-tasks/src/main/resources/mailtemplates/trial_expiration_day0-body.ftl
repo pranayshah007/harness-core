@@ -38,7 +38,7 @@
                               <p style="font-size:24px;color:#77787b;line-height:30px;font-weight:normal;margin-left: 12px;">
                                 Hi ${(name)},
                                 <br><br> Your Harness trial has expired. To continue using Harness free forever you can switch to <a href="https://app.harness.io">Community Edition</a>
-                                <br><br> If you don&#39;t convert your account to Community Edition, it will be permanently deleted in 90 days.  We will also remove any Harness delegates from your infrastructure in the coming days.
+                                <br><br> If you don&#39;t convert your account to Community Edition, it will be permanently deleted in 60 days.  We will also remove any Harness delegates from your infrastructure in the coming days.
                                 <br> <br>
 
                                                                 Account Name: ${(accountName)} <br>

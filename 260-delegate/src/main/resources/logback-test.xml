@@ -48,7 +48,7 @@
         </then>
     </if>
 
-    <logger name="software.wings" level="INFO"/>
+    <logger name="software.wings" level="${LOGGING_LEVEL:-INFO}"/>
     <logger name="org.zeroturnaround" level="WARN"/>
     <logger name="io.harness.pcf" level="${LOGGING_LEVEL_PCF:-INFO}"/>
     <logger name="io.harness.event.client.impl" level="${LOGGING_LEVEL_EVENT_CLIENT:-INFO}"/>
@@ -58,7 +58,7 @@
     // todo: Temporarily added till we replace fabric8 dependency
     <logger name="io.fabric8.kubernetes.client.Config" level="CRITICAL"/>
     <logger name="org.yaml.snakeyaml.introspector" level="ERROR"/>
-    <root level="INFO">
+    <root level="${LOGGING_LEVEL:-INFO}">
         <appender-ref ref="file"/>
         <appender-ref ref="REST2"/>
         <appender-ref ref="stdout"/>

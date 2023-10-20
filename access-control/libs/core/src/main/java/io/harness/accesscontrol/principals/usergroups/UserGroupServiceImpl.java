@@ -14,6 +14,7 @@ import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.principals.usergroups.persistence.UserGroupDao;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentService;
+import io.harness.accesscontrol.scopes.ScopeSelector;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
@@ -27,6 +28,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
@@ -68,6 +70,16 @@ public class UserGroupServiceImpl implements UserGroupService {
   @Override
   public List<UserGroup> list(String scopeIdentifier, String userIdentifier) {
     return userGroupDao.list(scopeIdentifier, userIdentifier);
+  }
+
+  @Override
+  public List<UserGroup> listUserGroupForUserInAccessibleScopes(
+      String scopeIdentifier, String userIdentifier, Set<ScopeSelector> scopeFilter) {
+    if (scopeFilter.isEmpty()) {
+      return list(scopeIdentifier, userIdentifier);
+    }
+
+    return userGroupDao.list(scopeIdentifier, userIdentifier, scopeFilter);
   }
 
   @Override

@@ -9,6 +9,7 @@ java_library(
     name = "module",
     visibility = ["//visibility:public"],
     exports = [
+        "//930-oidc-core/src/main/java/io/harness/oidc/accesstoken:module",
         "//930-oidc-core/src/main/java/io/harness/oidc/dto:module",
         "//930-oidc-core/src/main/java/io/harness/oidc/entities:module",
         "//930-oidc-core/src/main/java/io/harness/oidc/gcp:module",

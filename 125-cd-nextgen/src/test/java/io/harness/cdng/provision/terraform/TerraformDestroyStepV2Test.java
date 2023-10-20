@@ -455,8 +455,12 @@ public class TerraformDestroyStepV2Test extends CategoryTest {
     doReturn(TaskChainResponse.builder().chainEnd(true).taskRequest(TaskRequest.newBuilder().build()).build())
         .when(terraformStepHelper)
         .executeTerraformTask(any(), any(), any(), any(), any(), any());
-    TerraformInheritOutput inheritOutput =
-        TerraformInheritOutput.builder().backendConfig("back-content").workspace("w1").planName("plan").build();
+    TerraformInheritOutput inheritOutput = TerraformInheritOutput.builder()
+                                               .backendConfig("back-content")
+                                               .workspace("w1")
+                                               .planName("plan")
+                                               .skipStateStorage(true)
+                                               .build();
     doReturn(inheritOutput).when(terraformStepHelper).getSavedInheritOutput(any(), any(), any());
 
     ArgumentCaptor<TerraformTaskNGParameters> tfTaskNGParametersArgumentCaptor =
@@ -475,6 +479,7 @@ public class TerraformDestroyStepV2Test extends CategoryTest {
 
     assertThat(taskParameters.getTaskType()).isEqualTo(TFTaskType.DESTROY);
     assertThat(taskParameters.getTerraformCommandFlags().get("DESTROY")).isEqualTo("-lock-timeout=0s");
+    assertThat(taskParameters.isSkipStateStorage()).isTrue();
 
     TerraformPassThroughData terraformPassThroughData = tfPassThroughDataArgumentCaptor.getValue();
     assertThat(terraformPassThroughData).isNotNull();
@@ -696,6 +701,9 @@ public class TerraformDestroyStepV2Test extends CategoryTest {
             .build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(destroyStepParameters).build();
     doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
+    doReturn(TerraformInheritOutput.builder().build())
+        .when(terraformStepHelper)
+        .getSavedInheritOutput(any(), any(), any());
     List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
     UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
     Map<String, String> commitIdForConfigFilesMap = new HashMap<>();
@@ -720,6 +728,85 @@ public class TerraformDestroyStepV2Test extends CategoryTest {
     verify(terraformStepHelper).addTerraformRevisionOutcomeIfRequired(any(), any());
   }
 
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testFinalizeExecutionWithSecurityContextSkipStateStorageWhenInheritFormPlan() throws Exception {
+    Ambiance ambiance = getAmbiance();
+    TerraformDestroyStepParameters destroyStepParameters =
+        TerraformDestroyStepParameters.infoBuilder()
+            .provisionerIdentifier(ParameterField.createValueField("Id"))
+            .configuration(TerraformStepConfigurationParameters.builder()
+                               .type(TerraformStepConfigurationType.INHERIT_FROM_PLAN)
+                               .build())
+            .build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(destroyStepParameters).build();
+    doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
+    doReturn(TerraformInheritOutput.builder().skipStateStorage(true).build())
+        .when(terraformStepHelper)
+        .getSavedInheritOutput(any(), any(), any());
+    List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
+    Map<String, String> commitIdForConfigFilesMap = new HashMap<>();
+    commitIdForConfigFilesMap.put(TF_CONFIG_FILES, "commitId_1");
+    commitIdForConfigFilesMap.put(TF_BACKEND_CONFIG_FILE, "commitId_2");
+    TerraformTaskNGResponse terraformTaskNGResponse = TerraformTaskNGResponse.builder()
+                                                          .commitIdForConfigFilesMap(commitIdForConfigFilesMap)
+                                                          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                          .unitProgressData(unitProgressData)
+                                                          .build();
+
+    TerraformPassThroughData terraformPassThroughData =
+        TerraformPassThroughData.builder().hasGitFiles(false).hasS3Files(false).build();
+
+    StepResponse stepResponse = terraformDestroyStepV2.finalizeExecutionWithSecurityContext(
+        ambiance, stepElementParameters, terraformPassThroughData, () -> terraformTaskNGResponse);
+
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getStepOutcomes()).isNotNull();
+    verify(terraformConfigDAL, times(1)).clearTerraformConfig(any(), any());
+    verify(terraformStepHelper, times(0)).updateParentEntityIdAndVersion(any(), any());
+    verify(terraformStepHelper).addTerraformRevisionOutcomeIfRequired(any(), any());
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testFinalizeExecutionWithSecurityContextSkipStateStorageWhenInheritFormAapply() throws Exception {
+    Ambiance ambiance = getAmbiance();
+    TerraformDestroyStepParameters destroyStepParameters =
+        TerraformDestroyStepParameters.infoBuilder()
+            .provisionerIdentifier(ParameterField.createValueField("Id"))
+            .configuration(TerraformStepConfigurationParameters.builder().type(INHERIT_FROM_APPLY).build())
+            .build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(destroyStepParameters).build();
+    doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
+    doReturn(TerraformConfig.builder().skipStateStorage(true).build())
+        .when(terraformStepHelper)
+        .getLastSuccessfulApplyConfig(any(), any());
+    List<UnitProgress> unitProgresses = Collections.singletonList(UnitProgress.newBuilder().build());
+    UnitProgressData unitProgressData = UnitProgressData.builder().unitProgresses(unitProgresses).build();
+    Map<String, String> commitIdForConfigFilesMap = new HashMap<>();
+    commitIdForConfigFilesMap.put(TF_CONFIG_FILES, "commitId_1");
+    commitIdForConfigFilesMap.put(TF_BACKEND_CONFIG_FILE, "commitId_2");
+    TerraformTaskNGResponse terraformTaskNGResponse = TerraformTaskNGResponse.builder()
+                                                          .commitIdForConfigFilesMap(commitIdForConfigFilesMap)
+                                                          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                          .unitProgressData(unitProgressData)
+                                                          .build();
+
+    TerraformPassThroughData terraformPassThroughData =
+        TerraformPassThroughData.builder().hasGitFiles(false).hasS3Files(false).build();
+
+    StepResponse stepResponse = terraformDestroyStepV2.finalizeExecutionWithSecurityContext(
+        ambiance, stepElementParameters, terraformPassThroughData, () -> terraformTaskNGResponse);
+
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getStepOutcomes()).isNotNull();
+    verify(terraformConfigDAL, times(1)).clearTerraformConfig(any(), any());
+    verify(terraformStepHelper, times(0)).updateParentEntityIdAndVersion(any(), any());
+    verify(terraformStepHelper).addTerraformRevisionOutcomeIfRequired(any(), any());
+  }
   @Test
   @Owner(developers = VLICA)
   @Category(UnitTests.class)
@@ -848,6 +935,9 @@ public class TerraformDestroyStepV2Test extends CategoryTest {
             .build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(destroyStepParameters).build();
     doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
+    doReturn(TerraformInheritOutput.builder().build())
+        .when(terraformStepHelper)
+        .getSavedInheritOutput(any(), any(), any());
 
     List<UnitProgress> unitProgressesPlan = new ArrayList<>();
     UnitProgress planUP = UnitProgress.newBuilder().setUnitName("Plan").setStatus(UnitStatus.SUCCESS).build();

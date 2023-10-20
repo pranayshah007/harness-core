@@ -75,4 +75,5 @@ public class TerraformConfig implements PersistentEntity, CreatedAtAware {
   boolean useConnectorCredentials;
   boolean isTerraformCloudCli;
   TerraformProviderCredentialConfig providerCredentialConfig;
+  boolean skipStateStorage;
 }

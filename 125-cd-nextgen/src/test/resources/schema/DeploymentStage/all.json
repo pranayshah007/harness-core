@@ -23429,6 +23429,16 @@
             ]
           }
         },
+        "skipStateStorage": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
         "targets": {
           "oneOf": [
             {
@@ -23462,6 +23472,16 @@
         },
         "encryptOutput": {
           "$ref": "#/definitions/TerraformEncryptOutput"
+        },
+        "skipStateStorage": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
         },
         "spec": {
           "$ref": "#/definitions/TerraformCloudCliExecutionData"
@@ -24284,6 +24304,16 @@
             }
           ]
         },
+        "skipStateStorage": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
         "targets": {
           "oneOf": [
             {
@@ -24468,6 +24498,16 @@
           "$ref": "#/definitions/TerraformEncryptOutput"
         },
         "skipRefreshCommand": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "skipStateStorage": {
           "oneOf": [
             {
               "type": "boolean"

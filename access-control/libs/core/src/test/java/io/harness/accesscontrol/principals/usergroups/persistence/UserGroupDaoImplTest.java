@@ -7,8 +7,10 @@
 
 package io.harness.accesscontrol.principals.usergroups.persistence;
 
+import static io.harness.accesscontrol.scopes.harness.ScopeMapper.fromParams;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.KARAN;
+import static io.harness.rule.OwnerRule.MEENAKSHI;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -20,6 +22,9 @@ import static org.mockito.Mockito.when;
 
 import io.harness.accesscontrol.AccessControlCoreTestBase;
 import io.harness.accesscontrol.principals.usergroups.UserGroup;
+import io.harness.accesscontrol.scopes.ScopeFilterType;
+import io.harness.accesscontrol.scopes.ScopeSelector;
+import io.harness.accesscontrol.scopes.harness.HarnessScopeParams;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.beans.PageRequest;
@@ -27,17 +32,25 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.rule.Owner;
 import io.harness.utils.PageUtils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Pattern;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 
 @OwnedBy(PL)
 public class UserGroupDaoImplTest extends AccessControlCoreTestBase {
   private UserGroupRepository userGroupRepository;
   private UserGroupDao userGroupDao;
+  private static final String ACCOUNT_IDENTIFIER = randomAlphabetic(10);
 
   @Before
   public void setup() {
@@ -88,6 +101,65 @@ public class UserGroupDaoImplTest extends AccessControlCoreTestBase {
     when(userGroupRepository.findByScopeIdentifier(scopeIdentifier, pageable)).thenReturn(Page.empty());
     assertEquals(pageResponse, userGroupDao.list(pageRequest, scopeIdentifier));
     verify(userGroupRepository, times(1)).findByScopeIdentifier(scopeIdentifier, pageable);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testListWithScopeSelector_allAccountScope_includingChild() {
+    String scopeIdentifier = "/ACCOUNT/" + ACCOUNT_IDENTIFIER;
+    String user = randomAlphabetic(10);
+    Set<ScopeSelector> scopeSelectors = Set.of(ScopeSelector.builder()
+                                                   .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                                   .filter(ScopeFilterType.INCLUDING_CHILD_SCOPES)
+                                                   .build());
+    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    when(userGroupRepository.find(criteriaArgumentCaptor.capture()))
+        .thenReturn(List.of(UserGroupDBO.builder().build()));
+    userGroupDao.list(scopeIdentifier, user, scopeSelectors);
+    verify(userGroupRepository, times(1)).find(criteriaArgumentCaptor.capture());
+    Criteria actualCriteria = criteriaArgumentCaptor.getValue();
+    Criteria expectedCriteria = new Criteria();
+    List<Criteria> scopeCriterion = new ArrayList<>();
+    String scopeId = fromParams(HarnessScopeParams.builder()
+                                    .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                    .orgIdentifier(null)
+                                    .projectIdentifier(null)
+                                    .build())
+                         .toString();
+    Pattern startsWithScope = Pattern.compile("^".concat(scopeId));
+    scopeCriterion.add(Criteria.where("scopeIdentifier").regex(startsWithScope));
+    expectedCriteria.orOperator(scopeCriterion.toArray(new Criteria[0])).and("users").in(user);
+    assertEquals(new Query(actualCriteria).toString(), new Query(expectedCriteria).toString());
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testListWithScopeSelector_allAccountScope_excludingChildScope() {
+    String scopeIdentifier = "/ACCOUNT/" + ACCOUNT_IDENTIFIER;
+    String user = randomAlphabetic(10);
+    Set<ScopeSelector> scopeSelectors = Set.of(ScopeSelector.builder()
+                                                   .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                                   .filter(ScopeFilterType.EXCLUDING_CHILD_SCOPES)
+                                                   .build());
+    ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    when(userGroupRepository.find(criteriaArgumentCaptor.capture()))
+        .thenReturn(List.of(UserGroupDBO.builder().build()));
+    userGroupDao.list(scopeIdentifier, user, scopeSelectors);
+    verify(userGroupRepository, times(1)).find(criteriaArgumentCaptor.capture());
+    Criteria actualCriteria = criteriaArgumentCaptor.getValue();
+    Criteria expectedCriteria = new Criteria();
+    List<Criteria> scopeCriterion = new ArrayList<>();
+    String scopeId = fromParams(HarnessScopeParams.builder()
+                                    .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                    .orgIdentifier(null)
+                                    .projectIdentifier(null)
+                                    .build())
+                         .toString();
+    scopeCriterion.add(Criteria.where("scopeIdentifier").is(scopeId));
+    expectedCriteria.orOperator(scopeCriterion.toArray(new Criteria[0])).and("users").in(user);
+    assertEquals(new Query(actualCriteria).toString(), new Query(expectedCriteria).toString());
   }
 
   @Test

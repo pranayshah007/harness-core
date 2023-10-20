@@ -15,7 +15,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
-import io.harness.ssca.beans.Activity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import dev.morphia.annotations.Entity;
@@ -66,7 +65,8 @@ public class ArtifactEntity implements PersistentEntity, UpdatedAtAware {
   boolean invalid;
   @Setter @NonFinal long lastUpdatedAt;
   @Setter @NonFinal long componentsCount;
-  Activity activity;
+  @Setter @NonFinal long prodEnvCount;
+  @Setter @NonFinal long nonProdEnvCount;
 
   @Value
   @Builder

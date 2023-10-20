@@ -50,7 +50,7 @@ public class OrchestrationLogPublisher implements PlanStatusUpdateObserver, Step
 
   @Override
   public void onPlanStatusUpdate(Ambiance ambiance) {
-    createAndHandleEventLog(ambiance.getPlanExecutionId(), AmbianceUtils.obtainCurrentRuntimeId(ambiance),
+    createAndHandleEventLogForPlan(ambiance.getPlanExecutionId(), AmbianceUtils.obtainCurrentRuntimeId(ambiance),
         OrchestrationEventType.PLAN_EXECUTION_STATUS_UPDATE);
   }
 
@@ -70,6 +70,19 @@ public class OrchestrationLogPublisher implements PlanStatusUpdateObserver, Step
             .validUntil(Date.from(OffsetDateTime.now().plus(Duration.ofDays(14)).toInstant()))
             .build());
     batchAndSendLogEventIfRequired(planExecutionId);
+  }
+
+  private void createAndHandleEventLogForPlan(
+      String planExecutionId, String nodeExecutionId, OrchestrationEventType eventType) {
+    orchestrationEventLogRepository.save(
+        OrchestrationEventLog.builder()
+            .createdAt(System.currentTimeMillis())
+            .nodeExecutionId(nodeExecutionId)
+            .orchestrationEventType(eventType)
+            .planExecutionId(planExecutionId)
+            .validUntil(Date.from(OffsetDateTime.now().plus(Duration.ofDays(14)).toInstant()))
+            .build());
+    sendLogEvent(planExecutionId);
   }
 
   private void batchAndSendLogEventIfRequired(String planExecutionId) {

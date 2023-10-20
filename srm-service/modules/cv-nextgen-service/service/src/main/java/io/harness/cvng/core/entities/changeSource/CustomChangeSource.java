@@ -11,18 +11,27 @@ import dev.morphia.query.UpdateOperations;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 
 @Data
 @SuperBuilder
 @NoArgsConstructor
+@FieldNameConstants(innerTypeName = "CustomChangeSourceKeys")
 @EqualsAndHashCode(callSuper = true)
 public class CustomChangeSource extends ChangeSource {
+  String authorizationToken;
   public static class UpdatableCustomChangeSourceEntity
       extends UpdatableChangeSourceEntity<CustomChangeSource, CustomChangeSource> {
     @Override
     public void setUpdateOperations(UpdateOperations<CustomChangeSource> updateOperations, CustomChangeSource dto) {
       setCommonOperations(updateOperations, dto);
+
+      if (dto.getAuthorizationToken() == null) {
+        updateOperations.unset(CustomChangeSourceKeys.authorizationToken);
+      } else {
+        updateOperations.set(CustomChangeSourceKeys.authorizationToken, dto.getAuthorizationToken());
+      }
     }
   }
 }

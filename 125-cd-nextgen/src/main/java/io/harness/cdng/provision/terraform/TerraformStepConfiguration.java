@@ -44,13 +44,16 @@ public class TerraformStepConfiguration {
   @VariableExpression(skipVariableExpression = true) List<TerraformCliOptionFlag> commandFlags;
   TerraformEncryptOutput encryptOutput;
 
+  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) @YamlSchemaTypes({string}) ParameterField<Boolean> skipStateStorage;
+
   public TerraformStepConfigurationParameters toStepParameters() {
     TerraformStepConfigurationParametersBuilder builder = TerraformStepConfigurationParameters.builder();
     validateParams();
-    builder.type(terraformStepConfigurationType);
-    builder.skipTerraformRefresh(skipRefreshCommand);
-    builder.commandFlags(commandFlags);
-    builder.encryptOutput(encryptOutput);
+    builder.type(terraformStepConfigurationType)
+        .skipTerraformRefresh(skipRefreshCommand)
+        .commandFlags(commandFlags)
+        .encryptOutput(encryptOutput)
+        .skipStateStorage(skipStateStorage);
 
     if (terraformExecutionData != null) {
       builder.spec(terraformExecutionData.toStepParameters());

@@ -2230,4 +2230,19 @@ public class BuilderFactory {
                          .webhookUrl("webhookUrl")
                          .build());
   }
+
+  public CustomChangeWebhookPayloadBuilder getCustomChangeWebhookPayloadBuilderWithChannelId() {
+    return CustomChangeWebhookPayload.builder()
+        .endTime(1000l)
+        .startTime(1000l)
+        .user("testUser")
+        .eventDetail(CustomChangeWebhookEventDetail.builder()
+                         .changeEventDetailsLink("testLink")
+                         .externalLinkToEntity("externalLink")
+                         .description("desc")
+                         .name("name")
+                         .webhookUrl("webhookUrl")
+                         .channelId("channelId")
+                         .build());
+  }
 }

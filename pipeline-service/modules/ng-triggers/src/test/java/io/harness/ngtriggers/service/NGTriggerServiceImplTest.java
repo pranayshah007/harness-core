@@ -290,6 +290,22 @@ public class NGTriggerServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testInputSetRefExpression() {
+    TriggerDetails triggerDetails =
+        TriggerDetails.builder()
+            .ngTriggerEntity(NGTriggerEntity.builder().identifier("identifier").name("name").build())
+            .ngTriggerConfigV2(
+                NGTriggerConfigV2.builder().inputSetRefs(Collections.singletonList("<+trigger.payload.input>")).build())
+            .build();
+
+    assertThatThrownBy(() -> ngTriggerServiceImpl.validateTriggerConfig(triggerDetails))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage("InputSetRef cannot be an expression");
+  }
+
+  @Test
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testEmptyIdentifierTriggerFailure() {

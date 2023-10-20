@@ -118,6 +118,8 @@ public class ChangeEventServiceImpl implements ChangeEventService {
 
   @Inject Clock clock;
 
+  private String SLACK_WEBHOOK_URL = "https://slack.com/api/chat.postMessage";
+
   @Override
   public Boolean register(ChangeEventDTO changeEventDTO) {
     if (isEmpty(changeEventDTO.getMonitoredServiceIdentifier())) {
@@ -168,7 +170,7 @@ public class ChangeEventServiceImpl implements ChangeEventService {
   }
 
   @Override
-  public Boolean registerWithHealthReport(ChangeEventDTO changeEventDTO, String webhookUrl) {
+  public Boolean registerWithHealthReport(ChangeEventDTO changeEventDTO, String webhookUrl, String authorizationToken) {
     register(changeEventDTO);
 
     ProjectParams projectParams = ProjectParams.builder()
@@ -187,12 +189,24 @@ public class ChangeEventServiceImpl implements ChangeEventService {
         MonitoredServiceParams.builderWithProjectParams(projectParams)
             .monitoredServiceIdentifier(changeEventDTO.getMonitoredServiceIdentifier())
             .build());
-    Map<String, Object> entityDetails = Map.of(ENTITY_IDENTIFIER, changeEventDTO.getMonitoredServiceIdentifier(),
-        ENTITY_NAME, monitoredService.getName(), SERVICE_IDENTIFIER, monitoredService.getServiceIdentifier(),
-        MS_HEALTH_REPORT, msHealthReport);
-    msHealthReportService.sendReportNotification(projectParams, entityDetails, NotificationRuleType.FIRE_HYDRANT,
-        FireHydrantReportNotificationCondition.builder().build(),
-        new NotificationRule.CVNGSlackChannel(null, webhookUrl), changeEventDTO.getMonitoredServiceIdentifier());
+
+    String channelId = ((CustomChangeEventMetadata) changeEventDTO.getMetadata()).getCustomChangeEvent().getChannelId();
+
+    Map<String, Object> entityDetails = new HashMap(Map.of(ENTITY_IDENTIFIER,
+        changeEventDTO.getMonitoredServiceIdentifier(), ENTITY_NAME, monitoredService.getName(), SERVICE_IDENTIFIER,
+        monitoredService.getServiceIdentifier(), MS_HEALTH_REPORT, msHealthReport));
+
+    if (isNotEmpty(channelId) && isNotEmpty(authorizationToken)) {
+      entityDetails.put("CHANNEL_ID", channelId);
+      msHealthReportService.sendReportNotification(projectParams, entityDetails, NotificationRuleType.FIRE_HYDRANT,
+          FireHydrantReportNotificationCondition.builder().build(),
+          new NotificationRule.CVNGWebhookChannel(null, SLACK_WEBHOOK_URL, authorizationToken),
+          changeEventDTO.getMonitoredServiceIdentifier());
+    } else {
+      msHealthReportService.sendReportNotification(projectParams, entityDetails, NotificationRuleType.FIRE_HYDRANT,
+          FireHydrantReportNotificationCondition.builder().build(),
+          new NotificationRule.CVNGSlackChannel(null, webhookUrl), changeEventDTO.getMonitoredServiceIdentifier());
+    }
     return true;
   }
 

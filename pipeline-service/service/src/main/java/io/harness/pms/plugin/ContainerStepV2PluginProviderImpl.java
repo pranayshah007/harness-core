@@ -6,6 +6,7 @@
  */
 
 package io.harness.pms.plugin;
+
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -54,6 +55,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @CodePulse(module = ProductModule.CDS, unitCoverageRequired = true, components = {HarnessModuleComponent.CDS_ECS})
 @Slf4j
@@ -95,14 +97,14 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
               .setUsedPortDetails(PortDetails.newBuilder().addAllUsedPorts(usedPorts).build())
               .setAmbiance(ambiance)
               .build();
-      Map<String, StepInfo> stepInfoUuidToStepInfo =
-          entry.getValue().keySet().stream().collect(Collectors.toMap(StepInfo::getStepUuid, stepInfo -> stepInfo));
+      Map<String, StepInfo> requestIdToStepInfo = entry.getValue().keySet().stream().collect(
+          Collectors.toMap(this::getRequestIdForPluginCreation, stepInfo -> stepInfo));
       PluginCreationBatchResponse pluginCreationBatchResponse =
           pluginInfoProviderServiceBlockingStubMap.get(ModuleType.fromString(entry.getKey()))
               .getPluginInfosList(pluginCreationBatchRequest);
       for (Map.Entry<String, PluginCreationResponseList> response :
           pluginCreationBatchResponse.getRequestIdToResponseMap().entrySet()) {
-        stepInfoPluginCreationResponseListMap.put(stepInfoUuidToStepInfo.get(response.getKey()),
+        stepInfoPluginCreationResponseListMap.put(requestIdToStepInfo.get(response.getKey()),
             postProcessResponseList(initContainerV2StepInfo, response.getValue(), usedPorts));
       }
     }
@@ -134,7 +136,7 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
                 .setAccountId(AmbianceUtils.getAccountId(ambiance))
                 .setOsType(os.getYamlName())
                 .setUsedPortDetails(PortDetails.newBuilder().addAllUsedPorts(usedPorts).build())
-                .setRequestId(stepInfo.getStepUuid())
+                .setRequestId(getRequestIdForPluginCreation(stepInfo))
                 .build());
       }
       map.put(entry.getKey(), stepInfoToPluginCreationRequest);
@@ -261,5 +263,13 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
     }
 
     return updatedResponseList.build();
+  }
+
+  private String getRequestIdForPluginCreation(StepInfo stepInfo) {
+    String requestId = stepInfo.getStepUuid();
+    if (StringUtils.isNotBlank(stepInfo.getStepIdentifier())) {
+      requestId += stepInfo.getStepIdentifier();
+    }
+    return requestId;
   }
 }

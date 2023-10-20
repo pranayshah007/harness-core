@@ -34,6 +34,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -138,10 +139,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
 @OwnedBy(CDP)
 public class TerraformBaseHelperImplTest extends CategoryTest {
-  @InjectMocks @Inject TerraformBaseHelperImpl terraformBaseHelper;
+  @InjectMocks @Inject @Spy TerraformBaseHelperImpl terraformBaseHelper;
   @Mock private LogCallback logCallback;
   @Mock private PlanJsonLogOutputStream planJsonLogOutputStream;
   @Mock private PlanLogOutputStream planLogOutputStream;
@@ -653,11 +655,76 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
         .downloadByFileId(any(), any(), any());
 
     terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
-        artifactoryStoreDelegateConfig, "accountId", "workspace", "stateFileId", logCallback, "baseDir");
+        artifactoryStoreDelegateConfig, "accountId", "workspace", "stateFileId", logCallback, "baseDir", false);
     File configFile = new File("baseDir/script-repository/repoName/localresource.tfvar");
     File stateFile = new File("baseDir/script-repository/repoName/terraform.tfstate.d/workspace/terraform.tfstate");
     assertThat(configFile.exists()).isTrue();
     assertThat(stateFile.exists()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testFetchConfigFileAndPrepareScriptDirSkipStateStorage() throws IOException {
+    ClassLoader classLoader = TerraformBaseHelperImplTest.class.getClassLoader();
+
+    EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().fieldName("fieldName").build();
+    List<EncryptedDataDetail> encryptedDataDetails = Collections.singletonList(encryptedDataDetail);
+    ArtifactoryUsernamePasswordAuthDTO credentials = ArtifactoryUsernamePasswordAuthDTO.builder().build();
+    ArtifactoryConnectorDTO artifactoryConnectorDTO =
+        ArtifactoryConnectorDTO.builder()
+            .auth(ArtifactoryAuthenticationDTO.builder().credentials(credentials).build())
+            .build();
+    ArtifactoryStoreDelegateConfig artifactoryStoreDelegateConfig =
+        ArtifactoryStoreDelegateConfig.builder()
+            .artifacts(Arrays.asList("artifactPath"))
+            .repositoryName("repoName")
+            .encryptedDataDetails(encryptedDataDetails)
+            .connectorDTO(ConnectorInfoDTO.builder().connectorConfig(artifactoryConnectorDTO).build())
+            .build();
+    ArtifactoryConfigRequest artifactoryConfigRequest = ArtifactoryConfigRequest.builder().build();
+    doReturn(null).when(secretDecryptionService).decrypt(credentials, encryptedDataDetails);
+    doReturn(artifactoryConfigRequest).when(artifactoryRequestMapper).toArtifactoryRequest(artifactoryConnectorDTO);
+    doReturn(classLoader.getResourceAsStream("terraform/localresource.tfvar.zip"))
+        .when(artifactoryNgService)
+        .downloadArtifacts(eq(artifactoryConfigRequest), any(), any(), eq("artifactPath"), eq("artifactName"));
+
+    terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
+        artifactoryStoreDelegateConfig, "accountId", "workspace", "stateFileId", logCallback, "baseDir", true);
+    File configFile = new File("baseDir/script-repository/repoName/localresource.tfvar");
+    verify(delegateFileManagerBase, times(0)).downloadByFileId(any(), any(), any());
+    assertThat(configFile.exists()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testFetchS3ConfigFileAndPrepareScriptDirSkipStateStorage() throws IOException {
+    S3StoreTFDelegateConfig s3StoreTFDelegateConfig =
+        S3StoreTFDelegateConfig.builder().paths(Collections.singletonList("testPath")).build();
+    TerraformTaskNGParameters terraformTaskNGParameters = TerraformTaskNGParameters.builder()
+                                                              .accountId("accountId")
+                                                              .taskType(TFTaskType.APPLY)
+                                                              .entityId("entityId")
+                                                              .build();
+    doNothing().when(terraformBaseHelper).downloadS3Objects(any(), any(), any(), any());
+
+    terraformBaseHelper.fetchS3ConfigFilesAndPrepareScriptDir(
+        s3StoreTFDelegateConfig, terraformTaskNGParameters, "baseDir", new HashMap<>(), logCallback, true);
+    verify(delegateFileManagerBase, times(0)).downloadByFileId(any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testFetchGitConfigFileAndPrepareScriptDirSkipStateStorage() throws IOException {
+    GitBaseRequest gitBaseRequest = GitBaseRequest.builder().build();
+    doNothing().when(terraformBaseHelper).fetchConfigFileAndCloneLocally(any(), any());
+    doNothing().when(terraformBaseHelper).copyConfigFilestoWorkingDirectory(any(), any(), any(), any());
+
+    terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
+        gitBaseRequest, "accountId", "workspace", "stateFileId", logCallback, "scriptPath", "baseDir", true);
+    verify(delegateFileManagerBase, times(0)).downloadByFileId(any(), any(), any());
   }
 
   @Test
@@ -1086,7 +1153,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
         .getObjectContent();
 
     terraformBaseHelper.fetchS3ConfigFilesAndPrepareScriptDir(
-        s3StoreTFDelegateConfig, taskNGParameters, "baseDir", keyVersionMap, logCallback);
+        s3StoreTFDelegateConfig, taskNGParameters, "baseDir", keyVersionMap, logCallback, false);
 
     verify(awsApiHelperService, times(1)).isVersioningEnabledForBucket(any(), any(), any());
     verify(awsApiHelperService, times(1))
@@ -1125,7 +1192,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
         .getObjectContent();
 
     terraformBaseHelper.fetchS3ConfigFilesAndPrepareScriptDir(
-        s3StoreTFDelegateConfig, taskNGParameters, "baseDir", keyVersionMap, logCallback);
+        s3StoreTFDelegateConfig, taskNGParameters, "baseDir", keyVersionMap, logCallback, false);
 
     verify(awsApiHelperService, times(1)).isVersioningEnabledForBucket(any(), any(), any());
     verify(awsApiHelperService, times(1)).getObjectFromS3(any(), eq("region"), eq("bucket"), eq("terraform/file1.tf"));

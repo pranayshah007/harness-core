@@ -18,7 +18,7 @@ global:
 minio:
   fullnameOverride: "minio"
   mode: standalone
-  defaultBuckets: "logs, sbom_store, policy_store"
+  defaultBuckets: "logs, sbom-store, policy-store"
   image:
     tag: 2023.7.18-debian-11-r2
   persistence:

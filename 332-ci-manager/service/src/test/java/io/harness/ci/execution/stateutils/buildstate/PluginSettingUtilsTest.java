@@ -1206,6 +1206,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_REPO", "image");
     expected.put("PLUGIN_TYPE", "verify");
     expected.put("STEP_EXECUTION_ID", null);
+    expected.put("PLUGIN_REGISTRY_TYPE", "docker");
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
         slsaVerificationStepInfo, "identifier", 100, ambiance, Type.K8, false, true);

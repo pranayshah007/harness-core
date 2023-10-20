@@ -9,6 +9,7 @@ FROM us.gcr.io/platform-205701/harness/ubi8/java11:11.0.19_7 as base
 
 # Add the capsule JAR and config.yml
 
+COPY --chown=65534:65534 redisson-jcache.yaml /opt/harness/
 COPY --chown=65534:65534 protocol.info /opt/harness/
 COPY --chown=65534:65534 default.jfc /opt/harness/
 COPY --chown=65534:65534 profile.jfc /opt/harness/

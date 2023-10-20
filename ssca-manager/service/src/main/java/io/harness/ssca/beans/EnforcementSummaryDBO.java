@@ -14,10 +14,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.FieldNameConstants;
 
 @Getter
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@FieldNameConstants(innerTypeName = "EnforcementSummaryDBOKeys")
 @AllArgsConstructor
 public class EnforcementSummaryDBO {
   EnforcementSummaryEntity document;
