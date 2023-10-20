@@ -19,7 +19,7 @@ public class ErrorTrackingHitSummary {
   String versionId;
   Integer hitId;
   Integer requestId;
-  EventType eventType;
+  OveropsEventType eventType;
   String eventName;
   Date firstSeen;
   List<String> stackTrace = new ArrayList<>();
