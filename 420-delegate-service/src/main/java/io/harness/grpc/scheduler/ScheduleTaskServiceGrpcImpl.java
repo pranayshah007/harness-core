@@ -166,7 +166,6 @@ public class ScheduleTaskServiceGrpcImpl extends ScheduleTaskServiceImplBase {
   private void sendTask(final SchedulingConfig schedulingConfig, final byte[] taskData, final byte[] infraData,
       final SchedulingTaskEvent.EventType eventType, final String executionInfraRef, final String taskId,
       final List<ExecutionCapability> capabilities) {
-
     final var task =
         DelegateTask.builder()
             .uuid(taskId)
