@@ -12,7 +12,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.util.stream.Collectors.toMap;
 
 import io.harness.beans.DelegateTask;
-import io.harness.beans.DelegateTask.DelegateTaskKeys;
 import io.harness.delegate.Execution;
 import io.harness.delegate.K8sInfraSpec;
 import io.harness.delegate.LogConfig;
