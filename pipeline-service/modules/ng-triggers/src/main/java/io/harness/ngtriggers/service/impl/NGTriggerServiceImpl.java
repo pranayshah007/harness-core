@@ -922,6 +922,13 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       throw new InvalidArgumentsException("Name can not be empty");
     }
 
+    if (triggerDetails.getNgTriggerConfigV2().getInputSetRefs() != null) {
+      for (String inputSetRef : triggerDetails.getNgTriggerConfigV2().getInputSetRefs()) {
+        if (TriggerHelper.isBranchExpr(inputSetRef)) {
+          throw new InvalidArgumentsException("InputSetRef cannot be an expression");
+        }
+      }
+    }
     NGTriggerSourceV2 triggerSource = triggerDetails.getNgTriggerConfigV2().getSource();
     NGTriggerSpecV2 spec = triggerSource.getSpec();
     switch (triggerSource.getType()) {
