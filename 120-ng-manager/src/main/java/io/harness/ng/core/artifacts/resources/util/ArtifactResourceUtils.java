@@ -14,6 +14,7 @@ import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
@@ -1056,14 +1057,18 @@ public class ArtifactResourceUtils {
     }
     Map<String, String> inputVariables = NGVariablesUtils.getStringMapVariables(inputs, 0L);
 
-    for (Map.Entry<String, String> entry : inputVariables.entrySet()) {
-      resolvedFieldValueWithYamlExpressionEvaluator = getResolvedFieldValueWithYamlExpressionEvaluator(accountId,
-          orgIdentifier, projectIdentifier, pipelineIdentifier, customScriptInfo.getRuntimeInputYaml(),
-          entry.getValue(), fqnPath, gitEntityBasicInfo, serviceRef,
-          resolvedFieldValueWithYamlExpressionEvaluator != null
-              ? resolvedFieldValueWithYamlExpressionEvaluator.getYamlExpressionEvaluator()
-              : null);
-      inputVariables.put(entry.getKey(), resolvedFieldValueWithYamlExpressionEvaluator.getValue());
+    if (isNotBlank(fqnPath)) {
+      for (Map.Entry<String, String> entry : inputVariables.entrySet()) {
+        resolvedFieldValueWithYamlExpressionEvaluator = getResolvedFieldValueWithYamlExpressionEvaluator(accountId,
+            orgIdentifier, projectIdentifier, pipelineIdentifier, customScriptInfo.getRuntimeInputYaml(),
+            entry.getValue(), fqnPath, gitEntityBasicInfo, serviceRef,
+            resolvedFieldValueWithYamlExpressionEvaluator != null
+                ? resolvedFieldValueWithYamlExpressionEvaluator.getYamlExpressionEvaluator()
+                : null);
+        if (isNotBlank(resolvedFieldValueWithYamlExpressionEvaluator.getValue())) {
+          inputVariables.put(entry.getKey(), resolvedFieldValueWithYamlExpressionEvaluator.getValue());
+        }
+      }
     }
     return customResourceService.getBuilds(script, versionPath, arrayPath, inputVariables, accountId, orgIdentifier,
         projectIdentifier, secretFunctor, delegateSelector);
