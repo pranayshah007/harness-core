@@ -43,22 +43,17 @@ message SchedulingConfig {
   // details.execution_timeout
   google.protobuf.Duration execution_timeout = 1;
 
-  // This map provides a list of key-vals used filter delegates during assignment process.
-  // This is anti-pattern because we already have selectors framework. This map gives an open-ended way for different
-  // product modules to write customized codes in assignment instead of using the framework delegate provides. Keep it
-  // in new APIs for backward compatibility, but tend to remove it in the future.
-  TaskSetupAbstractions setup_abstractions = 2;
-
   // Routing related
-  repeated TaskSelector selectors = 3;
+  repeated TaskSelector selectors = 2;
   // Runner's type
-  string runner_type = 4;
+  string runner_type = 3;
 
-  bool selection_tracking_log_enabled = 5;
-  string account_id = 6;
-  string org_id = 7;
-  string project_id = 8;
+  string account_id = 4;
+  string org_id = 5;
+  string project_id = 6;
 
   // Represents the callback driver to send task response by DMS
-  callback.DelegateCallbackToken callback_token = 9;
+  callback.DelegateCallbackToken callback_token = 7;
+
+  bool selection_tracking_log_enabled = 8;
 }

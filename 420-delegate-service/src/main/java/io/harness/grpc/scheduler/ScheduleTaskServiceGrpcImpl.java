@@ -166,7 +166,6 @@ public class ScheduleTaskServiceGrpcImpl extends ScheduleTaskServiceImplBase {
   private void sendTask(final SchedulingConfig schedulingConfig, final byte[] taskData, final byte[] infraData,
       final SchedulingTaskEvent.EventType eventType, final String executionInfraRef, final String taskId,
       final List<ExecutionCapability> capabilities) {
-    final var setupAbstractions = schedulingConfig.getSetupAbstractions().getValuesMap();
 
     final var task =
         DelegateTask.builder()
@@ -177,8 +176,6 @@ public class ScheduleTaskServiceGrpcImpl extends ScheduleTaskServiceImplBase {
             .driverId(schedulingConfig.hasCallbackToken() ? schedulingConfig.getCallbackToken().getToken() : null)
             .waitId(taskId)
             .accountId(schedulingConfig.getAccountId())
-            .setupAbstractions(setupAbstractions)
-            .workflowExecutionId(setupAbstractions.get(DelegateTaskKeys.workflowExecutionId))
             .executionCapabilities(capabilities)
             .selectionLogsTrackingEnabled(schedulingConfig.getSelectionTrackingLogEnabled())
             .taskData(taskData)
