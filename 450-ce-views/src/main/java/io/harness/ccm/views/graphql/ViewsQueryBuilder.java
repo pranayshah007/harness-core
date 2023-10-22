@@ -514,7 +514,7 @@ public class ViewsQueryBuilder {
       final List<QLCEViewFilter> filters, final List<QLCEViewTimeFilter> timeFilters, final String table) {
     final SelectQuery selectQuery = new SelectQuery();
     selectQuery.addCustomFromTable(table);
-    String tableIdentifier = "clusterData";
+    String tableIdentifier = getTableIdentifier(table);
 
     ViewLabelsFlattened viewLabelsFlattened =
         ViewLabelsFlattened.builder().shouldUseFlattenedLabelsColumn(false).build();
@@ -527,12 +527,12 @@ public class ViewsQueryBuilder {
       decorateQueryWithTimeFilters(selectQuery, timeFilters, true, tableIdentifier);
     }
 
-    selectQuery.addAliasedColumn(
-        new CustomSql(String.format(DISTINCT, String.format(COALESCE, "workloadName", "cloudServiceName"))),
+    selectQuery.addAliasedColumn(new CustomSql(String.format(DISTINCT,
+                                     String.format(COALESCE, getColumnNameForField(tableIdentifier, "workloadName"),
+                                         getColumnNameForField(tableIdentifier, "cloudServiceName")))),
         "resourceName");
-    selectQuery.addCustomColumns(new CustomSql("instanceType"));
+    selectQuery.addCustomColumns(new CustomSql(getColumnNameForField(tableIdentifier, "instanceType")));
 
-    log.info("Query for labels recommendation: {}", selectQuery);
     return selectQuery;
   }
 

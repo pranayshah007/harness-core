@@ -27,6 +27,7 @@ import static io.harness.ccm.views.entities.ViewFieldIdentifier.BUSINESS_MAPPING
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.COMMON;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.LABEL;
+import static io.harness.ccm.views.graphql.QLCEViewFilterOperator.IN;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
 import static io.harness.ccm.views.graphql.ViewsQueryHelper.getPerspectiveIdFromMetadataFilter;
 import static io.harness.ccm.views.utils.ClusterTableKeys.CLUSTER_TABLE_AGGREGRATED;
@@ -85,12 +86,14 @@ import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.Field;
 import com.google.cloud.bigquery.FieldValueList;
 import com.google.cloud.bigquery.QueryJobConfiguration;
+import com.google.cloud.bigquery.QueryParameterValue;
 import com.google.cloud.bigquery.TableResult;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.healthmarketscience.sqlbuilder.CustomCondition;
 import com.healthmarketscience.sqlbuilder.SelectQuery;
 import graphql.com.google.common.collect.ImmutableSet;
 import io.fabric8.utils.Lists;
@@ -545,12 +548,14 @@ public class RecommendationsOverviewQueryV2 {
                   accountId, qlCEViewTimeFilters));
         }
       } else if (idCondition.getViewField().getIdentifier() == LABEL) {
+        List<String> workloads = getDistinctWorkloads(accountId);
         if (isClickHouseEnabled) {
-          final ResultSet result = getWorkloadAndCloudServiceNamesResultSet(qlCEViewTimeFilters, idCondition);
+          final ResultSet result =
+              getWorkloadAndCloudServiceNamesResultSet(qlCEViewTimeFilters, idCondition, workloads);
           condition = condition.and(getWorkloadAndCloudServiceNamesConditions(result));
         } else {
           final TableResult result =
-              getWorkloadAndCloudServiceNamesTableResult(accountId, qlCEViewTimeFilters, idCondition);
+              getWorkloadAndCloudServiceNamesTableResult(accountId, qlCEViewTimeFilters, idCondition, workloads);
           condition = condition.and(getWorkloadAndCloudServiceNamesConditions(result));
         }
       } else if (viewFieldIdentifier == COMMON && fieldId.equals(CLOUD_PROVIDER_FIELD_ID)) {
@@ -568,8 +573,31 @@ public class RecommendationsOverviewQueryV2 {
     return condition;
   }
 
-  private TableResult getWorkloadAndCloudServiceNamesTableResult(
-      final String accountId, final List<QLCEViewTimeFilter> qlCEViewTimeFilters, final ViewIdCondition idCondition) {
+  private List<String> getDistinctWorkloads(final String accountId) {
+    Condition workloadCondition =
+        CE_RECOMMENDATIONS.RESOURCETYPE.eq(ResourceType.WORKLOAD.name())
+            .and(CE_RECOMMENDATIONS.LASTPROCESSEDAT.greaterOrEqual(
+                offsetDateTimeNow().truncatedTo(ChronoUnit.DAYS).minusDays(THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION)));
+    return recommendationService.getDistinctStringValues(
+        accountId, workloadCondition, CE_RECOMMENDATIONS.NAME.getName(), CE_RECOMMENDATIONS);
+  }
+
+  private QLCEViewFilter getWorkloadQLCEViewFilter(final List<String> workloads) {
+    return QLCEViewFilter.builder()
+        .field(QLCEViewFieldInput.builder()
+                   .fieldId(WORKLOAD_NAME_FIELD_ID)
+                   .fieldName("Workload")
+                   .identifier(CLUSTER)
+                   .identifierName(CLUSTER.getDisplayName())
+                   .build())
+        .operator(IN)
+        .values(workloads.toArray(new String[0]))
+        .build();
+  }
+
+  private TableResult getWorkloadAndCloudServiceNamesTableResult(final String accountId,
+      final List<QLCEViewTimeFilter> qlCEViewTimeFilters, final ViewIdCondition idCondition,
+      final List<String> workloads) {
     final BigQuery bigQuery = bigQueryService.get();
     final List<QLCEViewFilter> qlCEViewFilters =
         Collections.singletonList(viewParametersHelper.constructQLCEViewFilterFromViewIdCondition(idCondition));
@@ -577,7 +605,12 @@ public class RecommendationsOverviewQueryV2 {
         bigQueryHelper.getCloudProviderTableName(accountId, CLUSTER_TABLE_AGGREGRATED);
     final SelectQuery query = viewsQueryBuilder.getWorkloadAndCloudServiceNamesForLabels(
         qlCEViewFilters, qlCEViewTimeFilters, cloudProviderTableName);
-    final QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
+    query.addCondition(new CustomCondition(String.format("%s IN UNNEST(@workloads)", WORKLOAD_NAME_FIELD_ID)));
+    log.info("Query for labels recommendation: {}", query);
+    final QueryJobConfiguration queryConfig =
+        QueryJobConfiguration.newBuilder(query.toString())
+            .addNamedParameter("workloads", QueryParameterValue.array(workloads.toArray(new String[0]), String.class))
+            .build();
     TableResult result;
     try {
       result = bigQuery.query(queryConfig);
@@ -589,16 +622,24 @@ public class RecommendationsOverviewQueryV2 {
     return result;
   }
 
-  private ResultSet getWorkloadAndCloudServiceNamesResultSet(
-      final List<QLCEViewTimeFilter> qlCEViewTimeFilters, final ViewIdCondition idCondition) {
-    final List<QLCEViewFilter> qlCEViewFilters =
-        Collections.singletonList(viewParametersHelper.constructQLCEViewFilterFromViewIdCondition(idCondition));
-    final String cloudProviderTableName = CLUSTER_TABLE_AGGREGRATED_CH;
+  private ResultSet getWorkloadAndCloudServiceNamesResultSet(final List<QLCEViewTimeFilter> qlCEViewTimeFilters,
+      final ViewIdCondition idCondition, final List<String> workloads) {
+    final List<QLCEViewFilter> qlCEViewFilters = new ArrayList<>();
+    qlCEViewFilters.add(viewParametersHelper.constructQLCEViewFilterFromViewIdCondition(idCondition));
+    qlCEViewFilters.add(getWorkloadQLCEViewFilter(workloads));
     final SelectQuery query = viewsQueryBuilder.getWorkloadAndCloudServiceNamesForLabels(
-        qlCEViewFilters, qlCEViewTimeFilters, cloudProviderTableName);
+        qlCEViewFilters, qlCEViewTimeFilters, CLUSTER_TABLE_AGGREGRATED_CH);
+//    query.addCondition(new CustomCondition(String.format("%s IN ({workloads: Array(String)})", WORKLOAD_NAME_FIELD_ID)));
+    log.info("Query for labels recommendation: {}", query);
     ResultSet resultSet;
     try (Connection connection = clickHouseService.getConnection(clickHouseConfig);
          Statement statement = connection.createStatement()) {
+//      String viewQuery = String.format("SET param_workloads = %s;\n" +
+//              "CREATE OR REPLACE VIEW raw_data_parametrized AS %s", workloads, query.toString());
+//      log.info("viewQuery: {}", viewQuery);
+//      statement.executeQuery(viewQuery);
+//      String selectQuery = "SELECT resourceName, instanceType from raw_data_parametrized(workloads=" + workloads + ")";
+//      log.info("selectQuery: {}", selectQuery);
       resultSet = statement.executeQuery(query.toString());
     } catch (SQLException e) {
       log.error("Failed to get labels recommendation for query {}", query, e);

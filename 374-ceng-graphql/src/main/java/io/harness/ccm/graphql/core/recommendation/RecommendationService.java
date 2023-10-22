@@ -77,6 +77,12 @@ public class RecommendationService {
     return result;
   }
 
+  public List<String> getDistinctStringValues(
+          String accountId, Condition preCondition, @NonNull String column, @NonNull Table<?> table) {
+    Field<?> field = SQLConverter.getField(column, table);
+    return k8sRecommendationDAO.getDistinctStringValues(accountId, preCondition, field, table);
+  }
+
   public int getRecommendationsCount(@NonNull String accountId, @NonNull Condition condition) {
     return k8sRecommendationDAO.fetchRecommendationsCount(accountId, condition);
   }
