@@ -138,6 +138,7 @@ import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
 import io.harness.ng.core.filter.ApiResponseFilter;
 import io.harness.ng.core.handler.NGVaultSecretManagerRenewalHandler;
 import io.harness.ng.core.handler.freezeHandlers.NgDeploymentFreezeActivationHandler;
+import io.harness.ng.core.migration.AddUniqueIdParentIdToEntitiesJob;
 import io.harness.ng.core.migration.NGBeanMigrationProvider;
 import io.harness.ng.core.migration.ProjectMigrationProvider;
 import io.harness.ng.core.migration.UniqueIdParentIdMigrationProvider;
@@ -913,6 +914,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
     environment.lifecycle().manage(injector.getInstance(DefaultUserGroupsCreationJob.class));
     environment.lifecycle().manage(injector.getInstance(FixInconsistentUserDataMigrationJob.class));
+    environment.lifecycle().manage(injector.getInstance(AddUniqueIdParentIdToEntitiesJob.class));
     // Do not remove as it's used for MaintenanceController for shutdown mode
     environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
     if (appConfig.isUseQueueServiceForWebhookTriggers()) {
