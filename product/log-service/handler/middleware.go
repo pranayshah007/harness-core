@@ -269,7 +269,7 @@ func ValidatePrefixRequest() func(handler http.Handler) http.Handler {
 				return
 			}
 
-			containRunSequence, err := regexp.MatchString("runSequence:[\\d+]", unescapedUrl)
+			containRunSequence, err := regexp.MustCompile(`\w+\/pipeline\/\w+\/(?P<runSequence>\d)`)
 			if err != nil {
 				WriteInternalError(w, err)
 				logger.FromRequest(r).
