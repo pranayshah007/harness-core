@@ -931,7 +931,8 @@ public enum FeatureName {
   CDS_K8S_ASYNC_STEP_STRATEGY("This Flag enables the usage of ASYNC chain orchestration for K8s step", HarnessTeam.CDP),
   CDS_MERGE_PIPELINE_EXECUTION_SUMMARY_UPDATE_FLOW(
       "Merge the different flows to update pipeline execution summary to avoid write conflicts in mongo", PIPELINE),
-  PIE_SECRETS_OBSERVER("Secrets Runtime Usages Observer", PIPELINE);
+  PIE_SECRETS_OBSERVER("Secrets Runtime Usages Observer", PIPELINE),
+  CI_VM_CONTAINERLESS_RUN_ASUSER("Run CI containerless step with specific userid", HarnessTeam.CI);
 
   // keep-sorted end
 
